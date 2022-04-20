@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+  <!-- 
+  Originally based on https://github.com/2ndQuadrant/audit-trigger/blob/master/audit.sql 
+  Every index you add has a big impact, so avoid adding indexes to the audit table unless you REALLY need them.
+  The hstore GIST indexes are particularly expensive. 
+  -->
+  <include file="db_log/changelog.xml" relativeToChangelogFile="true" />
+
+</databaseChangeLog>
+
+

@@ -1,0 +1,28 @@
+subprojects {
+  apply plugin: "java"
+  apply plugin: "groovy"
+
+  group "com.kodality.termserver"
+  version "0.1.0-SNAPSHOT"
+
+  repositories {
+    mavenCentral()
+    maven { url "https://kexus.kodality.com/repository/maven-public/" }
+  }
+
+  dependencies {
+    compileOnly "org.projectlombok:lombok:1.18.22"
+    annotationProcessor "org.projectlombok:lombok:1.18.22"
+  }
+
+  java {
+    sourceCompatibility = JavaVersion.toVersion("17")
+    targetCompatibility = JavaVersion.toVersion("17")
+    withSourcesJar()
+  }
+
+  configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+  }
+}
+

@@ -1,0 +1,4 @@
+DROP ROLE :admin;
+DROP ROLE :app;
+DROP ROLE :viewer;
+

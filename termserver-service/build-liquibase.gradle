@@ -1,0 +1,20 @@
+dependencies {
+  liquibaseRuntime 'org.liquibase:liquibase-core:4.6.1'
+  liquibaseRuntime 'org.postgresql:postgresql:42.2.23'
+  liquibaseRuntime 'org.yaml:snakeyaml:1.29'
+}
+
+
+liquibase {
+  activities {
+    dev {
+      changeLogFile 'db/changelog/changelog-master.xml'
+      url 'jdbc:postgresql://localhost:5432/termserver'
+      classpath 'src/main/resources/'
+      defaultSchemaName 'public'
+      username 'termserver_admin'
+      password 'test'
+    }
+  }
+  runList = project.hasProperty('runList') ? project.properties['runList'] : "dev"
+}

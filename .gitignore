@@ -1,0 +1,19 @@
+target/
+build/
+bin/
+out/
+.gradle/
+.DS_Store
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.idea
+*.iws
+*.iml
+*.ipr
+*.swo
+*.swp

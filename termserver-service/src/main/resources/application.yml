@@ -1,0 +1,25 @@
+micronaut:
+  application:
+    name: termserver
+  server:
+    port: 8200
+    max-request-size: 104857600
+datasources:
+  default:
+    url: ${DB_URL:`jdbc:postgresql://localhost:5432/termserver`}
+    username: ${DB_APP_USER:termserver_app}
+    password: ${DB_APP_PASSWORD:test}
+    maximum-pool-size: ${DB_POOL_SIZE:10}
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    url: ${DB_URL:`jdbc:postgresql://localhost:5432/termserver`}
+    username: ${DB_ADMIN_USER:termserver_admin}
+    password: ${DB_ADMIN_PASSWORD:test}
+    driver-class-name: org.postgresql.Driver
+    maximum-pool-size: 1
+liquibase:
+  datasources:
+    liquibase:
+      enabled: true
+      change-log: 'classpath:/db/changelog/changelog-master.xml'
+      default-schema: 'public'

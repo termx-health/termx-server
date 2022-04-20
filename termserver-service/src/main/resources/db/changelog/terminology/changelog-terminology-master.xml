@@ -1,0 +1,16 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+    <include file="changelog-terminology.xml" relativeToChangelogFile="true"/>
+    <include file="01-code_system.sql" relativeToChangelogFile="true"/>
+    <include file="02-code_system_entity.sql" relativeToChangelogFile="true"/>
+    <include file="03-concept.sql" relativeToChangelogFile="true"/>
+    <include file="04-designation.sql" relativeToChangelogFile="true"/>
+    <include file="05-value_set.sql" relativeToChangelogFile="true"/>
+    <include file="06-map_set.sql" relativeToChangelogFile="true"/>
+    <include file="07-association.sql" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>

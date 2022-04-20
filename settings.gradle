@@ -1,0 +1,8 @@
+rootProject.name="terminology-server"
+include 'termserver-api'
+include 'termserver-service'
+include 'termserver-commons'
+include 'termserver-commons:commons-model'
+include 'termserver-commons:commons-util'
+include 'termserver-commons:commons-http-client'
+include 'termserver-commons:commons-db'

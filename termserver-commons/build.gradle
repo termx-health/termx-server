@@ -1,0 +1,22 @@
+subprojects {
+  apply plugin: "java-library"
+  apply plugin: "groovy"
+  apply plugin: "idea"
+  apply plugin: "maven-publish"
+
+  dependencies {
+    compileOnly "org.projectlombok:lombok:1.18.22"
+    annotationProcessor "org.projectlombok:lombok:1.18.22"
+
+    testImplementation("org.spockframework:spock-core:2.0-groovy-3.0") {
+      exclude group: "org.codehaus.groovy", module: "groovy-all"
+    }
+  }
+
+  test {
+    useJUnitPlatform()
+  }
+}
+
+
+

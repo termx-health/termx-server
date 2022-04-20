@@ -1,0 +1,14 @@
+--Terminate all connections in database, but not my own
+SELECT pg_terminate_backend(pid)
+  FROM pg_stat_activity
+ WHERE pid <> pg_backend_pid()
+   and datname = :'db';
+
+--Terminate all connections in database
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = :'db';
+
+DROP DATABASE :db;
+
+

@@ -1,0 +1,8 @@
+set core.env  = :'env';
+set core.client_identifier  = '';
+
+
+ALTER SYSTEM SET core.env = :'env';
+ALTER SYSTEM SET core.client_identifier = '';
+
+select pg_reload_conf();
