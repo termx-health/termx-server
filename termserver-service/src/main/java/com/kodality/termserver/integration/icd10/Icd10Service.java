@@ -1,23 +1,16 @@
 package com.kodality.termserver.integration.icd10;
 
 
-import com.kodality.termserver.ApiError;
-import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.association.AssociationType;
-import com.kodality.termserver.codesystem.CodeSystem;
-import com.kodality.termserver.codesystem.CodeSystemService;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
-import com.kodality.termserver.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
-import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
-import com.kodality.termserver.codesystem.association.AssociationTypeService;
-import com.kodality.termserver.codesystem.concept.ConceptService;
-import com.kodality.termserver.codesystem.entity.CodeSystemEntityVersionService;
-import com.kodality.termserver.codesystem.entityproperty.EntityPropertyService;
+import com.kodality.termserver.association.AssociationTypeService;
 import com.kodality.termserver.commons.client.BinaryHttpClient;
 import com.kodality.termserver.commons.model.constant.Language;
+import com.kodality.termserver.commons.model.model.LocalizedName;
 import com.kodality.termserver.integration.common.ImportConfiguration;
+import com.kodality.termserver.integration.common.TerminologyImportService;
 import com.kodality.termserver.integration.icd10.utils.Icd10;
 import com.kodality.termserver.integration.icd10.utils.Icd10Mapper;
 import com.kodality.termserver.integration.icd10.utils.Icd10ZipReader;
@@ -27,49 +20,29 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
 @Slf4j
 @RequiredArgsConstructor
 public class Icd10Service {
-  private final BinaryHttpClient binaryHttpClient = new BinaryHttpClient();
-  private final ConceptService conceptService;
-  private final CodeSystemService codeSystemService;
-  private final EntityPropertyService entityPropertyService;
+  private final TerminologyImportService importService;
   private final AssociationTypeService associationTypeService;
-  private final CodeSystemVersionService codeSystemVersionService;
-  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
-
+  private final BinaryHttpClient binaryHttpClient = new BinaryHttpClient();
 
   @Transactional
-  public List<Concept> importIcd10(String url, ImportConfiguration configuration) {
+  public void importIcd10(String url, ImportConfiguration configuration) {
     prepareConfiguration(configuration);
 
-    CodeSystemVersion version = prepareCodeSystemAndVersion(configuration);
-    List<EntityProperty> properties = prepareProperties(configuration);
+    CodeSystemVersion version = importService.prepareCodeSystemAndVersion(configuration);
+    List<EntityProperty> properties = importService.prepareProperties(configuration, List.of("term", "synonym"));
     prepareAssociations();
 
     Icd10 diagnoses = new Icd10ZipReader().handleZipPack(getResource(url));
     List<Concept> concepts = Icd10Mapper.mapConcepts(diagnoses, configuration, properties);
-    log.info("Creating concepts");
-    concepts.forEach(concept -> {
-      conceptService.save(concept, version.getCodeSystem());
-      codeSystemEntityVersionService.save(concept.getVersions().get(0), concept.getId(), version.getCodeSystem());
-    });
-    log.info("Created '{}' concepts", concepts.size());
-    codeSystemVersionService.saveEntityVersions(version.getId(), concepts.stream().map(c -> c.getVersions().get(0)).collect(Collectors.toList()));
-
-    log.info("Activating version '{}' in codesystem '{}'", configuration.getCodeSystem(), configuration.getVersion());
-    codeSystemVersionService.activateVersion(configuration.getCodeSystem(), configuration.getVersion());
-
-    log.info("Import finished.");
-    return concepts;
+    importService.importConcepts(concepts, version, configuration);
   }
 
   private byte[] getResource(String url) {
@@ -78,84 +51,28 @@ public class Icd10Service {
   }
 
   private void prepareAssociations() {
-    if (associationTypeService.load("is-a") == null) {
-      AssociationType associationType = new AssociationType();
-      associationType.setCode("is-a");
-      associationType.setForwardName("Is a");
-      associationType.setDirected(true);
-      associationType.setAssociationKind("code-system-hierarchy");
-      associationTypeService.save(associationType);
-    }
+    AssociationType associationType = new AssociationType();
+    associationType.setCode("is-a");
+    associationType.setForwardName("Is a");
+    associationType.setDirected(true);
+    associationType.setAssociationKind("code-system-hierarchy");
+    associationTypeService.save(associationType);
   }
 
   private void prepareConfiguration(ImportConfiguration configuration) {
-    configuration.setCodeSystem(configuration.getCodeSystem() == null ? Icd10Configuration.codeSystem : configuration.getCodeSystem());
     configuration.setUri(configuration.getUri() == null ? Icd10Configuration.uri : configuration.getUri());
     configuration.setVersion(configuration.getVersion() == null ? Icd10Configuration.version : configuration.getVersion());
     configuration.setSource(configuration.getSource() == null ? Icd10Configuration.source : configuration.getSource());
     configuration.setValidFrom(configuration.getValidFrom() == null ? LocalDate.now() : configuration.getValidFrom());
-    configuration.setCodeSystemDescription(configuration.getCodeSystemDescription() == null ? Icd10Configuration.codeSystemDescription : configuration.getCodeSystemDescription());
+    configuration.setCodeSystem(configuration.getCodeSystem() == null ? Icd10Configuration.codeSystem : configuration.getCodeSystem());
+    configuration.setCodeSystemName(configuration.getCodeSystemName() == null ? getCodeSystemName() : configuration.getCodeSystemName());
+    configuration.setCodeSystemDescription(
+        configuration.getCodeSystemDescription() == null ? Icd10Configuration.codeSystemDescription : configuration.getCodeSystemDescription());
   }
 
-  private CodeSystemVersion prepareCodeSystemAndVersion(ImportConfiguration configuration) {
-    log.info("Checking, the code system and version exists");
-    Optional<CodeSystem> codeSystem = codeSystemService.get(configuration.getCodeSystem());
-    if (codeSystem.isEmpty()) {
-      log.info("Code system {} does not exist, creating new", configuration.getCodeSystem());
-      createCodeSystem(configuration);
-    }
-
-    Optional<CodeSystemVersion> version = codeSystemVersionService.getVersion(configuration.getCodeSystem(), configuration.getVersion());
-    if (version.isPresent() && version.get().getStatus().equals(PublicationStatus.active)) {
-      throw ApiError.TE105.toApiException(Map.of("version", configuration.getVersion()));
-    }
-    log.info("Saving code system version {}", configuration.getVersion());
-    return saveCodeSystemVersion(configuration, version.map(CodeSystemVersion::getId).orElse(null));
-  }
-
-  private List<EntityProperty> prepareProperties(ImportConfiguration configuration) {
-    List<String> properties = List.of("term", "synonym");
-    List<EntityProperty> existingProperties = entityPropertyService.query(
-        new EntityPropertyQueryParams()
-            .setNames(StringUtils.join(properties, ","))
-            .setCodeSystem(configuration.getCodeSystem())).getData();
-    return properties.stream().map(p -> {
-      EntityProperty entityProperty = existingProperties.stream().filter(ep -> ep.getName().equals(p)).findFirst().orElse(new EntityProperty());
-      entityProperty.setName(p);
-      entityProperty.setStatus(PublicationStatus.active);
-      entityPropertyService.save(entityProperty, configuration.getCodeSystem());
-      return entityProperty;
-    }).collect(Collectors.toList());
-  }
-
-  private void createCodeSystem(ImportConfiguration configuration) {
-    CodeSystem codeSystem = new CodeSystem();
-    codeSystem.setId(configuration.getCodeSystem());
-    codeSystem.setUri(configuration.getUri());
-    codeSystem.setNames(getCodeSystemName());
-    codeSystem.setDescription(configuration.getCodeSystemDescription());
-    codeSystemService.save(codeSystem);
-  }
-
-  private Map<String, String> getCodeSystemName() {
+  private LocalizedName getCodeSystemName() {
     Map<String, String> ln = new HashMap<>();
     ln.put(Language.en, "ICD-10 WHO Edition");
-    return ln;
-  }
-
-  private CodeSystemVersion saveCodeSystemVersion(ImportConfiguration configuration, Long id) {
-    CodeSystemVersion version = new CodeSystemVersion();
-    version.setId(id);
-    version.setCodeSystem(configuration.getCodeSystem());
-    version.setVersion(configuration.getVersion());
-    version.setSource(configuration.getSource());
-    version.setPreferredLanguage(Language.en);
-    version.setSupportedLanguages(List.of(Language.en));
-    version.setDescription(configuration.getCodeSystemVersionDescription());
-    version.setStatus(PublicationStatus.draft);
-    version.setReleaseDate(configuration.getValidFrom());
-    version.setExpirationDate(configuration.getValidTo());
-    codeSystemVersionService.save(version);
-    return version;
+    return new LocalizedName(ln);
   }
 }

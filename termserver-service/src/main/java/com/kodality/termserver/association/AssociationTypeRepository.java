@@ -1,6 +1,5 @@
-package com.kodality.termserver.codesystem.association;
+package com.kodality.termserver.association;
 
-import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.commons.db.bean.PgBeanProcessor;
 import com.kodality.termserver.commons.db.repo.BaseRepository;
 import com.kodality.termserver.commons.db.sql.SaveSqlBuilder;

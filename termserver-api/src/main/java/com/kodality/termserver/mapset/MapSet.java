@@ -1,14 +1,18 @@
 package com.kodality.termserver.mapset;
 
+import com.kodality.termserver.commons.model.model.LocalizedName;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 @Getter
 @Setter
+@Accessors(chain = true)
 public class MapSet {
-  private Long id;
-  private String name;
+  private String id;
+  private LocalizedName names;
   private String description;
 
-  private MapSetVersion version;
+  private List<MapSetVersion> versions;
 }

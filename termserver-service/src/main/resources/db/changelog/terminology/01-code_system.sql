@@ -29,7 +29,7 @@ create table code_system_version (
     supported_languages text[],
     description         text,
     status              text                      not null,
-    release_date        timestamp,
+    release_date        timestamp                 not null,
     expiration_date     timestamp,
     created             timestamptz default now() not null,
     previous_version_id bigint,

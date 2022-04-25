@@ -11,8 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
-@Singleton
 @Slf4j
+@Singleton
 @RequiredArgsConstructor
 public class CodeSystemVersionService {
   private final CodeSystemVersionRepository repository;
@@ -27,7 +27,7 @@ public class CodeSystemVersionService {
             .setVersion(version.getVersion())
             .setStatus(PublicationStatus.draft)).findFirst().orElse(null);
     if (lastDraftVersion != null && !lastDraftVersion.getId().equals(version.getId())) {
-      throw ApiError.TE102.toApiException(Map.of("version", lastDraftVersion.getVersion(), "codeSystem", version.getCodeSystem()));
+      throw ApiError.TE102.toApiException(Map.of("version", lastDraftVersion.getVersion()));
     }
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
     repository.save(version);
@@ -41,12 +41,9 @@ public class CodeSystemVersionService {
     return repository.getVersions(codeSystem);
   }
 
-  public String getLastActiveVersion(String codeSystem) {
-    return repository.getLastActiveVersion(codeSystem);
-  }
 
   @Transactional
-  public void activateVersion(String codeSystem, String version) {
+  public void activate(String codeSystem, String version) {
     CodeSystemVersion currentVersion = repository.getVersion(codeSystem, version);
     if (currentVersion == null) {
       throw ApiError.TE104.toApiException(Map.of("version", version, "codeSystem", codeSystem));
@@ -62,9 +59,32 @@ public class CodeSystemVersionService {
         .setReleaseDateLe(currentVersion.getExpirationDate())
         .setExpirationDateGe(currentVersion.getReleaseDate())).findFirst().orElse(null);
     if (overlappingVersion != null) {
-      throw ApiError.TE104.toApiException(Map.of("version", overlappingVersion.getVersion()));
+      throw ApiError.TE103.toApiException(Map.of("version", overlappingVersion.getVersion()));
     }
     repository.activate(codeSystem, version);
+  }
+
+  @Transactional
+  public void retire(String codeSystem, String version) {
+    CodeSystemVersion currentVersion = repository.getVersion(codeSystem, version);
+    if (currentVersion == null) {
+      throw ApiError.TE104.toApiException(Map.of("version", version, "codeSystem", codeSystem));
+    }
+    if (PublicationStatus.retired.equals(currentVersion.getStatus())) {
+      log.warn("Version '{}' of codesystem '{}' is already retired, skipping retirement process.", version, codeSystem);
+      return;
+    }
+    repository.retire(codeSystem, version);
+  }
+
+  @Transactional
+  public void saveEntityVersions(String codeSystem, String codeSystemVersion, List<CodeSystemEntityVersion> entityVersions) {
+    Optional<Long> versionId = getVersion(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
+    if (versionId.isPresent()) {
+      saveEntityVersions(versionId.get(), entityVersions);
+    } else {
+      throw ApiError.TE104.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
+    }
   }
 
   @Transactional

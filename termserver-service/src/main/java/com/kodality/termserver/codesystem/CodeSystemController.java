@@ -1,19 +1,31 @@
 package com.kodality.termserver.codesystem;
 
 import com.kodality.termserver.codesystem.concept.ConceptService;
+import com.kodality.termserver.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.termserver.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termserver.commons.model.exception.NotFoundException;
 import com.kodality.termserver.commons.model.model.QueryResult;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
+import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.Put;
+import java.util.List;
+import javax.validation.Valid;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 @Controller("/code-systems")
 @RequiredArgsConstructor
 public class CodeSystemController {
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
+  private final EntityPropertyService entityPropertyService;
   private final CodeSystemVersionService codeSystemVersionService;
+  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   @Get(uri = "{?params*}")
   public QueryResult<CodeSystem> getCodeSystems(CodeSystemQueryParams params) {
@@ -25,21 +37,48 @@ public class CodeSystemController {
     return codeSystemService.get(codeSystem).orElseThrow(() -> new NotFoundException("CodeSystem not found: " + codeSystem));
   }
 
+  @Post
+  public HttpResponse<?> create(@Body @Valid CodeSystem codeSystem) {
+    codeSystemService.create(codeSystem);
+    return HttpResponse.created(codeSystem);
+  }
+
+  @Get(uri = "/{codeSystem}/versions")
+  public List<CodeSystemVersion> getCodeSystemVersions(@PathVariable String codeSystem) {
+    return codeSystemVersionService.getVersions(codeSystem);
+  }
+
   @Get(uri = "/{codeSystem}/versions/{version}")
   public CodeSystemVersion getCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version) {
     return codeSystemVersionService.getVersion(codeSystem, version).orElseThrow(() -> new NotFoundException("CodeSystem version not found: " + codeSystem));
   }
 
-  @Get(uri = "/{codeSystem}/versions/{version}/concepts{?params*}")
-  public QueryResult<Concept> getConcepts(@PathVariable String codeSystem, @PathVariable String version, ConceptQueryParams params) {
-    params.setCodeSystem(codeSystem);
-    params.setVersion(version);
-    return conceptService.query(params);
+  @Post(uri = "/{codeSystem}/versions")
+  public HttpResponse<?> createVersion(@PathVariable String codeSystem, @Body @Valid CodeSystemVersion version) {
+    version.setId(null);
+    version.setCodeSystem(codeSystem);
+    codeSystemVersionService.save(version);
+    return HttpResponse.created(version);
   }
 
-  @Get(uri = "/{codeSystem}/versions/{versionCode}/concepts/{conceptCode}")
-  public Concept getConcept(@PathVariable String codeSystem, @PathVariable String versionCode, @PathVariable String conceptCode) {
-    return conceptService.get(codeSystem, versionCode, conceptCode).orElseThrow(() -> new NotFoundException("Concept not found: " + conceptCode));
+  @Put(uri = "/{codeSystem}/versions/{id}")
+  public HttpResponse<?> updateVersion(@PathVariable String codeSystem, @PathVariable Long id, @Body @Valid CodeSystemVersion version) {
+    version.setId(id);
+    version.setCodeSystem(codeSystem);
+    codeSystemVersionService.save(version);
+    return HttpResponse.created(version);
+  }
+
+  @Post(uri = "/{codeSystem}/versions/{version}/activate")
+  public HttpResponse<?> activateVersion(@PathVariable String codeSystem, @PathVariable String version) {
+    codeSystemVersionService.activate(codeSystem, version);
+    return HttpResponse.noContent();
+  }
+
+  @Post(uri = "/{codeSystem}/versions/{version}/retire")
+  public HttpResponse<?> retireVersion(@PathVariable String codeSystem, @PathVariable String version) {
+    codeSystemVersionService.retire(codeSystem, version);
+    return HttpResponse.noContent();
   }
 
   @Get(uri = "/{codeSystem}/concepts{?params*}")
@@ -49,7 +88,63 @@ public class CodeSystemController {
   }
 
   @Get(uri = "/{codeSystem}/concepts/{code}")
-  public Concept get(@PathVariable String codeSystem, @PathVariable String code) {
+  public Concept getConcept(@PathVariable String codeSystem, @PathVariable String code) {
     return conceptService.get(codeSystem, code).orElseThrow(() -> new NotFoundException("Concept not found: " + code));
   }
+
+  @Get(uri = "/{codeSystem}/versions/{version}/concepts{?params*}")
+  public QueryResult<Concept> getConcepts(@PathVariable String codeSystem, @PathVariable String version, ConceptQueryParams params) {
+    params.setCodeSystem(codeSystem);
+    params.setCodeSystemVersion(version);
+    return conceptService.query(params);
+  }
+
+  @Get(uri = "/{codeSystem}/versions/{version}/concepts/{conceptCode}")
+  public Concept getConcept(@PathVariable String codeSystem, @PathVariable String version, @PathVariable String conceptCode) {
+    return conceptService.get(codeSystem, version, conceptCode).orElseThrow(() -> new NotFoundException("Concept not found: " + conceptCode));
+  }
+
+  @Post(uri = "/{codeSystem}/concepts")
+  public HttpResponse<?> createConcept(@PathVariable String codeSystem, @Body @Valid Concept concept) {
+    concept.setCodeSystem(codeSystem);
+    conceptService.save(concept, codeSystem);
+    return HttpResponse.created(concept);
+  }
+
+  @Get(uri = "/{codeSystem}/properties")
+  public List<EntityProperty> getProperties(@PathVariable String codeSystem) {
+    return entityPropertyService.getProperties(codeSystem);
+  }
+
+  @Post(uri = "/{codeSystem}/properties")
+  public HttpResponse<?> createProperties(@PathVariable String codeSystem, @Body EntityPropertyRequest request) {
+    return HttpResponse.created(entityPropertyService.save(request.getProperties(), codeSystem));
+  }
+
+  @Get(uri = "/{codeSystem}/versions/{version}/entity-versions")
+  public List<CodeSystemEntityVersion> getEntityVersions(@PathVariable String codeSystem, @PathVariable String version) {
+    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
+    params.setCodeSystem(codeSystem);
+    params.setCodeSystemVersion(version);
+    return codeSystemEntityVersionService.query(params).getData();
+  }
+
+  @Post(uri = "/{codeSystem}/versions/{version}/entity-versions")
+  public HttpResponse<?> saveEntityVersions(@PathVariable String codeSystem, @PathVariable String version, @Body EntityVersionRequest request) {
+    codeSystemVersionService.saveEntityVersions(codeSystem, version, request.getVersions());
+    return HttpResponse.ok();
+  }
+
+  @Getter
+  @Setter
+  private static class EntityPropertyRequest {
+    private List<EntityProperty> properties;
+  }
+
+  @Getter
+  @Setter
+  private static class EntityVersionRequest {
+    private List<CodeSystemEntityVersion> versions;
+  }
+
 }

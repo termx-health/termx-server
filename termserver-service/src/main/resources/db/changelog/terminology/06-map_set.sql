@@ -3,8 +3,8 @@
 --changeset kodality:map_set
 drop table if exists map_set;
 create table map_set (
-    id                  bigint              default nextval('core.s_entity') primary key,
-    name                text,
+    id                  text                primary key,
+    names               jsonb               not null,
     description         text,
     sys_created_at      timestamp           not null,
     sys_created_by      text                not null,
@@ -20,13 +20,14 @@ select core.create_table_metadata('map_set');
 drop table if exists map_set_version;
 create table map_set_version (
     id                  bigint      default nextval('core.s_entity') primary key,
-    map_set_id          bigint                    not null,
+    map_set             text                      not null,
     version             text                      not null,
     source              text,
     supported_languages text[],
     description         text,
     status              text                      not null,
-    release_date        timestamp,
+    release_date        timestamp                 not null,
+    expiration_date     timestamp,
     created             timestamptz default now() not null,
     previous_version_id bigint,
     sys_created_at      timestamp                 not null,
@@ -35,12 +36,12 @@ create table map_set_version (
     sys_modified_by     text                      not null,
     sys_status          char(1)     default 'A'   not null collate "C",
     sys_version         int                       not null,
-    constraint map_set_version_ukey unique (map_set_id, version),
-    constraint map_set_version_map_set_fk foreign key (map_set_id) references map_set(id),
+    constraint map_set_version_ukey unique (map_set, version),
+    constraint map_set_version_map_set_fk foreign key (map_set) references map_set(id),
     constraint map_set_version_previous_version_fk foreign key (previous_version_id) references map_set_version(id)
 );
 
-create index map_set_version_map_set_idx on map_set_version(map_set_id);
+create index map_set_version_map_set_idx on map_set_version(map_set);
 
 select core.create_table_metadata('map_set_version');
 --rollback drop table if exists map_set_version;
@@ -49,17 +50,17 @@ select core.create_table_metadata('map_set_version');
 drop table if exists map_set_entity;
 create table map_set_entity (
     id                  bigint      default nextval('core.s_entity') primary key,
-    map_set_id          bigint                    not null,
+    map_set             text                      not null,
     sys_created_at      timestamp                 not null,
     sys_created_by      text                      not null,
     sys_modified_at     timestamp                 not null,
     sys_modified_by     text                      not null,
     sys_status          char(1)     default 'A'   not null collate "C",
     sys_version         int                       not null,
-    constraint map_set_entity_map_set_fk foreign key (map_set_id) references map_set(id)
+    constraint map_set_entity_map_set_fk foreign key (map_set) references map_set(id)
 );
 
-create index map_set_entity_map_set_idx on map_set_entity(map_set_id);
+create index map_set_entity_map_set_idx on map_set_entity(map_set);
 
 select core.create_table_metadata('map_set_entity');
 --rollback drop table if exists map_set_entity;
@@ -71,6 +72,7 @@ create table map_set_entity_version (
     map_set_entity_id       bigint                    not null,
     description             text,
     status                  text                      not null,
+    created                 timestamptz default now() not null,
     previous_version_id     bigint,
     sys_created_at          timestamp                 not null,
     sys_created_by          text                      not null,

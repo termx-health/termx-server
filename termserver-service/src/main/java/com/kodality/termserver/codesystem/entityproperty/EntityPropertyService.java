@@ -19,11 +19,13 @@ public class EntityPropertyService {
   }
 
   @Transactional
-  public EntityProperty save(EntityProperty entityProperty, String codeSystem) {
-
-    entityProperty.setCreated(entityProperty.getCreated() == null ? OffsetDateTime.now() : entityProperty.getCreated());
-    repository.save(entityProperty, codeSystem);
-    return entityProperty;
+  public List<EntityProperty> save(List<EntityProperty> entityProperties, String codeSystem) {
+    repository.retain(entityProperties, codeSystem);
+    entityProperties.forEach(p -> {
+      p.setCreated(p.getCreated() == null ? OffsetDateTime.now() : p.getCreated());
+      repository.save(p, codeSystem);
+    });
+    return entityProperties;
   }
 
   public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {

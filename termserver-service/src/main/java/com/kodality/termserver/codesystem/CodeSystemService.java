@@ -19,7 +19,7 @@ public class CodeSystemService {
   }
 
   @Transactional
-  public void save(CodeSystem codeSystem) {
+  public void create(CodeSystem codeSystem) {
     repository.create(codeSystem);
   }
 

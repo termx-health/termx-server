@@ -9,16 +9,18 @@ import javax.inject.Singleton;
 
 @Singleton
 public class CodeSystemAssociationRepository extends BaseRepository {
-  private final PgBeanProcessor bp = new PgBeanProcessor(CodeSystemAssociation.class);
+  private final PgBeanProcessor bp = new PgBeanProcessor(CodeSystemAssociation.class, bp -> {
+    bp.overrideColumnMapping("target_code_system_entity_version_id", "targetId");
+  });
 
-  public List<CodeSystemAssociation> loadAll(Long codeSystemEntityVersionId, String codeSystem) {
-    String sql = "select * from code_system_association where sys_status = 'A' and source_code_system_entity_version_id = ? and code_system = ?";
-    return getBeans(sql, bp, codeSystemEntityVersionId, codeSystem);
+  public List<CodeSystemAssociation> loadAll(Long codeSystemEntityVersionId) {
+    String sql = "select * from code_system_association where sys_status = 'A' and source_code_system_entity_version_id = ?";
+    return getBeans(sql, bp, codeSystemEntityVersionId);
   }
 
-  public void retain(List<CodeSystemAssociation> associations, Long codeSystemEntityVersionId, String codeSystem) {
+  public void retain(List<CodeSystemAssociation> associations, Long codeSystemEntityVersionId) {
     SqlBuilder sb = new SqlBuilder("update code_system_association set sys_status = 'C'");
-    sb.append(" where source_code_system_entity_version_id = ? and code_system = ? and sys_status = 'A'", codeSystemEntityVersionId, codeSystem);
+    sb.append(" where source_code_system_entity_version_id = ? and sys_status = 'A'", codeSystemEntityVersionId);
     sb.andNotIn("id", associations, CodeSystemAssociation::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }

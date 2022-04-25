@@ -50,7 +50,6 @@ create table entity_version_code_system_version_membership (
     id                              bigserial                 not null primary key,
     code_system_entity_version_id   bigint                    not null,
     code_system_version_id          bigint                    not null,
-    order_nr                        int,
     sys_created_at                  timestamp                 not null,
     sys_created_by                  text                      not null,
     sys_modified_at                 timestamp                 not null,

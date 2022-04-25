@@ -26,10 +26,10 @@ public class AtcController {
     JobLogResponse jobLogResponse = importLogger.createJob(source, JOB_TYPE);
     CompletableFuture.runAsync(() -> {
       try {
-        log.info("Atc import started");
+        log.info("ATC import started");
         long start = System.currentTimeMillis();
         atcService.importAtc(configuration);
-        log.info("Atc import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
+        log.info("ATC import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
         importLogger.logImport(jobLogResponse.getJobId());
       } catch (Exception e) {
         log.error("Error while importing ATC", e);

@@ -29,7 +29,7 @@ public class AtcEstMapper {
 
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode("classification");
-    version.setStatus(PublicationStatus.active);
+    version.setStatus(PublicationStatus.draft);
     version.setDesignations(List.of(designation));
 
     Concept concept = new Concept();
@@ -43,7 +43,7 @@ public class AtcEstMapper {
     return atc.stream().map(a -> {
       CodeSystemEntityVersion version = new CodeSystemEntityVersion();
       version.setCode(a.getCode());
-      version.setStatus(PublicationStatus.active);
+      version.setStatus(PublicationStatus.draft);
       version.setDesignations(mapDesignations(a, properties));
       version.setAssociations(mapAssociations(findParent(a.getCode(), atc, 1), configuration));
 
@@ -68,7 +68,7 @@ public class AtcEstMapper {
     return List.of(designation);
   }
 
-  private static List<CodeSystemAssociation> mapAssociations(AtcEst parent, ImportConfiguration configuration) {
+  private static List<CodeSystemAssociation> mapAssociations(String parent, ImportConfiguration configuration) {
     List<CodeSystemAssociation> associations = new ArrayList<>();
     if (parent == null) {
       return associations;
@@ -78,18 +78,18 @@ public class AtcEstMapper {
     association.setCodeSystem(configuration.getCodeSystem());
     association.setAssociationType("is-a");
     association.setStatus(PublicationStatus.active);
-    association.setTargetCode(parent.getCode());
+    association.setTargetCode(parent);
     associations.add(association);
     return associations;
   }
 
-  private static AtcEst findParent(String child, List<AtcEst> atc, int offset) {
+  private static String findParent(String child, List<AtcEst> atc, int offset) {
     if (child.length() < 2) {
-      return null;
+      return "classification";
     }
     Optional<AtcEst> parent = atc.stream().filter(p -> child.startsWith(p.getCode()) && p.getCode().length() == child.length() - offset).findFirst();
     if (parent.isPresent()) {
-      return parent.get();
+      return parent.get().getCode();
     }
     if (child.length() - offset < 1) {
       throw new IllegalStateException("Failed to find parent for ATC with code '" + child + "'");

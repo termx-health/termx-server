@@ -9,9 +9,10 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class CodeSystemEntityVersionQueryParams extends QueryParams {
+  private String code;
+  private String status;
+  private String codeSystem;
   private Long codeSystemEntityId;
   private Long codeSystemVersionId;
-  private String codeSystemVersion; //codeSystem|version
-  private String status;
-  private String code;
+  private String codeSystemVersion;
 }

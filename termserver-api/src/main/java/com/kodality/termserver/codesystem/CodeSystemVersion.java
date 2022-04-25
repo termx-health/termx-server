@@ -1,5 +1,6 @@
 package com.kodality.termserver.codesystem;
 
+import io.micronaut.core.annotation.Introspected;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -9,6 +10,7 @@ import lombok.experimental.Accessors;
 
 @Getter
 @Setter
+@Introspected
 @Accessors(chain = true)
 public class CodeSystemVersion {
   private Long id;

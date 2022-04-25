@@ -9,5 +9,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class CodeSystemQueryParams extends QueryParams {
+  private String name;
+
   private boolean decorated;
 }

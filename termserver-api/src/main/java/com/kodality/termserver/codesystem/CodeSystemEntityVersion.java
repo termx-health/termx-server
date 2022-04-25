@@ -1,5 +1,6 @@
 package com.kodality.termserver.codesystem;
 
+import io.micronaut.core.annotation.Introspected;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import lombok.experimental.Accessors;
 
 @Getter
 @Setter
+@Introspected
 @Accessors(chain = true)
 public class CodeSystemEntityVersion {
   private Long id;
@@ -15,8 +17,6 @@ public class CodeSystemEntityVersion {
   private String description;
   private String status;
   private OffsetDateTime created;
-
-  private int orderNr;
 
   private List<EntityPropertyValue> propertyValues;
   private List<Designation> designations;

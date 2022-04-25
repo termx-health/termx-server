@@ -55,4 +55,11 @@ public class EntityPropertyRepository extends BaseRepository {
     sb.appendIfNotNull("and code_system = ?", params.getCodeSystem());
     return sb;
   }
+
+  public void retain(List<EntityProperty> properties, String codeSystem) {
+    SqlBuilder sb = new SqlBuilder("update entity_property set sys_status = 'C'");
+    sb.append(" where code_system = ? and sys_status = 'A'", codeSystem);
+    sb.andNotIn("id", properties, EntityProperty::getId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }

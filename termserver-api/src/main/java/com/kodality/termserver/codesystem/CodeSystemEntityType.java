@@ -1,4 +1,4 @@
-package com.kodality.termserver.codesystem.entity;
+package com.kodality.termserver.codesystem;
 
 public interface CodeSystemEntityType {
   String concept = "concept";

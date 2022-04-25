@@ -24,6 +24,11 @@ public class ConceptRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
+  public Concept load(Long id) {
+    String sql = "select * from concept where sys_status = 'A' and id = ?";
+    return getBean(sql, bp, id);
+  }
+
   public Concept load(String codeSystem, String code) {
     String sql = "select * from concept where sys_status = 'A' and code_system = ? and code = ?";
     return getBean(sql, bp, codeSystem, code);
@@ -46,6 +51,14 @@ public class ConceptRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and c.code ilike ? || '%'", params.getCode());
     sb.appendIfNotNull("and c.code_system = ?", params.getCodeSystem());
+    if (params.getCodeSystemVersion() != null) {
+      sb.append("and exists (select 1 from code_system_version csv " +
+          "inner join entity_version_code_system_version_membership evcsvm on evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A' " +
+          "inner join code_system_entity_version csev on csev.id = evcsvm.code_system_entity_version_id and csev.sys_status = 'A' " +
+          "where csev.code_system_entity_id = c.id and csv.version = ? and csv.sys_status = 'A'", params.getCodeSystemVersion());
+      sb.appendIfNotNull("and csv.code_system = ?", params.getCodeSystem());
+      sb.append(")");
+    }
     return sb;
   }
 }

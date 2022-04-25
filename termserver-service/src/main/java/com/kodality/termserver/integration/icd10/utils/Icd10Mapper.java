@@ -46,7 +46,7 @@ public class Icd10Mapper {
   private static CodeSystemEntityVersion mapConceptVersion(Class diagnosis, ImportConfiguration configuration, List<EntityProperty> properties) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(diagnosis.getCode());
-    version.setStatus(PublicationStatus.active);
+    version.setStatus(PublicationStatus.draft);
     version.setDesignations(mapDesignations(diagnosis, properties));
     version.setAssociations(mapAssociations(diagnosis, configuration));
     return version;
@@ -77,14 +77,11 @@ public class Icd10Mapper {
 
   private static List<CodeSystemAssociation> mapAssociations(Class diagnosis, ImportConfiguration configuration) {
     List<CodeSystemAssociation> associations = new ArrayList<>();
-    if (diagnosis.getSuperClass() == null || diagnosis.getSuperClass().getCode() == null) {
-      return associations;
-    }
     CodeSystemAssociation association = new CodeSystemAssociation();
     association.setCodeSystem(configuration.getCodeSystem());
     association.setAssociationType("is-a");
     association.setStatus(PublicationStatus.active);
-    association.setTargetCode(diagnosis.getSuperClass().getCode());
+    association.setTargetCode(diagnosis.getSuperClass() == null || diagnosis.getSuperClass().getCode() == null ? "classification" : diagnosis.getSuperClass().getCode());
     associations.add(association);
     return associations;
   }
@@ -100,7 +97,7 @@ public class Icd10Mapper {
 
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode("classification");
-    version.setStatus(PublicationStatus.active);
+    version.setStatus(PublicationStatus.draft);
     version.setDesignations(List.of(designation));
 
     Concept concept = new Concept();

@@ -1,10 +1,10 @@
 package com.kodality.termserver.integration.icd10est;
 
 public class Icd10EstConfiguration {
-  public static final String codeSystem = "icd-10-est";
-  public static final String version = "8";
   public static final String uri = "https://pub.e-tervis.ee/classifications/RHK-10/8";
   public static final String source = "Ministry of Social Affairs of Estonia";
+  public static final String version = "8";
+  public static final String codeSystem = "icd-10-est";
   public static final String codeSystemDescription = "RHK-10 on rahvusvaheline haiguste ja nendega seotud terviseprobleemide statistiline klassifikatsioon, mille sisu haldaja on Sotsiaalministeerium. Täiendus- ja muudatusettepanekud edastada info@sm.ee.";
   public static final String codeSystemVersionDescription = "22.04.2021 on 8. versiooni lisatud järgmised uued koodid:\n" +
       "U08 COVID-19 anamneesis\n" +

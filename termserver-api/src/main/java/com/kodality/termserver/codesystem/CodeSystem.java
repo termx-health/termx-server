@@ -1,18 +1,20 @@
 package com.kodality.termserver.codesystem;
 
+import com.kodality.termserver.commons.model.model.LocalizedName;
+import io.micronaut.core.annotation.Introspected;
 import java.util.List;
-import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Getter
 @Setter
+@Introspected
 @Accessors(chain = true)
 public class CodeSystem {
   private String id;
   private String uri;
-  private Map<String, String> names;
+  private LocalizedName names;
   private String description;
 
   private List<EntityProperty> properties;

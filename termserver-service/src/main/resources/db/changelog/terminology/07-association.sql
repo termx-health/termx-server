@@ -53,6 +53,7 @@ select core.create_table_metadata('code_system_association');
 drop table if exists map_set_association;
 create table map_set_association (
     id                                          bigint              not null primary key,
+    map_set                                     text                not null,
     source_code_system_entity_version_id        bigint              not null,
     target_code_system_entity_version_id        bigint              not null,
     association_type                            text                not null,
@@ -64,10 +65,12 @@ create table map_set_association (
     sys_status          char(1) default 'A' not null collate "C",
     sys_version         int                 not null,
     constraint ms_association_id_fk foreign key (id) references map_set_entity(id),
+    constraint ms_association_map_set_fk foreign key (map_set) references map_set(id),
     constraint ms_association_source_cs_entity_version_fk foreign key (source_code_system_entity_version_id) references code_system_entity_version(id),
     constraint ms_association_target_cs_entity_version_fk foreign key (target_code_system_entity_version_id) references code_system_entity_version(id),
     constraint ms_association_association_type_fk foreign key (association_type) references association_type(code)
 );
+create index ms_association_map_set_idx on map_set_association(map_set);
 create index ms_association_source_cs_entity_version_idx on map_set_association(source_code_system_entity_version_id);
 create index ms_association_target_cs_entity_version_idx on map_set_association(target_code_system_entity_version_id);
 create index ms_association_association_type_idx on map_set_association(association_type);

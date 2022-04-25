@@ -33,12 +33,20 @@ public class CodeSystemRepository extends BaseRepository {
   public QueryResult<CodeSystem> query(CodeSystemQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from code_system cs where cs.sys_status = 'A' ");
+      sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
       SqlBuilder sb = new SqlBuilder("select cs.* from code_system cs where cs.sys_status = 'A' ");
+      sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
+  }
+
+  private SqlBuilder filter(CodeSystemQueryParams params) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(cs.names) where value ~* ?)", params.getName());
+    return sb;
   }
 
 }

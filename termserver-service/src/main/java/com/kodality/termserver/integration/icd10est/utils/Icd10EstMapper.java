@@ -31,7 +31,7 @@ public class Icd10EstMapper {
 
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode("classification");
-    version.setStatus(PublicationStatus.active);
+    version.setStatus(PublicationStatus.draft);
     version.setDesignations(List.of(designation));
 
     Concept concept = new Concept();
@@ -52,7 +52,7 @@ public class Icd10EstMapper {
   private static CodeSystemEntityVersion mapConceptVersion(Node element, Node parent, ImportConfiguration configuration, List<EntityProperty> properties) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(element.getCode());
-    version.setStatus(PublicationStatus.active);
+    version.setStatus(PublicationStatus.draft);
     version.setDesignations(mapDesignations(element, properties));
     version.setPropertyValues(mapPropertyValues(element, properties));
     version.setAssociations(mapAssociations(parent, configuration));
@@ -129,7 +129,7 @@ public class Icd10EstMapper {
     association.setCodeSystem(configuration.getCodeSystem());
     association.setAssociationType("is-a");
     association.setStatus(PublicationStatus.active);
-    association.setTargetCode(parent.getCode());
+    association.setTargetCode(parent == null || parent.getCode() == null ? "classification" : parent.getCode());
     associations.add(association);
     return associations;
   }
