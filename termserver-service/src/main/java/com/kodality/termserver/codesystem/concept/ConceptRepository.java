@@ -59,6 +59,12 @@ public class ConceptRepository extends BaseRepository {
       sb.appendIfNotNull("and csv.code_system = ?", params.getCodeSystem());
       sb.append(")");
     }
+    sb.appendIfNotNull("and exists( select 1 from value_set_version vsv where vsv.value_set = ? and vsv.sys_status = 'A' " +
+        "inner join concept_value_set_version_membership cvsvm on cvsvm.value_set_version_id = vsv.id and cvsvm.sys_status = 'A' " +
+        "where cvsvm.concept_id = d.id)", params.getValueSet());
+    sb.appendIfNotNull("and exists( select 1 from value_set_version vsv where vsv.version = ? and vsv.sys_status = 'A' " +
+        "inner join concept_value_set_version_membership cvsvm on cvsvm.value_set_version_id = vsv.id and cvsvm.sys_status = 'A' " +
+        "where cvsvm.designation_id = d.id)", params.getValueSetVersion());
     return sb;
   }
 }

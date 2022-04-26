@@ -83,7 +83,7 @@ public class MapSetVersionService {
     if (versionId.isPresent()) {
       saveEntityVersions(versionId.get(), entityVersions);
     } else {
-      throw ApiError.TE107.toApiException(Map.of("version", mapSetVersion, "codeSystem", mapSet));
+      throw ApiError.TE107.toApiException(Map.of("version", mapSetVersion, "mapSet", mapSet));
     }
   }
 

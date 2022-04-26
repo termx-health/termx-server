@@ -14,7 +14,8 @@ public enum ApiError {
   TE104("TE104", "Version '{{version}}' of code system '{{codeSystem}}' doesn't exist."),
   TE105("TE105", "Version '{{version}}' is already created and active."),
   TE107("TE107", "Version '{{version}}' of map set '{{mapSet}}' doesn't exist."),
-  TE108("TE108", "Version with id  '{{version}}' doesn't exist.")
+  TE108("TE108", "Version with id  '{{version}}' doesn't exist."),
+  TE109("TE109", "Version '{{version}}' of value set '{{valueSet}}' doesn't exist.")
   ;
 
 

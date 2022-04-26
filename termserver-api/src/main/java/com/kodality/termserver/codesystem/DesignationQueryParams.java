@@ -8,10 +8,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class ConceptQueryParams extends QueryParams {
-  private String code;
-  private String codeSystem;
-  private String codeSystemVersion;
+public class DesignationQueryParams extends QueryParams {
   private String valueSet;
   private String valueSetVersion;
 }

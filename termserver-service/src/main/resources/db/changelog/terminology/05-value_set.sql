@@ -3,8 +3,8 @@
 --changeset kodality:value_set
 drop table if exists value_set;
 create table value_set (
-    id                  bigint              default nextval('core.s_entity') primary key,
-    name                text,
+    id                  text                primary key,
+    names               jsonb               not null,
     rule                text,
     description         text,
     status              text                not null,
@@ -22,7 +22,7 @@ select core.create_table_metadata('value_set');
 drop table if exists value_set_version;
 create table value_set_version (
     id                  bigint      default nextval('core.s_entity') primary key,
-    value_set_id        bigint                    not null,
+    value_set           text                      not null,
     version             text                      not null,
     rule_value          text,
     supported_languages text[],
@@ -38,12 +38,12 @@ create table value_set_version (
     sys_modified_by     text                      not null,
     sys_status          char(1)     default 'A'   not null collate "C",
     sys_version         int                       not null,
-    constraint value_set_version_ukey unique (value_set_id, version),
-    constraint value_set_version_value_set_fk foreign key (value_set_id) references value_set(id),
+    constraint value_set_version_ukey unique (value_set, version),
+    constraint value_set_version_value_set_fk foreign key (value_set) references value_set(id),
     constraint value_set_version_previous_version_fk foreign key (previous_version_id) references value_set_version(id)
 );
 
-create index value_set_version_value_set_idx on value_set_version(value_set_id);
+create index value_set_version_value_set_idx on value_set_version(value_set);
 
 select core.create_table_metadata('value_set_version');
 --rollback drop table if exists value_set_version;

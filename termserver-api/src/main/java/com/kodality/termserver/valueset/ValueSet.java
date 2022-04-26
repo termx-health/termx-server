@@ -1,20 +1,22 @@
 package com.kodality.termserver.valueset;
 
-import com.kodality.termserver.codesystem.Concept;
+import com.kodality.commons.model.LocalizedName;
+import io.micronaut.core.annotation.Introspected;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 @Getter
 @Setter
+@Introspected
+@Accessors(chain = true)
 public class ValueSet {
-  private Long id;
-  private String name;
+  private String id;
+  private LocalizedName names;
   private String rule;
   private String description;
   private String status;
 
-  private List<Concept> concepts;
-
-  private ValueSetVersion version;
+  private List<ValueSetVersion> versions;
 }

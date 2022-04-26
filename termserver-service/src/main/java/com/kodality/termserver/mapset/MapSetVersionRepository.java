@@ -79,7 +79,7 @@ public class MapSetVersionRepository extends BaseRepository {
   public void retainEntityVersions(List<MapSetEntityVersion> entityVersions, Long mapSetVersionId) {
     SqlBuilder sb = new SqlBuilder("update entity_version_map_set_version_membership set sys_status = 'C'");
     sb.append(" where map_set_version_id = ? and sys_status = 'A'", mapSetVersionId);
-    sb.andNotIn("id", entityVersions, MapSetEntityVersion::getId);
+    sb.andNotIn("map_set_entity_version_id", entityVersions, MapSetEntityVersion::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 

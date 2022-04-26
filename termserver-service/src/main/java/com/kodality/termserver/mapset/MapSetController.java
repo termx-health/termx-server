@@ -36,7 +36,7 @@ public class MapSetController {
   }
 
   @Post
-  public HttpResponse<?> create(@Body MapSet mapSet) {
+  public HttpResponse<?> create(@Body @Valid MapSet mapSet) {
     mapSetService.create(mapSet);
     return HttpResponse.created(mapSet);
   }

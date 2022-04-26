@@ -3,7 +3,9 @@ package com.kodality.termserver.codesystem.designation;
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.Designation;
+import com.kodality.termserver.codesystem.DesignationQueryParams;
 import jakarta.inject.Singleton;
 import java.util.List;
 
@@ -14,6 +16,30 @@ public class DesignationRepository extends BaseRepository {
   public List<Designation> loadAll(Long codeSystemEntityVersionId) {
     String sql = "select * from designation where sys_status = 'A' and code_system_entity_version_id = ?";
     return getBeans(sql, bp, codeSystemEntityVersionId);
+  }
+
+  public QueryResult<Designation> query(DesignationQueryParams params) {
+    return query(params, p -> {
+      SqlBuilder sb = new SqlBuilder("select count(1) from designation d where d.sys_status = 'A'");
+      sb.append(filter(params));
+      return queryForObject(sb.getSql(), Integer.class, sb.getParams());
+    }, p -> {
+      SqlBuilder sb = new SqlBuilder("select * from designation d where d.sys_status = 'A'");
+      sb.append(filter(params));
+      sb.append(limit(params));
+      return getBeans(sb.getSql(), bp, sb.getParams());
+    });
+  }
+
+  private SqlBuilder filter(DesignationQueryParams params) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.appendIfNotNull("and exists( select 1 from value_set_version vsv where vsv.value_set = ? and vsv.sys_status = 'A' " +
+        "inner join designation_value_set_version_membership dvsvm on dvsvm.value_set_version_id = vsv.id and dvsvm.sys_status = 'A' " +
+        "where dvsvm.designation_id = d.id)", params.getValueSet());
+    sb.appendIfNotNull("and exists( select 1 from value_set_version vsv where vsv.version = ? and vsv.sys_status = 'A' " +
+        "inner join designation_value_set_version_membership dvsvm on dvsvm.value_set_version_id = vsv.id and dvsvm.sys_status = 'A' " +
+        "where dvsvm.designation_id = d.id)", params.getValueSetVersion());
+    return sb;
   }
 
   public void retain(List<Designation> designations, Long codeSystemEntityVersionId) {
