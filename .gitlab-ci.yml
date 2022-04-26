@@ -1,0 +1,26 @@
+image: openjdk:17-slim
+
+cache:
+  key: "$CI_PROJECT_NAME"
+  paths:
+    - .gradle
+    - build
+
+stages:
+- build
+- release
+
+build:
+  stage: build
+  script:
+    - ./gradlew clean assemble
+
+release:
+  stage: release
+  script:
+    - ./gradlew clean assemble
+    - cd termserver-service
+    - docker build -t docker.kodality.com/terminology-server --build-arg BUILD_TIME=$BUILD_TIME .
+    - docker push docker.kodality.com/terminology-server
+  only:
+    - main
