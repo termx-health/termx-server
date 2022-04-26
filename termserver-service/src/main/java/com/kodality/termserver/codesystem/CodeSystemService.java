@@ -1,7 +1,7 @@
 package com.kodality.termserver.codesystem;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.entityproperty.EntityPropertyService;
-import com.kodality.termserver.commons.model.model.QueryResult;
 import jakarta.inject.Singleton;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,0 @@
-dependencies {
-  api "com.fasterxml.jackson.core:jackson-annotations:${rootProject.jacksonVersion}"
-  api "javax.validation:validation-api:2.0.1.Final"
-}

@@ -1,10 +1,10 @@
 package com.kodality.termserver.codesystem.entity;
 
+import com.kodality.commons.db.bean.PgBeanProcessor;
+import com.kodality.commons.db.repo.BaseRepository;
+import com.kodality.commons.db.sql.SaveSqlBuilder;
+import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.termserver.codesystem.CodeSystemEntity;
-import com.kodality.termserver.commons.db.bean.PgBeanProcessor;
-import com.kodality.termserver.commons.db.repo.BaseRepository;
-import com.kodality.termserver.commons.db.sql.SaveSqlBuilder;
-import com.kodality.termserver.commons.db.sql.SqlBuilder;
 import jakarta.inject.Singleton;
 
 @Singleton

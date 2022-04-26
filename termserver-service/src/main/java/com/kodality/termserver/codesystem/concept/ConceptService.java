@@ -1,5 +1,6 @@
 package com.kodality.termserver.codesystem.concept;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.CodeSystemEntityType;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
@@ -7,7 +8,6 @@ import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.codesystem.entity.CodeSystemEntityService;
 import com.kodality.termserver.codesystem.entity.CodeSystemEntityVersionService;
-import com.kodality.termserver.commons.model.model.QueryResult;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Optional;

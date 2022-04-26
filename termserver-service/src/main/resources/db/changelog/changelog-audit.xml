@@ -23,6 +23,6 @@
         </sql>
     </changeSet>
 
-    <include file="changelog.xml" relativeToChangelogFile="true"/>
+    <include file="core-db/changelog/audit/changelog.xml" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

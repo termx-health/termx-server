@@ -4,7 +4,7 @@ apply plugin: "maven-publish"
 dependencies {
   annotationProcessor("io.micronaut:micronaut-inject-java:${rootProject.micronautVersion}")
 
-  api project(':termserver-commons:commons-model')
+  api("com.kodality.commons:commons-model:${rootProject.commonsVersion}") { changing = true }
   api("io.micronaut:micronaut-core:${rootProject.micronautVersion}")
   api("io.micronaut:micronaut-context:${rootProject.micronautVersion}")
 }

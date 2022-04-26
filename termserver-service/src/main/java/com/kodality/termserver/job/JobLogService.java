@@ -1,8 +1,8 @@
 package com.kodality.termserver.job;
 
 
-import com.kodality.termserver.commons.model.exception.NotFoundException;
-import com.kodality.termserver.commons.model.model.QueryResult;
+import com.kodality.commons.exception.NotFoundException;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.job.JobLog.JobDefinition;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;

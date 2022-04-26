@@ -1,8 +1,8 @@
 package com.kodality.termserver.codesystem.entityproperty;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
-import com.kodality.termserver.commons.model.model.QueryResult;
 import java.time.OffsetDateTime;
 import java.util.List;
 import javax.inject.Singleton;

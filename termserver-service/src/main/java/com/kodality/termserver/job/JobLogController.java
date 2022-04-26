@@ -1,6 +1,6 @@
 package com.kodality.termserver.job;
 
-import com.kodality.termserver.commons.model.model.QueryResult;
+import com.kodality.commons.model.QueryResult;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;

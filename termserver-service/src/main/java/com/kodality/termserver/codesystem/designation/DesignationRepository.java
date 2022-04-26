@@ -1,9 +1,9 @@
 package com.kodality.termserver.codesystem.designation;
 
+import com.kodality.commons.db.bean.PgBeanProcessor;
+import com.kodality.commons.db.repo.BaseRepository;
+import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.termserver.codesystem.Designation;
-import com.kodality.termserver.commons.db.bean.PgBeanProcessor;
-import com.kodality.termserver.commons.db.repo.BaseRepository;
-import com.kodality.termserver.commons.db.sql.SqlBuilder;
 import jakarta.inject.Singleton;
 import java.util.List;
 

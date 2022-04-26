@@ -1,7 +1,7 @@
 package com.kodality.termserver.codesystem.concept;
 
+import com.kodality.commons.exception.NotFoundException;
 import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.commons.model.exception.NotFoundException;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;

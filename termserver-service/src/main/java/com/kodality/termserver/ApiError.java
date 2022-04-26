@@ -1,8 +1,8 @@
 package com.kodality.termserver;
 
-import com.kodality.termserver.commons.model.exception.ApiClientException;
-import com.kodality.termserver.commons.model.exception.ApiException;
-import com.kodality.termserver.commons.model.model.Issue;
+import com.kodality.commons.exception.ApiClientException;
+import com.kodality.commons.exception.ApiException;
+import com.kodality.commons.model.Issue;
 import java.util.Map;
 import lombok.Getter;
 

@@ -1,13 +1,13 @@
 package com.kodality.termserver.integration.atc;
 
 
+import com.kodality.commons.model.LocalizedName;
+import com.kodality.termserver.Language;
 import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.association.AssociationTypeService;
-import com.kodality.termserver.commons.model.constant.Language;
-import com.kodality.termserver.commons.model.model.LocalizedName;
 import com.kodality.termserver.integration.atc.utils.AtcMapper;
 import com.kodality.termserver.integration.atc.utils.AtcResponseParser;
 import com.kodality.termserver.integration.common.ImportConfiguration;

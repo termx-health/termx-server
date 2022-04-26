@@ -1,10 +1,10 @@
 package com.kodality.termserver.codesystem;
 
+import com.kodality.commons.exception.NotFoundException;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.concept.ConceptService;
 import com.kodality.termserver.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.codesystem.entityproperty.EntityPropertyService;
-import com.kodality.termserver.commons.model.exception.NotFoundException;
-import com.kodality.termserver.commons.model.model.QueryResult;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;

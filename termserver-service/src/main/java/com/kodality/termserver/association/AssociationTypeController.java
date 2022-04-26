@@ -1,6 +1,6 @@
 package com.kodality.termserver.association;
 
-import com.kodality.termserver.commons.model.exception.NotFoundException;
+import com.kodality.commons.exception.NotFoundException;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;

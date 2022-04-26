@@ -1,9 +1,9 @@
-package com.kodality.termserver.commons.client;
+package com.kodality.termserver.integration.common;
 
+import com.kodality.commons.client.BaseHttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.concurrent.CompletableFuture;
 
 public class BinaryHttpClient extends BaseHttpClient {
   public BinaryHttpClient() {
@@ -14,8 +14,8 @@ public class BinaryHttpClient extends BaseHttpClient {
     super(baseUrl);
   }
 
-  public CompletableFuture<HttpResponse<byte[]>> GET(String path) {
+  public HttpResponse<byte[]> GET(String path) {
     HttpRequest request = builder(path).GET().build();
-    return executeAsync(request, BodyHandlers.ofByteArray());
+    return execute(request, BodyHandlers.ofByteArray());
   }
 }

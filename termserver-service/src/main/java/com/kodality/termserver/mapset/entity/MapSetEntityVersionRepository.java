@@ -1,11 +1,11 @@
 package com.kodality.termserver.mapset.entity;
 
+import com.kodality.commons.db.bean.PgBeanProcessor;
+import com.kodality.commons.db.repo.BaseRepository;
+import com.kodality.commons.db.sql.SaveSqlBuilder;
+import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
-import com.kodality.termserver.commons.db.bean.PgBeanProcessor;
-import com.kodality.termserver.commons.db.repo.BaseRepository;
-import com.kodality.termserver.commons.db.sql.SaveSqlBuilder;
-import com.kodality.termserver.commons.db.sql.SqlBuilder;
-import com.kodality.termserver.commons.model.model.QueryResult;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetEntityVersionQueryParams;
 import javax.inject.Singleton;

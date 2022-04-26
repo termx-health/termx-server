@@ -1,6 +1,6 @@
 package com.kodality.termserver.mapset.association;
 
-import com.kodality.termserver.commons.model.model.QueryResult;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.mapset.MapSetAssociation;
 import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
 import com.kodality.termserver.mapset.MapSetEntityVersion;

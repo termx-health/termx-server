@@ -1,6 +1,6 @@
 package com.kodality.termserver.mapset;
 
-import com.kodality.termserver.commons.model.model.QueryResult;
+import com.kodality.commons.model.QueryResult;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;

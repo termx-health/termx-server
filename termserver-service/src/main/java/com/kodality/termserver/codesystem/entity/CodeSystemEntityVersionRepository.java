@@ -1,13 +1,13 @@
 package com.kodality.termserver.codesystem.entity;
 
+import com.kodality.commons.db.bean.PgBeanProcessor;
+import com.kodality.commons.db.repo.BaseRepository;
+import com.kodality.commons.db.sql.SaveSqlBuilder;
+import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
-import com.kodality.termserver.commons.db.bean.PgBeanProcessor;
-import com.kodality.termserver.commons.db.repo.BaseRepository;
-import com.kodality.termserver.commons.db.sql.SaveSqlBuilder;
-import com.kodality.termserver.commons.db.sql.SqlBuilder;
-import com.kodality.termserver.commons.model.model.QueryResult;
 import javax.inject.Singleton;
 
 @Singleton

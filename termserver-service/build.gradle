@@ -34,37 +34,30 @@ dependencies {
   annotationProcessor("io.micronaut.spring:micronaut-spring-annotation")
 
   implementation project(':termserver-api')
-  implementation project(':termserver-commons:commons-util')
-  implementation project(':termserver-commons:commons-model')
-  implementation project(':termserver-commons:commons-db')
-  implementation project(':termserver-commons:commons-http-client')
+
+  implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
+  implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}") { changing = true }
+  implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
+  implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsVersion}") { changing = true }
+  implementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
 
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${rootProject.jacksonVersion}")
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${rootProject.jacksonVersion}")
   implementation("com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${rootProject.jacksonVersion}")
-  implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${rootProject.jacksonVersion}")
+//  implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${rootProject.jacksonVersion}")
 
   implementation "org.apache.commons:commons-io:1.3.2"
-  implementation 'org.apache.commons:commons-lang3:3.12.0'
-  implementation 'org.apache.commons:commons-text:1.9'
-  implementation 'commons-io:commons-io:2.11.0'
 
   implementation("io.micronaut:micronaut-http:${rootProject.micronautVersion}")
   implementation("io.micronaut:micronaut-validation:${rootProject.micronautVersion}")
   implementation("io.micronaut:micronaut-http-client")
   implementation("io.micronaut:micronaut-http-server")
   implementation("io.micronaut:micronaut-runtime")
-  implementation("io.micronaut.liquibase:micronaut-liquibase") {
-    exclude group: "org.liquibase"
-  }
   implementation("org.liquibase:liquibase-core:4.9.0")
   implementation("io.micronaut.sql:micronaut-jdbc-hikari")
   implementation("io.micronaut.spring:micronaut-spring")
   implementation("javax.annotation:javax.annotation-api")
-  implementation("io.micronaut:micronaut-validation")
   implementation("io.micronaut:micronaut-inject-java")
-  implementation("org.springframework:spring-jdbc:5.3.17")
-  implementation("org.postgresql:postgresql:42.3.3")
 
   testCompileOnly("org.projectlombok:lombok:1.18.22")
   testAnnotationProcessor("org.projectlombok:lombok:1.18.22")

@@ -1,6 +1,6 @@
 package com.kodality.termserver.codesystem;
 
-import com.kodality.termserver.commons.model.model.QueryParams;
+import com.kodality.commons.model.QueryParams;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;

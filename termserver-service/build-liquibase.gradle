@@ -2,6 +2,7 @@ dependencies {
   liquibaseRuntime 'org.liquibase:liquibase-core:4.6.1'
   liquibaseRuntime 'org.postgresql:postgresql:42.2.23'
   liquibaseRuntime 'org.yaml:snakeyaml:1.29'
+  liquibaseRuntime("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}") { changing = true }
 }
 
 

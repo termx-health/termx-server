@@ -1,12 +1,12 @@
 package com.kodality.termserver.codesystem.entityproperty;
 
+import com.kodality.commons.db.bean.PgBeanProcessor;
+import com.kodality.commons.db.repo.BaseRepository;
+import com.kodality.commons.db.sql.SaveSqlBuilder;
+import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
-import com.kodality.termserver.commons.db.bean.PgBeanProcessor;
-import com.kodality.termserver.commons.db.repo.BaseRepository;
-import com.kodality.termserver.commons.db.sql.SaveSqlBuilder;
-import com.kodality.termserver.commons.db.sql.SqlBuilder;
-import com.kodality.termserver.commons.model.model.QueryResult;
 import jakarta.inject.Singleton;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;

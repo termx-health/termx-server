@@ -1,10 +1,10 @@
 package com.kodality.termserver.codesystem;
 
-import com.kodality.termserver.commons.db.bean.PgBeanProcessor;
-import com.kodality.termserver.commons.db.repo.BaseRepository;
-import com.kodality.termserver.commons.db.sql.SaveSqlBuilder;
-import com.kodality.termserver.commons.db.sql.SqlBuilder;
-import com.kodality.termserver.commons.model.model.QueryResult;
+import com.kodality.commons.db.bean.PgBeanProcessor;
+import com.kodality.commons.db.repo.BaseRepository;
+import com.kodality.commons.db.sql.SaveSqlBuilder;
+import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
 import jakarta.inject.Singleton;
 
 @Singleton
@@ -21,7 +21,7 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.jsonProperty("names", codeSystem.getNames());
     ssb.property("description", codeSystem.getDescription());
 
-    SqlBuilder sb = ssb.buildInsert("code_system");
+    SqlBuilder sb = ssb.buildUpsert("code_system", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 

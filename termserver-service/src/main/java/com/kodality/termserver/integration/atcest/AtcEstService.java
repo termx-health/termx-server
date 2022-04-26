@@ -1,16 +1,16 @@
 package com.kodality.termserver.integration.atcest;
 
+import com.kodality.commons.model.LocalizedName;
+import com.kodality.termserver.Language;
 import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.association.AssociationTypeService;
-import com.kodality.termserver.commons.client.BinaryHttpClient;
-import com.kodality.termserver.commons.model.constant.Language;
-import com.kodality.termserver.commons.model.model.LocalizedName;
 import com.kodality.termserver.integration.atcest.utils.AtcEst;
 import com.kodality.termserver.integration.atcest.utils.AtcEstCsvReader;
 import com.kodality.termserver.integration.atcest.utils.AtcEstMapper;
+import com.kodality.termserver.integration.common.BinaryHttpClient;
 import com.kodality.termserver.integration.common.ImportConfiguration;
 import com.kodality.termserver.integration.common.TerminologyImportService;
 import java.time.LocalDate;
@@ -48,7 +48,7 @@ public class AtcEstService {
 
   private byte[] getResource(String url) {
     log.info("Loading ATC CSV from {}", url);
-    return client.GET(url).thenApply(java.net.http.HttpResponse::body).join();
+    return client.GET(url).body();
   }
 
   private void prepareAssociations() {

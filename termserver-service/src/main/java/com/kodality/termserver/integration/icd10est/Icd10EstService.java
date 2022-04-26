@@ -1,20 +1,19 @@
 package com.kodality.termserver.integration.icd10est;
 
+import com.kodality.commons.model.LocalizedName;
+import com.kodality.termserver.Language;
 import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.association.AssociationTypeService;
-import com.kodality.termserver.commons.client.BinaryHttpClient;
-import com.kodality.termserver.commons.model.constant.Language;
-import com.kodality.termserver.commons.model.model.LocalizedName;
+import com.kodality.termserver.integration.common.BinaryHttpClient;
 import com.kodality.termserver.integration.common.ImportConfiguration;
 import com.kodality.termserver.integration.common.TerminologyImportService;
 import com.kodality.termserver.integration.icd10est.utils.Extractor;
 import com.kodality.termserver.integration.icd10est.utils.Icd10Est;
 import com.kodality.termserver.integration.icd10est.utils.Icd10EstZipReader;
 import jakarta.inject.Singleton;
-import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +45,7 @@ public class Icd10EstService {
 
   private byte[] getResource(String url) {
     log.info("Loading ICD-10 ZIP from {}", url);
-    return binaryHttpClient.GET(url).thenApply(HttpResponse::body).join();
+    return binaryHttpClient.GET(url).body();
   }
 
   private void prepareAssociations() {

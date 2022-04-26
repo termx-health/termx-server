@@ -1,13 +1,13 @@
 package com.kodality.termserver.integration.atc.utils;
 
 import com.kodality.termserver.CaseSignificance;
+import com.kodality.termserver.Language;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
-import com.kodality.termserver.commons.model.constant.Language;
 import com.kodality.termserver.integration.common.ImportConfiguration;
 import java.util.ArrayList;
 import java.util.List;

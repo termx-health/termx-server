@@ -1,11 +1,11 @@
 package com.kodality.termserver.job;
 
 
-import com.kodality.termserver.commons.db.bean.PgBeanProcessor;
-import com.kodality.termserver.commons.db.repo.BaseRepository;
-import com.kodality.termserver.commons.db.sql.SqlBuilder;
-import com.kodality.termserver.commons.model.model.QueryResult;
-import com.kodality.termserver.commons.util.JsonUtil;
+import com.kodality.commons.db.bean.PgBeanProcessor;
+import com.kodality.commons.db.repo.BaseRepository;
+import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.job.JobLog.JobDefinition;
 import java.util.Map;
 import javax.inject.Singleton;

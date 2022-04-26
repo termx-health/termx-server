@@ -24,7 +24,7 @@
         </sql>
     </changeSet>
 
-    <include file="changelog.xml" relativeToChangelogFile="true"/>
+    <include file="core-db/changelog/core/changelog.xml" relativeToChangelogFile="false"/>
 
     <changeSet dbms="PostgreSQL" id="set_core_search_path" author="kodality">
         <sql>

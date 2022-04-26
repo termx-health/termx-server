@@ -1,6 +1,6 @@
 package com.kodality.termserver.integration.common;
 
-import com.kodality.termserver.commons.model.model.LocalizedName;
+import com.kodality.commons.model.LocalizedName;
 import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;

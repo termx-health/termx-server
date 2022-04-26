@@ -1,6 +1,6 @@
 package com.kodality.termserver.mapset;
 
-import com.kodality.termserver.commons.model.model.LocalizedName;
+import com.kodality.commons.model.LocalizedName;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;

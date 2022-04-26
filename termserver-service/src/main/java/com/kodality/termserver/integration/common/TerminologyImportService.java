@@ -1,6 +1,7 @@
 package com.kodality.termserver.integration.common;
 
 import com.kodality.termserver.ApiError;
+import com.kodality.termserver.Language;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
@@ -16,7 +17,6 @@ import com.kodality.termserver.codesystem.association.CodeSystemAssociationServi
 import com.kodality.termserver.codesystem.concept.ConceptService;
 import com.kodality.termserver.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.codesystem.entityproperty.EntityPropertyService;
-import com.kodality.termserver.commons.model.constant.Language;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,12 +82,12 @@ public class TerminologyImportService {
   }
 
   public List<EntityProperty> prepareProperties(ImportConfiguration configuration, List<String> properties) {
-    List<EntityProperty> entityProperties = entityPropertyService.query(
-        new EntityPropertyQueryParams()
-            .setNames(StringUtils.join(properties, ","))
-            .setCodeSystem(configuration.getCodeSystem())).getData();
+    List<EntityProperty> existingProperties = entityPropertyService.query(new EntityPropertyQueryParams()
+        .setNames(StringUtils.join(properties, ","))
+        .setCodeSystem(configuration.getCodeSystem())).getData();
+    List<EntityProperty> entityProperties = new ArrayList<>(existingProperties);
     properties.forEach(p -> {
-      Optional<EntityProperty> existing = entityProperties.stream().filter(ep -> ep.getName().equals(p)).findFirst();
+      Optional<EntityProperty> existing = existingProperties.stream().filter(ep -> ep.getName().equals(p)).findFirst();
       if (existing.isEmpty()) {
         entityProperties.add(new EntityProperty().setName(p).setStatus(PublicationStatus.active));
       }

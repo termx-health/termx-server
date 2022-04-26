@@ -1,10 +1,10 @@
 package com.kodality.termserver.mapset;
 
-import com.kodality.termserver.commons.db.bean.PgBeanProcessor;
-import com.kodality.termserver.commons.db.repo.BaseRepository;
-import com.kodality.termserver.commons.db.sql.SaveSqlBuilder;
-import com.kodality.termserver.commons.db.sql.SqlBuilder;
-import com.kodality.termserver.commons.model.model.QueryResult;
+import com.kodality.commons.db.bean.PgBeanProcessor;
+import com.kodality.commons.db.repo.BaseRepository;
+import com.kodality.commons.db.sql.SaveSqlBuilder;
+import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
 import javax.inject.Singleton;
 
 @Singleton
@@ -19,7 +19,7 @@ public class MapSetRepository extends BaseRepository {
     ssb.jsonProperty("names", mapSet.getNames());
     ssb.property("description", mapSet.getDescription());
 
-    SqlBuilder sb = ssb.buildInsert("map_set");
+    SqlBuilder sb = ssb.buildUpsert("map_set", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 

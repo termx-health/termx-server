@@ -1,5 +1,6 @@
 package com.kodality.termserver.codesystem.entity;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
@@ -8,7 +9,6 @@ import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.codesystem.designation.DesignationService;
 import com.kodality.termserver.codesystem.entitypropertyvalue.EntityPropertyValueService;
-import com.kodality.termserver.commons.model.model.QueryResult;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
