@@ -1,4 +1,4 @@
-image: openjdk:17-slim
+image: registry.gitlab.com/kodality-public/gitlab-builders/jdk-docker:latest
 
 cache:
   key: "$CI_PROJECT_NAME"
