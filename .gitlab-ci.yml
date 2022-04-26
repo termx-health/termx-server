@@ -6,6 +6,9 @@ cache:
     - .gradle
     - build
 
+before_script:
+  - docker login -u $KODALITY_NEXUS_USER -p $KODALITY_NEXUS_PASSWORD docker.kodality.com
+
 stages:
 - build
 - release
