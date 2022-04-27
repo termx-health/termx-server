@@ -1,0 +1,2783 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="3.xsl"?>
+<classifier>
+  <chapter>
+    <number>I</number>
+    <code>A00-B99</code>
+    <object>
+      <hidden>1</hidden>
+      <name-est>Teatavad nakkus- ja parasiithaigused</name-est>
+      <name-lat>Aliqui morbi infectiosi et parasitici</name-lat>
+      <name-eng>Certain infectious and parasitic diseases</name-eng>
+      <add_code></add_code>
+    </object>
+    <include>
+      <text>Tavaliselt tuntud kui nakkus- või transmissiivsed haigused</text>
+    </include>
+    <exclude>
+      <code>Z22.**</code>
+      <text>Mikroobikandja või kahtlustatav mikroobikandja</text>
+    </exclude>
+    <exclude>
+      <code>vt kehasüsteeme käsitlevaid peatükke</code>
+      <text>Mõned lokaliseeritud nakkused</text>
+    </exclude>
+    <exclude>
+      <code>O98.**</code>
+      <text>Rasedust, sünnitust ja sünnitusjärgset perioodi tüsistavad nakkus- ja parasiithaigused [v.a sünnitusabiteetanus ja inimese immuunpuudulikkuse
+        viirustõbi e HIV-tõbi]
+      </text>
+    </exclude>
+    <exclude>
+      <code>P35-P39</code>
+      <text>Sünniperioodile iseloomulikud nakkus- ja parasiithaigused [v.a vastsündinuteetanus, kaasasündinud süüfilis, perinataalne e sünnipuhune
+        gonokokknakkus ja perinataalne inimese HIV-tõbi]
+      </text>
+    </exclude>
+    <exclude>
+      <code>J00-J22</code>
+      <text>Gripp ja muud ägedad hingamisteede nakkushaigused</text>
+    </exclude>
+    <section>
+      <code>A00-A09</code>
+      <object>
+        <hidden>1</hidden>
+        <name-est>Soolenakkushaigused</name-est>
+        <name-lat>Morbi infectiosi intestinales</name-lat>
+        <name-eng>Intestinal infectious diseases</name-eng>
+        <add_code></add_code>
+      </object>
+      <subsection>
+        <code>A00</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Koolera</name-est>
+          <name-lat>Cholera</name-lat>
+          <name-eng>Cholera</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A00.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Vibrio cholerae 01, biovar cholerae koolera</name-est>
+            <name-lat>Cholera a Vibrione cholerae 01, biovar cholerae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Klassikaline koolera</name-est>
+            <name-lat>Cholera classica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A00.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Vibrio cholerae 01, biovar El Tor'i koolera</name-est>
+            <name-lat>Cholera a Vibrione cholerae 01, biovar El Tor</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>El Tor koolera</name-est>
+            <name-lat>Cholera El Tor</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A00.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata koolera</name-est>
+            <name-lat>Cholera non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A01</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Kõhutüüfus ja paratüüfused</name-est>
+          <name-lat>Febris typhoides et febres paratyphoides</name-lat>
+          <name-eng>Typhoid and paratyphoid fevers</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A01.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kõhutüüfus</name-est>
+            <name-lat>Febris typhoides</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Salmonella typhi nakkus</name-est>
+            <name-lat>Infectio a Salmonella typhi</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A01.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Paratüüfus A</name-est>
+            <name-lat>Febris paratyphoides A</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A01.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Paratüüfus B</name-est>
+            <name-lat>Febris paratyphoides B</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A01.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Paratüüfus C</name-est>
+            <name-lat>Febris paratyphoides C</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A01.4</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata paratüüfus</name-est>
+            <name-lat>Febris paratyphoides non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata Salmonella paratyphi nakkus</name-est>
+            <name-lat>Infectio a Salmonella paratyphi NAS</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A02</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Muud salmonellanakkused e salmonelloosid</name-est>
+          <name-lat>Aliae salmonelloses</name-lat>
+          <name-eng>Other salmonella infections</name-eng>
+          <add_code></add_code>
+        </object>
+        <include>
+          <text>Mistahes Salmonella liigi v.a S. typhi ja S. paratyphi nakkus või toidumürgistus</text>
+        </include>
+        <item>
+          <code>A02.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Salmonellaenteriit</name-est>
+            <name-lat>Enteritis salmonellosa</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Salmonelloos</name-est>
+            <name-lat>Salmonellosis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A02.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Salmonellaseptitseemia</name-est>
+            <name-lat>Septicaemia salmonellosa</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A02.2</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Lokaliseerunud salmonellanakkused</name-est>
+            <name-lat>Infectiones salmonellosae localisatae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Salmonellaartriit</name-est>
+            <name-lat>Arthritis salmonellosa</name-lat>
+            <add_code>M01.3</add_code>
+          </object>
+          <object type="+">
+            <hidden>3</hidden>
+            <name-est>Salmonellameningiit</name-est>
+            <name-lat>Meningitis salmonellosa</name-lat>
+            <add_code>G01</add_code>
+          </object>
+          <object type="+">
+            <hidden>4</hidden>
+            <name-est>Salmonellaosteomüeliit</name-est>
+            <name-lat>Osteomyelitis salmonellosa</name-lat>
+            <add_code>M90.2</add_code>
+          </object>
+          <object type="+">
+            <hidden>5</hidden>
+            <name-est>Salmonellapneumoonia</name-est>
+            <name-lat>Pneumonia salmonellosa</name-lat>
+            <add_code>J17.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>6</hidden>
+            <name-est>Salmonellatekkene tubulointerstitsiaalne neeruhaigus</name-est>
+            <name-lat>Infectio renalis tubulointerstitialis salmonellosa</name-lat>
+            <add_code>N16.0</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A02.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muud täpsustatud salmonellanakkused</name-est>
+            <name-lat>Aliae infectiones salmonellosae specificatae</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A02.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata salmonellanakkused</name-est>
+            <name-lat>Infectiones salmonellosae non specificatae</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A03</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Šigelloos</name-est>
+          <name-lat>Shigellosis</name-lat>
+          <name-eng>Shigellosis</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A03.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Shigella dysenteriae šigelloos</name-est>
+            <name-lat>Shigellosis a Shigella dysenteriae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>A-rühma šigelloos [Shiga-Kruse düsenteeria]</name-est>
+            <name-lat>Shigellosis gregis A [Dysenteria Shiga-Kruse]</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A03.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Shigella flexneri šigelloos</name-est>
+            <name-lat>Shigellosis a Shigella flexneri</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>B-rühma šigelloos</name-est>
+            <name-lat>Shigellosis gregis B</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A03.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Shigella boydii šigelloos</name-est>
+            <name-lat>Shigellosis a Shigella boydii</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>C-rühma šigelloos</name-est>
+            <name-lat>Shigellosis gregis C</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A03.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Shigella sonnei šigelloos</name-est>
+            <name-lat>Shigellosis a Shigella sonnei</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>D-rühma šigelloos</name-est>
+            <name-lat>Shigellosis gregis D</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A03.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muu šigelloos</name-est>
+            <name-lat>Alia shigellosis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A03.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata šigelloos</name-est>
+            <name-lat>Shigellosis non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata batsillaarne düsenteeria</name-est>
+            <name-lat>Dysenteria bacillaris NAS</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A04</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Soole muud bakternakkused</name-est>
+          <name-lat>Aliae infectiones bacteriales intestinales</name-lat>
+          <name-eng>Other bacterial intestinal infections</name-eng>
+          <add_code></add_code>
+        </object>
+        <exclude>
+          <code>A05</code>
+          <text>Baktertoidumürgistused</text>
+        </exclude>
+        <exclude>
+          <code>A18.3</code>
+          <text>Tuberkuloosne enteriit</text>
+        </exclude>
+        <item>
+          <code>A04.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Enteropatogeense Escherichia coli nakkus</name-est>
+            <name-lat>Infectio ab Escherichia coli enteropathogenica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A04.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Enterotoksi[ko]geense Escherichia coli nakkus</name-est>
+            <name-lat>Infectio ab Escherichia coli enterotoxi[co]genica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A04.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Enteroinvasiivse Escherichia coli nakkus</name-est>
+            <name-lat>Infectio ab Escherichia coli enteroinvasiva</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A04.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Enterohemorraagilise Escherichia coli nakkus</name-est>
+            <name-lat>Infectio ab Escherichia coli enterohaemorrhagica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A04.4</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muud Escherichia coli nakkused</name-est>
+            <name-lat>Aliae infectiones ab Escherichia coli</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata Escherichia coli enteriit</name-est>
+            <name-lat>Enteritis ab Escherichia coli NAS</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A04.5</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kampülobakterenteriit</name-est>
+            <name-lat>Enteritis campylobacterialis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A04.6</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Yersinia enterocolitica enteriit</name-est>
+            <name-lat>Enteritis a Yersinia enterocolitica</name-lat>
+            <add_code></add_code>
+          </object>
+          <exclude>
+            <code>A28.2</code>
+            <text>Sooleväline jersinioos</text>
+          </exclude>
+        </item>
+        <item>
+          <code>A04.7</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Clostridium difficile enterokoliit</name-est>
+            <name-lat>Enterocolitis a Clostridio difficili</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A04.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Soole muud täpsustatud bakternakkused</name-est>
+            <name-lat>Aliae infectiones bacteriales intestinales specificatae</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A04.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Soole täpsustamata bakternakkused</name-est>
+            <name-lat>Infectiones bacteriales intestinales non specificatae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata bakteriaalne enteriit</name-est>
+            <name-lat>Enteritis bacterialis NAS</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A05</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Muud baktertoidumürgistused</name-est>
+          <name-lat>Aliae intoxicationes bacteriales alimentariae</name-lat>
+          <name-eng>Other bacterial foodborne intoxications</name-eng>
+          <add_code></add_code>
+        </object>
+        <exclude>
+          <code>A04.0-.4</code>
+          <text>Escherichia coli nakkus</text>
+        </exclude>
+        <exclude>
+          <code>A32</code>
+          <text>Listerioos</text>
+        </exclude>
+        <exclude>
+          <code>A02.**</code>
+          <text>Salmonelloos-toidumürgistus ja -nakkus</text>
+        </exclude>
+        <exclude>
+          <code>T61-T62</code>
+          <text>Toiduga söödud kahjulike ainete toksiline toime</text>
+        </exclude>
+        <item>
+          <code>A05.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Stafülokokktoidumürgistus</name-est>
+            <name-lat>Intoxicatio alimentaria staphylococcica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A05.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Botulism</name-est>
+            <name-lat>Botulismus</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Klassikaline Clostridium botulinum'i toidumürgistus</name-est>
+            <name-lat>Intoxicatio alimentaria classica a Clostridio botulino</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A05.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Clostridium perfringens'i [Cl. welchii] toidumürgistus</name-est>
+            <name-lat>Intoxicatio alimentaria a Clostridio perfringenti</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Nekrotiseeriv enteriit</name-est>
+            <name-lat>Enteritis necroticans</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A05.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Vibrio parahaemolyticus'e toidumürgistus</name-est>
+            <name-lat>Intoxicatio alimentaria a Vibrione parahaemolytico</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A05.4</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Bacillus cereus'e toidumürgistus</name-est>
+            <name-lat>Intoxicatio alimentaria a Bacillo cereo</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A05.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muud täpsustatud baktertoidumürgistused</name-est>
+            <name-lat>Aliae intoxicationes alimentariae specificatae</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A05.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata baktertoidumürgistus</name-est>
+            <name-lat>Intoxicatio alimentaria non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A06</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Amöbiaas</name-est>
+          <name-lat>Amoebiasis</name-lat>
+          <name-eng>Amoebiasis</name-eng>
+          <add_code></add_code>
+        </object>
+        <include>
+          <text>Entamoeba histolytica nakkus</text>
+        </include>
+        <exclude>
+          <code>A07.**</code>
+          <text>Soole muud algloomhaigused</text>
+        </exclude>
+        <item>
+          <code>A06.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Äge amööbdüsenteeria</name-est>
+            <name-lat>Dysenteria amoebica acuta</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Äge amöbiaas</name-est>
+            <name-lat>Amoebiasis acuta</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Teisiti täpsustamata sooleamöbiaas</name-est>
+            <name-lat>Amoebiasis intestinalis NAS</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A06.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Krooniline sooleamöbiaas</name-est>
+            <name-lat>Amoebiasis intestinalis chronica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A06.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Mittedüsenteeriline amööbkoliit</name-est>
+            <name-lat>Colitis amoebica non dysenterica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A06.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Sooleamöboom</name-est>
+            <name-lat>Amoeboma intestini</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata amöboom</name-est>
+            <name-lat>Amoeboma NAS</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A06.4</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Maksa amööbabstsess</name-est>
+            <name-lat>Abscessus hepatis amoebicus</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Maksaamöbiaas</name-est>
+            <name-lat>Amoebiasis hepatis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A06.5</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Kopsu amööbabstsess</name-est>
+            <name-lat>Abscessus pulmonis amoebicus</name-lat>
+            <add_code>J99.8</add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Kopsu (ja maksa) amööbabstsess</name-est>
+            <name-lat>Abscessus pulmonis (et hepatis) amoebicus</name-lat>
+            <add_code>J99.8</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A06.6</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Peaaju amööbabstsess</name-est>
+            <name-lat>Abscessus cerebri amoebicus</name-lat>
+            <add_code>G07</add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Peaaju (ja maksa; ja kopsu) amööbabstsess</name-est>
+            <name-lat>Abscessus cerebri (et hepatis; et pulmonis) amoebicus</name-lat>
+            <add_code>G07</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A06.7</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Nahaamöbiaas</name-est>
+            <name-lat>Amoebiasis cutanea</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A06.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muude paikmete amööbnakkus</name-est>
+            <name-lat>Infectio amoebica aliis locis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Amööbapenditsiit</name-est>
+            <name-lat>Appendicitis amoebica</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>3</hidden>
+            <name-est>Amööbbalaniit</name-est>
+            <name-lat>Balanitis amoebica</name-lat>
+            <add_code>N51.2</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A06.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata amöbiaas</name-est>
+            <name-lat>Amoebiasis non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A07</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Soole muud algloomhaigused</name-est>
+          <name-lat>Alii morbi protozoici intestinales</name-lat>
+          <name-eng>Other protozoal intestinal diseases</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A07.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Balantidiaas</name-est>
+            <name-lat>Balantidiasis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Balantiid-düsenteeria</name-est>
+            <name-lat>Dysenteria balantidica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A07.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Giardiaas [lambliaas]</name-est>
+            <name-lat>Giardiasis [lambliasis]</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A07.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Krüptosporidioos</name-est>
+            <name-lat>Cryptosporidiosis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A07.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Isosporiaas</name-est>
+            <name-lat>Isosporiasis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Isospora belli ja Isospora hominis'e nakkus</name-est>
+            <name-lat>Infectio ab Isospora belli et Isospora hominis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Soolekoktsidioos</name-est>
+            <name-lat>Coccidiosis intestini</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Isosporoos</name-est>
+            <name-lat>Isosporosis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A07.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Soole muud täpsustatud algloomhaigused</name-est>
+            <name-lat>Alii morbi protozoici intestinales specificati</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Sooletrihhomoniaas</name-est>
+            <name-lat>Trichomoniasis intestini</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Sarkotsüstoos</name-est>
+            <name-lat>Sarcocystosis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Sarkosporidioos</name-est>
+            <name-lat>Sarcosporidiosis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A07.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Soole täpsustamata algloomhaigus</name-est>
+            <name-lat>Morbus protozoicus intestinalis non specificatus</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Viburloomdiarröa</name-est>
+            <name-lat>Diarrhoea a flagellatis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Algloomkoliit</name-est>
+            <name-lat>Colitis protozoica</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Algloomdiarröa</name-est>
+            <name-lat>Diarrhoea protozoica</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>5</hidden>
+            <name-est>Algloomdüsenteeria</name-est>
+            <name-lat>Dysenteria protozoica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A08</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Soole viirus- ja muud täpsustatud nakkused</name-est>
+          <name-lat>Infectiones intestinales virales et aliae specificatae</name-lat>
+          <name-eng>Viral and other specified intestinal infections</name-eng>
+          <add_code></add_code>
+        </object>
+        <exclude>
+          <code>J09, J10.8, J11.8</code>
+          <text>Seedeelunditega seonduv gripp</text>
+        </exclude>
+        <item>
+          <code>A08.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Rotaviirusenteriit</name-est>
+            <name-lat>Enteritis rotaviralis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A08.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Norwalki viiruse tekkene äge gastroenteropaatia</name-est>
+            <name-lat>Gastroenteropathia acuta a viro Norwalk</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Väikese ümarviiruse tekkene enteriit</name-est>
+            <name-lat>Enteritis a viro rotundo parvo</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A08.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Adenoviirusenteriit</name-est>
+            <name-lat>Enteritis adenoviralis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A08.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muu viirusenteriit</name-est>
+            <name-lat>Enteritis a viro alio</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A08.4</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Soole täpsustamata viirusnakkus</name-est>
+            <name-lat>Infectio intestinalis viralis non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata viirusenteriit</name-est>
+            <name-lat>Enteritis viralis NAS</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Teisiti täpsustamata viirusgastroenteriitenteriit</name-est>
+            <name-lat>Gastroenteritis viralis NAS</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Teisiti täpsustamata viirugastroenteropaatia</name-est>
+            <name-lat>Gastroenteropathia viralis NAS</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A08.5</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Soole muud täpsustatud nakkused</name-est>
+            <name-lat>Infectiones specificatae intestini aliae</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A09</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Oletatavalt nakkusliku päritoluga kõhulahtisus ja gastroenteriit</name-est>
+          <name-lat>Diarrhoea et gastroenteritis origine infectiosa praesumpta</name-lat>
+          <name-eng>Diarrhoea and gastroenteritis of presumed infectious origin</name-eng>
+          <add_code></add_code>
+        </object>
+        <object>
+          <hidden>2</hidden>
+          <name-est>Peensoole- või soolekatarr</name-est>
+          <name-lat>Catarrhus intestini tenuis seu intestinalis</name-lat>
+          <add_code></add_code>
+        </object>
+        <object>
+          <hidden>3</hidden>
+          <name-est>Teisiti täpsustamata, hemorraagiline või septiline+koliit</name-est>
+          <name-lat>Colitis+NAS, haemorrhagica seu septica</name-lat>
+          <add_code></add_code>
+        </object>
+        <object>
+          <hidden>4</hidden>
+          <name-est>Teisiti täpsustamata, hemorraagiline või septiline+enteriit</name-est>
+          <name-lat>Enteritis+NAS, haemorrhagica seu septica</name-lat>
+          <add_code></add_code>
+        </object>
+        <object>
+          <hidden>5</hidden>
+          <name-est>Teisiti täpsustamata, hemorraagiline või septiline+gastroenteriit</name-est>
+          <name-lat>Gastroenteritis+NAS, haemorrhagica seu septica</name-lat>
+          <add_code></add_code>
+        </object>
+        <object>
+          <hidden>6</hidden>
+          <name-est>Teisiti täpsustamata diarrhöa</name-est>
+          <name-lat>Diarrhoea NAS</name-lat>
+          <add_code></add_code>
+        </object>
+        <object>
+          <hidden>7</hidden>
+          <name-est>Düsenteeriline diarrhöa</name-est>
+          <name-lat>Diarrhoea dysenterica</name-lat>
+          <add_code></add_code>
+        </object>
+        <object>
+          <hidden>8</hidden>
+          <name-est>Epideemiline diarrhöa</name-est>
+          <name-lat>Diarrhoea epidemica</name-lat>
+          <add_code></add_code>
+        </object>
+        <object>
+          <hidden>9</hidden>
+          <name-est>Teisiti täpsustamata kõhulahtisusega nakkushaigus</name-est>
+          <name-lat>Morbus infectiosus diarrhoicus NAS</name-lat>
+          <add_code></add_code>
+        </object>
+        <exclude>
+          <code>A00-A08</code>
+          <text>Bakteriaalne, algloomatekkene, viiruslik või muu täpsustatud tekitaja põhjustatud</text>
+        </exclude>
+        <exclude>
+          <code>K52.9</code>
+          <text>Mittenakkuslik kõhulahtisus</text>
+        </exclude>
+        <exclude>
+          <code>P78.3</code>
+          <text>Mittenakkuslik vastsündinukõhulahtisus</text>
+        </exclude>
+        <notice>Maades, kus mistahes A09 all loetletud termin ilma täiendava täpsustuseta võib oletatavasti olla mittenakkusliku päritoluga, tuleb seisundit
+          klassifitseerida K52.9 alla
+        </notice>
+      </subsection>
+    </section>
+    <section>
+      <code>A15-A19</code>
+      <object>
+        <hidden>1</hidden>
+        <name-est>Tuberkuloos</name-est>
+        <name-lat>Tuberculosis</name-lat>
+        <name-eng>Tuberculosis</name-eng>
+        <add_code></add_code>
+      </object>
+      <exclude>
+        <code>P37</code>
+        <text>Kaasasündinud tuberkuloos</text>
+      </exclude>
+      <exclude>
+        <code>J65</code>
+        <text>Pneumokonioos koos tuberkuloosiga</text>
+      </exclude>
+      <exclude>
+        <code>B90</code>
+        <text>Tuberkuloosi jääknähud</text>
+      </exclude>
+      <exclude>
+        <code>J65</code>
+        <text>Silikotuberkuloos</text>
+      </exclude>
+      <subsection>
+        <code>A15</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Bakterioloogiliselt ja histoloogiliselt kinnitatud hingamiselundite tuberkuloos</name-est>
+          <name-lat>Tuberculosis organorum respiratoriorum bacteriologice et histologice confirmata</name-lat>
+          <name-eng>Respiratory tuberculosis, bacteriologically and histologically confirmed</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A15.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kopsutuberkuloos, kinnitatud röga mikroskoopilise uuringuga, mikroobikultuuri abil või ilma</name-est>
+            <name-lat>Tuberculosis pulmonum, microscopia sputi cum sive sine cultura confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Tuberkuloosne bronhoektaasia+kinnitatud röga mikroskoopiaga, (kultuuriga või ilma)</name-est>
+            <name-lat>Bronchoectasia+tuberculosa(-us), microscopia sputi cum sive sine cultura confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Tuberkuloosne kopsufibroos+kinnitatud röga mikroskoopiaga, (kultuuriga või ilma)</name-est>
+            <name-lat>Fibrosis pulmonum+tuberculosa(-us), microscopia sputi cum sive sine cultura confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Tuberkuloosne pneumoonia+kinnitatud röga mikroskoopiaga, (kultuuriga või ilma)</name-est>
+            <name-lat>Pneumonia+tuberculosa(-us), microscopia sputi cum sive sine cultura confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>5</hidden>
+            <name-est>Tuberkuloosne pneumotooraks+kinnitatud röga mikroskoopiaga, (kultuuriga või ilma)</name-est>
+            <name-lat>Pneumothorax+tuberculosa(-us), microscopia sputi cum sive sine cultura confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A15.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kopsutuberkuloos, kinnitatud ainult kultuuriga</name-est>
+            <name-lat>Tuberculosis pulmonum solum cultura confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>A15.0 all antud seisundid, kinnitatud ainult kultuuriga</name-est>
+            <name-lat>Condiciones sub A15.0 datae solum cultura confirmatae</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A15.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kopsutuberkuloos, histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tuberculosis pulmonum histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>A15.0 all antud seisundid, histoloogiliselt kinnitatud</name-est>
+            <name-lat>Condiciones sub A15.0 datae, histologice confirmatae</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A15.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kopsutuberkuloos, täpsustamata meetodil kinnitatud</name-est>
+            <name-lat>Tuberculosis pulmonum modo non specificato confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>A15.0 all antud seisundid, kinnitatud, kuid täpsustamata, kas bakterioloogiliselt või histoloogiliselt</name-est>
+            <name-lat>Condiciones sub A15.0 datae, confirmatae, sed non specificatum utrum bacteriologice an histologice</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A15.4</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Rindkeresiseste lümfisõlmede tuberkuloos, kinnitatud bakterioloogiliselt ja histoloogiliselt</name-est>
+            <name-lat>Tuberculosis lymphonodorum intrathoracalium, confirmata bacteriologice et histologice</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Bronhopulmonaal-+lümfisõlmede tuberkuloos, kinnitatud bakterioloogiliselt ja histoloogiliselt</name-est>
+            <name-lat>Tuberculosis lymphonodorum+bronchopulmonalium confirmata bacteriologice et histologice</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Mediastiinumi-+lümfisõlmede tuberkuloos, kinnitatud bakterioloogiliselt ja histoloogiliselt</name-est>
+            <name-lat>Tuberculosis lymphonodorum+mediastinalium confirmata bacteriologice et histologice</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Trahheobronhiaal-+lümfisõlmede tuberkuloos, kinnitatud bakterioloogiliselt ja histoloogiliselt</name-est>
+            <name-lat>Tuberculosis lymphonodorum+tracheobronchialium confirmata bacteriologice et histologice</name-lat>
+            <add_code></add_code>
+          </object>
+          <exclude>
+            <code>A15.7</code>
+            <text>Esmastena täpsustatud</text>
+          </exclude>
+        </item>
+        <item>
+          <code>A15.5</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kõri-, trahhea- ja bronhituberkuloos, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tuberculosis laryngis, tracheae et bronchi bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Bronhi-+tuberkuloos, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tuberculosis bronchi+bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Häälekõri-+tuberkuloos, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tuberculosis glottidis+bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Kõri-+tuberkuloos, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tuberculosis laryngis+bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>5</hidden>
+            <name-est>Trahhea-+tuberkuloos, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tuberculosis tracheae+bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A15.6</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Tuberkuloosne pleuriit, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Pleuritis tuberculosa, bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Bakterioloogiliselt ja histoloogiliselt kinnitatud+pleuratuberkuloos</name-est>
+            <name-lat>Tuberculosis pleurae+bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Bakterioloogiliselt ja histoloogiliselt kinnitatud+pleuraempüeem</name-est>
+            <name-lat>Empyema pleurae+bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <exclude>
+            <code>A15.7</code>
+            <text>Bakterioloogiliselt ja histoloogiliselt kinnitatud esmase tuberkuloosi korral</text>
+          </exclude>
+        </item>
+        <item>
+          <code>A15.7</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Hingamiselundite esmane tuberkuloos, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tubeculosis respiratoria primaria bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A15.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muu hingamiselundite tuberkuloos, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tuberculosis respiratoria alia, bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Mediastiinumi-+tuberkuloos, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tuberculosis mediastini+bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Nasofarüngeaal-+tuberkuloos, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tuberculosis nasopharyngealis+bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Nina-+tuberkuloos, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tuberculosis nasi+bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>5</hidden>
+            <name-est>Ninakõrvalurke-+tuberkuloos, bakterioloogiliselt ja histoloogiliselt kinnitatud</name-est>
+            <name-lat>Tuberculosis sinus nasalis+bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A15.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Hingamiselundite täpsustamata tuberkuloos, kinnitatud bakterioloogiliselt ja histoloogiliselt</name-est>
+            <name-lat>Tuberculosis respiratoria non specificata, bacteriologice et histologice confirmata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A16</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Bakterioloogiliselt või histoloogiliselt kinnitamata hingamiselundite tuberkuloos</name-est>
+          <name-lat>Tuberculosis organorum respiratoriorum bacteriologice sive histologice non confirmata</name-lat>
+          <name-eng>Respiratory tuberculosis, not confirmed bacteriologically or histologically</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A16.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kopsutuberkuloos, bakterioloogiliselt ja histoloogiliselt negatiivne</name-est>
+            <name-lat>Tuberculosis pulmonum bacteriologice et histologice negativa</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Tuberkuloosne bronhoektaasia+bakterioloogiliselt ja histoloogiliselt negatiivne</name-est>
+            <name-lat>Bronchoectasia+tuberculosa(-us), bacteriologice et histologice negativa(-us)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Tuberkuloosne kopsufibroos+bakterioloogiliselt ja histoloogiliselt negatiivne</name-est>
+            <name-lat>Fibrosis pulmonum+tuberculosa(-us), bacteriologice et histologice negativa(-us)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Tuberkuloosne pneumoonia+bakterioloogiliselt ja histoloogiliselt negatiivne</name-est>
+            <name-lat>Pneumonia+tuberculosa(-us), bacteriologice et histologice negativa(-us)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>5</hidden>
+            <name-est>Tuberkuloosne pneumotooraks+bakterioloogiliselt ja histoloogiliselt negatiivne</name-est>
+            <name-lat>Pneumothorax+tuberculosa(-us), bacteriologice et histologice negativa(-us)</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A16.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kopsutuberkuloos, bakterioloogiline ja histoloogiline uuring tegemata</name-est>
+            <name-lat>Tuberculosis pulmonum, examinationes bacteriologica et histologica non factae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>A16.0 all antud seisundid, bakterioloogiline ja histoloogiline uuring tegemata</name-est>
+            <name-lat>Condiciones sub A16.0 datae, examinationes bacterilogica et histologica non factae</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A16.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kopsutuberkuloos, bakterioloogiline või histoloogiline kinnitus mainimata</name-est>
+            <name-lat>Tuberculosis pulmonum sine mentione confirmationis bacteriologicae neque histologicae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+kopsutuberkuloos</name-est>
+            <name-lat>Tuberculosis pulmonum+NAS (sine mentione tuberculosa confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+tuberkuloosne bronhoektaasia</name-est>
+            <name-lat>Bronchiectasia tuberculosa (-us)+NAS (sine mentione tuberculosa confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+tuberkuloosne kopsufibroos</name-est>
+            <name-lat>Fibrosis pulmonum tuberculosa (-us)+NAS (sine mentione tuberculosa confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>5</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+tuberkuloosne pneumoonia</name-est>
+            <name-lat>Pneumonia tuberculosa (-us)+NAS (sine mentione tuberculosa confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>6</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+tuberkuloosne pneumotooraks</name-est>
+            <name-lat>Pneumothorax tuberculosa (-us)+NAS (sine mentione tuberculosa confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A16.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Rindkeresiseste lümfisõlmede tuberkuloos, bakterioloogiline või histoloogiline kinnitus mainimata</name-est>
+            <name-lat>Tuberculosis lymphonodorum intrathoracalium sine mentione confirmationis bacteriologicae neque histologicae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Bronhopulmonaal-+lümfisõlmede teisiti täpsustamata tuberkuloos, (bakterioloogiline või histoloogiline kinnitus mainimata)</name-est>
+            <name-lat>Tuberculosis lymphonodorum+bronchopulmonalium NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Mediastiinumi-+lümfisõlmede teisiti täpsustamata tuberkuloos, (bakterioloogiline või histoloogiline kinnitus mainimata)</name-est>
+            <name-lat>Tuberculosis lymphonodorum+mediastinalium NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Trahheobronhiaal-+lümfisõlmede teisiti täpsustamata tuberkuloos, (bakterioloogiline või histoloogiline kinnitus mainimata)</name-est>
+            <name-lat>Tuberculosis lymphonodorum+tracheobronchialium NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>5</hidden>
+            <name-est>Intratorakaal-+lümfisõlmede teisiti täpsustamata tuberkuloos, (bakterioloogiline või histoloogiline kinnitus mainimata)</name-est>
+            <name-lat>Tuberculosis lymphonodorum+intrathoracalium NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <exclude>
+            <code>A16.7</code>
+            <text>Esmasena täpsustatud</text>
+          </exclude>
+        </item>
+        <item>
+          <code>A16.4</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kõri-, trahhea- ja bronhituberkuloos, bakterioloogiline või histoloogiline kinnitus mainimata</name-est>
+            <name-lat>Tuberculosis laryngis, tracheae et bronchi sine mentione confirmationis bacteriologicae neque histologicae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+bronhituberkuloos</name-est>
+            <name-lat>Tuberculosis bronchi+NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+häälekõrituberkuloos</name-est>
+            <name-lat>Tuberculosis glottidis+NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+kõrituberkuloos</name-est>
+            <name-lat>Tuberculosis laryngis+NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>5</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+trahheatuberkuloos</name-est>
+            <name-lat>Tuberculosis tracheae+NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A16.5</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Tuberkuloosne pleuriit, bakterioloogiline või histoloogiline kinnitus mainimata</name-est>
+            <name-lat>Pleuritis tuberculosa sine mentione confirmationis bacteriologicae neque histologicae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+pleuratuberkuloos</name-est>
+            <name-lat>Tuberculosis pleurae+NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+tuberkuloosne empüeem</name-est>
+            <name-lat>Empyema tuberculosum+NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline või histoloogiline kinnitus mainimata)+tuberkuloosne pleuriit</name-est>
+            <name-lat>Pleuritis tuberculosa+NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <exclude>
+            <code>A16.7</code>
+            <text>Hingamiselundite esmase tuberkuloosi korral</text>
+          </exclude>
+        </item>
+        <item>
+          <code>A16.7</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Hingamiselundite esmane tuberkuloos, bakterioloogiline või histoloogiline kinnitus mainimata</name-est>
+            <name-lat>Tuberculosis respiratoria primaria sine mentione confirmationis bacteriologicae neque histologicae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata hingamiselundite esmane tuberkuloos</name-est>
+            <name-lat>Tuberculosis respiratoria primaria NAS</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Esmane tuberkuloosikompleks</name-est>
+            <name-lat>Complexus tuberculosus primarius</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A16.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muu hingamiselundite tuberkuloos, bakterioloogiline või histoloogiline kinnitus mainimata</name-est>
+            <name-lat>Tuberculosis respiratoria alia sine mentione confirmationis bacteriologicae neque histologicae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline ja histoloogiline kinnitus mainimata)+mediastiinumituberkuloos</name-est>
+            <name-lat>Tuberculosis mediastini+NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline ja histoloogiline kinnitus mainimata)+nasofarüngeaaltuberkuloos</name-est>
+            <name-lat>Tuberculosis nasopharyngealis+NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline ja histoloogiline kinnitus mainimata)+ninatuberkuloos</name-est>
+            <name-lat>Tuberculosis nasi+NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>5</hidden>
+            <name-est>Teisiti täpsustamata (bakterioloogiline ja histoloogiline kinnitus mainimata)+ninakõrvalurketuberkuloos</name-est>
+            <name-lat>Tuberculosis sinus nasalis+NAS (sine mentione confirmationis bacteriologicae neque histologicae)</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A16.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Hingamiselundite täpsustamata tuberkuloos, bakterioloogiline või histoloogiline kinnitus mainimata</name-est>
+            <name-lat>Tuberculosis respiratoria non specificata sine mentione confirmationis bacteriologicae neque histologicae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata hingamiselundite tuberkuloos</name-est>
+            <name-lat>Tuberculosis respiratoria NAS</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Teisiti täpsustamata tuberkuloos</name-est>
+            <name-lat>Tuberculosis NAS</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A17</code>
+        <object type="+">
+          <hidden>1</hidden>
+          <name-est>Närvisüsteemi tuberkuloos</name-est>
+          <name-lat>Tuberculosis systematis nervosi</name-lat>
+          <name-eng>Tuberculosis of nervous system</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A17.0</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Tuberkuloosne meningiit</name-est>
+            <name-lat>Meningitis tuberculosa</name-lat>
+            <add_code>G01</add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>(Peaaju-; seljaaju-)kestade tuberkuloos</name-est>
+            <name-lat>Tuberculosis meningium (cerebralium; spinalium)</name-lat>
+            <add_code>G01</add_code>
+          </object>
+          <object type="+">
+            <hidden>3</hidden>
+            <name-est>Tuberkuloosne leptomeningiit</name-est>
+            <name-lat>Leptomeningitis tuberculosa</name-lat>
+            <add_code>G01</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A17.1</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Meningeaaltuberkuloom</name-est>
+            <name-lat>Tuberculoma meningeale</name-lat>
+            <add_code>G07</add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Ajukestade tuberkuloom</name-est>
+            <name-lat>Tuberculoma meningium</name-lat>
+            <add_code>G07</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A17.8</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Närvisüsteemi muu tuberkuloos</name-est>
+            <name-lat>Alia tuberculosis systematis nervosi</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Peaaju tuberkuloom</name-est>
+            <name-lat>Tuberculoma cerebri</name-lat>
+            <add_code>G07</add_code>
+          </object>
+          <object type="+">
+            <hidden>3</hidden>
+            <name-est>Peaaju tuberkuloos</name-est>
+            <name-lat>Tuberculosis cerebri</name-lat>
+            <add_code>G07</add_code>
+          </object>
+          <object type="+">
+            <hidden>4</hidden>
+            <name-est>Seljaaju tuberkuloom</name-est>
+            <name-lat>Tuberculoma medullae spinalis</name-lat>
+            <add_code>G07</add_code>
+          </object>
+          <object type="+">
+            <hidden>5</hidden>
+            <name-est>Seljaaju tuberkuloos</name-est>
+            <name-lat>Tuberculosis medullae spinalis</name-lat>
+            <add_code>G07</add_code>
+          </object>
+          <object type="+">
+            <hidden>6</hidden>
+            <name-est>Peaaju tuberkuloosne abstsess</name-est>
+            <name-lat>Abscessus tuberculosus cerebri</name-lat>
+            <add_code>G07</add_code>
+          </object>
+          <object type="+">
+            <hidden>7</hidden>
+            <name-est>Tuberkuloosne meningoentsefaliit</name-est>
+            <name-lat>Meningoencephalitis tuberculosa</name-lat>
+            <add_code>G05.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>8</hidden>
+            <name-est>Tuberkuloosne müeliit</name-est>
+            <name-lat>Myelitis tuberculosa</name-lat>
+            <add_code>G05.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>9</hidden>
+            <name-est>Tuberkuloosne polüneuropaatia</name-est>
+            <name-lat>Polyneuropathia tuberculosa</name-lat>
+            <add_code>G63.0</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A17.9</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Närvisüsteemi täpsustamata tuberkuloos</name-est>
+            <name-lat>Tuberculosis systematis nervosi non specificata</name-lat>
+            <add_code>G99.8</add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A18</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Muude elundite tuberkuloos</name-est>
+          <name-lat>Tuberculosis aliorum organorum</name-lat>
+          <name-eng>Tuberculosis of other organs</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A18.0</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Luude ja liigeste tuberkuloos</name-est>
+            <name-lat>Tuberculosis ossium et articulationum</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Puusatuberkuloos</name-est>
+            <name-lat>Tuberculosis coxae [Coxitis tuberculosa]</name-lat>
+            <add_code>M01.1</add_code>
+          </object>
+          <object type="+">
+            <hidden>3</hidden>
+            <name-est>Põlvetuberkuloos</name-est>
+            <name-lat>Tuberculosis genus [Gonitis tuberculosa]</name-lat>
+            <add_code>M01.1</add_code>
+          </object>
+          <object type="+">
+            <hidden>4</hidden>
+            <name-est>Lülisambatuberkuloos</name-est>
+            <name-lat>Tuberculosis columnae vertebralis [Spondylitis tuberculosa]</name-lat>
+            <add_code>M49.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>5</hidden>
+            <name-est>Tuberkuloosne artriit e liigesepõletik</name-est>
+            <name-lat>Arthritis tuberculosa</name-lat>
+            <add_code>M01.1</add_code>
+          </object>
+          <object type="+">
+            <hidden>6</hidden>
+            <name-est>Tuberkuloosne mastoidiit e nibujätkepõletik</name-est>
+            <name-lat>Mastoiditis tuberculosa</name-lat>
+            <add_code>H75.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>7</hidden>
+            <name-est>Tuberkuloosne osteonekroos e luukärbus</name-est>
+            <name-lat>Osteitis tuberculosa</name-lat>
+            <add_code>M90.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>8</hidden>
+            <name-est>Tuberkuloosne osteiit e luupõletik</name-est>
+            <name-lat>Osteomyelitis tuberculosa</name-lat>
+            <add_code>M90.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>9</hidden>
+            <name-est>Tuberkuloosne osteomüeliit e luuüdipõletik</name-est>
+            <name-lat>Osteonecrosis tuberculosa</name-lat>
+            <add_code>M90.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>10</hidden>
+            <name-est>Tuberkuloosne sünoviit e sünoviaalkestapõletik</name-est>
+            <name-lat>Synovitis tuberculosa</name-lat>
+            <add_code>M68.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>11</hidden>
+            <name-est>Tuberkuloosne tenosünoviit e kõõluse-sünoviaalkestapõletik</name-est>
+            <name-lat>Tenosynovitis tuberculosa</name-lat>
+            <add_code>M68.0</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A18.1</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Kuse-suguelundite tuberkuloos</name-est>
+            <name-lat>Tuberculosis systematis genitourinarii</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Kusepõietuberkuloos</name-est>
+            <name-lat>Tuberculosis vesicae urinariae</name-lat>
+            <add_code>N33.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>3</hidden>
+            <name-est>Emakakaelatuberkuloos</name-est>
+            <name-lat>Tuberculosis cervicis uteri</name-lat>
+            <add_code>N74.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>4</hidden>
+            <name-est>Neerutuberkuloos</name-est>
+            <name-lat>Tuberculosis renis</name-lat>
+            <add_code>N29.1</add_code>
+          </object>
+          <object type="+">
+            <hidden>5</hidden>
+            <name-est>Meessuguelundite tuberkuloos</name-est>
+            <name-lat>Tuberculosis organorum genitalium masculinorum</name-lat>
+            <add_code>N51.**</add_code>
+          </object>
+          <object type="+">
+            <hidden>6</hidden>
+            <name-est>Ureeterituberkuloos</name-est>
+            <name-lat>Tuberculosis ureteris</name-lat>
+            <add_code>N29.1</add_code>
+          </object>
+          <object type="+">
+            <hidden>7</hidden>
+            <name-est>Naise vaagnaelundite tuberkuloosne põletik</name-est>
+            <name-lat>Inflammatio tuberculosa organorum pelvis femininae</name-lat>
+            <add_code>N74.1</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A18.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Perifeerne tuberkuloosne lümfadenopaatia</name-est>
+            <name-lat>Lymphadenopathia tuberculosa peripherica</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Tuberkuloosne adeniit</name-est>
+            <name-lat>Adenitis tuberculosa</name-lat>
+            <add_code></add_code>
+          </object>
+          <exclude>
+            <code>A15.4, A16.3</code>
+            <text>Intratorakaalsete lümfisõlmede tuberkuloos</text>
+          </exclude>
+          <exclude>
+            <code>A18.3</code>
+            <text>Mesenteriaalsete ja retroperitoneaalsete lümfisõlmede tuberkuloos</text>
+          </exclude>
+          <exclude>
+            <code>A15.4, A16.3</code>
+            <text>Tuberkuloosne trahheobronhiaalne adenopaatia</text>
+          </exclude>
+        </item>
+        <item>
+          <code>A18.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Soolte, peritoneumi ja mesenteriaalsõlmede tuberkuloos</name-est>
+            <name-lat>Tuberculosis intestinorum, peritonei et nodorum mesentericorum</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Päraku ja pärasoole tuberkuloos</name-est>
+            <name-lat>Tuberculosis ani et recti</name-lat>
+            <add_code>K93.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>3</hidden>
+            <name-est>(Jäme-; peen-)soole tuberkuloos</name-est>
+            <name-lat>Tuberculosis intestini (crassi; tenuis)</name-lat>
+            <add_code>K93.0</add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Retroperitoneaalsete lümfisõlmede tuberkuloos</name-est>
+            <name-lat>Tuberculosis lymphonodorum retroperitonealium</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>5</hidden>
+            <name-est>Tuberkuloosne astsiit</name-est>
+            <name-lat>Ascites tuberculosa</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>6</hidden>
+            <name-est>Tuberkuloosne enteriit</name-est>
+            <name-lat>Enteritis tuberculosa</name-lat>
+            <add_code>K93.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>7</hidden>
+            <name-est>Tuberkuloosne peritoniit</name-est>
+            <name-lat>Peritonitis tuberculosa</name-lat>
+            <add_code>K67.3</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A18.4</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Naha ja nahaaluskoe tuberkuloos</name-est>
+            <name-lat>Tuberculosis cutis et telae subcutaneae</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Naha tuberkuloosne induratiiverüteem</name-est>
+            <name-lat>Erythema induratum cutis tuberculosum</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Eksedentluupus</name-est>
+            <name-lat>Lupus exedens</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Teisiti täpsustamata lihtluupus</name-est>
+            <name-lat>Lupus vulgaris NAS</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>5</hidden>
+            <name-est>Silmalau lihtluupus</name-est>
+            <name-lat>Lupus vulgaris palpebrae</name-lat>
+            <add_code>H03.1</add_code>
+          </object>
+          <object>
+            <hidden>6</hidden>
+            <name-est>Skrofuloderma</name-est>
+            <name-lat>Scrofuloderma</name-lat>
+            <add_code></add_code>
+          </object>
+          <exclude>
+            <code>L93.**</code>
+            <text>Erütematoosluupus</text>
+          </exclude>
+          <exclude>
+            <code>M32.**</code>
+            <text>Süsteemne erütematoosluupus</text>
+          </exclude>
+        </item>
+        <item>
+          <code>A18.5</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Silmatuberkuloos</name-est>
+            <name-lat>Tuberculosis oculi</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Tuberkuloosne episkleriit</name-est>
+            <name-lat>Episcleritis tuberculosa</name-lat>
+            <add_code>H19.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>3</hidden>
+            <name-est>Tuberkuloosne interstitsiaalkeratiit</name-est>
+            <name-lat>Iridocyclitis tuberculosa</name-lat>
+            <add_code>H19.2</add_code>
+          </object>
+          <object type="+">
+            <hidden>4</hidden>
+            <name-est>Tuberkuloosne iridotsükliit</name-est>
+            <name-lat>Keratitis interstitialis tuberculosa</name-lat>
+            <add_code>H22.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>5</hidden>
+            <name-est>Tuberkuloosne keratokonjunktiviit (interstitsiaalne; flüktenuloosne)</name-est>
+            <name-lat>Keratoconjunctivitis (interstitialis; phlyctaenulosa) tuberculosa</name-lat>
+            <add_code>H19.2</add_code>
+          </object>
+          <object type="+">
+            <hidden>6</hidden>
+            <name-est>Tuberkuloosne korioretiniit</name-est>
+            <name-lat>Chorioretinitis tuberculosa</name-lat>
+            <add_code>H32.0</add_code>
+          </object>
+          <exclude>
+            <code>A18.4</code>
+            <text>Silmalau lihtluupus</text>
+          </exclude>
+        </item>
+        <item>
+          <code>A18.6</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Kõrvatuberkuloos</name-est>
+            <name-lat>Tuberculosis auris</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Tuberkuloosne keskkõrvapõletik</name-est>
+            <name-lat>Otitis media tuberculosa</name-lat>
+            <add_code>H67.0</add_code>
+          </object>
+          <exclude>
+            <code>A18.0</code>
+            <text>Tuberkuloosne mastoidiit</text>
+          </exclude>
+        </item>
+        <item>
+          <code>A18.7</code>
+          <object type="+">
+            <hidden>1</hidden>
+            <name-est>Neerupealisetuberkuloos</name-est>
+            <name-lat>Tuberculosis glandularum suprarenalium</name-lat>
+            <add_code>E35.1</add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Tuberkuloosne Addisoni tõbi</name-est>
+            <name-lat>Morbus Addison tuberculosus</name-lat>
+            <add_code>E35.1</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A18.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muude täpsustatud elundite tuberkuloos</name-est>
+            <name-lat>Tuberculosis organorum specificatorum aliorum</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Endokardituberkuloos</name-est>
+            <name-lat>Tuberculosis endocardii</name-lat>
+            <add_code>I39.8</add_code>
+          </object>
+          <object type="+">
+            <hidden>3</hidden>
+            <name-est>Kilpnäärmetuberkuloos</name-est>
+            <name-lat>Tuberculosis glandulae thyr[e]oideae</name-lat>
+            <add_code>E35.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>4</hidden>
+            <name-est>Müokardituberkuloos</name-est>
+            <name-lat>Tuberculosis myocardii</name-lat>
+            <add_code>I41.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>5</hidden>
+            <name-est>Perikardituberkuloos</name-est>
+            <name-lat>Tuberculosis pericardii</name-lat>
+            <add_code>I32.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>6</hidden>
+            <name-est>Söögitorutuberkuloos</name-est>
+            <name-lat>Tuberculosis oesophagi</name-lat>
+            <add_code>K23.0</add_code>
+          </object>
+          <object type="+">
+            <hidden>7</hidden>
+            <name-est>Tuberkuloosne peaajuarteriit</name-est>
+            <name-lat>Arteritis cerebralis tuberculosa</name-lat>
+            <add_code>I68.1</add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A19</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Miliaartuberkuloos</name-est>
+          <name-lat>Tuberculosis miliaris</name-lat>
+          <name-eng>Miliary tuberculosis</name-eng>
+          <add_code></add_code>
+        </object>
+        <include>
+          <text>Laialikülvunud tuberkuloos</text>
+        </include>
+        <include>
+          <text>Generaliseerunud tuberkuloos</text>
+        </include>
+        <include>
+          <text>Tuberkuloosne polüserosiit</text>
+        </include>
+        <item>
+          <code>A19.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustatud üksikpaikme äge miliaartuberkuloos</name-est>
+            <name-lat>Tuberculosis miliaris acuta loco singulo specificato</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A19.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Hulgipaikmeline äge miliaartuberkuloos</name-est>
+            <name-lat>Tuberculosis miliaris acuta locis multis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A19.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata äge miliaartuberkuloos</name-est>
+            <name-lat>Tuberculosis miliaris acuta non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A19.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muu miliaartuberkuloos</name-est>
+            <name-lat>Tuberculosis miliaris alia</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A19.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata miliaartuberkuloos</name-est>
+            <name-lat>Tuberculosis miliaris non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+    </section>
+    <section>
+      <code>A20-A28</code>
+      <object>
+        <hidden>1</hidden>
+        <name-est>Kindlad (teatavad) bakterzoonoosid</name-est>
+        <name-lat>Aliqui morbi bacteriales zoonotici</name-lat>
+        <name-eng>Certain zoonotic bacterial diseases</name-eng>
+        <add_code></add_code>
+      </object>
+      <subsection>
+        <code>A20</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Katk</name-est>
+          <name-lat>Pestis</name-lat>
+          <name-eng>Plague</name-eng>
+          <add_code></add_code>
+        </object>
+        <include>
+          <text>Yersinia pestis'e nakkus</text>
+        </include>
+        <item>
+          <code>A20.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Buboonkatk</name-est>
+            <name-lat>Pestis bubonica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A20.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Nahakatk</name-est>
+            <name-lat>Pestis cellulocutanea</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A20.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kopsukatk</name-est>
+            <name-lat>Pestis pneumonica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A20.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Katkumeningiit</name-est>
+            <name-lat>Pestis meningitica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A20.7</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Katkuseptitseemia</name-est>
+            <name-lat>Pestis septicaemica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A20.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muud katkuvormid</name-est>
+            <name-lat>Aliae formae pestis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Abortiivkatk</name-est>
+            <name-lat>Pestis abortiva</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Asümptomaatiline katk</name-est>
+            <name-lat>Pestis asymptomatica</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Väike katk</name-est>
+            <name-lat>Pestis minor</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A20.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata katk</name-est>
+            <name-lat>Pestis non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A21</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Tulareemia</name-est>
+          <name-lat>Tularaemia</name-lat>
+          <name-eng>Tularaemia</name-eng>
+          <add_code></add_code>
+        </object>
+        <include>
+          <text>Põdrakärbsepalavik</text>
+        </include>
+        <include>
+          <text>Francisella tularensis'e nakkus</text>
+        </include>
+        <include>
+          <text>Küülikupalavik</text>
+        </include>
+        <item>
+          <code>A21.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Ultseroglandulaarne tulareemia</name-est>
+            <name-lat>Tularaemia ulceroglandularis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A21.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Okuloglandulaarne tulareemia</name-est>
+            <name-lat>Tularaemia oculoglandularis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Silmatulareemia [Oftalmtulareemia]</name-est>
+            <name-lat>Tularaemia ophthalmica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A21.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kopsutulareemia</name-est>
+            <name-lat>Tularaemia pulmonalis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A21.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Gastrointestinaalne tulareemia</name-est>
+            <name-lat>Tularaemia gastrointestinalis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Kõhutulareemia [Abdominaaltulareemia]</name-est>
+            <name-lat>Tularaemia abdominalis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A21.7</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Generaliseerunud tulareemia</name-est>
+            <name-lat>Tularaemia generalisata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A21.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Tulareemia muud vormid</name-est>
+            <name-lat>Aliae formae tularaemiae</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A21.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata tulareemia</name-est>
+            <name-lat>Tularaemia non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A22</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Põrnatõbi [antraks e Siberi katk]</name-est>
+          <name-lat>Anthrax</name-lat>
+          <name-eng>Anthrax</name-eng>
+          <add_code></add_code>
+        </object>
+        <include>
+          <text>Bacillus anthracis'e nakkused</text>
+        </include>
+        <item>
+          <code>A22.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Nahapõrnatõbi</name-est>
+            <name-lat>Anthrax cutaneus</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Pahaloomuline karbunkul</name-est>
+            <name-lat>Carbunculus malignus</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Pahaloomuline pustul</name-est>
+            <name-lat>Pustula maligna</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A22.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kopsupõrnatõbi [Pulmonaalantraks]</name-est>
+            <name-lat>Anthrax pulmonalis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Inhalatsioonpõrnatõbi</name-est>
+            <name-lat>Anthrax ex inhalatione</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Kaltsukorjajahaigus</name-est>
+            <name-lat>Morbus colligentis panniculorum</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Villasorteerijahaigus</name-est>
+            <name-lat>Morbus selectoris lanae</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A22.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Gastrointestinaal-põrnatõbi</name-est>
+            <name-lat>Anthrax gastrointestinalis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A22.7</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Põrnatõveseptitseemia</name-est>
+            <name-lat>Septicaemia in anthrace</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A22.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Põrnatõve muud vormid</name-est>
+            <name-lat>Aliae formae anthracis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object type="+">
+            <hidden>2</hidden>
+            <name-est>Põrnatõvemeningiit</name-est>
+            <name-lat>Meningitis in anthrace</name-lat>
+            <add_code>G01</add_code>
+          </object>
+        </item>
+        <item>
+          <code>A22.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata põrnatõbi</name-est>
+            <name-lat>Anthrax non specificatus</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A23</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Brutselloos</name-est>
+          <name-lat>Brucellosis</name-lat>
+          <name-eng>Brucellosis</name-eng>
+          <add_code></add_code>
+        </object>
+        <include>
+          <text>Maltapalavik</text>
+        </include>
+        <include>
+          <text>Vahemerepalavik</text>
+        </include>
+        <include>
+          <text>Undulant- e lainlev palavik</text>
+        </include>
+        <item>
+          <code>A23.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Brucella melitensis'e brutselloos</name-est>
+            <name-lat>Brucellosis a Brucella melitensi</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A23.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Brucella abortus'e brutselloos</name-est>
+            <name-lat>Brucellosis a Brucella abortus</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A23.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Brucella suis'e brutselloos</name-est>
+            <name-lat>Brucellosis a Brucella suis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A23.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Brucella canis'e brutselloos</name-est>
+            <name-lat>Brucellosis a Brucella canis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A23.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muu brutselloos</name-est>
+            <name-lat>Alia brucellosis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A23.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata brutselloos</name-est>
+            <name-lat>Brucellosis non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A24</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Malleus ja melioidoos</name-est>
+          <name-lat>Malleus et melioidosis</name-lat>
+          <name-eng>Glanders and melioidosis</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A24.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Malleus</name-est>
+            <name-lat>Malleus</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Pseudomonas mallei nakkus</name-est>
+            <name-lat>Infectio a Pseudomonade mallei</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A24.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Äge ja välkkiire e fulminantne melioidoos</name-est>
+            <name-lat>Melioidosis acuta et fulminans</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Melioidoospneumoonia</name-est>
+            <name-lat>Pneumonia in melioidosi</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Melioidoosseptitseemia</name-est>
+            <name-lat>Septicaemia in melioidosi</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A24.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Alaäge ja krooniline melioidoos</name-est>
+            <name-lat>Melioidosis subacuta et chronica</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A24.3</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Muu melioidoos</name-est>
+            <name-lat>Alia melioidosis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A24.4</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata melioidoos</name-est>
+            <name-lat>Melioidosis non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Teisiti täpsustamata Pseudomonas pseudomallei nakkus</name-est>
+            <name-lat>Infectio a Pseudomonade pseudomallei NAS</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Whitmore'i tõbi</name-est>
+            <name-lat>Morbus Whitmore</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A25</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Rotihammustuspalavikud</name-est>
+          <name-lat>Febres morsus muris</name-lat>
+          <name-eng>Rat-bite fevers</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A25.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Spirilloos</name-est>
+            <name-lat>Spirillosis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Sodoku</name-est>
+            <name-lat>Morbus sodoku</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A25.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Streptobatsilloos</name-est>
+            <name-lat>Streptobacillosis</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Epideemiline artriiterüteem</name-est>
+            <name-lat>Erythema arthriticum epidemicum</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>3</hidden>
+            <name-est>Haverhilli palavik</name-est>
+            <name-lat>Febris Haverhill</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>4</hidden>
+            <name-est>Streptobatsillaarne rotihammustuspalavik</name-est>
+            <name-lat>Febris morsus muris streptobacillaris</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A25.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata rotihammustuspalavik</name-est>
+            <name-lat>Febris morsus muris non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A26</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Erüsipeloid</name-est>
+          <name-lat>Erysipeloidum</name-lat>
+          <name-eng>Erysipeloid</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A26.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Nahaerüsipeloid</name-est>
+            <name-lat>Erysipeloidum cutaneum</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Ränderüteem</name-est>
+            <name-lat>Erythema migrans</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A26.7</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Erysipelothrix'i septitseemia</name-est>
+            <name-lat>Septicaemia ab Erysipelothrice</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A26.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Erüsipeloidi muud vormid</name-est>
+            <name-lat>Aliae formae erysipeloidi</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A26.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata erüsipeloid</name-est>
+            <name-lat>Erysipeloidum non specificatum</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A27</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Leptospiroos</name-est>
+          <name-lat>Leptospirosis</name-lat>
+          <name-eng>Leptospirosis</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A27.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Ikterohemorraagiline leptospiroos</name-est>
+            <name-lat>Leptospirosis icterohaemorrhagica</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Leptospira interrogans serovar icterohaemorrhagiae leptospiroos</name-est>
+            <name-lat>Leptospirosis a Leptospira interrogante serovar icterohaemorrhagiae</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A27.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Leptospiroosi muud vormid</name-est>
+            <name-lat>Aliae formae leptospirosis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A27.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata leptospiroos</name-est>
+            <name-lat>Leptospirosis non specificata</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+      <subsection>
+        <code>A28</code>
+        <object>
+          <hidden>1</hidden>
+          <name-est>Muud mujal klassifitseerimata bakterzoonoosid</name-est>
+          <name-lat>Alii morbi bacteriales zoonotici, non alibi classificati</name-lat>
+          <name-eng>Other zoonotic bacterial diseases, not elsewhere classified</name-eng>
+          <add_code></add_code>
+        </object>
+        <item>
+          <code>A28.0</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Pasteurelloos</name-est>
+            <name-lat>Pasteurellosis</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A28.1</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Kassikriimustustõbi</name-est>
+            <name-lat>Morbus e cnesmate felino</name-lat>
+            <add_code></add_code>
+          </object>
+          <object>
+            <hidden>2</hidden>
+            <name-est>Kassikriimustuspalavik</name-est>
+            <name-lat>Febris e cnesmate felino</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A28.2</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Sooleväline jersinioos</name-est>
+            <name-lat>Yersiniosis extraintestinalis</name-lat>
+            <add_code></add_code>
+          </object>
+          <exclude>
+            <code>A04.6</code>
+            <text>Yersinia enterocolitica enteriit</text>
+          </exclude>
+          <exclude>
+            <code>A20.**</code>
+            <text>Katk</text>
+          </exclude>
+        </item>
+        <item>
+          <code>A28.8</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Mujal klassifitseerimata muud täpsustatud bakterzoonoosid</name-est>
+            <name-lat>Alii morbi bacteriales zoonotici specificati, non alibi classificati</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+        <item>
+          <code>A28.9</code>
+          <object>
+            <hidden>1</hidden>
+            <name-est>Täpsustamata bakterzoonoos</name-est>
+            <name-lat>Morbus bacterialis zoonoticus non specificatus</name-lat>
+            <add_code></add_code>
+          </object>
+        </item>
+      </subsection>
+    </section>
+  </chapter>
+</classifier>

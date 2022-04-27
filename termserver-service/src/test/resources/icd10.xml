@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ClaML version="2.0.0">
+  <Class code="A00-A09" kind="block">
+    <SuperClass code="I"/>
+    <SubClass code="A00"/>
+    <SubClass code="A01"/>
+    <SubClass code="A02"/>
+    <SubClass code="A03"/>
+    <SubClass code="A04"/>
+    <SubClass code="A05"/>
+    <SubClass code="A06"/>
+    <SubClass code="A07"/>
+    <SubClass code="A08"/>
+    <SubClass code="A09"/>
+    <Rubric id="id-icd10_20190322-1587556953279-592" kind="preferred">
+      <Label xml:lang="en" xml:space="default">Intestinal infectious diseases</Label>
+    </Rubric>
+  </Class>
+  <Class code="A00" kind="category">
+    <Meta name="MortBCode" value="001"/>
+    <Meta name="MortL4Code" value="4-002"/>
+    <Meta name="MortL3Code" value="3-003"/>
+    <Meta name="MortL2Code" value="2-001"/>
+    <Meta name="MortL1Code" value="1-002"/>
+    <SuperClass code="A00-A09"/>
+    <SubClass code="A00.0"/>
+    <SubClass code="A00.1"/>
+    <SubClass code="A00.9"/>
+    <Rubric id="id-icd10_20190322-1587556953279-593" kind="preferred">
+      <Label xml:lang="en" xml:space="default">Cholera</Label>
+    </Rubric>
+  </Class>
+  <Class code="A00.0" kind="category">
+    <Meta name="MortBCode" value="001"/>
+    <Meta name="MortL4Code" value="4-002"/>
+    <Meta name="MortL3Code" value="3-003"/>
+    <Meta name="MortL2Code" value="2-001"/>
+    <Meta name="MortL1Code" value="1-002"/>
+    <SuperClass code="A00"/>
+    <Rubric id="id-icd10_20190322-1587556953279-594" kind="preferred">
+      <Label xml:lang="en" xml:space="default">Cholera due to Vibrio cholerae 01, biovar cholerae</Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-595" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">Classical cholera</Label>
+    </Rubric>
+  </Class>
+  <Class code="A00.1" kind="category">
+    <Meta name="MortBCode" value="001"/>
+    <Meta name="MortL4Code" value="4-002"/>
+    <Meta name="MortL3Code" value="3-003"/>
+    <Meta name="MortL2Code" value="2-001"/>
+    <Meta name="MortL1Code" value="1-002"/>
+    <SuperClass code="A00"/>
+    <Rubric id="id-icd10_20190322-1587556953279-596" kind="preferred">
+      <Label xml:lang="en" xml:space="default">Cholera due to Vibrio cholerae 01, biovar eltor</Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-597" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">Cholera eltor</Label>
+    </Rubric>
+  </Class>
+  <Class code="A00.9" kind="category">
+    <Meta name="MortBCode" value="001"/>
+    <Meta name="MortL4Code" value="4-002"/>
+    <Meta name="MortL3Code" value="3-003"/>
+    <Meta name="MortL2Code" value="2-001"/>
+    <Meta name="MortL1Code" value="1-002"/>
+    <SuperClass code="A00"/>
+    <Rubric id="id-icd10_20190322-1587556953279-598" kind="preferred">
+      <Label xml:lang="en" xml:space="default">Cholera, unspecified</Label>
+    </Rubric>
+  </Class>
+  <Class code="A02" kind="category">
+    <Meta name="MortBCode" value="006"/>
+    <Meta name="MortL4Code" value="4-002"/>
+    <Meta name="MortL3Code" value="3-003"/>
+    <Meta name="MortL2Code" value="2-003"/>
+    <Meta name="MortL1Code" value="1-004"/>
+    <SuperClass code="A00-A09"/>
+    <SubClass code="A02.0"/>
+    <SubClass code="A02.1"/>
+    <SubClass code="A02.2"/>
+    <SubClass code="A02.8"/>
+    <SubClass code="A02.9"/>
+    <Rubric id="id-icd10_20190322-1587556953279-607" kind="preferred">
+      <Label xml:lang="en" xml:space="default">Other salmonella infections</Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-608" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">infection or foodborne intoxication due to any Salmonella species other than S. typhi and S. paratyphi</Label>
+    </Rubric>
+  </Class>
+  <Class code="A02.2" kind="category">
+    <Meta name="MortBCode" value="006"/>
+    <Meta name="MortL4Code" value="4-002"/>
+    <Meta name="MortL3Code" value="3-003"/>
+    <Meta name="MortL2Code" value="2-003"/>
+    <Meta name="MortL1Code" value="1-004"/>
+    <SuperClass code="A02"/>
+    <Rubric id="id-icd10_20190322-1587556953279-612" kind="preferred">
+      <Label xml:lang="en" xml:space="default">Localized salmonella infections</Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-613" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Salmonella:</Fragment>
+        <Fragment type="list" usage="dagger">arthritis<Reference class="in brackets" usage="aster">M01.3</Reference></Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-614" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Salmonella:</Fragment>
+        <Fragment type="list" usage="dagger">meningitis<Reference class="in brackets" usage="aster">G01</Reference></Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-615" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Salmonella:</Fragment>
+        <Fragment type="list" usage="dagger">osteomyelitis<Reference class="in brackets" usage="aster">M90.2</Reference></Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-616" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Salmonella:</Fragment>
+        <Fragment type="list" usage="dagger">pneumonia<Reference class="in brackets" usage="aster">J17.0</Reference></Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-617" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Salmonella:</Fragment>
+        <Fragment type="list" usage="dagger">renal tubulo-interstitial disease<Reference class="in brackets" usage="aster">N16.0</Reference></Fragment>
+      </Label>
+    </Rubric>
+  </Class>
+  <Class code="A50" kind="category">
+    <Meta name="MortBCode" value="019"/>
+    <Meta name="MortL4Code" value="4-014"/>
+    <Meta name="MortL3Code" value="3-015"/>
+    <Meta name="MortL2Code" value="2-012"/>
+    <Meta name="MortL1Code" value="1-013"/>
+    <SuperClass code="A50-A64"/>
+    <SubClass code="A50.0"/>
+    <SubClass code="A50.1"/>
+    <SubClass code="A50.2"/>
+    <SubClass code="A50.3"/>
+    <SubClass code="A50.4"/>
+    <SubClass code="A50.5"/>
+    <SubClass code="A50.6"/>
+    <SubClass code="A50.7"/>
+    <SubClass code="A50.9"/>
+    <Rubric id="id-icd10_20190322-1587556953279-1198" kind="preferred">
+      <Label xml:lang="en" xml:space="default">Congenital syphilis</Label>
+    </Rubric>
+  </Class>
+  <Class code="A50.0" kind="category">
+    <Meta name="MortBCode" value="019"/>
+    <Meta name="MortL4Code" value="4-014"/>
+    <Meta name="MortL3Code" value="3-015"/>
+    <Meta name="MortL2Code" value="2-012"/>
+    <Meta name="MortL1Code" value="1-013"/>
+    <SuperClass code="A50"/>
+    <Rubric id="id-icd10_20190322-1587556953279-1199" kind="preferred">
+      <Label xml:lang="en" xml:space="default">Early congenital syphilis, symptomatic</Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-1200" kind="text">
+      <Label xml:lang="en" xml:space="default">
+        <Para type="is">Any congenital syphilitic condition specified as early or manifest less than two years after birth.</Para>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-1201" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Early congenital syphilis:</Fragment>
+        <Fragment type="list">cutaneous</Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-1202" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Early congenital syphilis:</Fragment>
+        <Fragment type="list">mucocutaneous</Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-1203" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Early congenital syphilis:</Fragment>
+        <Fragment type="list">visceral</Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-1204" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Early congenital syphilitic:</Fragment>
+        <Fragment type="list">laryngitis</Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-1205" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Early congenital syphilitic:</Fragment>
+        <Fragment type="list">oculopathy</Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-1206" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Early congenital syphilitic:</Fragment>
+        <Fragment type="list">osteochondropathy</Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-1207" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Early congenital syphilitic:</Fragment>
+        <Fragment type="list">pharyngitis</Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-1208" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Early congenital syphilitic:</Fragment>
+        <Fragment type="list">pneumonia</Fragment>
+      </Label>
+    </Rubric>
+    <Rubric id="id-icd10_20190322-1587556953279-1209" kind="inclusion">
+      <Label xml:lang="en" xml:space="default">
+        <Fragment type="list">Early congenital syphilitic:</Fragment>
+        <Fragment type="list">rhinitis</Fragment>
+      </Label>
+    </Rubric>
+  </Class>
+</ClaML>

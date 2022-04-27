@@ -20,8 +20,8 @@ public class AtcEstMapper {
 
   public static Concept createRootConcept(ImportConfiguration configuration, List<EntityProperty> properties) {
     Designation designation = new Designation();
-    designation.setName("ATC est classification");
-    designation.setLanguage(Language.en);
+    designation.setName("ATC est klassifikatsioon");
+    designation.setLanguage(Language.et);
     designation.setCaseSignificance(CaseSignificance.entire_term_case_insensitive);
     designation.setDesignationKind("text");
     designation.setDesignationTypeId(properties.stream().filter(p -> p.getName().equals("term")).findFirst().map(EntityProperty::getId).orElse(null));
@@ -59,7 +59,7 @@ public class AtcEstMapper {
     Long term = properties.stream().filter(p -> p.getName().equals("term")).findFirst().map(EntityProperty::getId).orElse(null);
     Designation designation = new Designation();
     designation.setName(atc.getName());
-    designation.setLanguage(Language.en);
+    designation.setLanguage(Language.et);
     designation.setCaseSignificance(CaseSignificance.entire_term_case_insensitive);
     designation.setDesignationKind("text");
     designation.setStatus(PublicationStatus.active);

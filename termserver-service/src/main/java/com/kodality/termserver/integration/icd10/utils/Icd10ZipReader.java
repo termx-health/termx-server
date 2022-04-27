@@ -6,6 +6,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.Charset;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.xml.stream.XMLInputFactory;
@@ -50,7 +52,7 @@ public class Icd10ZipReader {
         }
         streamReader.next();
       }
-      return MAPPER.readValue(object, Icd10.class);
+      return MAPPER.readValue(prepare(object), Icd10.class);
     } catch (Exception e) {
       throw new RuntimeException("Failed to read xml", e);
     } finally {
@@ -62,5 +64,20 @@ public class Icd10ZipReader {
         }
       }
     }
+  }
+
+  private String prepare(String object) {
+    object = object.replace(", , , ", "").replace(", , ", "");
+    String rx = "<Reference.*?>(.*?)</Reference>";
+
+    StringBuilder sb = new StringBuilder();
+    Pattern p = Pattern.compile(rx);
+    Matcher m = p.matcher(object);
+    while (m.find()) {
+      m.appendReplacement(sb, "(" + m.group(1) + ")");
+    }
+    m.appendTail(sb);
+
+    return sb.toString();
   }
 }

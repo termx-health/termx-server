@@ -1,6 +1,5 @@
 package com.kodality.termserver.integration.icd10;
 
-
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termserver.Language;
 import com.kodality.termserver.association.AssociationType;

@@ -79,8 +79,6 @@ public class Icd10 {
     @JacksonXmlElementWrapper(useWrapping = false)
     @JacksonXmlProperty(localName = "Para")
     private List<Para> para;
-    @JacksonXmlProperty(localName = "Reference")
-    private List<String> reference;
     @JacksonXmlText
     private String value;
   }
@@ -92,8 +90,6 @@ public class Icd10 {
   public static class Fragment {
     @JacksonXmlProperty(localName = "type", isAttribute = true)
     private String type;
-    @JacksonXmlProperty(localName = "Reference")
-    private List<Reference> reference;
     @JacksonXmlText
     private String value;
   }
@@ -103,24 +99,8 @@ public class Icd10 {
   @ToString
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class Para {
-    @JacksonXmlElementWrapper(useWrapping = false)
-    @JacksonXmlProperty(localName = "Reference")
-    private List<Reference> reference;
     @JacksonXmlProperty(localName = "type", isAttribute = true)
     private String type;
-    @JacksonXmlText
-    private String value;
-  }
-
-  @Getter
-  @Setter
-  @ToString
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  public static class Reference {
-    @JacksonXmlProperty(localName = "class", isAttribute = true)
-    private String clas;
-    @JacksonXmlProperty(localName = "code", isAttribute = true)
-    private String code;
     @JacksonXmlText
     private String value;
   }

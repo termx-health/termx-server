@@ -6,5 +6,4 @@ public class Icd10Configuration {
   public static final String version = "10";
   public static final String codeSystem = "icd-10-int";
   public static final String codeSystemDescription = "International Statistical Classification of Diseases and Related Health Problems 10th Revision";
-
 }

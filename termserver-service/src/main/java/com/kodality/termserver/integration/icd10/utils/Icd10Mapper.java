@@ -10,8 +10,8 @@ import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.integration.common.ImportConfiguration;
 import com.kodality.termserver.integration.icd10.utils.Icd10.Class;
+import com.kodality.termserver.integration.icd10.utils.Icd10.Fragment;
 import com.kodality.termserver.integration.icd10.utils.Icd10.Para;
-import com.kodality.termserver.integration.icd10.utils.Icd10.Reference;
 import com.kodality.termserver.integration.icd10.utils.Icd10.Rubric;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +81,7 @@ public class Icd10Mapper {
     association.setCodeSystem(configuration.getCodeSystem());
     association.setAssociationType("is-a");
     association.setStatus(PublicationStatus.active);
-    association.setTargetCode(diagnosis.getSuperClass() == null || diagnosis.getSuperClass().getCode() == null ? "classification" : diagnosis.getSuperClass().getCode());
+    association.setTargetCode(diagnosis.getSuperClass() == null || diagnosis.getSuperClass().getCode() == null || !p.matcher(diagnosis.getSuperClass().getCode()).matches() ? "classification" : diagnosis.getSuperClass().getCode());
     associations.add(association);
     return associations;
   }
@@ -112,43 +112,23 @@ public class Icd10Mapper {
   }
 
   private static String mapLabel(Rubric rubric) {
-    String labelValue = mapLabelValue(rubric);
-    if (labelValue != null) {
-      return labelValue;
-    }
+    String labelValue = rubric.getLabel().getValue() == null ? "" : rubric.getLabel().getValue();
     if (rubric.getLabel().getFragment() != null) {
-      return mapLabelFragment(rubric);
+      String fragment = mapLabelFragment(rubric);
+      labelValue = fragment == null ? labelValue : labelValue + " " + fragment;
     }
     if (rubric.getLabel().getPara() != null) {
-      return mapLabelPara(rubric);
+      String para = mapLabelPara(rubric);
+      labelValue = para == null ? labelValue : labelValue + " " + para;
     }
-    return null;
-  }
-
-  private static String mapLabelValue(Rubric rubric) {
-    if (rubric.getLabel().getValue() == null && rubric.getLabel().getReference() == null) {
-      return null;
-    }
-    List<String> labelValue = new ArrayList<>();
-    if (rubric.getLabel().getValue() != null) {
-      labelValue.add(rubric.getLabel().getValue());
-    }
-    if (rubric.getLabel().getReference() != null) {
-      labelValue.addAll(rubric.getLabel().getReference());
-    }
-    return String.join(" ", labelValue);
+    return labelValue;
   }
 
   private static String mapLabelFragment(Rubric rubric) {
     return rubric.getLabel().getFragment()
         .stream().filter(Objects::nonNull)
-        .map(fragment -> {
-          if (fragment.getReference() == null) {
-            return fragment.getValue();
-          }
-          String references = fragment.getReference().stream().filter(Objects::nonNull).map(Reference::getValue).collect(Collectors.joining(" "));
-          return fragment.getValue() + " " + references;
-        }).collect(Collectors.joining(" "));
+        .map(Fragment::getValue)
+        .collect(Collectors.joining(" "));
   }
 
   private static String mapLabelPara(Rubric rubric) {
