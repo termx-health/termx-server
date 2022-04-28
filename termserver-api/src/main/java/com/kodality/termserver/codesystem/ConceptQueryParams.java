@@ -10,7 +10,9 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ConceptQueryParams extends QueryParams {
   private String code;
+  private String codeEq;
   private String codeSystem;
+  private String codeSystemUri;
   private String codeSystemVersion;
   private String valueSet;
   private String valueSetVersion;

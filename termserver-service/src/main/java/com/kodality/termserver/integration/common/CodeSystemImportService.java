@@ -1,8 +1,9 @@
 package com.kodality.termserver.integration.common;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.Language;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.association.AssociationType;
+import com.kodality.termserver.association.AssociationTypeService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
@@ -31,72 +32,62 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Singleton
 @RequiredArgsConstructor
-public class TerminologyImportService {
+public class CodeSystemImportService {
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
   private final EntityPropertyService entityPropertyService;
+  private final AssociationTypeService associationTypeService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   @Transactional
-  public CodeSystemVersion prepareCodeSystemAndVersion(ImportConfiguration configuration) {
+  public CodeSystemVersion prepareCodeSystemAndVersion(CodeSystem codeSystem) {
     log.info("Checking, the code system and version exists");
-    Optional<CodeSystem> codeSystem = codeSystemService.get(configuration.getCodeSystem());
-    if (codeSystem.isEmpty()) {
-      log.info("Code system {} does not exist, creating new", configuration.getCodeSystem());
-      createCodeSystem(configuration);
+    Optional<CodeSystem> existingCodeSystem = codeSystemService.get(codeSystem.getId());
+    if (existingCodeSystem.isEmpty()) {
+      log.info("Code system {} does not exist, creating new", codeSystem.getId());
+      codeSystemService.create(codeSystem);
     }
 
-    Optional<CodeSystemVersion> version = codeSystemVersionService.getVersion(configuration.getCodeSystem(), configuration.getVersion());
-    if (version.isPresent() && version.get().getStatus().equals(PublicationStatus.active)) {
-      throw ApiError.TE105.toApiException(Map.of("version", configuration.getVersion()));
+    CodeSystemVersion version = codeSystem.getVersions().get(0);
+    Optional<CodeSystemVersion> existingVersion = codeSystemVersionService.getVersion(version.getCodeSystem(), version.getVersion());
+    if (existingVersion.isPresent() && existingVersion.get().getStatus().equals(PublicationStatus.active)) {
+      throw ApiError.TE105.toApiException(Map.of("version", version.getVersion()));
     }
-    log.info("Saving code system version {}", configuration.getVersion());
-    return saveCodeSystemVersion(configuration, version.map(CodeSystemVersion::getId).orElse(null));
-  }
-
-  private void createCodeSystem(ImportConfiguration configuration) {
-    CodeSystem codeSystem = new CodeSystem();
-    codeSystem.setId(configuration.getCodeSystem());
-    codeSystem.setUri(configuration.getUri());
-    codeSystem.setNames(configuration.getCodeSystemName());
-    codeSystem.setDescription(configuration.getCodeSystemDescription());
-    codeSystemService.create(codeSystem);
-  }
-
-  private CodeSystemVersion saveCodeSystemVersion(ImportConfiguration configuration, Long id) {
-    CodeSystemVersion version = new CodeSystemVersion();
-    version.setId(id);
-    version.setCodeSystem(configuration.getCodeSystem());
-    version.setVersion(configuration.getVersion());
-    version.setSource(configuration.getSource());
-    version.setPreferredLanguage(Language.en);
-    version.setSupportedLanguages(List.of(Language.en));
-    version.setDescription(configuration.getCodeSystemVersionDescription());
-    version.setStatus(PublicationStatus.draft);
-    version.setReleaseDate(configuration.getValidFrom());
-    version.setExpirationDate(configuration.getValidTo());
+    log.info("Saving code system version {}", version.getVersion());
+    version.setId(existingVersion.map(CodeSystemVersion::getId).orElse(null));
     codeSystemVersionService.save(version);
     return version;
   }
 
-  public List<EntityProperty> prepareProperties(ImportConfiguration configuration, List<String> properties) {
+  public List<EntityProperty> prepareProperties(List<EntityProperty> properties, String codeSystem) {
     List<EntityProperty> existingProperties = entityPropertyService.query(new EntityPropertyQueryParams()
-        .setNames(StringUtils.join(properties, ","))
-        .setCodeSystem(configuration.getCodeSystem())).getData();
+        .setNames(StringUtils.join(properties.stream().map(EntityProperty::getName), ","))
+        .setCodeSystem(codeSystem)).getData();
     List<EntityProperty> entityProperties = new ArrayList<>(existingProperties);
     properties.forEach(p -> {
-      Optional<EntityProperty> existing = existingProperties.stream().filter(ep -> ep.getName().equals(p)).findFirst();
+      Optional<EntityProperty> existing = existingProperties.stream().filter(ep -> ep.getName().equals(p.getName())).findFirst();
       if (existing.isEmpty()) {
-        entityProperties.add(new EntityProperty().setName(p).setStatus(PublicationStatus.active));
+        entityProperties.add(p);
       }
     });
-    return entityPropertyService.save(entityProperties, configuration.getCodeSystem());
+    return entityPropertyService.save(entityProperties, codeSystem);
+  }
+
+  public void prepareAssociationType(String code, String kind) {
+    if (code == null) {
+      return;
+    }
+    AssociationType associationType = new AssociationType();
+    associationType.setCode(code);
+    associationType.setDirected(true);
+    associationType.setAssociationKind(kind);
+    associationTypeService.save(associationType);
   }
 
   @Transactional
-  public void importConcepts(List<Concept> concepts, CodeSystemVersion version, ImportConfiguration configuration) {
+  public void importConcepts(List<Concept> concepts, CodeSystemVersion version) {
     log.info("Creating '{}' concepts", concepts.size());
     concepts.forEach(concept -> {
       conceptService.save(concept, version.getCodeSystem());
@@ -114,12 +105,11 @@ public class TerminologyImportService {
       codeSystemAssociationService.save(associations, concept.getVersions().get(0).getId());
     });
 
-    log.info("Activating version '{}' in code system '{}'", configuration.getCodeSystem(), configuration.getVersion());
-    codeSystemVersionService.activate(configuration.getCodeSystem(), configuration.getVersion());
+    log.info("Activating version '{}' in code system '{}'", version.getCodeSystem(), version.getVersion());
+    codeSystemVersionService.activate(version.getCodeSystem(), version.getVersion());
 
     log.info("Import finished.");
   }
-
 
   private List<CodeSystemAssociation> prepareCodeSystemAssociations(List<CodeSystemAssociation> associations, Long versionId) {
     if (associations == null) {

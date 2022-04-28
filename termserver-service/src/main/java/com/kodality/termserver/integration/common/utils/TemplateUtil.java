@@ -1,4 +1,4 @@
-package com.kodality.termserver.integration.common;
+package com.kodality.termserver.integration.common.utils;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -1,4 +1,4 @@
-package com.kodality.termserver.integration.common;
+package com.kodality.termserver.integration.common.utils;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;

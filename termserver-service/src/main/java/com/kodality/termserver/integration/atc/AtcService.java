@@ -3,15 +3,13 @@ package com.kodality.termserver.integration.atc;
 
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termserver.Language;
-import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
-import com.kodality.termserver.association.AssociationTypeService;
 import com.kodality.termserver.integration.atc.utils.AtcMapper;
 import com.kodality.termserver.integration.atc.utils.AtcResponseParser;
 import com.kodality.termserver.integration.common.ImportConfiguration;
-import com.kodality.termserver.integration.common.TerminologyImportService;
+import com.kodality.termserver.integration.common.CodeSystemImportService;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -32,22 +30,20 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AtcService {
 
-  private final TerminologyImportService importService;
-  private final AssociationTypeService associationTypeService;
+  private final CodeSystemImportService importService;
 
   @Transactional
   public void importAtc(ImportConfiguration configuration) {
     prepareConfiguration(configuration);
 
-    CodeSystemVersion version = importService.prepareCodeSystemAndVersion(configuration);
-    List<EntityProperty> properties = importService.prepareProperties(configuration, List.of("term"));
-    prepareAssociations();
+    CodeSystemVersion version = importService.prepareCodeSystemAndVersion(AtcMapper.mapCodeSystem(configuration));
+    List<EntityProperty> properties = importService.prepareProperties(AtcMapper.mapProperties(), configuration.getCodeSystem());
+    importService.prepareAssociationType("is-a", "code-system-hierarchy");
 
     Map<String, String> atc = AtcResponseParser.parse(getResource());
     List<Concept> concepts = AtcMapper.mapConcepts(atc, configuration, properties);
-    concepts.add(0, AtcMapper.createRootConcept(configuration, properties));
 
-    importService.importConcepts(concepts, version, configuration);
+    importService.importConcepts(concepts, version);
   }
 
   private String getResource() {
@@ -66,15 +62,6 @@ public class AtcService {
         .header("Content-Type", "application/x-www-form-urlencoded")
         .POST(HttpRequest.BodyPublishers.ofString("code=ATC+code&name=%%%&namesearchtype=containing"))
         .build();
-  }
-
-  private void prepareAssociations() {
-    AssociationType associationType = new AssociationType();
-    associationType.setCode("is-a");
-    associationType.setForwardName("Is a");
-    associationType.setDirected(true);
-    associationType.setAssociationKind("code-system-hierarchy");
-    associationTypeService.save(associationType);
   }
 
   private void prepareConfiguration(ImportConfiguration configuration) {

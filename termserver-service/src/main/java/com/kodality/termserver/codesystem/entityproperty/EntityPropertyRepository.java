@@ -20,6 +20,7 @@ public class EntityPropertyRepository extends BaseRepository {
     ssb.property("id", entityProperty.getId());
     ssb.property("code_system", codeSystem);
     ssb.property("name", entityProperty.getName());
+    ssb.property("type", entityProperty.getType());
     ssb.property("description", entityProperty.getDescription());
     ssb.property("status", entityProperty.getStatus());
     ssb.property("created", entityProperty.getCreated());

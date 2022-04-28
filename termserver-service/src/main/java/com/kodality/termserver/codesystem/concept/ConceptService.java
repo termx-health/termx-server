@@ -39,7 +39,7 @@ public class ConceptService {
     return query(new ConceptQueryParams()
         .setCodeSystem(codeSystem)
         .setCodeSystemVersion(codeSystemVersion)
-        .setCode(code)).findFirst().map(c -> decorate(c, codeSystemVersion));
+        .setCodeEq(code)).findFirst().map(c -> decorate(c, codeSystemVersion));
   }
 
   private Concept decorate(Concept concept, String codeSystemVersion) {

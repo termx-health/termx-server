@@ -9,6 +9,6 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class EntityPropertyValue {
   private Long id;
-  private String value;
+  private Object value;
   private Long entityPropertyId;
 }

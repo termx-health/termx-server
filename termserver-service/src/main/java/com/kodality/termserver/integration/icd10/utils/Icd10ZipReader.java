@@ -1,7 +1,7 @@
 package com.kodality.termserver.integration.icd10.utils;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.kodality.termserver.integration.common.MapperUtil;
+import com.kodality.termserver.integration.common.utils.XmlMapperUtil;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
@@ -19,7 +19,7 @@ import org.apache.commons.io.IOUtils;
 
 @Slf4j
 public class Icd10ZipReader {
-  private static final XmlMapper MAPPER = MapperUtil.getMapper();
+  private static final XmlMapper MAPPER = XmlMapperUtil.getMapper();
   private static final XMLInputFactory XML_INPUT_FACTORY = XMLInputFactory.newFactory();
 
   public Icd10 handleZipPack(byte[] bytes) {

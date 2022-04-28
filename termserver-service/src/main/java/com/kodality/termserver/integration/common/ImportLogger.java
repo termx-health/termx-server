@@ -11,6 +11,10 @@ import lombok.RequiredArgsConstructor;
 public class ImportLogger {
   private final JobLogService jobLogService;
 
+  public JobLogResponse createJob(String type) {
+    return createJob(null, type);
+  }
+
   public JobLogResponse createJob(String source, String type) {
     JobDefinition jobDefinition = new JobDefinition();
     jobDefinition.setType(type);

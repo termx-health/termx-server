@@ -69,6 +69,7 @@ create table entity_property (
     id                  bigint      default nextval('core.s_entity') primary key,
     code_system         text                      not null,
     name                text                      not null,
+    type                text                      not null,
     description         text,
     status              text                      not null,
     created             timestamptz default now() not null,

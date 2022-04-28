@@ -33,12 +33,12 @@ public class DesignationRepository extends BaseRepository {
 
   private SqlBuilder filter(DesignationQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and exists( select 1 from value_set_version vsv where vsv.value_set = ? and vsv.sys_status = 'A' " +
+    sb.appendIfNotNull("and exists( select 1 from value_set_version vsv " +
         "inner join designation_value_set_version_membership dvsvm on dvsvm.value_set_version_id = vsv.id and dvsvm.sys_status = 'A' " +
-        "where dvsvm.designation_id = d.id)", params.getValueSet());
-    sb.appendIfNotNull("and exists( select 1 from value_set_version vsv where vsv.version = ? and vsv.sys_status = 'A' " +
+        "where vsv.value_set = ? and vsv.sys_status = 'A' and dvsvm.designation_id = d.id)", params.getValueSet());
+    sb.appendIfNotNull("and exists( select 1 from value_set_version vsv " +
         "inner join designation_value_set_version_membership dvsvm on dvsvm.value_set_version_id = vsv.id and dvsvm.sys_status = 'A' " +
-        "where dvsvm.designation_id = d.id)", params.getValueSetVersion());
+        "where vsv.version = ? and vsv.sys_status = 'A' and dvsvm.designation_id = d.id)", params.getValueSetVersion());
     return sb;
   }
 

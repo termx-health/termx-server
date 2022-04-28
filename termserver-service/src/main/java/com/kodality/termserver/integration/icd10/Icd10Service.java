@@ -2,14 +2,12 @@ package com.kodality.termserver.integration.icd10;
 
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termserver.Language;
-import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
-import com.kodality.termserver.association.AssociationTypeService;
 import com.kodality.termserver.integration.common.BinaryHttpClient;
 import com.kodality.termserver.integration.common.ImportConfiguration;
-import com.kodality.termserver.integration.common.TerminologyImportService;
+import com.kodality.termserver.integration.common.CodeSystemImportService;
 import com.kodality.termserver.integration.icd10.utils.Icd10;
 import com.kodality.termserver.integration.icd10.utils.Icd10Mapper;
 import com.kodality.termserver.integration.icd10.utils.Icd10ZipReader;
@@ -26,35 +24,25 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @RequiredArgsConstructor
 public class Icd10Service {
-  private final TerminologyImportService importService;
-  private final AssociationTypeService associationTypeService;
-  private final BinaryHttpClient binaryHttpClient = new BinaryHttpClient();
+  private final CodeSystemImportService importService;
+  private final BinaryHttpClient client = new BinaryHttpClient();
 
   @Transactional
   public void importIcd10(String url, ImportConfiguration configuration) {
     prepareConfiguration(configuration);
 
-    CodeSystemVersion version = importService.prepareCodeSystemAndVersion(configuration);
-    List<EntityProperty> properties = importService.prepareProperties(configuration, List.of("term", "synonym"));
-    prepareAssociations();
+    CodeSystemVersion version = importService.prepareCodeSystemAndVersion(Icd10Mapper.mapCodeSystem(configuration));
+    List<EntityProperty> properties = importService.prepareProperties(Icd10Mapper.mapProperties(), configuration.getCodeSystem());
+    importService.prepareAssociationType("is-a", "code-system-hierarchy");
 
     Icd10 diagnoses = new Icd10ZipReader().handleZipPack(getResource(url));
     List<Concept> concepts = Icd10Mapper.mapConcepts(diagnoses, configuration, properties);
-    importService.importConcepts(concepts, version, configuration);
+    importService.importConcepts(concepts, version);
   }
 
   private byte[] getResource(String url) {
     log.info("Loading ICD-10 ZIP from {}", url);
-    return binaryHttpClient.GET(url).body();
-  }
-
-  private void prepareAssociations() {
-    AssociationType associationType = new AssociationType();
-    associationType.setCode("is-a");
-    associationType.setForwardName("Is a");
-    associationType.setDirected(true);
-    associationType.setAssociationKind("code-system-hierarchy");
-    associationTypeService.save(associationType);
+    return client.GET(url).body();
   }
 
   private void prepareConfiguration(ImportConfiguration configuration) {

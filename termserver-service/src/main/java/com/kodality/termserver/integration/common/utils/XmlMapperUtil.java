@@ -1,4 +1,4 @@
-package com.kodality.termserver.integration.common;
+package com.kodality.termserver.integration.common.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonGenerator.Feature;
@@ -7,7 +7,7 @@ import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 
-public class MapperUtil {
+public class XmlMapperUtil {
 
   public static XmlMapper getMapper() {
     JacksonXmlModule xmlModule = new JacksonXmlModule();

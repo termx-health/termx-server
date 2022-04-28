@@ -2,7 +2,7 @@ package com.kodality.termserver.integration.atcest.utils;
 
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import com.kodality.termserver.integration.common.CsvMapperUtil;
+import com.kodality.termserver.integration.common.utils.CsvMapperUtil;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
