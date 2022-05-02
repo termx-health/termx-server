@@ -21,4 +21,9 @@ public class EntityPropertyValueService {
     repository.batchUpsert(values, codeSystemEntityVersionId);
   }
 
+  @Transactional
+  public void save(EntityPropertyValue value, Long codeSystemEntityVersionId) {
+    repository.save(value, codeSystemEntityVersionId);
+  }
+
 }

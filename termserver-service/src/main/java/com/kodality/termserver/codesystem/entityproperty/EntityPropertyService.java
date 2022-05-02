@@ -28,6 +28,13 @@ public class EntityPropertyService {
     return entityProperties;
   }
 
+  @Transactional
+  public EntityProperty save(EntityProperty entityProperty, String codeSystem) {
+    entityProperty.setCreated(entityProperty.getCreated() == null ? OffsetDateTime.now() : entityProperty.getCreated());
+    repository.save(entityProperty, codeSystem);
+    return entityProperty;
+  }
+
   public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {
     return repository.query(params);
   }

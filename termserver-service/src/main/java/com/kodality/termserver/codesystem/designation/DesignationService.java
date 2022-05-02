@@ -27,4 +27,9 @@ public class DesignationService {
     repository.batchUpsert(designations, codeSystemEntityVersionId);
   }
 
+  @Transactional
+  public void save(Designation designation, Long codeSystemEntityVersionId) {
+    repository.save(designation, codeSystemEntityVersionId);
+  }
+
 }

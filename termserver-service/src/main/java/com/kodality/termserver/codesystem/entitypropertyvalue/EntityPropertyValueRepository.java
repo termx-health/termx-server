@@ -2,7 +2,9 @@ package com.kodality.termserver.codesystem.entitypropertyvalue;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
+import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
 import java.util.List;
 import javax.inject.Singleton;
@@ -10,6 +12,18 @@ import javax.inject.Singleton;
 @Singleton
 public class EntityPropertyValueRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(EntityPropertyValue.class);
+
+  public void save(EntityPropertyValue value, Long codeSystemEntityVersionId) {
+    SaveSqlBuilder ssb = new SaveSqlBuilder();
+    ssb.property("id", value.getId());
+    ssb.property("entity_property_id", value.getEntityPropertyId());
+    ssb.property("code_system_entity_version_id", codeSystemEntityVersionId);
+    ssb.jsonProperty("value", value.getValue());
+
+    SqlBuilder sb = ssb.buildSave("entity_property_value", "id");
+    Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
+    value.setId(id);
+  }
 
   public List<EntityPropertyValue> loadAll(Long codeSystemEntityVersionId) {
     String sql = "select * from entity_property_value where sys_status = 'A' and code_system_entity_version_id = ?";
@@ -32,17 +46,17 @@ public class EntityPropertyValueRepository extends BaseRepository {
           upsert(new SqlBuilder("insert into entity_property_value (" +
                   "code_system_entity_version_id, " +
                   "entity_property_id, " +
-                  "value) select ?,?,?",
+                  "value) select ?,?,?::jsonb",
                   codeSystemEntityVersionId,
                   v.getEntityPropertyId(),
-                  v.getValue()
+                  JsonUtil.toJson(v.getValue())
               ),
               new SqlBuilder(
                   "UPDATE entity_property_value SET " +
                       "entity_property_id = ?, " +
-                      "value = ? where code_system_entity_version_id = ? and id = ? and sys_status = 'A'",
+                      "value = ?::jsonb where code_system_entity_version_id = ? and id = ? and sys_status = 'A'",
                   v.getEntityPropertyId(),
-                  v.getValue(),
+                  JsonUtil.toJson(v.getValue()),
                   codeSystemEntityVersionId,
                   v.getId()));
       jdbcTemplate.update(sb.getSql(), sb.getParams());

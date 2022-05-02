@@ -2,6 +2,7 @@ package com.kodality.termserver.codesystem.designation;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
+import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.Designation;
@@ -12,6 +13,25 @@ import java.util.List;
 @Singleton
 public class DesignationRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(Designation.class);
+
+  public void save(Designation designation, Long codeSystemEntityVersionId) {
+    SaveSqlBuilder ssb = new SaveSqlBuilder();
+    ssb.property("id", designation.getId());
+    ssb.property("code_system_entity_version_id", codeSystemEntityVersionId);
+    ssb.property("designation_type_id", designation.getDesignationTypeId());
+    ssb.property("name", designation.getName());
+    ssb.property("language", designation.getLanguage());
+    ssb.property("rendering", designation.getRendering());
+    ssb.property("preferred", designation.isPreferred());
+    ssb.property("case_significance", designation.getCaseSignificance());
+    ssb.property("designation_kind", designation.getDesignationKind());
+    ssb.property("description", designation.getDescription());
+    ssb.property("status", designation.getStatus());
+
+    SqlBuilder sb = ssb.buildSave("designation", "id");
+    Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
+    designation.setId(id);
+  }
 
   public List<Designation> loadAll(Long codeSystemEntityVersionId) {
     String sql = "select * from designation where sys_status = 'A' and code_system_entity_version_id = ?";

@@ -42,6 +42,10 @@ public class CodeSystemEntityVersionService {
     return version;
   }
 
+  public CodeSystemEntityVersion load(Long id) {
+    return repository.load(id);
+  }
+
   public QueryResult<CodeSystemEntityVersion> query(CodeSystemEntityVersionQueryParams params) {
     QueryResult<CodeSystemEntityVersion> versions = repository.query(params);
     versions.getData().forEach(this::decorate);

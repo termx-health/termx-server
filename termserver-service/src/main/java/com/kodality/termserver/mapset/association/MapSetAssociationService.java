@@ -1,6 +1,7 @@
 package com.kodality.termserver.mapset.association;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.mapset.MapSetAssociation;
 import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
@@ -19,6 +20,7 @@ public class MapSetAssociationService {
   private final MapSetAssociationRepository repository;
   private final MapSetEntityService mapSetEntityService;
   private final MapSetEntityVersionService mapSetEntityVersionService;
+  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   public QueryResult<MapSetAssociation> query(MapSetAssociationQueryParams params) {
     QueryResult<MapSetAssociation> associations = repository.query(params);
@@ -47,6 +49,8 @@ public class MapSetAssociationService {
         .setMapSetVersion(mapSetVersion)
         .setMapSet(association.getMapSet())).getData();
     association.setVersions(versions);
+    association.setSource(codeSystemEntityVersionService.load(association.getSource().getId()));
+    association.setTarget(codeSystemEntityVersionService.load(association.getTarget().getId()));
     return association;
   }
 

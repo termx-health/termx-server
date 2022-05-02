@@ -5,6 +5,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.concept.ConceptService;
 import com.kodality.termserver.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.codesystem.entityproperty.EntityPropertyService;
+import com.kodality.termserver.codesystem.supplement.CodeSystemSupplementService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -25,6 +26,7 @@ public class CodeSystemController {
   private final CodeSystemService codeSystemService;
   private final EntityPropertyService entityPropertyService;
   private final CodeSystemVersionService codeSystemVersionService;
+  private final CodeSystemSupplementService codeSystemSupplementService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   @Get(uri = "{?params*}")
@@ -133,6 +135,24 @@ public class CodeSystemController {
   public HttpResponse<?> saveEntityVersions(@PathVariable String codeSystem, @PathVariable String version, @Body EntityVersionRequest request) {
     codeSystemVersionService.saveEntityVersions(codeSystem, version, request.getVersions());
     return HttpResponse.ok();
+  }
+
+  @Get(uri = "/{codeSystem}/supplements")
+  public List<CodeSystemSupplement> getSupplements(@PathVariable String codeSystem) {
+    return codeSystemSupplementService.getSupplements(codeSystem);
+  }
+
+  @Post(uri = "/{codeSystem}/supplements")
+  public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @Body @Valid CodeSystemSupplement supplement) {
+    codeSystemSupplementService.save(supplement, codeSystem);
+    return HttpResponse.created(supplement);
+  }
+
+  @Put(uri = "/{codeSystem}/supplements/{id}")
+  public HttpResponse<?> updateSupplement(@PathVariable String codeSystem, @PathVariable Long id, @Body @Valid CodeSystemSupplement supplement) {
+    supplement.setId(id);
+    codeSystemSupplementService.save(supplement, codeSystem);
+    return HttpResponse.created(supplement);
   }
 
   @Getter

@@ -79,7 +79,7 @@ create table entity_property (
     sys_modified_by     text                      not null,
     sys_status          char(1)     default 'A'   not null collate "C",
     sys_version         int                       not null,
-    constraint code_system_entity_code_system_fk foreign key (code_system) references code_system(id)
+    constraint entity_property_code_system_fk foreign key (code_system) references code_system(id)
 );
 create index entity_property_code_system_idx on entity_property(code_system);
 
@@ -93,7 +93,7 @@ create table entity_property_value (
     id                              bigint      default nextval('core.s_entity') primary key,
     entity_property_id              bigint                    not null,
     code_system_entity_version_id   bigint                    not null,
-    value                           text                      not null,
+    value                           jsonb                     not null,
     sys_created_at                  timestamp                 not null,
     sys_created_by                  text                      not null,
     sys_modified_at                 timestamp                 not null,

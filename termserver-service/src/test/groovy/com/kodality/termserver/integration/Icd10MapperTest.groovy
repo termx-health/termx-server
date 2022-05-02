@@ -5,7 +5,7 @@ import com.kodality.commons.model.LocalizedName
 import com.kodality.termserver.codesystem.Concept
 import com.kodality.termserver.integration.common.ImportConfiguration
 import com.kodality.termserver.integration.common.MapperUtil
-import com.kodality.termserver.integration.common.TemplateUtil
+import com.kodality.termserver.integration.common.utils.TemplateUtil
 import com.kodality.termserver.integration.icd10.utils.Icd10
 import com.kodality.termserver.integration.icd10.utils.Icd10Mapper
 import spock.lang.Shared

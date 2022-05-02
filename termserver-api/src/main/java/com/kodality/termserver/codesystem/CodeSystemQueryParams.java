@@ -10,6 +10,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class CodeSystemQueryParams extends QueryParams {
   private String name;
+  private Long codeSystemEntityVersionId;
 
   private boolean decorated;
 }

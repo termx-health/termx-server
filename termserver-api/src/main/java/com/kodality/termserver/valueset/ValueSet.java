@@ -14,7 +14,6 @@ import lombok.experimental.Accessors;
 public class ValueSet {
   private String id;
   private LocalizedName names;
-  private String rule;
   private String description;
   private String status;
 

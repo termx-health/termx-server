@@ -28,6 +28,11 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     version.setId(id);
   }
 
+  public CodeSystemEntityVersion load(Long id) {
+    String sql = "select * from code_system_entity_version where sys_status = 'A' and id = ?";
+    return getBean(sql, bp, id);
+  }
+
   public QueryResult<CodeSystemEntityVersion> query(CodeSystemEntityVersionQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from code_system_entity_version csev where csev.sys_status = 'A'");
@@ -74,6 +79,5 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     String sql = "update code_system_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.retired, versionId, PublicationStatus.retired);
   }
-
 }
 

@@ -4,8 +4,8 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.kodality.commons.model.LocalizedName
 import com.kodality.termserver.codesystem.Concept
 import com.kodality.termserver.integration.common.ImportConfiguration
-import com.kodality.termserver.integration.common.MapperUtil
-import com.kodality.termserver.integration.common.TemplateUtil
+import com.kodality.termserver.integration.common.utils.TemplateUtil
+import com.kodality.termserver.integration.common.utils.XmlMapperUtil
 import com.kodality.termserver.integration.icd10est.utils.Extractor
 import com.kodality.termserver.integration.icd10est.utils.Icd10Est
 import spock.lang.Shared
@@ -24,7 +24,7 @@ class Icd10EstMapperTest extends Specification {
   private Icd10Est icd10Est
 
   void setupSpec() {
-    mapper = MapperUtil.getMapper()
+    mapper = XmlMapperUtil.getMapper()
     xml = TemplateUtil.getTemplate("icd10-est.xml")
   }
 

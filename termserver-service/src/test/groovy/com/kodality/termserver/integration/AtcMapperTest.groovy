@@ -1,6 +1,7 @@
 package com.kodality.termserver.integration
 
 import com.kodality.commons.model.LocalizedName
+import com.kodality.termserver.Language
 import com.kodality.termserver.integration.atc.utils.AtcMapper
 import com.kodality.termserver.integration.common.ImportConfiguration
 import spock.lang.Specification
@@ -20,7 +21,7 @@ class AtcMapperTest extends Specification {
       version: '2022',
       validFrom: LocalDate.of(2022, 1, 1),
       codeSystem: 'atc-int',
-      codeSystemName: new LocalizedName(Map.of("en", "ATC int")),
+      codeSystemName: new LocalizedName(Map.of(Language.en, "ATC int")),
       codeSystemDescription: 'Anatomical Therapeutic Chemical Classification System'
   )
 

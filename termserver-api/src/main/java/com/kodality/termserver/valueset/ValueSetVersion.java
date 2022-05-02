@@ -14,7 +14,6 @@ public class ValueSetVersion {
   private Long id;
   private String valueSet;
   private String version;
-  private String ruleValue;
   private List<String> supportedLanguages;
   private String description;
   private String status;

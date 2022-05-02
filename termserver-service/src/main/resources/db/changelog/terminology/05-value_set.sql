@@ -5,7 +5,6 @@ drop table if exists value_set;
 create table value_set (
     id                  text                primary key,
     names               jsonb               not null,
-    rule                text,
     description         text,
     status              text                not null,
     sys_created_at      timestamp           not null,
@@ -24,7 +23,6 @@ create table value_set_version (
     id                  bigint      default nextval('core.s_entity') primary key,
     value_set           text                      not null,
     version             text                      not null,
-    rule_value          text,
     supported_languages text[],
     description         text,
     status              text                      not null,

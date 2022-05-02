@@ -17,7 +17,6 @@ public class ValueSetRepository extends BaseRepository {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", valueSet.getId());
     ssb.jsonProperty("names", valueSet.getNames());
-    ssb.property("rule", valueSet.getRule());
     ssb.property("description", valueSet.getDescription());
     ssb.property("status", valueSet.getStatus());
 
