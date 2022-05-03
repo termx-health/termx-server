@@ -13,5 +13,6 @@
     <include file="06-map_set.sql" relativeToChangelogFile="true"/>
     <include file="07-association.sql" relativeToChangelogFile="true"/>
     <include file="08-code_system_supplement.sql" relativeToChangelogFile="true"/>
+    <include file="09-naming_system.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

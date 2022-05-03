@@ -136,8 +136,13 @@ public class FhirCodeSystemMapper {
     }
 
     designations.addAll(c.getDesignation().stream().map(d -> {
+      Long designationType = properties.stream()
+          .filter(p -> p.getName().equals(d.getUse() == null ? "display" : d.getUse().getDisplay()))
+          .findFirst()
+          .map(EntityProperty::getId)
+          .orElse(null);
       Designation designation = new Designation();
-      designation.setDesignationTypeId(properties.stream().filter(p -> p.getName().equals(d.getUse().getDisplay())).findFirst().map(EntityProperty::getId).orElse(null));
+      designation.setDesignationTypeId(designationType);
       designation.setName(d.getValue());
       designation.setLanguage(d.getLanguage());
       designation.setCaseSignificance(caseSignificance);

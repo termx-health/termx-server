@@ -45,7 +45,14 @@ public class CodeSystemRepository extends BaseRepository {
 
   private SqlBuilder filter(CodeSystemQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(cs.names) where value ~* ?)", params.getName());
+    sb.appendIfNotNull("and id = ?", params.getId());
+    sb.appendIfNotNull("and id ~* ?", params.getIdContains());
+    sb.appendIfNotNull("and uri = ?", params.getUri());
+    sb.appendIfNotNull("and uri ~* ?", params.getUriContains());
+    sb.appendIfNotNull("and description = ?", params.getDescription());
+    sb.appendIfNotNull("and description ~* ?", params.getDescriptionContains());
+    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(cs.names) where value = ?)", params.getName());
+    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(cs.names) where value ~* ?)", params.getNameContains());
     sb.appendIfNotNull("and exists (select 1 from code_system_entity cse " +
         "inner join code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
         "where cse.code_system = cs.id and cse.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
