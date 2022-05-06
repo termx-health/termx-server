@@ -1,7 +1,7 @@
 package com.kodality.termserver.integration.atcest;
 
-import com.kodality.termserver.integration.common.ImportConfiguration;
-import com.kodality.termserver.integration.common.ImportLogger;
+import com.kodality.termserver.common.ImportConfiguration;
+import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
 import io.micronaut.core.annotation.NonNull;
 import io.micronaut.http.annotation.Body;

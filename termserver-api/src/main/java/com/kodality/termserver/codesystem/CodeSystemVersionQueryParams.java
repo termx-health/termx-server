@@ -14,5 +14,7 @@ public class CodeSystemVersionQueryParams extends QueryParams {
   private String version;
   private String status;
   private LocalDate releaseDateLe;
+  private LocalDate releaseDateGe;
+  private LocalDate expirationDateLe;
   private LocalDate expirationDateGe;
 }

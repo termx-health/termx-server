@@ -3,7 +3,7 @@ package com.kodality.termserver.integration
 import com.kodality.commons.model.LocalizedName
 import com.kodality.termserver.integration.atcest.utils.AtcEst
 import com.kodality.termserver.integration.atcest.utils.AtcEstMapper
-import com.kodality.termserver.integration.common.ImportConfiguration
+import com.kodality.termserver.common.ImportConfiguration
 import spock.lang.Specification
 
 import java.time.LocalDate

@@ -1,7 +1,7 @@
 package com.kodality.termserver.integration.icd10est.utils;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.kodality.termserver.integration.common.utils.XmlMapperUtil;
+import com.kodality.termserver.common.utils.XmlMapperUtil;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;

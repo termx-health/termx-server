@@ -1,6 +1,7 @@
 package com.kodality.termserver.codesystem;
 
 import com.kodality.commons.model.QueryParams;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -18,7 +19,16 @@ public class CodeSystemQueryParams extends QueryParams {
   private String description;
   private String descriptionContains;
 
-  private Long codeSystemEntityVersionId;
+  private String conceptCode;
+  private String conceptCodeSystemVersion;
+  private boolean conceptsDecorated;
 
-  private boolean decorated;
+  private String versionVersion;
+  private LocalDate versionReleaseDateGe;
+  private LocalDate versionExpirationDateLe;
+  private boolean versionsDecorated;
+
+  private boolean propertiesDecorated;
+
+  private Long codeSystemEntityVersionId;
 }

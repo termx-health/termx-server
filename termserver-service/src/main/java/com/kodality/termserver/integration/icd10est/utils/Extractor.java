@@ -2,7 +2,7 @@ package com.kodality.termserver.integration.icd10est.utils;
 
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
-import com.kodality.termserver.integration.common.ImportConfiguration;
+import com.kodality.termserver.common.ImportConfiguration;
 import com.kodality.termserver.integration.icd10est.utils.Icd10Est.Node;
 import java.util.ArrayList;
 import java.util.List;

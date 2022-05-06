@@ -17,6 +17,7 @@ public class CodeSystem {
   private LocalizedName names;
   private String description;
 
+  private List<Concept> concepts;
   private List<EntityProperty> properties;
   private List<CodeSystemVersion> versions;
 }
