@@ -12,7 +12,8 @@ create table code_system (
     sys_modified_at     timestamp           not null,
     sys_modified_by     text                not null,
     sys_status          char(1) default 'A' not null collate "C",
-    sys_version         int                 not null
+    sys_version         int                 not null,
+    constraint code_system_ukey unique (uri)
 );
 
 select core.create_table_metadata('code_system');

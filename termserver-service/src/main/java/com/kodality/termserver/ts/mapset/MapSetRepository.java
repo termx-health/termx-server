@@ -18,6 +18,7 @@ public class MapSetRepository extends BaseRepository {
   public void create(MapSet mapSet) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", mapSet.getId());
+    ssb.property("uri", mapSet.getUri());
     ssb.jsonProperty("names", mapSet.getNames());
     ssb.property("description", mapSet.getDescription());
 

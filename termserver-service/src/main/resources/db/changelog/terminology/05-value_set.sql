@@ -4,15 +4,16 @@
 drop table if exists value_set;
 create table value_set (
     id                  text                primary key,
+    uri                 text                not null,
     names               jsonb               not null,
     description         text,
-    status              text                not null,
     sys_created_at      timestamp           not null,
     sys_created_by      text                not null,
     sys_modified_at     timestamp           not null,
     sys_modified_by     text                not null,
     sys_status          char(1) default 'A' not null collate "C",
-    sys_version         int                 not null
+    sys_version         int                 not null,
+    constraint value_set_ukey unique (uri)
 );
 select core.create_table_metadata('value_set');
 --rollback drop table if exists value_set;

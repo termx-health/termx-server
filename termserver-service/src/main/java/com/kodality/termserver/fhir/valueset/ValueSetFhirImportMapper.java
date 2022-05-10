@@ -15,10 +15,10 @@ public class ValueSetFhirImportMapper {
   public static ValueSet mapValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     ValueSet vs = new ValueSet();
     vs.setId(valueSet.getId());
+    vs.setUri(valueSet.getUrl());
     vs.setNames(new LocalizedName(Map.of(Language.en, valueSet.getTitle())));
     vs.setDescription(valueSet.getDescription());
     vs.setVersions(List.of(mapVersion(valueSet)));
-    vs.setStatus(valueSet.getStatus());
     return vs;
   }
 

@@ -18,9 +18,9 @@ public class ValueSetRepository extends BaseRepository {
   public void create(ValueSet valueSet) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", valueSet.getId());
+    ssb.property("uri", valueSet.getUri());
     ssb.jsonProperty("names", valueSet.getNames());
     ssb.property("description", valueSet.getDescription());
-    ssb.property("status", valueSet.getStatus());
 
     SqlBuilder sb = ssb.buildUpsert("value_set", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());

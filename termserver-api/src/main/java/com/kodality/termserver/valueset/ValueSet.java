@@ -13,9 +13,9 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ValueSet {
   private String id;
+  private String uri;
   private LocalizedName names;
   private String description;
-  private String status;
 
   private List<ValueSetVersion> versions;
 }

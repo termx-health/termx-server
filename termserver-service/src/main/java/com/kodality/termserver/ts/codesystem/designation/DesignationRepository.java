@@ -59,6 +59,12 @@ public class DesignationRepository extends BaseRepository {
     sb.appendIfNotNull("and exists( select 1 from value_set_version vsv " +
         "inner join designation_value_set_version_membership dvsvm on dvsvm.value_set_version_id = vsv.id and dvsvm.sys_status = 'A' " +
         "where vsv.version = ? and vsv.sys_status = 'A' and dvsvm.designation_id = d.id)", params.getValueSetVersion());
+    sb.appendIfNotNull("and exists( select 1 from concept c " +
+        "inner join code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A' " +
+        "where c.code = ? and c.sys_status = 'A' and csev.id = d.code_system_entity_version_id)", params.getConceptCode());
+    sb.appendIfNotNull("and exists( select 1 from concept c " +
+        "inner join code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A' " +
+        "where c.id = ? and c.sys_status = 'A' and csev.id = d.code_system_entity_version_id)", params.getConceptId());
     return sb;
   }
 

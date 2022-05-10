@@ -13,6 +13,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class MapSet {
   private String id;
+  private String uri;
   private LocalizedName names;
   private String description;
 

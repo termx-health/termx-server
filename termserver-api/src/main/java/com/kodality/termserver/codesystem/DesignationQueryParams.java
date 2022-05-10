@@ -11,4 +11,7 @@ import lombok.experimental.Accessors;
 public class DesignationQueryParams extends QueryParams {
   private String valueSet;
   private String valueSetVersion;
+
+  private Long conceptId;
+  private String conceptCode;
 }
