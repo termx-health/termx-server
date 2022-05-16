@@ -4,6 +4,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.DesignationQueryParams;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class DesignationService {
   private final DesignationRepository repository;
+
+  public Optional<Designation> get(Long id) {
+    return Optional.ofNullable(repository.load(id));
+  }
 
   public QueryResult<Designation> query(DesignationQueryParams params) {
     return repository.query(params);

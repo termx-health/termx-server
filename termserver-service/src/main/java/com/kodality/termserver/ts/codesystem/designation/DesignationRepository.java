@@ -33,6 +33,11 @@ public class DesignationRepository extends BaseRepository {
     designation.setId(id);
   }
 
+  public Designation load(Long id) {
+    String sql = "select * from designation where sys_status = 'A' and id = ?";
+    return getBean(sql, bp, id);
+  }
+
   public List<Designation> loadAll(Long codeSystemEntityVersionId) {
     String sql = "select * from designation where sys_status = 'A' and code_system_entity_version_id = ?";
     return getBeans(sql, bp, codeSystemEntityVersionId);
