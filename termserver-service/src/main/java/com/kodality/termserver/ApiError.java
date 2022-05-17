@@ -31,7 +31,9 @@ public enum ApiError {
   }
 
   public ApiException toApiException() {
-    return new ApiClientException(code, message);
+    ApiClientException exception = new ApiClientException(code, message);
+    exception.getIssues().forEach(issue -> issue.setParams(Map.of())); //TODO fix in commons
+    return exception;
   }
 
   public ApiException toApiException(Map<String, Object> params) {
