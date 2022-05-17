@@ -92,7 +92,6 @@ public class ValueSetVersionRepository extends BaseRepository {
       return;
     }
     concepts.forEach(c -> {
-      System.out.println(concepts);;
       SaveSqlBuilder ssb = new SaveSqlBuilder();
       ssb.property("concept_id", c.getId());
       ssb.property("value_set_version_id", valueSetVersionId);
