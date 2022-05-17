@@ -105,7 +105,7 @@ public class CodeSystemImportService {
       codeSystemAssociationService.save(associations, concept.getVersions().get(0).getId());
     });
 
-    log.info("Activating version '{}' in code system '{}'", version.getCodeSystem(), version.getVersion());
+    log.info("Activating version '{}' in code system '{}'", version.getVersion(), version.getCodeSystem());
     codeSystemVersionService.activate(version.getCodeSystem(), version.getVersion());
 
     log.info("Import finished.");

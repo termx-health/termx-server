@@ -16,7 +16,7 @@ public class ValueSetFhirImportMapper {
     ValueSet vs = new ValueSet();
     vs.setId(valueSet.getId());
     vs.setUri(valueSet.getUrl());
-    vs.setNames(new LocalizedName(Map.of(Language.en, valueSet.getTitle())));
+    vs.setNames(new LocalizedName(Map.of(Language.en, valueSet.getName())));
     vs.setDescription(valueSet.getDescription());
     vs.setVersions(List.of(mapVersion(valueSet)));
     return vs;

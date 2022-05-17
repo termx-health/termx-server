@@ -28,7 +28,7 @@ public class CodeSystemFhirImportMapper {
     CodeSystem codeSystem = new CodeSystem();
     codeSystem.setId(fhirCodeSystem.getId());
     codeSystem.setUri(fhirCodeSystem.getUrl());
-    codeSystem.setNames(new LocalizedName(Map.of(Language.en, fhirCodeSystem.getTitle())));
+    codeSystem.setNames(new LocalizedName(Map.of(Language.en, fhirCodeSystem.getName())));
     codeSystem.setDescription(fhirCodeSystem.getDescription());
 
     codeSystem.setVersions(mapVersion(fhirCodeSystem));
@@ -43,7 +43,7 @@ public class CodeSystemFhirImportMapper {
     version.setPreferredLanguage(Language.en);
     version.setSupportedLanguages(List.of(Language.en));
     version.setStatus(PublicationStatus.draft);
-    version.setReleaseDate(LocalDate.from(fhirCodeSystem.getDate()));
+    version.setReleaseDate(fhirCodeSystem.getDate() == null ? LocalDate.now() : LocalDate.from(fhirCodeSystem.getDate()));
     return List.of(version);
   }
 

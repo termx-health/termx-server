@@ -10,8 +10,18 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class MapSetAssociationQueryParams extends QueryParams {
   private Long id;
-  private String mapSet;
-  private String associationType;
-  private String mapSetVersion;
   private String status;
+  private String type;
+
+  private String sourceCode;
+  private String sourceSystem;
+  private String sourceSystemUri;
+  private String sourceSystemVersion;
+
+  private String targetCode;
+  private String targetSystem;
+  private String targetSystemVersion;
+
+  private String mapSet;
+  private String mapSetVersion;
 }

@@ -10,13 +10,17 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class MapSetQueryParams extends QueryParams {
   private String name;
+  private String nameContains;
   private String uri;
+  private String uriContains;
 
-  private String sourceEntityCode;
-  private String sourceEntitySystem;
-  private String sourceEntitySystemVersion;
-  private String targetEntitySystem;
+  private String associationSourceCode;
+  private String associationSourceSystem;
+  private String associationSourceSystemUri;
+  private String associationSourceSystemVersion;
+  private String associationTargetSystem;
+  private boolean associationsDecorated;
 
   private String versionVersion;
-  private boolean decorated;
+  private boolean versionsDecorated;
 }

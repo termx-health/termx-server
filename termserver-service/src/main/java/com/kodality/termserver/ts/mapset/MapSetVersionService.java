@@ -1,5 +1,6 @@
 package com.kodality.termserver.ts.mapset;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 
@@ -35,6 +36,10 @@ public class MapSetVersionService {
     }
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
     repository.save(version);
+  }
+
+  public QueryResult<MapSetVersion> query(MapSetVersionQueryParams params) {
+    return repository.query(params);
   }
 
   public Optional<MapSetVersion> getVersion(String mapSet, String versionCode) {

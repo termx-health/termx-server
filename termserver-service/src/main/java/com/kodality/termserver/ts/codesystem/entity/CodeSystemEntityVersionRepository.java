@@ -52,7 +52,10 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     sb.appendIfNotNull("and csev.status = ?", params.getStatus());
     sb.appendIfNotNull("and csev.code = ?", params.getCode());
     sb.appendIfNotNull("and exists (select 1 from code_system_entity cse " +
-        "where cse.id = csev.code_system_entity_id and code_system = ?)", params.getCodeSystem());
+        "where cse.id = csev.code_system_entity_id and code_system = ? and cse.sys_status = 'A')", params.getCodeSystem());
+    sb.appendIfNotNull("and exists (select 1 from code_system cs " +
+        "inner join code_system_entity cse on cse.code_system = cs.id and cse.sys_status = 'A' " +
+        "where cse.id = csev.code_system_entity_id and cs.uri = ? and cs.sys_status = 'A')", params.getCodeSystemUri());
     sb.appendIfNotNull("and exists (select 1 from entity_version_code_system_version_membership evcsvm " +
         "where evcsvm.code_system_entity_version_id = csev.id and evcsvm.code_system_version_id = ?)", params.getCodeSystemVersionId());
     if (params.getCodeSystemVersion() != null) {

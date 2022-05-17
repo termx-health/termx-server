@@ -18,4 +18,5 @@ public class MapSet {
   private String description;
 
   private List<MapSetVersion> versions;
+  private List<MapSetAssociation> associations;
 }
