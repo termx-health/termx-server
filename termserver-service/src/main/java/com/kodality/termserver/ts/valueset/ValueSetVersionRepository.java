@@ -13,7 +13,6 @@ import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import java.util.List;
 import javax.inject.Singleton;
-import liquibase.repackaged.net.sf.jsqlparser.parser.CCJSqlParser;
 
 @Singleton
 public class ValueSetVersionRepository extends BaseRepository {
