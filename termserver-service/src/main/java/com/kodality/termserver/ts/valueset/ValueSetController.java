@@ -107,7 +107,7 @@ public class ValueSetController {
     return designationService.query(params).getData();
   }
 
-  @Post(uri = "/{valueSet}/versions/{version}/concepts")
+  @Post(uri = "/{valueSet}/versions/{version}/designations")
   public HttpResponse<?> saveDesignations(@PathVariable String valueSet, @PathVariable String version, @Body DesignationRequest request) {
     valueSetVersionService.saveDesignations(valueSet, version, request.getDesignations());
     return HttpResponse.ok();

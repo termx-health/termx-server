@@ -13,6 +13,7 @@ import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import java.util.List;
 import javax.inject.Singleton;
+import liquibase.repackaged.net.sf.jsqlparser.parser.CCJSqlParser;
 
 @Singleton
 public class ValueSetVersionRepository extends BaseRepository {
@@ -91,10 +92,12 @@ public class ValueSetVersionRepository extends BaseRepository {
       return;
     }
     concepts.forEach(c -> {
+      System.out.println(concepts);;
       SaveSqlBuilder ssb = new SaveSqlBuilder();
       ssb.property("concept_id", c.getId());
       ssb.property("value_set_version_id", valueSetVersionId);
-      SqlBuilder sb = ssb.buildUpsert("concept_value_set_version_membership", "value_set_version_id", "concept_id");
+      ssb.property("sys_status","A"); //TODO
+      SqlBuilder sb = ssb.buildUpsert("concept_value_set_version_membership", "value_set_version_id", "concept_id", "sys_status");
       jdbcTemplate.update(sb.getSql(), sb.getParams());
     });
   }
@@ -114,7 +117,9 @@ public class ValueSetVersionRepository extends BaseRepository {
       SaveSqlBuilder ssb = new SaveSqlBuilder();
       ssb.property("designation_id", d.getId());
       ssb.property("value_set_version_id", valueSetVersionId);
-      SqlBuilder sb = ssb.buildUpsert("designation_value_set_version_membership", "value_set_version_id", "designation_id");
+      ssb.property("\"default\"", false);
+      ssb.property("sys_status","A"); //TODO
+      SqlBuilder sb = ssb.buildUpsert("designation_value_set_version_membership", "value_set_version_id", "designation_id", "sys_status");
       jdbcTemplate.update(sb.getSql(), sb.getParams());
     });
   }
