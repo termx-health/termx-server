@@ -61,7 +61,7 @@ public class CodeSystemRepository extends BaseRepository {
       sb.append("and (id = ? or uri = ? or description = ? or exists (select 1 from jsonb_each_text(cs.names) where value = ?))", params.getText(), params.getText(), params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (id ~* ? or uri ~* ? or description ~* ? or exists (select 1 from jsonb_each_text(cs.names) where value ~* ?))", params.getText(), params.getText(), params.getText(), params.getText());
+      sb.append("and (id ~* ? or uri ~* ? or description ~* ? or exists (select 1 from jsonb_each_text(cs.names) where value ~* ?))", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
 
     sb.appendIfNotNull("and exists (select 1 from concept c where c.code_system = cs.id and c.sys_status = 'A' and c.code = ?)", params.getConceptCode());

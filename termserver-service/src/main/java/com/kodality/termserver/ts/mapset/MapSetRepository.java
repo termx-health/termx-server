@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.mapset.MapSet;
 import com.kodality.termserver.mapset.MapSetQueryParams;
+import io.micronaut.core.util.StringUtils;
 import javax.inject.Singleton;
 
 @Singleton
@@ -46,10 +47,21 @@ public class MapSetRepository extends BaseRepository {
 
   private SqlBuilder filter(MapSetQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ms.names) where value = ?)", params.getName());
-    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ms.names) where value ~* ?)", params.getNameContains());
+    sb.appendIfNotNull("and ms.id = ?", params.getId());
+    sb.appendIfNotNull("and ms.id ~* ?", params.getIdContains());
     sb.appendIfNotNull("and ms.uri = ?", params.getUri());
     sb.appendIfNotNull("and ms.uri ~* ?", params.getUriContains());
+    sb.appendIfNotNull("and ms.description = ?", params.getDescription());
+    sb.appendIfNotNull("and ms.description ~* ?", params.getDescriptionContains());
+    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ms.names) where value = ?)", params.getName());
+    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ms.names) where value ~* ?)", params.getNameContains());
+
+    if (StringUtils.isNotEmpty(params.getText())) {
+      sb.append("and (ms.id = ? or ms.uri = ? or ms.description = ? or exists (select 1 from jsonb_each_text(ms.names) where value = ?))", params.getText(), params.getText(), params.getText(), params.getText());
+    }
+    if (StringUtils.isNotEmpty(params.getTextContains())) {
+      sb.append("and (ms.id ~* ? or ms.uri ~* ? or ms.description ~* ? or exists (select 1 from jsonb_each_text(ms.names) where value ~* ?))", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
+    }
 
     sb.appendIfNotNull("and exists (select 1 from map_set_version msv where msv.map_set = ms.id and msv.sys_status = 'A' and msv.version = ?)", params.getVersionVersion());
 

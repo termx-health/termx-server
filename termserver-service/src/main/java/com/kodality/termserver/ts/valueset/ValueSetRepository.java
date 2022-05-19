@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
+import io.micronaut.core.util.StringUtils;
 import javax.inject.Singleton;
 
 @Singleton
@@ -46,7 +47,21 @@ public class ValueSetRepository extends BaseRepository {
 
   private SqlBuilder filter(ValueSetQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(vs.names) where value ~* ?)", params.getName());
+    sb.appendIfNotNull("and id = ?", params.getId());
+    sb.appendIfNotNull("and id ~* ?", params.getIdContains());
+    sb.appendIfNotNull("and uri = ?", params.getUri());
+    sb.appendIfNotNull("and uri ~* ?", params.getUriContains());
+    sb.appendIfNotNull("and description = ?", params.getDescription());
+    sb.appendIfNotNull("and description ~* ?", params.getDescriptionContains());
+    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(vs.names) where value = ?)", params.getName());
+    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(vs.names) where value ~* ?)", params.getNameContains());
+
+    if (StringUtils.isNotEmpty(params.getText())) {
+      sb.append("and (id = ? or uri = ? or description = ? or exists (select 1 from jsonb_each_text(vs.names) where value = ?))", params.getText(), params.getText(), params.getText(), params.getText());
+    }
+    if (StringUtils.isNotEmpty(params.getTextContains())) {
+      sb.append("and (id ~* ? or uri ~* ? or description ~* ? or exists (select 1 from jsonb_each_text(vs.names) where value ~* ?))", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
+    }
     return sb;
   }
 
