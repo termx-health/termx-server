@@ -19,6 +19,9 @@ public class CodeSystemQueryParams extends QueryParams {
   private String description;
   private String descriptionContains;
 
+  private String text;
+  private String textContains;
+
   private String conceptCode;
   private String conceptCodeSystemVersion;
   private boolean conceptsDecorated;

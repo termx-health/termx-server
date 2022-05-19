@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
+import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 
 @Singleton
@@ -55,6 +56,13 @@ public class CodeSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and description ~* ?", params.getDescriptionContains());
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(cs.names) where value = ?)", params.getName());
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(cs.names) where value ~* ?)", params.getNameContains());
+
+    if (StringUtils.isNotEmpty(params.getText())) {
+      sb.append("and (id = ? or uri = ? or description = ? or exists (select 1 from jsonb_each_text(cs.names) where value = ?))", params.getText(), params.getText(), params.getText(), params.getText());
+    }
+    if (StringUtils.isNotEmpty(params.getTextContains())) {
+      sb.append("and (id ~* ? or uri ~* ? or description ~* ? or exists (select 1 from jsonb_each_text(cs.names) where value ~* ?))", params.getText(), params.getText(), params.getText(), params.getText());
+    }
 
     sb.appendIfNotNull("and exists (select 1 from concept c where c.code_system = cs.id and c.sys_status = 'A' and c.code = ?)", params.getConceptCode());
 
