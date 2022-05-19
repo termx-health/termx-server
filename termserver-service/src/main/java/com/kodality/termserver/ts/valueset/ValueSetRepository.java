@@ -7,7 +7,10 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
+import com.kodality.termserver.valueset.ValueSetQueryParams.Ordering;
 import io.micronaut.core.util.StringUtils;
+import java.util.HashMap;
+import java.util.Map;
 import javax.inject.Singleton;
 
 @Singleton
@@ -40,6 +43,7 @@ public class ValueSetRepository extends BaseRepository {
     }, p -> {
       SqlBuilder sb = new SqlBuilder("select vs.* from value_set vs where vs.sys_status = 'A' ");
       sb.append(filter(params));
+      sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
@@ -63,6 +67,18 @@ public class ValueSetRepository extends BaseRepository {
       sb.append("and (id ~* ? or uri ~* ? or description ~* ? or exists (select 1 from jsonb_each_text(vs.names) where value ~* ?))", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
     return sb;
+  }
+
+  private Map<String, String> sortMap(String lang) {
+    Map<String, String> sortMap = new HashMap<>(Map.of(
+        Ordering.id, "id",
+        Ordering.uri, "uri",
+        Ordering.description, "description"
+    ));
+    if (StringUtils.isNotEmpty(lang)) {
+      sortMap.put(Ordering.name, "ms.names ->> '" + lang + "'");
+    }
+    return sortMap;
   }
 
 }

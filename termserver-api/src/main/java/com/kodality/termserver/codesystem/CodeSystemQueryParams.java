@@ -34,4 +34,12 @@ public class CodeSystemQueryParams extends QueryParams {
   private boolean propertiesDecorated;
 
   private Long codeSystemEntityVersionId;
+
+  private String lang;
+  public interface Ordering {
+    String id = "id";
+    String uri = "uri";
+    String name = "name";
+    String description = "description";
+  }
 }

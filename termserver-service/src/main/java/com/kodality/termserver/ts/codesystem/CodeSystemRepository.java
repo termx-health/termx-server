@@ -7,8 +7,11 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
+import com.kodality.termserver.codesystem.CodeSystemQueryParams.Ordering;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
+import java.util.HashMap;
+import java.util.Map;
 
 @Singleton
 public class CodeSystemRepository extends BaseRepository {
@@ -41,6 +44,7 @@ public class CodeSystemRepository extends BaseRepository {
     }, p -> {
       SqlBuilder sb = new SqlBuilder("select cs.* from code_system cs where cs.sys_status = 'A' ");
       sb.append(filter(params));
+      sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
@@ -58,22 +62,40 @@ public class CodeSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(cs.names) where value ~* ?)", params.getNameContains());
 
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and (id = ? or uri = ? or description = ? or exists (select 1 from jsonb_each_text(cs.names) where value = ?))", params.getText(), params.getText(), params.getText(), params.getText());
+      sb.append("and (id = ? or uri = ? or description = ? or exists (select 1 from jsonb_each_text(cs.names) where value = ?))", params.getText(),
+          params.getText(), params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (id ~* ? or uri ~* ? or description ~* ? or exists (select 1 from jsonb_each_text(cs.names) where value ~* ?))", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
+      sb.append("and (id ~* ? or uri ~* ? or description ~* ? or exists (select 1 from jsonb_each_text(cs.names) where value ~* ?))", params.getTextContains(),
+          params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
 
     sb.appendIfNotNull("and exists (select 1 from concept c where c.code_system = cs.id and c.sys_status = 'A' and c.code = ?)", params.getConceptCode());
 
-    sb.appendIfNotNull("and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.version = ?)", params.getVersionVersion());
-    sb.appendIfNotNull("and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.release_date >= ?)", params.getVersionReleaseDateGe());
-    sb.appendIfNotNull("and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and (csv.expiration_date <= ? or expiration_date is null))", params.getVersionExpirationDateLe());
+    sb.appendIfNotNull("and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.version = ?)",
+        params.getVersionVersion());
+    sb.appendIfNotNull("and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.release_date >= ?)",
+        params.getVersionReleaseDateGe());
+    sb.appendIfNotNull(
+        "and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and (csv.expiration_date <= ? or expiration_date is null))",
+        params.getVersionExpirationDateLe());
 
     sb.appendIfNotNull("and exists (select 1 from code_system_entity cse " +
         "inner join code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
         "where cse.code_system = cs.id and cse.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
     return sb;
+  }
+
+  private Map<String, String> sortMap(String lang) {
+    Map<String, String> sortMap = new HashMap<>(Map.of(
+        Ordering.id, "id",
+        Ordering.uri, "uri",
+        Ordering.description, "description"
+    ));
+    if (StringUtils.isNotEmpty(lang)) {
+      sortMap.put(Ordering.name, "cs.names ->> '" + lang + "'");
+    }
+    return sortMap;
   }
 
 }

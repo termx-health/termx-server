@@ -7,7 +7,10 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.mapset.MapSet;
 import com.kodality.termserver.mapset.MapSetQueryParams;
+import com.kodality.termserver.mapset.MapSetQueryParams.Ordering;
 import io.micronaut.core.util.StringUtils;
+import java.util.HashMap;
+import java.util.Map;
 import javax.inject.Singleton;
 
 @Singleton
@@ -40,6 +43,7 @@ public class MapSetRepository extends BaseRepository {
     }, p -> {
       SqlBuilder sb = new SqlBuilder("select ms.* from map_set ms where ms.sys_status = 'A' ");
       sb.append(filter(params));
+      sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
@@ -90,6 +94,18 @@ public class MapSetRepository extends BaseRepository {
         "inner join map_set_association msa on msa.target_code_system_entity_version_id = csev.id and msa.sys_status = 'A' " +
         "where msa.map_set = ms.id and cs.sys_status = 'A' and cs.uri = ?)", params.getAssociationTargetSystem());
     return sb;
+  }
+
+  private Map<String, String> sortMap(String lang) {
+    Map<String, String> sortMap = new HashMap<>(Map.of(
+        Ordering.id, "id",
+        Ordering.uri, "uri",
+        Ordering.description, "description"
+    ));
+    if (StringUtils.isNotEmpty(lang)) {
+      sortMap.put(Ordering.name, "ms.names ->> '" + lang + "'");
+    }
+    return sortMap;
   }
 
 }

@@ -22,4 +22,12 @@ public class ValueSetQueryParams extends QueryParams {
   private String textContains;
 
   private boolean decorated;
+
+  private String lang;
+  public interface Ordering {
+    String id = "id";
+    String uri = "uri";
+    String name = "name";
+    String description = "description";
+  }
 }

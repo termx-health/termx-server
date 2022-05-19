@@ -30,4 +30,12 @@ public class MapSetQueryParams extends QueryParams {
 
   private String versionVersion;
   private boolean versionsDecorated;
+
+  private String lang;
+  public interface Ordering {
+    String id = "id";
+    String uri = "uri";
+    String name = "name";
+    String description = "description";
+  }
 }
