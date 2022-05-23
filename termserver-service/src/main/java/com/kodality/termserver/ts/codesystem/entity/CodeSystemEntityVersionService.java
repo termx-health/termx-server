@@ -68,7 +68,7 @@ public class CodeSystemEntityVersionService {
 
   @Transactional
   public void activate(Long versionId) {
-    CodeSystemEntityVersion currentVersion = repository.getVersion(versionId);
+    CodeSystemEntityVersion currentVersion = repository.load(versionId);
     if (currentVersion == null) {
       throw ApiError.TE108.toApiException(Map.of("version", versionId));
     }
@@ -81,7 +81,7 @@ public class CodeSystemEntityVersionService {
 
   @Transactional
   public void retire(Long versionId) {
-    CodeSystemEntityVersion currentVersion = repository.getVersion(versionId);
+    CodeSystemEntityVersion currentVersion = repository.load(versionId);
     if (currentVersion == null) {
       throw ApiError.TE108.toApiException(Map.of("version", versionId));
     }

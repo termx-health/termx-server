@@ -29,17 +29,23 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
   }
 
   public CodeSystemEntityVersion load(Long id) {
-    String sql = "select * from code_system_entity_version where sys_status = 'A' and id = ?";
+    String sql = "select csev.*, cse.code_system from code_system_entity_version csev " +
+        "inner join code_system_entity cse on cse.id = csev.code_system_entity_id and cse.sys_status = 'A' " +
+        "where csev.sys_status = 'A' and csev.id = ?";
     return getBean(sql, bp, id);
   }
 
   public QueryResult<CodeSystemEntityVersion> query(CodeSystemEntityVersionQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from code_system_entity_version csev where csev.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from code_system_entity_version csev " +
+          "inner join code_system_entity cse on cse.id = csev.code_system_entity_id and cse.sys_status = 'A' " +
+          "where csev.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from code_system_entity_version csev where csev.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select csev.*, cse.code_system from code_system_entity_version csev " +
+          "inner join code_system_entity cse on cse.id = csev.code_system_entity_id and cse.sys_status = 'A' " +
+          "where csev.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -51,11 +57,9 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     sb.appendIfNotNull("and csev.code_system_entity_id = ?", params.getCodeSystemEntityId());
     sb.appendIfNotNull("and csev.status = ?", params.getStatus());
     sb.appendIfNotNull("and csev.code = ?", params.getCode());
-    sb.appendIfNotNull("and exists (select 1 from code_system_entity cse " +
-        "where cse.id = csev.code_system_entity_id and code_system = ? and cse.sys_status = 'A')", params.getCodeSystem());
+    sb.appendIfNotNull("and cse.code_system = ?", params.getCodeSystem());
     sb.appendIfNotNull("and exists (select 1 from code_system cs " +
-        "inner join code_system_entity cse on cse.code_system = cs.id and cse.sys_status = 'A' " +
-        "where cse.id = csev.code_system_entity_id and cs.uri = ? and cs.sys_status = 'A')", params.getCodeSystemUri());
+        "where cse.code_system = cs.id and cs.uri = ? and cs.sys_status = 'A')", params.getCodeSystemUri());
     sb.appendIfNotNull("and exists (select 1 from entity_version_code_system_version_membership evcsvm " +
         "where evcsvm.code_system_entity_version_id = csev.id and evcsvm.code_system_version_id = ?)", params.getCodeSystemVersionId());
     if (params.getCodeSystemVersion() != null) {
@@ -66,11 +70,6 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
       sb.append(")");
     }
     return sb;
-  }
-
-  public CodeSystemEntityVersion getVersion(Long versionId) {
-    String sql = "select * from code_system_entity_version where sys_status = 'A' and id = ?";
-    return getBean(sql, bp, versionId);
   }
 
   public void activate(Long versionId) {

@@ -14,6 +14,7 @@ import lombok.experimental.Accessors;
 public class CodeSystemEntityVersion {
   private Long id;
   private String code;
+  private String codeSystem;
   private String description;
   private String status;
   private OffsetDateTime created;
