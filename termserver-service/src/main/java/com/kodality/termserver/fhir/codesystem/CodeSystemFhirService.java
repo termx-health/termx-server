@@ -2,11 +2,16 @@ package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.CodeSystem;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
+import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.ts.codesystem.CodeSystemService;
+import com.kodality.termserver.ts.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
+import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
@@ -24,6 +29,9 @@ public class CodeSystemFhirService {
   private final CodeSystemFhirMapper mapper;
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
+  private final EntityPropertyService entityPropertyService;
+  private final CodeSystemVersionService codeSystemVersionService;
+  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   public Parameters lookup(Map<String, List<String>> params) {
     FhirQueryParams fhirParams = new FhirQueryParams(params);
@@ -79,5 +87,19 @@ public class CodeSystemFhirService {
       issue.setDetails(new CodeableConcept().setText("Code '" + fhirParams.getFirst("code").get() + "' not found"));
     }
     return new OperationOutcome(issue);
+  }
+
+  public com.kodality.zmei.fhir.resource.terminology.CodeSystem get(Long codeSystemVersionId) {
+    CodeSystem codeSystem = codeSystemService.query(new CodeSystemQueryParams().setVersionId(codeSystemVersionId)).findFirst().orElse(null);
+    if (codeSystem == null) {
+      return null;
+    }
+    codeSystem.setProperties(entityPropertyService.getProperties(codeSystem.getId()));
+    CodeSystemVersion version = codeSystemVersionService.getVersion(codeSystemVersionId);
+    CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(version.getId());
+    codeSystemEntityVersionParams.all();
+    version.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
+    return mapper.toFhir(codeSystem, version);
+
   }
 }

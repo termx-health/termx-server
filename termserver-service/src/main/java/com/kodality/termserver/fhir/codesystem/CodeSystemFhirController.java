@@ -1,9 +1,11 @@
 package com.kodality.termserver.fhir.codesystem;
 
+import com.kodality.commons.exception.NotFoundException;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -27,6 +29,14 @@ public class CodeSystemFhirController {
 
   private static final String JOB_TYPE = "FHIR-CS";
 
+  @Get("/{codeSystemVersionId}")
+  public HttpResponse<?> getCodeSystem(Long codeSystemVersionId) {
+    CodeSystem codeSystem = service.get(codeSystemVersionId);
+    if (codeSystem == null) {
+      throw new NotFoundException("CodeSystem not found");
+    }
+    return HttpResponse.ok(codeSystem);
+  }
 
   @Get("/$lookup{?params*}")
   public HttpResponse<?> lookup(Map<String, List<String>> params) {

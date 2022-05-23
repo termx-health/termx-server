@@ -43,6 +43,11 @@ public class CodeSystemVersionRepository extends BaseRepository {
     return getBean(sql, bp, codeSystem, versionCode);
   }
 
+  public CodeSystemVersion getVersion(Long id) {
+    String sql = "select * from code_system_version where sys_status = 'A' and id = ?";
+    return getBean(sql, bp, id);
+  }
+
   public List<CodeSystemVersion> getVersions(String codeSystem) {
     String sql = "select * from code_system_version where sys_status = 'A' and code_system = ?";
     return getBeans(sql, bp, codeSystem);

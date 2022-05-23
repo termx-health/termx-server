@@ -41,6 +41,10 @@ public class CodeSystemVersionService {
     return Optional.ofNullable(repository.getVersion(codeSystem, versionCode));
   }
 
+  public CodeSystemVersion getVersion(Long id) {
+    return repository.getVersion(id);
+  }
+
   public List<CodeSystemVersion> getVersions(String codeSystem) {
     return repository.getVersions(codeSystem);
   }

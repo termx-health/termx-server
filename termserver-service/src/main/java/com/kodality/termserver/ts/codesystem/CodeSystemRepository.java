@@ -74,6 +74,8 @@ public class CodeSystemRepository extends BaseRepository {
 
     sb.appendIfNotNull("and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.version = ?)",
         params.getVersionVersion());
+    sb.appendIfNotNull("and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.id = ?)",
+        params.getVersionId());
     sb.appendIfNotNull("and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.release_date >= ?)",
         params.getVersionReleaseDateGe());
     sb.appendIfNotNull(

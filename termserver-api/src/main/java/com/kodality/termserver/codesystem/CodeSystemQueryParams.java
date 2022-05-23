@@ -26,6 +26,7 @@ public class CodeSystemQueryParams extends QueryParams {
   private String conceptCodeSystemVersion;
   private boolean conceptsDecorated;
 
+  private Long versionId;
   private String versionVersion;
   private LocalDate versionReleaseDateGe;
   private LocalDate versionExpirationDateLe;
