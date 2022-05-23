@@ -83,6 +83,13 @@ public class CodeSystemVersionRepository extends BaseRepository {
     jdbcTemplate.update(sql, PublicationStatus.retired, codeSystem, version, PublicationStatus.retired);
   }
 
+  public void retainVersions(List<CodeSystemVersion> codeSystemVersions, String codeSystem) {
+    SqlBuilder sb = new SqlBuilder("update code_system_version set sys_status = 'C'");
+    sb.append(" where code_system = ? and sys_status = 'A'", codeSystem);
+    sb.andNotIn("id", codeSystemVersions, CodeSystemVersion::getId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
   public void retainEntityVersions(List<CodeSystemEntityVersion> entityVersions, Long codeSystemVersionId) {
     SqlBuilder sb = new SqlBuilder("update entity_version_code_system_version_membership set sys_status = 'C'");
     sb.append(" where code_system_version_id = ? and sys_status = 'A'", codeSystemVersionId);

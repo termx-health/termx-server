@@ -85,6 +85,12 @@ public class CodeSystemVersionService {
   }
 
   @Transactional
+  public void save(List<CodeSystemVersion> versions, String codeSystem) {
+    repository.retainVersions(versions, codeSystem);
+    versions.forEach(repository::save);
+  }
+
+  @Transactional
   public void saveEntityVersions(String codeSystem, String codeSystemVersion, List<CodeSystemEntityVersion> entityVersions) {
     Optional<Long> versionId = getVersion(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
     if (versionId.isPresent()) {

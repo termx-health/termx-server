@@ -26,8 +26,8 @@ public class CodeSystemService {
   }
 
   @Transactional
-  public void create(CodeSystem codeSystem) {
-    repository.create(codeSystem);
+  public void save(CodeSystem codeSystem) {
+    repository.save(codeSystem);
   }
 
   public QueryResult<CodeSystem> query(CodeSystemQueryParams params) {

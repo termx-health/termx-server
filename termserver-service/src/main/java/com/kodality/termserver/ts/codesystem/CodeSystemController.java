@@ -35,6 +35,7 @@ public class CodeSystemController {
   private final CodeSystemService codeSystemService;
   private final EntityPropertyService entityPropertyService;
   private final CodeSystemVersionService codeSystemVersionService;
+  private final CodeSystemDuplicateService codeSystemDuplicateService;
   private final CodeSystemSupplementService codeSystemSupplementService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
@@ -49,8 +50,8 @@ public class CodeSystemController {
   }
 
   @Post
-  public HttpResponse<?> create(@Body @Valid CodeSystem codeSystem) {
-    codeSystemService.create(codeSystem);
+  public HttpResponse<?> save(@Body @Valid CodeSystem codeSystem) {
+    codeSystemService.save(codeSystem);
     return HttpResponse.created(codeSystem);
   }
 
@@ -164,6 +165,13 @@ public class CodeSystemController {
     return HttpResponse.created(supplement);
   }
 
+  @Post(uri = "/{codeSystem}/duplicate")
+  public HttpResponse<?> duplicateCodeSystem(@PathVariable String codeSystem, @Body @Valid CodeSystemDuplicateRequest request) {
+    CodeSystem targetCodeSystem = new CodeSystem().setId(codeSystem).setUri(request.getTargetCodeSystemUri());
+    codeSystemDuplicateService.duplicate(targetCodeSystem, request.getSourceCodeSystem());
+    return HttpResponse.ok();
+  }
+
   @Getter
   @Setter
   private static class EntityPropertyRequest {
@@ -174,6 +182,13 @@ public class CodeSystemController {
   @Setter
   private static class EntityVersionRequest {
     private List<CodeSystemEntityVersion> versions;
+  }
+
+  @Getter
+  @Setter
+  private static class CodeSystemDuplicateRequest {
+    private String sourceCodeSystem;
+    private String targetCodeSystemUri;
   }
 
 }

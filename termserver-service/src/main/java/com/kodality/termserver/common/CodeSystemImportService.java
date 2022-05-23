@@ -47,7 +47,7 @@ public class CodeSystemImportService {
     Optional<CodeSystem> existingCodeSystem = codeSystemService.get(codeSystem.getId());
     if (existingCodeSystem.isEmpty()) {
       log.info("Code system {} does not exist, creating new", codeSystem.getId());
-      codeSystemService.create(codeSystem);
+      codeSystemService.save(codeSystem);
     }
 
     CodeSystemVersion version = codeSystem.getVersions().get(0);

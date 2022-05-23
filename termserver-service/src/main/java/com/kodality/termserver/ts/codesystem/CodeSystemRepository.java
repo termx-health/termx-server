@@ -20,7 +20,7 @@ public class CodeSystemRepository extends BaseRepository {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
   });
 
-  public void create(CodeSystem codeSystem) {
+  public void save(CodeSystem codeSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", codeSystem.getId());
     ssb.property("uri", codeSystem.getUri());
