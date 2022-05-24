@@ -11,6 +11,7 @@ import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -41,13 +42,15 @@ public class ConceptMapFhirController {
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);
     CompletableFuture.runAsync(() -> {
       try {
+        List<String> warnings = new ArrayList<>();
         log.info("Fhir map set import started");
         long start = System.currentTimeMillis();
-        importService.importMapSet(parameters);
+        importService.importMapSets(parameters, warnings);
         log.info("Fhir map set import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
-        importLogger.logImport(jobLogResponse.getJobId());
+        importLogger.logImport(jobLogResponse.getJobId(), warnings);
       } catch (Exception e) {
         log.error("Error while importing fhir map set", e);
+        importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
     });

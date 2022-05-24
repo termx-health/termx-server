@@ -48,20 +48,28 @@ public class ConceptMapFhirImportService {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final BinaryHttpClient client = new BinaryHttpClient();
 
-  @Transactional
-  public void importMapSet(Parameters parameters) {
+  public void importMapSets(Parameters parameters, List<String> warnings) {
     List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ?
         parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(Parameter::getValueString).toList() : Collections.emptyList();
     if (urls.isEmpty()) {
       throw ApiError.TE110.toApiException();
     }
     urls.forEach(url -> {
-      String resource = getResource(url);
-      ConceptMap conceptMap = FhirMapper.fromJson(resource, ConceptMap.class);
-      MapSetVersion version = prepareMapSetAndVersion(ConceptMapFhirImportMapper.mapMapSet(conceptMap));
-      List<MapSetAssociation> associations = findAssociations(conceptMap);
-      importAssociations(associations, version);
+      try {
+        importMapSet(url);
+      } catch (Exception e) {
+        warnings.add(String.format("ConceptMap from resource {%s} was not imported due to error: {%s}", url, e.getMessage()));
+      }
     });
+  }
+
+  @Transactional
+  public void importMapSet(String url) {
+    String resource = getResource(url);
+    ConceptMap conceptMap = FhirMapper.fromJson(resource, ConceptMap.class);
+    MapSetVersion version = prepareMapSetAndVersion(ConceptMapFhirImportMapper.mapMapSet(conceptMap));
+    List<MapSetAssociation> associations = findAssociations(conceptMap);
+    importAssociations(associations, version);
   }
 
   private String getResource(String url) {

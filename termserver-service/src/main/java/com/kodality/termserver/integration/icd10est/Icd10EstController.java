@@ -34,6 +34,7 @@ public class Icd10EstController {
         importLogger.logImport(jobLogResponse.getJobId());
       } catch (Exception e) {
         log.error("Error while importing ICD-10 est", e);
+        importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
     });

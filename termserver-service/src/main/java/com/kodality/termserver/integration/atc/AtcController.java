@@ -33,6 +33,7 @@ public class AtcController {
         importLogger.logImport(jobLogResponse.getJobId());
       } catch (Exception e) {
         log.error("Error while importing ATC", e);
+        importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
     });

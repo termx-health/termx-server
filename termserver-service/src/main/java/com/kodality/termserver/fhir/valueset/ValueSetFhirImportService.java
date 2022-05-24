@@ -36,24 +36,31 @@ public class ValueSetFhirImportService {
   private final ValueSetVersionService valueSetVersionService;
   private final BinaryHttpClient client = new BinaryHttpClient();
 
-
-  @Transactional
-  public void importValueSet(Parameters parameters) {
+  public void importValueSets(Parameters parameters, List<String> warnings) {
     List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ? parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(
-      Parameter::getValueString).toList() : Collections.emptyList();
+        Parameter::getValueString).toList() : Collections.emptyList();
     if (urls.isEmpty()) {
       throw ApiError.TE110.toApiException();
     }
     urls.forEach(url -> {
-      String resource = getResource(url);
-      com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
-
-      ValueSetVersion version = prepareValueSetAndVersion(ValueSetFhirImportMapper.mapValueSet(valueSet));
-      valueSetVersionService.saveConcepts(version.getId(), findConcepts(valueSet));
-
-      log.info("Activating version '{}' in value set '{}'", version.getValueSet(), version.getVersion());
-      valueSetVersionService.activate(version.getValueSet(), version.getVersion());
+      try {
+        importValueSet(url);
+      } catch (Exception e) {
+        warnings.add(String.format("ValueSet from resource {%s} was not imported due to error: {%s}", url, e.getMessage()));
+      }
     });
+  }
+
+  @Transactional
+  public void importValueSet(String url) {
+    String resource = getResource(url);
+    com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
+
+    ValueSetVersion version = prepareValueSetAndVersion(ValueSetFhirImportMapper.mapValueSet(valueSet));
+    valueSetVersionService.saveConcepts(version.getId(), findConcepts(valueSet));
+
+    log.info("Activating version '{}' in value set '{}'", version.getValueSet(), version.getVersion());
+    valueSetVersionService.activate(version.getValueSet(), version.getVersion());
   }
 
   private String getResource(String url) {

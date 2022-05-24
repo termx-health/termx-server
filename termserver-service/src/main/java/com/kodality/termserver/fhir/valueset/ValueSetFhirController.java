@@ -9,6 +9,7 @@ import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Post;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
@@ -28,13 +29,15 @@ public class ValueSetFhirController {
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);
     CompletableFuture.runAsync(() -> {
       try {
+        List<String> warnings = new ArrayList<>();
         log.info("Fhir value set import started");
         long start = System.currentTimeMillis();
-        importService.importValueSet(parameters);
+        importService.importValueSets(parameters, warnings);
         log.info("Fhir value set import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
-        importLogger.logImport(jobLogResponse.getJobId());
+        importLogger.logImport(jobLogResponse.getJobId(), warnings);
       } catch (Exception e) {
         log.error("Error while importing fhir value set", e);
+        importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
     });

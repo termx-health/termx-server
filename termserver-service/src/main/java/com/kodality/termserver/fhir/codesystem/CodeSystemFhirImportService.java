@@ -25,23 +25,33 @@ public class CodeSystemFhirImportService {
   private final CodeSystemImportService importService;
   private final BinaryHttpClient client = new BinaryHttpClient();
 
-  @Transactional
-  public void importCodeSystem(Parameters parameters) {
-    List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ? parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(Parameter::getValueString).toList() : Collections.emptyList();
+  public void importCodeSystems(Parameters parameters, List<String> warnings) {
+    List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ?
+        parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(Parameter::getValueString).toList() : Collections.emptyList();
     if (urls.isEmpty()) {
       throw ApiError.TE110.toApiException();
     }
     urls.forEach(url -> {
-      String resource = getResource(url);
-      com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
-
-      CodeSystemVersion version = importService.prepareCodeSystemAndVersion(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem));
-      List<EntityProperty> properties = importService.prepareProperties(CodeSystemFhirImportMapper.mapProperties(codeSystem), codeSystem.getId());
-      importService.prepareAssociationType(codeSystem.getHierarchyMeaning(), "code-system-hierarchy");
-
-      List<Concept> concepts = CodeSystemFhirImportMapper.mapConcepts(codeSystem.getConcept(), codeSystem, properties, null);
-      importService.importConcepts(concepts, version);
+      try {
+        importCodeSystem(url);
+      } catch (Exception e) {
+        warnings.add(String.format("CodeSystem from resource {%s} was not imported due to error: {%s}", url, e.getMessage()));
+      }
     });
+  }
+
+  @Transactional
+  public void importCodeSystem(String url) {
+    String resource = getResource(url);
+    com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem =
+        FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
+
+    CodeSystemVersion version = importService.prepareCodeSystemAndVersion(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem));
+    List<EntityProperty> properties = importService.prepareProperties(CodeSystemFhirImportMapper.mapProperties(codeSystem), codeSystem.getId());
+    importService.prepareAssociationType(codeSystem.getHierarchyMeaning(), "code-system-hierarchy");
+
+    List<Concept> concepts = CodeSystemFhirImportMapper.mapConcepts(codeSystem.getConcept(), codeSystem, properties, null);
+    importService.importConcepts(concepts, version);
   }
 
   private String getResource(String url) {

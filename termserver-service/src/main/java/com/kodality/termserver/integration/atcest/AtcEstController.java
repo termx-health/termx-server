@@ -34,6 +34,7 @@ public class AtcEstController {
         importLogger.logImport(jobLogResponse.getJobId());
       } catch (Exception e) {
         log.error("Error while importing ATC est", e);
+        importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
     });
