@@ -168,7 +168,13 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/duplicate")
   public HttpResponse<?> duplicateCodeSystem(@PathVariable String codeSystem, @Body @Valid CodeSystemDuplicateRequest request) {
     CodeSystem targetCodeSystem = new CodeSystem().setId(request.getCodeSystem()).setUri(request.getCodeSystemUri());
-    codeSystemDuplicateService.duplicate(targetCodeSystem, codeSystem);
+    codeSystemDuplicateService.duplicateCodeSystem(targetCodeSystem, codeSystem);
+    return HttpResponse.ok();
+  }
+
+  @Post(uri = "/{codeSystem}/versions/{version}/duplicate")
+  public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version, @Body @Valid CodeSystemVersionDuplicateRequest request) {
+    codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), codeSystem, version);
     return HttpResponse.ok();
   }
 
@@ -189,6 +195,12 @@ public class CodeSystemController {
   private static class CodeSystemDuplicateRequest {
     private String codeSystem;
     private String codeSystemUri;
+  }
+
+  @Getter
+  @Setter
+  private static class CodeSystemVersionDuplicateRequest {
+    private String version;
   }
 
 }
