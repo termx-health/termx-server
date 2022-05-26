@@ -167,8 +167,8 @@ public class CodeSystemController {
 
   @Post(uri = "/{codeSystem}/duplicate")
   public HttpResponse<?> duplicateCodeSystem(@PathVariable String codeSystem, @Body @Valid CodeSystemDuplicateRequest request) {
-    CodeSystem targetCodeSystem = new CodeSystem().setId(codeSystem).setUri(request.getTargetCodeSystemUri());
-    codeSystemDuplicateService.duplicate(targetCodeSystem, request.getSourceCodeSystem());
+    CodeSystem targetCodeSystem = new CodeSystem().setId(request.getCodeSystem()).setUri(request.getCodeSystemUri());
+    codeSystemDuplicateService.duplicate(targetCodeSystem, codeSystem);
     return HttpResponse.ok();
   }
 
@@ -187,8 +187,8 @@ public class CodeSystemController {
   @Getter
   @Setter
   private static class CodeSystemDuplicateRequest {
-    private String sourceCodeSystem;
-    private String targetCodeSystemUri;
+    private String codeSystem;
+    private String codeSystemUri;
   }
 
 }
