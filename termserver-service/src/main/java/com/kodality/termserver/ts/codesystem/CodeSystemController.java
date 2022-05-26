@@ -174,7 +174,7 @@ public class CodeSystemController {
 
   @Post(uri = "/{codeSystem}/versions/{version}/duplicate")
   public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version, @Body @Valid CodeSystemVersionDuplicateRequest request) {
-    codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), codeSystem, version);
+    codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), request.getCodeSystem(), version, codeSystem);
     return HttpResponse.ok();
   }
 
@@ -200,6 +200,7 @@ public class CodeSystemController {
   @Getter
   @Setter
   private static class CodeSystemVersionDuplicateRequest {
+    private String codeSystem;
     private String version;
   }
 

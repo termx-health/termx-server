@@ -36,34 +36,77 @@ public class CodeSystemDuplicateService {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   @Transactional
-  public void duplicateCodeSystem(CodeSystem targetCodeSystem, String sourceCsId) {
-    CodeSystem sourceCodeSystem = codeSystemService.get(sourceCsId).orElse(null);
-    if (sourceCodeSystem == null) {
-      throw ApiError.TE111.toApiException(Map.of("codeSystem", sourceCsId));
+  public void duplicateCodeSystem(CodeSystem targetCodeSystem, String sourceCodeSystem) {
+    CodeSystem sourceCs = codeSystemService.get(sourceCodeSystem).orElse(null);
+    if (sourceCs == null) {
+      throw ApiError.TE111.toApiException(Map.of("codeSystem", sourceCodeSystem));
     }
 
     if (codeSystemService.get(targetCodeSystem.getId()).isEmpty()) {
-      targetCodeSystem.setNames(sourceCodeSystem.getNames());
-      targetCodeSystem.setDescription(sourceCodeSystem.getDescription());
+      targetCodeSystem.setNames(sourceCs.getNames());
+      targetCodeSystem.setDescription(sourceCs.getDescription());
       codeSystemService.save(targetCodeSystem);
     }
 
-    List<CodeSystemVersion> versions = codeSystemVersionService.getVersions(sourceCsId);
+    List<CodeSystemVersion> versions = codeSystemVersionService.getVersions(sourceCodeSystem);
     versions.forEach(v -> v.setId(null).setStatus(PublicationStatus.draft).setCodeSystem(targetCodeSystem.getId()));
     codeSystemVersionService.save(versions, targetCodeSystem.getId());
 
-    List<EntityProperty> properties = entityPropertyService.getProperties(sourceCsId);
+    List<EntityProperty> properties = entityPropertyService.getProperties(sourceCodeSystem);
     properties.forEach(p -> p.setId(null));
     entityPropertyService.save(properties, targetCodeSystem.getId());
 
-    ConceptQueryParams conceptParams = new ConceptQueryParams().setCodeSystem(sourceCsId);
+    duplicateConcepts(versions, sourceCodeSystem, targetCodeSystem.getId());
+  }
+
+  @Transactional
+  public void duplicateCodeSystemVersion(String targetVersionVersion, String targetCodeSystem, String sourceVersionVersion, String sourceCodeSystem) {
+    CodeSystemVersion version = codeSystemVersionService.getVersion(sourceCodeSystem, sourceVersionVersion).orElse(null);
+    if (version == null) {
+      throw ApiError.TE104.toApiException(Map.of("version", sourceVersionVersion, "codeSystem", sourceCodeSystem));
+    }
+
+    version.setId(null);
+    version.setVersion(targetVersionVersion);
+    version.setCodeSystem(targetCodeSystem);
+    version.setStatus(PublicationStatus.draft);
+    codeSystemVersionService.save(version);
+
+    if (!sourceCodeSystem.equals(targetCodeSystem)) {
+      List<EntityProperty> properties = entityPropertyService.getProperties(sourceCodeSystem);
+      properties.forEach(p -> p.setId(null));
+      entityPropertyService.save(properties, targetCodeSystem);
+    }
+
+    duplicateConcepts(List.of(version), sourceCodeSystem, targetCodeSystem);
+  }
+
+  private void duplicateConcepts(List<CodeSystemVersion> versions, String sourceCodeSystem, String targetCodeSystem) {
+    ConceptQueryParams conceptParams = new ConceptQueryParams().setCodeSystem(sourceCodeSystem);
     conceptParams.all();
     List<Concept> concepts = conceptService.query(conceptParams).getData();
-    Map<Long, Long> entityVersionsMap = duplicateConcepts(conceptParams, targetCodeSystem.getId());
+
+    Map<Long, Long> entityVersionsMap = new HashMap<>();
+    concepts.forEach(c -> {
+      if (!sourceCodeSystem.equals(targetCodeSystem)) {
+        c.setId(null);
+        conceptService.save(c, targetCodeSystem);
+      }
+      c.getVersions().forEach(v -> {
+        Long sourceId = v.getId();
+        v.setId(null);
+        v.getDesignations().forEach(d -> d.setId(null));
+        v.getPropertyValues().forEach(pv -> pv.setId(null));
+        v.setAssociations(new ArrayList<>());
+        v.setStatus(PublicationStatus.draft);
+        codeSystemEntityVersionService.save(v, c.getId());
+        entityVersionsMap.put(sourceId, v.getId());
+      });
+    });
 
     versions.forEach(v -> {
       CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
-          .setCodeSystem(sourceCsId).setCodeSystemVersion(v.getVersion());
+          .setCodeSystem(sourceCodeSystem).setCodeSystemVersion(v.getVersion());
       codeSystemEntityVersionParams.all();
       List<CodeSystemEntityVersion> entityVersions = codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData();
       codeSystemVersionService.saveEntityVersions(v.getId(),
@@ -71,65 +114,6 @@ public class CodeSystemDuplicateService {
     });
 
     concepts.forEach(concept -> concept.getVersions().forEach(version -> duplicateEntityVersionAssociations(version.getId(), entityVersionsMap)));
-  }
-
-  @Transactional
-  public void duplicateCodeSystemVersion(String targetVersionVersion, String codeSystem, String sourceVersionVersion) {
-    CodeSystemVersion version = codeSystemVersionService.getVersion(codeSystem, sourceVersionVersion).orElse(null);
-    if (version == null) {
-      throw ApiError.TE104.toApiException(Map.of("version", sourceVersionVersion, "codeSystem", codeSystem));
-    }
-
-    version.setId(null);
-    version.setVersion(targetVersionVersion);
-    version.setCodeSystem(codeSystem);
-    version.setStatus(PublicationStatus.draft);
-    codeSystemVersionService.save(version);
-
-    ConceptQueryParams conceptParams = new ConceptQueryParams().setCodeSystem(codeSystem).setCodeSystemVersion(sourceVersionVersion);
-    conceptParams.all();
-    List<Concept> concepts = conceptService.query(conceptParams).getData();
-    Map<Long, Long> entityVersionsMap = new HashMap<>();
-    concepts.forEach(c -> c.getVersions().forEach(v -> {
-      Long sourceId = v.getId();
-      duplicateConceptVersion(v, c.getId());
-      codeSystemEntityVersionService.save(v, c.getId());
-      entityVersionsMap.put(sourceId, v.getId());
-    }));
-
-
-    CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
-        .setCodeSystem(codeSystem).setCodeSystemVersion(sourceVersionVersion);
-    codeSystemEntityVersionParams.all();
-    List<CodeSystemEntityVersion> entityVersions = codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData();
-    codeSystemVersionService.saveEntityVersions(version.getId(),
-        entityVersions.stream().peek(ev -> ev.setId(entityVersionsMap.get(ev.getId()))).collect(Collectors.toList()));
-
-    concepts.forEach(concept -> concept.getVersions().forEach(v -> duplicateEntityVersionAssociations(v.getId(), entityVersionsMap)));
-  }
-
-  private Map<Long, Long> duplicateConcepts(ConceptQueryParams conceptParams, String targetCodeSystem) {
-    List<Concept> concepts = conceptService.query(conceptParams).getData();
-    Map<Long, Long> entityVersionsMap = new HashMap<>();
-    concepts.forEach(c -> {
-      c.setId(null);
-      conceptService.save(c, targetCodeSystem);
-      c.getVersions().forEach(v -> {
-        Long sourceId = v.getId();
-        duplicateConceptVersion(v, c.getId());
-        entityVersionsMap.put(sourceId, v.getId());
-      });
-    });
-    return entityVersionsMap;
-  }
-
-  private void duplicateConceptVersion(CodeSystemEntityVersion v, Long entityId) {
-    v.setId(null);
-    v.getDesignations().forEach(d -> d.setId(null));
-    v.getPropertyValues().forEach(pv -> pv.setId(null));
-    v.setAssociations(new ArrayList<>());
-    v.setStatus(PublicationStatus.draft);
-    codeSystemEntityVersionService.save(v, entityId);
   }
 
 
