@@ -30,8 +30,8 @@ public class NamingSystemController {
   }
 
   @Post
-  public HttpResponse<?> create(@Body @Valid NamingSystem namingSystem) {
-    namingSystemService.create(namingSystem);
+  public HttpResponse<?> save(@Body @Valid NamingSystem namingSystem) {
+    namingSystemService.save(namingSystem);
     return HttpResponse.created(namingSystem);
   }
 }

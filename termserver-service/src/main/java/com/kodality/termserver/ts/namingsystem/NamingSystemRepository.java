@@ -16,7 +16,7 @@ public class NamingSystemRepository extends BaseRepository {
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson());
   });
 
-  public void create(NamingSystem namingSystem) {
+  public void save(NamingSystem namingSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", namingSystem.getId());
     ssb.jsonProperty("names", namingSystem.getNames());

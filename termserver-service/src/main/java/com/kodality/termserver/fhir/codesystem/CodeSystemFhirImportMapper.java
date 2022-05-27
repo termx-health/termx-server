@@ -2,6 +2,8 @@ package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termserver.CaseSignificance;
+import com.kodality.termserver.ContactDetail;
+import com.kodality.termserver.ContactDetail.Telecom;
 import com.kodality.termserver.Language;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystem;
@@ -29,10 +31,24 @@ public class CodeSystemFhirImportMapper {
     codeSystem.setId(fhirCodeSystem.getId());
     codeSystem.setUri(fhirCodeSystem.getUrl());
     codeSystem.setNames(new LocalizedName(Map.of(Language.en, fhirCodeSystem.getName())));
+    codeSystem.setContent(fhirCodeSystem.getContent());
+    codeSystem.setContacts(fhirCodeSystem.getContact() == null ? null :
+        fhirCodeSystem.getContact().stream().map(CodeSystemFhirImportMapper::mapCodeSystemContact).collect(Collectors.toList()));
     codeSystem.setDescription(fhirCodeSystem.getDescription());
+    codeSystem.setCaseSensitive(fhirCodeSystem.getCaseSensitive() != null && fhirCodeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive : CaseSignificance.entire_term_case_insensitive);
+    codeSystem.setNarrative(fhirCodeSystem.getText() == null ? null : fhirCodeSystem.getText().getDiv());
 
     codeSystem.setVersions(mapVersion(fhirCodeSystem));
     return codeSystem;
+  }
+
+  private static ContactDetail mapCodeSystemContact(com.kodality.zmei.fhir.datatypes.ContactDetail c) {
+    ContactDetail contact = new ContactDetail();
+    contact.setName(c.getName());
+    contact.setTelecoms(c.getTelecom() == null ? null : c.getTelecom().stream().map(t ->
+        new Telecom().setSystem(t.getSystem()).setUse(t.getUse()).setValue(t.getValue())
+    ).collect(Collectors.toList()));
+    return contact;
   }
 
   private static List<CodeSystemVersion> mapVersion(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {

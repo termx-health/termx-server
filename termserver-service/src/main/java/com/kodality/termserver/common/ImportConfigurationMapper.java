@@ -3,6 +3,7 @@ package com.kodality.termserver.common;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
+import com.kodality.termserver.codesystem.CodeSystemContent;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ public class ImportConfigurationMapper {
     codeSystem.setNames(configuration.getCodeSystemName());
     codeSystem.setDescription(configuration.getCodeSystemDescription());
     codeSystem.setVersions(mapVersions(configuration, lang));
+    codeSystem.setContent(CodeSystemContent.complete);
     return codeSystem;
   }
 

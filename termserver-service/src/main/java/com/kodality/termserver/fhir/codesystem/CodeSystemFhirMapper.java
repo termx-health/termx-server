@@ -10,6 +10,9 @@ import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyType;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
+import com.kodality.zmei.fhir.datatypes.ContactDetail;
+import com.kodality.zmei.fhir.datatypes.ContactPoint;
+import com.kodality.zmei.fhir.datatypes.Narrative;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.Property;
@@ -155,13 +158,19 @@ public class CodeSystemFhirMapper {
     fhirCodeSystem.setUrl(codeSystem.getUri());
     //TODO identifiers from naming-system
     fhirCodeSystem.setName(codeSystem.getNames().getOrDefault(Language.en, codeSystem.getNames().values().stream().findFirst().orElse(null)));
+    fhirCodeSystem.setContent(codeSystem.getContent());
+    fhirCodeSystem.setContact(codeSystem.getContacts() == null ? null : codeSystem.getContacts().stream().map(c ->
+        new ContactDetail().setName(c.getName()).setTelecom(c.getTelecoms() == null ? null : c.getTelecoms().stream().map(t ->
+            new ContactPoint().setSystem(t.getSystem()).setValue(t.getValue()).setUse(t.getUse())).collect(Collectors.toList())))
+        .collect(Collectors.toList()));
+    fhirCodeSystem.setText(new Narrative().setDiv(codeSystem.getNarrative()));
     fhirCodeSystem.setDescription(codeSystem.getDescription());
+    fhirCodeSystem.setCaseSensitive(codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
 
     fhirCodeSystem.setVersion(version.getVersion());
     fhirCodeSystem.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
     fhirCodeSystem.setStatus(version.getStatus());
     fhirCodeSystem.setPublisher(version.getSource());
-    fhirCodeSystem.setContent("complete");
     fhirCodeSystem.setConcept(version.getEntities().stream()
         .filter(e -> CollectionUtils.isEmpty(e.getAssociations()))
         .map(e -> toFhir(e, codeSystem, version.getEntities(), fhirCodeSystem))
@@ -180,8 +189,6 @@ public class CodeSystemFhirMapper {
     concept.setDesignation(getDesignations(e.getDesignations(), codeSystem.getProperties()));
     concept.setProperty(getProperties(e.getPropertyValues(), codeSystem.getProperties(), fhirCodeSystem));
     concept.setConcept(getChildConcepts(entities, e.getId(), codeSystem, fhirCodeSystem));
-    fhirCodeSystem.setCaseSensitive(fhirCodeSystem.getCaseSensitive() != null && fhirCodeSystem.getCaseSensitive() ||
-        e.getDesignations().stream().anyMatch(d -> !CaseSignificance.entire_term_case_insensitive.equals(d.getCaseSignificance())));
     return concept;
   }
 

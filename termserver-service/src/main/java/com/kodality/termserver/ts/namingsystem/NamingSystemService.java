@@ -23,8 +23,8 @@ public class NamingSystemService {
   }
 
   @Transactional
-  public void create(NamingSystem namingSystem) {
+  public void save(NamingSystem namingSystem) {
     namingSystem.setCreated(namingSystem.getCreated() == null ? OffsetDateTime.now() : namingSystem.getCreated());
-    repository.create(namingSystem);
+    repository.save(namingSystem);
   }
 }

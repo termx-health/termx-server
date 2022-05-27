@@ -18,6 +18,7 @@ public class CodeSystemRepository extends BaseRepository {
 
   private final PgBeanProcessor bp = new PgBeanProcessor(CodeSystem.class, bp -> {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson());
   });
 
   public void save(CodeSystem codeSystem) {
@@ -25,6 +26,10 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.property("id", codeSystem.getId());
     ssb.property("uri", codeSystem.getUri());
     ssb.jsonProperty("names", codeSystem.getNames());
+    ssb.property("content", codeSystem.getContent());
+    ssb.jsonProperty("contacts", codeSystem.getContacts());
+    ssb.property("case_sensitive", codeSystem.getCaseSensitive());
+    ssb.property("narrative", codeSystem.getNarrative());
     ssb.property("description", codeSystem.getDescription());
 
     SqlBuilder sb = ssb.buildUpsert("code_system", "id");
