@@ -76,7 +76,7 @@ public class ValueSetRepository extends BaseRepository {
         Ordering.description, "description"
     ));
     if (StringUtils.isNotEmpty(lang)) {
-      sortMap.put(Ordering.name, "ms.names ->> '" + lang + "'");
+      sortMap.put(Ordering.name, "vs.names ->> '" + lang + "'");
     }
     return sortMap;
   }
