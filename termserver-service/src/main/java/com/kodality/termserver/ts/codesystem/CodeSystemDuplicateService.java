@@ -44,6 +44,10 @@ public class CodeSystemDuplicateService {
 
     if (codeSystemService.get(targetCodeSystem.getId()).isEmpty()) {
       targetCodeSystem.setNames(sourceCs.getNames());
+      targetCodeSystem.setContent(sourceCs.getContent());
+      targetCodeSystem.setContacts(sourceCs.getContacts());
+      targetCodeSystem.setCaseSensitive(sourceCs.getCaseSensitive());
+      targetCodeSystem.setNarrative(sourceCs.getNarrative());
       targetCodeSystem.setDescription(sourceCs.getDescription());
       codeSystemService.save(targetCodeSystem);
     }
