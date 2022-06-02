@@ -18,6 +18,7 @@ import com.kodality.termserver.ts.codesystem.supplement.CodeSystemSupplementServ
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
@@ -141,8 +142,14 @@ public class CodeSystemController {
   }
 
   @Post(uri = "/{codeSystem}/versions/{version}/entity-versions")
-  public HttpResponse<?> saveEntityVersions(@PathVariable String codeSystem, @PathVariable String version, @Body EntityVersionRequest request) {
-    codeSystemVersionService.saveEntityVersions(codeSystem, version, request.getVersions());
+  public HttpResponse<?> saveEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @Body CodeSystemEntityVersion entityVersion) {
+    codeSystemVersionService.saveEntityVersion(codeSystem, version, entityVersion);
+    return HttpResponse.ok();
+  }
+
+  @Delete(uri = "/{codeSystem}/versions/{version}/entity-versions")
+  public HttpResponse<?> deleteEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @Body CodeSystemEntityVersion entityVersion) {
+    codeSystemVersionService.deleteEntityVersion(codeSystem, version, entityVersion);
     return HttpResponse.ok();
   }
 
@@ -181,12 +188,6 @@ public class CodeSystemController {
   @Setter
   private static class EntityPropertyRequest {
     private List<EntityProperty> properties;
-  }
-
-  @Getter
-  @Setter
-  private static class EntityVersionRequest {
-    private List<CodeSystemEntityVersion> versions;
   }
 
   @Getter

@@ -95,10 +95,20 @@ public class CodeSystemVersionService {
   }
 
   @Transactional
-  public void saveEntityVersions(String codeSystem, String codeSystemVersion, List<CodeSystemEntityVersion> entityVersions) {
+  public void saveEntityVersion(String codeSystem, String codeSystemVersion, CodeSystemEntityVersion entityVersion) {
     Optional<Long> versionId = getVersion(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
     if (versionId.isPresent()) {
-      saveEntityVersions(versionId.get(), entityVersions);
+      repository.saveEntityVersion(versionId.get(), entityVersion);
+    } else {
+      throw ApiError.TE104.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
+    }
+  }
+
+  @Transactional
+  public void deleteEntityVersion(String codeSystem, String codeSystemVersion, CodeSystemEntityVersion entityVersion) {
+    Optional<Long> versionId = getVersion(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
+    if (versionId.isPresent()) {
+      repository.deleteEntityVersion(versionId.get(), entityVersion);
     } else {
       throw ApiError.TE104.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
     }
