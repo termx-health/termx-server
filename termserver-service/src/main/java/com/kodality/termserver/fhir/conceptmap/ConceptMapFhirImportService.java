@@ -162,9 +162,6 @@ public class ConceptMapFhirImportService {
     log.info("Linking map set version and association versions");
     mapSetVersionService.saveEntityVersions(version.getId(), associations.stream().map(c -> c.getVersions().get(0)).collect(Collectors.toList()));
 
-    log.info("Activating version '{}' in map set '{}'", version.getVersion(), version.getMapSet());
-    mapSetVersionService.activate(version.getMapSet(), version.getVersion());
-
     log.info("Import finished.");
   }
 

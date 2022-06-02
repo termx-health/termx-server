@@ -11,4 +11,5 @@ import lombok.experimental.Accessors;
 public class EntityPropertyQueryParams extends QueryParams {
   private String names;
   private String codeSystem;
+  private String valueSet;
 }

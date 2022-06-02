@@ -1,5 +1,6 @@
 package com.kodality.termserver.ts.valueset;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.Concept;
@@ -41,9 +42,18 @@ public class ValueSetVersionService {
     return Optional.ofNullable(repository.getVersion(valueSet, versionCode));
   }
 
+  public ValueSetVersion getVersion(Long id) {
+    return repository.getVersion(id);
+  }
+
   public List<ValueSetVersion> getVersions(String valueSet) {
     return repository.getVersions(valueSet);
   }
+
+  public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
+    return repository.query(params);
+  }
+
 
   @Transactional
   public void activate(String valueSet, String version) {

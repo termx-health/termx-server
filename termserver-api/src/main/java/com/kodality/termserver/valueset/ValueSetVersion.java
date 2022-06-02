@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 @Getter
 @Setter
@@ -14,6 +15,7 @@ public class ValueSetVersion {
   private Long id;
   private String valueSet;
   private String version;
+  private String source;
   private List<String> supportedLanguages;
   private String description;
   private String status;
@@ -21,6 +23,15 @@ public class ValueSetVersion {
   private LocalDate expirationDate;
   private OffsetDateTime created;
 
-  private List<Concept> concepts;
-  private List<Designation> designations;
+  private ValueSetRuleSet ruleSet;
+  private List<ValueSetConcept> concepts;
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class ValueSetConcept {
+    private Concept concept;
+    private Designation display;
+    private List<Designation> additionalDesignations;
+  }
 }

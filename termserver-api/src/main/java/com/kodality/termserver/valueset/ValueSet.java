@@ -1,6 +1,7 @@
 package com.kodality.termserver.valueset;
 
 import com.kodality.commons.model.LocalizedName;
+import com.kodality.termserver.ContactDetail;
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
 import lombok.Getter;
@@ -15,6 +16,7 @@ public class ValueSet {
   private String id;
   private String uri;
   private LocalizedName names;
+  private List<ContactDetail> contacts;
   private String description;
 
   private List<ValueSetVersion> versions;

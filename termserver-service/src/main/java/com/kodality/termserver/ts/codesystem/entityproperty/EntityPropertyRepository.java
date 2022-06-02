@@ -37,11 +37,11 @@ public class EntityPropertyRepository extends BaseRepository {
 
   public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from entity_property where sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from entity_property ep where ep.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from entity_property where sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select * from entity_property ep where ep.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -51,9 +51,14 @@ public class EntityPropertyRepository extends BaseRepository {
   private SqlBuilder filter(EntityPropertyQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     if (StringUtils.isNotEmpty(params.getNames())) {
-      sb.and().in("name", params.getNames());
+      sb.and().in("ep.name", params.getNames());
     }
-    sb.appendIfNotNull("and code_system = ?", params.getCodeSystem());
+    sb.appendIfNotNull("and ep.code_system = ?", params.getCodeSystem());
+    sb.appendIfNotNull("and exists(select 1 from value_set vs " +
+        "inner join value_set_version vsv on vsv.value_set = vs.id and vsv.sys_status = 'A' " +
+        "inner join concept_value_set_version_membership cvsvm on cvsvm.value_set_version_id = vsv.id and cvsvm.sys_status = 'A' " +
+        "inner join concept c on c.id = cvsvm.concept_id and c.sys_status = 'A' " +
+        "where c.code_system = ep.code_system and vs.id = ? and vs.sys_status = 'A')", params.getValueSet());
     return sb;
   }
 

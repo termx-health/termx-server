@@ -11,6 +11,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ValueSetVersionQueryParams extends QueryParams {
   private String valueSet;
+  private String valueSetUri;
   private String version;
   private String status;
   private LocalDate releaseDateLe;

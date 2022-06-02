@@ -56,11 +56,20 @@ public class ConceptRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("c.code ", params.getCode());
     }
-    if (params.getCodeSystemVersion() != null) {
+    if (params.getCodeSystemVersion() != null ||
+        params.getCodeSystemVersionReleaseDateGe() != null ||
+        params.getCodeSystemVersionReleaseDateLe() != null ||
+        params.getCodeSystemVersionExpirationDateGe() != null ||
+        params.getCodeSystemVersionExpirationDateLe() != null) {
       sb.append("and exists (select 1 from code_system_version csv " +
           "inner join entity_version_code_system_version_membership evcsvm on evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A' " +
           "inner join code_system_entity_version csev on csev.id = evcsvm.code_system_entity_version_id and csev.sys_status = 'A' " +
-          "where csev.code_system_entity_id = c.id and csv.version = ? and csv.sys_status = 'A'", params.getCodeSystemVersion());
+          "where csev.code_system_entity_id = c.id and csv.sys_status = 'A'");
+      sb.appendIfNotNull("and csv.version = ?", params.getCodeSystemVersion());
+      sb.appendIfNotNull("and csv.release_date >= ?", params.getCodeSystemVersionReleaseDateGe());
+      sb.appendIfNotNull("and csv.release_date <= ?", params.getCodeSystemVersionReleaseDateLe());
+      sb.appendIfNotNull("and (csv.expiration_date >= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateGe());
+      sb.appendIfNotNull("and (csv.expiration_date <= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateLe());
       sb.appendIfNotNull("and csv.code_system = ?", params.getCodeSystem());
       sb.append(")");
     }
@@ -70,6 +79,8 @@ public class ConceptRepository extends BaseRepository {
     sb.appendIfNotNull("and exists( select 1 from value_set_version vsv " +
         "inner join concept_value_set_version_membership cvsvm on cvsvm.value_set_version_id = vsv.id and cvsvm.sys_status = 'A' " +
         "where vsv.version = ? and vsv.sys_status = 'A' and cvsvm.concept_id = c.id)", params.getValueSetVersion());
+    sb.appendIfNotNull("and exists (select 1 from code_system_entity_version csev " +
+        "where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status = ?)", params.getCodeSystemEntityStatus());
     return sb;
   }
 }

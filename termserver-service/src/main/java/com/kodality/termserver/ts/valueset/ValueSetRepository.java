@@ -17,6 +17,7 @@ import javax.inject.Singleton;
 public class ValueSetRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(ValueSet.class, bp -> {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson());
   });
 
   public void create(ValueSet valueSet) {
@@ -24,6 +25,7 @@ public class ValueSetRepository extends BaseRepository {
     ssb.property("id", valueSet.getId());
     ssb.property("uri", valueSet.getUri());
     ssb.jsonProperty("names", valueSet.getNames());
+    ssb.jsonProperty("contacts", valueSet.getContacts());
     ssb.property("description", valueSet.getDescription());
 
     SqlBuilder sb = ssb.buildUpsert("value_set", "id");

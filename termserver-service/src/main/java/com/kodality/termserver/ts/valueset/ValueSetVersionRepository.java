@@ -18,6 +18,7 @@ import javax.inject.Singleton;
 public class ValueSetVersionRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(ValueSetVersion.class, bp -> {
     bp.addColumnProcessor("supported_languages", PgBeanProcessor.fromArray());
+    bp.addColumnProcessor("rule_set", PgBeanProcessor.fromJson());
   });
 
   public void save(ValueSetVersion version) {
@@ -25,7 +26,9 @@ public class ValueSetVersionRepository extends BaseRepository {
     ssb.property("id", version.getId());
     ssb.property("value_set", version.getValueSet());
     ssb.property("version", version.getVersion());
+    ssb.property("source", version.getSource());
     ssb.property("supported_languages", "?::text[]", PgUtil.array(version.getSupportedLanguages()));
+    ssb.jsonProperty("rule_set", version.getRuleSet());
     ssb.property("description", version.getDescription());
     ssb.property("status", version.getStatus());
     ssb.property("release_date", version.getReleaseDate());
@@ -41,6 +44,10 @@ public class ValueSetVersionRepository extends BaseRepository {
     return getBean(sql, bp, valueSet, version);
   }
 
+  public ValueSetVersion getVersion(Long id) {
+    String sql = "select * from value_set_version where sys_status = 'A' and id = ?";
+    return getBean(sql, bp, id);
+  }
   public List<ValueSetVersion> getVersions(String valueSet) {
     String sql = "select * from value_set_version where sys_status = 'A' and value_set = ?";
     return getBeans(sql, bp, valueSet);
@@ -48,11 +55,11 @@ public class ValueSetVersionRepository extends BaseRepository {
 
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from value_set_version where sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from value_set_version vsv where vsv.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from value_set_version where sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select * from value_set_version vsv where vsv.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -61,11 +68,12 @@ public class ValueSetVersionRepository extends BaseRepository {
 
   private SqlBuilder filter(ValueSetVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and value_set = ?", params.getValueSet());
-    sb.appendIfNotNull("and version = ?", params.getVersion());
-    sb.appendIfNotNull("and status = ?", params.getStatus());
-    sb.appendIfNotNull("and release_date <= ?", params.getReleaseDateLe());
-    sb.appendIfNotNull("and expiration_date >= ?", params.getExpirationDateGe());
+    sb.appendIfNotNull("and vsv.value_set = ?", params.getValueSet());
+    sb.appendIfNotNull("and exists (select 1 from value_set vs where vs.id = vsv.value_set and vs.uri = ? and vs.sys_status = 'A')", params.getValueSetUri());
+    sb.appendIfNotNull("and vsv.version = ?", params.getVersion());
+    sb.appendIfNotNull("and vsv.status = ?", params.getStatus());
+    sb.appendIfNotNull("and (vsv.release_date is null or vsv.release_date <= ?)", params.getReleaseDateLe());
+    sb.appendIfNotNull("and (vsv.expiration_date is null or vsv.expiration_date >= ?)", params.getExpirationDateGe());
     return sb;
   }
 
