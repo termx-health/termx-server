@@ -11,6 +11,8 @@ import lombok.experimental.Accessors;
 public class CodeSystemEntityVersionQueryParams extends QueryParams {
   private String code;
   private String codeContains;
+  private String descriptionContains;
+  private String textContains;
   private String status;
   private String codeSystem;
   private Long codeSystemEntityId;
