@@ -52,7 +52,7 @@ public class ConceptRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and c.code_system = ?", params.getCodeSystem());
     sb.appendIfNotNull("and exists (select 1 from code_system cs where cs.id = c.code_system and cs.uri = ?)", params.getCodeSystemUri());
-    sb.appendIfNotNull("and c.code ilike ? || '%'", params.getCodeContains());
+    sb.appendIfNotNull("and c.code ~* ?", params.getCodeContains());
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("c.code ", params.getCode());
     }
