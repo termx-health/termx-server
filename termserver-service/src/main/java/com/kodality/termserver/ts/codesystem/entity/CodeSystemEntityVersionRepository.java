@@ -8,6 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
+import io.micronaut.core.util.StringUtils;
 import javax.inject.Singleton;
 
 @Singleton
@@ -56,7 +57,10 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and csev.code_system_entity_id = ?", params.getCodeSystemEntityId());
     sb.appendIfNotNull("and csev.status = ?", params.getStatus());
-    sb.appendIfNotNull("and csev.code = ?", params.getCode());
+    sb.appendIfNotNull("and csev.code ilike ? || '%'", params.getCodeContains());
+    if (StringUtils.isNotEmpty(params.getCode())) {
+      sb.and().in("csev.code ", params.getCode());
+    }
     sb.appendIfNotNull("and cse.code_system = ?", params.getCodeSystem());
     sb.appendIfNotNull("and exists (select 1 from code_system cs " +
         "where cse.code_system = cs.id and cs.uri = ? and cs.sys_status = 'A')", params.getCodeSystemUri());
