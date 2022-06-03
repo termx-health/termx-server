@@ -1,10 +1,12 @@
 package com.kodality.termserver.ts.codesystem.entity;
 
+import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemSupplement;
 import com.kodality.termserver.ts.codesystem.supplement.CodeSystemSupplementService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import javax.validation.Valid;
@@ -15,6 +17,11 @@ import lombok.RequiredArgsConstructor;
 public class CodeSystemEntityVersionController {
   private final CodeSystemSupplementService codeSystemSupplementService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+
+  @Get(uri = "/{id}")
+  public CodeSystemEntityVersion getEntityVersion(@PathVariable Long id) {
+    return codeSystemEntityVersionService.load(id);
+  }
 
   @Post(uri = "/{id}/activate")
   public HttpResponse<?> activateVersion(@PathVariable Long id) {
