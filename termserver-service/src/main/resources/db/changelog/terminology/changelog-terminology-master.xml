@@ -15,4 +15,5 @@
     <include file="08-code_system_supplement.sql" relativeToChangelogFile="true"/>
     <include file="09-naming_system.sql" relativeToChangelogFile="true"/>
 
+    <include file="data/changelog-data.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

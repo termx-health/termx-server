@@ -16,6 +16,7 @@ import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyType;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.Property;
+import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,6 +96,9 @@ public class CodeSystemFhirImportMapper {
                                           List<EntityProperty> properties,
                                           com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept parent) {
     List<Concept> concepts = new ArrayList<>();
+    if (CollectionUtils.isEmpty(fhirConcepts)) {
+      return concepts;
+    }
     fhirConcepts.forEach(c -> {
       Concept concept = new Concept();
       concept.setCode(c.getCode());

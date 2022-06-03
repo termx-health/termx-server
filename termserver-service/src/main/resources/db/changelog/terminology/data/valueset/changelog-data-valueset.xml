@@ -1,0 +1,61 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+  <changeSet id="publication-status" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+      <param name="files" value="db/changelog/terminology/data/valueset/publication-status.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="codesystem-content-mode" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+      <param name="files" value="db/changelog/terminology/data/valueset/codesystem-content-mode.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="v3-ietf3066" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+      <param name="files" value="db/changelog/terminology/data/valueset/languages.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="concept-property-type" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+      <param name="files" value="db/changelog/terminology/data/valueset/concept-property-type.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="contact-point-system" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+      <param name="files" value="db/changelog/terminology/data/valueset/contact-point-system.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="contact-point-use" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+      <param name="files" value="db/changelog/terminology/data/valueset/contact-point-use.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="filter-operator" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+      <param name="files" value="db/changelog/terminology/data/valueset/filter-operator.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="namingsystem-identifier-type" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+      <param name="files" value="db/changelog/terminology/data/valueset/namingsystem-identifier-type.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="namingsystem-type" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+      <param name="files" value="db/changelog/terminology/data/valueset/namingsystem-type.json"/>
+    </customChange>
+  </changeSet>
+
+</databaseChangeLog>

@@ -9,6 +9,10 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class DesignationQueryParams extends QueryParams {
+  private String name;
+  private String language;
+  private String designationKind;
+
   private String valueSet;
   private String valueSetVersion;
 

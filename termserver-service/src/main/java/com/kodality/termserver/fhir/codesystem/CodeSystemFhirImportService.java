@@ -40,12 +40,15 @@ public class CodeSystemFhirImportService {
     });
   }
 
-  @Transactional
   public void importCodeSystem(String url) {
     String resource = getResource(url);
     com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem =
         FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
+    importCodeSystem(codeSystem);
+  }
 
+  @Transactional
+  public void importCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
     CodeSystemVersion version = importService.prepareCodeSystemAndVersion(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem));
     List<EntityProperty> properties = importService.prepareProperties(CodeSystemFhirImportMapper.mapProperties(codeSystem), codeSystem.getId());
     importService.prepareAssociationType(codeSystem.getHierarchyMeaning(), "code-system-hierarchy");

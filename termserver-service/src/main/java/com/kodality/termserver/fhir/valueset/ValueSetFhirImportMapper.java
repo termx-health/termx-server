@@ -2,6 +2,7 @@ package com.kodality.termserver.fhir.valueset;
 
 
 import com.kodality.commons.model.LocalizedName;
+import com.kodality.termserver.CaseSignificance;
 import com.kodality.termserver.ContactDetail;
 import com.kodality.termserver.ContactDetail.Telecom;
 import com.kodality.termserver.Language;
@@ -91,8 +92,12 @@ public class ValueSetFhirImportMapper {
     return concepts.stream().map(c -> {
       ValueSetConcept concept = new ValueSetConcept();
       concept.setConcept(new com.kodality.termserver.codesystem.Concept().setCode(c.getCode()));
-      concept.setDisplay(new Designation().setName(c.getDisplay()));
       concept.setAdditionalDesignations(mapDesignations(c.getDesignation()));
+      concept.setDisplay(new Designation()
+          .setName(c.getDisplay())
+          .setDesignationKind("text")
+          .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)
+          .setStatus(PublicationStatus.active));
       return concept;
     }).collect(Collectors.toList());
   }
@@ -104,7 +109,9 @@ public class ValueSetFhirImportMapper {
     return designation.stream().map(d -> new Designation()
         .setLanguage(d.getLanguage())
         .setName(d.getValue())
-        .setDesignationKind("text")).collect(Collectors.toList());
+        .setDesignationKind("text")
+        .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)
+        .setStatus(PublicationStatus.active)).collect(Collectors.toList());
   }
 
   private static List<ValueSetRuleFilter> mapRuleFilters(List<Filter> filters) {

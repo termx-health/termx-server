@@ -5,12 +5,17 @@ import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.concept.ConceptService;
+import com.kodality.termserver.ts.codesystem.designation.DesignationService;
+import com.kodality.termserver.valueset.ValueSetRuleSet.ValueSetRule;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
+import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class ValueSetVersionService {
+  private final ConceptService conceptService;
+  private final DesignationService designationService;
+
   private final ValueSetVersionRepository repository;
 
   @Transactional
@@ -35,15 +43,15 @@ public class ValueSetVersionService {
       throw ApiError.TE102.toApiException(Map.of("version", lastDraftVersion.getVersion()));
     }
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
-    repository.save(version);
+    repository.save(prepare(version));
   }
 
   public Optional<ValueSetVersion> getVersion(String valueSet, String versionCode) {
-    return Optional.ofNullable(repository.getVersion(valueSet, versionCode));
+    return Optional.ofNullable(decorate(repository.getVersion(valueSet, versionCode)));
   }
 
   public ValueSetVersion getVersion(Long id) {
-    return repository.getVersion(id);
+    return decorate(repository.getVersion(id));
   }
 
   public List<ValueSetVersion> getVersions(String valueSet) {
@@ -120,5 +128,59 @@ public class ValueSetVersionService {
   public void saveDesignations(Long valueSetVersionId, List<Designation> designations) {
     repository.retainDesignations(designations, valueSetVersionId);
     repository.upsertDesignations(designations, valueSetVersionId);
+  }
+
+  private ValueSetVersion decorate(ValueSetVersion version) {
+    if (version != null && version.getRuleSet() != null) {
+      if (CollectionUtils.isNotEmpty(version.getRuleSet().getIncludeRules())) {
+        version.getRuleSet().getIncludeRules().forEach(this::decorate);
+      }
+      if (CollectionUtils.isNotEmpty(version.getRuleSet().getExcludeRules())) {
+        version.getRuleSet().getExcludeRules().forEach(this::decorate);
+      }
+    }
+    return version;
+  }
+
+  private void decorate(ValueSetRule r) {
+    if (CollectionUtils.isNotEmpty(r.getConcepts())) {
+      r.getConcepts().forEach(c -> {
+        c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? null : designationService.get(c.getDisplay().getId()).orElse(null));
+        c.setConcept(c.getConcept() == null || c.getConcept().getId() == null ? null : conceptService.get(c.getConcept().getId()).orElse(null));
+        if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
+          c.setAdditionalDesignations(c.getAdditionalDesignations().stream()
+              .map(d -> d.getId() == null ? d : designationService.get(d.getId()).orElse(null))
+              .collect(Collectors.toList()));
+        }
+      });
+    }
+  }
+
+  private ValueSetVersion prepare(ValueSetVersion version) {
+    if (version.getRuleSet() != null) {
+      if (CollectionUtils.isNotEmpty(version.getRuleSet().getIncludeRules())) {
+        version.getRuleSet().getIncludeRules().forEach(this::prepare);
+      }
+      if (CollectionUtils.isNotEmpty(version.getRuleSet().getExcludeRules())) {
+        version.getRuleSet().getExcludeRules().forEach(this::prepare);
+      }
+    }
+    return version;
+  }
+
+  private void prepare(ValueSetRule r) {
+    if (CollectionUtils.isNotEmpty(r.getConcepts())) {
+      r.getConcepts().forEach(c -> {
+        c.setDisplay(c.getDisplay() == null ? null : new Designation().setId(c.getDisplay().getId()));
+        if (c.getConcept() != null) {
+          Concept concept = new Concept();
+          concept.setId(c.getConcept().getId());
+          c.setConcept(concept);
+        }
+        if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
+          c.setAdditionalDesignations(c.getAdditionalDesignations().stream().map(d -> new Designation().setId(d.getId())).collect(Collectors.toList()));
+        }
+      });
+    }
   }
 }

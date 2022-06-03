@@ -4,7 +4,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.kodality.commons.model.LocalizedName
 import com.kodality.termserver.codesystem.Concept
 import com.kodality.termserver.common.ImportConfiguration
-import com.kodality.termserver.integration.common.MapperUtil
 import com.kodality.termserver.common.utils.TemplateUtil
 import com.kodality.termserver.integration.icd10.utils.Icd10
 import com.kodality.termserver.integration.icd10.utils.Icd10Mapper
