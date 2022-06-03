@@ -134,6 +134,12 @@ public class CodeSystemController {
     return HttpResponse.created(entityPropertyService.save(request.getProperties(), codeSystem));
   }
 
+  @Get(uri = "/{codeSystem}/entity-versions{?params*}")
+  public QueryResult<CodeSystemEntityVersion> getEntityVersions(@PathVariable String codeSystem, CodeSystemEntityVersionQueryParams params) {
+    params.setCodeSystem(codeSystem);
+    return codeSystemEntityVersionService.query(params);
+  }
+
   @Get(uri = "/{codeSystem}/versions/{version}/entity-versions{?params*}")
   public QueryResult<CodeSystemEntityVersion> getEntityVersions(@PathVariable String codeSystem, @PathVariable String version, CodeSystemEntityVersionQueryParams params) {
     params.setCodeSystem(codeSystem);
