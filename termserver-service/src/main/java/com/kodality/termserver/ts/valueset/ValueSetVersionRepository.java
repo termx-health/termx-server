@@ -7,8 +7,6 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import java.util.List;
@@ -85,49 +83,6 @@ public class ValueSetVersionRepository extends BaseRepository {
   public void retire(String valueSet, String version) {
     String sql = "update value_set_version set status = ? where value_set = ? and version = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.retired, valueSet, version, PublicationStatus.retired);
-  }
-
-  public void retainConcepts(List<Concept> concepts, Long valueSetVersionId) {
-    SqlBuilder sb = new SqlBuilder("update concept_value_set_version_membership set sys_status = 'C'");
-    sb.append(" where value_set_version_id = ? and sys_status = 'A'", valueSetVersionId);
-    sb.andNotIn("concept_id", concepts, Concept::getId);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
-  }
-
-  public void upsertConcepts(List<Concept> concepts, Long valueSetVersionId) {
-    if (concepts == null) {
-      return;
-    }
-    concepts.forEach(c -> {
-      SaveSqlBuilder ssb = new SaveSqlBuilder();
-      ssb.property("concept_id", c.getId());
-      ssb.property("value_set_version_id", valueSetVersionId);
-      ssb.property("sys_status","A"); //TODO
-      SqlBuilder sb = ssb.buildUpsert("concept_value_set_version_membership", "value_set_version_id", "concept_id", "sys_status");
-      jdbcTemplate.update(sb.getSql(), sb.getParams());
-    });
-  }
-
-  public void retainDesignations(List<Designation> designations, Long valueSetVersionId) {
-    SqlBuilder sb = new SqlBuilder("update designation_value_set_version_membership set sys_status = 'C'");
-    sb.append(" where value_set_version_id = ? and sys_status = 'A'", valueSetVersionId);
-    sb.andNotIn("designation_id", designations, Designation::getId);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
-  }
-
-  public void upsertDesignations(List<Designation> designations, Long valueSetVersionId) {
-    if (designations == null) {
-      return;
-    }
-    designations.forEach(d -> {
-      SaveSqlBuilder ssb = new SaveSqlBuilder();
-      ssb.property("designation_id", d.getId());
-      ssb.property("value_set_version_id", valueSetVersionId);
-      ssb.property("\"default\"", false);
-      ssb.property("sys_status","A"); //TODO
-      SqlBuilder sb = ssb.buildUpsert("designation_value_set_version_membership", "value_set_version_id", "designation_id", "sys_status");
-      jdbcTemplate.update(sb.getSql(), sb.getParams());
-    });
   }
 
 }

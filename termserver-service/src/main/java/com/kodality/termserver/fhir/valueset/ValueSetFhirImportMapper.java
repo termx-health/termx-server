@@ -20,6 +20,7 @@ import com.kodality.zmei.fhir.resource.terminology.ValueSet.Filter;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.Include;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,6 +56,7 @@ public class ValueSetFhirImportMapper {
     version.setStatus(PublicationStatus.draft);
     version.setReleaseDate(LocalDate.from(valueSet.getDate()));
     version.setRuleSet(mapRuleSet(valueSet));
+    version.setConcepts(mapConcepts(valueSet));
     return version;
   }
 
@@ -124,6 +126,25 @@ public class ValueSetFhirImportMapper {
       filter.setOperator(f.getOp());
       filter.setValue(f.getValue());
       return filter;
+    }).collect(Collectors.toList());
+  }
+
+  private static List<ValueSetConcept> mapConcepts(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
+    if (valueSet.getExpansion() == null || CollectionUtils.isEmpty(valueSet.getExpansion().getContains())) {
+      return new ArrayList<>();
+    }
+    return valueSet.getExpansion().getContains().stream().map(c -> {
+      ValueSetConcept vsConcept = new ValueSetConcept();
+      vsConcept.setDisplay(new Designation()
+          .setName(c.getDisplay())
+          .setDesignationKind("text")
+          .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)
+          .setStatus(PublicationStatus.active));
+      vsConcept.setAdditionalDesignations(mapDesignations(c.getDesignation()));
+      com.kodality.termserver.codesystem.Concept concept = new com.kodality.termserver.codesystem.Concept().setCode(c.getCode());
+      concept.setCodeSystem(c.getSystem());
+      vsConcept.setConcept(concept);
+      return vsConcept;
     }).collect(Collectors.toList());
   }
 }

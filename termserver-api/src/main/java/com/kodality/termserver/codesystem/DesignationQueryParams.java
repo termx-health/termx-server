@@ -13,9 +13,6 @@ public class DesignationQueryParams extends QueryParams {
   private String language;
   private String designationKind;
 
-  private String valueSet;
-  private String valueSetVersion;
-
   private Long conceptId;
   private String conceptCode;
 }

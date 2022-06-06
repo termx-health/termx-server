@@ -30,6 +30,8 @@ public class ValueSetVersion {
   @Setter
   @Accessors(chain = true)
   public static class ValueSetConcept {
+    private Long id;
+    private Long orderNr;
     private Concept concept;
     private Designation display;
     private List<Designation> additionalDesignations;

@@ -28,18 +28,15 @@ create table code_system_entity_version (
     description             text,
     status                  text                      not null,
     created                 timestamp,
-    previous_version_id     bigint,
     sys_created_at          timestamp                 not null,
     sys_created_by          text                      not null,
     sys_modified_at         timestamp                 not null,
     sys_modified_by         text                      not null,
     sys_status              char(1)     default 'A'   not null collate "C",
     sys_version             int                       not null,
-    constraint code_system_entity_version_code_system_entity_fk foreign key (code_system_entity_id) references code_system_entity(id),
-    constraint code_system_entity_version_previous_version_fk foreign key (previous_version_id) references code_system_entity_version(id)
+    constraint code_system_entity_version_code_system_entity_fk foreign key (code_system_entity_id) references code_system_entity(id)
 );
 create index code_system_entity_version_code_system_entity_idx on code_system_entity_version(code_system_entity_id);
-create index code_system_entity_version_previous_version_idx on code_system_entity_version(previous_version_id);
 
 select core.create_table_metadata('code_system_entity_version');
 --rollback drop table if exists code_system_entity_version;

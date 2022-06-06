@@ -2,15 +2,10 @@ package com.kodality.termserver.ts.valueset;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.ConceptQueryParams;
-import com.kodality.termserver.codesystem.Designation;
-import com.kodality.termserver.codesystem.DesignationQueryParams;
-import com.kodality.termserver.ts.codesystem.concept.ConceptService;
-import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
 import com.kodality.termserver.valueset.ValueSetVersion;
+import com.kodality.termserver.valueset.ValueSetVersion.ValueSetConcept;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -27,9 +22,7 @@ import lombok.Setter;
 @Controller("/ts/value-sets")
 @RequiredArgsConstructor
 public class ValueSetController {
-  private final ConceptService conceptService;
   private final ValueSetService valueSetService;
-  private final DesignationService designationService;
   private final ValueSetVersionService valueSetVersionService;
 
   @Get(uri = "{?params*}")
@@ -86,11 +79,8 @@ public class ValueSetController {
   }
 
   @Get(uri = "/{valueSet}/versions/{version}/concepts")
-  public List<Concept> getConcepts(@PathVariable String valueSet, @PathVariable String version) {
-    ConceptQueryParams params = new ConceptQueryParams();
-    params.setValueSet(valueSet);
-    params.setValueSetVersion(version);
-    return conceptService.query(params).getData();
+  public List<ValueSetConcept> getConcepts(@PathVariable String valueSet, @PathVariable String version) {
+    return valueSetVersionService.getConcepts(valueSet, version);
   }
 
   @Post(uri = "/{valueSet}/versions/{version}/concepts")
@@ -99,29 +89,9 @@ public class ValueSetController {
     return HttpResponse.ok();
   }
 
-  @Get(uri = "/{valueSet}/versions/{version}/designations")
-  public List<Designation> getDesignations(@PathVariable String valueSet, @PathVariable String version) {
-    DesignationQueryParams params = new DesignationQueryParams();
-    params.setValueSet(valueSet);
-    params.setValueSetVersion(version);
-    return designationService.query(params).getData();
-  }
-
-  @Post(uri = "/{valueSet}/versions/{version}/designations")
-  public HttpResponse<?> saveDesignations(@PathVariable String valueSet, @PathVariable String version, @Body DesignationRequest request) {
-    valueSetVersionService.saveDesignations(valueSet, version, request.getDesignations());
-    return HttpResponse.ok();
-  }
-
   @Getter
   @Setter
   private static class ConceptRequest {
-    private List<Concept> concepts;
-  }
-
-  @Getter
-  @Setter
-  private static class DesignationRequest {
-    private List<Designation> designations;
+    private List<ValueSetConcept> concepts;
   }
 }

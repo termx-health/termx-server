@@ -37,7 +37,6 @@ create table code_system_version (
     release_date        timestamp                 not null,
     expiration_date     timestamp,
     created             timestamptz default now() not null,
-    previous_version_id bigint,
     sys_created_at      timestamp                 not null,
     sys_created_by      text                      not null,
     sys_modified_at     timestamp                 not null,
@@ -45,8 +44,7 @@ create table code_system_version (
     sys_status          char(1)     default 'A'   not null collate "C",
     sys_version         int                       not null,
     constraint code_system_version_ukey unique (code_system, version),
-    constraint code_system_version_code_system_fk foreign key (code_system) references code_system(id),
-    constraint code_system_version_previous_version_fk foreign key (previous_version_id) references code_system_version(id)
+    constraint code_system_version_code_system_fk foreign key (code_system) references code_system(id)
 );
 create index code_system_version_code_system_idx on code_system_version(code_system);
 

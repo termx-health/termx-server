@@ -3,11 +3,11 @@ package com.kodality.termserver.fhir.valueset;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.codesystem.DesignationQueryParams;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
@@ -33,12 +33,10 @@ import io.micronaut.core.util.StringUtils;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,8 +82,7 @@ public class ValueSetFhirImportService {
   @Transactional
   public void importValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet) {
     ValueSet valueSet = prepare(ValueSetFhirImportMapper.mapValueSet(fhirValueSet));
-    ValueSetVersion version = prepareValueSetAndVersion(valueSet);
-    valueSetVersionService.saveConcepts(version.getId(), findConcepts(fhirValueSet));
+    prepareValueSetAndVersion(valueSet);
   }
 
   private String getResource(String url) {
@@ -98,6 +95,9 @@ public class ValueSetFhirImportService {
       prepareRules(valueSet.getVersions().get(0).getRuleSet().getExcludeRules(), valueSet.getVersions().get(0).getRuleSet().getLockedDate());
       prepareRules(valueSet.getVersions().get(0).getRuleSet().getIncludeRules(), valueSet.getVersions().get(0).getRuleSet().getLockedDate());
     }
+    if (CollectionUtils.isNotEmpty(valueSet.getVersions()) && valueSet.getVersions().get(0) != null && valueSet.getVersions().get(0).getConcepts() != null) {
+      prepareConcepts(valueSet.getVersions().get(0).getConcepts(), null, null);
+    }
     return valueSet;
   }
 
@@ -108,7 +108,7 @@ public class ValueSetFhirImportService {
     rules.forEach(r -> {
       prepareRuleValueSet(r);
       prepareRuleCodeSystem(r, lockedDate);
-      prepareConcepts(r);
+      prepareConcepts(r.getConcepts(), r.getCodeSystem(), r.getCodeSystemVersion());
     });
   }
 
@@ -137,14 +137,14 @@ public class ValueSetFhirImportService {
     }
   }
 
-  private void prepareConcepts(ValueSetRule r) {
-    if (CollectionUtils.isEmpty(r.getConcepts())) {
+  private void prepareConcepts(List<ValueSetConcept> concepts, String codeSystem, String codeSystemVersion) {
+    if (CollectionUtils.isEmpty(concepts)) {
       return;
     }
-    r.getConcepts().forEach(c -> {
+    concepts.forEach(c -> {
       if (c.getConcept() != null && c.getConcept().getCode() != null) {
-        conceptService.get(r.getCodeSystem(), r.getCodeSystemVersion(), c.getConcept().getCode()).ifPresentOrElse(c::setConcept, () -> {
-          Concept concept = conceptService.save(new Concept().setCode(c.getConcept().getCode()), r.getCodeSystem());
+        conceptService.get(codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem, codeSystemVersion, c.getConcept().getCode()).ifPresentOrElse(c::setConcept, () -> {
+          Concept concept = conceptService.save(new Concept().setCode(c.getConcept().getCode()), codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
           c.setConcept(concept);
         });
       }
@@ -160,14 +160,23 @@ public class ValueSetFhirImportService {
         .query(new EntityPropertyQueryParams().setCodeSystem(c.getConcept().getCodeSystem()).setNames("display"))
         .findFirst().map(EntityProperty::getId).orElse(null);
 
-    CodeSystemEntityVersion codeSystemEntityVersion = new CodeSystemEntityVersion()
-        .setCodeSystem(c.getConcept().getCodeSystem())
-        .setCode(c.getConcept().getCode())
-        .setStatus(PublicationStatus.draft);
+    CodeSystemEntityVersion codeSystemEntityVersion = codeSystemEntityVersionService
+        .query(
+            new CodeSystemEntityVersionQueryParams()
+                .setCodeSystem(c.getConcept().getCodeSystem())
+                .setCode(c.getConcept().getCode())
+                .setStatus(PublicationStatus.draft))
+        .findFirst()
+        .orElse(
+            new CodeSystemEntityVersion()
+                .setCodeSystem(c.getConcept().getCodeSystem())
+                .setCode(c.getConcept().getCode())
+                .setStatus(PublicationStatus.draft));
 
     if (c.getDisplay() != null) {
       designationService
-          .query(new DesignationQueryParams().setConceptCode(c.getConcept().getCode()).setName(c.getDisplay().getName()).setDesignationKind(c.getDisplay().getDesignationKind()))
+          .query(new DesignationQueryParams().setConceptCode(c.getConcept().getCode()).setName(c.getDisplay().getName())
+              .setDesignationKind(c.getDisplay().getDesignationKind()))
           .findFirst().ifPresentOrElse(c::setDisplay, () -> {
             codeSystemEntityVersionService.save(codeSystemEntityVersion, c.getConcept().getId());
             c.getDisplay().setDesignationTypeId(propertyId);
@@ -200,21 +209,7 @@ public class ValueSetFhirImportService {
     }
     log.info("Saving value set version {}", version.getVersion());
     valueSetVersionService.save(version);
+    valueSetVersionService.saveConcepts(version.getId(), version.getConcepts());
     return version;
-  }
-
-  private List<Concept> findConcepts(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
-    if (valueSet.getCompose() == null) {
-      return new ArrayList<>();
-    }
-    List<Concept> concepts = new ArrayList<>();
-    valueSet.getCompose().getInclude().forEach(i -> {
-      ConceptQueryParams params = new ConceptQueryParams();
-      params.setCodeSystemUri(i.getSystem());
-      params.setCodeSystemVersion(i.getVersion());
-      params.setCode(i.getConcept() == null ? null : i.getConcept().stream().map(c -> c.getCode()).collect(Collectors.joining(",")));
-      concepts.addAll(conceptService.query(params).getData());
-    });
-    return concepts;
   }
 }

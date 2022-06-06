@@ -9,6 +9,7 @@ import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.valueset.ValueSetRuleSet.ValueSetRule;
 import com.kodality.termserver.valueset.ValueSetVersion;
+import com.kodality.termserver.valueset.ValueSetVersion.ValueSetConcept;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
@@ -29,6 +30,7 @@ public class ValueSetVersionService {
   private final DesignationService designationService;
 
   private final ValueSetVersionRepository repository;
+  private final ValueSetVersionConceptRepository valueSetVersionConceptRepository;
 
   @Transactional
   public void save(ValueSetVersion version) {
@@ -99,7 +101,7 @@ public class ValueSetVersionService {
   }
 
   @Transactional
-  public void saveConcepts(String valueSet, String valueSetVersion, List<Concept> concepts) {
+  public void saveConcepts(String valueSet, String valueSetVersion, List<ValueSetConcept> concepts) {
     Optional<Long> versionId = getVersion(valueSet, valueSetVersion).map(ValueSetVersion::getId);
     if (versionId.isPresent()) {
       saveConcepts(versionId.get(), concepts);
@@ -108,43 +110,37 @@ public class ValueSetVersionService {
     }
   }
 
-  @Transactional
-  public void saveConcepts(Long valueSetVersionId, List<Concept> concepts) {
-    repository.retainConcepts(concepts, valueSetVersionId);
-    repository.upsertConcepts(concepts, valueSetVersionId);
-  }
-
-  @Transactional
-  public void saveDesignations(String valueSet, String valueSetVersion, List<Designation> designations) {
-    Optional<Long> versionId = getVersion(valueSet, valueSetVersion).map(ValueSetVersion::getId);
-    if (versionId.isPresent()) {
-      saveDesignations(versionId.get(), designations);
-    } else {
-      throw ApiError.TE109.toApiException(Map.of("version", valueSetVersion, "valueSet", valueSet));
+  public List<ValueSetConcept> getConcepts(String valueSet, String version) {
+    Optional<ValueSetVersion> vsVersion = getVersion(valueSet, version);
+    if (vsVersion.isEmpty()) {
+      throw ApiError.TE109.toApiException(Map.of("version", version, "valueSet", valueSet));
     }
+    List<ValueSetConcept> concepts = valueSetVersionConceptRepository.getConcepts(vsVersion.get().getId());
+    decorate(concepts);
+    return concepts;
   }
 
   @Transactional
-  public void saveDesignations(Long valueSetVersionId, List<Designation> designations) {
-    repository.retainDesignations(designations, valueSetVersionId);
-    repository.upsertDesignations(designations, valueSetVersionId);
+  public void saveConcepts(Long valueSetVersionId, List<ValueSetConcept> concepts) {
+    valueSetVersionConceptRepository.retainConcepts(concepts, valueSetVersionId);
+    valueSetVersionConceptRepository.upsertConcepts(concepts, valueSetVersionId);
   }
 
   private ValueSetVersion decorate(ValueSetVersion version) {
     if (version != null && version.getRuleSet() != null) {
       if (CollectionUtils.isNotEmpty(version.getRuleSet().getIncludeRules())) {
-        version.getRuleSet().getIncludeRules().forEach(this::decorate);
+        version.getRuleSet().getIncludeRules().forEach(r -> decorate(r.getConcepts()));
       }
       if (CollectionUtils.isNotEmpty(version.getRuleSet().getExcludeRules())) {
-        version.getRuleSet().getExcludeRules().forEach(this::decorate);
+        version.getRuleSet().getExcludeRules().forEach(r -> decorate(r.getConcepts()));
       }
     }
     return version;
   }
 
-  private void decorate(ValueSetRule r) {
-    if (CollectionUtils.isNotEmpty(r.getConcepts())) {
-      r.getConcepts().forEach(c -> {
+  private void decorate(List<ValueSetConcept> concepts) {
+    if (CollectionUtils.isNotEmpty(concepts)) {
+      concepts.forEach(c -> {
         c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? null : designationService.get(c.getDisplay().getId()).orElse(null));
         c.setConcept(c.getConcept() == null || c.getConcept().getId() == null ? null : conceptService.get(c.getConcept().getId()).orElse(null));
         if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
