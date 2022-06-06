@@ -3,8 +3,6 @@ package com.kodality.termserver.ts.codesystem;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.CodeSystem;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemSupplement;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
@@ -134,28 +132,15 @@ public class CodeSystemController {
     return HttpResponse.created(entityPropertyService.save(request.getProperties(), codeSystem));
   }
 
-  @Get(uri = "/{codeSystem}/entity-versions{?params*}")
-  public QueryResult<CodeSystemEntityVersion> getEntityVersions(@PathVariable String codeSystem, CodeSystemEntityVersionQueryParams params) {
-    params.setCodeSystem(codeSystem);
-    return codeSystemEntityVersionService.query(params);
-  }
-
-  @Get(uri = "/{codeSystem}/versions/{version}/entity-versions{?params*}")
-  public QueryResult<CodeSystemEntityVersion> getEntityVersions(@PathVariable String codeSystem, @PathVariable String version, CodeSystemEntityVersionQueryParams params) {
-    params.setCodeSystem(codeSystem);
-    params.setCodeSystemVersion(version);
-    return codeSystemEntityVersionService.query(params);
-  }
-
-  @Post(uri = "/{codeSystem}/versions/{version}/entity-versions")
-  public HttpResponse<?> saveEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @Body CodeSystemEntityVersion entityVersion) {
-    codeSystemVersionService.saveEntityVersion(codeSystem, version, entityVersion);
+  @Post(uri = "/{codeSystem}/versions/{version}/entity-versions/{entityVersionId}/membership")
+  public HttpResponse<?> saveEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @PathVariable Long entityVersionId) {
+    codeSystemVersionService.saveEntityVersion(codeSystem, version, entityVersionId);
     return HttpResponse.ok();
   }
 
-  @Delete(uri = "/{codeSystem}/versions/{version}/entity-versions")
-  public HttpResponse<?> deleteEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @Body CodeSystemEntityVersion entityVersion) {
-    codeSystemVersionService.deleteEntityVersion(codeSystem, version, entityVersion);
+  @Delete(uri = "/{codeSystem}/versions/{version}/entity-versions/{entityVersionId}/membership")
+  public HttpResponse<?> deleteEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @PathVariable Long entityVersionId) {
+    codeSystemVersionService.deleteEntityVersion(codeSystem, version, entityVersionId);
     return HttpResponse.ok();
   }
 

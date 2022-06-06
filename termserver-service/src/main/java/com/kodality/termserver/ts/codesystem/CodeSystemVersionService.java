@@ -27,9 +27,9 @@ public class CodeSystemVersionService {
       throw ApiError.TE101.toApiException();
     }
     CodeSystemVersion lastDraftVersion = repository.query(new CodeSystemVersionQueryParams()
-            .setCodeSystem(version.getCodeSystem())
-            .setVersion(version.getVersion())
-            .setStatus(PublicationStatus.draft)).findFirst().orElse(null);
+        .setCodeSystem(version.getCodeSystem())
+        .setVersion(version.getVersion())
+        .setStatus(PublicationStatus.draft)).findFirst().orElse(null);
     if (lastDraftVersion != null && !lastDraftVersion.getId().equals(version.getId())) {
       throw ApiError.TE102.toApiException(Map.of("version", lastDraftVersion.getVersion()));
     }
@@ -95,20 +95,20 @@ public class CodeSystemVersionService {
   }
 
   @Transactional
-  public void saveEntityVersion(String codeSystem, String codeSystemVersion, CodeSystemEntityVersion entityVersion) {
+  public void saveEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
     Optional<Long> versionId = getVersion(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
     if (versionId.isPresent()) {
-      repository.saveEntityVersion(versionId.get(), entityVersion);
+      repository.saveEntityVersion(versionId.get(), entityVersionId);
     } else {
       throw ApiError.TE104.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
     }
   }
 
   @Transactional
-  public void deleteEntityVersion(String codeSystem, String codeSystemVersion, CodeSystemEntityVersion entityVersion) {
+  public void deleteEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
     Optional<Long> versionId = getVersion(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
     if (versionId.isPresent()) {
-      repository.deleteEntityVersion(versionId.get(), entityVersion);
+      repository.deleteEntityVersion(versionId.get(), entityVersionId);
     } else {
       throw ApiError.TE104.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
     }
