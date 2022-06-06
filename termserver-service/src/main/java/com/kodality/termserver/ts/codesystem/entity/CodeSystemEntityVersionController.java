@@ -1,6 +1,8 @@
 package com.kodality.termserver.ts.codesystem.entity;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemSupplement;
 import com.kodality.termserver.ts.codesystem.supplement.CodeSystemSupplementService;
 import io.micronaut.http.HttpResponse;
@@ -23,6 +25,11 @@ public class CodeSystemEntityVersionController {
     return codeSystemEntityVersionService.load(id);
   }
 
+  @Get(uri = "{?params*}")
+  public QueryResult<CodeSystemEntityVersion> getEntityVersions(CodeSystemEntityVersionQueryParams params) {
+    return codeSystemEntityVersionService.query(params);
+  }
+
   @Post(uri = "/{id}/activate")
   public HttpResponse<?> activateVersion(@PathVariable Long id) {
     codeSystemEntityVersionService.activate(id);
@@ -40,4 +47,5 @@ public class CodeSystemEntityVersionController {
     codeSystemSupplementService.save(supplement, id);
     return HttpResponse.created(supplement);
   }
+
 }
