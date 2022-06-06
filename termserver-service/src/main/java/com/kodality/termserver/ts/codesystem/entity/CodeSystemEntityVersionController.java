@@ -26,7 +26,7 @@ public class CodeSystemEntityVersionController {
     return codeSystemEntityVersionService.load(id);
   }
 
-  @Get(uri = "/{?params*}")
+  @Get(uri = "{?params*}")
   public QueryResult<CodeSystemEntityVersion> getEntityVersions(CodeSystemEntityVersionQueryParams params) {
     return codeSystemEntityVersionService.query(params);
   }
