@@ -115,16 +115,16 @@ public class CodeSystemVersionRepository extends BaseRepository {
     });
   }
 
-  public void deleteEntityVersion(Long codeSystemVersionId, CodeSystemEntityVersion entityVersion) {
+  public void deleteEntityVersion(Long codeSystemVersionId, Long entityVersionId) {
     SqlBuilder sb = new SqlBuilder("update entity_version_code_system_version_membership set sys_status = 'C' where sys_status = 'A'");
     sb.append("and code_system_version_id = ?", codeSystemVersionId);
-    sb.append("and code_system_entity_version_id = ?", entityVersion.getId());
+    sb.append("and code_system_entity_version_id = ?", entityVersionId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public void saveEntityVersion(Long codeSystemVersionId, CodeSystemEntityVersion entityVersion) {
+  public void saveEntityVersion(Long codeSystemVersionId, Long entityVersionId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
-    ssb.property("code_system_entity_version_id", entityVersion.getId());
+    ssb.property("code_system_entity_version_id", entityVersionId);
     ssb.property("code_system_version_id", codeSystemVersionId);
     ssb.property("sys_status", "A");
     SqlBuilder sb = ssb.buildUpsert("entity_version_code_system_version_membership", "code_system_entity_version_id", "code_system_version_id", "sys_status");
