@@ -21,7 +21,7 @@ public class ValueSetVersionConceptRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(ValueSetConcept.class, bp -> {
     bp.addColumnProcessor("display", "display", (rs, index, propType) -> new Designation().setId(rs.getLong("display")));
     bp.addColumnProcessor("concept_id", "concept", (rs, index, propType) -> new Concept().setId(rs.getLong("concept_id")));
-    bp.addRowProcessor("additional_designations", rs -> {
+    bp.addRowProcessor("additionalDesignations", rs -> {
       Array designationIds = rs.getArray("additional_designations");
       return designationIds == null ? null :
           Arrays.stream((Long[]) designationIds.getArray()).map(id -> new Designation().setId(id)).collect(Collectors.toList());
