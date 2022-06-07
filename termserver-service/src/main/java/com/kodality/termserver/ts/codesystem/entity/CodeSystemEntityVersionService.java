@@ -43,7 +43,7 @@ public class CodeSystemEntityVersionService {
   }
 
   public CodeSystemEntityVersion load(Long id) {
-    return repository.load(id);
+    return decorate(repository.load(id));
   }
 
   public QueryResult<CodeSystemEntityVersion> query(CodeSystemEntityVersionQueryParams params) {
