@@ -54,7 +54,7 @@ public class MapSetVersionService {
   public void activate(String mapSet, String version) {
     MapSetVersion currentVersion = repository.getVersion(mapSet, version);
     if (currentVersion == null) {
-      throw ApiError.TE107.toApiException(Map.of("version", version, "mapSet", mapSet));
+      throw ApiError.TE401.toApiException(Map.of("version", version, "mapSet", mapSet));
     }
     if (PublicationStatus.active.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' of mapSet '{}' is already activated, skipping activation process.", version, mapSet);
@@ -76,7 +76,7 @@ public class MapSetVersionService {
   public void retire(String mapSet, String version) {
     MapSetVersion currentVersion = repository.getVersion(mapSet, version);
     if (currentVersion == null) {
-      throw ApiError.TE107.toApiException(Map.of("version", version, "mapSet", mapSet));
+      throw ApiError.TE401.toApiException(Map.of("version", version, "mapSet", mapSet));
     }
     if (PublicationStatus.retired.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' of mapset '{}' is already retired, skipping retirement process.", version, mapSet);
@@ -91,7 +91,7 @@ public class MapSetVersionService {
     if (versionId.isPresent()) {
       saveEntityVersions(versionId.get(), entityVersions);
     } else {
-      throw ApiError.TE107.toApiException(Map.of("version", mapSetVersion, "mapSet", mapSet));
+      throw ApiError.TE401.toApiException(Map.of("version", mapSetVersion, "mapSet", mapSet));
     }
   }
 

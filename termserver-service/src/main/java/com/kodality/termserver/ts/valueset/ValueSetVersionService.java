@@ -7,12 +7,14 @@ import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
+import com.kodality.termserver.valueset.ValueSetConcept;
+import com.kodality.termserver.valueset.ValueSetRuleSet;
 import com.kodality.termserver.valueset.ValueSetRuleSet.ValueSetRule;
 import com.kodality.termserver.valueset.ValueSetVersion;
-import com.kodality.termserver.valueset.ValueSetVersion.ValueSetConcept;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,10 +50,6 @@ public class ValueSetVersionService {
     repository.save(prepare(version));
   }
 
-  public Optional<ValueSetVersion> getVersion(String valueSet, String versionCode) {
-    return Optional.ofNullable(decorate(repository.getVersion(valueSet, versionCode)));
-  }
-
   public ValueSetVersion getVersion(Long id) {
     return decorate(repository.getVersion(id));
   }
@@ -60,16 +58,23 @@ public class ValueSetVersionService {
     return repository.getVersions(valueSet);
   }
 
+  public Optional<ValueSetVersion> getVersion(String valueSet, String versionCode) {
+    return Optional.ofNullable(decorate(repository.getVersion(valueSet, versionCode)));
+  }
+
+  public Optional<ValueSetVersion> getLastVersion(String valueSet, String status) {
+    return Optional.ofNullable(decorate(repository.getLastVersion(valueSet, status)));
+  }
+
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
     return repository.query(params);
   }
-
 
   @Transactional
   public void activate(String valueSet, String version) {
     ValueSetVersion currentVersion = repository.getVersion(valueSet, version);
     if (currentVersion == null) {
-      throw ApiError.TE107.toApiException(Map.of("version", version, "valueSet", valueSet));
+      throw ApiError.TE401.toApiException(Map.of("version", version, "valueSet", valueSet));
     }
     if (PublicationStatus.active.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' of valueSet '{}' is already activated, skipping activation process.", version, valueSet);
@@ -91,7 +96,7 @@ public class ValueSetVersionService {
   public void retire(String valueSet, String version) {
     ValueSetVersion currentVersion = repository.getVersion(valueSet, version);
     if (currentVersion == null) {
-      throw ApiError.TE109.toApiException(Map.of("version", version, "valueSet", valueSet));
+      throw ApiError.TE301.toApiException(Map.of("version", version, "valueSet", valueSet));
     }
     if (PublicationStatus.retired.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' of valueSet '{}' is already retired, skipping retirement process.", version, valueSet);
@@ -106,14 +111,14 @@ public class ValueSetVersionService {
     if (versionId.isPresent()) {
       saveConcepts(versionId.get(), concepts);
     } else {
-      throw ApiError.TE109.toApiException(Map.of("version", valueSetVersion, "valueSet", valueSet));
+      throw ApiError.TE301.toApiException(Map.of("version", valueSetVersion, "valueSet", valueSet));
     }
   }
 
   public List<ValueSetConcept> getConcepts(String valueSet, String version) {
     Optional<ValueSetVersion> vsVersion = getVersion(valueSet, version);
     if (vsVersion.isEmpty()) {
-      throw ApiError.TE109.toApiException(Map.of("version", version, "valueSet", valueSet));
+      throw ApiError.TE301.toApiException(Map.of("version", version, "valueSet", valueSet));
     }
     List<ValueSetConcept> concepts = valueSetVersionConceptRepository.getConcepts(vsVersion.get().getId());
     decorate(concepts);
@@ -124,6 +129,27 @@ public class ValueSetVersionService {
   public void saveConcepts(Long valueSetVersionId, List<ValueSetConcept> concepts) {
     valueSetVersionConceptRepository.retainConcepts(concepts, valueSetVersionId);
     valueSetVersionConceptRepository.upsertConcepts(concepts, valueSetVersionId);
+  }
+
+  public List<ValueSetConcept> expand(String valueSet) {
+    Optional<ValueSetVersion> lastActiveVersion = getLastVersion(valueSet, PublicationStatus.active);
+    if (lastActiveVersion.isPresent()) {
+      return decorate(valueSetVersionConceptRepository.expand(valueSet, lastActiveVersion.get().getVersion(), null));
+    } else {
+      throw ApiError.TE302.toApiException(Map.of("valueSet", valueSet));
+    }
+  }
+
+  public List<ValueSetConcept> expand(String valueSet, String versionCode) {
+    return decorate(valueSetVersionConceptRepository.expand(valueSet, versionCode, null));
+  }
+
+  public List<ValueSetConcept> expand(ValueSetRuleSet ruleSet) {
+    List<ValueSetConcept> concepts = new ArrayList<>();
+    if (ruleSet == null) {
+      return concepts;
+    }
+    return decorate(valueSetVersionConceptRepository.expand(null, null, ruleSet));
   }
 
   private ValueSetVersion decorate(ValueSetVersion version) {
@@ -138,7 +164,7 @@ public class ValueSetVersionService {
     return version;
   }
 
-  private void decorate(List<ValueSetConcept> concepts) {
+  private List<ValueSetConcept> decorate(List<ValueSetConcept> concepts) {
     if (CollectionUtils.isNotEmpty(concepts)) {
       concepts.forEach(c -> {
         c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? null : designationService.get(c.getDisplay().getId()).orElse(null));
@@ -150,6 +176,7 @@ public class ValueSetVersionService {
         }
       });
     }
+    return concepts;
   }
 
   private ValueSetVersion prepare(ValueSetVersion version) {

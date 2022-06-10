@@ -5,6 +5,8 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.ContactDetail;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams.Ordering;
@@ -18,7 +20,7 @@ public class CodeSystemRepository extends BaseRepository {
 
   private final PgBeanProcessor bp = new PgBeanProcessor(CodeSystem.class, bp -> {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
-    bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
   });
 
   public void save(CodeSystem codeSystem) {

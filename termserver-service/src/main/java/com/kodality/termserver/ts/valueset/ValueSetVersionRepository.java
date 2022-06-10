@@ -51,6 +51,11 @@ public class ValueSetVersionRepository extends BaseRepository {
     return getBeans(sql, bp, valueSet);
   }
 
+  public ValueSetVersion getLastVersion(String valueSet, String status) {
+    String sql = "select * from value_set_version where sys_status = 'A' and value_set = ? and status = ? order by release_date desc";
+    return getBean(sql, bp, valueSet, status);
+  }
+
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from value_set_version vsv where vsv.sys_status = 'A'");

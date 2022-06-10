@@ -21,9 +21,9 @@ import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyServic
 import com.kodality.termserver.ts.valueset.ValueSetService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionService;
 import com.kodality.termserver.valueset.ValueSet;
+import com.kodality.termserver.valueset.ValueSetConcept;
 import com.kodality.termserver.valueset.ValueSetRuleSet.ValueSetRule;
 import com.kodality.termserver.valueset.ValueSetVersion;
-import com.kodality.termserver.valueset.ValueSetVersion.ValueSetConcept;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +62,7 @@ public class ValueSetFhirImportService {
     List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ? parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(
         Parameter::getValueString).toList() : Collections.emptyList();
     if (urls.isEmpty()) {
-      throw ApiError.TE110.toApiException();
+      throw ApiError.TE106.toApiException();
     }
     urls.forEach(url -> {
       try {
@@ -142,25 +143,27 @@ public class ValueSetFhirImportService {
       return;
     }
     concepts.forEach(c -> {
-      if (c.getConcept() != null && c.getConcept().getCode() != null) {
-        conceptService.get(codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem, codeSystemVersion, c.getConcept().getCode()).ifPresentOrElse(c::setConcept, () -> {
-          Concept concept = conceptService.save(new Concept().setCode(c.getConcept().getCode()), codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
-          c.setConcept(concept);
-        });
+      if (c.getConcept() == null || c.getConcept().getCode() == null) {
+        return;
       }
-      prepareDesignations(c);
+      prepareConcept(c, codeSystem, codeSystemVersion);
+      CodeSystemEntityVersion codeSystemEntityVersion = prepareCodeSystemVersion(c, codeSystem, codeSystemVersion);
+      prepareDesignations(c, codeSystemEntityVersion.getId());
+
     });
   }
 
-  private void prepareDesignations(ValueSetConcept c) {
-    if (c.getConcept() == null || c.getConcept().getId() == null) {
-      return;
-    }
-    Long propertyId = entityPropertyService
-        .query(new EntityPropertyQueryParams().setCodeSystem(c.getConcept().getCodeSystem()).setNames("display"))
-        .findFirst().map(EntityProperty::getId).orElse(null);
+  private void prepareConcept(ValueSetConcept c, String codeSystem, String codeSystemVersion) {
+    conceptService.get(codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem, codeSystemVersion, c.getConcept().getCode())
+        .ifPresentOrElse(c::setConcept, () -> {
+          Concept concept =
+              conceptService.save(new Concept().setCode(c.getConcept().getCode()), codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
+          c.setConcept(concept);
+        });
+  }
 
-    CodeSystemEntityVersion codeSystemEntityVersion = codeSystemEntityVersionService
+  private CodeSystemEntityVersion prepareCodeSystemVersion(ValueSetConcept c, String codeSystem, String codeSystemVersion) {
+    CodeSystemEntityVersion version = codeSystemEntityVersionService
         .query(
             new CodeSystemEntityVersionQueryParams()
                 .setCodeSystem(c.getConcept().getCodeSystem())
@@ -172,24 +175,38 @@ public class ValueSetFhirImportService {
                 .setCodeSystem(c.getConcept().getCodeSystem())
                 .setCode(c.getConcept().getCode())
                 .setStatus(PublicationStatus.draft));
+    if (version.getId() == null) {
+      codeSystemEntityVersionService.save(version, c.getConcept().getId());
+    }
+
+    if (codeSystem != null && codeSystemVersion != null) {
+      codeSystemVersionService.saveEntityVersion(codeSystem, codeSystemVersion, version.getId());
+    }
+
+    return version;
+  }
+
+  private void prepareDesignations(ValueSetConcept c, Long codeSystemEntityVersionId) {
+    if (c.getConcept().getId() == null) {
+      return;
+    }
+    Long propertyId = entityPropertyService
+        .query(new EntityPropertyQueryParams().setCodeSystem(c.getConcept().getCodeSystem()).setNames("display"))
+        .findFirst().map(EntityProperty::getId).orElse(null);
 
     if (c.getDisplay() != null) {
       designationService
           .query(new DesignationQueryParams().setConceptCode(c.getConcept().getCode()).setName(c.getDisplay().getName())
               .setDesignationKind(c.getDisplay().getDesignationKind()))
           .findFirst().ifPresentOrElse(c::setDisplay, () -> {
-            codeSystemEntityVersionService.save(codeSystemEntityVersion, c.getConcept().getId());
             c.getDisplay().setDesignationTypeId(propertyId);
-            designationService.save(c.getDisplay(), codeSystemEntityVersion.getId());
+            designationService.save(c.getDisplay(), codeSystemEntityVersionId);
           });
     }
     if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
-      if (codeSystemEntityVersion.getId() == null) {
-        codeSystemEntityVersionService.save(codeSystemEntityVersion, c.getConcept().getId());
-      }
       c.getAdditionalDesignations().forEach(d -> {
         d.setDesignationTypeId(propertyId);
-        designationService.save(d, codeSystemEntityVersion.getId());
+        designationService.save(d, codeSystemEntityVersionId);
       });
     }
   }
@@ -205,7 +222,7 @@ public class ValueSetFhirImportService {
     ValueSetVersion version = valueSet.getVersions().get(0);
     Optional<ValueSetVersion> existingVersion = valueSetVersionService.getVersion(valueSet.getId(), version.getVersion());
     if (existingVersion.isPresent() && existingVersion.get().getStatus().equals(PublicationStatus.active)) {
-      throw ApiError.TE105.toApiException(Map.of("version", version.getVersion()));
+      throw ApiError.TE104.toApiException(Map.of("version", version.getVersion()));
     }
     log.info("Saving value set version {}", version.getVersion());
     valueSetVersionService.save(version);

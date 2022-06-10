@@ -3,9 +3,10 @@ package com.kodality.termserver.ts.valueset;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.valueset.ValueSet;
+import com.kodality.termserver.valueset.ValueSetConcept;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
+import com.kodality.termserver.valueset.ValueSetRuleSet;
 import com.kodality.termserver.valueset.ValueSetVersion;
-import com.kodality.termserver.valueset.ValueSetVersion.ValueSetConcept;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -87,6 +88,21 @@ public class ValueSetController {
   public HttpResponse<?> saveConcepts(@PathVariable String valueSet, @PathVariable String version, @Body ConceptRequest request) {
     valueSetVersionService.saveConcepts(valueSet, version, request.getConcepts());
     return HttpResponse.ok();
+  }
+
+  @Post(uri = "/expand")
+  public List<ValueSetConcept> expand(@Body ValueSetRuleSet ruleSet) {
+    return valueSetVersionService.expand(ruleSet);
+  }
+
+  @Get(uri = "/{valueSet}/expand")
+  public List<ValueSetConcept> expand(@PathVariable String valueSet) {
+    return valueSetVersionService.expand(valueSet);
+  }
+
+  @Get(uri = "/{valueSet}/versions/{version}/expand")
+  public List<ValueSetConcept> expand(@PathVariable String valueSet, @PathVariable String version) {
+    return valueSetVersionService.expand(valueSet, version);
   }
 
   @Getter

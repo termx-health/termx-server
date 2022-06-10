@@ -10,7 +10,6 @@ import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
-import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termserver.ts.codesystem.supplement.CodeSystemSupplementService;
 import io.micronaut.http.HttpResponse;
@@ -36,7 +35,6 @@ public class CodeSystemController {
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemDuplicateService codeSystemDuplicateService;
   private final CodeSystemSupplementService codeSystemSupplementService;
-  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   @Get(uri = "{?params*}")
   public QueryResult<CodeSystem> getCodeSystems(CodeSystemQueryParams params) {

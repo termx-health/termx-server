@@ -159,13 +159,14 @@ public class CodeSystemFhirMapper {
     //TODO identifiers from naming-system
     fhirCodeSystem.setName(codeSystem.getNames().getOrDefault(Language.en, codeSystem.getNames().values().stream().findFirst().orElse(null)));
     fhirCodeSystem.setContent(codeSystem.getContent());
-    fhirCodeSystem.setContact(codeSystem.getContacts() == null ? null : codeSystem.getContacts().stream().map(c ->
-        new ContactDetail().setName(c.getName()).setTelecom(c.getTelecoms() == null ? null : c.getTelecoms().stream().map(t ->
+    fhirCodeSystem.setContact(codeSystem.getContacts() == null ? null : codeSystem.getContacts().stream()
+        .map(c -> new ContactDetail().setName(c.getName()).setTelecom(c.getTelecoms() == null ? null : c.getTelecoms().stream().map(t ->
             new ContactPoint().setSystem(t.getSystem()).setValue(t.getValue()).setUse(t.getUse())).collect(Collectors.toList())))
         .collect(Collectors.toList()));
     fhirCodeSystem.setText(new Narrative().setDiv(codeSystem.getNarrative()));
     fhirCodeSystem.setDescription(codeSystem.getDescription());
-    fhirCodeSystem.setCaseSensitive(codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
+    fhirCodeSystem.setCaseSensitive(
+        codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
 
     fhirCodeSystem.setVersion(version.getVersion());
     fhirCodeSystem.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
@@ -257,6 +258,7 @@ public class CodeSystemFhirMapper {
   private List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept> getChildConcepts(List<CodeSystemEntityVersion> entities,
                                                                                                 Long targetId, CodeSystem codeSystem,
                                                                                                 com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
-    return entities.stream().filter(e -> e.getAssociations().stream().anyMatch(a -> a.getTargetId().equals(targetId))).map(e -> toFhir(e, codeSystem, entities, fhirCodeSystem)).collect(Collectors.toList());
+    return entities.stream().filter(e -> e.getAssociations().stream().anyMatch(a -> a.getTargetId().equals(targetId)))
+        .map(e -> toFhir(e, codeSystem, entities, fhirCodeSystem)).collect(Collectors.toList());
   }
 }

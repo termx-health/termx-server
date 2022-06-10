@@ -29,7 +29,7 @@ public class CodeSystemFhirImportService {
     List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ?
         parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(Parameter::getValueString).toList() : Collections.emptyList();
     if (urls.isEmpty()) {
-      throw ApiError.TE110.toApiException();
+      throw ApiError.TE106.toApiException();
     }
     urls.forEach(url -> {
       try {

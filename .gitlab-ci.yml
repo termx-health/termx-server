@@ -23,7 +23,7 @@ release:
   script:
     - ./gradlew clean assemble
     - cd termserver-service
-    - docker build -t docker.kodality.com/terminology-server --build-arg BUILD_TIME=$BUILD_TIME .
-    - docker push docker.kodality.com/terminology-server
+    - docker build -t docker.kodality.com/terminology-server:latest --build-arg BUILD_TIME=$BUILD_TIME .
+    - docker push docker.kodality.com/terminology-server:latest
   only:
     - main

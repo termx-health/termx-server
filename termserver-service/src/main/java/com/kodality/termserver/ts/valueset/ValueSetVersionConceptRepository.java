@@ -2,12 +2,15 @@ package com.kodality.termserver.ts.valueset;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
+import com.kodality.commons.db.resultset.ResultSetUtil;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.db.util.PgUtil;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.Designation;
-import com.kodality.termserver.valueset.ValueSetVersion.ValueSetConcept;
+import com.kodality.termserver.valueset.ValueSetConcept;
+import com.kodality.termserver.valueset.ValueSetRuleSet;
 import io.micronaut.core.util.CollectionUtils;
 import java.sql.Array;
 import java.util.Arrays;
@@ -19,8 +22,8 @@ import javax.inject.Singleton;
 public class ValueSetVersionConceptRepository extends BaseRepository {
 
   private final PgBeanProcessor bp = new PgBeanProcessor(ValueSetConcept.class, bp -> {
-    bp.addColumnProcessor("display", "display", (rs, index, propType) -> new Designation().setId(rs.getLong("display")));
-    bp.addColumnProcessor("concept_id", "concept", (rs, index, propType) -> new Concept().setId(rs.getLong("concept_id")));
+    bp.addColumnProcessor("display", "display", (rs, index, propType) -> new Designation().setId(ResultSetUtil.getLong(rs, "display")));
+    bp.addColumnProcessor("concept_id", "concept", (rs, index, propType) -> new Concept().setId(ResultSetUtil.getLong(rs,"concept_id")));
     bp.addRowProcessor("additionalDesignations", rs -> {
       Array designationIds = rs.getArray("additional_designations");
       return designationIds == null ? null :
@@ -57,5 +60,10 @@ public class ValueSetVersionConceptRepository extends BaseRepository {
       Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
       c.setId(id);
     });
+  }
+
+  public List<ValueSetConcept> expand(String valueSet, String valueSetVersion, ValueSetRuleSet ruleSet) {
+    SqlBuilder sb = new SqlBuilder("select * from value_set_expand(?::text,?::text,?::jsonb)", valueSet, valueSetVersion, JsonUtil.toJson(ruleSet));
+    return getBeans(sb.getSql(), bp, sb.getParams());
   }
 }

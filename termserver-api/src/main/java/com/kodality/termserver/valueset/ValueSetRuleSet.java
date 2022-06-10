@@ -1,7 +1,6 @@
 package com.kodality.termserver.valueset;
 
 import com.kodality.termserver.codesystem.EntityProperty;
-import com.kodality.termserver.valueset.ValueSetVersion.ValueSetConcept;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.Getter;

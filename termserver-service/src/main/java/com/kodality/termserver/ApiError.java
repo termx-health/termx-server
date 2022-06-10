@@ -11,13 +11,17 @@ public enum ApiError {
   TE101("TE101", "Could not modify not draft version."),
   TE102("TE102", "Draft version '{{version}}' already exists."),
   TE103("TE103", "Can't activate version, active version '{{version}}' has overlapping periods."),
-  TE104("TE104", "Version '{{version}}' of code system '{{codeSystem}}' doesn't exist."),
-  TE105("TE105", "Version '{{version}}' is already created and active."),
-  TE107("TE107", "Version '{{version}}' of map set '{{mapSet}}' doesn't exist."),
-  TE108("TE108", "Version with id '{{version}}' doesn't exist."),
-  TE109("TE109", "Version '{{version}}' of value set '{{valueSet}}' doesn't exist."),
-  TE110("TE110", "Url not provided."),
-  TE111("TE111", "Code system '{{codeSystem}}' not found.")
+  TE104("TE104", "Version '{{version}}' is already created and active."),
+  TE105("TE105", "Version with id '{{version}}' doesn't exist."),
+  TE106("TE106", "Url not provided."),
+
+  TE201("TE201", "Code system '{{codeSystem}}' not found."),
+  TE202("TE202", "Version '{{version}}' of code system '{{codeSystem}}' doesn't exist."),
+
+  TE301("TE301", "Version '{{version}}' of value set '{{valueSet}}' doesn't exist."),
+  TE302("TE302", "Value set '{{valueSet}}' doesn't have active version."),
+
+  TE401("TE401", "Version '{{version}}' of map set '{{mapSet}}' doesn't exist.")
   ;
 
 

@@ -57,7 +57,7 @@ public class CodeSystemVersionService {
   public void activate(String codeSystem, String version) {
     CodeSystemVersion currentVersion = repository.getVersion(codeSystem, version);
     if (currentVersion == null) {
-      throw ApiError.TE104.toApiException(Map.of("version", version, "codeSystem", codeSystem));
+      throw ApiError.TE202.toApiException(Map.of("version", version, "codeSystem", codeSystem));
     }
     if (PublicationStatus.active.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' of codesystem '{}' is already activated, skipping activation process.", version, codeSystem);
@@ -79,7 +79,7 @@ public class CodeSystemVersionService {
   public void retire(String codeSystem, String version) {
     CodeSystemVersion currentVersion = repository.getVersion(codeSystem, version);
     if (currentVersion == null) {
-      throw ApiError.TE104.toApiException(Map.of("version", version, "codeSystem", codeSystem));
+      throw ApiError.TE202.toApiException(Map.of("version", version, "codeSystem", codeSystem));
     }
     if (PublicationStatus.retired.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' of codesystem '{}' is already retired, skipping retirement process.", version, codeSystem);
@@ -100,7 +100,7 @@ public class CodeSystemVersionService {
     if (versionId.isPresent()) {
       repository.saveEntityVersion(versionId.get(), entityVersionId);
     } else {
-      throw ApiError.TE104.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
+      throw ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
     }
   }
 
@@ -110,7 +110,7 @@ public class CodeSystemVersionService {
     if (versionId.isPresent()) {
       repository.deleteEntityVersion(versionId.get(), entityVersionId);
     } else {
-      throw ApiError.TE104.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
+      throw ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
     }
   }
 

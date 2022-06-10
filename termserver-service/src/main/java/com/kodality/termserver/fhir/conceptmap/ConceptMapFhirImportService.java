@@ -52,7 +52,7 @@ public class ConceptMapFhirImportService {
     List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ?
         parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(Parameter::getValueString).toList() : Collections.emptyList();
     if (urls.isEmpty()) {
-      throw ApiError.TE110.toApiException();
+      throw ApiError.TE106.toApiException();
     }
     urls.forEach(url -> {
       try {
@@ -88,7 +88,7 @@ public class ConceptMapFhirImportService {
     MapSetVersion version = mapSet.getVersions().get(0);
     Optional<MapSetVersion> existingVersion = mapSetVersionService.getVersion(mapSet.getId(), version.getVersion());
     if (existingVersion.isPresent() && existingVersion.get().getStatus().equals(PublicationStatus.active)) {
-      throw ApiError.TE105.toApiException(Map.of("version", version.getVersion()));
+      throw ApiError.TE104.toApiException(Map.of("version", version.getVersion()));
     }
     log.info("Saving map set version {}", version.getVersion());
     mapSetVersionService.save(version);

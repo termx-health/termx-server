@@ -70,7 +70,7 @@ public class CodeSystemEntityVersionService {
   public void activate(Long versionId) {
     CodeSystemEntityVersion currentVersion = repository.load(versionId);
     if (currentVersion == null) {
-      throw ApiError.TE108.toApiException(Map.of("version", versionId));
+      throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
     if (PublicationStatus.active.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' is already activated, skipping activation process.", versionId);
@@ -83,7 +83,7 @@ public class CodeSystemEntityVersionService {
   public void retire(Long versionId) {
     CodeSystemEntityVersion currentVersion = repository.load(versionId);
     if (currentVersion == null) {
-      throw ApiError.TE108.toApiException(Map.of("version", versionId));
+      throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
     if (PublicationStatus.retired.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' is already retired, skipping retirement process.", versionId);

@@ -53,7 +53,7 @@ public class CodeSystemImportService {
     CodeSystemVersion version = codeSystem.getVersions().get(0);
     Optional<CodeSystemVersion> existingVersion = codeSystemVersionService.getVersion(version.getCodeSystem(), version.getVersion());
     if (existingVersion.isPresent() && existingVersion.get().getStatus().equals(PublicationStatus.active)) {
-      throw ApiError.TE105.toApiException(Map.of("version", version.getVersion()));
+      throw ApiError.TE104.toApiException(Map.of("version", version.getVersion()));
     }
     log.info("Saving code system version {}", version.getVersion());
     version.setId(existingVersion.map(CodeSystemVersion::getId).orElse(null));
