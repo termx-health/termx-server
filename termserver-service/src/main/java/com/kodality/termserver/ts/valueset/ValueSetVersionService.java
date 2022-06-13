@@ -17,6 +17,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
@@ -172,6 +173,7 @@ public class ValueSetVersionService {
         if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
           c.setAdditionalDesignations(c.getAdditionalDesignations().stream()
               .map(d -> d.getId() == null ? d : designationService.get(d.getId()).orElse(null))
+              .filter(Objects::nonNull)
               .collect(Collectors.toList()));
         }
       });
