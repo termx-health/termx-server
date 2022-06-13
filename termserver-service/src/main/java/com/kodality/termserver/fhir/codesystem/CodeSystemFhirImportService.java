@@ -44,17 +44,17 @@ public class CodeSystemFhirImportService {
     String resource = getResource(url);
     com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem =
         FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
-    importCodeSystem(codeSystem);
+    importCodeSystem(codeSystem, false);
   }
 
   @Transactional
-  public void importCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
+  public void importCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem, boolean activateVersion) {
     CodeSystemVersion version = importService.prepareCodeSystemAndVersion(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem));
     List<EntityProperty> properties = importService.prepareProperties(CodeSystemFhirImportMapper.mapProperties(codeSystem), codeSystem.getId());
     importService.prepareAssociationType(codeSystem.getHierarchyMeaning(), "code-system-hierarchy");
 
     List<Concept> concepts = CodeSystemFhirImportMapper.mapConcepts(codeSystem.getConcept(), codeSystem, properties, null);
-    importService.importConcepts(concepts, version);
+    importService.importConcepts(concepts, version, activateVersion);
   }
 
   private String getResource(String url) {

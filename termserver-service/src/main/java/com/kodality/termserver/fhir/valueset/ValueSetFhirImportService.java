@@ -77,13 +77,16 @@ public class ValueSetFhirImportService {
     String resource = getResource(url);
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet =
         FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
-    importValueSet(fhirValueSet);
+    importValueSet(fhirValueSet, false);
   }
 
   @Transactional
-  public void importValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet) {
+  public void importValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet, boolean activateVersion) {
     ValueSet valueSet = prepare(ValueSetFhirImportMapper.mapValueSet(fhirValueSet));
-    prepareValueSetAndVersion(valueSet);
+    ValueSetVersion valueSetVersion = prepareValueSetAndVersion(valueSet);
+    if (activateVersion) {
+      valueSetVersionService.activate(valueSet.getId(), valueSetVersion.getVersion());
+    }
   }
 
   private String getResource(String url) {
@@ -177,6 +180,7 @@ public class ValueSetFhirImportService {
                 .setStatus(PublicationStatus.draft));
     if (version.getId() == null) {
       codeSystemEntityVersionService.save(version, c.getConcept().getId());
+      codeSystemEntityVersionService.activate(version.getId());
     }
 
     if (codeSystem != null && codeSystemVersion != null) {

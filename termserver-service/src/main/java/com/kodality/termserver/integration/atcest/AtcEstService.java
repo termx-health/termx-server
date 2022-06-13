@@ -38,7 +38,7 @@ public class AtcEstService {
 
     List<AtcEst> atc = AtcEstCsvReader.read(getResource(url));
     List<Concept> concepts = AtcEstMapper.mapConcepts(atc, configuration, properties);
-    importService.importConcepts(concepts, version);
+    importService.importConcepts(concepts, version, false);
   }
 
   private byte[] getResource(String url) {

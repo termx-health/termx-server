@@ -43,7 +43,7 @@ public class AtcService {
     Map<String, String> atc = AtcResponseParser.parse(getResource());
     List<Concept> concepts = AtcMapper.mapConcepts(atc, configuration, properties);
 
-    importService.importConcepts(concepts, version);
+    importService.importConcepts(concepts, version, false);
   }
 
   private String getResource() {

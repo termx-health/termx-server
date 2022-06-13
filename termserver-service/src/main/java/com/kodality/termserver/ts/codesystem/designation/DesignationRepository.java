@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.DesignationQueryParams;
+import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.List;
 
@@ -58,6 +59,9 @@ public class DesignationRepository extends BaseRepository {
 
   private SqlBuilder filter(DesignationQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    if (StringUtils.isNotEmpty(params.getId())) {
+      sb.and().in("d.id", params.getId(), Long::valueOf);
+    }
     sb.appendIfNotNull("and d.name = ?", params.getName());
     sb.appendIfNotNull("and d.language = ?", params.getLanguage());
     sb.appendIfNotNull("and d.designation_kind = ?", params.getDesignationKind());

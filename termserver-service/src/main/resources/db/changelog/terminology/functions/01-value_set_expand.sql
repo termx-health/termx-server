@@ -21,7 +21,9 @@ begin
             select vsv.rule_set rs
             from value_set_version vsv
                      inner join value_set vs on vs.id = vsv.value_set and vs.sys_status = 'A'
-            where vsv.sys_status = 'A' and vsv.version = p_value_set_version and vs.id = p_value_set
+            where vsv.sys_status = 'A' and vs.id = p_value_set
+            and (p_value_set_version is null or vsv.version = p_value_set_version)
+            and (p_value_set_version is not null or tsrange(vsv.release_date, vsv.expiration_date) @> now()::timestamp)
             limit 1
         ),
             rule_set as (

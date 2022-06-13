@@ -20,6 +20,6 @@ public class ValueSetFhirImport extends FileReaderCustomChange {
     log.info("creating valueset " + name);
 
     ValueSet vs = JsonUtil.fromJson(asString(content), ValueSet.class);
-    valueSetFhirImportService.importValueSet(vs);
+    valueSetFhirImportService.importValueSet(vs, true);
   }
 }

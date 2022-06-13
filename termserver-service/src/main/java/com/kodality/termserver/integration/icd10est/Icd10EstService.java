@@ -38,7 +38,7 @@ public class Icd10EstService {
 
     List<Icd10Est> diagnoses = new Icd10EstZipReader().handleZipPack(getResource(url));
     List<Concept> concepts = Extractor.parseDiagnoses(diagnoses, configuration, properties);
-    importService.importConcepts(concepts, version);
+    importService.importConcepts(concepts, version, false);
   }
 
   private byte[] getResource(String url) {

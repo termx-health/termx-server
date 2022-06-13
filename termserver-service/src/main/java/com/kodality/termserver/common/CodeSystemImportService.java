@@ -87,7 +87,7 @@ public class CodeSystemImportService {
   }
 
   @Transactional
-  public void importConcepts(List<Concept> concepts, CodeSystemVersion version) {
+  public void importConcepts(List<Concept> concepts, CodeSystemVersion version, boolean activateVersion) {
     log.info("Creating '{}' concepts", concepts.size());
     concepts.forEach(concept -> {
       conceptService.save(concept, version.getCodeSystem());
@@ -98,6 +98,9 @@ public class CodeSystemImportService {
 
     log.info("Linking code system version and entity versions");
     codeSystemVersionService.saveEntityVersions(version.getId(), concepts.stream().map(c -> c.getVersions().get(0)).collect(Collectors.toList()));
+    if (activateVersion) {
+      codeSystemVersionService.activate(version.getCodeSystem(), version.getVersion());
+    }
 
     log.info("Creating associations between code system entity versions");
     concepts.forEach(concept -> {

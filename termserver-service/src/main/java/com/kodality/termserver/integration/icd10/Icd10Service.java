@@ -37,7 +37,7 @@ public class Icd10Service {
 
     Icd10 diagnoses = new Icd10ZipReader().handleZipPack(getResource(url));
     List<Concept> concepts = Icd10Mapper.mapConcepts(diagnoses, configuration, properties);
-    importService.importConcepts(concepts, version);
+    importService.importConcepts(concepts, version, false);
   }
 
   private byte[] getResource(String url) {
