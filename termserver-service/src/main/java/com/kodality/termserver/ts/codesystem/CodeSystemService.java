@@ -5,7 +5,6 @@ import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
-import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
 import jakarta.inject.Singleton;
@@ -22,21 +21,24 @@ public class CodeSystemService {
   private final CodeSystemVersionService codeSystemVersionService;
 
   public Optional<CodeSystem> get(String codeSystem) {
-    return Optional.ofNullable(repository.load(codeSystem));
+    Optional<CodeSystem> cs = Optional.ofNullable(repository.load(codeSystem));
+    cs.ifPresent(this::decorate);
+    return cs;
   }
 
   @Transactional
   public void save(CodeSystem codeSystem) {
     repository.save(codeSystem);
+    entityPropertyService.save(codeSystem.getProperties(), codeSystem.getId());
   }
 
   public QueryResult<CodeSystem> query(CodeSystemQueryParams params) {
     QueryResult<CodeSystem> codeSystems = repository.query(params);
-    decorate(codeSystems, params);
+    decorateQueryResult(codeSystems, params);
     return codeSystems;
   }
 
-  private void decorate(QueryResult<CodeSystem> codeSystems, CodeSystemQueryParams params) {
+  private void decorateQueryResult(QueryResult<CodeSystem> codeSystems, CodeSystemQueryParams params) {
     codeSystems.getData().forEach(codeSystem -> {
       if (params.isConceptsDecorated()) {
         ConceptQueryParams conceptParams = new ConceptQueryParams();
@@ -56,11 +58,12 @@ public class CodeSystemService {
         codeSystem.setVersions(codeSystemVersionService.query(versionParams).getData());
       }
       if (params.isPropertiesDecorated()) {
-        EntityPropertyQueryParams propertyParams = new EntityPropertyQueryParams();
-        propertyParams.setCodeSystem(codeSystem.getId());
-        propertyParams.all();
-        codeSystem.setProperties(entityPropertyService.query(propertyParams).getData());
+        codeSystem.setProperties(entityPropertyService.getProperties(codeSystem.getId()));
       }
     });
+  }
+
+  private void decorate(CodeSystem codeSystem) {
+    codeSystem.setProperties(entityPropertyService.getProperties(codeSystem.getId()));
   }
 }

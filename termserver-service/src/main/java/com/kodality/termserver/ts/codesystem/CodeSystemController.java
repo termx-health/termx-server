@@ -10,7 +10,6 @@ import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
-import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termserver.ts.codesystem.supplement.CodeSystemSupplementService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -31,7 +30,6 @@ import lombok.Setter;
 public class CodeSystemController {
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
-  private final EntityPropertyService entityPropertyService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemDuplicateService codeSystemDuplicateService;
   private final CodeSystemSupplementService codeSystemSupplementService;
@@ -118,16 +116,6 @@ public class CodeSystemController {
     concept.setCodeSystem(codeSystem);
     conceptService.save(concept, codeSystem);
     return HttpResponse.created(concept);
-  }
-
-  @Get(uri = "/{codeSystem}/properties")
-  public List<EntityProperty> getProperties(@PathVariable String codeSystem) {
-    return entityPropertyService.getProperties(codeSystem);
-  }
-
-  @Post(uri = "/{codeSystem}/properties")
-  public HttpResponse<?> createProperties(@PathVariable String codeSystem, @Body EntityPropertyRequest request) {
-    return HttpResponse.created(entityPropertyService.save(request.getProperties(), codeSystem));
   }
 
   @Post(uri = "/{codeSystem}/versions/{version}/entity-versions/{entityVersionId}/membership")
