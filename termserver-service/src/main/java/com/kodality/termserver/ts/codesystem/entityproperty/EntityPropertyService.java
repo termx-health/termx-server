@@ -21,10 +21,12 @@ public class EntityPropertyService {
   @Transactional
   public List<EntityProperty> save(List<EntityProperty> entityProperties, String codeSystem) {
     repository.retain(entityProperties, codeSystem);
-    entityProperties.forEach(p -> {
-      p.setCreated(p.getCreated() == null ? OffsetDateTime.now() : p.getCreated());
-      repository.save(p, codeSystem);
-    });
+    if (entityProperties != null) {
+      entityProperties.forEach(p -> {
+        p.setCreated(p.getCreated() == null ? OffsetDateTime.now() : p.getCreated());
+        repository.save(p, codeSystem);
+      });
+    }
     return entityProperties;
   }
 
