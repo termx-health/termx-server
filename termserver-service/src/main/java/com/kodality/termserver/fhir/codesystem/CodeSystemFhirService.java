@@ -17,7 +17,7 @@ import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Singleton;
@@ -44,8 +44,8 @@ public class CodeSystemFhirService {
         .setConceptCodeSystemVersion(fhirParams.getFirst("version").orElse(null))
         .setUri(fhirParams.getFirst("system").orElse(null))
         .setVersionVersion(fhirParams.getFirst("version").orElse(null))
-        .setVersionReleaseDateGe(fhirParams.getFirst("date").map(LocalDate::parse).orElse(null))
-        .setVersionExpirationDateLe(fhirParams.getFirst("date").map(LocalDate::parse).orElse(null))
+        .setVersionReleaseDateGe(fhirParams.getFirst("date").map(d -> LocalDateTime.parse(d).toLocalDate()).orElse(null))
+        .setVersionExpirationDateLe(fhirParams.getFirst("date").map(d -> LocalDateTime.parse(d).toLocalDate()).orElse(null))
         .setVersionsDecorated(true).setConceptsDecorated(true).setPropertiesDecorated(true);
     csParams.setOffset(fhirParams.getOffset());
     csParams.setLimit(fhirParams.getCount());
