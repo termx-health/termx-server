@@ -18,7 +18,7 @@ public class AssociationTypeController {
   private final AssociationTypeService associationTypeService;
 
   @Get(uri = "/{code}")
-  public AssociationType getCodeSystem(@PathVariable String code) {
+  public AssociationType getAssociation(@PathVariable String code) {
     return associationTypeService.load(code).orElseThrow(() -> new NotFoundException("Association type not found: " + code));
   }
 

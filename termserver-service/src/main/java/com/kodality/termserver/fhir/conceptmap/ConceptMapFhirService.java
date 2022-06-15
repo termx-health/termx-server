@@ -34,9 +34,6 @@ public class ConceptMapFhirService {
         .setAssociationSourceSystemVersion(fhirParams.getFirst("version").orElse(null))
         .setAssociationTargetSystem(fhirParams.getFirst("targetSystem").orElse(null))
         .setAssociationsDecorated(true);
-    msParams.setOffset(fhirParams.getOffset());
-    msParams.setLimit(fhirParams.getCount());
-    msParams.setSort(fhirParams.getSort());
     QueryResult<MapSet> mapSets = mapSetService.query(msParams);
 
     return mapper.toFhirParameters(mapSets.findFirst().orElse(null));

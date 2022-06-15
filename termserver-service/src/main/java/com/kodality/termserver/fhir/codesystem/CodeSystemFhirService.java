@@ -47,9 +47,6 @@ public class CodeSystemFhirService {
         .setVersionReleaseDateGe(fhirParams.getFirst("date").map(d -> LocalDateTime.parse(d).toLocalDate()).orElse(null))
         .setVersionExpirationDateLe(fhirParams.getFirst("date").map(d -> LocalDateTime.parse(d).toLocalDate()).orElse(null))
         .setVersionsDecorated(true).setConceptsDecorated(true).setPropertiesDecorated(true);
-    csParams.setOffset(fhirParams.getOffset());
-    csParams.setLimit(fhirParams.getCount());
-    csParams.setSort(fhirParams.getSort());
     QueryResult<CodeSystem> codeSystems = codeSystemService.query(csParams);
 
     return mapper.toFhirParameters(codeSystems.findFirst().orElse(null), fhirParams);
@@ -65,9 +62,6 @@ public class CodeSystemFhirService {
         .setCode(fhirParams.getFirst("code").orElse(null))
         .setCodeSystemVersion(fhirParams.getFirst("version").orElse(null))
         .setCodeSystemUri(fhirParams.getFirst("system").orElse(null));
-    cParams.setOffset(fhirParams.getOffset());
-    cParams.setLimit(fhirParams.getCount());
-    cParams.setSort(fhirParams.getSort());
     QueryResult<Concept> concepts = conceptService.query(cParams);
 
     return mapper.toFhirParameters(concepts.findFirst().orElse(null), fhirParams);
