@@ -1,13 +1,11 @@
 package com.kodality.termserver.common;
 
-import com.kodality.commons.util.MapUtil;
 import com.kodality.termserver.job.JobLog.JobDefinition;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.termserver.job.JobLogService;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -41,27 +39,8 @@ public class ImportLogger {
   }
 
   public void logImport(Long jobId, List<String> warnings, List<String> successes, Throwable e) {
-    jobLogService.finish(jobId, makeWarnings(warnings), makeSuccesses(successes), makeErrors(e));
-  }
-
-  private Map<String, Object> makeWarnings(List<String> warnings) {
-    if (CollectionUtils.isEmpty(warnings)) {
-      return null;
-    }
-    return MapUtil.toMap("warnings", warnings);
-  }
-  private Map<String, Object> makeSuccesses(List<String> successes) {
-    if (CollectionUtils.isEmpty(successes)) {
-      return null;
-    }
-    return MapUtil.toMap("successes", successes);
-  }
-
-  private Map<String, Object> makeErrors(Throwable e) {
-    if (e == null) {
-      return null;
-    }
-    return MapUtil.toMap("errors", ExceptionUtils.getStackTrace(e));
+    jobLogService.finish(jobId, CollectionUtils.isEmpty(warnings) ? null : warnings, CollectionUtils.isEmpty(successes) ? null : successes, e == null ? null :
+        List.of(ExceptionUtils.getStackTrace(e)));
   }
 
 }
