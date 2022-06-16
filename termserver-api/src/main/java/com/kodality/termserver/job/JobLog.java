@@ -2,7 +2,7 @@ package com.kodality.termserver.job;
 
 import io.micronaut.core.annotation.Introspected;
 import java.time.OffsetDateTime;
-import java.util.Map;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,8 +16,9 @@ public class JobLog {
   private Long id;
   private JobDefinition definition;
   private JobExecution execution;
-  private Map<String, Object> warnings;
-  private Map<String, Object> errors;
+  private List<String> warnings;
+  private List<String> successes;
+  private List<String> errors;
 
   @Introspected
   @Getter

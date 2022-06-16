@@ -4,7 +4,7 @@ package com.kodality.termserver.job;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.job.JobLog.JobDefinition;
-import java.util.Map;
+import java.util.List;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,17 +29,19 @@ public class JobLogService {
 
   @Transactional
   public void finish(Long id) {
-    finish(id, null, null);
+    finish(id, null, null, null);
   }
+
   @Transactional
-  public void finish(Long id, Map<String, Object> warnings, Map<String, Object> errors) {
+  public void finish(Long id, List<String> successes, List<String> warnings, List<String> errors) {
     JobLog jobLog = get(id);
     if (jobLog == null) {
       throw new NotFoundException("Job log not found " + id);
     }
     jobLog.setId(id);
-    jobLog.setErrors(errors);
+    jobLog.setSuccesses(successes);
     jobLog.setWarnings(warnings);
+    jobLog.setErrors(errors);
     String status = resolveStatus(jobLog);
     jobLogRepository.finish(jobLog, status);
   }
