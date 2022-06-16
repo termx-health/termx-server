@@ -10,6 +10,7 @@ create table job_log (
     source              text,
     status              text not null,
     warnings            jsonb,
+    successes           jsonb,
     errors              jsonb,
     sys_created_at      timestamp not null,
     sys_created_by      text not null,

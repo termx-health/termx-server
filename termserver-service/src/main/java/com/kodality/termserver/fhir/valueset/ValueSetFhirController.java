@@ -30,11 +30,12 @@ public class ValueSetFhirController {
     CompletableFuture.runAsync(() -> {
       try {
         List<String> warnings = new ArrayList<>();
+        List<String> successes = new ArrayList<>();
         log.info("Fhir value set import started");
         long start = System.currentTimeMillis();
-        importService.importValueSets(parameters, warnings);
+        importService.importValueSets(parameters, warnings, successes);
         log.info("Fhir value set import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
-        importLogger.logImport(jobLogResponse.getJobId(), warnings);
+        importLogger.logImport(jobLogResponse.getJobId(), warnings, successes);
       } catch (Exception e) {
         log.error("Error while importing fhir value set", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);

@@ -29,10 +29,10 @@ public class JobLogService {
 
   @Transactional
   public void finish(Long id) {
-    finish(id, null, null);
+    finish(id, null, null, null);
   }
   @Transactional
-  public void finish(Long id, Map<String, Object> warnings, Map<String, Object> errors) {
+  public void finish(Long id, Map<String, Object> warnings, Map<String, Object> successes,  Map<String, Object> errors) {
     JobLog jobLog = get(id);
     if (jobLog == null) {
       throw new NotFoundException("Job log not found " + id);
@@ -40,6 +40,7 @@ public class JobLogService {
     jobLog.setId(id);
     jobLog.setErrors(errors);
     jobLog.setWarnings(warnings);
+    jobLog.setSuccesses(successes);
     String status = resolveStatus(jobLog);
     jobLogRepository.finish(jobLog, status);
   }

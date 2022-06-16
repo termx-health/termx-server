@@ -43,11 +43,12 @@ public class ConceptMapFhirController {
     CompletableFuture.runAsync(() -> {
       try {
         List<String> warnings = new ArrayList<>();
+        List<String> successes = new ArrayList<>();
         log.info("Fhir map set import started");
         long start = System.currentTimeMillis();
-        importService.importMapSets(parameters, warnings);
+        importService.importMapSets(parameters, warnings, successes);
         log.info("Fhir map set import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
-        importLogger.logImport(jobLogResponse.getJobId(), warnings);
+        importLogger.logImport(jobLogResponse.getJobId(), warnings, successes);
       } catch (Exception e) {
         log.error("Error while importing fhir map set", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);

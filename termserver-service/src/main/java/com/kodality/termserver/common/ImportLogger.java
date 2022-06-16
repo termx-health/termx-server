@@ -32,16 +32,16 @@ public class ImportLogger {
     jobLogService.finish(jobId);
   }
 
-  public void logImport(Long jobId, List<String> warnings) {
-    logImport(jobId, warnings, null);
+  public void logImport(Long jobId, List<String> warnings, List<String> successes) {
+    logImport(jobId, warnings, successes, null);
   }
 
   public void logImport(Long jobId, Throwable e) {
-    logImport(jobId, null, e);
+    logImport(jobId, null, null, e);
   }
 
-  public void logImport(Long jobId, List<String> warnings, Throwable e) {
-    jobLogService.finish(jobId, makeWarnings(warnings), makeErrors(e));
+  public void logImport(Long jobId, List<String> warnings, List<String> successes, Throwable e) {
+    jobLogService.finish(jobId, makeWarnings(warnings), makeSuccesses(successes), makeErrors(e));
   }
 
   private Map<String, Object> makeWarnings(List<String> warnings) {
@@ -49,6 +49,12 @@ public class ImportLogger {
       return null;
     }
     return MapUtil.toMap("warnings", warnings);
+  }
+  private Map<String, Object> makeSuccesses(List<String> successes) {
+    if (CollectionUtils.isEmpty(successes)) {
+      return null;
+    }
+    return MapUtil.toMap("successes", successes);
   }
 
   private Map<String, Object> makeErrors(Throwable e) {

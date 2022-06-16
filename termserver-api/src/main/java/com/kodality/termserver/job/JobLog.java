@@ -17,6 +17,7 @@ public class JobLog {
   private JobDefinition definition;
   private JobExecution execution;
   private Map<String, Object> warnings;
+  private Map<String, Object> successes;
   private Map<String, Object> errors;
 
   @Introspected
