@@ -25,7 +25,7 @@ public class CodeSystemFhirImportService {
   private final CodeSystemImportService importService;
   private final BinaryHttpClient client = new BinaryHttpClient();
 
-  public void importCodeSystems(Parameters parameters, List<String> warnings, List<String> successes) {
+  public void importCodeSystems(Parameters parameters, List<String> successes, List<String> warnings) {
     List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ?
         parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(Parameter::getValueString).toList() : Collections.emptyList();
     if (urls.isEmpty()) {

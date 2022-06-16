@@ -33,15 +33,15 @@ public class JobLogService {
   }
 
   @Transactional
-  public void finish(Long id, List<String> warnings, List<String> successes, List<String> errors) {
+  public void finish(Long id, List<String> successes, List<String> warnings, List<String> errors) {
     JobLog jobLog = get(id);
     if (jobLog == null) {
       throw new NotFoundException("Job log not found " + id);
     }
     jobLog.setId(id);
-    jobLog.setErrors(errors);
-    jobLog.setWarnings(warnings);
     jobLog.setSuccesses(successes);
+    jobLog.setWarnings(warnings);
+    jobLog.setErrors(errors);
     String status = resolveStatus(jobLog);
     jobLogRepository.finish(jobLog, status);
   }

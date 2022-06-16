@@ -15,8 +15,8 @@ public class JobLogRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(JobLog.class, p -> {
     p.addColumnProcessor("definition", PgBeanProcessor.fromJson());
     p.addColumnProcessor("execution", PgBeanProcessor.fromJson());
-    p.addColumnProcessor("warnings", PgBeanProcessor.fromJson());
     p.addColumnProcessor("successes", PgBeanProcessor.fromJson());
+    p.addColumnProcessor("warnings", PgBeanProcessor.fromJson());
     p.addColumnProcessor("errors", PgBeanProcessor.fromJson());
   });
 
