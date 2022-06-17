@@ -58,7 +58,7 @@ public class ValueSetFhirImportService {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final BinaryHttpClient client = new BinaryHttpClient();
 
-  public void importValueSets(Parameters parameters, List<String> warnings) {
+  public void importValueSets(Parameters parameters, List<String> successes, List<String> warnings) {
     List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ? parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(
         Parameter::getValueString).toList() : Collections.emptyList();
     if (urls.isEmpty()) {
@@ -67,6 +67,7 @@ public class ValueSetFhirImportService {
     urls.forEach(url -> {
       try {
         importValueSet(url);
+        successes.add(String.format("CodeSystem from resource {%s} imported", url));
       } catch (Exception e) {
         warnings.add(String.format("ValueSet from resource {%s} was not imported due to error: {%s}", url, e.getMessage()));
       }

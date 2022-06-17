@@ -15,6 +15,7 @@ public class JobLogRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(JobLog.class, p -> {
     p.addColumnProcessor("definition", PgBeanProcessor.fromJson());
     p.addColumnProcessor("execution", PgBeanProcessor.fromJson());
+    p.addColumnProcessor("successes", PgBeanProcessor.fromJson());
     p.addColumnProcessor("warnings", PgBeanProcessor.fromJson());
     p.addColumnProcessor("errors", PgBeanProcessor.fromJson());
   });
@@ -46,8 +47,9 @@ public class JobLogRepository extends BaseRepository {
   }
 
   public void finish(JobLog jobLog, String status) {
-    SqlBuilder sb = new SqlBuilder("update job_log set warnings = ?::jsonb, errors = ?::jsonb, status = ?, finished = current_timestamp ",
+    SqlBuilder sb = new SqlBuilder("update job_log set warnings = ?::jsonb, successes = ?::jsonb, errors = ?::jsonb, status = ?, finished = current_timestamp ",
         jobLog.getWarnings() == null ? null : JsonUtil.toJson(jobLog.getWarnings()),
+        jobLog.getSuccesses() == null ? null : JsonUtil.toJson(jobLog.getSuccesses()),
         jobLog.getErrors() == null ? null : JsonUtil.toJson(jobLog.getErrors()),
         status
     );

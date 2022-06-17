@@ -62,12 +62,13 @@ public class CodeSystemFhirController {
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);
     CompletableFuture.runAsync(() -> {
       try {
+        List<String> successes = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
         log.info("Fhir code system import started");
         long start = System.currentTimeMillis();
-        importService.importCodeSystems(parameters, warnings);
+        importService.importCodeSystems(parameters, successes, warnings);
         log.info("Fhir code system import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
-        importLogger.logImport(jobLogResponse.getJobId(), warnings);
+        importLogger.logImport(jobLogResponse.getJobId(), successes, warnings);
       } catch (Exception e) {
         log.error("Error while importing fhir code system", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);
