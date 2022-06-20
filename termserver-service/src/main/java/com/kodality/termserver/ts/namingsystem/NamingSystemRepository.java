@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.namingsystem.NamingSystem;
 import com.kodality.termserver.namingsystem.NamingSystemQueryParams;
+import io.micronaut.core.util.StringUtils;
 import javax.inject.Singleton;
 
 @Singleton
@@ -52,8 +53,17 @@ public class NamingSystemRepository extends BaseRepository {
 
   private SqlBuilder filter(NamingSystemQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ns.names) where value ~* ?)", params.getName());
+    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ns.names) where value = ?)", params.getName());
+    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ns.names) where value ~* ?)", params.getNameContains());
     sb.appendIfNotNull("and code_system = ? ", params.getCodeSystem());
+    sb.appendIfNotNull("and code_system ~* ? ", params.getCodeSystemContains());
+
+    if (StringUtils.isNotEmpty(params.getText())) {
+      sb.append("and (id = ? or code_system = ? or description = ? or source = ? or kind = ? or source = ? or exists (select 1 from jsonb_each_text(ns.names) where value = ?) or exists (select 1 from jsonb_each_text(ns.identifiers) where value = ?)", params.getText(), params.getText(), params.getText(), params.getText(), params.getText(), params.getText(), params.getText(), params.getText());
+    }
+    if (StringUtils.isNotEmpty(params.getTextContains())) {
+      sb.append("and (id ~* ? or code_system ~* ? or description ~* ? or source ~* ? or kind ~* ? or source ~* ? or exists (select 1 from jsonb_each_text(ns.names) where value ~* ?))", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
+    } // TODO  check identifiers
     return sb;
   }
 }

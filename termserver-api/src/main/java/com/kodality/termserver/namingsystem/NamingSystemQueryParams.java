@@ -8,5 +8,10 @@ import lombok.Setter;
 @Setter
 public class NamingSystemQueryParams extends QueryParams {
   private String name;
+  private String nameContains;
   private String codeSystem;
+  private String codeSystemContains;
+
+  private String text;
+  private String textContains;
 }
