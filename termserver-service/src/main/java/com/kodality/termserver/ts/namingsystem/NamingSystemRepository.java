@@ -65,14 +65,15 @@ public class NamingSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and status ~* ? ", params.getStatusContains());
     sb.appendIfNotNull("and description = ? ", params.getDescription());
     sb.appendIfNotNull("and description ~* ? ", params.getDescriptionContains());
-    sb.appendIfNotNull("and code_system = ? ", params.getCodeSystem());
-    sb.appendIfNotNull("and code_system ~* ? ", params.getCodeSystemContains());
-
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and (id = ? or code_system = ? or description = ? or source = ? or kind = ? or status = ? or exists (select 1 from jsonb_each_text(ns.names) where value = ?) or exists exists (select 1 from jsonb_array_elements(ns.identifiers) obj where exists (select 1 from jsonb_each_text(obj) where value = ?)))", params.getText(), params.getText(), params.getText(), params.getText(), params.getText(), params.getText(), params.getText(), params.getText());
+      sb.append("and (id = ? or code_system = ? or description = ? or source = ? or kind = ? or status = ? " +
+          "or exists (select 1 from jsonb_each_text(ns.names) where value = ?) or exists (select 1 from jsonb_array_elements(ns.identifiers) obj where exists (select 1 from jsonb_each_text(obj) where value = ?)))"
+          , params.getText(), params.getText(), params.getText(), params.getText(), params.getText(), params.getText(), params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (id ~* ? or code_system ~* ? or description ~* ? or source ~* ? or kind ~* ? or status ~* ? or exists (select 1 from jsonb_each_text(ns.names) where value ~* ?) or exists (select 1 from jsonb_array_elements(ns.identifiers) obj where exists (select 1 from jsonb_each_text(obj) where value ~* ?)))", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
+      sb.append("and (id ~* ? or code_system ~* ? or description ~* ? or source ~* ? or kind ~* ? or status ~* ? " +
+          "or exists (select 1 from jsonb_each_text(ns.names) where value ~* ?) or exists (select 1 from jsonb_array_elements(ns.identifiers) obj where exists (select 1 from jsonb_each_text(obj) where value ~* ?)))"
+          , params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
 
     return sb;
