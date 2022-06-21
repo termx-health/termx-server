@@ -28,22 +28,22 @@ public class ValueSetRepository extends BaseRepository {
     ssb.jsonProperty("contacts", valueSet.getContacts());
     ssb.property("description", valueSet.getDescription());
 
-    SqlBuilder sb = ssb.buildUpsert("value_set", "id");
+    SqlBuilder sb = ssb.buildUpsert("terminology.value_set", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
   public ValueSet load(String id) {
-    String sql = "select * from value_set where sys_status = 'A' and id = ?";
+    String sql = "select * from terminology.value_set where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }
 
   public QueryResult<ValueSet> query(ValueSetQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from value_set vs where vs.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.value_set vs where vs.sys_status = 'A' ");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select vs.* from value_set vs where vs.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select vs.* from terminology.value_set vs where vs.sys_status = 'A' ");
       sb.append(filter(params));
       sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));

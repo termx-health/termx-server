@@ -32,37 +32,37 @@ public class ValueSetVersionRepository extends BaseRepository {
     ssb.property("release_date", version.getReleaseDate());
     ssb.property("expiration_date", version.getExpirationDate());
     ssb.property("created", version.getCreated());
-    SqlBuilder sb = ssb.buildSave("value_set_version", "id");
+    SqlBuilder sb = ssb.buildSave("terminology.value_set_version", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     version.setId(id);
   }
 
   public ValueSetVersion getVersion(String valueSet, String version) {
-    String sql = "select * from value_set_version where sys_status = 'A' and value_set = ? and version = ?";
+    String sql = "select * from terminology.value_set_version where sys_status = 'A' and value_set = ? and version = ?";
     return getBean(sql, bp, valueSet, version);
   }
 
   public ValueSetVersion getVersion(Long id) {
-    String sql = "select * from value_set_version where sys_status = 'A' and id = ?";
+    String sql = "select * from terminology.value_set_version where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }
   public List<ValueSetVersion> getVersions(String valueSet) {
-    String sql = "select * from value_set_version where sys_status = 'A' and value_set = ?";
+    String sql = "select * from terminology.value_set_version where sys_status = 'A' and value_set = ?";
     return getBeans(sql, bp, valueSet);
   }
 
   public ValueSetVersion getLastVersion(String valueSet, String status) {
-    String sql = "select * from value_set_version where sys_status = 'A' and value_set = ? and status = ? order by release_date desc";
+    String sql = "select * from terminology.value_set_version where sys_status = 'A' and value_set = ? and status = ? order by release_date desc";
     return getBean(sql, bp, valueSet, status);
   }
 
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from value_set_version vsv where vsv.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.value_set_version vsv where vsv.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from value_set_version vsv where vsv.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select * from terminology.value_set_version vsv where vsv.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -81,12 +81,12 @@ public class ValueSetVersionRepository extends BaseRepository {
   }
 
   public void activate(String valueSet, String version) {
-    String sql = "update value_set_version set status = ? where value_set = ? and version = ? and sys_status = 'A' and status <> ?";
+    String sql = "update terminology.value_set_version set status = ? where value_set = ? and version = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.active, valueSet, version, PublicationStatus.active);
   }
 
   public void retire(String valueSet, String version) {
-    String sql = "update value_set_version set status = ? where value_set = ? and version = ? and sys_status = 'A' and status <> ?";
+    String sql = "update terminology.value_set_version set status = ? where value_set = ? and version = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.retired, valueSet, version, PublicationStatus.retired);
   }
 

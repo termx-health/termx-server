@@ -33,22 +33,22 @@ public class NamingSystemRepository extends BaseRepository {
     ssb.property("status", namingSystem.getStatus());
     ssb.property("created", namingSystem.getCreated());
 
-    SqlBuilder sb = ssb.buildUpsert("naming_system", "id");
+    SqlBuilder sb = ssb.buildUpsert("terminology.naming_system", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
   public NamingSystem load(String id) {
-    String sql = "select * from naming_system where sys_status = 'A' and id = ?";
+    String sql = "select * from terminology.naming_system where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }
 
   public QueryResult<NamingSystem> query(NamingSystemQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from naming_system ns where ns.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.naming_system ns where ns.sys_status = 'A' ");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select ns.* from naming_system ns where ns.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select ns.* from terminology.naming_system ns where ns.sys_status = 'A' ");
       sb.append(filter(params));
       sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));
@@ -87,12 +87,12 @@ public class NamingSystemRepository extends BaseRepository {
   }
 
   public void activate(String id) {
-    String sql = "update naming_system set status = ? where id = ? and sys_status = 'A' and status <> ?";
+    String sql = "update terminology.naming_system set status = ? where id = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.active, id, PublicationStatus.active);
   }
 
   public void retire(String id) {
-    String sql = "update naming_system set status = ? where id = ? and sys_status = 'A' and status <> ?";
+    String sql = "update terminology.naming_system set status = ? where id = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.retired, id, PublicationStatus.retired);
   }
 

@@ -32,13 +32,13 @@ public class CodeSystemSupplementRepository extends BaseRepository {
     ssb.property("property_value_supplement", supplement.getPropertyValueSupplement() == null ? null : supplement.getPropertyValueSupplement().getId());
     ssb.property("designation_supplement", supplement.getDesignationSupplement() == null ? null : supplement.getDesignationSupplement().getId());
 
-    SqlBuilder sb = ssb.buildSave("code_system_supplement", "id");
+    SqlBuilder sb = ssb.buildSave("terminology.code_system_supplement", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     supplement.setId(id);
   }
 
   public List<CodeSystemSupplement> getSupplements(String codeSystem) {
-    String sql = "select * from code_system_supplement where sys_status = 'A' and code_system = ?";
+    String sql = "select * from terminology.code_system_supplement where sys_status = 'A' and code_system = ?";
     return getBeans(sql, bp, codeSystem);
   }
 }

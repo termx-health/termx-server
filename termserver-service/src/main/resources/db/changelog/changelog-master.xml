@@ -7,6 +7,7 @@
     <include file="changelog-core.xml" relativeToChangelogFile="true"/>
     <include file="changelog-audit.xml" relativeToChangelogFile="true"/>
     <include file="01-init-user.sql" relativeToChangelogFile="true"/>
+    <include file="auth/changelog-auth-master.xml" relativeToChangelogFile="true"/>
     <include file="job/changelog-job-master.xml" relativeToChangelogFile="true"/>
     <include file="terminology/changelog-terminology-master.xml" relativeToChangelogFile="true"/>
 

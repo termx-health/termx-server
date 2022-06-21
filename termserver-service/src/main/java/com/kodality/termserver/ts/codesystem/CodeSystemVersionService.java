@@ -95,20 +95,20 @@ public class CodeSystemVersionService {
   }
 
   @Transactional
-  public void saveEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
+  public void linkEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
     Optional<Long> versionId = getVersion(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
     if (versionId.isPresent()) {
-      repository.saveEntityVersion(versionId.get(), entityVersionId);
+      repository.linkEntityVersion(versionId.get(), entityVersionId);
     } else {
       throw ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
     }
   }
 
   @Transactional
-  public void deleteEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
+  public void unlinkEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
     Optional<Long> versionId = getVersion(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
     if (versionId.isPresent()) {
-      repository.deleteEntityVersion(versionId.get(), entityVersionId);
+      repository.unlinkEntityVersion(versionId.get(), entityVersionId);
     } else {
       throw ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
     }
@@ -116,7 +116,7 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void saveEntityVersions(Long codeSystemVersionId, List<CodeSystemEntityVersion> entityVersions) {
-    repository.retainEntityVersions(entityVersions, codeSystemVersionId);
-    repository.upsertEntityVersions(entityVersions, codeSystemVersionId);
+    repository.unlinkEntityVersions(entityVersions, codeSystemVersionId);
+    repository.linkEntityVersions(entityVersions, codeSystemVersionId);
   }
 }

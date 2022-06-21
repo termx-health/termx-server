@@ -20,12 +20,12 @@ public class AssociationTypeRepository extends BaseRepository {
     ssb.property("directed", associationType.isDirected());
     ssb.property("description", associationType.getDescription());
 
-    SqlBuilder sb = ssb.buildUpsert("association_type", "code");
+    SqlBuilder sb = ssb.buildUpsert("terminology.association_type", "code");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
   public AssociationType load(String code) {
-    String sql = "select * from association_type where code = ? and sys_status = 'A'";
+    String sql = "select * from terminology.association_type where code = ? and sys_status = 'A'";
     return getBean(sql, bp, code);
   }
 }

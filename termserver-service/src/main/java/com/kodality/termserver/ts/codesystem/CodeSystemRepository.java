@@ -34,22 +34,22 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.property("narrative", codeSystem.getNarrative());
     ssb.property("description", codeSystem.getDescription());
 
-    SqlBuilder sb = ssb.buildUpsert("code_system", "id");
+    SqlBuilder sb = ssb.buildUpsert("terminology.code_system", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
   public CodeSystem load(String codeSystem) {
-    String sql = "select * from code_system where sys_status = 'A' and id = ?";
+    String sql = "select * from terminology.code_system where sys_status = 'A' and id = ?";
     return getBean(sql, bp, codeSystem);
   }
 
   public QueryResult<CodeSystem> query(CodeSystemQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from code_system cs where cs.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system cs where cs.sys_status = 'A' ");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select cs.* from code_system cs where cs.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select cs.* from terminology.code_system cs where cs.sys_status = 'A' ");
       sb.append(filter(params));
       sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));
@@ -77,20 +77,20 @@ public class CodeSystemRepository extends BaseRepository {
           params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
 
-    sb.appendIfNotNull("and exists (select 1 from concept c where c.code_system = cs.id and c.sys_status = 'A' and c.code = ?)", params.getConceptCode());
+    sb.appendIfNotNull("and exists (select 1 from terminology.concept c where c.code_system = cs.id and c.sys_status = 'A' and c.code = ?)", params.getConceptCode());
 
-    sb.appendIfNotNull("and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.version = ?)",
+    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.version = ?)",
         params.getVersionVersion());
-    sb.appendIfNotNull("and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.id = ?)",
+    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.id = ?)",
         params.getVersionId());
-    sb.appendIfNotNull("and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.release_date >= ?)",
+    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.release_date >= ?)",
         params.getVersionReleaseDateGe());
     sb.appendIfNotNull(
-        "and exists (select 1 from code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and (csv.expiration_date <= ? or expiration_date is null))",
+        "and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and (csv.expiration_date <= ? or expiration_date is null))",
         params.getVersionExpirationDateLe());
 
-    sb.appendIfNotNull("and exists (select 1 from code_system_entity cse " +
-        "inner join code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
+    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity cse " +
+        "inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
         "where cse.code_system = cs.id and cse.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
     return sb;
   }

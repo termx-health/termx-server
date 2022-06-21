@@ -1,6 +1,6 @@
-drop function if exists value_set_expand(p_value_set text, p_value_set_version text, p_rule_set jsonb);
+drop function if exists terminology.value_set_expand(p_value_set text, p_value_set_version text, p_rule_set jsonb);
 
-create or replace function value_set_expand(
+create or replace function terminology.value_set_expand(
     p_value_set text default null,
     p_value_set_version text default null,
     p_rule_set jsonb default null
@@ -19,8 +19,8 @@ begin
     return query
         with vs_rule_set as (
             select vsv.rule_set rs
-            from value_set_version vsv
-                     inner join value_set vs on vs.id = vsv.value_set and vs.sys_status = 'A'
+            from terminology.value_set_version vsv
+                     inner join terminology.value_set vs on vs.id = vsv.value_set and vs.sys_status = 'A'
             where vsv.sys_status = 'A' and vs.id = p_value_set
             and (p_value_set_version is null or vsv.version = p_value_set_version)
             and (p_value_set_version is not null or tsrange(vsv.release_date, vsv.expiration_date) @> now()::timestamp)
@@ -38,7 +38,7 @@ begin
                 from include_rules
             ),
             value_set_concepts as (
-                select s.* from include_rules, lateral value_set_expand(ir ->> 'valueSet', ir ->> 'valueSetVersion', null) s
+                select s.* from include_rules, lateral terminology.value_set_expand(ir ->> 'valueSet', ir ->> 'valueSetVersion', null) s
             ),
             all_concepts as (
                 select null::bigint id, null::int order_nr, (irc.c -> 'concept' ->> 'id')::bigint concept_id, (irc.c -> 'display' ->> 'id')::bigint display,
@@ -54,14 +54,14 @@ begin
             ),
             vs_concepts as (
                 select cvsvm.id, cvsvm.order_nr, cvsvm.concept_id, cvsvm.display, cvsvm.additional_designations
-                from concept_value_set_version_membership cvsvm
-                         inner join value_set_version vsv on vsv.id = cvsvm.value_set_version_id and vsv.sys_status = 'A'
-                         inner join value_set vs on vs.id = vsv.value_set and vs.sys_status = 'A'
+                from terminology.concept_value_set_version_membership cvsvm
+                         inner join terminology.value_set_version vsv on vsv.id = cvsvm.value_set_version_id and vsv.sys_status = 'A'
+                         inner join terminology.value_set vs on vs.id = vsv.value_set and vs.sys_status = 'A'
                 where cvsvm.sys_status = 'A' and vsv.version = '4.3.0' and vs.id = 'languages'
             ),
             rule_set_concepts as (
                 select ac.id, ac.order_nr, c.id conept_id, ac.display, ac.additional_designations
-                from concept c
+                from terminology.concept c
                          left join all_concepts ac on ac.concept_id = c.id
                 where exists(select 1
                              from include_rules
@@ -69,13 +69,13 @@ begin
                                      or ir ->> 'valueSet' is not null and ir ->> 'valueSetVersion' is not null) and
                                  (ir ->> 'codeSystem' is null or ir ->> 'codeSystemVersion' is null and ir ->> 'lockedDate' is null
                                          or (exists(select 1
-                                                    from code_system_version csv
-                                                             inner join code_system cs on cs.id = csv.code_system and cs.sys_status = 'A'
-                                                             inner join entity_version_code_system_version_membership evcsvm
+                                                    from terminology.code_system_version csv
+                                                             inner join terminology.code_system cs on cs.id = csv.code_system and cs.sys_status = 'A'
+                                                             inner join terminology.entity_version_code_system_version_membership evcsvm
                                                     on evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A'
-                                                             inner join code_system_entity_version csev
+                                                             inner join terminology.code_system_entity_version csev
                                                     on csev.id = evcsvm.code_system_entity_version_id and csev.sys_status = 'A'
-                                                             inner join code_system_entity cse on cse.id = csev.code_system_entity_id and cse.sys_status = 'A'
+                                                             inner join terminology.code_system_entity cse on cse.id = csev.code_system_entity_id and cse.sys_status = 'A'
                                                     where csv.sys_status = 'A' and cse.id = c.id and
                                                         (ir ->> 'codeSystemVersion' is null or csv.version = ir ->> 'codeSystemVersion') and
                                                         cs.id = ir ->> 'codeSystem' and
@@ -88,7 +88,7 @@ begin
                                                  or exists(select jsonb_array_elements(ir -> 'filters') where 1 = 1)))) and
                                  (ir ->> 'valueSet' is null or ir ->> 'valueSetVersion' is null
                                          or exists(select 1
-                                                   from value_set_expand(ir ->> 'valueSet', ir ->> 'valueSetVersion', null) vse
+                                                   from terminology.value_set_expand(ir ->> 'valueSet', ir ->> 'valueSetVersion', null) vse
                                                    where vse.concept_id = c.id)
                                      )
                     ) and
@@ -98,13 +98,13 @@ begin
                                        or er ->> 'valueSet' is not null and er ->> 'valueSetVersion' is not null) and
                                    (er ->> 'codeSystem' is not null and (er ->> 'codeSystemVersion' is not null or er ->> 'lockedDate' is not null)
                                            and exists(select 1
-                                                      from code_system_version csv
-                                                               inner join code_system cs on cs.id = csv.code_system and cs.sys_status = 'A'
-                                                               inner join entity_version_code_system_version_membership evcsvm
+                                                      from terminology.code_system_version csv
+                                                               inner join terminology.code_system cs on cs.id = csv.code_system and cs.sys_status = 'A'
+                                                               inner join terminology.entity_version_code_system_version_membership evcsvm
                                                       on evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A'
-                                                               inner join code_system_entity_version csev
+                                                               inner join terminology.code_system_entity_version csev
                                                       on csev.id = evcsvm.code_system_entity_version_id and csev.sys_status = 'A'
-                                                               inner join code_system_entity cse on cse.id = csev.code_system_entity_id and cse.sys_status = 'A'
+                                                               inner join terminology.code_system_entity cse on cse.id = csev.code_system_entity_id and cse.sys_status = 'A'
                                                       where csv.sys_status = 'A' and cse.id = c.id and
                                                           (er ->> 'codeSystemVersion' is null or csv.version = er ->> 'codeSystemVersion') and
                                                           cs.id = er ->> 'codeSystem' and
@@ -117,7 +117,7 @@ begin
                                                or exists(select jsonb_array_elements(er -> 'filters') where 1 = 1))
                                            or er ->> 'valueSet' is not null and er ->> 'valueSetVersion' is not null
                                                and exists(select 1
-                                                          from value_set_expand(er ->> 'valueSet', er ->> 'valueSetVersion', null) vse
+                                                          from terminology.value_set_expand(er ->> 'valueSet', er ->> 'valueSetVersion', null) vse
                                                           where vse.concept_id = c.id)
                                        )
                         )

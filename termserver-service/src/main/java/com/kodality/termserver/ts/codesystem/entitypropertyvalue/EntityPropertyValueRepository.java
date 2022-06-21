@@ -22,18 +22,18 @@ public class EntityPropertyValueRepository extends BaseRepository {
     ssb.property("code_system_entity_version_id", codeSystemEntityVersionId);
     ssb.jsonProperty("value", value.getValue());
 
-    SqlBuilder sb = ssb.buildSave("entity_property_value", "id");
+    SqlBuilder sb = ssb.buildSave("terminology.entity_property_value", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     value.setId(id);
   }
 
   public List<EntityPropertyValue> loadAll(Long codeSystemEntityVersionId) {
-    String sql = "select * from entity_property_value where sys_status = 'A' and code_system_entity_version_id = ?";
+    String sql = "select * from terminology.entity_property_value where sys_status = 'A' and code_system_entity_version_id = ?";
     return getBeans(sql, bp, codeSystemEntityVersionId);
   }
 
   public void retain(List<EntityPropertyValue> values, Long codeSystemEntityVersionId) {
-    SqlBuilder sb = new SqlBuilder("update entity_property_value set sys_status = 'C'");
+    SqlBuilder sb = new SqlBuilder("update terminology.entity_property_value set sys_status = 'C'");
     sb.append(" where code_system_entity_version_id = ? and sys_status = 'A'", codeSystemEntityVersionId);
     sb.andNotIn("id", values, EntityPropertyValue::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
@@ -45,7 +45,7 @@ public class EntityPropertyValueRepository extends BaseRepository {
     }
     values.forEach(v -> {
       SqlBuilder sb =
-          upsert(new SqlBuilder("insert into entity_property_value (" +
+          upsert(new SqlBuilder("insert into terminology.entity_property_value (" +
                   "code_system_entity_version_id, " +
                   "entity_property_id, " +
                   "value) select ?,?,?::jsonb",
@@ -54,7 +54,7 @@ public class EntityPropertyValueRepository extends BaseRepository {
                   JsonUtil.toJson(v.getValue())
               ),
               new SqlBuilder(
-                  "UPDATE entity_property_value SET " +
+                  "UPDATE terminology.entity_property_value SET " +
                       "entity_property_id = ?, " +
                       "value = ?::jsonb where code_system_entity_version_id = ? and id = ? and sys_status = 'A'",
                   v.getEntityPropertyId(),

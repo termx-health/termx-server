@@ -23,7 +23,6 @@ public class NamingSystemController {
     return namingSystemService.query(params);
   }
 
-
   @Get(uri = "/{id}")
   public NamingSystem getNamingSystem(@PathVariable String id) {
     return namingSystemService.get(id).orElseThrow(() -> new NotFoundException("Naming system not found: " + id));

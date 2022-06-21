@@ -19,7 +19,7 @@
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/01-value_set_expand.sql" />
 
         <rollback>
-            drop function if exists value_set_expand(text,text,jsonb);
+            drop function if exists terminology.value_set_expand(text,text,jsonb);
         </rollback>
     </changeSet>
 

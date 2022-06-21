@@ -29,28 +29,28 @@ public class DesignationRepository extends BaseRepository {
     ssb.property("description", designation.getDescription());
     ssb.property("status", designation.getStatus());
 
-    SqlBuilder sb = ssb.buildSave("designation", "id");
+    SqlBuilder sb = ssb.buildSave("terminology.designation", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     designation.setId(id);
   }
 
   public Designation load(Long id) {
-    String sql = "select * from designation where sys_status = 'A' and id = ?";
+    String sql = "select * from terminology.designation where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }
 
   public List<Designation> loadAll(Long codeSystemEntityVersionId) {
-    String sql = "select * from designation where sys_status = 'A' and code_system_entity_version_id = ?";
+    String sql = "select * from terminology.designation where sys_status = 'A' and code_system_entity_version_id = ?";
     return getBeans(sql, bp, codeSystemEntityVersionId);
   }
 
   public QueryResult<Designation> query(DesignationQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from designation d where d.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.designation d where d.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from designation d where d.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select * from terminology.designation d where d.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -65,17 +65,17 @@ public class DesignationRepository extends BaseRepository {
     sb.appendIfNotNull("and d.name = ?", params.getName());
     sb.appendIfNotNull("and d.language = ?", params.getLanguage());
     sb.appendIfNotNull("and d.designation_kind = ?", params.getDesignationKind());
-    sb.appendIfNotNull("and exists( select 1 from concept c " +
-        "inner join code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A' " +
+    sb.appendIfNotNull("and exists( select 1 from terminology.concept c " +
+        "inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A' " +
         "where c.code = ? and c.sys_status = 'A' and csev.id = d.code_system_entity_version_id)", params.getConceptCode());
-    sb.appendIfNotNull("and exists( select 1 from concept c " +
-        "inner join code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A' " +
+    sb.appendIfNotNull("and exists( select 1 from terminology.concept c " +
+        "inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A' " +
         "where c.id = ? and c.sys_status = 'A' and csev.id = d.code_system_entity_version_id)", params.getConceptId());
     return sb;
   }
 
   public void retain(List<Designation> designations, Long codeSystemEntityVersionId) {
-    SqlBuilder sb = new SqlBuilder("update designation set sys_status = 'C'");
+    SqlBuilder sb = new SqlBuilder("update terminology.designation set sys_status = 'C'");
     sb.append(" where code_system_entity_version_id = ? and sys_status = 'A'", codeSystemEntityVersionId);
     sb.andNotIn("id", designations, Designation::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
@@ -87,7 +87,7 @@ public class DesignationRepository extends BaseRepository {
     }
     designations.forEach(d -> {
       SqlBuilder sb =
-          upsert(new SqlBuilder("insert into designation (" +
+          upsert(new SqlBuilder("insert into terminology.designation (" +
                   "code_system_entity_version_id, " +
                   "designation_type_id, " +
                   "name, " +
@@ -110,7 +110,7 @@ public class DesignationRepository extends BaseRepository {
                   d.getStatus()
               ),
               new SqlBuilder(
-                  "UPDATE designation SET " +
+                  "UPDATE terminology.designation SET " +
                       "designation_type_id = ?, " +
                       "name = ?, " +
                       "language = ?, " +

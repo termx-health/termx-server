@@ -33,33 +33,33 @@ public class CodeSystemVersionRepository extends BaseRepository {
     ssb.property("expiration_date", version.getExpirationDate());
     ssb.property("created", version.getCreated());
     ssb.property("status", version.getStatus());
-    SqlBuilder sb = ssb.buildSave("code_system_version", "id");
+    SqlBuilder sb = ssb.buildSave("terminology.code_system_version", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     version.setId(id);
   }
 
   public CodeSystemVersion getVersion(String codeSystem, String versionCode) {
-    String sql = "select * from code_system_version where sys_status = 'A' and code_system = ? and version = ?";
+    String sql = "select * from terminology.code_system_version where sys_status = 'A' and code_system = ? and version = ?";
     return getBean(sql, bp, codeSystem, versionCode);
   }
 
   public CodeSystemVersion getVersion(Long id) {
-    String sql = "select * from code_system_version where sys_status = 'A' and id = ?";
+    String sql = "select * from terminology.code_system_version where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }
 
   public List<CodeSystemVersion> getVersions(String codeSystem) {
-    String sql = "select * from code_system_version where sys_status = 'A' and code_system = ?";
+    String sql = "select * from terminology.code_system_version where sys_status = 'A' and code_system = ?";
     return getBeans(sql, bp, codeSystem);
   }
 
   public QueryResult<CodeSystemVersion> query(CodeSystemVersionQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from code_system_version where sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_version where sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from code_system_version where sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select * from terminology.code_system_version where sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -79,30 +79,30 @@ public class CodeSystemVersionRepository extends BaseRepository {
   }
 
   public void activate(String codeSystem, String version) {
-    String sql = "update code_system_version set status = ? where code_system = ? and version = ? and sys_status = 'A' and status <> ?";
+    String sql = "update terminology.code_system_version set status = ? where code_system = ? and version = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.active, codeSystem, version, PublicationStatus.active);
   }
 
   public void retire(String codeSystem, String version) {
-    String sql = "update code_system_version set status = ? where code_system = ? and version = ? and sys_status = 'A' and status <> ?";
+    String sql = "update terminology.code_system_version set status = ? where code_system = ? and version = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.retired, codeSystem, version, PublicationStatus.retired);
   }
 
   public void retainVersions(List<CodeSystemVersion> codeSystemVersions, String codeSystem) {
-    SqlBuilder sb = new SqlBuilder("update code_system_version set sys_status = 'C'");
+    SqlBuilder sb = new SqlBuilder("update terminology.code_system_version set sys_status = 'C'");
     sb.append(" where code_system = ? and sys_status = 'A'", codeSystem);
     sb.andNotIn("id", codeSystemVersions, CodeSystemVersion::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public void retainEntityVersions(List<CodeSystemEntityVersion> entityVersions, Long codeSystemVersionId) {
-    SqlBuilder sb = new SqlBuilder("update entity_version_code_system_version_membership set sys_status = 'C'");
+  public void unlinkEntityVersions(List<CodeSystemEntityVersion> entityVersions, Long codeSystemVersionId) {
+    SqlBuilder sb = new SqlBuilder("update terminology.entity_version_code_system_version_membership set sys_status = 'C'");
     sb.append(" where code_system_version_id = ? and sys_status = 'A'", codeSystemVersionId);
     sb.andNotIn("code_system_entity_version_id", entityVersions, CodeSystemEntityVersion::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public void upsertEntityVersions(List<CodeSystemEntityVersion> entityVersions, Long codeSystemVersionId) {
+  public void linkEntityVersions(List<CodeSystemEntityVersion> entityVersions, Long codeSystemVersionId) {
     if (entityVersions == null) {
       return;
     }
@@ -110,24 +110,24 @@ public class CodeSystemVersionRepository extends BaseRepository {
       SaveSqlBuilder ssb = new SaveSqlBuilder();
       ssb.property("code_system_entity_version_id", v.getId());
       ssb.property("code_system_version_id", codeSystemVersionId);
-      SqlBuilder sb = ssb.buildUpsert("entity_version_code_system_version_membership", "code_system_entity_version_id", "code_system_version_id");
+      SqlBuilder sb = ssb.buildUpsert("terminology.entity_version_code_system_version_membership", "code_system_entity_version_id", "code_system_version_id");
       jdbcTemplate.update(sb.getSql(), sb.getParams());
     });
   }
 
-  public void deleteEntityVersion(Long codeSystemVersionId, Long entityVersionId) {
-    SqlBuilder sb = new SqlBuilder("update entity_version_code_system_version_membership set sys_status = 'C' where sys_status = 'A'");
+  public void unlinkEntityVersion(Long codeSystemVersionId, Long entityVersionId) {
+    SqlBuilder sb = new SqlBuilder("update terminology.entity_version_code_system_version_membership set sys_status = 'C' where sys_status = 'A'");
     sb.append("and code_system_version_id = ?", codeSystemVersionId);
     sb.append("and code_system_entity_version_id = ?", entityVersionId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public void saveEntityVersion(Long codeSystemVersionId, Long entityVersionId) {
+  public void linkEntityVersion(Long codeSystemVersionId, Long entityVersionId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("code_system_entity_version_id", entityVersionId);
     ssb.property("code_system_version_id", codeSystemVersionId);
     ssb.property("sys_status", "A");
-    SqlBuilder sb = ssb.buildUpsert("entity_version_code_system_version_membership", "code_system_entity_version_id", "code_system_version_id", "sys_status");
+    SqlBuilder sb = ssb.buildUpsert("terminology.entity_version_code_system_version_membership", "code_system_entity_version_id", "code_system_version_id", "sys_status");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 }

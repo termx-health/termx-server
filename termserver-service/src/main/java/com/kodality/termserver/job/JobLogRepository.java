@@ -26,12 +26,12 @@ public class JobLogRepository extends BaseRepository {
       "jsonb_build_object('started', j.started, 'finished', j.finished, 'status', j.status) execution" ;
 
   public JobLog load(Long id) {
-    SqlBuilder sb = new SqlBuilder(SELECT + " from job_log j where j.sys_status = 'A' and j.id = ?", id);
+    SqlBuilder sb = new SqlBuilder(SELECT + " from job.job_log j where j.sys_status = 'A' and j.id = ?", id);
     return getBean(sb.getSql(), bp, sb.getParams());
   }
 
   public Long create(JobDefinition definition) {
-    SqlBuilder sb = new SqlBuilder("insert into job_log (type, source, status, started) " +
+    SqlBuilder sb = new SqlBuilder("insert into job.job_log (type, source, status, started) " +
         "select ?,?,?, current_timestamp returning id",
         definition.getType(),
         definition.getSource(),
@@ -41,13 +41,13 @@ public class JobLogRepository extends BaseRepository {
   }
 
   public void finish(Long id) {
-    SqlBuilder sb = new SqlBuilder("update job_log set status = ?, finished = current_timestamp ", JobExecutionStatus.COMPLETED);
+    SqlBuilder sb = new SqlBuilder("update job.job_log set status = ?, finished = current_timestamp ", JobExecutionStatus.COMPLETED);
     sb.append("where sys_status = 'A' and id = ?", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
   public void finish(JobLog jobLog, String status) {
-    SqlBuilder sb = new SqlBuilder("update job_log set warnings = ?::jsonb, successes = ?::jsonb, errors = ?::jsonb, status = ?, finished = current_timestamp ",
+    SqlBuilder sb = new SqlBuilder("update job.job_log set warnings = ?::jsonb, successes = ?::jsonb, errors = ?::jsonb, status = ?, finished = current_timestamp ",
         jobLog.getWarnings() == null ? null : JsonUtil.toJson(jobLog.getWarnings()),
         jobLog.getSuccesses() == null ? null : JsonUtil.toJson(jobLog.getSuccesses()),
         jobLog.getErrors() == null ? null : JsonUtil.toJson(jobLog.getErrors()),
@@ -59,12 +59,12 @@ public class JobLogRepository extends BaseRepository {
 
   public QueryResult<JobLog> search(JobLogQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from job_log j where j.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from job.job_log j where j.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
 
     }, p -> {
-      SqlBuilder sb = new SqlBuilder(SELECT + " from job_log j where j.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder(SELECT + " from job.job_log j where j.sys_status = 'A'");
 
       sb.append(filter(params));
       sb.append(order(params, orderMapping));

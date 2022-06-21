@@ -16,13 +16,13 @@ public class MapSetEntityRepository extends BaseRepository {
     ssb.property("id", entity.getId());
     ssb.property("map_set", entity.getMapSet());
 
-    SqlBuilder sb = ssb.buildSave("map_set_entity", "id");
+    SqlBuilder sb = ssb.buildSave("terminology.map_set_entity", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     entity.setId(id);
   }
 
   public MapSetEntity load(Long id) {
-    String sql = "select * from map_set_entity where sys_status = 'A' and id = ?";
+    String sql = "select * from terminology.map_set_entity where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }
 }

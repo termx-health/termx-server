@@ -16,7 +16,7 @@
     </customChange>
   </changeSet>
 
-  <changeSet id="v3-ietf3066" author="kodality">
+  <changeSet id="languages" author="kodality">
     <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
       <param name="files" value="db/changelog/terminology/data/valueset/languages.json"/>
     </customChange>
