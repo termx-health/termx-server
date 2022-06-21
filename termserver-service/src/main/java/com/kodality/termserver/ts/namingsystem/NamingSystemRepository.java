@@ -5,9 +5,13 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.namingsystem.NamingSystem;
 import com.kodality.termserver.namingsystem.NamingSystemQueryParams;
+import com.kodality.termserver.namingsystem.NamingSystemQueryParams.Ordering;
 import io.micronaut.core.util.StringUtils;
+import java.util.HashMap;
+import java.util.Map;
 import javax.inject.Singleton;
 
 @Singleton
@@ -46,6 +50,7 @@ public class NamingSystemRepository extends BaseRepository {
     }, p -> {
       SqlBuilder sb = new SqlBuilder("select ns.* from naming_system ns where ns.sys_status = 'A' ");
       sb.append(filter(params));
+      sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
@@ -79,5 +84,28 @@ public class NamingSystemRepository extends BaseRepository {
     }
 
     return sb;
+  }
+
+  public void activate(String id) {
+    String sql = "update naming_system set status = ? where id = ? and sys_status = 'A' and status <> ?";
+    jdbcTemplate.update(sql, PublicationStatus.active, id, PublicationStatus.active);
+  }
+
+  public void retire(String id) {
+    String sql = "update naming_system set status = ? where id = ? and sys_status = 'A' and status <> ?";
+    jdbcTemplate.update(sql, PublicationStatus.retired, id, PublicationStatus.retired);
+  }
+
+  private Map<String, String> sortMap(String lang) {
+    Map<String, String> sortMap = new HashMap<>(Map.of(
+        Ordering.id, "id",
+        Ordering.source, "source",
+        Ordering.kind, "kind",
+        Ordering.status, "status"
+    ));
+    if (StringUtils.isNotEmpty(lang)) {
+      sortMap.put(Ordering.name, "ns.names ->> '" + lang + "'");
+    }
+    return sortMap;
   }
 }

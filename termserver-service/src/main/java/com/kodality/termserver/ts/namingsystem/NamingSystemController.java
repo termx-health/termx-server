@@ -34,4 +34,16 @@ public class NamingSystemController {
     namingSystemService.save(namingSystem);
     return HttpResponse.created(namingSystem);
   }
+
+  @Post(uri = "/{id}/activate")
+  public HttpResponse<?> activateVersion(@PathVariable String id) {
+    namingSystemService.activate(id);
+    return HttpResponse.noContent();
+  }
+
+  @Post(uri = "/{id}/retire")
+  public HttpResponse<?> retireVersion(@PathVariable String id) {
+    namingSystemService.retire(id);
+    return HttpResponse.noContent();
+  }
 }
