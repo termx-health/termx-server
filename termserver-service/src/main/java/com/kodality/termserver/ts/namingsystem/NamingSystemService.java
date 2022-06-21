@@ -37,10 +37,10 @@ public class NamingSystemService {
   public void retire(String id) {
     NamingSystem namingSystem = repository.load(id);
     if (namingSystem == null) {
-      throw ApiError.TE203.toApiException(Map.of("namingSystem", id));
+      throw ApiError.TE501.toApiException(Map.of("namingSystem", id));
     }
     if (PublicationStatus.retired.equals(namingSystem.getStatus())) {
-      log.warn("namingsystem '{}' is already retired, skipping retirement process.", id);
+      log.warn("NamingSystem '{}' is already retired, skipping retirement process.", id);
       return;
 
     }
@@ -51,7 +51,7 @@ public class NamingSystemService {
   public void activate(String id) {
     NamingSystem namingSystem = repository.load(id);
     if (namingSystem == null) {
-      throw ApiError.TE203.toApiException(Map.of("namingSystem", id));
+      throw ApiError.TE501.toApiException(Map.of("namingSystem", id));
     }
     if (PublicationStatus.active.equals(namingSystem.getStatus())) {
       log.warn("NamingSystem '{}' is already activated, skipping activation process.", id);

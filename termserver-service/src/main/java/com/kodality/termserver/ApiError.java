@@ -16,13 +16,15 @@ public enum ApiError {
   TE106("TE106", "Url not provided."),
 
   TE201("TE201", "Code system '{{codeSystem}}' not found."),
-  TE203("TE203", "Naming system '{{namingSystem}}' not found."),
   TE202("TE202", "Version '{{version}}' of code system '{{codeSystem}}' doesn't exist."),
 
   TE301("TE301", "Version '{{version}}' of value set '{{valueSet}}' doesn't exist."),
   TE302("TE302", "Value set '{{valueSet}}' doesn't have active version."),
 
-  TE401("TE401", "Version '{{version}}' of map set '{{mapSet}}' doesn't exist.")
+  TE401("TE401", "Version '{{version}}' of map set '{{mapSet}}' doesn't exist."),
+
+  TE501("TE501", "Naming system '{{namingSystem}}' not found."),
+
   ;
 
 
