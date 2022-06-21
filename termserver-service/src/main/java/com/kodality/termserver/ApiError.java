@@ -21,7 +21,10 @@ public enum ApiError {
   TE301("TE301", "Version '{{version}}' of value set '{{valueSet}}' doesn't exist."),
   TE302("TE302", "Value set '{{valueSet}}' doesn't have active version."),
 
-  TE401("TE401", "Version '{{version}}' of map set '{{mapSet}}' doesn't exist.")
+  TE401("TE401", "Version '{{version}}' of map set '{{mapSet}}' doesn't exist."),
+
+  TE501("TE501", "Naming system '{{namingSystem}}' not found."),
+
   ;
 
 

@@ -20,7 +20,16 @@ public class NamingSystemQueryParams extends QueryParams {
   private String description;
   private String descriptionContains;
   private String codeSystem;
+  private String lang;
 
   private String text;
   private String textContains;
+
+  public interface Ordering {
+    String id = "id";
+    String name = "name";
+    String source = "source";
+    String kind = "kind";
+    String status = "status";
+  }
 }
