@@ -260,6 +260,12 @@ public class CodeSystemController {
     return codeSystemSupplementService.getSupplements(codeSystem);
   }
 
+  @Authorized("*.code-system.view")
+  @Get(uri = "/{codeSystem}/supplements/{id}")
+  public CodeSystemSupplement getSupplement(@PathVariable String codeSystem, @PathVariable Long id) {
+    return codeSystemSupplementService.getSupplement(id);
+  }
+
   @Authorized("*.code-system.edit")
   @Post(uri = "/{codeSystem}/supplements")
   public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @Body @Valid CodeSystemSupplement supplement) {

@@ -2,6 +2,9 @@ package com.kodality.termserver.ts.codesystem.supplement;
 
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
+import com.kodality.termserver.codesystem.Designation;
+import com.kodality.termserver.codesystem.EntityProperty;
+import com.kodality.termserver.codesystem.EntityPropertyValue;
 import com.kodality.termserver.ts.codesystem.CodeSystemService;
 import com.kodality.termserver.codesystem.CodeSystemSupplement;
 import com.kodality.termserver.codesystem.CodeSystemSupplementType;
@@ -27,10 +30,16 @@ public class CodeSystemSupplementService {
     return repository.getSupplements(codeSystem);
   }
 
+  public CodeSystemSupplement getSupplement(Long id) {
+    return decorate(repository.getSupplement(id));
+  }
+
   @Transactional
   public void save(CodeSystemSupplement supplement, String codeSystem) {
-    if (supplement.getType().equals(CodeSystemSupplementType.property)) {
-      entityPropertyService.save(supplement.getPropertySupplement(), codeSystem);
+    if (supplement.getTargetType().equals(CodeSystemSupplementType.property)) {
+      EntityProperty property = (EntityProperty) supplement.getTarget();
+      entityPropertyService.save(property, codeSystem);
+      supplement.setTarget(property);
     }
     supplement.setCodeSystem(codeSystem);
     supplement.setCreated(supplement.getCreated() == null ? OffsetDateTime.now() : supplement.getCreated());
@@ -39,11 +48,15 @@ public class CodeSystemSupplementService {
 
   @Transactional
   public void save(CodeSystemSupplement supplement, Long codeSystemEntityVersionId) {
-    if (supplement.getType().equals(CodeSystemSupplementType.propertyValue)) {
-      entityPropertyValueService.save(supplement.getPropertyValueSupplement(), codeSystemEntityVersionId);
+    if (supplement.getTargetType().equals(CodeSystemSupplementType.propertyValue)) {
+      EntityPropertyValue propertyValue = (EntityPropertyValue) supplement.getTarget();
+      entityPropertyValueService.save(propertyValue, codeSystemEntityVersionId);
+      supplement.setTarget(propertyValue);
     }
-    if (supplement.getType().equals(CodeSystemSupplementType.designation)) {
-      designationService.save(supplement.getDesignationSupplement(), codeSystemEntityVersionId);
+    if (supplement.getTargetType().equals(CodeSystemSupplementType.designation)) {
+      Designation designation = (Designation) supplement.getTarget();
+      designationService.save(designation, codeSystemEntityVersionId);
+      supplement.setTarget(designation);
     }
     String codeSystem = codeSystemService.query(new CodeSystemQueryParams().setCodeSystemEntityVersionId(codeSystemEntityVersionId)).findFirst().map(CodeSystem::getId).orElse(null);
     supplement.setCodeSystem(codeSystem);
@@ -51,5 +64,17 @@ public class CodeSystemSupplementService {
     repository.save(supplement);
   }
 
+  private CodeSystemSupplement decorate(CodeSystemSupplement supplement) {
+    if (CodeSystemSupplementType.property.equals(supplement.getTargetType())) {
+      supplement.setTarget(entityPropertyService.getProperty(((EntityProperty) supplement.getTarget()).getId()));
+    }
+    if (CodeSystemSupplementType.propertyValue.equals(supplement.getTargetType())) {
+      supplement.setTarget(entityPropertyValueService.load(((EntityPropertyValue) supplement.getTarget()).getId()));
+    }
 
+    if (CodeSystemSupplementType.designation.equals(supplement.getTargetType())) {
+      supplement.setTarget(designationService.get(((Designation) supplement.getTarget()).getId()).orElse(null));
+    }
+    return supplement;
+  }
 }

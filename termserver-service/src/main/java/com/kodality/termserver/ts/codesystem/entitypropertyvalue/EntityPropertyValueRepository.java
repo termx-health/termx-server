@@ -15,6 +15,8 @@ public class EntityPropertyValueRepository extends BaseRepository {
     bp.addColumnProcessor("value", PgBeanProcessor.fromJson());
   });
 
+  String from = " from terminology.entity_property_value epv left join terminology.code_system_supplement css on css.target_id = epv.id and css.target_type = 'EntityPropertyValue' ";
+
   public void save(EntityPropertyValue value, Long codeSystemEntityVersionId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", value.getId());
@@ -28,8 +30,13 @@ public class EntityPropertyValueRepository extends BaseRepository {
   }
 
   public List<EntityPropertyValue> loadAll(Long codeSystemEntityVersionId) {
-    String sql = "select * from terminology.entity_property_value where sys_status = 'A' and code_system_entity_version_id = ?";
+    String sql = "select epv.*, css.id supplement_id" + from + "where epv.sys_status = 'A' and epv.code_system_entity_version_id = ?";
     return getBeans(sql, bp, codeSystemEntityVersionId);
+  }
+
+  public EntityPropertyValue load(Long id) {
+    String sql = "select epv.*, css.id supplement_id" + from + "where epv.sys_status = 'A' and epv.id = ?";
+    return getBean(sql, bp, id);
   }
 
   public void retain(List<EntityPropertyValue> values, Long codeSystemEntityVersionId) {

@@ -15,6 +15,8 @@ import org.apache.commons.lang3.StringUtils;
 public class EntityPropertyRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(EntityProperty.class);
 
+  String from = " from terminology.entity_property ep left join terminology.code_system_supplement css on css.target_id = ep.id and css.target_type = 'EntityProperty' ";
+
   public void save(EntityProperty entityProperty, String codeSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", entityProperty.getId());
@@ -31,22 +33,22 @@ public class EntityPropertyRepository extends BaseRepository {
   }
 
   public List<EntityProperty> getProperties(String codeSystem) {
-    String sql = "select * from terminology.entity_property where sys_status = 'A' and code_system = ?";
+    String sql = "select ep.*, css.id supplement_id" + from + "where ep.where sys_status = 'A' and ep.code_system = ?";
     return getBeans(sql, bp, codeSystem);
   }
 
   public EntityProperty getProperty(Long id) {
-    String sql = "select * from terminology.entity_property where sys_status = 'A' and id = ?";
+    String sql ="select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A' and ep.id = ?";
     return getBean(sql, bp, id);
   }
 
   public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.entity_property ep where ep.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1)" + from + "where ep.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from terminology.entity_property ep where ep.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());

@@ -15,6 +15,8 @@ import java.util.List;
 public class DesignationRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(Designation.class);
 
+  String from = " from terminology.designation d left join terminology.code_system_supplement css on css.target_id = d.id and css.target_type = 'Designation' ";
+
   public void save(Designation designation, Long codeSystemEntityVersionId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", designation.getId());
@@ -35,22 +37,22 @@ public class DesignationRepository extends BaseRepository {
   }
 
   public Designation load(Long id) {
-    String sql = "select * from terminology.designation where sys_status = 'A' and id = ?";
+    String sql = "select d.*, css.id supplement_id" + from + "where d.sys_status = 'A' and d.id = ?";
     return getBean(sql, bp, id);
   }
 
   public List<Designation> loadAll(Long codeSystemEntityVersionId) {
-    String sql = "select * from terminology.designation where sys_status = 'A' and code_system_entity_version_id = ?";
+    String sql = "select d.*, css.id supplement_id" + from + "where d.sys_status = 'A' and d.code_system_entity_version_id = ?";
     return getBeans(sql, bp, codeSystemEntityVersionId);
   }
 
   public QueryResult<Designation> query(DesignationQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.designation d where d.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1)" + from + "where d.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from terminology.designation d where d.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select d.*, css.id supplement_id" + from + "where d.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());

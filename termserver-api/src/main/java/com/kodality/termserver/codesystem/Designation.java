@@ -18,4 +18,6 @@ public class Designation {
   private String designationKind; //text, blob
   private String description;
   private String status;
+
+  private Long supplementId;
 }

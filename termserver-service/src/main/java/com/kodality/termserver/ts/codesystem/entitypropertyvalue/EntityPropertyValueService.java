@@ -15,6 +15,10 @@ public class EntityPropertyValueService {
     return repository.loadAll(codeSystemEntityVersionId);
   }
 
+  public EntityPropertyValue load(Long id) {
+    return repository.load(id);
+  }
+
   @Transactional
   public void save(List<EntityPropertyValue> values, Long codeSystemEntityVersionId) {
     repository.retain(values, codeSystemEntityVersionId);
