@@ -18,6 +18,14 @@ public class EntityPropertyService {
     return repository.getProperties(codeSystem);
   }
 
+  public EntityProperty getProperty(Long id) {
+    return repository.getProperty(id);
+  }
+
+  public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {
+    return repository.query(params);
+  }
+
   @Transactional
   public List<EntityProperty> save(List<EntityProperty> entityProperties, String codeSystem) {
     repository.retain(entityProperties, codeSystem);
@@ -37,9 +45,8 @@ public class EntityPropertyService {
     return entityProperty;
   }
 
-  public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {
-    return repository.query(params);
+  @Transactional
+  public void delete(Long id) {
+    repository.delete(id);
   }
-
-
 }

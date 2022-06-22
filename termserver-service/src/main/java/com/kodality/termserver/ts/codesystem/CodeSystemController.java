@@ -217,11 +217,39 @@ public class CodeSystemController {
 
   //----------------CodeSystem Property----------------
 
+  @Authorized("*.code-system.edit")
+  @Post(uri = "/{codeSystem}/entity-properties/{id}")
+  public EntityProperty getEntityProperty(@PathVariable String codeSystem, @PathVariable Long id) {
+    return entityPropertyService.getProperty(id);
+  }
+
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/entity-properties{?params*}")
-  public QueryResult<EntityProperty> getEntityProperties(@PathVariable String codeSystem, EntityPropertyQueryParams params) {
+  public QueryResult<EntityProperty> queryEntityProperties(@PathVariable String codeSystem, EntityPropertyQueryParams params) {
     params.setCodeSystem(codeSystem);
     return entityPropertyService.query(params);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Post(uri = "/{codeSystem}/entity-properties")
+  public HttpResponse<?> createEntityProperty(@PathVariable String codeSystem, @Body @Valid EntityProperty property) {
+    entityPropertyService.save(property, codeSystem);
+    return HttpResponse.created(property);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Put(uri = "/{codeSystem}/entity-properties/{id}")
+  public HttpResponse<?> updateEntityProperty(@PathVariable String codeSystem, @PathVariable Long id, @Body @Valid EntityProperty property) {
+    property.setId(id);
+    entityPropertyService.save(property, codeSystem);
+    return HttpResponse.created(property);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Delete(uri = "/{codeSystem}/entity-properties/{id}")
+  public HttpResponse<?> deleteEntityProperty(@PathVariable String codeSystem, @PathVariable Long id) {
+    entityPropertyService.delete(id);
+    return HttpResponse.ok();
   }
 
   //----------------CodeSystem Supplement----------------

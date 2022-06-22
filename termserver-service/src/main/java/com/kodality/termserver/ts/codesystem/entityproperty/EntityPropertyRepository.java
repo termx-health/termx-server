@@ -35,6 +35,11 @@ public class EntityPropertyRepository extends BaseRepository {
     return getBeans(sql, bp, codeSystem);
   }
 
+  public EntityProperty getProperty(Long id) {
+    String sql = "select * from terminology.entity_property where sys_status = 'A' and id = ?";
+    return getBean(sql, bp, id);
+  }
+
   public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from terminology.entity_property ep where ep.sys_status = 'A'");
@@ -66,6 +71,11 @@ public class EntityPropertyRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder("update terminology.entity_property set sys_status = 'C'");
     sb.append(" where code_system = ? and sys_status = 'A'", codeSystem);
     sb.andNotIn("id", properties, EntityProperty::getId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
+  public void delete(Long id) {
+    SqlBuilder sb = new SqlBuilder("update terminology.entity_property set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 }

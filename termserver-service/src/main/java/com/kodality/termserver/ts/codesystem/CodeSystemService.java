@@ -29,7 +29,6 @@ public class CodeSystemService {
   @Transactional
   public void save(CodeSystem codeSystem) {
     repository.save(codeSystem);
-    entityPropertyService.save(codeSystem.getProperties(), codeSystem.getId());
   }
 
   public QueryResult<CodeSystem> query(CodeSystemQueryParams params) {
