@@ -33,7 +33,7 @@ public class EntityPropertyRepository extends BaseRepository {
   }
 
   public List<EntityProperty> getProperties(String codeSystem) {
-    String sql = "select ep.*, css.id supplement_id" + from + "where ep.where sys_status = 'A' and ep.code_system = ?";
+    String sql = "select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A' and ep.code_system = ?";
     return getBeans(sql, bp, codeSystem);
   }
 
