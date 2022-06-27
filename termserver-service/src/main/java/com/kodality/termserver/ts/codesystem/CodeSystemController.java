@@ -10,9 +10,11 @@ import com.kodality.termserver.codesystem.CodeSystemSupplement;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
+import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
+import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termserver.ts.codesystem.supplement.CodeSystemSupplementService;
@@ -36,6 +38,7 @@ public class CodeSystemController {
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
   private final EntityPropertyService entityPropertyService;
+  private final DesignationService designationService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemDuplicateService codeSystemDuplicateService;
   private final CodeSystemSupplementService codeSystemSupplementService;
@@ -118,7 +121,8 @@ public class CodeSystemController {
 
   @Authorized("*.code-system.edit")
   @Post(uri = "/{codeSystem}/versions/{version}/duplicate")
-  public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version, @Body @Valid CodeSystemVersionDuplicateRequest request) {
+  public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version,
+                                                    @Body @Valid CodeSystemVersionDuplicateRequest request) {
     codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), request.getCodeSystem(), version, codeSystem);
     return HttpResponse.ok();
   }
@@ -173,7 +177,8 @@ public class CodeSystemController {
 
   @Authorized("*.code-system.edit")
   @Put(uri = "/{codeSystem}/entities/{entityId}/versions/{id}")
-  public HttpResponse<?> updateEntityVersion(@PathVariable String codeSystem, @PathVariable Long entityId, @PathVariable Long id, @Body @Valid CodeSystemEntityVersion version) {
+  public HttpResponse<?> updateEntityVersion(@PathVariable String codeSystem, @PathVariable Long entityId, @PathVariable Long id,
+                                             @Body @Valid CodeSystemEntityVersion version) {
     version.setId(id);
     version.setCodeSystem(codeSystem);
     codeSystemEntityVersionService.save(version, entityId);
@@ -249,6 +254,35 @@ public class CodeSystemController {
   @Delete(uri = "/{codeSystem}/entity-properties/{id}")
   public HttpResponse<?> deleteEntityProperty(@PathVariable String codeSystem, @PathVariable Long id) {
     entityPropertyService.delete(id);
+    return HttpResponse.ok();
+  }
+
+  //----------------CodeSystem Designation---------------
+
+  @Authorized("*.code-system.view")
+  @Get(uri = "/{codeSystem}/designations/{id}")
+  public Designation getDesignation(@PathVariable String codeSystem, @PathVariable Long id) {
+    return designationService.get(id).orElseThrow(() -> new NotFoundException("Designation not found: " + id));
+  }
+
+  @Authorized("*.code-system.edit")
+  @Post(uri = "/{codeSystem}/entity-versions/{entityVersionId}/designations")
+  public HttpResponse<?> createDesignation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @Body @Valid Designation designation) {
+    designationService.save(designation, entityVersionId);
+    return HttpResponse.created(designation);
+  }
+  @Authorized("*.code-system.edit")
+  @Put(uri = "/{codeSystem}/entity-versions/{entityVersionId}/designations/{id}")
+  public HttpResponse<?> updateDesignation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid Designation designation) {
+    designation.setId(id);
+    designationService.save(designation, entityVersionId);
+    return HttpResponse.created(designation);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Delete(uri = "/{codeSystem}/designations/{id}")
+  public HttpResponse<?> deleteDesignation(@PathVariable String codeSystem, @PathVariable Long id) {
+    designationService.delete(id);
     return HttpResponse.ok();
   }
 
