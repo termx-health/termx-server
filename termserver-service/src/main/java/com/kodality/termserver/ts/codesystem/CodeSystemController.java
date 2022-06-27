@@ -217,7 +217,7 @@ public class CodeSystemController {
 
   //----------------CodeSystem Property----------------
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/entity-properties/{id}")
   public EntityProperty getEntityProperty(@PathVariable String codeSystem, @PathVariable Long id) {
     return entityPropertyService.getProperty(id);
