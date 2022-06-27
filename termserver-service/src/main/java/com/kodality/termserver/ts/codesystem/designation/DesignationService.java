@@ -37,4 +37,9 @@ public class DesignationService {
     repository.save(designation, codeSystemEntityVersionId);
   }
 
+  @Transactional
+  public void delete(Long id) {
+    repository.delete(id);
+  }
+
 }
