@@ -260,9 +260,30 @@ public class CodeSystemController {
   //----------------CodeSystem Designation---------------
 
   @Authorized("*.code-system.edit")
-  @Get(uri = "/{codeSystem}/designations/{id}")
-  public Designation getDesignation(@PathVariable String codeSystem, @PathVariable Long id) {
-    return designationService.get(id).orElseThrow(() -> new NotFoundException("Designation not found: " + id));
+  @Get(uri = "/{codeSystem}/entity-versions/{entityVersionId}/designations/{designationId}")
+  public Designation getDesignation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long designationId) {
+    return designationService.get(designationId).orElseThrow(() -> new NotFoundException("Designation not found: " + designationId));
+  }
+
+  @Authorized("*.code-system.edit")
+  @Post(uri = "/{codeSystem}/entity-versions/{entityVersionId}/designations")
+  public HttpResponse<?> createDesignation(@PathVariable String codeSystem, @PathVariable Long entityVersionId,  @Body @Valid Designation designation) {
+    designationService.save(designation, entityVersionId);
+    return HttpResponse.created(designation);
+  }
+  @Authorized("*.code-system.edit")
+  @Put(uri = "/{codeSystem}/entity-versions/{entityVersionId}/designations/{designationId}")
+  public HttpResponse<?> updateDesignation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long designationId, @Body @Valid Designation designation) {
+    designation.setId(designationId);
+    designationService.save(designation, entityVersionId);
+    return HttpResponse.created(designation);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Delete(uri = "/{codeSystem}/entity-versions/{entityVersionId}/designations/{designationId}")
+  public HttpResponse<?> deleteDesignation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long designationId) {
+    designationService.delete(designationId);
+    return HttpResponse.ok();
   }
 
   //----------------CodeSystem Supplement----------------
