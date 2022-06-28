@@ -30,4 +30,8 @@ public class EntityPropertyValueService {
     repository.save(value, codeSystemEntityVersionId);
   }
 
+  @Transactional
+  public void delete(Long id) {
+    repository.delete(id);
+  }
 }
