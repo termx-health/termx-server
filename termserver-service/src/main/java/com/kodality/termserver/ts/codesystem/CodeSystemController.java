@@ -13,10 +13,12 @@ import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
+import com.kodality.termserver.codesystem.EntityPropertyValue;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
+import com.kodality.termserver.ts.codesystem.entitypropertyvalue.EntityPropertyValueService;
 import com.kodality.termserver.ts.codesystem.supplement.CodeSystemSupplementService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -38,6 +40,7 @@ public class CodeSystemController {
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
   private final EntityPropertyService entityPropertyService;
+  private final EntityPropertyValueService entityPropertyValueService;
   private final DesignationService designationService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemDuplicateService codeSystemDuplicateService;
@@ -262,6 +265,36 @@ public class CodeSystemController {
   @Delete(uri = "/{codeSystem}/entity-properties/{id}")
   public HttpResponse<?> deleteEntityProperty(@PathVariable String codeSystem, @PathVariable Long id) {
     entityPropertyService.delete(id);
+    return HttpResponse.ok();
+  }
+
+  //----------------CodeSystem PropertyValue----------------
+
+  @Authorized("*.code-system.view")
+  @Get(uri = "/{codeSystem}/entity-property-values/{id}")
+  public EntityPropertyValue getEntityPropertyValue(@PathVariable String codeSystem, @PathVariable Long id) {
+    return entityPropertyValueService.load(id);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Post(uri = "/{codeSystem}/entity-versions/{entityVersionId}/entity-property-values")
+  public HttpResponse<?> createEntityPropertyValue(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @Body @Valid EntityPropertyValue propertyValue) {
+    entityPropertyValueService.save(propertyValue, entityVersionId);
+    return HttpResponse.created(propertyValue);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Put(uri = "/{codeSystem}/entity-versions/{entityVersionId}/entity-property-values/{id}")
+  public HttpResponse<?> updateEntityPropertyValue(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid EntityPropertyValue propertyValue) {
+    propertyValue.setId(id);
+    entityPropertyValueService.save(propertyValue, entityVersionId);
+    return HttpResponse.created(propertyValue);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Delete(uri = "/{codeSystem}/entity-property-values/{id}")
+  public HttpResponse<?> deleteEntityPropertyValue(@PathVariable String codeSystem, @PathVariable Long id) {
+    entityPropertyValueService.delete(id);
     return HttpResponse.ok();
   }
 

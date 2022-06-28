@@ -71,4 +71,9 @@ public class EntityPropertyValueRepository extends BaseRepository {
       jdbcTemplate.update(sb.getSql(), sb.getParams());
     });
   }
+
+  public void delete(Long id) {
+    SqlBuilder sb = new SqlBuilder("update terminology.entity_property_value set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }
