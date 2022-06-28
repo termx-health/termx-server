@@ -11,6 +11,7 @@ import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.codesystem.Designation;
+import com.kodality.termserver.codesystem.DesignationQueryParams;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
@@ -263,6 +264,11 @@ public class CodeSystemController {
   @Get(uri = "/{codeSystem}/designations/{id}")
   public Designation getDesignation(@PathVariable String codeSystem, @PathVariable Long id) {
     return designationService.get(id).orElseThrow(() -> new NotFoundException("Designation not found: " + id));
+  }
+  @Authorized("*.code-system.view")
+  @Get(uri = "/{codeSystem}/designations{?params*}")
+  public QueryResult<Designation> queryDesignation(@PathVariable String codeSystem, @PathVariable DesignationQueryParams params){
+    return designationService.query(params);
   }
 
   @Authorized("*.code-system.edit")
