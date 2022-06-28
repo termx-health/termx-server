@@ -207,6 +207,14 @@ public class CodeSystemController {
   }
 
   @Authorized("*.code-system.edit")
+  @Put(uri = "/{codeSystem}/entities/versions/{entityVersion}/supplements/{id}")
+  public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @PathVariable Long entityVersion, @PathVariable Long id,@Body @Valid CodeSystemSupplement supplement) {
+    supplement.setId(id);
+    codeSystemSupplementService.save(supplement, entityVersion);
+    return HttpResponse.created(supplement);
+  }
+
+  @Authorized("*.code-system.edit")
   @Post(uri = "/{codeSystem}/versions/{version}/entity-versions/{entityVersionId}/membership")
   public HttpResponse<?> linkEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @PathVariable Long entityVersionId) {
     codeSystemVersionService.linkEntityVersion(codeSystem, version, entityVersionId);
