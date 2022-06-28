@@ -207,10 +207,10 @@ public class CodeSystemController {
   }
 
   @Authorized("*.code-system.edit")
-  @Put(uri = "/{codeSystem}/entities/versions/{entityVersion}/supplements/{id}")
-  public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @PathVariable Long entityVersion, @PathVariable Long id,@Body @Valid CodeSystemSupplement supplement) {
+  @Put(uri = "/{codeSystem}/entities/versions/{entityVersionId}/supplements/{id}")
+  public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id,@Body @Valid CodeSystemSupplement supplement) {
     supplement.setId(id);
-    codeSystemSupplementService.save(supplement, entityVersion);
+    codeSystemSupplementService.save(supplement, entityVersionId);
     return HttpResponse.created(supplement);
   }
 
