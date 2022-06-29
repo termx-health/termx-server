@@ -172,7 +172,7 @@ public class CodeSystemController {
 
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/entity-versions{?params*}")
-  public QueryResult<CodeSystemEntityVersion> queryEntityVersions(@PathVariable String codeSystem, CodeSystemEntityVersionQueryParams params) {
+  public QueryResult<CodeSystemEntityVersion> getEntityVersions(@PathVariable String codeSystem, CodeSystemEntityVersionQueryParams params) {
     params.setCodeSystem(codeSystem);
     return codeSystemEntityVersionService.query(params);
   }
