@@ -171,8 +171,8 @@ public class CodeSystemController {
   //----------------CodeSystem Entity Version----------------
 
   @Authorized("*.code-system.view")
-  @Get(uri = "/{codeSystem}/entities{?params*}")
-  public QueryResult<CodeSystemEntityVersion> createEntityVersion(@PathVariable String codeSystem, CodeSystemEntityVersionQueryParams params) {
+  @Get(uri = "/{codeSystem}/entity-versions{?params*}")
+  public QueryResult<CodeSystemEntityVersion> queryEntityVersions(@PathVariable String codeSystem, CodeSystemEntityVersionQueryParams params) {
     params.setCodeSystem(codeSystem);
     return codeSystemEntityVersionService.query(params);
   }
