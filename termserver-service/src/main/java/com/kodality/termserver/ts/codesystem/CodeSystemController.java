@@ -5,6 +5,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemSupplement;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
@@ -169,6 +170,13 @@ public class CodeSystemController {
 
   //----------------CodeSystem Entity Version----------------
 
+  @Authorized("*.code-system.view")
+  @Get(uri = "/{codeSystem}/entity-versions{?params*}")
+  public QueryResult<CodeSystemEntityVersion> getEntityVersions(@PathVariable String codeSystem, CodeSystemEntityVersionQueryParams params) {
+    params.setCodeSystem(codeSystem);
+    return codeSystemEntityVersionService.query(params);
+  }
+
   @Authorized("*.code-system.edit")
   @Post(uri = "/{codeSystem}/entities/{entityId}/versions")
   public HttpResponse<?> createEntityVersion(@PathVariable String codeSystem, @PathVariable Long entityId, @Body @Valid CodeSystemEntityVersion version) {
@@ -268,7 +276,7 @@ public class CodeSystemController {
     return HttpResponse.ok();
   }
 
-  //----------------CodeSystem PropertyValue----------------
+  //----------------CodeSystem Property Value----------------
 
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/entity-property-values/{id}")
@@ -369,5 +377,4 @@ public class CodeSystemController {
     private String codeSystem;
     private String version;
   }
-
 }
