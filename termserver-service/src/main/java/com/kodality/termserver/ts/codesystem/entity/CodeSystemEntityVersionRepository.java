@@ -48,6 +48,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
           "inner join terminology.code_system_entity cse on cse.id = csev.code_system_entity_id and cse.sys_status = 'A' " +
           "where csev.sys_status = 'A'");
       sb.append(filter(params));
+      sb.append("order by created");
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });

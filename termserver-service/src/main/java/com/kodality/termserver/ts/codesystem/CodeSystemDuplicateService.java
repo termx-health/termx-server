@@ -60,7 +60,7 @@ public class CodeSystemDuplicateService {
     properties.forEach(p -> p.setId(null));
     entityPropertyService.save(properties, targetCodeSystem.getId());
 
-    duplicateConcepts(versions, sourceCodeSystem, targetCodeSystem.getId());
+    duplicateConcepts(versions, sourceCodeSystem, null, targetCodeSystem.getId());
   }
 
   @Transactional
@@ -82,42 +82,54 @@ public class CodeSystemDuplicateService {
       entityPropertyService.save(properties, targetCodeSystem);
     }
 
-    duplicateConcepts(List.of(version), sourceCodeSystem, targetCodeSystem);
+    duplicateConcepts(List.of(version), sourceCodeSystem, sourceVersionVersion, targetCodeSystem);
   }
 
-  private void duplicateConcepts(List<CodeSystemVersion> versions, String sourceCodeSystem, String targetCodeSystem) {
+  private void duplicateConcepts(List<CodeSystemVersion> versions, String sourceCodeSystem, String sourceVersionVersion, String targetCodeSystem) {
     ConceptQueryParams conceptParams = new ConceptQueryParams().setCodeSystem(sourceCodeSystem);
     conceptParams.all();
     List<Concept> concepts = conceptService.query(conceptParams).getData();
 
-    Map<Long, Long> entityVersionsMap = new HashMap<>();
-    concepts.forEach(c -> {
-      if (!sourceCodeSystem.equals(targetCodeSystem)) {
+
+    if (!sourceCodeSystem.equals(targetCodeSystem)) {
+      Map<Long, Long> entityVersionsMap = new HashMap<>();
+      concepts.forEach(c -> {
         c.setId(null);
         conceptService.save(c, targetCodeSystem);
-      }
-      c.getVersions().forEach(v -> {
-        Long sourceId = v.getId();
-        v.setId(null);
-        v.getDesignations().forEach(d -> d.setId(null));
-        v.getPropertyValues().forEach(pv -> pv.setId(null));
-        v.setAssociations(new ArrayList<>());
-        v.setStatus(PublicationStatus.draft);
-        codeSystemEntityVersionService.save(v, c.getId());
-        entityVersionsMap.put(sourceId, v.getId());
+        c.getVersions().forEach(v -> {
+          Long sourceId = v.getId();
+          v.setId(null);
+          v.getDesignations().forEach(d -> d.setId(null));
+          v.getPropertyValues().forEach(pv -> pv.setId(null));
+          v.setAssociations(new ArrayList<>());
+          v.setStatus(PublicationStatus.draft);
+          codeSystemEntityVersionService.save(v, c.getId());
+          entityVersionsMap.put(sourceId, v.getId());
+        });
       });
-    });
 
-    versions.forEach(v -> {
-      CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
-          .setCodeSystem(sourceCodeSystem).setCodeSystemVersion(v.getVersion());
-      codeSystemEntityVersionParams.all();
-      List<CodeSystemEntityVersion> entityVersions = codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData();
-      codeSystemVersionService.saveEntityVersions(v.getId(),
-          entityVersions.stream().peek(ev -> ev.setId(entityVersionsMap.get(ev.getId()))).collect(Collectors.toList()));
-    });
+      versions.forEach(v -> {
+        CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams();
+        codeSystemEntityVersionParams.setCodeSystem(sourceCodeSystem);
+        codeSystemEntityVersionParams.setCodeSystemVersion(sourceVersionVersion == null ? v.getVersion() : sourceVersionVersion);
+        codeSystemEntityVersionParams.all();
+        List<CodeSystemEntityVersion> entityVersions = codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData();
+        codeSystemVersionService.saveEntityVersions(v.getId(),
+            entityVersions.stream().peek(ev -> ev.setId(entityVersionsMap.get(ev.getId()))).collect(Collectors.toList()));
+      });
 
-    concepts.forEach(concept -> concept.getVersions().forEach(version -> duplicateEntityVersionAssociations(version.getId(), entityVersionsMap)));
+      concepts.forEach(concept -> concept.getVersions().forEach(version -> duplicateEntityVersionAssociations(version.getId(), entityVersionsMap)));
+    } else {
+      versions.forEach(v -> {
+        CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams();
+        codeSystemEntityVersionParams.setCodeSystem(sourceCodeSystem);
+        codeSystemEntityVersionParams.setCodeSystemVersion(sourceVersionVersion == null ? v.getVersion() : sourceVersionVersion);
+        codeSystemEntityVersionParams.all();
+        List<CodeSystemEntityVersion> entityVersions = codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData();
+        codeSystemVersionService.saveEntityVersions(v.getId(), entityVersions);
+      });
+    }
+
   }
 
 

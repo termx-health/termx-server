@@ -79,8 +79,8 @@ public class CodeSystemController {
 
   //----------------CodeSystem Version----------------
 
-  @Get(uri = "/{codeSystem}/versions")
   @Authorized("*.code-system.view")
+  @Get(uri = "/{codeSystem}/versions")
   public List<CodeSystemVersion> getCodeSystemVersions(@PathVariable String codeSystem) {
     return codeSystemVersionService.getVersions(codeSystem);
   }
@@ -125,8 +125,7 @@ public class CodeSystemController {
 
   @Authorized("*.code-system.edit")
   @Post(uri = "/{codeSystem}/versions/{version}/duplicate")
-  public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version,
-                                                    @Body @Valid CodeSystemVersionDuplicateRequest request) {
+  public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version, @Body @Valid CodeSystemVersionDuplicateRequest request) {
     codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), request.getCodeSystem(), version, codeSystem);
     return HttpResponse.ok();
   }
@@ -168,7 +167,7 @@ public class CodeSystemController {
     return HttpResponse.created(concept);
   }
 
-  //----------------CodeSystem Entity Version----------------
+  //----------------CodeSystem EntityVersion----------------
 
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/entity-versions{?params*}")
@@ -188,8 +187,7 @@ public class CodeSystemController {
 
   @Authorized("*.code-system.edit")
   @Put(uri = "/{codeSystem}/entities/{entityId}/versions/{id}")
-  public HttpResponse<?> updateEntityVersion(@PathVariable String codeSystem, @PathVariable Long entityId, @PathVariable Long id,
-                                             @Body @Valid CodeSystemEntityVersion version) {
+  public HttpResponse<?> updateEntityVersion(@PathVariable String codeSystem, @PathVariable Long entityId, @PathVariable Long id, @Body @Valid CodeSystemEntityVersion version) {
     version.setId(id);
     version.setCodeSystem(codeSystem);
     codeSystemEntityVersionService.save(version, entityId);
@@ -208,21 +206,6 @@ public class CodeSystemController {
   public HttpResponse<?> retireEntityVersion(@PathVariable String codeSystem, @PathVariable Long id) {
     codeSystemEntityVersionService.retire(id);
     return HttpResponse.noContent();
-  }
-
-  @Authorized("*.code-system.edit")
-  @Post(uri = "/{codeSystem}/entities/versions/{id}/supplements")
-  public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @PathVariable Long id, @Body @Valid CodeSystemSupplement supplement) {
-    codeSystemSupplementService.save(supplement, id);
-    return HttpResponse.created(supplement);
-  }
-
-  @Authorized("*.code-system.edit")
-  @Put(uri = "/{codeSystem}/entities/versions/{entityVersionId}/supplements/{id}")
-  public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id,@Body @Valid CodeSystemSupplement supplement) {
-    supplement.setId(id);
-    codeSystemSupplementService.save(supplement, entityVersionId);
-    return HttpResponse.created(supplement);
   }
 
   @Authorized("*.code-system.edit")
@@ -276,7 +259,7 @@ public class CodeSystemController {
     return HttpResponse.ok();
   }
 
-  //----------------CodeSystem Property Value----------------
+  //----------------CodeSystem PropertyValue----------------
 
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/entity-property-values/{id}")
@@ -320,9 +303,11 @@ public class CodeSystemController {
     designationService.save(designation, entityVersionId);
     return HttpResponse.created(designation);
   }
+
   @Authorized("*.code-system.edit")
   @Put(uri = "/{codeSystem}/entity-versions/{entityVersionId}/designations/{id}")
-  public HttpResponse<?> updateDesignation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid Designation designation) {
+  public HttpResponse<?> updateDesignation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id,
+                                           @Body @Valid Designation designation) {
     designation.setId(id);
     designationService.save(designation, entityVersionId);
     return HttpResponse.created(designation);
@@ -361,6 +346,21 @@ public class CodeSystemController {
   public HttpResponse<?> updateSupplement(@PathVariable String codeSystem, @PathVariable Long id, @Body @Valid CodeSystemSupplement supplement) {
     supplement.setId(id);
     codeSystemSupplementService.save(supplement, codeSystem);
+    return HttpResponse.created(supplement);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Post(uri = "/{codeSystem}/entities/versions/{entityVersionId}/supplements")
+  public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @Body @Valid CodeSystemSupplement supplement) {
+    codeSystemSupplementService.save(supplement, entityVersionId);
+    return HttpResponse.created(supplement);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Put(uri = "/{codeSystem}/entities/versions/{entityVersionId}/supplements/{id}")
+  public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid CodeSystemSupplement supplement) {
+    supplement.setId(id);
+    codeSystemSupplementService.save(supplement, entityVersionId);
     return HttpResponse.created(supplement);
   }
 

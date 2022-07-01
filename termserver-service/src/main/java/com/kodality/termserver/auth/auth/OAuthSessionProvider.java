@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
-
 public class OAuthSessionProvider extends SessionProvider{
 
   private static final String AUTHORIZATION = "Authorization";
