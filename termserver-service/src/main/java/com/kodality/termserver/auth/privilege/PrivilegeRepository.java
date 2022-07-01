@@ -54,7 +54,7 @@ public class PrivilegeRepository extends BaseRepository {
   }
 
   public void delete(Long id) {
-    SqlBuilder sb = new SqlBuilder("update auth.designation set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+    SqlBuilder sb = new SqlBuilder("update auth.privilege set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 }
