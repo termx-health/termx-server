@@ -2,6 +2,7 @@ package com.kodality.termserver.auth.privilegeresource;
 
 import com.kodality.termserver.auth.PrivilegeResource;
 import io.micronaut.core.util.CollectionUtils;
+import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +20,13 @@ public class PrivilegeResourceService {
   @Transactional
   public void save(List<PrivilegeResource> resources, Long privilegeId) {
     repository.retain(resources, privilegeId);
-    if (CollectionUtils.isEmpty(resources)) {
+    if (CollectionUtils.isNotEmpty(resources)) {
       resources.forEach(r -> repository.save(r, privilegeId));
     }
+  }
+
+  @Transactional
+  public void delete(Long privilegeId) {
+    repository.retain(new ArrayList<>(), privilegeId);
   }
 }

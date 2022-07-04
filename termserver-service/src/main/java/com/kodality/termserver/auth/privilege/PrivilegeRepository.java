@@ -52,4 +52,9 @@ public class PrivilegeRepository extends BaseRepository {
     sb.appendIfNotNull("and code ~* ?", params.getCodeContains());
     return sb;
   }
+
+  public void delete(Long id) {
+    SqlBuilder sb = new SqlBuilder("update auth.privilege set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }
