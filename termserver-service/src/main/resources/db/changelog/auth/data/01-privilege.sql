@@ -18,5 +18,38 @@ with t (code, names) as (values ('admin', '{"en": "Admin"}'),
 select 1;
 --rollback select 1;
 
+--changeset kodality:privilege-resources
+with res(resource_id, resource_type, code) as (values ('publication-status', 'CodeSystem', 'code-system'),
+                                                         ('codesystem-content-mode', 'CodeSystem', 'code-system'),
+                                                         ('v3-ietf3066', 'CodeSystem', 'code-system'),
+                                                         ('concept-property-type', 'CodeSystem', 'code-system'),
+                                                         ('contact-point-system', 'CodeSystem', 'code-system'),
+                                                         ('contact-point-use', 'CodeSystem', 'code-system'),
+                                                         ('filter-operator', 'CodeSystem', 'code-system'),
+                                                         ('namingsystem-identifier-type', 'CodeSystem', 'code-system'),
+                                                         ('namingsystem-type', 'CodeSystem', 'code-system'),
+
+                                                         ('publication-status', 'ValueSet', 'value-set'),
+                                                         ('codesystem-content-mode', 'ValueSet', 'value-set'),
+                                                         ('languages', 'ValueSet', 'value-set'),
+                                                         ('concept-property-type', 'ValueSet', 'value-set'),
+                                                         ('contact-point-system', 'ValueSet', 'value-set'),
+                                                         ('contact-point-use', 'ValueSet', 'value-set'),
+                                                         ('filter-operator', 'ValueSet', 'value-set'),
+                                                         ('namingsystem-identifier-type', 'ValueSet', 'value-set'),
+                                                         ('namingsystem-type', 'ValueSet', 'value-set')
+)
+insert
+into auth.privilege_resource (privilege_id, resource_type, resource_id)
+select p.id, res.resource_type, res.resource_id
+from auth.privilege p, res
+where p.code like '%.' || res.code || '.%' and
+    not exists(select 1
+               from auth.privilege_resource pr
+               where pr.resource_id = res.resource_id and
+                   pr.resource_type = res.resource_type and
+                   pr.privilege_id = p.id);
+--rollback select 1;
+
 
 

@@ -34,4 +34,10 @@ public class PrivilegeService {
     privilege.setResources(resourceService.load(privilege.getId()));
     return privilege;
   }
+
+  @Transactional
+  public void delete(Long id) {
+    repository.delete(id);
+    resourceService.delete(id);
+  }
 }

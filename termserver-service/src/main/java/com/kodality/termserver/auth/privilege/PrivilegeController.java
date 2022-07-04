@@ -6,6 +6,7 @@ import com.kodality.termserver.auth.PrivilegeQueryParams;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
@@ -39,5 +40,11 @@ public class PrivilegeController {
     privilege.setId(id);
     privilegeService.save(privilege);
     return HttpResponse.created(privilege);
+  }
+
+  @Delete("/{id}")
+  public HttpResponse<?> delete(@PathVariable Long id) {
+    privilegeService.delete(id);
+    return HttpResponse.ok();
   }
 }
