@@ -5,9 +5,11 @@ import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
+import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
 import jakarta.inject.Singleton;
+import java.time.LocalDate;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +22,12 @@ public class CodeSystemService {
   private final EntityPropertyService entityPropertyService;
   private final CodeSystemVersionService codeSystemVersionService;
 
+  public Optional<CodeSystem> get(String codeSystem, boolean decorate) {
+    return Optional.ofNullable(repository.load(codeSystem)).map(cs -> decorate ? decorate(cs) : cs);
+  }
+
   public Optional<CodeSystem> get(String codeSystem) {
-    Optional<CodeSystem> cs = Optional.ofNullable(repository.load(codeSystem));
-    cs.ifPresent(this::decorate);
-    return cs;
+    return get(codeSystem, false);
   }
 
   @Transactional
@@ -37,32 +41,50 @@ public class CodeSystemService {
     return codeSystems;
   }
 
+  private CodeSystem decorate(CodeSystem codeSystem) {
+    decorateConcepts(codeSystem, null, null);
+    decorateVersions(codeSystem, null, null, null);
+    decorateProperties(codeSystem);
+    return codeSystem;
+  }
+
   private void decorateQueryResult(QueryResult<CodeSystem> codeSystems, CodeSystemQueryParams params) {
     codeSystems.getData().forEach(codeSystem -> {
       if (params.isConceptsDecorated()) {
-        ConceptQueryParams conceptParams = new ConceptQueryParams();
-        conceptParams.setCodeSystem(codeSystem.getId());
-        conceptParams.setCode(params.getConceptCode());
-        conceptParams.setCodeSystemVersion(params.getConceptCodeSystemVersion());
-        conceptParams.all();
-        codeSystem.setConcepts(conceptService.query(conceptParams).getData());
+        decorateConcepts(codeSystem, params.getConceptCode(), params.getConceptCodeSystemVersion());
       }
       if (params.isVersionsDecorated()) {
-        CodeSystemVersionQueryParams versionParams = new CodeSystemVersionQueryParams();
-        versionParams.setCodeSystem(codeSystem.getId());
-        versionParams.setVersion(params.getVersionVersion());
-        versionParams.setReleaseDateGe(params.getVersionReleaseDateGe());
-        versionParams.setExpirationDateLe(params.getVersionExpirationDateLe());
-        versionParams.all();
-        codeSystem.setVersions(codeSystemVersionService.query(versionParams).getData());
+        decorateVersions(codeSystem, params.getVersionVersion(), params.getVersionReleaseDateGe(), params.getVersionExpirationDateLe());
       }
       if (params.isPropertiesDecorated()) {
-        codeSystem.setProperties(entityPropertyService.getProperties(codeSystem.getId()));
+        decorateProperties(codeSystem);
       }
     });
   }
 
-  private void decorate(CodeSystem codeSystem) {
-    codeSystem.setProperties(entityPropertyService.getProperties(codeSystem.getId()));
+  private void decorateConcepts(CodeSystem codeSystem, String conceptCode, String conceptCodeSystemVersion) {
+    ConceptQueryParams conceptParams = new ConceptQueryParams();
+    conceptParams.setCodeSystem(codeSystem.getId());
+    conceptParams.setCode(conceptCode);
+    conceptParams.setCodeSystemVersion(conceptCodeSystemVersion);
+    conceptParams.all();
+    codeSystem.setConcepts(conceptService.query(conceptParams).getData());
+  }
+
+  private void decorateVersions(CodeSystem codeSystem, String versionVersion, LocalDate versionReleaseDateGe, LocalDate versionExpirationDateLe) {
+    CodeSystemVersionQueryParams versionParams = new CodeSystemVersionQueryParams();
+    versionParams.setCodeSystem(codeSystem.getId());
+    versionParams.setVersion(versionVersion);
+    versionParams.setReleaseDateGe(versionReleaseDateGe);
+    versionParams.setExpirationDateLe(versionExpirationDateLe);
+    versionParams.all();
+    codeSystem.setVersions(codeSystemVersionService.query(versionParams).getData());
+  }
+
+  private void decorateProperties(CodeSystem codeSystem) {
+    EntityPropertyQueryParams propertyParams = new EntityPropertyQueryParams();
+    propertyParams.setCodeSystem(codeSystem.getId());
+    propertyParams.all();
+    codeSystem.setProperties(entityPropertyService.query(propertyParams).getData());
   }
 }

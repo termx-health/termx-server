@@ -7,6 +7,7 @@ create table value_set (
     uri                 text                not null,
     names               jsonb               not null,
     contacts            jsonb,
+    narrative           text,
     description         text,
     sys_created_at      timestamp           not null,
     sys_created_by      text                not null,

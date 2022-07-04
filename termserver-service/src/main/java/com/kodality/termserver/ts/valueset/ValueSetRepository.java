@@ -5,6 +5,8 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.ContactDetail;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
 import com.kodality.termserver.valueset.ValueSetQueryParams.Ordering;
@@ -17,7 +19,7 @@ import javax.inject.Singleton;
 public class ValueSetRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(ValueSet.class, bp -> {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
-    bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
   });
 
   public void create(ValueSet valueSet) {
@@ -26,6 +28,7 @@ public class ValueSetRepository extends BaseRepository {
     ssb.property("uri", valueSet.getUri());
     ssb.jsonProperty("names", valueSet.getNames());
     ssb.jsonProperty("contacts", valueSet.getContacts());
+    ssb.property("narrative", valueSet.getDescription());
     ssb.property("description", valueSet.getDescription());
 
     SqlBuilder sb = ssb.buildUpsert("terminology.value_set", "id");
@@ -68,6 +71,8 @@ public class ValueSetRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getTextContains())) {
       sb.append("and (id ~* ? or uri ~* ? or description ~* ? or exists (select 1 from jsonb_each_text(vs.names) where value ~* ?))", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
+
+    sb.appendIfNotNull("and exists (select 1 from terminology.value_set_version vsv where vsv.value_set = vs.id and vsv.sys_status = 'A' and vsv.id = ?)", params.getVersionId());
     return sb;
   }
 

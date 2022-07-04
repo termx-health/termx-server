@@ -30,7 +30,6 @@ import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton
-@RequiredArgsConstructor
 public class CodeSystemFhirMapper {
 
   public Parameters toFhirParameters(CodeSystem cs, FhirQueryParams fhirParams) {

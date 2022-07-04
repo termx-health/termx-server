@@ -13,6 +13,7 @@ import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyServic
 import com.kodality.termserver.ts.codesystem.entitypropertyvalue.EntityPropertyValueService;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,8 +31,8 @@ public class CodeSystemSupplementService {
     return repository.getSupplements(codeSystem);
   }
 
-  public CodeSystemSupplement getSupplement(Long id) {
-    return decorate(repository.getSupplement(id));
+  public Optional<CodeSystemSupplement> getSupplement(Long id) {
+    return Optional.ofNullable(repository.getSupplement(id)).map(this::decorate);
   }
 
   @Transactional
@@ -66,10 +67,10 @@ public class CodeSystemSupplementService {
 
   private CodeSystemSupplement decorate(CodeSystemSupplement supplement) {
     if (CodeSystemSupplementType.property.equals(supplement.getTargetType())) {
-      supplement.setTarget(entityPropertyService.getProperty(((EntityProperty) supplement.getTarget()).getId()));
+      supplement.setTarget(entityPropertyService.getProperty(((EntityProperty) supplement.getTarget()).getId()).orElse(null));
     }
     if (CodeSystemSupplementType.propertyValue.equals(supplement.getTargetType())) {
-      supplement.setTarget(entityPropertyValueService.load(((EntityPropertyValue) supplement.getTarget()).getId()));
+      supplement.setTarget(entityPropertyValueService.load(((EntityPropertyValue) supplement.getTarget()).getId()).orElse(null));
     }
 
     if (CodeSystemSupplementType.designation.equals(supplement.getTargetType())) {

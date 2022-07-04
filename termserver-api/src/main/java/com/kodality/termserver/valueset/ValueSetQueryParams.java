@@ -21,6 +21,8 @@ public class ValueSetQueryParams extends QueryParams {
   private String text;
   private String textContains;
 
+  private Long versionId;
+
   private boolean decorated;
 
   private String lang;

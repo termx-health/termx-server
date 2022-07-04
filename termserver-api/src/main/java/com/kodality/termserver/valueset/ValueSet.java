@@ -17,6 +17,7 @@ public class ValueSet {
   private String uri;
   private LocalizedName names;
   private List<ContactDetail> contacts;
+  private String narrative;
   private String description;
 
   private List<ValueSetVersion> versions;

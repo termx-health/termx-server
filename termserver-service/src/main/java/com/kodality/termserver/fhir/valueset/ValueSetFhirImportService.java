@@ -67,7 +67,7 @@ public class ValueSetFhirImportService {
     urls.forEach(url -> {
       try {
         importValueSet(url);
-        successes.add(String.format("CodeSystem from resource {%s} imported", url));
+        successes.add(String.format("ValueSet from resource {%s} imported", url));
       } catch (Exception e) {
         warnings.add(String.format("ValueSet from resource {%s} was not imported due to error: {%s}", url, e.getMessage()));
       }

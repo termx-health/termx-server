@@ -45,10 +45,6 @@ public class CodeSystemVersionService {
     return repository.getVersion(id);
   }
 
-  public List<CodeSystemVersion> getVersions(String codeSystem) {
-    return repository.getVersions(codeSystem);
-  }
-
   public QueryResult<CodeSystemVersion> query(CodeSystemVersionQueryParams params) {
     return repository.query(params);
   }

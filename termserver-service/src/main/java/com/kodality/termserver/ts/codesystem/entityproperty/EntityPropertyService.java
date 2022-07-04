@@ -5,6 +5,7 @@ import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,12 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class EntityPropertyService {
   private final EntityPropertyRepository repository;
 
-  public List<EntityProperty> getProperties(String codeSystem) {
-    return repository.getProperties(codeSystem);
-  }
-
-  public EntityProperty getProperty(Long id) {
-    return repository.getProperty(id);
+  public Optional<EntityProperty> getProperty(Long id) {
+    return Optional.ofNullable(repository.getProperty(id));
   }
 
   public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {

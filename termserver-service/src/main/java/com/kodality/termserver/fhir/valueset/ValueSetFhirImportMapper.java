@@ -34,6 +34,7 @@ public class ValueSetFhirImportMapper {
     vs.setNames(new LocalizedName(Map.of(Language.en, valueSet.getName())));
     vs.setContacts(valueSet.getContact() == null ? null :
         valueSet.getContact().stream().map(ValueSetFhirImportMapper::mapContact).collect(Collectors.toList()));
+    vs.setNarrative(valueSet.getText() == null ? null : valueSet.getText().getDiv());
     vs.setDescription(valueSet.getDescription());
     vs.setVersions(List.of(mapVersion(valueSet)));
     return vs;

@@ -84,11 +84,13 @@ public class CodeSystemFhirService {
   }
 
   public com.kodality.zmei.fhir.resource.terminology.CodeSystem get(Long codeSystemVersionId) {
-    CodeSystem codeSystem = codeSystemService.query(new CodeSystemQueryParams().setVersionId(codeSystemVersionId)).findFirst().orElse(null);
+    CodeSystem codeSystem = codeSystemService.query(new CodeSystemQueryParams()
+        .setVersionId(codeSystemVersionId)
+        .setPropertiesDecorated(true)
+    ).findFirst().orElse(null);
     if (codeSystem == null) {
       return null;
     }
-    codeSystem.setProperties(entityPropertyService.getProperties(codeSystem.getId()));
     CodeSystemVersion version = codeSystemVersionService.getVersion(codeSystemVersionId);
     CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(version.getId());
     codeSystemEntityVersionParams.all();

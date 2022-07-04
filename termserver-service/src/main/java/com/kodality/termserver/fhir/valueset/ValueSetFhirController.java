@@ -1,12 +1,15 @@
 package com.kodality.termserver.fhir.valueset;
 
+import com.kodality.commons.exception.NotFoundException;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -20,9 +23,20 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ValueSetFhirController {
   private final ImportLogger importLogger;
+  private final ValueSetFhirService service;
   private final ValueSetFhirImportService importService;
 
   private static final String JOB_TYPE = "FHIR-VS";
+
+
+  @Get("/{valueSetVersionId}")
+  public HttpResponse<?> getValueSet(Long valueSetVersionId) {
+    ValueSet valueSet = service.get(valueSetVersionId);
+    if (valueSet == null) {
+      throw new NotFoundException("ValueSet not found");
+    }
+    return HttpResponse.ok(valueSet);
+  }
 
   @Post("/$sync")
   public HttpResponse<?> importFhirValueSet(@Body Parameters parameters) {

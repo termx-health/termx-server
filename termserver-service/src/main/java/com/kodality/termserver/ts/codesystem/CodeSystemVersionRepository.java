@@ -48,11 +48,6 @@ public class CodeSystemVersionRepository extends BaseRepository {
     return getBean(sql, bp, id);
   }
 
-  public List<CodeSystemVersion> getVersions(String codeSystem) {
-    String sql = "select * from terminology.code_system_version where sys_status = 'A' and code_system = ?";
-    return getBeans(sql, bp, codeSystem);
-  }
-
   public QueryResult<CodeSystemVersion> query(CodeSystemVersionQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_version where sys_status = 'A'");
