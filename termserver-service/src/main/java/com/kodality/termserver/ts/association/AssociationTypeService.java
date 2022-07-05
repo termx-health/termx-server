@@ -1,6 +1,8 @@
 package com.kodality.termserver.ts.association;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.association.AssociationType;
+import com.kodality.termserver.association.AssociationTypeQueryParams;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -21,4 +23,7 @@ public class AssociationTypeService {
     return associationType;
   }
 
+  public QueryResult<AssociationType> query(AssociationTypeQueryParams params) {
+    return repository.query(params);
+  }
 }

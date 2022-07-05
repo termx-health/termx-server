@@ -1,7 +1,9 @@
 package com.kodality.termserver.ts.association;
 
 import com.kodality.commons.exception.NotFoundException;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.association.AssociationType;
+import com.kodality.termserver.association.AssociationTypeQueryParams;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -33,5 +35,10 @@ public class AssociationTypeController {
     associationType.setCode(code);
     associationTypeService.save(associationType);
     return HttpResponse.ok();
+  }
+
+  @Get(uri = "{?params*}")
+  public QueryResult<AssociationType> queryAssociationTypes(AssociationTypeQueryParams params) {
+    return associationTypeService.query(params);
   }
 }
