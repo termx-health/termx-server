@@ -5,6 +5,14 @@ micronaut:
     port: 8200
     max-request-size: 104857600
     thread-selection: auto
+  router:
+    static-resources:
+      swagger:
+        paths: classpath:META-INF/swagger
+        mapping: /swagger/**
+      swagger-ui:
+        paths: classpath:META-INF/swagger/views/swagger-ui
+        mapping: /swagger-ui/**
 datasources:
   default:
     url: ${DB_URL:`jdbc:postgresql://localhost:5432/termserver`}

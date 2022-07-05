@@ -32,6 +32,7 @@ dependencies {
   annotationProcessor("io.micronaut:micronaut-http-validation")
   annotationProcessor("io.micronaut:micronaut-inject-java")
   annotationProcessor("io.micronaut.spring:micronaut-spring-annotation")
+  annotationProcessor("io.micronaut.openapi:micronaut-openapi")
 
   implementation project(':termserver-api')
 
@@ -60,6 +61,7 @@ dependencies {
   implementation("javax.annotation:javax.annotation-api")
   implementation("io.micronaut:micronaut-inject-java")
   implementation("io.reactivex.rxjava2:rxjava:2.2.21")
+  implementation("io.swagger.core.v3:swagger-annotations")
 
   testCompileOnly("org.projectlombok:lombok:1.18.24")
   testAnnotationProcessor("org.projectlombok:lombok:1.18.22")
