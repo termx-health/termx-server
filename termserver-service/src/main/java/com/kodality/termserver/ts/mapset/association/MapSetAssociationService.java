@@ -1,11 +1,13 @@
 package com.kodality.termserver.ts.mapset.association;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.mapset.MapSetAssociation;
 import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
+import com.kodality.termserver.mapset.MapSetAssociationTypeQueryParams;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetEntityVersionQueryParams;
+import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.mapset.entity.MapSetEntityService;
 import com.kodality.termserver.ts.mapset.entity.MapSetEntityVersionService;
 import java.util.List;
@@ -67,6 +69,11 @@ public class MapSetAssociationService {
       repository.save(association);
     }
     return association;
+  }
+
+  @Transactional
+  public QueryResult<AssociationType> queryAssociationTypes(MapSetAssociationTypeQueryParams params) {
+    return repository.queryAssociationTypes(params);
   }
 
 

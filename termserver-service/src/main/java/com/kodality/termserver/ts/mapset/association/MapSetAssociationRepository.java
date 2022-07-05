@@ -5,9 +5,11 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.mapset.MapSetAssociation;
 import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
+import com.kodality.termserver.mapset.MapSetAssociationTypeQueryParams;
 import javax.inject.Singleton;
 
 @Singleton
@@ -51,6 +53,26 @@ public class MapSetAssociationRepository extends BaseRepository {
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
+  }
+
+  public QueryResult<AssociationType> queryAssociationTypes(MapSetAssociationTypeQueryParams params) {
+    return query(params, p -> {
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.association_type a where a.sys_status = 'A'");
+      sb.append(filterTypes(params));
+      return queryForObject(sb.getSql(), Integer.class, sb.getParams());
+    }, p -> {
+      SqlBuilder sb = new SqlBuilder("select * from terminology.association_type a where a.sys_status = 'A'");
+      sb.append(filterTypes(params));
+      sb.append(limit(params));
+      return getBeans(sb.getSql(), AssociationType.class, sb.getParams());
+    });
+  }
+
+  private SqlBuilder filterTypes(MapSetAssociationTypeQueryParams params) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.appendIfNotNull("and code = ?", params.getCode());
+    sb.appendIfNotNull("and code ~* ?", params.getCodeContains());
+    return sb;
   }
 
   private SqlBuilder filter(MapSetAssociationQueryParams params) {
