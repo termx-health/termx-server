@@ -40,7 +40,7 @@ public class AssociationTypeRepository extends BaseRepository {
       SqlBuilder sb = new SqlBuilder("select * from terminology.association_type a where a.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
-      return getBeans(sb.getSql(), AssociationType.class, sb.getParams());
+      return getBeans(sb.getSql(), bp, sb.getParams());
     });
   }
 

@@ -23,7 +23,6 @@ public class AssociationTypeService {
     return associationType;
   }
 
-  @Transactional
   public QueryResult<AssociationType> query(AssociationTypeQueryParams params) {
     return repository.query(params);
   }
