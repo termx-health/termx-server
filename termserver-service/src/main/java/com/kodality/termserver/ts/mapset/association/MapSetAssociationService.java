@@ -58,14 +58,8 @@ public class MapSetAssociationService {
   @Transactional
   public MapSetAssociation save(MapSetAssociation association, String mapSet) {
     association.setMapSet(mapSet);
-
-    Optional<MapSetAssociation> existingAssociation = get(mapSet, association.getId());
-    if (existingAssociation.isPresent()) {
-      association.setId(existingAssociation.get().getId());
-    } else {
-      mapSetEntityService.save(association);
-      repository.save(association);
-    }
+    mapSetEntityService.save(association);
+    repository.save(association);
     return association;
   }
 

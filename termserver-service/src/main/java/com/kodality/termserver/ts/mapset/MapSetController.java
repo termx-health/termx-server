@@ -110,7 +110,14 @@ public class MapSetController {
 
   @Post(uri = "/{mapSet}/associations")
   public HttpResponse<?> createAssociation(@PathVariable String mapSet, @Body @Valid MapSetAssociation association) {
-    association.setMapSet(mapSet);
+    association.setId(null);
+    mapSetAssociationService.save(association, mapSet);
+    return HttpResponse.created(association);
+  }
+
+  @Post(uri = "/{mapSet}/associations/{id}")
+  public HttpResponse<?> createAssociation(@PathVariable String mapSet, @PathVariable Long id, @Body @Valid MapSetAssociation association) {
+    association.setId(id);
     mapSetAssociationService.save(association, mapSet);
     return HttpResponse.created(association);
   }

@@ -58,12 +58,9 @@ public class ConceptService {
     concept.setCodeSystem(codeSystem);
 
     Optional<Concept> existingConcept = get(codeSystem, concept.getCode());
-    if (existingConcept.isPresent()) {
-      concept.setId(existingConcept.get().getId());
-    } else {
-      codeSystemEntityService.save(concept);
-      repository.save(concept);
-    }
+    existingConcept.ifPresent(value -> concept.setId(value.getId()));
+    codeSystemEntityService.save(concept);
+    repository.save(concept);
     return concept;
   }
 
