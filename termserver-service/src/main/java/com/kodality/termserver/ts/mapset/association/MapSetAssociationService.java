@@ -58,9 +58,9 @@ public class MapSetAssociationService {
   @Transactional
   public MapSetAssociation save(MapSetAssociation association, String mapSet) {
     association.setMapSet(mapSet);
-    MapSetAssociation entity = (MapSetAssociation) mapSetEntityService.save(association);
+    mapSetEntityService.save(association);
     repository.save(association);
-    mapSetEntityVersionService.save(association.getVersions(), entity.getId());
+    association.getVersions().forEach(version -> mapSetEntityVersionService.save(version, association.getId()));
     return association;
   }
 
