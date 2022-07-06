@@ -60,7 +60,7 @@ public class MapSetAssociationService {
     association.setMapSet(mapSet);
     mapSetEntityService.save(association);
     repository.save(association);
-    association.getVersions().forEach(version -> mapSetEntityVersionService.save(version, association.getId()));
+    mapSetEntityVersionService.save(association.getVersions(), association.getId());
     return association;
   }
 
