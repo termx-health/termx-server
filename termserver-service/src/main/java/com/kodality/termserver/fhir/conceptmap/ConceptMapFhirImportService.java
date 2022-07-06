@@ -17,6 +17,7 @@ import com.kodality.termserver.ts.mapset.MapSetVersionService;
 import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
 import com.kodality.termserver.ts.mapset.entity.MapSetEntityVersionService;
 import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.resource.ResourceType;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
@@ -57,9 +58,9 @@ public class ConceptMapFhirImportService {
     urls.forEach(url -> {
       try {
         importMapSet(url);
-        successes.add(String.format("CodeSystem from resource {%s} imported", url));
+        successes.add(String.format("ConceptMap from resource %s imported", url));
       } catch (Exception e) {
-        warnings.add(String.format("ConceptMap from resource {%s} was not imported due to error: {%s}", url, e.getMessage()));
+        warnings.add(String.format("ConceptMap from resource %s was not imported due to error: %s", url, e.getMessage()));
       }
     });
   }
@@ -68,6 +69,9 @@ public class ConceptMapFhirImportService {
   public void importMapSet(String url) {
     String resource = getResource(url);
     ConceptMap conceptMap = FhirMapper.fromJson(resource, ConceptMap.class);
+    if (!ResourceType.conceptMap.equals(conceptMap.getResourceType())) {
+      throw ApiError.TE107.toApiException();
+    }
     MapSetVersion version = prepareMapSetAndVersion(ConceptMapFhirImportMapper.mapMapSet(conceptMap));
     List<MapSetAssociation> associations = findAssociations(conceptMap);
     importAssociations(associations, version);

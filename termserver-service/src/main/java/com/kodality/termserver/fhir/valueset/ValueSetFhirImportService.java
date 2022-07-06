@@ -26,6 +26,7 @@ import com.kodality.termserver.valueset.ValueSetRuleSet.ValueSetRule;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.resource.ResourceType;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
 import io.micronaut.core.util.CollectionUtils;
@@ -67,17 +68,19 @@ public class ValueSetFhirImportService {
     urls.forEach(url -> {
       try {
         importValueSet(url);
-        successes.add(String.format("ValueSet from resource {%s} imported", url));
+        successes.add(String.format("ValueSet from resource %s imported", url));
       } catch (Exception e) {
-        warnings.add(String.format("ValueSet from resource {%s} was not imported due to error: {%s}", url, e.getMessage()));
+        warnings.add(String.format("ValueSet from resource %s was not imported due to error: %s", url, e.getMessage()));
       }
     });
   }
 
   public void importValueSet(String url) {
     String resource = getResource(url);
-    com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet =
-        FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
+    com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
+    if (!ResourceType.valueSet.equals(fhirValueSet.getResourceType())) {
+      throw ApiError.TE107.toApiException();
+    }
     importValueSet(fhirValueSet, false);
   }
 

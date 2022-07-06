@@ -7,6 +7,7 @@ import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.common.BinaryHttpClient;
 import com.kodality.termserver.common.CodeSystemImportService;
 import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.resource.ResourceType;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
 import io.micronaut.core.util.CollectionUtils;
@@ -34,17 +35,19 @@ public class CodeSystemFhirImportService {
     urls.forEach(url -> {
       try {
         importCodeSystem(url);
-        successes.add(String.format("CodeSystem from resource {%s} imported", url));
+        successes.add(String.format("CodeSystem from resource %s imported", url));
       } catch (Exception e) {
-        warnings.add(String.format("CodeSystem from resource {%s} was not imported due to error: {%s}", url, e.getMessage()));
+        warnings.add(String.format("CodeSystem from resource %s was not imported due to error: %s", url, e.getMessage()));
       }
     });
   }
 
   public void importCodeSystem(String url) {
     String resource = getResource(url);
-    com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem =
-        FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
+    com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
+    if (!ResourceType.codeSystem.equals(codeSystem.getResourceType())) {
+      throw ApiError.TE107.toApiException();
+    }
     importCodeSystem(codeSystem, false);
   }
 

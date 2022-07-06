@@ -14,6 +14,7 @@ public enum ApiError {
   TE104("TE104", "Version '{{version}}' is already created and active."),
   TE105("TE105", "Version with id '{{version}}' doesn't exist."),
   TE106("TE106", "Url not provided."),
+  TE107("TE107", "Wrong resource type."),
 
   TE201("TE201", "Code system '{{codeSystem}}' not found."),
   TE202("TE202", "Version '{{version}}' of code system '{{codeSystem}}' doesn't exist."),
