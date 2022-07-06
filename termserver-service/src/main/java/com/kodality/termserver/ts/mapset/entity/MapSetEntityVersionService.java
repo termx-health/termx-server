@@ -6,6 +6,7 @@ import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetEntityVersionQueryParams;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,12 @@ public class MapSetEntityVersionService {
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
     repository.save(version, mapSetEntityId);
     return version;
+  }
+
+  @Transactional
+  public void save(List<MapSetEntityVersion> versions, Long mapSetEntityId) {
+    repository.retainVersions(versions, mapSetEntityId);
+    versions.forEach(version -> save(version, mapSetEntityId));
   }
 
   public QueryResult<MapSetEntityVersion> query(MapSetEntityVersionQueryParams params) {
