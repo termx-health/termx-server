@@ -8,6 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetEntityVersionQueryParams;
+import java.util.List;
 import javax.inject.Singleton;
 
 @Singleton
@@ -25,6 +26,13 @@ public class MapSetEntityVersionRepository extends BaseRepository {
     SqlBuilder sb = ssb.buildSave("terminology.map_set_entity_version", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     version.setId(id);
+  }
+
+  public void retainVersions(List<MapSetEntityVersion> versions, Long mapSetEntityId) {
+    SqlBuilder sb = new SqlBuilder("update terminology.map_set_entity_version set sys_status = 'C'");
+    sb.append(" where map_set_entity_id = ? and sys_status = 'A'", mapSetEntityId);
+    sb.andNotIn("id", versions, MapSetEntityVersion::getId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
   public QueryResult<MapSetEntityVersion> query(MapSetEntityVersionQueryParams params) {
