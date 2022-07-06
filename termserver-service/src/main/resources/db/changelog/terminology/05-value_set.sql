@@ -43,7 +43,6 @@ create table value_set_version (
     constraint value_set_version_ukey unique (value_set, version),
     constraint value_set_version_value_set_fk foreign key (value_set) references value_set(id)
 );
-
 create index value_set_version_value_set_idx on value_set_version(value_set);
 
 select core.create_table_metadata('value_set_version');
@@ -68,6 +67,9 @@ create table concept_value_set_version_membership (
     constraint concept_value_set_version_membership_display_fk foreign key (display) references designation(id),
     constraint concept_value_set_version_membership_value_set_version_fk foreign key (value_set_version_id) references value_set_version(id)
 );
+create index concept_value_set_version_membership_concept_idx on concept_value_set_version_membership(concept_id);
+create index concept_value_set_version_membership_display_idx on concept_value_set_version_membership(display);
+create index concept_value_set_version_membership_value_set_version_idx on concept_value_set_version_membership(value_set_version_id);
 
 select core.create_table_metadata('concept_value_set_version_membership');
 --rollback drop table if exists concept_value_set_version_membership;

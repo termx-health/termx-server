@@ -40,7 +40,6 @@ create table map_set_version (
     constraint map_set_version_ukey unique (map_set, version),
     constraint map_set_version_map_set_fk foreign key (map_set) references map_set(id)
 );
-
 create index map_set_version_map_set_idx on map_set_version(map_set);
 
 select core.create_table_metadata('map_set_version');
@@ -59,7 +58,6 @@ create table map_set_entity (
     sys_version         int                       not null,
     constraint map_set_entity_map_set_fk foreign key (map_set) references map_set(id)
 );
-
 create index map_set_entity_map_set_idx on map_set_entity(map_set);
 
 select core.create_table_metadata('map_set_entity');
@@ -81,7 +79,6 @@ create table map_set_entity_version (
     sys_version             int                       not null,
     constraint map_set_entity_version_map_set_entity_fk foreign key (map_set_entity_id) references map_set_entity(id)
 );
-
 create index map_set_entity_version_map_set_entity_idx on map_set_entity_version(map_set_entity_id);
 
 select core.create_table_metadata('map_set_entity_version');
@@ -102,6 +99,8 @@ create table entity_version_map_set_version_membership (
     constraint entity_version_ms_version_membership_ms_entity_version_fk foreign key (map_set_entity_version_id) references map_set_entity_version(id),
     constraint entity_version_ms_version_membership_ms_version_fk foreign key (map_set_version_id) references map_set_version(id)
 );
+create index entity_version_ms_version_membership_ms_entity_version_idx on entity_version_map_set_version_membership(map_set_entity_version_id);
+create index entity_version_ms_version_membership_ms_version_idx on entity_version_map_set_version_membership(map_set_version_id);
 
 select core.create_table_metadata('entity_version_map_set_version_membership');
 --rollback drop table if exists entity_version_map_set_version_membership;

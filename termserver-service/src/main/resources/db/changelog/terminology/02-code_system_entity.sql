@@ -56,6 +56,8 @@ create table entity_version_code_system_version_membership (
     constraint entity_version_cs_version_membership_cs_entity_version_fk foreign key (code_system_entity_version_id) references code_system_entity_version(id),
     constraint entity_version_cs_version_membership_cs_version_fk foreign key (code_system_version_id) references code_system_version(id)
 );
+create index entity_version_cs_version_membership_cs_entity_version_idx on entity_version_code_system_version_membership(code_system_entity_version_id);
+create index entity_version_cs_version_membership_cs_version_idx on entity_version_code_system_version_membership(code_system_version_id);
 
 select core.create_table_metadata('entity_version_code_system_version_membership');
 --rollback drop table if exists entity_version_code_system_version_membership;

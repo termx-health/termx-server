@@ -43,6 +43,7 @@ create table code_system_association (
 );
 create index cs_association_source_cs_entity_version_idx on code_system_association(source_code_system_entity_version_id);
 create index cs_association_target_cs_entity_version_idx on code_system_association(target_code_system_entity_version_id);
+create index cs_association_code_system_idx on code_system_association(code_system);
 create index cs_association_association_type_idx on code_system_association(association_type);
 
 select core.create_table_metadata('code_system_association');

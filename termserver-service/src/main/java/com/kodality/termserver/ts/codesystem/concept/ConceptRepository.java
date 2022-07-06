@@ -79,7 +79,6 @@ public class ConceptRepository extends BaseRepository {
           "inner join terminology.concept_value_set_version_membership cvsvm on cvsvm.value_set_version_id = vsv.id and cvsvm.sys_status = 'A' " +
           "where vsv.value_set = ? and vsv.sys_status = 'A' and cvsvm.concept_id = c.id)", params.getValueSet());
       sb.or();
-      sb.append("exists( select 1 from terminology.value_set_expand(?, null, null) vse where vse.concept_id = c.id)", params.getValueSet());
       sb.append(")");
     }
     if (params.getValueSetVersion() != null) {

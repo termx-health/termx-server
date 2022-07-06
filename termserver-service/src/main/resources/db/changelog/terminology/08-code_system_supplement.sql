@@ -19,6 +19,5 @@ create table code_system_supplement (
 );
 create index code_system_supplement_code_system_idx on code_system_supplement(code_system);
 
-
 select core.create_table_metadata('code_system_supplement');
 --rollback drop table if exists code_system_supplement;
