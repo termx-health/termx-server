@@ -3,7 +3,6 @@ package com.kodality.termserver.ts.mapset.association;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.mapset.MapSetAssociation;
 import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
-import com.kodality.termserver.mapset.MapSetEntity;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetEntityVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
@@ -59,9 +58,9 @@ public class MapSetAssociationService {
   @Transactional
   public MapSetAssociation save(MapSetAssociation association, String mapSet) {
     association.setMapSet(mapSet);
-    MapSetEntity mapSetEntity = mapSetEntityService.save(association);
+    MapSetAssociation entity = (MapSetAssociation) mapSetEntityService.save(association);
     repository.save(association);
-    this.mapSetEntityVersionService.save(association.getVersions(), mapSetEntity.getId());
+    mapSetEntityVersionService.save(association.getVersions(), entity.getId());
     return association;
   }
 

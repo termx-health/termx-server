@@ -25,10 +25,14 @@ public class MapSetEntityVersionService {
     repository.save(version, mapSetEntityId);
     return version;
   }
+
   @Transactional
   public void save(List<MapSetEntityVersion> versions, Long mapSetEntityId) {
     repository.retainVersions(versions, mapSetEntityId);
-    versions.forEach(version -> repository.save(version, mapSetEntityId));
+    versions.forEach(version -> {
+      version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
+      repository.save(version, mapSetEntityId);
+    });
   }
 
   public QueryResult<MapSetEntityVersion> query(MapSetEntityVersionQueryParams params) {
