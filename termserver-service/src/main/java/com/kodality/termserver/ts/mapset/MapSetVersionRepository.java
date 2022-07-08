@@ -99,4 +99,20 @@ public class MapSetVersionRepository extends BaseRepository {
     });
   }
 
+  public void unlinkEntityVersion(Long mapSetVersionId, Long entityVersionId) {
+    SqlBuilder sb = new SqlBuilder("update terminology.entity_version_map_set_version_membership set sys_status = 'C' where sys_status = 'A'");
+    sb.append("and map_set_version_id = ?", mapSetVersionId);
+    sb.append("and map_set_entity_version_id = ?", entityVersionId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
+  public void linkEntityVersion(Long mapSetVersionId, Long entityVersionId) {
+    SaveSqlBuilder ssb = new SaveSqlBuilder();
+    ssb.property("map_set_entity_version_id", entityVersionId);
+    ssb.property("map_set_version_id", mapSetVersionId);
+    ssb.property("sys_status", "A");
+    SqlBuilder sb = ssb.buildUpsert("terminology.entity_version_map_set_version_membership", "map_set_entity_version_id", "map_set_version_id", "sys_status");
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
 }
