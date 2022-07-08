@@ -4,6 +4,7 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.codesystem.CodeSystem;
+import com.kodality.termserver.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
@@ -16,6 +17,7 @@ import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
+import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
@@ -45,6 +47,7 @@ public class CodeSystemController {
   private final EntityPropertyService entityPropertyService;
   private final EntityPropertyValueService entityPropertyValueService;
   private final DesignationService designationService;
+  private final CodeSystemAssociationService associationService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemDuplicateService codeSystemDuplicateService;
   private final CodeSystemSupplementService codeSystemSupplementService;
@@ -321,6 +324,36 @@ public class CodeSystemController {
   @Delete(uri = "/{codeSystem}/designations/{id}")
   public HttpResponse<?> deleteDesignation(@PathVariable String codeSystem, @PathVariable Long id) {
     designationService.delete(id);
+    return HttpResponse.ok();
+  }
+
+  //----------------CodeSystem Association---------------
+
+  @Authorized("*.code-system.view")
+  @Get(uri = "/{codeSystem}/associations/{id}")
+  public CodeSystemAssociation getAssociation(@PathVariable String codeSystem, @PathVariable Long id) {
+    return associationService.load(id).orElseThrow(() -> new NotFoundException("Association not found: " + id));
+  }
+
+  @Authorized("*.code-system.edit")
+  @Post(uri = "/{codeSystem}/entity-versions/{entityVersionId}/associations")
+  public HttpResponse<?> createAssociation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @Body @Valid CodeSystemAssociation association) {
+    associationService.save(association, entityVersionId);
+    return HttpResponse.created(association);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Put(uri = "/{codeSystem}/entity-versions/{entityVersionId}/associations/{id}")
+  public HttpResponse<?> updateAssociation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid CodeSystemAssociation association) {
+    association.setId(id);
+    associationService.save(association, entityVersionId);
+    return HttpResponse.created(association);
+  }
+
+  @Authorized("*.code-system.edit")
+  @Delete(uri = "/{codeSystem}/associations/{id}")
+  public HttpResponse<?> deleteAssociation(@PathVariable String codeSystem, @PathVariable Long id) {
+    associationService.delete(id);
     return HttpResponse.ok();
   }
 
