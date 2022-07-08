@@ -28,6 +28,13 @@ public class MapSetEntityVersionRepository extends BaseRepository {
     version.setId(id);
   }
 
+  public MapSetEntityVersion load(Long versionId) {
+    String sql = "select msev.*, mse.map_set from terminology.map_set_entity_version msev " +
+        "inner join terminology.map_set_entity mse on mse.id = msev.map_set_entity_id and mse.sys_status = 'A' " +
+        "where msev.sys_status = 'A' and msev.id = ?";
+    return getBean(sql, bp, versionId);
+  }
+
   public void retainVersions(List<MapSetEntityVersion> versions, Long mapSetEntityId) {
     SqlBuilder sb = new SqlBuilder("update terminology.map_set_entity_version set sys_status = 'C'");
     sb.append(" where map_set_entity_id = ? and sys_status = 'A'", mapSetEntityId);
@@ -37,11 +44,15 @@ public class MapSetEntityVersionRepository extends BaseRepository {
 
   public QueryResult<MapSetEntityVersion> query(MapSetEntityVersionQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.map_set_entity_version msev where msev.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.map_set_entity_version msev " +
+          "inner join terminology.map_set_entity mse on mse.id = msev.map_set_entity_id and mse.sys_status = 'A' " +
+          "where msev.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from terminology.map_set_entity_version msev where msev.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select msev.*, mse.map_set from terminology.map_set_entity_version msev " +
+          "inner join terminology.map_set_entity mse on mse.id = msev.map_set_entity_id and mse.sys_status = 'A' " +
+          "where msev.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -52,8 +63,7 @@ public class MapSetEntityVersionRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and msev.map_set_entity_id = ?", params.getMapSetEntityId());
     sb.appendIfNotNull("and msev.status = ?", params.getStatus());
-    sb.appendIfNotNull("and exists (select 1 from terminology.map_set_entity mse " +
-        "where mse.id = msev.map_set_entity_id and map_set = ?)", params.getMapSet());
+    sb.appendIfNotNull("and mse.map_set = ?", params.getMapSet());
     sb.appendIfNotNull("and exists (select 1 from terminology.entity_version_map_set_version_membership evmsvm " +
         "where evmsvm.map_set_entity_version_id = msev.id and evmsvm.map_set_version_id = ?)", params.getMapSetVersionId());
     sb.appendIfNotNull("and msev.description ~* ?", params.getDescriptionContains());
@@ -65,11 +75,6 @@ public class MapSetEntityVersionRepository extends BaseRepository {
       sb.append(")");
     }
     return sb;
-  }
-
-  public MapSetEntityVersion getVersion(Long versionId) {
-    String sql = "select * from terminology.map_set_entity_version where sys_status = 'A' and id = ?";
-    return getBean(sql, bp, versionId);
   }
 
   public void activate(Long versionId) {

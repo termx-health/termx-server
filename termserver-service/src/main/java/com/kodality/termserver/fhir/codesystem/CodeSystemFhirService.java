@@ -91,7 +91,7 @@ public class CodeSystemFhirService {
     if (codeSystem == null) {
       return null;
     }
-    CodeSystemVersion version = codeSystemVersionService.getVersion(codeSystemVersionId);
+    CodeSystemVersion version = codeSystemVersionService.load(codeSystemVersionId);
     CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(version.getId());
     codeSystemEntityVersionParams.all();
     version.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());

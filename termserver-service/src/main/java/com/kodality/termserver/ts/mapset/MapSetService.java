@@ -18,13 +18,13 @@ public class MapSetService {
   private final MapSetVersionService mapSetVersionService;
   private final MapSetAssociationService mapSetAssociationService;
 
-  public Optional<MapSet> get(String id) {
+  public Optional<MapSet> load(String id) {
     return Optional.ofNullable(repository.load(id));
   }
 
   @Transactional
-  public void create(MapSet mapSet) {
-    repository.create(mapSet);
+  public void save(MapSet mapSet) {
+    repository.save(mapSet);
   }
 
   public QueryResult<MapSet> query(MapSetQueryParams params) {

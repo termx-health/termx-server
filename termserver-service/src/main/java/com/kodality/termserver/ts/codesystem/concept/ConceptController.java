@@ -17,11 +17,11 @@ public class ConceptController {
 
   @Get(uri = "/{id}")
   public Concept getConcept(@PathVariable Long id) {
-    return conceptService.get(id).orElseThrow(() -> new NotFoundException("Concept not found: " + id));
+    return conceptService.load(id).orElseThrow(() -> new NotFoundException("Concept not found: " + id));
   }
 
   @Get(uri = "{?params*}")
-  public QueryResult<Concept> getConcepts(ConceptQueryParams params) {
+  public QueryResult<Concept> queryConcepts(ConceptQueryParams params) {
     return conceptService.query(params);
   }
 

@@ -83,60 +83,6 @@ public class DesignationRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public void batchUpsert(List<Designation> designations, Long codeSystemEntityVersionId) {
-    if (designations == null) {
-      return;
-    }
-    designations.forEach(d -> {
-      SqlBuilder sb =
-          upsert(new SqlBuilder("insert into terminology.designation (" +
-                  "code_system_entity_version_id, " +
-                  "designation_type_id, " +
-                  "name, " +
-                  "language, " +
-                  "rendering, " +
-                  "preferred, " +
-                  "case_significance, " +
-                  "designation_kind, " +
-                  "description, " +
-                  "status) select ?,?,?,?,?,?,?,?,?,?",
-                  codeSystemEntityVersionId,
-                  d.getDesignationTypeId(),
-                  d.getName(),
-                  d.getLanguage(),
-                  d.getRendering(),
-                  d.isPreferred(),
-                  d.getCaseSignificance(),
-                  d.getDesignationKind(),
-                  d.getDescription(),
-                  d.getStatus()
-              ),
-              new SqlBuilder(
-                  "UPDATE terminology.designation SET " +
-                      "designation_type_id = ?, " +
-                      "name = ?, " +
-                      "language = ?, " +
-                      "rendering = ?, " +
-                      "preferred = ?, " +
-                      "case_significance = ?, " +
-                      "designation_kind = ?, " +
-                      "description = ?, " +
-                      "status = ? where code_system_entity_version_id = ? and id = ? and sys_status = 'A'",
-                  d.getDesignationTypeId(),
-                  d.getName(),
-                  d.getLanguage(),
-                  d.getRendering(),
-                  d.isPreferred(),
-                  d.getCaseSignificance(),
-                  d.getDesignationKind(),
-                  d.getDescription(),
-                  d.getStatus(),
-                  codeSystemEntityVersionId,
-                  d.getId()));
-      jdbcTemplate.update(sb.getSql(), sb.getParams());
-    });
-  }
-
   public void delete(Long id) {
     SqlBuilder sb = new SqlBuilder("update terminology.designation set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());

@@ -13,6 +13,6 @@ public class CodeSystemVersionController {
 
   @Get(uri = "/{id}")
   public CodeSystemVersion getVersion(@PathVariable Long id) {
-    return codeSystemVersionService.getVersion(id);
+    return codeSystemVersionService.load(id);
   }
 }

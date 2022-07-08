@@ -39,12 +39,12 @@ public class CodeSystemDuplicateService {
 
   @Transactional
   public void duplicateCodeSystem(CodeSystem targetCodeSystem, String sourceCodeSystem) {
-    CodeSystem sourceCs = codeSystemService.get(sourceCodeSystem, true).orElse(null);
+    CodeSystem sourceCs = codeSystemService.load(sourceCodeSystem, true).orElse(null);
     if (sourceCs == null) {
       throw ApiError.TE201.toApiException(Map.of("codeSystem", sourceCodeSystem));
     }
 
-    if (codeSystemService.get(targetCodeSystem.getId()).isEmpty()) {
+    if (codeSystemService.load(targetCodeSystem.getId()).isEmpty()) {
       targetCodeSystem.setNames(sourceCs.getNames());
       targetCodeSystem.setContent(sourceCs.getContent());
       targetCodeSystem.setContacts(sourceCs.getContacts());
@@ -67,7 +67,7 @@ public class CodeSystemDuplicateService {
 
   @Transactional
   public void duplicateCodeSystemVersion(String targetVersionVersion, String targetCodeSystem, String sourceVersionVersion, String sourceCodeSystem) {
-    CodeSystemVersion version = codeSystemVersionService.getVersion(sourceCodeSystem, sourceVersionVersion).orElse(null);
+    CodeSystemVersion version = codeSystemVersionService.load(sourceCodeSystem, sourceVersionVersion).orElse(null);
     if (version == null) {
       throw ApiError.TE202.toApiException(Map.of("version", sourceVersionVersion, "codeSystem", sourceCodeSystem));
     }

@@ -11,13 +11,13 @@ import lombok.RequiredArgsConstructor;
 public class JobLogController {
   protected final JobLogService jobLogService;
 
-  @Get("/{id}")
-  public JobLog get(@PathVariable Long id) {
-    return jobLogService.get(id);
+  @Get("{?params*}")
+  public QueryResult<JobLog> queryJobLogs(JobLogQueryParams params) {
+    return jobLogService.query(params);
   }
 
-  @Get("{?params*}")
-  public QueryResult<JobLog> search(JobLogQueryParams params) {
-    return jobLogService.search(params);
+  @Get("/{id}")
+  public JobLog getJobLog(@PathVariable Long id) {
+    return jobLogService.get(id);
   }
 }

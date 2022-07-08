@@ -15,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class EntityPropertyService {
   private final EntityPropertyRepository repository;
 
-  public Optional<EntityProperty> getProperty(Long id) {
-    return Optional.ofNullable(repository.getProperty(id));
+  public Optional<EntityProperty> load(Long id) {
+    return Optional.ofNullable(repository.load(id));
   }
 
   public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {

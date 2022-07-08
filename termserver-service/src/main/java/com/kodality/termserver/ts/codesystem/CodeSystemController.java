@@ -64,7 +64,7 @@ public class CodeSystemController {
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}{?decorate}")
   public CodeSystem getCodeSystem(@PathVariable String codeSystem, Optional<Boolean> decorate) {
-    return codeSystemService.get(codeSystem, decorate.orElse(false)).orElseThrow(() -> new NotFoundException("CodeSystem not found: " + codeSystem));
+    return codeSystemService.load(codeSystem, decorate.orElse(false)).orElseThrow(() -> new NotFoundException("CodeSystem not found: " + codeSystem));
   }
 
   @Authorized("*.code-system.edit")
@@ -94,7 +94,7 @@ public class CodeSystemController {
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/versions/{version}")
   public CodeSystemVersion getCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version) {
-    return codeSystemVersionService.getVersion(codeSystem, version).orElseThrow(() -> new NotFoundException("CodeSystemVersion not found: " + codeSystem));
+    return codeSystemVersionService.load(codeSystem, version).orElseThrow(() -> new NotFoundException("CodeSystemVersion not found: " + codeSystem));
   }
 
   @Authorized("*.code-system.edit")
@@ -148,13 +148,13 @@ public class CodeSystemController {
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/concepts/{code}")
   public Concept getConcept(@PathVariable String codeSystem, @PathVariable String code) {
-    return conceptService.get(codeSystem, code).orElseThrow(() -> new NotFoundException("Concept not found: " + code));
+    return conceptService.load(codeSystem, code).orElseThrow(() -> new NotFoundException("Concept not found: " + code));
   }
 
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/versions/{version}/concepts/{code}")
   public Concept getConcept(@PathVariable String codeSystem, @PathVariable String version, @PathVariable String code) {
-    return conceptService.get(codeSystem, version, code).orElseThrow(() -> new NotFoundException("Concept not found: " + code));
+    return conceptService.load(codeSystem, version, code).orElseThrow(() -> new NotFoundException("Concept not found: " + code));
   }
 
   @Authorized("*.code-system.edit")
@@ -242,7 +242,7 @@ public class CodeSystemController {
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/entity-properties/{id}")
   public EntityProperty getEntityProperty(@PathVariable String codeSystem, @PathVariable Long id) {
-    return entityPropertyService.getProperty(id).orElseThrow(() -> new NotFoundException("EntityProperty not found: " + id));
+    return entityPropertyService.load(id).orElseThrow(() -> new NotFoundException("EntityProperty not found: " + id));
   }
 
   @Authorized("*.code-system.edit")
@@ -302,7 +302,7 @@ public class CodeSystemController {
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/designations/{id}")
   public Designation getDesignation(@PathVariable String codeSystem, @PathVariable Long id) {
-    return designationService.get(id).orElseThrow(() -> new NotFoundException("Designation not found: " + id));
+    return designationService.load(id).orElseThrow(() -> new NotFoundException("Designation not found: " + id));
   }
 
   @Authorized("*.code-system.edit")
@@ -368,7 +368,7 @@ public class CodeSystemController {
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/supplements/{id}")
   public CodeSystemSupplement getSupplement(@PathVariable String codeSystem, @PathVariable Long id) {
-    return codeSystemSupplementService.getSupplement(id).orElseThrow(() -> new NotFoundException("Supplement not found: " + id));
+    return codeSystemSupplementService.load(id).orElseThrow(() -> new NotFoundException("Supplement not found: " + id));
   }
 
   @Authorized("*.code-system.edit")

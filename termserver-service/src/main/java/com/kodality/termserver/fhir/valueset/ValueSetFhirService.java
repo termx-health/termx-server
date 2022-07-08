@@ -20,7 +20,7 @@ public class ValueSetFhirService {
     if (valueSet == null) {
       return null;
     }
-    ValueSetVersion version = valueSetVersionService.getVersion(valueSetVersionId);
+    ValueSetVersion version = valueSetVersionService.load(valueSetVersionId);
     return mapper.toFhir(valueSet, version);
   }
 }

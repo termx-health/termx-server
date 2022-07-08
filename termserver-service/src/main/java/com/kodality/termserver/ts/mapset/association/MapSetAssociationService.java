@@ -28,15 +28,15 @@ public class MapSetAssociationService {
     return associations;
   }
 
-  public Optional<MapSetAssociation> get(Long id) {
+  public Optional<MapSetAssociation> load(Long id) {
     return Optional.ofNullable(repository.load(id)).map(a -> decorate(a, null));
   }
 
-  public Optional<MapSetAssociation> get(String mapSet, Long id) {
+  public Optional<MapSetAssociation> load(String mapSet, Long id) {
     return Optional.ofNullable(repository.load(mapSet, id)).map(a -> decorate(a, null));
   }
 
-  public Optional<MapSetAssociation> get(String mapSet, String mapSetVersion, Long id) {
+  public Optional<MapSetAssociation> load(String mapSet, String mapSetVersion, Long id) {
     return query(new MapSetAssociationQueryParams()
         .setMapSet(mapSet)
         .setMapSetVersion(mapSetVersion)

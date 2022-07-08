@@ -36,14 +36,9 @@ public class MapSetVersionRepository extends BaseRepository {
     version.setId(id);
   }
 
-  public MapSetVersion getVersion(String mapSet, String version) {
+  public MapSetVersion load(String mapSet, String version) {
     String sql = "select * from terminology.map_set_version where sys_status = 'A' and map_set = ? and version = ?";
     return getBean(sql, bp, mapSet, version);
-  }
-
-  public List<MapSetVersion> getVersions(String mapSet) {
-    String sql = "select * from terminology.map_set_version where sys_status = 'A' and map_set = ?";
-    return getBeans(sql, bp, mapSet);
   }
 
   public QueryResult<MapSetVersion> query(MapSetVersionQueryParams params) {

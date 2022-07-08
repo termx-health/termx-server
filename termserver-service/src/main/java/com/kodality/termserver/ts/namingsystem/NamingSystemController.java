@@ -25,7 +25,7 @@ public class NamingSystemController {
 
   @Get(uri = "/{namingSystem}")
   public NamingSystem getNamingSystem(@PathVariable String namingSystem) {
-    return namingSystemService.get(namingSystem).orElseThrow(() -> new NotFoundException("Naming system not found: " + namingSystem));
+    return namingSystemService.load(namingSystem).orElseThrow(() -> new NotFoundException("Naming system not found: " + namingSystem));
   }
 
   @Post

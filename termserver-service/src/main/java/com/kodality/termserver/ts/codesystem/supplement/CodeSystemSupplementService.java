@@ -31,8 +31,8 @@ public class CodeSystemSupplementService {
     return repository.getSupplements(codeSystem);
   }
 
-  public Optional<CodeSystemSupplement> getSupplement(Long id) {
-    return Optional.ofNullable(repository.getSupplement(id)).map(this::decorate);
+  public Optional<CodeSystemSupplement> load(Long id) {
+    return Optional.ofNullable(repository.load(id)).map(this::decorate);
   }
 
   @Transactional
@@ -67,14 +67,14 @@ public class CodeSystemSupplementService {
 
   private CodeSystemSupplement decorate(CodeSystemSupplement supplement) {
     if (CodeSystemSupplementType.property.equals(supplement.getTargetType())) {
-      supplement.setTarget(entityPropertyService.getProperty(((EntityProperty) supplement.getTarget()).getId()).orElse(null));
+      supplement.setTarget(entityPropertyService.load(((EntityProperty) supplement.getTarget()).getId()).orElse(null));
     }
     if (CodeSystemSupplementType.propertyValue.equals(supplement.getTargetType())) {
       supplement.setTarget(entityPropertyValueService.load(((EntityPropertyValue) supplement.getTarget()).getId()).orElse(null));
     }
 
     if (CodeSystemSupplementType.designation.equals(supplement.getTargetType())) {
-      supplement.setTarget(designationService.get(((Designation) supplement.getTarget()).getId()).orElse(null));
+      supplement.setTarget(designationService.load(((Designation) supplement.getTarget()).getId()).orElse(null));
     }
     return supplement;
   }

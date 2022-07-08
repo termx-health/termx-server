@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DesignationService {
   private final DesignationRepository repository;
 
-  public Optional<Designation> get(Long id) {
+  public Optional<Designation> load(Long id) {
     return Optional.ofNullable(repository.load(id));
   }
 
@@ -29,7 +29,9 @@ public class DesignationService {
   @Transactional
   public void save(List<Designation> designations, Long codeSystemEntityVersionId) {
     repository.retain(designations, codeSystemEntityVersionId);
-    repository.batchUpsert(designations, codeSystemEntityVersionId);
+    if (designations != null) {
+      designations.forEach(designation -> save(designation, codeSystemEntityVersionId));
+    }
   }
 
   @Transactional

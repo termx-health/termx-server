@@ -39,7 +39,7 @@ public class ValueSetController {
   @Authorized("*.value-set.view")
   @Get(uri = "/{valueSet}")
   public ValueSet getValueSet(@PathVariable String valueSet) {
-    return valueSetService.get(valueSet).orElseThrow(() -> new NotFoundException("ValueSet not found: " + valueSet));
+    return valueSetService.load(valueSet).orElseThrow(() -> new NotFoundException("ValueSet not found: " + valueSet));
   }
 
   @Authorized("*.value-set.edit")
@@ -61,7 +61,7 @@ public class ValueSetController {
   @Authorized("*.value-set.view")
   @Get(uri = "/{valueSet}/versions/{version}")
   public ValueSetVersion getValueSetVersion(@PathVariable String valueSet, @PathVariable String version) {
-    return valueSetVersionService.getVersion(valueSet, version).orElseThrow(() -> new NotFoundException("Value set version not found: " + version));
+    return valueSetVersionService.load(valueSet, version).orElseThrow(() -> new NotFoundException("Value set version not found: " + version));
   }
 
   @Authorized("*.value-set.edit")

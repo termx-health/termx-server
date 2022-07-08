@@ -57,7 +57,7 @@ public class JobLogRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public QueryResult<JobLog> search(JobLogQueryParams params) {
+  public QueryResult<JobLog> query(JobLogQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from job.job_log j where j.sys_status = 'A'");
       sb.append(filter(params));

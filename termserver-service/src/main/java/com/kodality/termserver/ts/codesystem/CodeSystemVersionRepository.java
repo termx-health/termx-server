@@ -38,12 +38,12 @@ public class CodeSystemVersionRepository extends BaseRepository {
     version.setId(id);
   }
 
-  public CodeSystemVersion getVersion(String codeSystem, String versionCode) {
+  public CodeSystemVersion load(String codeSystem, String versionCode) {
     String sql = "select * from terminology.code_system_version where sys_status = 'A' and code_system = ? and version = ?";
     return getBean(sql, bp, codeSystem, versionCode);
   }
 
-  public CodeSystemVersion getVersion(Long id) {
+  public CodeSystemVersion load(Long id) {
     String sql = "select * from terminology.code_system_version where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }

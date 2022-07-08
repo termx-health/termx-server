@@ -15,7 +15,7 @@ public class ValueSetService {
   private final ValueSetRepository repository;
   private final ValueSetVersionService valueSetVersionService;
 
-  public Optional<ValueSet> get(String id) {
+  public Optional<ValueSet> load(String id) {
     return Optional.ofNullable(repository.load(id));
   }
 

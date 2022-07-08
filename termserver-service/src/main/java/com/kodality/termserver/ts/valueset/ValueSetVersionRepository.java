@@ -37,17 +37,17 @@ public class ValueSetVersionRepository extends BaseRepository {
     version.setId(id);
   }
 
-  public ValueSetVersion getVersion(String valueSet, String version) {
+  public ValueSetVersion load(String valueSet, String version) {
     String sql = "select * from terminology.value_set_version where sys_status = 'A' and value_set = ? and version = ?";
     return getBean(sql, bp, valueSet, version);
   }
 
-  public ValueSetVersion getVersion(Long id) {
+  public ValueSetVersion load(Long id) {
     String sql = "select * from terminology.value_set_version where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }
 
-  public ValueSetVersion getLastVersion(String valueSet, String status) {
+  public ValueSetVersion loadLastVersion(String valueSet, String status) {
     String sql = "select * from terminology.value_set_version where sys_status = 'A' and value_set = ? and status = ? order by release_date desc";
     return getBean(sql, bp, valueSet, status);
   }

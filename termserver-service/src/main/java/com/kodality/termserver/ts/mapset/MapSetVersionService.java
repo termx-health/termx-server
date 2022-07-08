@@ -43,16 +43,12 @@ public class MapSetVersionService {
   }
 
   public Optional<MapSetVersion> getVersion(String mapSet, String versionCode) {
-    return Optional.ofNullable(repository.getVersion(mapSet, versionCode));
-  }
-
-  public List<MapSetVersion> getVersions(String mapSet) {
-    return repository.getVersions(mapSet);
+    return Optional.ofNullable(repository.load(mapSet, versionCode));
   }
 
   @Transactional
   public void activate(String mapSet, String version) {
-    MapSetVersion currentVersion = repository.getVersion(mapSet, version);
+    MapSetVersion currentVersion = repository.load(mapSet, version);
     if (currentVersion == null) {
       throw ApiError.TE401.toApiException(Map.of("version", version, "mapSet", mapSet));
     }
@@ -74,7 +70,7 @@ public class MapSetVersionService {
 
   @Transactional
   public void retire(String mapSet, String version) {
-    MapSetVersion currentVersion = repository.getVersion(mapSet, version);
+    MapSetVersion currentVersion = repository.load(mapSet, version);
     if (currentVersion == null) {
       throw ApiError.TE401.toApiException(Map.of("version", version, "mapSet", mapSet));
     }
@@ -83,16 +79,6 @@ public class MapSetVersionService {
       return;
     }
     repository.retire(mapSet, version);
-  }
-
-  @Transactional
-  public void saveEntityVersions(String mapSet, String mapSetVersion, List<MapSetEntityVersion> entityVersions) {
-    Optional<Long> versionId = getVersion(mapSet, mapSetVersion).map(MapSetVersion::getId);
-    if (versionId.isPresent()) {
-      saveEntityVersions(versionId.get(), entityVersions);
-    } else {
-      throw ApiError.TE401.toApiException(Map.of("version", mapSetVersion, "mapSet", mapSet));
-    }
   }
 
   @Transactional

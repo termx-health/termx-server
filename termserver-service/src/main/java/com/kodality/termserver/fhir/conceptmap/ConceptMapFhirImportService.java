@@ -84,10 +84,10 @@ public class ConceptMapFhirImportService {
 
   private MapSetVersion prepareMapSetAndVersion(MapSet mapSet) {
     log.info("Checking, the map set and version exists");
-    Optional<MapSet> existingMapSet = mapSetService.get(mapSet.getId());
+    Optional<MapSet> existingMapSet = mapSetService.load(mapSet.getId());
     if (existingMapSet.isEmpty()) {
       log.info("Map set {} does not exist, creating new", mapSet.getId());
-      mapSetService.create(mapSet);
+      mapSetService.save(mapSet);
     }
 
     MapSetVersion version = mapSet.getVersions().get(0);

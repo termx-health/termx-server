@@ -48,7 +48,7 @@ public class CodeSystemSupplementRepository extends BaseRepository {
     return getBeans(sql, bp, codeSystem);
   }
 
-  public CodeSystemSupplement getSupplement(Long id) {
+  public CodeSystemSupplement load(Long id) {
     String sql = "select * from terminology.code_system_supplement where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }

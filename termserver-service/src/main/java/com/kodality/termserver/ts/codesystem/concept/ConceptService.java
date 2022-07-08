@@ -21,21 +21,33 @@ public class ConceptService {
   private final CodeSystemEntityService codeSystemEntityService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
+  @Transactional
+  public Concept save(Concept concept, String codeSystem) {
+    concept.setType(CodeSystemEntityType.concept);
+    concept.setCodeSystem(codeSystem);
+
+    Optional<Concept> existingConcept = load(codeSystem, concept.getCode());
+    existingConcept.ifPresent(value -> concept.setId(value.getId()));
+    codeSystemEntityService.save(concept);
+    repository.save(concept);
+    return concept;
+  }
+
   public QueryResult<Concept> query(ConceptQueryParams params) {
     QueryResult<Concept> concepts = repository.query(params);
     concepts.getData().forEach(c -> decorate(c, params.getCodeSystemVersion()));
     return concepts;
   }
 
-  public Optional<Concept> get(Long id) {
+  public Optional<Concept> load(Long id) {
     return Optional.ofNullable(repository.load(id)).map(c -> decorate(c, null));
   }
 
-  public Optional<Concept> get(String codeSystem, String code) {
+  public Optional<Concept> load(String codeSystem, String code) {
     return Optional.ofNullable(repository.load(codeSystem, code)).map(c -> decorate(c, null));
   }
 
-  public Optional<Concept> get(String codeSystem, String codeSystemVersion, String code) {
+  public Optional<Concept> load(String codeSystem, String codeSystemVersion, String code) {
     return query(new ConceptQueryParams()
         .setCodeSystem(codeSystem)
         .setCodeSystemVersion(codeSystemVersion)
@@ -48,19 +60,6 @@ public class ConceptService {
         .setCodeSystemVersion(codeSystemVersion)
         .setCodeSystem(concept.getCodeSystem())).getData();
     concept.setVersions(versions);
-    return concept;
-  }
-
-
-  @Transactional
-  public Concept save(Concept concept, String codeSystem) {
-    concept.setType(CodeSystemEntityType.concept);
-    concept.setCodeSystem(codeSystem);
-
-    Optional<Concept> existingConcept = get(codeSystem, concept.getCode());
-    existingConcept.ifPresent(value -> concept.setId(value.getId()));
-    codeSystemEntityService.save(concept);
-    repository.save(concept);
     return concept;
   }
 

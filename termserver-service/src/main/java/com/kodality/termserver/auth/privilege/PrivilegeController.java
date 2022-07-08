@@ -19,31 +19,31 @@ import lombok.RequiredArgsConstructor;
 public class PrivilegeController {
   private final PrivilegeService privilegeService;
 
-  @Get(uri = "/{id}")
-  public Privilege load(@PathVariable Long id) {
-    return privilegeService.load(id);
-  }
-
   @Get(uri = "{?params*}")
-  public QueryResult<Privilege> query(PrivilegeQueryParams params) {
+  public QueryResult<Privilege> queryPrivileges(PrivilegeQueryParams params) {
     return privilegeService.query(params);
   }
 
+  @Get(uri = "/{id}")
+  public Privilege getPrivilege(@PathVariable Long id) {
+    return privilegeService.load(id);
+  }
+
   @Post
-  public HttpResponse<?> create(@Body @Valid Privilege privilege) {
+  public HttpResponse<?> createPrivilege(@Body @Valid Privilege privilege) {
     privilegeService.save(privilege);
     return HttpResponse.created(privilege);
   }
 
   @Put("/{id}")
-  public HttpResponse<?> update(@PathVariable Long id, @Body @Valid Privilege privilege) {
+  public HttpResponse<?> updatePrivilege(@PathVariable Long id, @Body @Valid Privilege privilege) {
     privilege.setId(id);
     privilegeService.save(privilege);
     return HttpResponse.created(privilege);
   }
 
   @Delete("/{id}")
-  public HttpResponse<?> delete(@PathVariable Long id) {
+  public HttpResponse<?> deletePrivilege(@PathVariable Long id) {
     privilegeService.delete(id);
     return HttpResponse.ok();
   }

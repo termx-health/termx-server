@@ -19,8 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class MapSetEntityVersionService {
   private final MapSetEntityVersionRepository repository;
 
-  public MapSetEntityVersion get(Long id) {
-    return repository.getVersion(id);
+  public MapSetEntityVersion load(Long id) {
+    return repository.load(id);
   }
 
   @Transactional
@@ -42,10 +42,9 @@ public class MapSetEntityVersionService {
     return repository.query(params);
   }
 
-
   @Transactional
   public void activate(Long versionId) {
-    MapSetEntityVersion currentVersion = repository.getVersion(versionId);
+    MapSetEntityVersion currentVersion = repository.load(versionId);
     if (currentVersion == null) {
       throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
@@ -58,7 +57,7 @@ public class MapSetEntityVersionService {
 
   @Transactional
   public void retire(Long versionId) {
-    MapSetEntityVersion currentVersion = repository.getVersion(versionId);
+    MapSetEntityVersion currentVersion = repository.load(versionId);
     if (currentVersion == null) {
       throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }

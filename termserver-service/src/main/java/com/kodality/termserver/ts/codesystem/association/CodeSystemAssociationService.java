@@ -3,6 +3,7 @@ package com.kodality.termserver.ts.codesystem.association;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.codesystem.CodeSystemEntityType;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityService;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,19 +27,17 @@ public class CodeSystemAssociationService {
 
   @Transactional
   public void save(List<CodeSystemAssociation> associations, Long codeSystemEntityVersionId) {
-    List<CodeSystemAssociation> existing = loadAll(codeSystemEntityVersionId);
+    if (associations == null) {
+      associations = new ArrayList<>();
+    }
 
-    associations.stream().filter(a -> a.getId() == null)
+    List<CodeSystemAssociation> existing = loadAll(codeSystemEntityVersionId);
+    associations.stream()
+        .filter(a -> a.getId() == null)
         .forEach(a -> existing.stream().filter(e -> isSame(a, e)).findAny().ifPresent(codeSystemAssociation -> a.setId(codeSystemAssociation.getId())));
 
     repository.retain(associations, codeSystemEntityVersionId);
-    associations.forEach(association -> {
-      association.setType(CodeSystemEntityType.association);
-      if (association.getId() == null) {
-        codeSystemEntityService.save(association);
-      }
-    });
-    repository.batchUpsert(associations, codeSystemEntityVersionId);
+    associations.forEach(association -> save(association, codeSystemEntityVersionId));
   }
 
   @Transactional

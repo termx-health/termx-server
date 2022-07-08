@@ -51,16 +51,16 @@ public class ValueSetVersionService {
     repository.save(prepare(version));
   }
 
-  public ValueSetVersion getVersion(Long id) {
-    return decorate(repository.getVersion(id));
+  public ValueSetVersion load(Long id) {
+    return decorate(repository.load(id));
   }
 
-  public Optional<ValueSetVersion> getVersion(String valueSet, String versionCode) {
-    return Optional.ofNullable(decorate(repository.getVersion(valueSet, versionCode)));
+  public Optional<ValueSetVersion> load(String valueSet, String versionCode) {
+    return Optional.ofNullable(decorate(repository.load(valueSet, versionCode)));
   }
 
-  public Optional<ValueSetVersion> getLastVersion(String valueSet, String status) {
-    return Optional.ofNullable(decorate(repository.getLastVersion(valueSet, status)));
+  public Optional<ValueSetVersion> loadLastVersion(String valueSet, String status) {
+    return Optional.ofNullable(decorate(repository.loadLastVersion(valueSet, status)));
   }
 
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
@@ -69,7 +69,7 @@ public class ValueSetVersionService {
 
   @Transactional
   public void activate(String valueSet, String version) {
-    ValueSetVersion currentVersion = repository.getVersion(valueSet, version);
+    ValueSetVersion currentVersion = repository.load(valueSet, version);
     if (currentVersion == null) {
       throw ApiError.TE401.toApiException(Map.of("version", version, "valueSet", valueSet));
     }
@@ -91,7 +91,7 @@ public class ValueSetVersionService {
 
   @Transactional
   public void retire(String valueSet, String version) {
-    ValueSetVersion currentVersion = repository.getVersion(valueSet, version);
+    ValueSetVersion currentVersion = repository.load(valueSet, version);
     if (currentVersion == null) {
       throw ApiError.TE301.toApiException(Map.of("version", version, "valueSet", valueSet));
     }
@@ -104,7 +104,7 @@ public class ValueSetVersionService {
 
   @Transactional
   public void saveConcepts(String valueSet, String valueSetVersion, List<ValueSetConcept> concepts) {
-    Optional<Long> versionId = getVersion(valueSet, valueSetVersion).map(ValueSetVersion::getId);
+    Optional<Long> versionId = load(valueSet, valueSetVersion).map(ValueSetVersion::getId);
     if (versionId.isPresent()) {
       saveConcepts(versionId.get(), concepts);
     } else {
@@ -113,7 +113,7 @@ public class ValueSetVersionService {
   }
 
   public List<ValueSetConcept> getConcepts(String valueSet, String version) {
-    Optional<ValueSetVersion> vsVersion = getVersion(valueSet, version);
+    Optional<ValueSetVersion> vsVersion = load(valueSet, version);
     if (vsVersion.isEmpty()) {
       throw ApiError.TE301.toApiException(Map.of("version", version, "valueSet", valueSet));
     }
@@ -136,7 +136,7 @@ public class ValueSetVersionService {
       return new ArrayList<>();
     }
     if (valueSetVersion == null) {
-      valueSetVersion = getLastVersion(valueSet, PublicationStatus.active).map(ValueSetVersion::getVersion).orElse(null);
+      valueSetVersion = loadLastVersion(valueSet, PublicationStatus.active).map(ValueSetVersion::getVersion).orElse(null);
     }
     return decorate(valueSetVersionConceptRepository.expand(valueSet, valueSetVersion, null));
   }
@@ -156,11 +156,11 @@ public class ValueSetVersionService {
   private List<ValueSetConcept> decorate(List<ValueSetConcept> concepts) {
     if (CollectionUtils.isNotEmpty(concepts)) {
       concepts.forEach(c -> {
-        c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? null : designationService.get(c.getDisplay().getId()).orElse(null));
-        c.setConcept(c.getConcept() == null || c.getConcept().getId() == null ? null : conceptService.get(c.getConcept().getId()).orElse(null));
+        c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? null : designationService.load(c.getDisplay().getId()).orElse(null));
+        c.setConcept(c.getConcept() == null || c.getConcept().getId() == null ? null : conceptService.load(c.getConcept().getId()).orElse(null));
         if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
           c.setAdditionalDesignations(c.getAdditionalDesignations().stream()
-              .map(d -> d.getId() == null ? d : designationService.get(d.getId()).orElse(null))
+              .map(d -> d.getId() == null ? d : designationService.load(d.getId()).orElse(null))
               .filter(Objects::nonNull)
               .collect(Collectors.toList()));
         }

@@ -13,7 +13,7 @@ public class DesignationController {
   private final DesignationService designationService;
 
   @Get(uri = "{?params*}")
-  public QueryResult<Designation> getDesignations(DesignationQueryParams params) {
+  public QueryResult<Designation> queryDesignations(DesignationQueryParams params) {
     return designationService.query(params);
   }
 

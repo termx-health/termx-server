@@ -23,7 +23,7 @@ public class NamingSystemService {
     return repository.query(params);
   }
 
-  public Optional<NamingSystem> get(String id) {
+  public Optional<NamingSystem> load(String id) {
     return Optional.ofNullable(repository.load(id));
   }
 

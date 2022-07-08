@@ -23,14 +23,14 @@ public class PrivilegeRepository extends BaseRepository {
     privilege.setId(id);
   }
 
-  public Privilege load(String code) {
-    String sql = "select * from auth.privilege where code = ? and sys_status = 'A'";
-    return getBean(sql, bp, code);
-  }
-
   public Privilege load(Long id) {
     String sql = "select * from auth.privilege where id = ? and sys_status = 'A'";
     return getBean(sql, bp, id);
+  }
+
+  public Privilege load(String code) {
+    String sql = "select * from auth.privilege where code = ? and sys_status = 'A'";
+    return getBean(sql, bp, code);
   }
 
   public QueryResult<Privilege> query(PrivilegeQueryParams params) {

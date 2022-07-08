@@ -9,6 +9,7 @@ import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetEntityVersionQueryParams;
 import com.kodality.termserver.mapset.MapSetQueryParams;
 import com.kodality.termserver.mapset.MapSetVersion;
+import com.kodality.termserver.mapset.MapSetVersionQueryParams;
 import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
 import com.kodality.termserver.ts.mapset.entity.MapSetEntityVersionService;
 import io.micronaut.http.HttpResponse;
@@ -19,11 +20,8 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
-import java.util.List;
 import javax.validation.Valid;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 @Controller("/ts/map-sets")
 @RequiredArgsConstructor
@@ -33,25 +31,30 @@ public class MapSetController {
   private final MapSetAssociationService mapSetAssociationService;
   private final MapSetEntityVersionService mapSetEntityVersionService;
 
+  //----------------MapSet----------------
+
   @Get(uri = "{?params*}")
-  public QueryResult<MapSet> getMapSets(MapSetQueryParams params) {
+  public QueryResult<MapSet> queryMapSets(MapSetQueryParams params) {
     return mapSetService.query(params);
   }
 
-  @Get(uri = "/{id}")
-  public MapSet getMapSet(@PathVariable String id) {
-    return mapSetService.get(id).orElseThrow(() -> new NotFoundException("MapSet not found: " + id));
+  @Get(uri = "/{mapSet}")
+  public MapSet getMapSet(@PathVariable String mapSet) {
+    return mapSetService.load(mapSet).orElseThrow(() -> new NotFoundException("MapSet not found: " + mapSet));
   }
 
   @Post
-  public HttpResponse<?> create(@Body @Valid MapSet mapSet) {
-    mapSetService.create(mapSet);
+  public HttpResponse<?> saveMapSet(@Body @Valid MapSet mapSet) {
+    mapSetService.save(mapSet);
     return HttpResponse.created(mapSet);
   }
 
-  @Get(uri = "/{mapSet}/versions")
-  public List<MapSetVersion> getMapSetVersions(@PathVariable String mapSet) {
-    return mapSetVersionService.getVersions(mapSet);
+  //----------------MapSet Version----------------
+
+  @Get(uri = "/{mapSet}/versions{?params*}")
+  public QueryResult<MapSetVersion> queryMapSetVersions(@PathVariable String mapSet, MapSetVersionQueryParams params) {
+    params.setMapSet(mapSet);
+    return mapSetVersionService.query(params);
   }
 
   @Get(uri = "/{mapSet}/versions/{version}")
@@ -61,6 +64,7 @@ public class MapSetController {
 
   @Post(uri = "/{mapSet}/versions")
   public HttpResponse<?> createVersion(@PathVariable String mapSet, @Body @Valid MapSetVersion version) {
+    version.setId(null);
     version.setMapSet(mapSet);
     mapSetVersionService.save(version);
     return HttpResponse.created(version);
@@ -86,27 +90,22 @@ public class MapSetController {
     return HttpResponse.noContent();
   }
 
+  //----------------MapSet Association----------------
+
   @Get(uri = "/{mapSet}/associations{?params*}")
-  public QueryResult<MapSetAssociation> getAssociations(@PathVariable String mapSet, MapSetAssociationQueryParams params) {
+  public QueryResult<MapSetAssociation> queryAssociations(@PathVariable String mapSet, MapSetAssociationQueryParams params) {
     params.setMapSet(mapSet);
     return mapSetAssociationService.query(params);
   }
 
   @Get(uri = "/{mapSet}/associations/{id}")
   public MapSetAssociation getAssociation(@PathVariable String mapSet, @PathVariable Long id) {
-    return mapSetAssociationService.get(mapSet, id).orElseThrow(() -> new NotFoundException("Association not found: " + id));
-  }
-
-  @Get(uri = "/{mapSet}/versions/{version}/associations{?params*}")
-  public QueryResult<MapSetAssociation> getAssociations(@PathVariable String mapSet, @PathVariable String version, MapSetAssociationQueryParams params) {
-    params.setMapSet(mapSet);
-    params.setMapSetVersion(version);
-    return mapSetAssociationService.query(params);
+    return mapSetAssociationService.load(mapSet, id).orElseThrow(() -> new NotFoundException("Association not found: " + id));
   }
 
   @Get(uri = "/{mapSet}/versions/{version}/associations/{id}")
   public MapSetAssociation getAssociation(@PathVariable String mapSet, @PathVariable String version, @PathVariable Long id) {
-    return mapSetAssociationService.get(mapSet, version, id).orElseThrow(() -> new NotFoundException("Association not found: " + id));
+    return mapSetAssociationService.load(mapSet, version, id).orElseThrow(() -> new NotFoundException("Association not found: " + id));
   }
 
   @Post(uri = "/{mapSet}/associations")
@@ -123,16 +122,40 @@ public class MapSetController {
     return HttpResponse.created(association);
   }
 
+  //----------------MapSet EntityVersion----------------
+
   @Get(uri = "/{mapSet}/entity-versions{?params*}")
   public QueryResult<MapSetEntityVersion> searchEntityVersions(@PathVariable String mapSet, MapSetEntityVersionQueryParams params) {
     params.setMapSet(mapSet);
     return mapSetEntityVersionService.query(params);
   }
 
-  @Post(uri = "/{mapSet}/versions/{version}/entity-versions")
-  public HttpResponse<?> saveEntityVersions(@PathVariable String mapSet, @PathVariable String version, @Body EntityVersionRequest request) {
-    mapSetVersionService.saveEntityVersions(mapSet, version, request.getVersions());
-    return HttpResponse.ok();
+  @Post(uri = "/{mapSet}/entities/{entityId}/versions")
+  public HttpResponse<?> createEntityVersion(@PathVariable String mapSet, @PathVariable Long entityId, @Body @Valid MapSetEntityVersion version) {
+    version.setId(null);
+    version.setMapSet(mapSet);
+    mapSetEntityVersionService.save(version, entityId);
+    return HttpResponse.created(version);
+  }
+
+  @Put(uri = "/{mapSet}/entities/{entityId}/versions/{id}")
+  public HttpResponse<?> updateVersion(@PathVariable String mapSet, @PathVariable Long entityId, @PathVariable Long id,  @Body @Valid MapSetEntityVersion version) {
+    version.setId(id);
+    version.setMapSet(mapSet);
+    mapSetEntityVersionService.save(version, entityId);
+    return HttpResponse.created(version);
+  }
+
+  @Post(uri = "/{mapSet}/entities/versions/{id}/activate")
+  public HttpResponse<?> activateVersion(@PathVariable String mapSet, @PathVariable Long id) {
+    mapSetEntityVersionService.activate(id);
+    return HttpResponse.noContent();
+  }
+
+  @Post(uri = "/{mapSet}/entities/versions/{id}/retire")
+  public HttpResponse<?> retireVersion(@PathVariable String mapSet, @PathVariable Long id) {
+    mapSetEntityVersionService.retire(id);
+    return HttpResponse.noContent();
   }
 
   @Post(uri = "/{mapSet}/versions/{version}/entity-versions/{entityVersionId}/membership")
@@ -145,11 +168,5 @@ public class MapSetController {
   public HttpResponse<?> unlinkEntityVersion(@PathVariable String mapSet, @PathVariable String version, @PathVariable Long entityVersionId) {
     mapSetVersionService.unlinkEntityVersion(mapSet, version, entityVersionId);
     return HttpResponse.ok();
-  }
-
-  @Getter
-  @Setter
-  private static class EntityVersionRequest {
-    private List<MapSetEntityVersion> versions;
   }
 }

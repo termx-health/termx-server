@@ -15,6 +15,6 @@ public class MapSetAssociationController {
 
   @Get(uri = "/{id}")
   public MapSetAssociation getAssociation(@PathVariable Long id) {
-    return associationService.get(id).orElseThrow(() -> new NotFoundException("Map set association not found: " + id));
+    return associationService.load(id).orElseThrow(() -> new NotFoundException("Map set association not found: " + id));
   }
 }

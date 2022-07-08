@@ -13,14 +13,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class AssociationTypeService {
   private final AssociationTypeRepository repository;
 
-  public Optional<AssociationType> load(String code) {
-    return Optional.ofNullable(repository.load(code));
-  }
-
   @Transactional
   public AssociationType save(AssociationType associationType) {
     repository.save(associationType);
     return associationType;
+  }
+
+  public Optional<AssociationType> load(String code) {
+    return Optional.ofNullable(repository.load(code));
   }
 
   public QueryResult<AssociationType> query(AssociationTypeQueryParams params) {

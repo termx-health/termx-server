@@ -32,12 +32,7 @@ public class EntityPropertyRepository extends BaseRepository {
     entityProperty.setId(id);
   }
 
-  public List<EntityProperty> getProperties(String codeSystem) {
-    String sql = "select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A' and ep.code_system = ?";
-    return getBeans(sql, bp, codeSystem);
-  }
-
-  public EntityProperty getProperty(Long id) {
+  public EntityProperty load(Long id) {
     String sql ="select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A' and ep.id = ?";
     return getBean(sql, bp, id);
   }

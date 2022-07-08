@@ -23,7 +23,9 @@ public class EntityPropertyValueService {
   @Transactional
   public void save(List<EntityPropertyValue> values, Long codeSystemEntityVersionId) {
     repository.retain(values, codeSystemEntityVersionId);
-    repository.batchUpsert(values, codeSystemEntityVersionId);
+    if (values != null) {
+      values.forEach(value -> save(value, codeSystemEntityVersionId));
+    }
   }
 
   @Transactional

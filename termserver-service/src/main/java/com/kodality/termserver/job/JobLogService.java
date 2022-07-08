@@ -14,17 +14,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class JobLogService {
   private final JobLogRepository jobLogRepository;
 
-  public QueryResult<JobLog> search(JobLogQueryParams params) {
-    return jobLogRepository.search(params);
+  @Transactional
+  public Long create(JobDefinition definition) {
+    return jobLogRepository.create(definition);
+  }
+
+  public QueryResult<JobLog> query(JobLogQueryParams params) {
+    return jobLogRepository.query(params);
   }
 
   public JobLog get(Long id) {
     return jobLogRepository.load(id);
-  }
-
-  @Transactional
-  public Long create(JobDefinition definition) {
-    return jobLogRepository.create(definition);
   }
 
   @Transactional

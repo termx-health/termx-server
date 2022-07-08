@@ -13,16 +13,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class PrivilegeResourceService {
   private final PrivilegeResourceRepository repository;
 
-  public List<PrivilegeResource> load(Long privilegeId) {
-    return repository.load(privilegeId);
-  }
-
   @Transactional
   public void save(List<PrivilegeResource> resources, Long privilegeId) {
     repository.retain(resources, privilegeId);
     if (CollectionUtils.isNotEmpty(resources)) {
       resources.forEach(r -> repository.save(r, privilegeId));
     }
+  }
+
+  public List<PrivilegeResource> load(Long privilegeId) {
+    return repository.load(privilegeId);
   }
 
   @Transactional

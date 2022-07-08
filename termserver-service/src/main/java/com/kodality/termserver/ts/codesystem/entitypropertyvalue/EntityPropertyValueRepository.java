@@ -46,32 +46,6 @@ public class EntityPropertyValueRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public void batchUpsert(List<EntityPropertyValue> values, Long codeSystemEntityVersionId) {
-    if (values == null) {
-      return;
-    }
-    values.forEach(v -> {
-      SqlBuilder sb =
-          upsert(new SqlBuilder("insert into terminology.entity_property_value (" +
-                  "code_system_entity_version_id, " +
-                  "entity_property_id, " +
-                  "value) select ?,?,?::jsonb",
-                  codeSystemEntityVersionId,
-                  v.getEntityPropertyId(),
-                  JsonUtil.toJson(v.getValue())
-              ),
-              new SqlBuilder(
-                  "UPDATE terminology.entity_property_value SET " +
-                      "entity_property_id = ?, " +
-                      "value = ?::jsonb where code_system_entity_version_id = ? and id = ? and sys_status = 'A'",
-                  v.getEntityPropertyId(),
-                  JsonUtil.toJson(v.getValue()),
-                  codeSystemEntityVersionId,
-                  v.getId()));
-      jdbcTemplate.update(sb.getSql(), sb.getParams());
-    });
-  }
-
   public void delete(Long id) {
     SqlBuilder sb = new SqlBuilder("update terminology.entity_property_value set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());

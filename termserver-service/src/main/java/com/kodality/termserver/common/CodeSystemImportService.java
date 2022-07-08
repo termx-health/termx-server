@@ -44,14 +44,14 @@ public class CodeSystemImportService {
   @Transactional
   public CodeSystemVersion prepareCodeSystemAndVersion(CodeSystem codeSystem) {
     log.info("Checking, the code system and version exists");
-    Optional<CodeSystem> existingCodeSystem = codeSystemService.get(codeSystem.getId());
+    Optional<CodeSystem> existingCodeSystem = codeSystemService.load(codeSystem.getId());
     if (existingCodeSystem.isEmpty()) {
       log.info("Code system {} does not exist, creating new", codeSystem.getId());
       codeSystemService.save(codeSystem);
     }
 
     CodeSystemVersion version = codeSystem.getVersions().get(0);
-    Optional<CodeSystemVersion> existingVersion = codeSystemVersionService.getVersion(version.getCodeSystem(), version.getVersion());
+    Optional<CodeSystemVersion> existingVersion = codeSystemVersionService.load(version.getCodeSystem(), version.getVersion());
     if (existingVersion.isPresent() && existingVersion.get().getStatus().equals(PublicationStatus.active)) {
       throw ApiError.TE104.toApiException(Map.of("version", version.getVersion()));
     }

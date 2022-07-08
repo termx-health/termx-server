@@ -161,7 +161,7 @@ public class ValueSetFhirImportService {
   }
 
   private void prepareConcept(ValueSetConcept c, String codeSystem, String codeSystemVersion) {
-    conceptService.get(codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem, codeSystemVersion, c.getConcept().getCode())
+    conceptService.load(codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem, codeSystemVersion, c.getConcept().getCode())
         .ifPresentOrElse(c::setConcept, () -> {
           Concept concept =
               conceptService.save(new Concept().setCode(c.getConcept().getCode()), codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
@@ -221,14 +221,14 @@ public class ValueSetFhirImportService {
 
   private ValueSetVersion prepareValueSetAndVersion(ValueSet valueSet) {
     log.info("Checking, the value set and version exists");
-    Optional<ValueSet> existingValueSet = valueSetService.get(valueSet.getId());
+    Optional<ValueSet> existingValueSet = valueSetService.load(valueSet.getId());
     if (existingValueSet.isEmpty()) {
       log.info("Value set {} does not exist, creating new", valueSet.getId());
       valueSetService.save(valueSet);
     }
 
     ValueSetVersion version = valueSet.getVersions().get(0);
-    Optional<ValueSetVersion> existingVersion = valueSetVersionService.getVersion(valueSet.getId(), version.getVersion());
+    Optional<ValueSetVersion> existingVersion = valueSetVersionService.load(valueSet.getId(), version.getVersion());
     if (existingVersion.isPresent() && existingVersion.get().getStatus().equals(PublicationStatus.active)) {
       throw ApiError.TE104.toApiException(Map.of("version", version.getVersion()));
     }

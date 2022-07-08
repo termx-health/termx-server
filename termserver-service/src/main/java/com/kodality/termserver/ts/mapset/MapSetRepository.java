@@ -19,7 +19,7 @@ public class MapSetRepository extends BaseRepository {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
   });
 
-  public void create(MapSet mapSet) {
+  public void save(MapSet mapSet) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", mapSet.getId());
     ssb.property("uri", mapSet.getUri());

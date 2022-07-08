@@ -12,6 +12,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class MapSetEntityVersion {
   private Long id;
+  private String mapSet;
   private String description;
   private String status;
   private OffsetDateTime created;

@@ -27,11 +27,11 @@ public class CodeSystemService {
     repository.save(codeSystem);
   }
 
-  public Optional<CodeSystem> get(String codeSystem) {
-    return get(codeSystem, false);
+  public Optional<CodeSystem> load(String codeSystem) {
+    return load(codeSystem, false);
   }
 
-  public Optional<CodeSystem> get(String codeSystem, boolean decorate) {
+  public Optional<CodeSystem> load(String codeSystem, boolean decorate) {
     return Optional.ofNullable(repository.load(codeSystem)).map(cs -> decorate ? decorate(cs) : cs);
   }
 

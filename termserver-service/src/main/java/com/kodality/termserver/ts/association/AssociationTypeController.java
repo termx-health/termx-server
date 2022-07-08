@@ -19,26 +19,26 @@ import lombok.RequiredArgsConstructor;
 public class AssociationTypeController {
   private final AssociationTypeService associationTypeService;
 
+  @Get(uri = "{?params*}")
+  public QueryResult<AssociationType> queryAssociationTypes(AssociationTypeQueryParams params) {
+    return associationTypeService.query(params);
+  }
+
   @Get(uri = "/{code}")
-  public AssociationType getAssociation(@PathVariable String code) {
+  public AssociationType getAssociationType(@PathVariable String code) {
     return associationTypeService.load(code).orElseThrow(() -> new NotFoundException("Association type not found: " + code));
   }
 
   @Post
-  public HttpResponse<?> create(@Body @Valid AssociationType associationType) {
+  public HttpResponse<?> createAssociationType(@Body @Valid AssociationType associationType) {
     associationTypeService.save(associationType);
     return HttpResponse.created(associationType);
   }
 
   @Put("/{code}")
-  public HttpResponse<?> update(@PathVariable String code, @Body @Valid AssociationType associationType) {
+  public HttpResponse<?> updateAssociationType(@PathVariable String code, @Body @Valid AssociationType associationType) {
     associationType.setCode(code);
     associationTypeService.save(associationType);
     return HttpResponse.ok();
-  }
-
-  @Get(uri = "{?params*}")
-  public QueryResult<AssociationType> queryAssociationTypes(AssociationTypeQueryParams params) {
-    return associationTypeService.query(params);
   }
 }

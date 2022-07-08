@@ -14,19 +14,7 @@ public class MapSetEntityVersionController {
   private final MapSetEntityVersionService mapSetEntityVersionService;
 
   @Get(uri = "/{id}")
-  public MapSetEntityVersion load(@PathVariable Long id) {
-    return mapSetEntityVersionService.get(id);
-  }
-
-  @Post(uri = "/{id}/activate")
-  public HttpResponse<?> activateVersion(@PathVariable Long id) {
-    mapSetEntityVersionService.activate(id);
-    return HttpResponse.noContent();
-  }
-
-  @Post(uri = "/{id}/retire")
-  public HttpResponse<?> retireVersion(@PathVariable Long id) {
-    mapSetEntityVersionService.retire(id);
-    return HttpResponse.noContent();
+  public MapSetEntityVersion getEntityVersion(@PathVariable Long id) {
+    return mapSetEntityVersionService.load(id);
   }
 }
