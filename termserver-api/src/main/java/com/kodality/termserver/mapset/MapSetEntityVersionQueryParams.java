@@ -14,6 +14,6 @@ public class MapSetEntityVersionQueryParams extends QueryParams {
   private String mapSetVersion;
   private String mapSet;
   private String status;
-  private String textContains;
+  private String descriptionContains;
 }
 

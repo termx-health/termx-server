@@ -57,14 +57,14 @@ public class MapSetEntityVersionRepository extends BaseRepository {
         "where mse.id = msev.map_set_entity_id and map_set = ?)", params.getMapSet());
     sb.appendIfNotNull("and exists (select 1 from terminology.entity_version_map_set_version_membership evmsvm " +
         "where evmsvm.map_set_entity_version_id = msev.id and evmsvm.map_set_version_id = ?)", params.getMapSetVersionId());
+    if (StringUtils.isNotEmpty(params.getDescriptionContains())) {
+      sb.append("and msev.description ~* ?", params.getDescriptionContains());
+    }
     if (params.getMapSetVersion() != null) {
       sb.append("and exists (select 1 from terminology.map_set_version msv " +
           "inner join terminology.entity_version_map_set_version_membership evmsvm on evmsvm.map_set_version_id = msv.id and evmsvm.sys_status = 'A' " +
           "where evmsvm.map_set_entity_version_id = msev.id and msv.version = ? and msv.sys_status = 'A'", params.getMapSetVersion());
       sb.appendIfNotNull("and msv.map_set = ?", params.getMapSet());
-      if (StringUtils.isNotEmpty(params.getTextContains())) {
-        sb.append("and (msev.id::text ~* ? or msev.description ~* ?)", params.getTextContains(), params.getTextContains());
-      }
       sb.append(")");
     }
     return sb;
