@@ -2,7 +2,6 @@ package com.kodality.termserver.ts.codesystem.association;
 
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.codesystem.CodeSystemEntityType;
-import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityService;
 import java.util.List;
 import java.util.Objects;
@@ -47,7 +46,7 @@ public class CodeSystemAssociationService {
   public void save(CodeSystemAssociation association, Long codeSystemEntityVersionId) {
     List<CodeSystemAssociation> existing = loadAll(codeSystemEntityVersionId);
     existing.stream().filter(e -> isSame(association, e)).findAny().ifPresent(codeSystemAssociation -> association.setId(codeSystemAssociation.getId()));
-    if (association.getId() == null){
+    if (association.getId() == null) {
       association.setType(CodeSystemEntityType.association);
       codeSystemEntityService.save(association);
     }
