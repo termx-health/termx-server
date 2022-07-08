@@ -123,8 +123,8 @@ public class MapSetController {
     return HttpResponse.created(association);
   }
 
-  @Get(uri = "/{mapSet}/versions/{version}/entity-versions{?params*}")
-  public QueryResult<MapSetEntityVersion> searchEntityVersions(@PathVariable String mapSet, @PathVariable String version, MapSetEntityVersionQueryParams params) {
+  @Get(uri = "/{mapSet}/entity-versions{?params*}")
+  public QueryResult<MapSetEntityVersion> searchEntityVersions(@PathVariable String mapSet, MapSetEntityVersionQueryParams params) {
     params.setMapSet(mapSet);
     return mapSetEntityVersionService.query(params);
   }
