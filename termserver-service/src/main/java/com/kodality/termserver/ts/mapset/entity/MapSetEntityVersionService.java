@@ -33,7 +33,9 @@ public class MapSetEntityVersionService {
   @Transactional
   public void save(List<MapSetEntityVersion> versions, Long mapSetEntityId) {
     repository.retainVersions(versions, mapSetEntityId);
-    versions.forEach(version -> save(version, mapSetEntityId));
+    if (versions != null) {
+      versions.forEach(version -> save(version, mapSetEntityId));
+    }
   }
 
   public QueryResult<MapSetEntityVersion> query(MapSetEntityVersionQueryParams params) {
