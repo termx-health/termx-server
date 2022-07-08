@@ -14,6 +14,7 @@ import com.kodality.termserver.ts.mapset.entity.MapSetEntityVersionService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
@@ -122,17 +123,27 @@ public class MapSetController {
     return HttpResponse.created(association);
   }
 
-  @Get(uri = "/{mapSet}/versions/{version}/entity-versions")
-  public List<MapSetEntityVersion> getEntityVersions(@PathVariable String mapSet, @PathVariable String version) {
-    MapSetEntityVersionQueryParams params = new MapSetEntityVersionQueryParams();
+  @Get(uri = "/{mapSet}/entity-versions{?params*}")
+  public QueryResult<MapSetEntityVersion> searchEntityVersions(@PathVariable String mapSet, MapSetEntityVersionQueryParams params) {
     params.setMapSet(mapSet);
-    params.setMapSetVersion(version);
-    return mapSetEntityVersionService.query(params).getData();
+    return mapSetEntityVersionService.query(params);
   }
 
   @Post(uri = "/{mapSet}/versions/{version}/entity-versions")
   public HttpResponse<?> saveEntityVersions(@PathVariable String mapSet, @PathVariable String version, @Body EntityVersionRequest request) {
     mapSetVersionService.saveEntityVersions(mapSet, version, request.getVersions());
+    return HttpResponse.ok();
+  }
+
+  @Post(uri = "/{mapSet}/versions/{version}/entity-versions/{entityVersionId}/membership")
+  public HttpResponse<?> linkEntityVersion(@PathVariable String mapSet, @PathVariable String version, @PathVariable Long entityVersionId) {
+    mapSetVersionService.linkEntityVersion(mapSet, version, entityVersionId);
+    return HttpResponse.ok();
+  }
+
+  @Delete(uri = "/{mapSet}/versions/{version}/entity-versions/{entityVersionId}/membership")
+  public HttpResponse<?> unlinkEntityVersion(@PathVariable String mapSet, @PathVariable String version, @PathVariable Long entityVersionId) {
+    mapSetVersionService.unlinkEntityVersion(mapSet, version, entityVersionId);
     return HttpResponse.ok();
   }
 
