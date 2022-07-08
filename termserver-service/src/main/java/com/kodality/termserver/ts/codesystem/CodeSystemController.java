@@ -325,7 +325,6 @@ public class CodeSystemController {
   public HttpResponse<?> deleteDesignation(@PathVariable String codeSystem, @PathVariable Long id) {
     designationService.delete(id);
     return HttpResponse.ok();
-
   }
 
   //----------------CodeSystem Association---------------

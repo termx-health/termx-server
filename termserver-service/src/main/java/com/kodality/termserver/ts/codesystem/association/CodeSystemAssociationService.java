@@ -24,7 +24,6 @@ public class CodeSystemAssociationService {
     return Optional.ofNullable(repository.load(id));
   }
 
-
   @Transactional
   public void save(List<CodeSystemAssociation> associations, Long codeSystemEntityVersionId) {
     List<CodeSystemAssociation> existing = loadAll(codeSystemEntityVersionId);
