@@ -74,11 +74,9 @@ public class ConceptRepository extends BaseRepository {
       sb.append(")");
     }
     if (params.getValueSet() != null) {
-      sb.and("(");
-      sb.append("exists( select 1 from terminology.value_set_version vsv " +
+      sb.append(" and exists( select 1 from terminology.value_set_version vsv " +
           "inner join terminology.concept_value_set_version_membership cvsvm on cvsvm.value_set_version_id = vsv.id and cvsvm.sys_status = 'A' " +
           "where vsv.value_set = ? and vsv.sys_status = 'A' and cvsvm.concept_id = c.id)", params.getValueSet());
-      sb.append(")");
     }
     if (params.getValueSetVersion() != null) {
       sb.and("(");

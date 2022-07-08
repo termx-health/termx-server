@@ -87,7 +87,9 @@ public class CodeSystemVersionService {
   @Transactional
   public void save(List<CodeSystemVersion> versions, String codeSystem) {
     repository.retainVersions(versions, codeSystem);
-    versions.forEach(this::save);
+    if (versions != null) {
+      versions.forEach(this::save);
+    }
   }
 
   @Transactional

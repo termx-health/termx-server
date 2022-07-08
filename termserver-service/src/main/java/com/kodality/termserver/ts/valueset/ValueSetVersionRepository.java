@@ -46,10 +46,6 @@ public class ValueSetVersionRepository extends BaseRepository {
     String sql = "select * from terminology.value_set_version where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }
-  public List<ValueSetVersion> getVersions(String valueSet) {
-    String sql = "select * from terminology.value_set_version where sys_status = 'A' and value_set = ?";
-    return getBeans(sql, bp, valueSet);
-  }
 
   public ValueSetVersion getLastVersion(String valueSet, String status) {
     String sql = "select * from terminology.value_set_version where sys_status = 'A' and value_set = ? and status = ? order by release_date desc";

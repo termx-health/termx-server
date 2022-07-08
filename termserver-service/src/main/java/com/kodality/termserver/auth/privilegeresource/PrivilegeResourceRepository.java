@@ -28,7 +28,6 @@ public class PrivilegeResourceRepository extends BaseRepository {
     return getBeans(sql, bp, privilegeId);
   }
 
-
   public void retain(List<PrivilegeResource> resources, Long privilegeId) {
     SqlBuilder sb = new SqlBuilder("update auth.privilege_resource set sys_status = 'C'");
     sb.append(" where privilege_id = ? and sys_status = 'A'", privilegeId);

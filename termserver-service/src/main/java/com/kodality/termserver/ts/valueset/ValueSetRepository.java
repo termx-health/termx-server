@@ -22,7 +22,7 @@ public class ValueSetRepository extends BaseRepository {
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
   });
 
-  public void create(ValueSet valueSet) {
+  public void save(ValueSet valueSet) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", valueSet.getId());
     ssb.property("uri", valueSet.getUri());

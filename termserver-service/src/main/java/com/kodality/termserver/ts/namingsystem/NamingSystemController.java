@@ -19,30 +19,30 @@ public class NamingSystemController {
   private final NamingSystemService namingSystemService;
 
   @Get(uri = "{?params*}")
-  public QueryResult<NamingSystem> getNamingSystems(NamingSystemQueryParams params) {
+  public QueryResult<NamingSystem> queryNamingSystems(NamingSystemQueryParams params) {
     return namingSystemService.query(params);
   }
 
-  @Get(uri = "/{id}")
-  public NamingSystem getNamingSystem(@PathVariable String id) {
-    return namingSystemService.get(id).orElseThrow(() -> new NotFoundException("Naming system not found: " + id));
+  @Get(uri = "/{namingSystem}")
+  public NamingSystem getNamingSystem(@PathVariable String namingSystem) {
+    return namingSystemService.get(namingSystem).orElseThrow(() -> new NotFoundException("Naming system not found: " + namingSystem));
   }
 
   @Post
-  public HttpResponse<?> save(@Body @Valid NamingSystem namingSystem) {
+  public HttpResponse<?> saveNamingSystem(@Body @Valid NamingSystem namingSystem) {
     namingSystemService.save(namingSystem);
     return HttpResponse.created(namingSystem);
   }
 
-  @Post(uri = "/{id}/activate")
-  public HttpResponse<?> activateVersion(@PathVariable String id) {
-    namingSystemService.activate(id);
+  @Post(uri = "/{namingSystem}/activate")
+  public HttpResponse<?> activateNamingSystem(@PathVariable String namingSystem) {
+    namingSystemService.activate(namingSystem);
     return HttpResponse.noContent();
   }
 
-  @Post(uri = "/{id}/retire")
-  public HttpResponse<?> retireVersion(@PathVariable String id) {
-    namingSystemService.retire(id);
+  @Post(uri = "/{namingSystem}/retire")
+  public HttpResponse<?> retireNamingSystem(@PathVariable String namingSystem) {
+    namingSystemService.retire(namingSystem);
     return HttpResponse.noContent();
   }
 }

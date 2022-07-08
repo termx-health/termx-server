@@ -22,17 +22,17 @@ public class CodeSystemService {
   private final EntityPropertyService entityPropertyService;
   private final CodeSystemVersionService codeSystemVersionService;
 
-  public Optional<CodeSystem> get(String codeSystem, boolean decorate) {
-    return Optional.ofNullable(repository.load(codeSystem)).map(cs -> decorate ? decorate(cs) : cs);
+  @Transactional
+  public void save(CodeSystem codeSystem) {
+    repository.save(codeSystem);
   }
 
   public Optional<CodeSystem> get(String codeSystem) {
     return get(codeSystem, false);
   }
 
-  @Transactional
-  public void save(CodeSystem codeSystem) {
-    repository.save(codeSystem);
+  public Optional<CodeSystem> get(String codeSystem, boolean decorate) {
+    return Optional.ofNullable(repository.load(codeSystem)).map(cs -> decorate ? decorate(cs) : cs);
   }
 
   public QueryResult<CodeSystem> query(CodeSystemQueryParams params) {

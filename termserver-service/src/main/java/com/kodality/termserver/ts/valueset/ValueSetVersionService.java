@@ -55,10 +55,6 @@ public class ValueSetVersionService {
     return decorate(repository.getVersion(id));
   }
 
-  public List<ValueSetVersion> getVersions(String valueSet) {
-    return repository.getVersions(valueSet);
-  }
-
   public Optional<ValueSetVersion> getVersion(String valueSet, String versionCode) {
     return Optional.ofNullable(decorate(repository.getVersion(valueSet, versionCode)));
   }
@@ -132,25 +128,17 @@ public class ValueSetVersionService {
     valueSetVersionConceptRepository.upsertConcepts(concepts, valueSetVersionId);
   }
 
-  public List<ValueSetConcept> expand(String valueSet) {
-    Optional<ValueSetVersion> lastActiveVersion = getLastVersion(valueSet, PublicationStatus.active);
-    if (lastActiveVersion.isPresent()) {
-      return decorate(valueSetVersionConceptRepository.expand(valueSet, lastActiveVersion.get().getVersion(), null));
-    } else {
-      throw ApiError.TE302.toApiException(Map.of("valueSet", valueSet));
+  public List<ValueSetConcept> expand(String valueSet, String valueSetVersion, ValueSetRuleSet ruleSet) {
+    if (ruleSet != null) {
+      return decorate(valueSetVersionConceptRepository.expand(null, null, ruleSet));
     }
-  }
-
-  public List<ValueSetConcept> expand(String valueSet, String versionCode) {
-    return decorate(valueSetVersionConceptRepository.expand(valueSet, versionCode, null));
-  }
-
-  public List<ValueSetConcept> expand(ValueSetRuleSet ruleSet) {
-    List<ValueSetConcept> concepts = new ArrayList<>();
-    if (ruleSet == null) {
-      return concepts;
+    if (valueSet == null) {
+      return new ArrayList<>();
     }
-    return decorate(valueSetVersionConceptRepository.expand(null, null, ruleSet));
+    if (valueSetVersion == null) {
+      valueSetVersion = getLastVersion(valueSet, PublicationStatus.active).map(ValueSetVersion::getVersion).orElse(null);
+    }
+    return decorate(valueSetVersionConceptRepository.expand(valueSet, valueSetVersion, null));
   }
 
   private ValueSetVersion decorate(ValueSetVersion version) {

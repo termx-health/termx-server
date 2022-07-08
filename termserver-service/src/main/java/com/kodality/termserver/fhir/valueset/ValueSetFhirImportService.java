@@ -224,7 +224,7 @@ public class ValueSetFhirImportService {
     Optional<ValueSet> existingValueSet = valueSetService.get(valueSet.getId());
     if (existingValueSet.isEmpty()) {
       log.info("Value set {} does not exist, creating new", valueSet.getId());
-      valueSetService.create(valueSet);
+      valueSetService.save(valueSet);
     }
 
     ValueSetVersion version = valueSet.getVersions().get(0);

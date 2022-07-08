@@ -3,6 +3,7 @@ package com.kodality.termserver.ts.valueset;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
+import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +20,8 @@ public class ValueSetService {
   }
 
   @Transactional
-  public void create(ValueSet valueSet) {
-    repository.create(valueSet);
+  public void save(ValueSet valueSet) {
+    repository.save(valueSet);
   }
 
   public QueryResult<ValueSet> query(ValueSetQueryParams params) {
@@ -32,6 +33,9 @@ public class ValueSetService {
   }
 
   private void decorate(ValueSet valueSet) {
-    valueSet.setVersions(valueSetVersionService.getVersions(valueSet.getId()));
+    ValueSetVersionQueryParams params = new ValueSetVersionQueryParams();
+    params.setValueSet(valueSet.getId());
+    params.all();
+    valueSet.setVersions(valueSetVersionService.query(params).getData());
   }
 }
