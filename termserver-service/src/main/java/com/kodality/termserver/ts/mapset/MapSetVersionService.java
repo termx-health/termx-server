@@ -100,4 +100,24 @@ public class MapSetVersionService {
     repository.retainEntityVersions(entityVersions, mapSetVersionId);
     repository.upsertEntityVersions(entityVersions, mapSetVersionId);
   }
+
+  @Transactional
+  public void linkEntityVersion(String mapSet, String mapSetVersion, Long entityVersionId) {
+    Optional<Long> currentVersionId = getVersion(mapSet, mapSetVersion).map(MapSetVersion::getId);
+    if (currentVersionId.isPresent()) {
+      repository.linkEntityVersion(currentVersionId.get(), entityVersionId);
+    } else {
+      throw ApiError.TE401.toApiException(Map.of("version", mapSetVersion, "mapSet", mapSet));
+    }
+  }
+
+  @Transactional
+  public void unlinkEntityVersion(String mapSet, String mapSetVersion, Long entityVersionId) {
+    Optional<Long> currentVersionId = getVersion(mapSet, mapSetVersion).map(MapSetVersion::getId);
+    if (currentVersionId.isPresent()) {
+      repository.unlinkEntityVersion(currentVersionId.get(), entityVersionId);
+    } else {
+      throw ApiError.TE401.toApiException(Map.of("version", mapSetVersion, "mapSet", mapSet));
+    }
+  }
 }

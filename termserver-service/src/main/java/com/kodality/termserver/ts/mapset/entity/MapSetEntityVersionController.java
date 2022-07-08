@@ -1,7 +1,9 @@
 package com.kodality.termserver.ts.mapset.entity;
 
+import com.kodality.termserver.mapset.MapSetEntityVersion;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +12,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MapSetEntityVersionController {
   private final MapSetEntityVersionService mapSetEntityVersionService;
+
+  @Get(uri = "/{id}")
+  public MapSetEntityVersion load(@PathVariable Long id) {
+    return mapSetEntityVersionService.get(id);
+  }
 
   @Post(uri = "/{id}/activate")
   public HttpResponse<?> activateVersion(@PathVariable Long id) {

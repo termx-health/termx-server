@@ -19,6 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class MapSetEntityVersionService {
   private final MapSetEntityVersionRepository repository;
 
+  public MapSetEntityVersion get(Long id) {
+    return repository.getVersion(id);
+  }
+
   @Transactional
   public MapSetEntityVersion save(MapSetEntityVersion version, Long mapSetEntityId) {
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
