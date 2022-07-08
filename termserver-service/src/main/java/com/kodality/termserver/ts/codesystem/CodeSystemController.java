@@ -326,12 +326,14 @@ public class CodeSystemController {
     designationService.delete(id);
     return HttpResponse.ok();
 
-  } //----------------CodeSystem Association---------------
+  }
+
+  //----------------CodeSystem Association---------------
 
   @Authorized("*.code-system.view")
   @Get(uri = "/{codeSystem}/associations/{id}")
   public CodeSystemAssociation getAssociation(@PathVariable String codeSystem, @PathVariable Long id) {
-    return associationService.get(id).orElseThrow(() -> new NotFoundException("Association not found: " + id));
+    return associationService.load(id).orElseThrow(() -> new NotFoundException("Association not found: " + id));
   }
 
   @Authorized("*.code-system.edit")

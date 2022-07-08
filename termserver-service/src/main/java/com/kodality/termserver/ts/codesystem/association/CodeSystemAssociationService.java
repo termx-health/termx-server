@@ -20,7 +20,7 @@ public class CodeSystemAssociationService {
     return repository.loadAll(codeSystemEntityVersionId);
   }
 
-  public Optional<CodeSystemAssociation> get(Long id) {
+  public Optional<CodeSystemAssociation> load(Long id) {
     return Optional.ofNullable(repository.load(id));
   }
 
@@ -44,13 +44,9 @@ public class CodeSystemAssociationService {
 
   @Transactional
   public void save(CodeSystemAssociation association, Long codeSystemEntityVersionId) {
-    List<CodeSystemAssociation> existing = loadAll(codeSystemEntityVersionId);
-    existing.stream().filter(e -> isSame(association, e)).findAny().ifPresent(codeSystemAssociation -> association.setId(codeSystemAssociation.getId()));
-    if (association.getId() == null) {
-      association.setType(CodeSystemEntityType.association);
-      codeSystemEntityService.save(association);
-    }
-    repository.upsert(association, codeSystemEntityVersionId);
+    association.setType(CodeSystemEntityType.association);
+    codeSystemEntityService.save(association);
+    repository.save(association, codeSystemEntityVersionId);
   }
 
   private boolean isSame(CodeSystemAssociation a, CodeSystemAssociation b) {
