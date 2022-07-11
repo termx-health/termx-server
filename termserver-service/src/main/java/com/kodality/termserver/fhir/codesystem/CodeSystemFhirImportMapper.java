@@ -77,8 +77,8 @@ public class CodeSystemFhirImportMapper {
     List<EntityProperty> designationProperties = fhirCodeSystem.getConcept().stream()
         .filter(c -> c.getDesignation() != null)
         .flatMap(c -> c.getDesignation().stream())
-        .filter(d -> d.getUse() != null && d.getUse().getDisplay() != null)
-        .map(d -> new EntityProperty().setName(d.getUse().getDisplay()).setType(EntityPropertyType.string).setStatus(PublicationStatus.active)).toList();
+        .filter(d -> d.getUse() != null && d.getUse().getCode() != null)
+        .map(d -> new EntityProperty().setName(d.getUse().getCode()).setType(EntityPropertyType.string).setStatus(PublicationStatus.active)).toList();
 
     List<EntityProperty> properties = fhirCodeSystem.getProperty().stream().map(p -> {
       EntityProperty property = new EntityProperty();
@@ -130,7 +130,7 @@ public class CodeSystemFhirImportMapper {
   private static List<Designation> mapDesignations(com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept c,
                                                    com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem,
                                                    List<EntityProperty> properties) {
-    String caseSignificance = codeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive : CaseSignificance.entire_term_case_insensitive;
+    String caseSignificance = codeSystem.getCaseSensitive() != null && codeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive : CaseSignificance.entire_term_case_insensitive;
 
     Designation display = new Designation();
     display.setDesignationTypeId(properties.stream().filter(p -> p.getName().equals("display")).findFirst().map(EntityProperty::getId).orElse(null));
@@ -159,7 +159,7 @@ public class CodeSystemFhirImportMapper {
 
     designations.addAll(c.getDesignation().stream().map(d -> {
       Long designationType = properties.stream()
-          .filter(p -> p.getName().equals(d.getUse() == null ? "display" : d.getUse().getDisplay()))
+          .filter(p -> p.getName().equals(d.getUse() == null ? "display" : d.getUse().getCode()))
           .findFirst()
           .map(EntityProperty::getId)
           .orElse(null);
