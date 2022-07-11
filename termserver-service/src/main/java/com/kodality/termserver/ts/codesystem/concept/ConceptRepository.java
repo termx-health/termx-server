@@ -89,6 +89,8 @@ public class ConceptRepository extends BaseRepository {
     }
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
         "where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status = ?)", params.getCodeSystemEntityStatus());
+    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
+        "where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
     return sb;
   }
 }
