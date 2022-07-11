@@ -23,9 +23,8 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     ssb.property("association_type", association.getAssociationType());
     ssb.property("status", association.getStatus());
 
-    SqlBuilder sb = ssb.buildSave("terminology.code_system_association", "id");
-    Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
-    association.setId(id);
+    SqlBuilder sb = ssb.buildUpsert("terminology.code_system_association", "id");
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
   public List<CodeSystemAssociation> loadAll(Long codeSystemEntityVersionId) {

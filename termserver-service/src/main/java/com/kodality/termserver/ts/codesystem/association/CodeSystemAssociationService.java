@@ -27,17 +27,10 @@ public class CodeSystemAssociationService {
 
   @Transactional
   public void save(List<CodeSystemAssociation> associations, Long codeSystemEntityVersionId) {
-    if (associations == null) {
-      associations = new ArrayList<>();
-    }
-
-    List<CodeSystemAssociation> existing = loadAll(codeSystemEntityVersionId);
-    associations.stream()
-        .filter(a -> a.getId() == null)
-        .forEach(a -> existing.stream().filter(e -> isSame(a, e)).findAny().ifPresent(codeSystemAssociation -> a.setId(codeSystemAssociation.getId())));
-
     repository.retain(associations, codeSystemEntityVersionId);
-    associations.forEach(association -> save(association, codeSystemEntityVersionId));
+    if (associations != null) {
+      associations.forEach(association -> save(association, codeSystemEntityVersionId));
+    }
   }
 
   @Transactional
@@ -45,11 +38,6 @@ public class CodeSystemAssociationService {
     association.setType(CodeSystemEntityType.association);
     codeSystemEntityService.save(association);
     repository.save(association, codeSystemEntityVersionId);
-  }
-
-  private boolean isSame(CodeSystemAssociation a, CodeSystemAssociation b) {
-    return Objects.equals(a.getTargetId(), b.getTargetId())
-        && Objects.equals(a.getAssociationType(), b.getAssociationType());
   }
 
   @Transactional
