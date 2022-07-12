@@ -14,6 +14,7 @@ import io.micronaut.http.annotation.Post;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,15 @@ public class ValueSetFhirController {
     ValueSet valueSet = service.get(valueSetVersionId);
     if (valueSet == null) {
       throw new NotFoundException("ValueSet not found");
+    }
+    return HttpResponse.ok(valueSet);
+  }
+
+  @Get("/$expand{?params*}")
+  public HttpResponse<?> expand(Map<String, List<String>> params) {
+    ValueSet valueSet = service.expand(params);
+    if (valueSet == null) {
+      HttpResponse.badRequest();
     }
     return HttpResponse.ok(valueSet);
   }

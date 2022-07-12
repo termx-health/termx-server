@@ -64,7 +64,11 @@ public class ValueSetVersionService {
   }
 
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
-    return repository.query(params);
+    QueryResult<ValueSetVersion> versions = repository.query(params);
+    if (params.isDecorated()) {
+      versions.getData().forEach(this::decorate);
+    }
+    return versions;
   }
 
   @Transactional

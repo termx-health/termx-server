@@ -16,4 +16,5 @@ public class ValueSetVersionQueryParams extends QueryParams {
   private String status;
   private LocalDate releaseDateLe;
   private LocalDate expirationDateGe;
+  private boolean decorated;
 }

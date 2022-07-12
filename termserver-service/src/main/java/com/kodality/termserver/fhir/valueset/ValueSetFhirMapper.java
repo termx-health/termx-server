@@ -12,7 +12,9 @@ import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Narrative;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.Compose;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.Concept;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.Contains;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.Designation;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.Expansion;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.Filter;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.Include;
 import io.micronaut.core.util.CollectionUtils;
@@ -99,6 +101,34 @@ public class ValueSetFhirMapper {
       filter.setProperty(valueSetRuleFilter.getProperty().getName());
       return filter;
     }).collect(Collectors.toList());
+  }
+
+  public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<ValueSetConcept> concepts) {
+    com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = toFhir(valueSet, version);
+    fhirValueSet.setExpansion(toFhirExpansion(concepts));
+    return fhirValueSet;
+  }
+
+  private Expansion toFhirExpansion(List<ValueSetConcept> concepts) {
+    Expansion expansion = new Expansion();
+    if (concepts == null) {
+      return expansion;
+    }
+    expansion.setTotal(concepts.size());
+    expansion.setContains(concepts.stream().map(valueSetConcept -> {
+      Contains contains = new Contains();
+      contains.setCode(valueSetConcept.getConcept().getCode());
+      contains.setSystem(valueSetConcept.getConcept().getCodeSystem());
+      contains.setDisplay(valueSetConcept.getDisplay() == null ? null : valueSetConcept.getDisplay().getName());
+      contains.setDesignation(valueSetConcept.getAdditionalDesignations() == null ? null : valueSetConcept.getAdditionalDesignations().stream().map(designation -> {
+        Designation d = new Designation();
+        d.setValue(designation.getName());
+        d.setLanguage(designation.getLanguage());
+        return d;
+      }).collect(Collectors.toList()));
+      return contains;
+    }).collect(Collectors.toList()));
+    return expansion;
   }
 
 }
