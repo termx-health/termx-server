@@ -12,7 +12,6 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ValueSetConcept {
   private Long id;
-  private Long orderNr;
   private Concept concept;
   private Designation display;
   private List<Designation> additionalDesignations;

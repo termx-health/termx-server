@@ -51,7 +51,6 @@ public class ValueSetVersionConceptRepository extends BaseRepository {
       SaveSqlBuilder ssb = new SaveSqlBuilder();
       ssb.property("id", c.getId());
       ssb.property("concept_id", c.getConcept().getId());
-      ssb.property("order_nr", c.getOrderNr());
       ssb.property("display", c.getDisplay() == null ? null : c.getDisplay().getId());
       ssb.property("additional_designations", "?::bigint[]", CollectionUtils.isEmpty(c.getAdditionalDesignations()) ? null :
           PgUtil.array(c.getAdditionalDesignations().stream().map(Designation::getId).collect(Collectors.toList())));

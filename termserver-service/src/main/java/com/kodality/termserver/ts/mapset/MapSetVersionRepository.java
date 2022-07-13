@@ -74,6 +74,11 @@ public class MapSetVersionRepository extends BaseRepository {
     jdbcTemplate.update(sql, PublicationStatus.retired, mapSet, version, PublicationStatus.retired);
   }
 
+  public void saveExpirationDate(MapSetVersion version) {
+    String sql = "update terminology.map_set_version set expiration_date = ? where id = ?";
+    jdbcTemplate.update(sql, version.getExpirationDate(), version.getId());
+  }
+
   public void retainEntityVersions(List<MapSetEntityVersion> entityVersions, Long mapSetVersionId) {
     SqlBuilder sb = new SqlBuilder("update terminology.entity_version_map_set_version_membership set sys_status = 'C'");
     sb.append(" where map_set_version_id = ? and sys_status = 'A'", mapSetVersionId);

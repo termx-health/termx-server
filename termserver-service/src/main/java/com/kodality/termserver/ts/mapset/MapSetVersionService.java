@@ -24,8 +24,12 @@ public class MapSetVersionService {
 
   @Transactional
   public void save(MapSetVersion version) {
-    if (!PublicationStatus.draft.equals(version.getStatus())) {
+    if (!PublicationStatus.draft.equals(version.getStatus()) && version.getId() == null) {
       throw ApiError.TE101.toApiException();
+    }
+    if (!PublicationStatus.draft.equals(version.getStatus())) {
+      repository.saveExpirationDate(version);
+      return;
     }
     MapSetVersion lastDraftVersion = repository.query(new MapSetVersionQueryParams()
         .setMapSet(version.getMapSet())

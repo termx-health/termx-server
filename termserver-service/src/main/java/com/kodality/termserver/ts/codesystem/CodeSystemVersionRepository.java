@@ -83,6 +83,11 @@ public class CodeSystemVersionRepository extends BaseRepository {
     jdbcTemplate.update(sql, PublicationStatus.retired, codeSystem, version, PublicationStatus.retired);
   }
 
+  public void saveExpirationDate(CodeSystemVersion version) {
+    String sql = "update terminology.code_system_version set expiration_date = ? where id = ?";
+    jdbcTemplate.update(sql, version.getExpirationDate(), version.getId());
+  }
+
   public void retainVersions(List<CodeSystemVersion> codeSystemVersions, String codeSystem) {
     SqlBuilder sb = new SqlBuilder("update terminology.code_system_version set sys_status = 'C'");
     sb.append(" where code_system = ? and sys_status = 'A'", codeSystem);

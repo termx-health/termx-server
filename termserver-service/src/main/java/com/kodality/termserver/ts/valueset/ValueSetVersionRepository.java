@@ -9,7 +9,6 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
-import java.util.List;
 import javax.inject.Singleton;
 
 @Singleton
@@ -84,6 +83,11 @@ public class ValueSetVersionRepository extends BaseRepository {
   public void retire(String valueSet, String version) {
     String sql = "update terminology.value_set_version set status = ? where value_set = ? and version = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.retired, valueSet, version, PublicationStatus.retired);
+  }
+
+  public void saveExpirationDate(ValueSetVersion version) {
+    String sql = "update terminology.value_set_version set expiration_date = ? where id = ?";
+    jdbcTemplate.update(sql, version.getExpirationDate(), version.getId());
   }
 
 }

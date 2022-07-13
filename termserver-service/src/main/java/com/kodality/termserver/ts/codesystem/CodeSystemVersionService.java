@@ -23,8 +23,12 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void save(CodeSystemVersion version) {
-    if (!PublicationStatus.draft.equals(version.getStatus())) {
+    if (!PublicationStatus.draft.equals(version.getStatus()) && version.getId() == null) {
       throw ApiError.TE101.toApiException();
+    }
+    if (!PublicationStatus.draft.equals(version.getStatus())) {
+      repository.saveExpirationDate(version);
+      return;
     }
     CodeSystemVersion lastDraftVersion = repository.query(new CodeSystemVersionQueryParams()
         .setCodeSystem(version.getCodeSystem())
