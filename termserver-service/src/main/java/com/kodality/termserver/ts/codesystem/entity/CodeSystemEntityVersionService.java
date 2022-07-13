@@ -91,4 +91,14 @@ public class CodeSystemEntityVersionService {
     }
     repository.retire(versionId);
   }
+
+  @Transactional
+  public void duplicate(String codeSystem, Long entityId, Long id) {
+    CodeSystemEntityVersion version = load(id);
+    version.setId(null);
+    version.setCreated(null);
+    version.setStatus(PublicationStatus.draft);
+    version.setCodeSystem(codeSystem);
+    save(version, entityId);
+  }
 }

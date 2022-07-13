@@ -217,6 +217,13 @@ public class CodeSystemController {
   }
 
   @Authorized("*.code-system.edit")
+  @Post(uri = "/{codeSystem}/entities/{entityId}/versions/{id}/duplicate")
+  public HttpResponse<?> duplicateEntityVersion(@PathVariable String codeSystem,  @PathVariable Long entityId, @PathVariable Long id) {
+    codeSystemEntityVersionService.duplicate(codeSystem, entityId, id);
+    return HttpResponse.ok();
+  }
+
+  @Authorized("*.code-system.edit")
   @Post(uri = "/{codeSystem}/versions/{version}/entity-versions/{entityVersionId}/membership")
   public HttpResponse<?> linkEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @PathVariable Long entityVersionId) {
     codeSystemVersionService.linkEntityVersion(codeSystem, version, entityVersionId);
