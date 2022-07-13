@@ -53,6 +53,10 @@ public class ConceptRepository extends BaseRepository {
     sb.appendIfNotNull("and c.code_system = ?", params.getCodeSystem());
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs where cs.id = c.code_system and cs.uri = ?)", params.getCodeSystemUri());
     sb.appendIfNotNull("and c.code ~* ?", params.getCodeContains());
+    if (StringUtils.isNotEmpty(params.getTextContains())) {
+      sb.append("and (c.code ~* ? or exists(select 1 from terminology.designation d " +
+          "inner join code_system_entity_version csev on d.code_system_entity_version_id = csev.id where csev.code_system_entity_id = c.id and d.name ~* ?))", params.getTextContains(), params.getTextContains());
+    }
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("c.code ", params.getCode());
     }
@@ -73,19 +77,8 @@ public class ConceptRepository extends BaseRepository {
       sb.appendIfNotNull("and csv.code_system = ?", params.getCodeSystem());
       sb.append(")");
     }
-    if (params.getValueSet() != null) {
-      sb.append(" and exists( select 1 from terminology.value_set_version vsv " +
-          "inner join terminology.concept_value_set_version_membership cvsvm on cvsvm.value_set_version_id = vsv.id and cvsvm.sys_status = 'A' " +
-          "where vsv.value_set = ? and vsv.sys_status = 'A' and cvsvm.concept_id = c.id)", params.getValueSet());
-    }
-    if (params.getValueSetVersion() != null) {
-      sb.and("(");
-      sb.append("exists( select 1 from terminology.value_set_version vsv " +
-          "inner join terminology.concept_value_set_version_membership cvsvm on cvsvm.value_set_version_id = vsv.id and cvsvm.sys_status = 'A' " +
-          "where vsv.version = ? and vsv.sys_status = 'A' and cvsvm.concept_id = c.id)", params.getValueSetVersion());
-      sb.or();
-      sb.append("exists( select 1 from terminology.value_set_expand(?, ?, null) vse where vse.concept_id = c.id)", params.getValueSet(), params.getValueSetVersion());
-      sb.append(")");
+    if (params.getValueSet() != null && params.getValueSetVersion() != null) {
+      sb.append("and exists( select 1 from terminology.value_set_expand(?, ?, null) vse where vse.concept_id = c.id)", params.getValueSet(), params.getValueSetVersion());
     }
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
         "where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status = ?)", params.getCodeSystemEntityStatus());

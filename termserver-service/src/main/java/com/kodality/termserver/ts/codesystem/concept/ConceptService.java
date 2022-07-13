@@ -1,6 +1,7 @@
 package com.kodality.termserver.ts.codesystem.concept;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystemEntityType;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
@@ -8,6 +9,8 @@ import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRepository;
+import com.kodality.termserver.valueset.ValueSetVersion;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ConceptService {
   private final ConceptRepository repository;
   private final CodeSystemEntityService codeSystemEntityService;
+  private final ValueSetVersionRepository valueSetVersionRepository;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   @Transactional
@@ -34,6 +38,7 @@ public class ConceptService {
   }
 
   public QueryResult<Concept> query(ConceptQueryParams params) {
+    prepareParams(params);
     QueryResult<Concept> concepts = repository.query(params);
     concepts.getData().forEach(c -> decorate(c, params.getCodeSystemVersion()));
     return concepts;
@@ -61,6 +66,13 @@ public class ConceptService {
         .setCodeSystem(concept.getCodeSystem())).getData();
     concept.setVersions(versions);
     return concept;
+  }
+
+  private void prepareParams(ConceptQueryParams params) {
+    if (params.getValueSet() != null && params.getValueSetVersion() == null) {
+      ValueSetVersion valueSetVersion = valueSetVersionRepository.loadLastVersion(params.getValueSet(), PublicationStatus.active);
+      params.setValueSetVersion(valueSetVersion == null ? null : valueSetVersion.getVersion());
+    }
   }
 
 }
