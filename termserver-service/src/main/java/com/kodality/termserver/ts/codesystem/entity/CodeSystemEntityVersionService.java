@@ -99,6 +99,15 @@ public class CodeSystemEntityVersionService {
     version.setCreated(null);
     version.setStatus(PublicationStatus.draft);
     version.setCodeSystem(codeSystem);
+    if (version.getDesignations() != null) {
+      version.getDesignations().forEach(d -> d.setId(null));
+    }
+    if (version.getPropertyValues() != null) {
+      version.getPropertyValues().forEach(pv -> pv.setId(null));
+    }
+    if (version.getAssociations() != null) {
+      version.getAssociations().forEach(a -> a.setId(null));
+    }
     save(version, entityId);
   }
 }
