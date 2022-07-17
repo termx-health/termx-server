@@ -10,22 +10,24 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class ValueSetRuleSet {
+public class ValueSetVersionRuleSet {
+  private Long id;
   private OffsetDateTime lockedDate;
   private Boolean inactive;
-  private List<ValueSetRule> includeRules;
-  private List<ValueSetRule> excludeRules;
+  private List<ValueSetVersionRule> rules;
 
   @Getter
   @Setter
   @Accessors(chain = true)
-  public static class ValueSetRule {
+  public static class ValueSetVersionRule {
+    private Long id;
+    private String type;
     private String codeSystem;
-    private String codeSystemVersion;
-    private List<ValueSetConcept> concepts;
+    private Long codeSystemVersionId;
+    private List<ValueSetVersionConcept> concepts;
     private List<ValueSetRuleFilter> filters;
     private String valueSet;
-    private String valueSetVersion;
+    private Long valueSetVersionId;
 
     @Getter
     @Setter

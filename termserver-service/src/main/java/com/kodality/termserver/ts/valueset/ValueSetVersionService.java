@@ -3,23 +3,13 @@ package com.kodality.termserver.ts.valueset;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.Designation;
-import com.kodality.termserver.ts.codesystem.concept.ConceptService;
-import com.kodality.termserver.ts.codesystem.designation.DesignationService;
-import com.kodality.termserver.valueset.ValueSetConcept;
-import com.kodality.termserver.valueset.ValueSetRuleSet;
-import com.kodality.termserver.valueset.ValueSetRuleSet.ValueSetRule;
+import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
+import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleSetService;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
-import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,11 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class ValueSetVersionService {
-  private final ConceptService conceptService;
-  private final DesignationService designationService;
-
   private final ValueSetVersionRepository repository;
-  private final ValueSetVersionConceptRepository valueSetVersionConceptRepository;
+  private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
+  private final ValueSetVersionConceptService valueSetVersionConceptService;
 
   @Transactional
   public void save(ValueSetVersion version) {
@@ -52,7 +40,8 @@ public class ValueSetVersionService {
       throw ApiError.TE102.toApiException(Map.of("version", lastDraftVersion.getVersion()));
     }
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
-    repository.save(prepare(version));
+    repository.save(version);
+    valueSetVersionRuleSetService.save(version.getRuleSet(), version.getId());
   }
 
   public ValueSetVersion load(Long id) {
@@ -61,10 +50,6 @@ public class ValueSetVersionService {
 
   public Optional<ValueSetVersion> load(String valueSet, String versionCode) {
     return Optional.ofNullable(decorate(repository.load(valueSet, versionCode)));
-  }
-
-  public Optional<ValueSetVersion> loadLastVersion(String valueSet, String status) {
-    return Optional.ofNullable(decorate(repository.loadLastVersion(valueSet, status)));
   }
 
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
@@ -110,98 +95,12 @@ public class ValueSetVersionService {
     repository.retire(valueSet, version);
   }
 
-  @Transactional
-  public void saveConcepts(String valueSet, String valueSetVersion, List<ValueSetConcept> concepts) {
-    Optional<Long> versionId = load(valueSet, valueSetVersion).map(ValueSetVersion::getId);
-    if (versionId.isPresent()) {
-      saveConcepts(versionId.get(), concepts);
-    } else {
-      throw ApiError.TE301.toApiException(Map.of("version", valueSetVersion, "valueSet", valueSet));
-    }
-  }
-
-  public List<ValueSetConcept> getConcepts(String valueSet, String version) {
-    Optional<ValueSetVersion> vsVersion = load(valueSet, version);
-    if (vsVersion.isEmpty()) {
-      throw ApiError.TE301.toApiException(Map.of("version", version, "valueSet", valueSet));
-    }
-    List<ValueSetConcept> concepts = valueSetVersionConceptRepository.getConcepts(vsVersion.get().getId());
-    decorate(concepts);
-    return concepts;
-  }
-
-  @Transactional
-  public void saveConcepts(Long valueSetVersionId, List<ValueSetConcept> concepts) {
-    valueSetVersionConceptRepository.retainConcepts(concepts, valueSetVersionId);
-    valueSetVersionConceptRepository.upsertConcepts(concepts, valueSetVersionId);
-  }
-
-  public List<ValueSetConcept> expand(String valueSet, String valueSetVersion, ValueSetRuleSet ruleSet) {
-    if (ruleSet != null) {
-      return decorate(valueSetVersionConceptRepository.expand(null, null, ruleSet));
-    }
-    if (valueSet == null) {
-      return new ArrayList<>();
-    }
-    if (valueSetVersion == null) {
-      valueSetVersion = loadLastVersion(valueSet, PublicationStatus.active).map(ValueSetVersion::getVersion).orElse(null);
-    }
-    return decorate(valueSetVersionConceptRepository.expand(valueSet, valueSetVersion, null));
-  }
-
   private ValueSetVersion decorate(ValueSetVersion version) {
-    if (version != null && version.getRuleSet() != null) {
-      if (CollectionUtils.isNotEmpty(version.getRuleSet().getIncludeRules())) {
-        version.getRuleSet().getIncludeRules().forEach(r -> decorate(r.getConcepts()));
-      }
-      if (CollectionUtils.isNotEmpty(version.getRuleSet().getExcludeRules())) {
-        version.getRuleSet().getExcludeRules().forEach(r -> decorate(r.getConcepts()));
-      }
+    if (version == null) {
+      return null;
     }
+    version.setConcepts(valueSetVersionConceptService.loadAll(version.getId()));
+    version.setRuleSet(valueSetVersionRuleSetService.load(version.getId()).orElse(null));
     return version;
-  }
-
-  private List<ValueSetConcept> decorate(List<ValueSetConcept> concepts) {
-    if (CollectionUtils.isNotEmpty(concepts)) {
-      concepts.forEach(c -> {
-        c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? null : designationService.load(c.getDisplay().getId()).orElse(null));
-        c.setConcept(c.getConcept() == null || c.getConcept().getId() == null ? null : conceptService.load(c.getConcept().getId()).orElse(null));
-        if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
-          c.setAdditionalDesignations(c.getAdditionalDesignations().stream()
-              .map(d -> d.getId() == null ? d : designationService.load(d.getId()).orElse(null))
-              .filter(Objects::nonNull)
-              .collect(Collectors.toList()));
-        }
-      });
-    }
-    return concepts;
-  }
-
-  private ValueSetVersion prepare(ValueSetVersion version) {
-    if (version.getRuleSet() != null) {
-      if (CollectionUtils.isNotEmpty(version.getRuleSet().getIncludeRules())) {
-        version.getRuleSet().getIncludeRules().forEach(this::prepare);
-      }
-      if (CollectionUtils.isNotEmpty(version.getRuleSet().getExcludeRules())) {
-        version.getRuleSet().getExcludeRules().forEach(this::prepare);
-      }
-    }
-    return version;
-  }
-
-  private void prepare(ValueSetRule r) {
-    if (CollectionUtils.isNotEmpty(r.getConcepts())) {
-      r.getConcepts().forEach(c -> {
-        c.setDisplay(c.getDisplay() == null ? null : new Designation().setId(c.getDisplay().getId()));
-        if (c.getConcept() != null) {
-          Concept concept = new Concept();
-          concept.setId(c.getConcept().getId());
-          c.setConcept(concept);
-        }
-        if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
-          c.setAdditionalDesignations(c.getAdditionalDesignations().stream().map(d -> new Designation().setId(d.getId())).collect(Collectors.toList()));
-        }
-      });
-    }
   }
 }

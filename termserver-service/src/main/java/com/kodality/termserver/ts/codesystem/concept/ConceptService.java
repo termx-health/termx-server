@@ -71,7 +71,10 @@ public class ConceptService {
   private void prepareParams(ConceptQueryParams params) {
     if (params.getValueSet() != null && params.getValueSetVersion() == null) {
       ValueSetVersion valueSetVersion = valueSetVersionRepository.loadLastVersion(params.getValueSet(), PublicationStatus.active);
-      params.setValueSetVersion(valueSetVersion == null ? null : valueSetVersion.getVersion());
+      params.setValueSetVersionId(valueSetVersion == null ? null : valueSetVersion.getId());
+    }
+    if (params.getValueSet() != null && params.getValueSetVersion() != null) {
+      params.setValueSetVersionId(valueSetVersionRepository.load(params.getValueSet(), params.getValueSetVersion()).getId());
     }
   }
 

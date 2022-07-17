@@ -56,11 +56,6 @@ public class EntityPropertyRepository extends BaseRepository {
       sb.and().in("ep.name", params.getNames());
     }
     sb.appendIfNotNull("and ep.code_system = ?", params.getCodeSystem());
-    sb.appendIfNotNull("and exists(select 1 from terminology.value_set vs " +
-        "inner join terminology.value_set_version vsv on vsv.value_set = vs.id and vsv.sys_status = 'A' " +
-        "inner join terminology.concept_value_set_version_membership cvsvm on cvsvm.value_set_version_id = vsv.id and cvsvm.sys_status = 'A' " +
-        "inner join terminology.concept c on c.id = cvsvm.concept_id and c.sys_status = 'A' " +
-        "where c.code_system = ep.code_system and vs.id = ? and vs.sys_status = 'A')", params.getValueSet());
     return sb;
   }
 

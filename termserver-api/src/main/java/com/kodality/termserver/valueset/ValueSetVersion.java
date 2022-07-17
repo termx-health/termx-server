@@ -20,6 +20,6 @@ public class ValueSetVersion {
   private LocalDate expirationDate;
   private OffsetDateTime created;
 
-  private ValueSetRuleSet ruleSet;
-  private List<ValueSetConcept> concepts;
+  private ValueSetVersionRuleSet ruleSet;
+  private List<ValueSetVersionConcept> concepts;
 }

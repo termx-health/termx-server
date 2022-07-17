@@ -10,11 +10,12 @@ import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.valueset.ValueSet;
-import com.kodality.termserver.valueset.ValueSetConcept;
-import com.kodality.termserver.valueset.ValueSetRuleSet;
-import com.kodality.termserver.valueset.ValueSetRuleSet.ValueSetRule;
-import com.kodality.termserver.valueset.ValueSetRuleSet.ValueSetRule.ValueSetRuleFilter;
+import com.kodality.termserver.valueset.ValueSetVersionConcept;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
 import com.kodality.termserver.valueset.ValueSetVersion;
+import com.kodality.termserver.valueset.ValueSetVersionRuleType;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.Concept;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.Filter;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.Include;
@@ -61,39 +62,44 @@ public class ValueSetFhirImportMapper {
     return version;
   }
 
-  private static ValueSetRuleSet mapRuleSet(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
+  private static ValueSetVersionRuleSet mapRuleSet(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     if (valueSet.getCompose() == null) {
       return null;
     }
-    ValueSetRuleSet ruleSet = new ValueSetRuleSet();
+    ValueSetVersionRuleSet ruleSet = new ValueSetVersionRuleSet();
     ruleSet.setInactive(valueSet.getCompose().getInactive());
     ruleSet.setLockedDate(valueSet.getCompose().getLockedDate());
-    ruleSet.setIncludeRules(mapRules(valueSet.getCompose().getInclude()));
-    ruleSet.setExcludeRules(mapRules(valueSet.getCompose().getExclude()));
+    ruleSet.setRules(mapRules(valueSet.getCompose().getInclude(), valueSet.getCompose().getExclude()));
     return ruleSet;
   }
 
-  private static List<ValueSetRule> mapRules(List<Include> include) {
-    if (CollectionUtils.isEmpty(include)) {
-      return null;
+  private static List<ValueSetVersionRule> mapRules(List<Include> include, List<Include> exclude) {
+    List<ValueSetVersionRule> rules = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(include)) {
+      rules.addAll(include.stream().map(inc -> mapRule(inc, ValueSetVersionRuleType.include)).toList());
     }
-    return include.stream().map(inc -> {
-      ValueSetRule rule = new ValueSetRule();
-      rule.setCodeSystem(inc.getSystem());
-      rule.setCodeSystemVersion(inc.getVersion());
-      rule.setConcepts(mapRuleConcepts(inc.getConcept()));
-      rule.setFilters(mapRuleFilters(inc.getFilter()));
-      rule.setValueSet(inc.getValueSet());
-      return rule;
-    }).collect(Collectors.toList());
+    if (CollectionUtils.isNotEmpty(exclude)) {
+      rules.addAll(exclude.stream().map(exc -> mapRule(exc, ValueSetVersionRuleType.exclude)).toList());
+    }
+    return rules;
   }
 
-  private static List<ValueSetConcept> mapRuleConcepts(List<Concept> concepts) {
+  private static ValueSetVersionRule mapRule(Include r, String type) {
+    ValueSetVersionRule rule = new ValueSetVersionRule();
+    rule.setType(type);
+    rule.setCodeSystem(r.getSystem());
+    rule.setConcepts(mapRuleConcepts(r.getConcept()));
+    rule.setFilters(mapRuleFilters(r.getFilter()));
+    rule.setValueSet(r.getValueSet());
+    return rule;
+  }
+
+  private static List<ValueSetVersionConcept> mapRuleConcepts(List<Concept> concepts) {
     if (CollectionUtils.isEmpty(concepts)) {
       return null;
     }
     return concepts.stream().map(c -> {
-      ValueSetConcept concept = new ValueSetConcept();
+      ValueSetVersionConcept concept = new ValueSetVersionConcept();
       concept.setConcept(new com.kodality.termserver.codesystem.Concept().setCode(c.getCode()));
       concept.setAdditionalDesignations(mapDesignations(c.getDesignation()));
       concept.setDisplay(new Designation()
@@ -130,12 +136,12 @@ public class ValueSetFhirImportMapper {
     }).collect(Collectors.toList());
   }
 
-  private static List<ValueSetConcept> mapConcepts(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
+  private static List<ValueSetVersionConcept> mapConcepts(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     if (valueSet.getExpansion() == null || CollectionUtils.isEmpty(valueSet.getExpansion().getContains())) {
       return new ArrayList<>();
     }
     return valueSet.getExpansion().getContains().stream().map(c -> {
-      ValueSetConcept vsConcept = new ValueSetConcept();
+      ValueSetVersionConcept vsConcept = new ValueSetVersionConcept();
       vsConcept.setDisplay(new Designation()
           .setName(c.getDisplay())
           .setDesignationKind("text")

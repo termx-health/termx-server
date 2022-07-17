@@ -2,8 +2,9 @@ package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.termserver.ts.valueset.ValueSetService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionService;
+import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.valueset.ValueSet;
-import com.kodality.termserver.valueset.ValueSetConcept;
+import com.kodality.termserver.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
@@ -19,6 +20,7 @@ public class ValueSetFhirService {
   private final ValueSetFhirMapper mapper;
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
+  private final ValueSetVersionConceptService valueSetVersionConceptService;
 
   public com.kodality.zmei.fhir.resource.terminology.ValueSet get(Long valueSetVersionId) {
     ValueSet valueSet = valueSetService.query(new ValueSetQueryParams().setVersionId(valueSetVersionId)).findFirst().orElse(null);
@@ -53,7 +55,7 @@ public class ValueSetFhirService {
       return null;
     }
 
-    List<ValueSetConcept> expandedConcepts = valueSetVersionService.expand(valueSet.getId(), version.getVersion(), null);
+    List<ValueSetVersionConcept> expandedConcepts = valueSetVersionConceptService.expand(valueSet.getId(), version.getVersion(), null);
     return mapper.toFhir(valueSet, version, expandedConcepts);
   }
 

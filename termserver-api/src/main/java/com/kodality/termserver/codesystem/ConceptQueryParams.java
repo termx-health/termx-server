@@ -16,6 +16,7 @@ public class ConceptQueryParams extends QueryParams {
   private String codeSystem;
   private String codeSystemUri;
   private String codeSystemVersion;
+  private Long codeSystemVersionId;
   private LocalDate codeSystemVersionReleaseDateLe;
   private LocalDate codeSystemVersionReleaseDateGe;
   private LocalDate codeSystemVersionExpirationDateLe;
@@ -24,4 +25,5 @@ public class ConceptQueryParams extends QueryParams {
   private Long codeSystemEntityVersionId;
   private String valueSet;
   private String valueSetVersion;
+  private Long valueSetVersionId;
 }

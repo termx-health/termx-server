@@ -255,6 +255,7 @@ public class CodeSystemController {
   @Authorized("*.code-system.edit")
   @Post(uri = "/{codeSystem}/entity-properties")
   public HttpResponse<?> createEntityProperty(@PathVariable String codeSystem, @Body @Valid EntityProperty property) {
+    property.setId(null);
     entityPropertyService.save(property, codeSystem);
     return HttpResponse.created(property);
   }
@@ -285,6 +286,7 @@ public class CodeSystemController {
   @Authorized("*.code-system.edit")
   @Post(uri = "/{codeSystem}/entity-versions/{entityVersionId}/entity-property-values")
   public HttpResponse<?> createEntityPropertyValue(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @Body @Valid EntityPropertyValue propertyValue) {
+    propertyValue.setId(null);
     entityPropertyValueService.save(propertyValue, entityVersionId);
     return HttpResponse.created(propertyValue);
   }
@@ -315,6 +317,7 @@ public class CodeSystemController {
   @Authorized("*.code-system.edit")
   @Post(uri = "/{codeSystem}/entity-versions/{entityVersionId}/designations")
   public HttpResponse<?> createDesignation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @Body @Valid Designation designation) {
+    designation.setId(null);
     designationService.save(designation, entityVersionId);
     return HttpResponse.created(designation);
   }
@@ -345,6 +348,7 @@ public class CodeSystemController {
   @Authorized("*.code-system.edit")
   @Post(uri = "/{codeSystem}/entity-versions/{entityVersionId}/associations")
   public HttpResponse<?> createAssociation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @Body @Valid CodeSystemAssociation association) {
+    association.setId(null);
     associationService.save(association, entityVersionId);
     return HttpResponse.created(association);
   }

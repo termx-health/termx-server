@@ -8,6 +8,7 @@ import com.kodality.termserver.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.codesystem.Concept;
+import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.codesystem.DesignationQueryParams;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
@@ -20,9 +21,11 @@ import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionServi
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termserver.ts.valueset.ValueSetService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionService;
+import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
+import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.valueset.ValueSet;
-import com.kodality.termserver.valueset.ValueSetConcept;
-import com.kodality.termserver.valueset.ValueSetRuleSet.ValueSetRule;
+import com.kodality.termserver.valueset.ValueSetVersionConcept;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import com.kodality.zmei.fhir.FhirMapper;
@@ -55,6 +58,8 @@ public class ValueSetFhirImportService {
   private final EntityPropertyService entityPropertyService;
   private final ValueSetVersionService valueSetVersionService;
   private final CodeSystemVersionService codeSystemVersionService;
+  private final ValueSetVersionRuleService valueSetVersionRuleService;
+  private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final BinaryHttpClient client = new BinaryHttpClient();
 
@@ -76,7 +81,8 @@ public class ValueSetFhirImportService {
 
   public void importValueSet(String url) {
     String resource = getResource(url);
-    com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
+    com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet =
+        FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
     if (!ResourceType.valueSet.equals(fhirValueSet.getResourceType())) {
       throw ApiError.TE107.toApiException();
     }
@@ -99,27 +105,23 @@ public class ValueSetFhirImportService {
 
   private ValueSet prepare(ValueSet valueSet) {
     if (CollectionUtils.isNotEmpty(valueSet.getVersions()) && valueSet.getVersions().get(0) != null && valueSet.getVersions().get(0).getRuleSet() != null) {
-      prepareRules(valueSet.getVersions().get(0).getRuleSet().getExcludeRules(), valueSet.getVersions().get(0).getRuleSet().getLockedDate());
-      prepareRules(valueSet.getVersions().get(0).getRuleSet().getIncludeRules(), valueSet.getVersions().get(0).getRuleSet().getLockedDate());
-    }
-    if (CollectionUtils.isNotEmpty(valueSet.getVersions()) && valueSet.getVersions().get(0) != null && valueSet.getVersions().get(0).getConcepts() != null) {
-      prepareConcepts(valueSet.getVersions().get(0).getConcepts(), null, null);
+      prepareRules(valueSet.getVersions().get(0).getRuleSet().getRules(), valueSet.getVersions().get(0).getRuleSet().getLockedDate());
     }
     return valueSet;
   }
 
-  private void prepareRules(List<ValueSetRule> rules, OffsetDateTime lockedDate) {
+  private void prepareRules(List<ValueSetVersionRule> rules, OffsetDateTime lockedDate) {
     if (CollectionUtils.isEmpty(rules)) {
       return;
     }
     rules.forEach(r -> {
       prepareRuleValueSet(r);
       prepareRuleCodeSystem(r, lockedDate);
-      prepareConcepts(r.getConcepts(), r.getCodeSystem(), r.getCodeSystemVersion());
+      prepareConcepts(r.getConcepts(), r.getCodeSystem(), r.getCodeSystemVersionId());
     });
   }
 
-  private void prepareRuleValueSet(ValueSetRule r) {
+  private void prepareRuleValueSet(ValueSetVersionRule r) {
     if (StringUtils.isNotEmpty(r.getValueSet())) {
       valueSetVersionService.query(new ValueSetVersionQueryParams()
           .setValueSetUri(r.getValueSet())
@@ -127,48 +129,47 @@ public class ValueSetFhirImportService {
           .setExpirationDateGe(LocalDate.now())
       ).findFirst().ifPresent(version -> {
         r.setValueSet(version.getValueSet());
-        r.setValueSetVersion(version.getVersion());
+        r.setValueSetVersionId(version.getId());
       });
     }
   }
 
-  private void prepareRuleCodeSystem(ValueSetRule r, OffsetDateTime lockedDate) {
+  private void prepareRuleCodeSystem(ValueSetVersionRule r, OffsetDateTime lockedDate) {
     if (StringUtils.isNotEmpty(r.getCodeSystem())) {
       codeSystemService.query(new CodeSystemQueryParams().setUri(r.getCodeSystem())).findFirst().ifPresent(cs -> r.setCodeSystem(cs.getId()));
       if (lockedDate == null) {
-        r.setCodeSystemVersion(codeSystemVersionService.query(new CodeSystemVersionQueryParams()
+        r.setCodeSystemVersionId(codeSystemVersionService.query(new CodeSystemVersionQueryParams()
             .setCodeSystem(r.getCodeSystem())
             .setReleaseDateLe(LocalDate.now())
-            .setExpirationDateGe(LocalDate.now())).findFirst().map(CodeSystemVersion::getVersion).orElse(null));
+            .setExpirationDateGe(LocalDate.now())).findFirst().map(CodeSystemVersion::getId).orElse(null));
       }
     }
   }
 
-  private void prepareConcepts(List<ValueSetConcept> concepts, String codeSystem, String codeSystemVersion) {
+  private void prepareConcepts(List<ValueSetVersionConcept> concepts, String codeSystem, Long codeSystemVersionId) {
     if (CollectionUtils.isEmpty(concepts)) {
       return;
     }
-    concepts.forEach(c -> {
-      if (c.getConcept() == null || c.getConcept().getCode() == null) {
-        return;
-      }
-      prepareConcept(c, codeSystem, codeSystemVersion);
-      CodeSystemEntityVersion codeSystemEntityVersion = prepareCodeSystemVersion(c, codeSystem, codeSystemVersion);
-      prepareDesignations(c, codeSystemEntityVersion.getId());
-
+    concepts.stream().filter(c -> c.getConcept() != null && c.getConcept().getCode() != null).forEach(concept -> {
+      prepareConcept(concept, codeSystem, codeSystemVersionId);
+      CodeSystemEntityVersion codeSystemEntityVersion = prepareCodeSystemVersion(concept, codeSystem, codeSystemVersionId);
+      prepareDesignations(concept, codeSystemEntityVersion.getId());
     });
   }
 
-  private void prepareConcept(ValueSetConcept c, String codeSystem, String codeSystemVersion) {
-    conceptService.load(codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem, codeSystemVersion, c.getConcept().getCode())
-        .ifPresentOrElse(c::setConcept, () -> {
-          Concept concept =
-              conceptService.save(new Concept().setCode(c.getConcept().getCode()), codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
-          c.setConcept(concept);
-        });
+  private void prepareConcept(ValueSetVersionConcept c, String codeSystem, Long codeSystemVersionId) {
+    ConceptQueryParams params = new ConceptQueryParams();
+    params.setCodeSystem(codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
+    params.setCodeSystemVersionId(codeSystemVersionId);
+    params.setCode(c.getConcept().getCode());
+    params.setLimit(1);
+    conceptService.query(params).findFirst().ifPresentOrElse(c::setConcept, () -> {
+      Concept concept = conceptService.save(new Concept().setCode(c.getConcept().getCode()), codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
+      c.setConcept(concept);
+    });
   }
 
-  private CodeSystemEntityVersion prepareCodeSystemVersion(ValueSetConcept c, String codeSystem, String codeSystemVersion) {
+  private CodeSystemEntityVersion prepareCodeSystemVersion(ValueSetVersionConcept c, String codeSystem, Long codeSystemVersionId) {
     CodeSystemEntityVersion version = codeSystemEntityVersionService
         .query(
             new CodeSystemEntityVersionQueryParams()
@@ -186,14 +187,13 @@ public class ValueSetFhirImportService {
       codeSystemEntityVersionService.activate(version.getId());
     }
 
-    if (codeSystem != null && codeSystemVersion != null) {
-      codeSystemVersionService.linkEntityVersion(codeSystem, codeSystemVersion, version.getId());
+    if (codeSystem != null && codeSystemVersionId != null) {
+      codeSystemVersionService.linkEntityVersion(codeSystemVersionId, version.getId());
     }
-
     return version;
   }
 
-  private void prepareDesignations(ValueSetConcept c, Long codeSystemEntityVersionId) {
+  private void prepareDesignations(ValueSetVersionConcept c, Long codeSystemEntityVersionId) {
     if (c.getConcept().getId() == null) {
       return;
     }
@@ -233,7 +233,8 @@ public class ValueSetFhirImportService {
     }
     log.info("Saving value set version {}", version.getVersion());
     valueSetVersionService.save(version);
-    valueSetVersionService.saveConcepts(version.getId(), version.getConcepts());
+    valueSetVersionRuleService.save(version.getRuleSet().getRules(), version.getRuleSet().getId());
+    valueSetVersionConceptService.save(version.getConcepts(), version.getId());
     return version;
   }
 }

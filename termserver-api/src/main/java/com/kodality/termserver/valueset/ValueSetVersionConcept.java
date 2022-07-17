@@ -10,7 +10,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class ValueSetConcept {
+public class ValueSetVersionConcept {
   private Long id;
   private Concept concept;
   private Designation display;

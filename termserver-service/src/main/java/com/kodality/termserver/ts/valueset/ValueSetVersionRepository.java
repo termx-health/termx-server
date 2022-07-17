@@ -25,7 +25,6 @@ public class ValueSetVersionRepository extends BaseRepository {
     ssb.property("version", version.getVersion());
     ssb.property("source", version.getSource());
     ssb.property("supported_languages", "?::text[]", PgUtil.array(version.getSupportedLanguages()));
-    ssb.jsonProperty("rule_set", version.getRuleSet());
     ssb.property("description", version.getDescription());
     ssb.property("status", version.getStatus());
     ssb.property("release_date", version.getReleaseDate());

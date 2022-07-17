@@ -107,6 +107,11 @@ public class CodeSystemVersionService {
   }
 
   @Transactional
+  public void linkEntityVersion(Long codeSystemVersionId, Long entityVersionId) {
+    repository.linkEntityVersion(codeSystemVersionId, entityVersionId);
+  }
+
+  @Transactional
   public void unlinkEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
     Optional<Long> versionId = load(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
     if (versionId.isPresent()) {

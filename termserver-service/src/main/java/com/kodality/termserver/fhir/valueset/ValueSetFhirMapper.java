@@ -2,11 +2,12 @@ package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.termserver.Language;
 import com.kodality.termserver.valueset.ValueSet;
-import com.kodality.termserver.valueset.ValueSetConcept;
-import com.kodality.termserver.valueset.ValueSetRuleSet;
-import com.kodality.termserver.valueset.ValueSetRuleSet.ValueSetRule;
-import com.kodality.termserver.valueset.ValueSetRuleSet.ValueSetRule.ValueSetRuleFilter;
+import com.kodality.termserver.valueset.ValueSetVersionConcept;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
 import com.kodality.termserver.valueset.ValueSetVersion;
+import com.kodality.termserver.valueset.ValueSetVersionRuleType;
 import com.kodality.zmei.fhir.datatypes.ContactDetail;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Narrative;
@@ -48,23 +49,22 @@ public class ValueSetFhirMapper {
     return fhirValueSet;
   }
 
-  private Compose toFhirCompose(ValueSetRuleSet ruleSet) {
+  private Compose toFhirCompose(ValueSetVersionRuleSet ruleSet) {
     Compose compose = new Compose();
     compose.setInactive(ruleSet.getInactive());
     compose.setLockedDate(ruleSet.getLockedDate());
-    compose.setInclude(toFhirInclude(ruleSet.getIncludeRules()));
-    compose.setExclude(toFhirInclude(ruleSet.getExcludeRules()));
+    compose.setInclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.include));
+    compose.setExclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.exclude));
     return compose;
   }
 
-  private List<Include> toFhirInclude(List<ValueSetRule> rules) {
+  private List<Include> toFhirInclude(List<ValueSetVersionRule> rules, String type) {
     if (CollectionUtils.isEmpty(rules)) {
       return null;
     }
-    return rules.stream().map(rule -> {
+    return rules.stream().filter(r -> r.getType().equals(type)).map(rule -> {
       Include include = new Include();
       include.setSystem(rule.getCodeSystem());
-      include.setVersion(rule.getCodeSystemVersion());
       include.setConcept(toFhirConcept(rule.getConcepts()));
       include.setFilter(toFhirFilter(rule.getFilters()));
       include.setValueSet(rule.getValueSet());
@@ -72,7 +72,7 @@ public class ValueSetFhirMapper {
     }).collect(Collectors.toList());
   }
 
-  private List<Concept> toFhirConcept(List<ValueSetConcept> concepts) {
+  private List<Concept> toFhirConcept(List<ValueSetVersionConcept> concepts) {
     if (CollectionUtils.isEmpty(concepts)) {
       return null;
     }
@@ -103,13 +103,13 @@ public class ValueSetFhirMapper {
     }).collect(Collectors.toList());
   }
 
-  public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<ValueSetConcept> concepts) {
+  public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<ValueSetVersionConcept> concepts) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = toFhir(valueSet, version);
     fhirValueSet.setExpansion(toFhirExpansion(concepts));
     return fhirValueSet;
   }
 
-  private Expansion toFhirExpansion(List<ValueSetConcept> concepts) {
+  private Expansion toFhirExpansion(List<ValueSetVersionConcept> concepts) {
     Expansion expansion = new Expansion();
     if (concepts == null) {
       return expansion;

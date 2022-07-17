@@ -55,12 +55,14 @@ public class ConceptRepository extends BaseRepository {
     sb.appendIfNotNull("and c.code ~* ?", params.getCodeContains());
     if (StringUtils.isNotEmpty(params.getTextContains())) {
       sb.append("and (c.code ~* ? or exists(select 1 from terminology.designation d " +
-          "inner join code_system_entity_version csev on d.code_system_entity_version_id = csev.id where csev.code_system_entity_id = c.id and d.name ~* ?))", params.getTextContains(), params.getTextContains());
+              "inner join code_system_entity_version csev on d.code_system_entity_version_id = csev.id where csev.code_system_entity_id = c.id and d.name ~* ?))",
+          params.getTextContains(), params.getTextContains());
     }
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("c.code ", params.getCode());
     }
     if (params.getCodeSystemVersion() != null ||
+        params.getCodeSystemVersionId() != null ||
         params.getCodeSystemVersionReleaseDateGe() != null ||
         params.getCodeSystemVersionReleaseDateLe() != null ||
         params.getCodeSystemVersionExpirationDateGe() != null ||
@@ -69,6 +71,7 @@ public class ConceptRepository extends BaseRepository {
           "inner join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A' " +
           "inner join terminology.code_system_entity_version csev on csev.id = evcsvm.code_system_entity_version_id and csev.sys_status = 'A' " +
           "where csev.code_system_entity_id = c.id and csv.sys_status = 'A'");
+      sb.appendIfNotNull("and csv.id = ?", params.getCodeSystemVersionId());
       sb.appendIfNotNull("and csv.version = ?", params.getCodeSystemVersion());
       sb.appendIfNotNull("and csv.release_date >= ?", params.getCodeSystemVersionReleaseDateGe());
       sb.appendIfNotNull("and csv.release_date <= ?", params.getCodeSystemVersionReleaseDateLe());
@@ -77,9 +80,7 @@ public class ConceptRepository extends BaseRepository {
       sb.appendIfNotNull("and csv.code_system = ?", params.getCodeSystem());
       sb.append(")");
     }
-    if (params.getValueSet() != null && params.getValueSetVersion() != null) {
-      sb.append("and exists( select 1 from terminology.value_set_expand(?, ?, null) vse where vse.concept_id = c.id)", params.getValueSet(), params.getValueSetVersion());
-    }
+    sb.appendIfNotNull("and exists( select 1 from terminology.value_set_expand(?) vse where (vse.concept ->> 'id')::bigint = c.id)", params.getValueSetVersionId());
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
         "where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status = ?)", params.getCodeSystemEntityStatus());
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
