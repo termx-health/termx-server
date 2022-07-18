@@ -1119,6 +1119,34 @@
           "value" : "Spansk (Uruguay)"
         }]
       },
+        {
+          "code" : "et",
+          "display" : "Estonian",
+          "designation" : [{
+            "language" : "en",
+            "use" : {
+              "system" : "http://terminology.hl7.org/CodeSystem/designation-usage",
+              "code" : "display"
+            },
+            "value" : "Estonian"
+          },
+            {
+              "language" : "et",
+              "use" : {
+                "system" : "http://terminology.hl7.org/CodeSystem/designation-usage",
+                "code" : "display"
+              },
+              "value" : "Eesti"
+            },
+            {
+              "language" : "ru",
+              "use" : {
+                "system" : "http://terminology.hl7.org/CodeSystem/designation-usage",
+                "code" : "display"
+              },
+              "value" : "Эстонский"
+            }]
+        },
       {
         "code" : "fi",
         "display" : "Finnish",

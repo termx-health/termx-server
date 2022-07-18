@@ -55,7 +55,7 @@ public class ConceptRepository extends BaseRepository {
     sb.appendIfNotNull("and c.code ~* ?", params.getCodeContains());
     if (StringUtils.isNotEmpty(params.getTextContains())) {
       sb.append("and (c.code ~* ? or exists(select 1 from terminology.designation d " +
-              "inner join code_system_entity_version csev on d.code_system_entity_version_id = csev.id where csev.code_system_entity_id = c.id and d.name ~* ?))",
+              "inner join terminology.code_system_entity_version csev on d.code_system_entity_version_id = csev.id where csev.code_system_entity_id = c.id and d.name ~* ?))",
           params.getTextContains(), params.getTextContains());
     }
     if (StringUtils.isNotEmpty(params.getCode())) {
