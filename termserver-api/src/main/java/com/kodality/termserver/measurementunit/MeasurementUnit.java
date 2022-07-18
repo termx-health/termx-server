@@ -1,0 +1,28 @@
+package com.kodality.termserver.measurementunit;
+
+import com.kodality.commons.model.CodeName;
+import com.kodality.commons.model.LocalizedName;
+import com.kodality.commons.util.range.LocalDateRange;
+import java.math.BigDecimal;
+import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
+@Getter
+@Setter
+@Accessors(chain = true)
+public class MeasurementUnit {
+  private Long id;
+  private String code;
+  private LocalizedName names;
+  private LocalizedName alias;
+  private LocalDateRange period;
+  private Integer ordering;
+  private BigDecimal rounding;
+  private CodeName kind;
+  private String definitionUnit;
+  private String definitionValue;
+
+  private List<MeasurementUnitMapping> mappings;
+}

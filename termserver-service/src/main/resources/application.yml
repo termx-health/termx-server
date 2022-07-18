@@ -5,6 +5,8 @@ micronaut:
     port: 8200
     max-request-size: 104857600
     thread-selection: auto
+    cors:
+      enabled: true
   router:
     static-resources:
       swagger:

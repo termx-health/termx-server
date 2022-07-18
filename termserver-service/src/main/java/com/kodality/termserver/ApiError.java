@@ -26,6 +26,9 @@ public enum ApiError {
 
   TE501("TE501", "Naming system '{{namingSystem}}' not found."),
 
+  TE601("TE601", "Cannot convert units of different kinds."),
+  TE602("TE602", "Could not find common base unit."),
+
   ;
 
 
