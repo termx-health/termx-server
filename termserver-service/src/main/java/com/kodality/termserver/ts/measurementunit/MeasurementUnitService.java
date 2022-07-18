@@ -1,5 +1,6 @@
 package com.kodality.termserver.ts.measurementunit;
 
+import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.measurementunit.MeasurementUnit;
 import com.kodality.termserver.measurementunit.MeasurementUnitQueryParams;
@@ -69,8 +70,8 @@ public class MeasurementUnitService {
     Optional<MeasurementUnit> persisted = query(params).findFirst();
     persisted.ifPresent(p -> {
       unit.setId(p.getId());
-      unit.setNames(MapUtils.isNotEmpty(unit.getNames()) ? unit.getNames() : p.getNames());
-      unit.setAlias(MapUtils.isNotEmpty(unit.getAlias()) ? unit.getAlias() : p.getAlias());
+      unit.setNames(MapUtils.isNotEmpty(unit.getNames()) ? mergeLocalizedName(unit.getNames(), p.getNames()) : p.getNames());
+      unit.setAlias(MapUtils.isNotEmpty(unit.getAlias()) ? mergeLocalizedName(unit.getAlias(), p.getAlias()) : p.getAlias());
       unit.setPeriod(unit.getPeriod() != null && unit.getPeriod().getLower() != null ? unit.getPeriod() : p.getPeriod());
       unit.setOrdering(unit.getOrdering() != null ? unit.getOrdering() : p.getOrdering());
       unit.setRounding(unit.getRounding() != null ? unit.getRounding() : p.getRounding());
@@ -80,5 +81,13 @@ public class MeasurementUnitService {
       unit.setMappings(CollectionUtils.isNotEmpty(unit.getMappings()) ? unit.getMappings() : p.getMappings());
     });
     save(unit);
+  }
+
+  private LocalizedName mergeLocalizedName(LocalizedName names, LocalizedName persistedNames) {
+    if (MapUtils.isEmpty(persistedNames)) {
+      return names;
+    }
+    persistedNames.keySet().forEach(pl -> names.putIfAbsent(pl, persistedNames.get(pl)));
+    return names;
   }
 }

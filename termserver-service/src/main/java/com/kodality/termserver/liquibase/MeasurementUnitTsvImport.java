@@ -28,7 +28,7 @@ public class MeasurementUnitTsvImport extends FileReaderCustomChange {
 
   @Override
   protected void handleFile(String name, byte[] content) {
-    log.info("updating measurement units");
+    log.info("Updating measurement units from " + name);
     RowListProcessor processor = csvProcessor(content);
 
     List<String> headers = Arrays.asList(processor.getHeaders());

@@ -1,0 +1,358 @@
+[
+  {
+    "code": "m2",
+    "names": {
+      "et": "Ruutmeeter"
+    }
+  },
+  {
+    "code": "mm2",
+    "names": {
+      "et": "Ruutmillimeeter"
+    },
+    "definitionUnit": "m2",
+    "definitionValue": "1e-6"
+  },
+  {
+    "code": "cm2",
+    "names": {
+      "et": "Ruutsentimeeter"
+    },
+    "definitionUnit": "m2",
+    "definitionValue": "1e-4"
+  },
+  {
+    "code": "[sft_i]",
+    "definitionUnit": "[sin_i]",
+    "definitionValue": "144"
+  },
+  {
+    "code": "[syd_i]",
+    "definitionUnit": "[sin_i]",
+    "definitionValue": "1296"
+  },
+  {
+    "code": "mm[Hg]",
+    "names": {
+      "et": "Millimeeter elavhõbedasammast"
+    }
+  },
+  {
+    "code": "%",
+    "names": {
+      "et": "Protsent"
+    }
+  },
+  {
+    "code": "m",
+    "names": {
+      "et": "Meeter"
+    }
+  },
+  {
+    "code": "km",
+    "names": {
+      "et": "Kilomeeter"
+    },
+    "definitionUnit": "m",
+    "definitionValue": "1e+3"
+  },
+  {
+    "code": "cm",
+    "names": {
+      "et": "Sentimeeter"
+    },
+    "definitionUnit": "m",
+    "definitionValue": "1e-2"
+  },
+  {
+    "code": "mm",
+    "names": {
+      "et": "Millimeeter"
+    },
+    "definitionUnit": "m",
+    "definitionValue": "1e-3"
+  },
+  {
+    "code": "fm",
+    "names": {
+      "et": "Femtomeeter"
+    },
+    "definitionUnit": "m",
+    "definitionValue": "1e-15"
+  },
+  {
+    "code": "pm",
+    "names": {
+      "et": "Pikomeeter"
+    },
+    "definitionUnit": "m",
+    "definitionValue": "1e-12"
+  },
+  {
+    "code": "nm",
+    "names": {
+      "et": "Nanomeeter"
+    },
+    "definitionUnit": "m",
+    "definitionValue": "1e-9"
+  },
+  {
+    "code": "um",
+    "names": {
+      "et": "Mikromeeter"
+    },
+    "definitionUnit": "m",
+    "definitionValue": "1e-6"
+  },
+  {
+    "code": "dm",
+    "names": {
+      "et": "Detsimeeter"
+    },
+    "definitionUnit": "m",
+    "definitionValue": "1e-1"
+  },
+  {
+    "code": "[ft_i]",
+    "definitionUnit": "[in_i]",
+    "definitionValue": "12"
+  },
+  {
+    "code": "[yd_i]",
+    "definitionUnit": "[in_i]",
+    "definitionValue": "36"
+  },
+  {
+    "code": "[mi_i]",
+    "definitionUnit": "[in_i]",
+    "definitionValue": "63360"
+  },
+  {
+    "code": "[nmi_i]",
+    "definitionUnit": "[in_i]",
+    "definitionValue": "72910"
+  },
+  {
+    "code": "g",
+    "names": {
+      "et": "Gramm"
+    }
+  },
+  {
+    "code": "kg",
+    "names": {
+      "et": "Kilogramm"
+    },
+    "definitionUnit": "g",
+    "definitionValue": "1e+3"
+  },
+  {
+    "code": "t",
+    "names": {
+      "et": "Tonn"
+    },
+    "definitionUnit": "g",
+    "definitionValue": "1e+6"
+  },
+  {
+    "code": "mg",
+    "names": {
+      "et": "Milligramm"
+    },
+    "definitionUnit": "g",
+    "definitionValue": "1e-3"
+  },
+  {
+    "code": "ug",
+    "names": {
+      "et": "Mikrogramm"
+    },
+    "definitionUnit": "g",
+    "definitionValue": "1e-6"
+  },
+  {
+    "code": "fg",
+    "names": {
+      "et": "Femtogramm"
+    },
+    "definitionUnit": "g",
+    "definitionValue": "1e-15"
+  },
+  {
+    "code": "pg",
+    "names": {
+      "et": "Pikogramm"
+    },
+    "definitionUnit": "g",
+    "definitionValue": "1e-12"
+  },
+  {
+    "code": "ng",
+    "names": {
+      "et": "Nanogramm"
+    },
+    "definitionUnit": "g",
+    "definitionValue": "1e-9"
+  },
+  {
+    "code": "dg",
+    "names": {
+      "et": "Detsigramm"
+    },
+    "definitionUnit": "g",
+    "definitionValue": "1e-1"
+  },
+  {
+    "code": "cg",
+    "names": {
+      "et": "Sentigramm"
+    },
+    "definitionUnit": "g",
+    "definitionValue": "1e-2"
+  },
+  {
+    "code": "mg/kg",
+    "names": {
+      "et": "Milligrammi kilogrammi kohta"
+    }
+  },
+  {
+    "code": "mg/mL",
+    "names": {
+      "et": "Milligrammi milliliitri kohta"
+    }
+  },
+  {
+    "code": "g/mL",
+    "names": {
+      "et": "Grammi milliliitri kohta"
+    }
+  },
+  {
+    "code": "mg/g",
+    "names": {
+      "et": "Milligrammi grammi kohta"
+    }
+  },
+  {
+    "code": "ug/mL",
+    "names": {
+      "et": "Mikrogrammi milliliitri kohta"
+    }
+  },
+  {
+    "code": "g/g",
+    "names": {
+      "et": "Grammi grammi kohta"
+    }
+  },
+  {
+    "code": "mol/kg",
+    "names": {
+      "et": "Mool kilo kohta"
+    }
+  },
+  {
+    "code": "mmol/kg",
+    "names": {
+      "et": "Millimool kilo kohta"
+    }
+  },
+  {
+    "code": "mmol/L",
+    "names": {
+      "et": "Millimool litri kohta"
+    }
+  },
+  {
+    "code": "mol/L",
+    "names": {
+      "et": "Mool litri kohta"
+    }
+  },
+  {
+    "code": "s",
+    "names": {
+      "et": "Sekund"
+    }
+  },
+  {
+    "code": "min",
+    "names": {
+      "et": "Minut"
+    },
+    "definitionUnit": "s",
+    "definitionValue": "60"
+  },
+  {
+    "code": "h",
+    "names": {
+      "et": "Tund"
+    },
+    "definitionUnit": "s",
+    "definitionValue": "3600"
+  },
+  {
+    "code": "d",
+    "names": {
+      "et": "Päev"
+    },
+    "definitionUnit": "s",
+    "definitionValue": "86400"
+  },
+  {
+    "code": "wk",
+    "names": {
+      "et": "Nädal"
+    },
+    "definitionUnit": "s",
+    "definitionValue": "604800"
+  },
+  {
+    "code": "a",
+    "names": {
+      "et": "Aasta"
+    },
+    "definitionUnit": "s",
+    "definitionValue": "31556925.216"
+  },
+  {
+    "code": "mo",
+    "names": {
+      "et": "Kuu"
+    },
+    "definitionUnit": "s",
+    "definitionValue": "2592000"
+  },
+  {
+    "code": "L",
+    "names": {
+      "et": "Liiter"
+    }
+  },
+  {
+    "code": "mL",
+    "names": {
+      "et": "Milliliiter"
+    },
+    "definitionUnit": "L",
+    "definitionValue": "1e-3"
+  },
+  {
+    "code": "cL",
+    "names": {
+      "et": "Sentiliiter"
+    },
+    "definitionUnit": "L",
+    "definitionValue": "1e-2"
+  },
+  {
+    "code": "uL",
+    "names": {
+      "et": "Mikroliiter"
+    },
+    "definitionUnit": "L",
+    "definitionValue": "0.000001"
+  }
+]
