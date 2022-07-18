@@ -2,6 +2,7 @@ package com.kodality.termserver.integration.icd10est;
 
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termserver.Language;
+import com.kodality.termserver.association.AssociationKind;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
@@ -34,7 +35,7 @@ public class Icd10EstService {
 
     CodeSystemVersion version = importService.prepareCodeSystemAndVersion(Icd10EstMapper.mapCodeSystem(configuration));
     List<EntityProperty> properties = importService.prepareProperties(Icd10EstMapper.mapProperties(), configuration.getCodeSystem());
-    importService.prepareAssociationType("is-a", "code-system-hierarchy");
+    importService.prepareAssociationType("is-a", AssociationKind.codesystemHierarchyMeaning);
 
     List<Icd10Est> diagnoses = new Icd10EstZipReader().handleZipPack(getResource(url));
     List<Concept> concepts = Extractor.parseDiagnoses(diagnoses, configuration, properties);

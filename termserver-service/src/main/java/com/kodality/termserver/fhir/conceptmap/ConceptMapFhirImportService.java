@@ -2,6 +2,7 @@ package com.kodality.termserver.fhir.conceptmap;
 
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.association.AssociationKind;
 import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
@@ -150,7 +151,7 @@ public class ConceptMapFhirImportService {
     AssociationType associationType = new AssociationType();
     associationType.setCode(code);
     associationType.setDirected(true);
-    associationType.setAssociationKind("map-set");
+    associationType.setAssociationKind(AssociationKind.conceptMapEquivalence);
     associationTypeService.save(associationType);
   }
 

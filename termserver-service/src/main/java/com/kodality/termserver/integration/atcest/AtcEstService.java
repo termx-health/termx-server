@@ -2,6 +2,7 @@ package com.kodality.termserver.integration.atcest;
 
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termserver.Language;
+import com.kodality.termserver.association.AssociationKind;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
@@ -34,7 +35,7 @@ public class AtcEstService {
 
     CodeSystemVersion version = importService.prepareCodeSystemAndVersion(AtcEstMapper.mapCodeSystem(configuration));
     List<EntityProperty> properties = importService.prepareProperties(AtcEstMapper.mapProperties(), configuration.getCodeSystem());
-    importService.prepareAssociationType("is-a", "code-system-hierarchy");
+    importService.prepareAssociationType("is-a", AssociationKind.codesystemHierarchyMeaning);
 
     List<AtcEst> atc = AtcEstCsvReader.read(getResource(url));
     List<Concept> concepts = AtcEstMapper.mapConcepts(atc, configuration, properties);

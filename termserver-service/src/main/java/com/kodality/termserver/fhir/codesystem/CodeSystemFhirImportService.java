@@ -1,6 +1,7 @@
 package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.termserver.ApiError;
+import com.kodality.termserver.association.AssociationKind;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
@@ -55,7 +56,7 @@ public class CodeSystemFhirImportService {
   public void importCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem, boolean activateVersion) {
     CodeSystemVersion version = importService.prepareCodeSystemAndVersion(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem));
     List<EntityProperty> properties = importService.prepareProperties(CodeSystemFhirImportMapper.mapProperties(codeSystem), codeSystem.getId());
-    importService.prepareAssociationType(codeSystem.getHierarchyMeaning(), "code-system-hierarchy");
+    importService.prepareAssociationType(codeSystem.getHierarchyMeaning(), AssociationKind.codesystemHierarchyMeaning);
 
     List<Concept> concepts = CodeSystemFhirImportMapper.mapConcepts(codeSystem.getConcept(), codeSystem, properties, null);
     importService.importConcepts(concepts, version, activateVersion);

@@ -3,6 +3,7 @@ package com.kodality.termserver.integration.atc;
 
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termserver.Language;
+import com.kodality.termserver.association.AssociationKind;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
@@ -38,7 +39,7 @@ public class AtcService {
 
     CodeSystemVersion version = importService.prepareCodeSystemAndVersion(AtcMapper.mapCodeSystem(configuration));
     List<EntityProperty> properties = importService.prepareProperties(AtcMapper.mapProperties(), configuration.getCodeSystem());
-    importService.prepareAssociationType("is-a", "code-system-hierarchy");
+    importService.prepareAssociationType("is-a", AssociationKind.codesystemHierarchyMeaning);
 
     Map<String, String> atc = AtcResponseParser.parse(getResource());
     List<Concept> concepts = AtcMapper.mapConcepts(atc, configuration, properties);
