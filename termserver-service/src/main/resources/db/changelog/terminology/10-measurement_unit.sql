@@ -20,8 +20,7 @@ create table measurement_unit (
   sys_created_at        timestamp not null,
   sys_created_by        text not null,
   sys_modified_at       timestamp,
-  sys_modified_by       text,
-  constraint measurement_unit_code_excl EXCLUDE USING gist (code WITH =, period WITH && ) where (sys_status='A')
+  sys_modified_by       text
 );
 select core.create_table_metadata('measurement_unit');
 --rollback drop table measurement_unit;
