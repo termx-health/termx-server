@@ -5,6 +5,7 @@ drop table if exists code_system;
 create table code_system (
     id                  text                primary key,
     uri                 text                not null,
+    identifiers         jsonb,
     names               jsonb               not null,
     content             text                not null,
     contacts            jsonb,

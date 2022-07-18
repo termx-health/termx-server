@@ -5,6 +5,7 @@ drop table if exists map_set;
 create table map_set (
     id                  text                primary key,
     uri                 text                not null,
+    identifiers         jsonb,
     names               jsonb               not null,
     description         text,
     sys_created_at      timestamp           not null,
