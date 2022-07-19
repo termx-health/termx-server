@@ -1,0 +1,27 @@
+version: '3.2'
+services:
+  keycloak:
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    image: docker.kodality.com/keycloak:latest
+    container_name: keycloak
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080" ]
+      interval: 1s
+      timeout: 1s
+      retries: 60
+    ports:
+      - "8080:8080"
+
+  postgres:
+    restart: unless-stopped
+    image: postgres:14
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    env_file: .env
+    volumes:
+      - /opt/keycloak/db:/var/lib/postgresql/data
