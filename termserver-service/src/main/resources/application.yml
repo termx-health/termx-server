@@ -34,4 +34,4 @@ liquibase:
       default-schema: 'public'
 auth:
   oauth:
-    userinfo: https://auth.kodality.dev/realms/terminology/protocol/openid-connect/userinfo
+    jwks-url: https://auth.kodality.dev/realms/terminology/protocol/openid-connect/certs
