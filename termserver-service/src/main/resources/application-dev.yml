@@ -1,0 +1,7 @@
+micronaut:
+  server:
+    cors:
+      enabled: true
+auth:
+  oauth:
+    jwks-url: https://auth.kodality.dev/realms/terminology/protocol/openid-connect/certs

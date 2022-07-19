@@ -1,16 +1,10 @@
 package com.kodality.termserver.auth.auth;
 
-import com.kodality.commons.cache.CacheManager;
-import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.util.JsonUtil;
 import io.micronaut.context.annotation.Requires;
-import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.http.HttpRequest;
-import io.micronaut.http.cookie.Cookie;
-import java.util.Base64;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,7 +34,7 @@ public class YupiSessionProvider extends SessionProvider {
   private SessionInfo yupiDroopy() {
     SessionInfo s = new SessionInfo();
     s.setLang("en");
-    s.setPrivileges(List.of("*"));
+    s.setRoles(List.of("*"));
     return s;
   }
 }
