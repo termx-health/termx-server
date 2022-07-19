@@ -45,7 +45,7 @@ public class AuthorizationFilter implements HttpServerFilter {
     if (!(route instanceof MethodBasedRouteMatch methodRoute) || !methodRoute.hasAnnotation(Authorized.class)) {
       return true;
     }
-    List<String> privileges = sessionInfo.map(SessionInfo::getPrivileges).orElse(null);
+    List<String> privileges = sessionInfo.map(SessionInfo::getRoles).orElse(null);
     if (CollectionUtils.isEmpty(privileges)) {
       return false;
     }

@@ -26,6 +26,9 @@ run {
   if (project.hasProperty('debug')) {
     jvmArgs += ['-Xdebug', "-Xrunjdwp:transport=dt_socket,address=" + project.getProperty('debug') + ",server=y,suspend=n"]
   }
+  if (project.hasProperty('dev')) {
+    jvmArgs += ['-Dauth.dev.allowed=true', '-Dmicronaut.environments=dev']
+  }
 }
 
 dependencies {
@@ -63,6 +66,8 @@ dependencies {
   implementation("io.reactivex.rxjava2:rxjava:2.2.21")
   implementation("io.swagger.core.v3:swagger-annotations")
   implementation("com.univocity:univocity-parsers:2.9.1")
+  implementation("com.auth0:java-jwt:4.0.0")
+  implementation("com.auth0:jwks-rsa:0.21.1")
 
   testCompileOnly("org.projectlombok:lombok:1.18.24")
   testAnnotationProcessor("org.projectlombok:lombok:1.18.22")
