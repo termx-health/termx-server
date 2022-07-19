@@ -1,7 +1,8 @@
 package com.kodality.termserver.ts.measurementunit;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.measurementunit.MeasurementUnit;
-import com.kodality.termserver.measurementunit.MeasurementUnitSearchParams;
+import com.kodality.termserver.measurementunit.MeasurementUnitQueryParams;
 import com.kodality.termserver.ts.measurementunit.converter.MeasurementUnitConverter;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.annotation.Body;
@@ -25,7 +26,7 @@ public class MeasurementUnitController {
   private final MeasurementUnitConverter measurementUnitConverter;
 
   @Get("{?params*}")
-  public List<MeasurementUnit> query(MeasurementUnitSearchParams params) {
+  public QueryResult<MeasurementUnit> query(MeasurementUnitQueryParams params) {
     return measurementUnitService.query(params);
   }
 

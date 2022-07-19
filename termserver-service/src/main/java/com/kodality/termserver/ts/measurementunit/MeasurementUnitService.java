@@ -1,12 +1,18 @@
 package com.kodality.termserver.ts.measurementunit;
 
+import com.kodality.commons.model.LocalizedName;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.measurementunit.MeasurementUnit;
-import com.kodality.termserver.measurementunit.MeasurementUnitSearchParams;
+import com.kodality.termserver.measurementunit.MeasurementUnitQueryParams;
 import com.kodality.termserver.ts.measurementunit.mapping.MeasurementUnitMappingRepository;
+import io.micronaut.core.util.CollectionUtils;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.inject.Singleton;
+import liquibase.repackaged.org.apache.commons.collections4.MapUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +22,7 @@ public class MeasurementUnitService {
   private final MeasurementUnitRepository measurementUnitRepository;
   private final MeasurementUnitMappingRepository measurementUnitMappingRepository;
 
-  public List<MeasurementUnit> query(MeasurementUnitSearchParams params) {
+  public QueryResult<MeasurementUnit> query(MeasurementUnitQueryParams params) {
     return measurementUnitRepository.query(params);
   }
 
@@ -35,7 +41,7 @@ public class MeasurementUnitService {
   }
 
   public Map<String, MeasurementUnit> findMapped(String kind, String system) {
-    List<MeasurementUnit> measurementUnits = queryByKind(kind);
+    List<MeasurementUnit> measurementUnits = queryByKind(kind).getData();
     Map<String, MeasurementUnit> result = new HashMap<>();
     measurementUnits.forEach(unit -> {
       if (unit.getMappings() != null) {
@@ -49,9 +55,39 @@ public class MeasurementUnitService {
     return result;
   }
 
-  private List<MeasurementUnit> queryByKind(String kind) {
-    MeasurementUnitSearchParams params = new MeasurementUnitSearchParams();
+  private QueryResult<MeasurementUnit> queryByKind(String kind) {
+    MeasurementUnitQueryParams params = new MeasurementUnitQueryParams();
     params.setKind(kind);
+    params.all();
     return query(params);
+  }
+
+  public void merge(MeasurementUnit unit) {
+    MeasurementUnitQueryParams params = new MeasurementUnitQueryParams();
+    params.setCode(unit.getCode());
+    params.setDate(LocalDate.now());
+    params.setLimit(1);
+    Optional<MeasurementUnit> persisted = query(params).findFirst();
+    persisted.ifPresent(p -> {
+      unit.setId(p.getId());
+      unit.setNames(MapUtils.isNotEmpty(unit.getNames()) ? mergeLocalizedName(unit.getNames(), p.getNames()) : p.getNames());
+      unit.setAlias(MapUtils.isNotEmpty(unit.getAlias()) ? mergeLocalizedName(unit.getAlias(), p.getAlias()) : p.getAlias());
+      unit.setPeriod(unit.getPeriod() != null && unit.getPeriod().getLower() != null ? unit.getPeriod() : p.getPeriod());
+      unit.setOrdering(unit.getOrdering() != null ? unit.getOrdering() : p.getOrdering());
+      unit.setRounding(unit.getRounding() != null ? unit.getRounding() : p.getRounding());
+      unit.setKind(unit.getKind() != null ? unit.getKind() : p.getKind());
+      unit.setDefinitionUnit(unit.getDefinitionUnit() != null ? unit.getDefinitionUnit() : p.getDefinitionUnit());
+      unit.setDefinitionValue(unit.getDefinitionValue() != null ? unit.getDefinitionValue() : p.getDefinitionValue());
+      unit.setMappings(CollectionUtils.isNotEmpty(unit.getMappings()) ? unit.getMappings() : p.getMappings());
+    });
+    save(unit);
+  }
+
+  private LocalizedName mergeLocalizedName(LocalizedName names, LocalizedName persistedNames) {
+    if (MapUtils.isEmpty(persistedNames)) {
+      return names;
+    }
+    persistedNames.keySet().forEach(pl -> names.putIfAbsent(pl, persistedNames.get(pl)));
+    return names;
   }
 }

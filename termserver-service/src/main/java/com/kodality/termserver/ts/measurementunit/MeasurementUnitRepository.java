@@ -4,11 +4,11 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.measurementunit.MeasurementUnit;
 import com.kodality.termserver.measurementunit.MeasurementUnitMapping;
-import com.kodality.termserver.measurementunit.MeasurementUnitSearchParams;
-import java.util.List;
+import com.kodality.termserver.measurementunit.MeasurementUnitQueryParams;
 import javax.inject.Singleton;
 
 @Singleton
@@ -17,7 +17,6 @@ public class MeasurementUnitRepository extends BaseRepository {
     p.addColumnProcessor("names", PgBeanProcessor.fromJson());
     p.addColumnProcessor("alias", PgBeanProcessor.fromJson());
     p.addColumnProcessor("period", PgBeanProcessor.toLocalDateRange());
-    p.addColumnProcessor("kind", PgBeanProcessor.toCodeName());
     p.addColumnProcessor("mappings", PgBeanProcessor.fromJson(JsonUtil.getListType(MeasurementUnitMapping.class)));
   });
 
@@ -28,10 +27,25 @@ public class MeasurementUnitRepository extends BaseRepository {
         " from terminology.measurement_unit mu";
   }
 
-  public List<MeasurementUnit> query(MeasurementUnitSearchParams params) {
-    SqlBuilder sb = new SqlBuilder(select() + " where mu.sys_status = 'A'");
+  public QueryResult<MeasurementUnit> query(MeasurementUnitQueryParams params) {
+    return query(params, p -> {
+      SqlBuilder sb = new SqlBuilder( "select count(1) from terminology.measurement_unit mu where mu.sys_status = 'A'");
+      sb.append(filter(params));
+      return queryForObject(sb.getSql(), Integer.class, sb.getParams());
+    }, p -> {
+      SqlBuilder sb = new SqlBuilder(select() + " where mu.sys_status = 'A'");
+      sb.append(filter(params));
+      sb.append(limit(params));
+      return getBeans(sb.getSql(), bp, sb.getParams());
+    });
+  }
+
+  private SqlBuilder filter(MeasurementUnitQueryParams params) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.appendIfNotNull("and mu.code = ?", params.getCode());
     sb.appendIfNotNull("and mu.kind = ?", params.getKind());
-    return getBeans(sb.getSql(), bp, sb.getParams());
+    sb.appendIfNotNull("and mu.period @> ?", params.getDate());
+    return sb;
   }
 
   public MeasurementUnit load(Long id) {
@@ -50,7 +64,7 @@ public class MeasurementUnitRepository extends BaseRepository {
     ssb.jsonProperty("alias", unit.getAlias());
     ssb.property("period", "?::daterange", unit.getPeriod() != null ? unit.getPeriod().asString() : null);
     ssb.property("rounding", unit.getRounding());
-    ssb.property("kind", unit.getKind() != null ? unit.getKind().getCode() : null);
+    ssb.property("kind", unit.getKind());
     ssb.property("definition_unit", unit.getDefinitionUnit());
     ssb.property("definition_value", unit.getDefinitionValue());
 

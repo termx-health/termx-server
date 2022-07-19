@@ -23,7 +23,7 @@ public class MeasurementUnitConverter {
     if (value == null) {
       return null;
     }
-    if (!from.getKind().getCode().equals(to.getKind().getCode())) {
+    if (!from.getKind().equals(to.getKind())) {
       throw ApiError.TE601.toApiException();
     }
     return doConvert(value, from, to);

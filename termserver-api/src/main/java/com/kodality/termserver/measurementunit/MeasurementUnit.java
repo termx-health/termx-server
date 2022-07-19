@@ -1,6 +1,5 @@
 package com.kodality.termserver.measurementunit;
 
-import com.kodality.commons.model.CodeName;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.range.LocalDateRange;
 import java.math.BigDecimal;
@@ -20,7 +19,7 @@ public class MeasurementUnit {
   private LocalDateRange period;
   private Integer ordering;
   private BigDecimal rounding;
-  private CodeName kind;
+  private String kind;
   private String definitionUnit;
   private String definitionValue;
 
