@@ -74,7 +74,6 @@ public class OAuthSessionProvider extends SessionProvider {
     }
   }
 
-
   /**
    * @see UrlJwkProvider
    */
@@ -85,5 +84,4 @@ public class OAuthSessionProvider extends SessionProvider {
       return keys.stream().map(Jwk::fromValues).collect(Collectors.toMap(Jwk::getId, k -> k));
     })).join();
   }
-
 }
