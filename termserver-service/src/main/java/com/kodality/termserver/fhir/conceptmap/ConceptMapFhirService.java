@@ -1,24 +1,52 @@
 package com.kodality.termserver.fhir.conceptmap;
 
+import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.Language;
+import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termserver.fhir.codesystem.CodeSystemFhirService;
 import com.kodality.termserver.mapset.MapSet;
+import com.kodality.termserver.mapset.MapSetAssociation;
+import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
+import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetQueryParams;
+import com.kodality.termserver.mapset.MapSetVersion;
+import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.mapset.MapSetService;
+import com.kodality.termserver.ts.mapset.MapSetVersionService;
+import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
+import com.kodality.termserver.ts.mapset.entity.MapSetEntityVersionService;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
+import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
+import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
+import io.micronaut.core.util.CollectionUtils;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
 @RequiredArgsConstructor
 public class ConceptMapFhirService {
   private final ConceptMapFhirMapper mapper;
   private final MapSetService mapSetService;
+  private final MapSetVersionService mapSetVersionService;
+  private final CodeSystemFhirService codeSystemFhirService;
+  private final MapSetAssociationService mapSetAssociationService;
+  private final MapSetEntityVersionService mapSetEntityVersionService;
+  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   public Parameters translate(Map<String, List<String>> params) {
     FhirQueryParams fhirParams = new FhirQueryParams(params);
@@ -37,6 +65,124 @@ public class ConceptMapFhirService {
     QueryResult<MapSet> mapSets = mapSetService.query(msParams);
 
     return mapper.toFhirParameters(mapSets.findFirst().orElse(null));
+  }
+
+  @Transactional
+  public ConceptMap closure(Parameters params, OperationOutcome outcome) {
+    outcome.setIssue(new ArrayList<>());
+    Optional<String> name = params.getParameter().stream().filter(p -> p.getName().equals("name")).map(Parameter::getValueString).findFirst();
+    Optional<String> version = params.getParameter().stream().filter(p -> p.getName().equals("version")).map(Parameter::getValueString).findFirst();
+    List<Coding> concepts = params.getParameter().stream().filter(p -> p.getName().equals("concept")).map(Parameter::getValueCoding).toList();
+
+    if (name.isEmpty()) {
+      outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("required")
+          .setDetails(new CodeableConcept().setText("Name not provided")));
+      return null;
+    }
+
+    if (CollectionUtils.isNotEmpty(concepts)) {
+      Optional<MapSet> persistedMapSet = mapSetService.load(name.get());
+      Optional<MapSetVersion> persistedMapSetVersion = version.isPresent() ? mapSetVersionService.getVersion(name.get(), version.get()) : Optional.empty();
+      if (persistedMapSet.isPresent()) {
+        MapSetVersion mapSetVersion = persistedMapSetVersion.orElse(null);
+        if (mapSetVersion == null) {
+          mapSetVersion = new MapSetVersion().setMapSet(persistedMapSet.get().getId()).setReleaseDate(LocalDate.now()).setStatus(PublicationStatus.draft).setDescription(String.format("Updates for Closure Table %s", name.get()));
+          if (version.isPresent()) {
+            mapSetVersion.setVersion(version.get());
+          } else {
+            MapSetVersion lastVersion = mapSetVersionService.loadLastVersion(persistedMapSet.get().getId(), PublicationStatus.active);
+            try {
+              mapSetVersion.setVersion(String.valueOf(Long.parseLong(lastVersion.getVersion()) + 1));
+            } catch (Exception e) {
+              mapSetVersion.setVersion(lastVersion.getVersion() + ".1");
+            }
+          }
+          mapSetVersionService.save(mapSetVersion);
+        }
+
+        List<MapSetAssociation> associations = composeAssociations(mapSetVersion.getId(), concepts);
+        associations.forEach(association -> mapSetAssociationService.save(association, persistedMapSet.get().getId()));
+        mapSetVersionService.saveEntityVersions(mapSetVersion.getId(), associations.stream().map(c -> c.getVersions().get(0)).collect(Collectors.toList()));
+        mapSetVersionService.activate(name.get(), mapSetVersion.getVersion());
+        mapSetVersion.setAssociations(associations);
+        return mapper.toFhir(persistedMapSet.get(), mapSetVersion);
+      }
+      outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("generated")
+          .setDetails(new CodeableConcept().setText("Invalid closure name, concept map does not exist")));
+      return null;
+    }
+
+    if (version.isPresent()) {
+      Optional<MapSet> mapSet = mapSetService.load(name.get());
+      Optional<MapSetVersion> mapSetVersion = mapSetVersionService.getVersion(name.get(), version.get());
+      if (mapSet.isPresent() && mapSetVersion.isPresent()) {
+        MapSetAssociationQueryParams ap = new MapSetAssociationQueryParams().setMapSetVersionId(mapSetVersion.get().getId());
+        ap.all();
+        mapSetVersion.get().setAssociations(mapSetAssociationService.query(ap).getData());
+        return mapper.toFhir(mapSet.get(), mapSetVersion.get());
+      }
+      outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found")
+          .setDetails(new CodeableConcept().setText("Concept Map version not found")));
+      return null;
+    }
+
+
+    Optional<MapSet> persistedMapSet = mapSetService.load(name.get());
+    if (persistedMapSet.isEmpty()) {
+      MapSet mapSet = new MapSet().setId(name.get()).setNames(new LocalizedName(Map.of(Language.en, String.format("Closure Table %s", name.get()))));
+      mapSetService.save(mapSet);
+      MapSetVersion msVersion = new MapSetVersion().setMapSet(mapSet.getId()).setVersion("0").setReleaseDate(LocalDate.now()).setStatus(PublicationStatus.draft)
+          .setDescription(String.format("Closure Table %s Creation", name.get()));
+      mapSetVersionService.save(msVersion);
+      mapSetVersionService.activate(msVersion.getMapSet(), msVersion.getVersion());
+      return mapper.toFhir(mapSet, msVersion);
+    }
+    outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("generated")
+        .setDetails(new CodeableConcept().setText("Closure table is already initialized")));
+    return null;
+
+
+  }
+
+  private List<MapSetAssociation> composeAssociations(Long versionId, List<Coding> concepts) {
+    List<MapSetAssociation> associations = new ArrayList<>();
+
+    MapSetAssociationQueryParams params = new MapSetAssociationQueryParams().setMapSetVersionId(versionId);
+    params.all();
+    List<MapSetAssociation> persistedAssociations = mapSetAssociationService.query(params).getData();
+
+    concepts.forEach(source -> concepts.forEach(target -> {
+      if (source.getCode().equals(target.getCode()) && source.getSystem().equals(target.getSystem())) {
+        return;
+      }
+      OperationOutcome outcome = new OperationOutcome();
+      Parameters res = codeSystemFhirService.subsumes(
+          new Parameters().setParameter(List.of(
+              new Parameter().setName("codingA").setValueCoding(source),
+              new Parameter().setName("codingB").setValueCoding(target))),
+          outcome);
+      if (res != null) {
+        MapSetAssociation a = new MapSetAssociation();
+        a.setSource(findEntityVersion(source));
+        a.setTarget(findEntityVersion(target));
+        a.setAssociationType(res.getParameter().stream().filter(p -> p.getName().equals("outcome")).findFirst().map(Parameter::getValueCode).orElse(null));
+        a.setStatus(PublicationStatus.active);
+        a.setVersions(new ArrayList<>(List.of(new MapSetEntityVersion().setStatus(PublicationStatus.active))));
+        associations.add(a);
+      }
+    }));
+
+    associations.addAll(persistedAssociations);
+    return associations;
+  }
+
+  private CodeSystemEntityVersion findEntityVersion(Coding coding) {
+    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
+    params.setCode(coding.getCode());
+    params.setCodeSystemUri(coding.getSystem());
+    params.setCodeSystemVersion(coding.getVersion());
+    params.setLimit(1);
+    return codeSystemEntityVersionService.query(params).findFirst().orElse(null);
   }
 
   public OperationOutcome error(Map<String, List<String>> params) {

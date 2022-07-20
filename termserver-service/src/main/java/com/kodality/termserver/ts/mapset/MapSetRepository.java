@@ -5,6 +5,8 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.ContactDetail;
 import com.kodality.termserver.mapset.MapSet;
 import com.kodality.termserver.mapset.MapSetQueryParams;
 import com.kodality.termserver.mapset.MapSetQueryParams.Ordering;
@@ -17,6 +19,7 @@ import javax.inject.Singleton;
 public class MapSetRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(MapSet.class, bp -> {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
   });
 
   public void save(MapSet mapSet) {
@@ -24,6 +27,8 @@ public class MapSetRepository extends BaseRepository {
     ssb.property("id", mapSet.getId());
     ssb.property("uri", mapSet.getUri());
     ssb.jsonProperty("names", mapSet.getNames());
+    ssb.property("narrative", mapSet.getNarrative());
+    ssb.jsonProperty("contacts", mapSet.getContacts());
     ssb.property("description", mapSet.getDescription());
 
     SqlBuilder sb = ssb.buildUpsert("terminology.map_set", "id");

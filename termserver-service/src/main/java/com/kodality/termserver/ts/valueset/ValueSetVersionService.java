@@ -103,4 +103,8 @@ public class ValueSetVersionService {
     version.setRuleSet(valueSetVersionRuleSetService.load(version.getId()).orElse(null));
     return version;
   }
+
+  public ValueSetVersion loadLastVersionByUri(String uri) {
+    return repository.loadLastVersionByUri(uri);
+  }
 }

@@ -49,6 +49,14 @@ public class CodeSystemVersionService {
     return repository.load(id);
   }
 
+  public CodeSystemVersion loadLastVersion(String codeSystem, String status) {
+    return repository.loadLastVersion(codeSystem, status);
+  }
+
+  public CodeSystemVersion loadLastVersionByUri(String uri) {
+    return repository.loadLastVersionByUri(uri);
+  }
+
   public QueryResult<CodeSystemVersion> query(CodeSystemVersionQueryParams params) {
     return repository.query(params);
   }

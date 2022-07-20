@@ -130,4 +130,16 @@ public class CodeSystemVersionRepository extends BaseRepository {
     SqlBuilder sb = ssb.buildUpsert("terminology.entity_version_code_system_version_membership", "code_system_entity_version_id", "code_system_version_id", "sys_status");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
+
+  public CodeSystemVersion loadLastVersion(String codeSystem, String status) {
+    String sql = "select * from terminology.code_system_version where sys_status = 'A' and code_system = ? and status = ? order by release_date desc";
+    return getBean(sql, bp, codeSystem, status);
+  }
+
+  public CodeSystemVersion loadLastVersionByUri(String uri) {
+    String sql = "select * from terminology.code_system_version csv where csv.sys_status = 'A' and " +
+        "exists (select 1 from terminology.code_system cs where cs.id = csv.code_system and cs.uri = ? and cs.sys_status = 'A') " +
+        "order by csv.release_date desc";
+    return getBean(sql, bp, uri);
+  }
 }

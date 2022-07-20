@@ -5,6 +5,7 @@ import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.http.HttpResponse;
@@ -57,6 +58,35 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(parameters);
   }
 
+  @Get("/$subsumes{?params*}")
+  public HttpResponse<?> subsumes(Map<String, List<String>> params) {
+    OperationOutcome outcome = new OperationOutcome();
+    Parameters parameters = service.subsumes(params, outcome);
+    if (CollectionUtils.isNotEmpty(outcome.getIssue())) {
+      return HttpResponse.badRequest(outcome);
+    }
+    return HttpResponse.ok(parameters);
+  }
+
+  @Post("/$subsumes")
+  public HttpResponse<?> subsumes(@Body Parameters params) {
+    OperationOutcome outcome = new OperationOutcome();
+    Parameters parameters = service.subsumes(params, outcome);
+    if (CollectionUtils.isNotEmpty(outcome.getIssue())) {
+      return HttpResponse.badRequest(outcome);
+    }
+    return HttpResponse.ok(parameters);
+  }
+
+  @Post("/$find-matches")
+  public HttpResponse<?> findMatches(@Body Parameters params) {
+    OperationOutcome outcome = new OperationOutcome();
+    Parameters parameters = service.findMatches(params, outcome);
+    if (CollectionUtils.isNotEmpty(outcome.getIssue())) {
+      return HttpResponse.badRequest(outcome);
+    }
+    return HttpResponse.ok(parameters);
+  }
   @Post("/$sync")
   public HttpResponse<?> importFhirCodeSystem(@Body Parameters parameters) {
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);
@@ -75,7 +105,7 @@ public class CodeSystemFhirController {
         throw e;
       }
     });
-    Parameters resp =  new Parameters().setParameter(List.of(new Parameter().setName("jobId").setValueDecimal(BigDecimal.valueOf(jobLogResponse.getJobId()))));
+    Parameters resp = new Parameters().setParameter(List.of(new Parameter().setName("jobId").setValueDecimal(BigDecimal.valueOf(jobLogResponse.getJobId()))));
     return HttpResponse.ok(resp);
   }
 }

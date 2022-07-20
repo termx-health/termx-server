@@ -24,6 +24,9 @@ public class ConceptQueryParams extends QueryParams {
   private String codeSystemEntityStatus;
   private Long codeSystemEntityVersionId;
   private String valueSet;
+  private String valueSetUri;
   private String valueSetVersion;
   private Long valueSetVersionId;
+  private String propertyValues; //propertyName|value
+  private String propertyValuesPartial; //propertyName|value
 }

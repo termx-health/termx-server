@@ -4,7 +4,7 @@
 drop table if exists value_set;
 create table value_set (
     id                  text                primary key,
-    uri                 text                not null,
+    uri                 text,
     identifiers         jsonb,
     names               jsonb               not null,
     contacts            jsonb,

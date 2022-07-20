@@ -24,4 +24,5 @@ public class MapSetAssociationQueryParams extends QueryParams {
 
   private String mapSet;
   private String mapSetVersion;
+  private Long mapSetVersionId;
 }

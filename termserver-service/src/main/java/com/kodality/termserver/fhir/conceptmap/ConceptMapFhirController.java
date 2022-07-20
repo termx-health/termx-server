@@ -4,6 +4,8 @@ import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.other.OperationOutcome;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -35,6 +37,16 @@ public class ConceptMapFhirController {
       return HttpResponse.badRequest(service.error(params));
     }
     return HttpResponse.ok(parameters);
+  }
+
+  @Post("/$closure")
+  public HttpResponse<?> closure(@Body Parameters params) {
+    OperationOutcome outcome = new OperationOutcome();
+    ConceptMap conceptMap = service.closure(params, outcome);
+    if (CollectionUtils.isNotEmpty(outcome.getIssue())) {
+      return HttpResponse.badRequest(outcome);
+    }
+    return HttpResponse.ok(conceptMap);
   }
 
   @Post("/$sync")

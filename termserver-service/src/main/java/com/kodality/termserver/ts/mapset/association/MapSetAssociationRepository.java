@@ -13,8 +13,10 @@ import javax.inject.Singleton;
 @Singleton
 public class MapSetAssociationRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(MapSetAssociation.class, bp -> {
-    bp.addColumnProcessor("target_code_system_entity_version_id", "target", (rs, index, propType) -> new CodeSystemEntityVersion().setId(rs.getLong("target_code_system_entity_version_id")));
-    bp.addColumnProcessor("source_code_system_entity_version_id", "source", (rs, index, propType) -> new CodeSystemEntityVersion().setId(rs.getLong("source_code_system_entity_version_id")));
+    bp.addColumnProcessor("target_code_system_entity_version_id", "target",
+        (rs, index, propType) -> new CodeSystemEntityVersion().setId(rs.getLong("target_code_system_entity_version_id")));
+    bp.addColumnProcessor("source_code_system_entity_version_id", "source",
+        (rs, index, propType) -> new CodeSystemEntityVersion().setId(rs.getLong("source_code_system_entity_version_id")));
   });
 
   public void save(MapSetAssociation association) {
@@ -89,6 +91,11 @@ public class MapSetAssociationRepository extends BaseRepository {
       sb.appendIfNotNull("and msv.map_set = ?", params.getMapSet());
       sb.append(")");
     }
+    sb.appendIfNotNull("and exists (select 1 from terminology.map_set_version msv " +
+        "inner join terminology.entity_version_map_set_version_membership evmsvm on evmsvm.map_set_version_id = msv.id and evmsvm.sys_status = 'A' " +
+        "inner join terminology.map_set_entity_version msev on msev.id = evmsvm.map_set_entity_version_id and msev.sys_status = 'A' " +
+        "where msev.map_set_entity_id = msa.id and msv.id = ? and msv.sys_status = 'A')", params.getMapSetVersionId());
+
     return sb;
   }
 }

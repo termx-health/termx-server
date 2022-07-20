@@ -110,4 +110,8 @@ public class MapSetVersionService {
       throw ApiError.TE401.toApiException(Map.of("version", mapSetVersion, "mapSet", mapSet));
     }
   }
+
+  public MapSetVersion loadLastVersion(String mapSet, String status) {
+    return repository.loadLastVersion(mapSet, status);
+  }
 }

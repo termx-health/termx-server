@@ -24,6 +24,6 @@ public class MapSetVersion {
   private LocalDate expirationDate;
   private OffsetDateTime created;
 
-  private List<MapSetEntityVersion> entities;
+  private List<MapSetAssociation> associations;
 
 }

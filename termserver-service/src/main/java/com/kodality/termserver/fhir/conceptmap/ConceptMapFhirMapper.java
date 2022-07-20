@@ -1,13 +1,24 @@
 package com.kodality.termserver.fhir.conceptmap;
 
+import com.kodality.termserver.Language;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.mapset.MapSet;
+import com.kodality.termserver.mapset.MapSetAssociation;
+import com.kodality.termserver.mapset.MapSetVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemService;
 import com.kodality.zmei.fhir.datatypes.Coding;
+import com.kodality.zmei.fhir.datatypes.ContactDetail;
+import com.kodality.zmei.fhir.datatypes.ContactPoint;
+import com.kodality.zmei.fhir.datatypes.Narrative;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroup;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElement;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElementTarget;
 import io.micronaut.core.util.CollectionUtils;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,6 +29,44 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ConceptMapFhirMapper {
   private final CodeSystemService codeSystemService;
+
+  public com.kodality.zmei.fhir.resource.terminology.ConceptMap toFhir(MapSet mapSet, MapSetVersion version) {
+    com.kodality.zmei.fhir.resource.terminology.ConceptMap fhirConceptMap = new com.kodality.zmei.fhir.resource.terminology.ConceptMap();
+    fhirConceptMap.setId(mapSet.getId());
+    fhirConceptMap.setUrl(mapSet.getUri());
+    fhirConceptMap.setName(mapSet.getNames().getOrDefault(Language.en, mapSet.getNames().values().stream().findFirst().orElse(null)));
+    fhirConceptMap.setContact(mapSet.getContacts() == null ? null : mapSet.getContacts().stream()
+        .map(c -> new ContactDetail().setName(c.getName()).setTelecom(c.getTelecoms() == null ? null : c.getTelecoms().stream().map(t ->
+            new ContactPoint().setSystem(t.getSystem()).setValue(t.getValue()).setUse(t.getUse())).collect(Collectors.toList())))
+        .collect(Collectors.toList()));
+    fhirConceptMap.setText(mapSet.getNarrative() == null ? null : new Narrative().setDiv(mapSet.getNarrative()));
+    fhirConceptMap.setDescription(mapSet.getDescription());
+    fhirConceptMap.setVersion(version.getVersion());
+    fhirConceptMap.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
+    fhirConceptMap.setStatus(version.getStatus());
+    fhirConceptMap.setPublisher(version.getSource());
+    fhirConceptMap.setGroup(toFhirGroup(version.getAssociations()));
+
+    return fhirConceptMap;
+  }
+
+  private List<ConceptMapGroup> toFhirGroup(List<MapSetAssociation> associations) {
+    if (associations == null) {
+      return new ArrayList<>();
+    }
+    return associations.stream().map(association -> {
+      ConceptMapGroup group = new ConceptMapGroup();
+      group.setSource(association.getSource().getCodeSystem());
+      group.setTarget(association.getTarget().getCodeSystem());
+      group.setElement(new ArrayList<>(List.of(
+          new ConceptMapGroupElement().setCode(association.getSource().getCode()).setTarget(new ArrayList<>(List.of(
+              new ConceptMapGroupElementTarget().setCode(association.getTarget().getCode()).setEquivalence(association.getAssociationType())
+          )))
+      )));
+      return group;
+    }).collect(Collectors.toList());
+  }
+
 
   public Parameters toFhirParameters(MapSet ms) {
     Parameters parameters = new Parameters();

@@ -1,6 +1,7 @@
 package com.kodality.termserver.mapset;
 
 import com.kodality.commons.model.LocalizedName;
+import com.kodality.termserver.ContactDetail;
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
 import lombok.Getter;
@@ -15,6 +16,8 @@ public class MapSet {
   private String id;
   private String uri;
   private LocalizedName names;
+  private List<ContactDetail> contacts;
+  private String narrative;
   private String description;
 
   private List<MapSetVersion> versions;

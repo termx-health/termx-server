@@ -5,10 +5,13 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 @Singleton
 public class ConceptRepository extends BaseRepository {
@@ -80,11 +83,33 @@ public class ConceptRepository extends BaseRepository {
       sb.appendIfNotNull("and csv.code_system = ?", params.getCodeSystem());
       sb.append(")");
     }
-    sb.appendIfNotNull("and exists( select 1 from terminology.value_set_expand(?) vse where (vse.concept ->> 'id')::bigint = c.id)", params.getValueSetVersionId());
+    sb.appendIfNotNull("and exists( select 1 from terminology.value_set_expand(?) vse where (vse.concept ->> 'id')::bigint = c.id)",
+        params.getValueSetVersionId());
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
         "where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status = ?)", params.getCodeSystemEntityStatus());
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
         "where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
+    if (StringUtils.isNotEmpty(params.getPropertyValues()) || StringUtils.isNotEmpty(params.getPropertyValuesPartial())) {
+      sb.append("and exists (select 1 from terminology.entity_property_value epv " +
+          "inner join terminology.entity_property ep on ep.id = epv.entity_property_id and ep.sys_status = 'A' " +
+          "inner join terminology.code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A' " +
+          "where csev.code_system_entity_id = c.id and epv.sys_status = 'A'");
+      if (StringUtils.isNotEmpty(params.getPropertyValues())) {
+        String[] propertyValues = params.getPropertyValues().split(",");
+        sb.append("and (").append(Arrays.stream(propertyValues).map(pv -> {
+              String[] pipe = PipeUtil.parsePipe(pv);
+              return new SqlBuilder().append("ep.name = ?", pipe[0]).appendIfTrue(pipe.length == 2, "and epv.value @> to_jsonb(?::text)", pipe[1]).toPrettyString();
+            }).collect(Collectors.joining(" and "))).append(")");
+      }
+      if (StringUtils.isNotEmpty(params.getPropertyValuesPartial())) {
+        String[] propertyValues = params.getPropertyValuesPartial().split(",");
+        sb.append("and (").append(Arrays.stream(propertyValues).map(pv -> {
+          String[] pipe = PipeUtil.parsePipe(pv);
+          return new SqlBuilder().append("ep.name = ?", pipe[0]).appendIfTrue(pipe.length == 2, "and epv.value @> to_jsonb(?::text)", pipe[1]).toPrettyString();
+        }).collect(Collectors.joining(" or "))).append(")");
+      }
+      sb.append(")");
+    }
     return sb;
   }
 }

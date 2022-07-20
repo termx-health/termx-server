@@ -5,6 +5,7 @@ import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -41,11 +42,22 @@ public class ValueSetFhirController {
 
   @Get("/$expand{?params*}")
   public HttpResponse<?> expand(Map<String, List<String>> params) {
-    ValueSet valueSet = service.expand(params);
+    OperationOutcome outcome = new OperationOutcome();
+    ValueSet valueSet = service.expand(params, outcome);
     if (valueSet == null) {
-      HttpResponse.badRequest();
+      return HttpResponse.badRequest(outcome);
     }
     return HttpResponse.ok(valueSet);
+  }
+
+  @Get("/$validate-code{?params*}")
+  public HttpResponse<?> validateCode(Map<String, List<String>> params) {
+    OperationOutcome outcome = new OperationOutcome();
+    Parameters parameters = service.validateCode(params, outcome);
+    if (parameters == null) {
+      return HttpResponse.badRequest(outcome);
+    }
+    return HttpResponse.ok(parameters);
   }
 
   @Post("/$sync")

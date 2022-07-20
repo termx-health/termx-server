@@ -1,10 +1,12 @@
 package com.kodality.termserver.ts.valueset.concept;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRepository;
+import com.kodality.termserver.valueset.ValueSetVersionConceptQueryParams;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionConcept;
@@ -86,5 +88,16 @@ public class ValueSetVersionConceptService {
           .collect(Collectors.toList()));
     }
     return c;
+  }
+
+  public QueryResult<ValueSetVersionConcept> query(ValueSetVersionConceptQueryParams params) {
+    if (params.getValueSetVersionId() == null) {
+      return QueryResult.empty();
+    }
+    QueryResult<ValueSetVersionConcept> concepts = repository.query(params);
+    if (params.isDecorated()) {
+      concepts.getData().forEach(this::decorate);
+    }
+    return concepts;
   }
 }

@@ -42,7 +42,6 @@ public class CodeSystemService {
   }
 
   private CodeSystem decorate(CodeSystem codeSystem) {
-    decorateConcepts(codeSystem, null, null);
     decorateVersions(codeSystem, null, null, null);
     decorateProperties(codeSystem);
     return codeSystem;
