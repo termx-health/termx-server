@@ -25,23 +25,16 @@ public class FileImporterService {
 
   public FileAnalysisResponse analyze(FileAnalysisRequest request) {
     byte[] file = client.GET(request.getLink()).body();
-    return analyze(request, file);
-  }
 
-  public FileAnalysisResponse analyze(FileAnalysisRequest request, byte[] file) {
     FileProcessor fp = fileProcessors.get(request.getTemplate());
     return fp.analyze(request.getType(), file);
   }
 
-
   public void process(FileProcessingRequest request) {
     byte[] file = client.GET(request.getLink()).body();
-    process(request, file);
-  }
-
-  public void process(FileProcessingRequest request, byte[] file) {
     FileProcessor fp = fileProcessors.get(request.getTemplate());
     FileProcessingResponse result = fp.process(request.getType(), file, request.getProperties());
+
 
     // todo(marina): save result
   }

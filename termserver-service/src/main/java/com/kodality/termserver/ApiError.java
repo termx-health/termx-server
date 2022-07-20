@@ -29,6 +29,7 @@ public enum ApiError {
   TE601("TE601", "Cannot convert units of different kinds."),
   TE602("TE602", "Could not find common base unit."),
 
+  TE701("TE701", "File has invalid encoding. UTF-8 is required."),
   ;
 
 

@@ -9,13 +9,13 @@ import lombok.Setter;
 
 @Getter
 public class FileProcessingResponse {
-  private final List<FileProcessingResponseCodeSystem> codeSystems;
+  private final List<FileProcessingCodeSystem> codeSystems;
 
   public FileProcessingResponse(List<Map<String, FileProcessingResponseProperty>> entities) {
-    this.codeSystems = entities.stream().map(FileProcessingResponseCodeSystem::new).collect(Collectors.toList());
+    this.codeSystems = entities.stream().map(FileProcessingCodeSystem::new).collect(Collectors.toList());
   }
 
-  public record FileProcessingResponseCodeSystem(Map<String, FileProcessingResponseProperty> entities) {
+  public record FileProcessingCodeSystem(Map<String, FileProcessingResponseProperty> entities) {
     public static final String IDENTIFIER = "identifier";
     public static final String ALIAS = "alias";
     public static final String DISPLAY = "display";
@@ -27,6 +27,10 @@ public class FileProcessingResponse {
     public static final String STATUS = "status";
     public static final String DESCRIPTION = "description";
     public static final String MODIFIED_AT = "modifiedAt";
+
+    public FileProcessingResponseProperty get(String propName) {
+      return entities.get(propName);
+    }
 
     public FileProcessingResponseProperty getIdentifier() {
       return entities.get(IDENTIFIER);

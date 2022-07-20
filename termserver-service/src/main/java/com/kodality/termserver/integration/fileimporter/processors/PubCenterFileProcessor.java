@@ -1,11 +1,16 @@
 package com.kodality.termserver.integration.fileimporter.processors;
 
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisResponse;
 import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisResponse.FileAnalyzeProperty;
 import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest.FileProcessProperty;
 import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse;
 import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseProperty;
 import com.univocity.parsers.common.processor.RowListProcessor;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -19,17 +24,17 @@ import java.util.stream.IntStream;
 import javax.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
-import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.ALIAS;
-import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.DESCRIPTION;
-import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.DESIGNATION;
-import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.DISPLAY;
-import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.IDENTIFIER;
-import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.LEVEL;
-import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.MODIFIED_AT;
-import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.PARENT;
-import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.STATUS;
-import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.VALID_FROM;
-import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.VALID_TO;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.ALIAS;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.DESCRIPTION;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.DESIGNATION;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.DISPLAY;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.IDENTIFIER;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.LEVEL;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.MODIFIED_AT;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.PARENT;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.STATUS;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.VALID_FROM;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.VALID_TO;
 
 @Singleton
 public class PubCenterFileProcessor extends FileProcessor {
@@ -42,6 +47,10 @@ public class PubCenterFileProcessor extends FileProcessor {
 
   @Override
   public FileAnalysisResponse analyze(String type, byte[] file) {
+    if (!isUTF8File(file)) {
+      throw ApiError.TE701.toApiException();
+    }
+
     RowListProcessor parser = getParser(type, file);
     List<String> headers = Arrays.asList(parser.getHeaders());
     List<String[]> rows = parser.getRows();
@@ -63,6 +72,10 @@ public class PubCenterFileProcessor extends FileProcessor {
 
   @Override
   public FileProcessingResponse process(String type, byte[] file, List<FileProcessProperty> importProperties) {
+    if (!isUTF8File(file)) {
+      throw ApiError.TE701.toApiException();
+    }
+
     RowListProcessor parser = getParser(type, file);
     List<String> headers = Arrays.asList(parser.getHeaders());
     List<String[]> rows = parser.getRows();
@@ -131,7 +144,7 @@ public class PubCenterFileProcessor extends FileProcessor {
     props.put("viimane_muudatus_kpv", MODIFIED_AT);
     props.put("staatus", STATUS);
     props.put("selgitus", DESCRIPTION);
-    return props.get(prop.toLowerCase());
+    return props.getOrDefault(prop.toLowerCase(), prop);
   }
 
   private String getPropertyType(String val) {
@@ -184,6 +197,17 @@ public class PubCenterFileProcessor extends FileProcessor {
       return dateFormat.parse(date);
     } catch (ParseException ignored) {
       return null;
+    }
+  }
+
+  private boolean isUTF8File(byte[] file) {
+    CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
+    ByteBuffer buf = ByteBuffer.wrap(file);
+    try {
+      decoder.decode(buf);
+      return true;
+    } catch (CharacterCodingException e) {
+      return false;
     }
   }
 }

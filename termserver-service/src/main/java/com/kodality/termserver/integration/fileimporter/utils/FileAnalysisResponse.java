@@ -12,6 +12,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class FileAnalysisResponse {
   private List<FileAnalyzeProperty> properties;
+  private List<String> errors;
 
   @Getter
   @Setter

@@ -36,13 +36,13 @@ public abstract class FileProcessor {
     return processor;
   }
 
-  protected RowListProcessor tsvProcessor(byte[] csv) {
+  protected RowListProcessor tsvProcessor(byte[] tsv) {
     RowListProcessor processor = new RowListProcessor();
     TsvParserSettings settings = new TsvParserSettings();
     settings.setLineSeparatorDetectionEnabled(true);
     settings.setProcessor(processor);
     settings.setHeaderExtractionEnabled(true);
-    new TsvParser(settings).parse(new ByteArrayInputStream(csv));
+    new TsvParser(settings).parse(new ByteArrayInputStream(tsv));
     return processor;
   }
 }
