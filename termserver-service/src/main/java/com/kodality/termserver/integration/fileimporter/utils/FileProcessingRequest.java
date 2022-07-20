@@ -13,13 +13,13 @@ public class FileProcessingRequest {
   private String link;
   private String type; // csv; tsv
   private String template;
-  private List<FileProcessProperty> properties;
+  private List<FileProcessingProperty> properties;
 
   private boolean generateValueSet;
 
   @Getter
   @Setter
-  public static class FileProcessCodeSystem {
+  public static class FileProcessingCodeSystem {
     private String id;
     private String uri;
     private LocalizedName names;
@@ -28,7 +28,7 @@ public class FileProcessingRequest {
 
   @Getter
   @Setter
-  public static class FileProcessCodeSystemVersion {
+  public static class FileProcessingCodeSystemVersion {
     private String version;
     private String status;
     private String releaseDate;
@@ -36,7 +36,7 @@ public class FileProcessingRequest {
 
   @Getter
   @Setter
-  public static class FileProcessProperty {
+  public static class FileProcessingProperty {
     private String columnName;
     private String mappedProperty;
     private String propertyType;

@@ -1,7 +1,7 @@
 package com.kodality.termserver.integration.fileimporter.processors;
 
 import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisResponse;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest.FileProcessProperty;
+import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest.FileProcessingProperty;
 import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import com.univocity.parsers.csv.CsvParser;
@@ -22,7 +22,7 @@ public abstract class FileProcessor {
 
   public abstract FileAnalysisResponse analyze(String type, byte[] file);
 
-  public abstract FileProcessingResponse process(String type, byte[] file, List<FileProcessProperty> importProperties);
+  public abstract FileProcessingResponse process(String type, byte[] file, List<FileProcessingProperty> importProperties);
 
 
   protected RowListProcessor csvProcessor(byte[] csv) {

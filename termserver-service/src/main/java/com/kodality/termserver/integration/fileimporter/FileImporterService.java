@@ -35,7 +35,6 @@ public class FileImporterService {
     FileProcessor fp = fileProcessors.get(request.getTemplate());
     FileProcessingResponse result = fp.process(request.getType(), file, request.getProperties());
 
-
     // todo(marina): save result
   }
 }

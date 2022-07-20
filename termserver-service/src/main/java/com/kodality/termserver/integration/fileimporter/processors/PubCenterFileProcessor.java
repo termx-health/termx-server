@@ -2,8 +2,8 @@ package com.kodality.termserver.integration.fileimporter.processors;
 
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisResponse;
-import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisResponse.FileAnalyzeProperty;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest.FileProcessProperty;
+import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisResponse.FileAnalysisProperty;
+import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest.FileProcessingProperty;
 import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse;
 import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseProperty;
 import com.univocity.parsers.common.processor.RowListProcessor;
@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
@@ -35,6 +34,7 @@ import static com.kodality.termserver.integration.fileimporter.utils.FileProcess
 import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.STATUS;
 import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.VALID_FROM;
 import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingCodeSystem.VALID_TO;
+import static java.util.stream.IntStream.range;
 
 @Singleton
 public class PubCenterFileProcessor extends FileProcessor {
@@ -55,15 +55,14 @@ public class PubCenterFileProcessor extends FileProcessor {
     List<String> headers = Arrays.asList(parser.getHeaders());
     List<String[]> rows = parser.getRows();
 
-    Map<String, List<String>> colValues = new HashMap<>();
-    IntStream.range(0, headers.size()).forEach(i -> {
+    Map<String, List<String>> columnValues = new HashMap<>();
+    range(0, headers.size()).forEach(i -> {
       List<String> vals = rows.stream().map(r -> r[i]).filter(Objects::nonNull).toList();
-      colValues.put(headers.get(i), vals);
+      columnValues.put(headers.get(i), vals);
     });
 
-    List<FileAnalyzeProperty> properties = headers.stream()
-        .map(k -> createHeaderProp(colValues, k))
-        .filter(Objects::nonNull)
+    List<FileAnalysisProperty> properties = headers.stream()
+        .map(k -> createHeaderProp(k, columnValues))
         .collect(Collectors.toList());
 
     return new FileAnalysisResponse().setProperties(properties);
@@ -71,7 +70,7 @@ public class PubCenterFileProcessor extends FileProcessor {
 
 
   @Override
-  public FileProcessingResponse process(String type, byte[] file, List<FileProcessProperty> importProperties) {
+  public FileProcessingResponse process(String type, byte[] file, List<FileProcessingProperty> importProperties) {
     if (!isUTF8File(file)) {
       throw ApiError.TE701.toApiException();
     }
@@ -83,7 +82,7 @@ public class PubCenterFileProcessor extends FileProcessor {
 
     var entities = rows.stream().map(r -> {
       Map<String, FileProcessingResponseProperty> cs = new HashMap<>();
-      for (FileProcessProperty prop : importProperties) {
+      for (FileProcessingProperty prop : importProperties) {
         int idx = headers.indexOf(prop.getColumnName());
         if (r[idx] == null) {
           continue;
@@ -112,18 +111,14 @@ public class PubCenterFileProcessor extends FileProcessor {
   }
 
 
-  private FileAnalyzeProperty createHeaderProp(Map<String, List<String>> headerCells, String col) {
-    if (getMappedProperty(col) == null) {
-      return null;
-    }
-
-    String firstHeaderVal = headerCells.get(col).isEmpty() ? null : headerCells.get(col).get(0);
-    FileAnalyzeProperty prop = new FileAnalyzeProperty();
+  private FileAnalysisProperty createHeaderProp(String col, Map<String, List<String>> columnValues) {
+    String firstColValue = columnValues.get(col).isEmpty() ? null : columnValues.get(col).get(0);
+    FileAnalysisProperty prop = new FileAnalysisProperty();
     prop.setColumnName(col);
     prop.setMappedProperty(getMappedProperty(col));
-    prop.setPropertyType(getPropertyType(firstHeaderVal));
-    prop.setTypeFormat(getDateFormat(firstHeaderVal));
-    prop.setHasValues(firstHeaderVal != null);
+    prop.setPropertyType(getPropertyType(firstColValue));
+    prop.setTypeFormat(getDateFormat(firstColValue));
+    prop.setHasValues(firstColValue != null);
     return prop;
   }
 

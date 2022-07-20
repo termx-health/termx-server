@@ -17,6 +17,7 @@ public class FileImporterController {
 
   @Post(value = "/analyze")
   public HttpResponse<?> analyze(@Body FileAnalysisRequest request) {
+    // todo (roman): add file upload
     return HttpResponse.ok(fileImporterService.analyze(request));
   }
 
