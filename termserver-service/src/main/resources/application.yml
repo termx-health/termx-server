@@ -13,6 +13,11 @@ micronaut:
       swagger-ui:
         paths: classpath:META-INF/swagger/views/swagger-ui
         mapping: /swagger-ui/**
+endpoints:
+  health:
+    enabled: true
+    details-visible: authenticated
+    sensitive: false
 datasources:
   default:
     url: ${DB_URL:`jdbc:postgresql://localhost:5432/termserver`}
