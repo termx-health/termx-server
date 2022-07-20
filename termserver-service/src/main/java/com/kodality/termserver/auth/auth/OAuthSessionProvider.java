@@ -7,6 +7,8 @@ import com.auth0.jwk.JwkProvider;
 import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.kodality.commons.cache.CacheManager;
 import com.kodality.commons.client.HttpClient;
@@ -69,8 +71,9 @@ public class OAuthSessionProvider extends SessionProvider {
       }
       String payload = new String(Base64.getUrlDecoder().decode(jwt.getPayload()));
       return JsonUtil.fromJson(payload, SessionInfo.class);
-    } catch (JwkException e) {
-      throw new RuntimeException(e);
+    } catch (SignatureVerificationException | JwkException | JWTDecodeException e) {
+      log.debug("", e);
+      return null;
     }
   }
 
