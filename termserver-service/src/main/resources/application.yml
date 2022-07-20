@@ -18,6 +18,12 @@ endpoints:
     enabled: true
     details-visible: authenticated
     sensitive: false
+  info:
+    enabled: true
+    sensitive: false
+info:
+  version: ${APP_VERSION:dev}
+
 datasources:
   default:
     url: ${DB_URL:`jdbc:postgresql://localhost:5432/termserver`}

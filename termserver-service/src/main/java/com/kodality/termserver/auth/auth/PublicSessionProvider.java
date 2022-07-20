@@ -9,14 +9,14 @@ import javax.inject.Singleton;
 
 @Singleton
 public class PublicSessionProvider extends SessionProvider {
-  public static final List<String> UNSECURED = Arrays.asList("/health");
+  private static final List<String> DEFAULT_PUBLIC = Arrays.asList("/health", "/info");
 
   @Value("${auth.public.endpoints:[]}")
   private List<String> publicEndpoints;
 
   @Override
   public SessionInfo authenticate(HttpRequest<?> request) {
-    if (Stream.concat(UNSECURED.stream(), publicEndpoints.stream()).anyMatch(prefix -> startsWith(request.getPath(), prefix))) {
+    if (Stream.concat(DEFAULT_PUBLIC.stream(), publicEndpoints.stream()).anyMatch(prefix -> startsWith(request.getPath(), prefix))) {
       return new SessionInfo();
     }
     return null;
