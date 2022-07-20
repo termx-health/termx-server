@@ -16,7 +16,7 @@ micronaut:
 endpoints:
   health:
     enabled: true
-    details-visible: authenticated
+    details-visible: anonymous
     sensitive: false
   info:
     enabled: true
