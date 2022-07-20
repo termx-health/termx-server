@@ -12,10 +12,27 @@ import lombok.Setter;
 public class FileProcessingRequest {
   private String link;
   private String type; // csv; tsv
-  private String template;
+  private boolean generateValueSet;
   private List<FileProcessingProperty> properties;
 
-  private boolean generateValueSet;
+  private FileProcessingCodeSystem codeSystem;
+  private FileProcessingCodeSystemVersion version;
+
+
+  @Getter
+  @Setter
+  public static class FileProcessingProperty {
+    private String columnName;
+    private String propertyName;
+    private String propertyType;
+    private String propertyTypeFormat;
+    private boolean preferred;
+    private String lang;
+
+    public String getName() {
+      return propertyName != null ? propertyName : columnName;
+    }
+  }
 
   @Getter
   @Setter
@@ -32,15 +49,6 @@ public class FileProcessingRequest {
     private String version;
     private String status;
     private String releaseDate;
-  }
 
-  @Getter
-  @Setter
-  public static class FileProcessingProperty {
-    private String columnName;
-    private String mappedProperty;
-    private String propertyType;
-    private String typeFormat;
-    private String lang;
   }
 }

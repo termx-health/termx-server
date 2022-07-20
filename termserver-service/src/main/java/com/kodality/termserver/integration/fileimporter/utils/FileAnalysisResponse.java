@@ -12,15 +12,13 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class FileAnalysisResponse {
   private List<FileAnalysisProperty> properties;
-  private List<String> errors;
 
   @Getter
   @Setter
   public static class FileAnalysisProperty {
     private String columnName;
-    private String mappedProperty;
-    private String propertyType;
-    private String typeFormat;
+    private String columnType;
+    private String columnTypeFormat;
     private boolean hasValues;
   }
 }

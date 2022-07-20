@@ -10,5 +10,4 @@ import lombok.Setter;
 public class FileAnalysisRequest {
   private String link;
   private String type; // csv; tsv
-  private String template;
 }
