@@ -5,7 +5,6 @@ micronaut:
     port: 8200
     max-request-size: 104857600
     thread-selection: auto
-    context-path: /api
   router:
     static-resources:
       swagger:

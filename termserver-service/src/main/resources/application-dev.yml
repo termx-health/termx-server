@@ -1,6 +1,5 @@
 micronaut:
   server:
-    context-path: /
     cors:
       enabled: true
 auth:
