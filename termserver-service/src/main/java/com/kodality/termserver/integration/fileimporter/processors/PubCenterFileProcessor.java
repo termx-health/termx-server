@@ -19,6 +19,18 @@ import java.util.stream.IntStream;
 import javax.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.ALIAS;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.DESCRIPTION;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.DESIGNATION;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.DISPLAY;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.IDENTIFIER;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.LEVEL;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.MODIFIED_AT;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.PARENT;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.STATUS;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.VALID_FROM;
+import static com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseCodeSystem.VALID_TO;
+
 @Singleton
 public class PubCenterFileProcessor extends FileProcessor {
   private static final List<String> DATE_FORMATS = List.of("dd.MM.yyyy", "MM/dd/yyyy", "yyyy-MM-dd", "dd.MM.yy");
@@ -69,7 +81,6 @@ public class PubCenterFileProcessor extends FileProcessor {
 
         FileProcessingResponseProperty rp = new FileProcessingResponseProperty();
         rp.setColumnName(prop.getColumnName());
-        rp.setMappedProperty(prop.getMappedProperty());
         rp.setPropertyType(prop.getPropertyType());
         rp.setTypeFormat(prop.getTypeFormat());
         rp.setLang(prop.getLang());
@@ -80,7 +91,7 @@ public class PubCenterFileProcessor extends FileProcessor {
       return cs;
     }).filter(cs -> !cs.isEmpty()).toList();
 
-    return new FileProcessingResponse().setEntities(entities);
+    return new FileProcessingResponse(entities);
   }
 
   private RowListProcessor getParser(String type, byte[] file) {
@@ -128,13 +139,13 @@ public class PubCenterFileProcessor extends FileProcessor {
       return null;
     }
     if (List.of("0", "1", "false", "true").contains(val)) {
-      return "boolean";
+      return BOOLEAN;
     } else if (StringUtils.isNumeric(val)) {
-      return "integer";
+      return INTEGER;
     } else if (getDateFormat(val) != null) {
-      return "date";
+      return DATE;
     } else {
-      return "text";
+      return TEXT;
     }
   }
 
@@ -159,9 +170,9 @@ public class PubCenterFileProcessor extends FileProcessor {
       return null;
     }
     return switch (type) {
-      case "boolean" -> List.of("1", "true").contains(val);
-      case "integer" -> Integer.valueOf(val);
-      case "date" -> transformDate(val, dateFormat);
+      case BOOLEAN -> List.of("1", "true").contains(val);
+      case INTEGER -> Integer.valueOf(val);
+      case DATE -> transformDate(val, dateFormat);
       default -> val;
     };
   }

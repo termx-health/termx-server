@@ -1,13 +1,11 @@
 package com.kodality.termserver.integration.fileimporter;
 
-import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.common.BinaryHttpClient;
 import com.kodality.termserver.integration.fileimporter.processors.FileProcessor;
 import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisRequest;
 import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisResponse;
 import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest;
 import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseProperty;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -46,9 +44,5 @@ public class FileImporterService {
     FileProcessingResponse result = fp.process(request.getType(), file, request.getProperties());
 
     // todo(marina): save result
-
-    for (Map<String, FileProcessingResponseProperty> entity : result.getEntities()) {
-      System.out.println(JsonUtil.toJson(entity));
-    }
   }
 }

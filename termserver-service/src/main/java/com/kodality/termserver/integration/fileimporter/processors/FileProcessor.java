@@ -12,17 +12,10 @@ import java.io.ByteArrayInputStream;
 import java.util.List;
 
 public abstract class FileProcessor {
-  public static final String IDENTIFIER = "identifier";
-  public static final String ALIAS = "alias";
-  public static final String DISPLAY = "display";
-  public static final String DESIGNATION = "designation";
-  public static final String PARENT = "parent";
-  public static final String LEVEL = "level";
-  public static final String VALID_FROM = "validFrom";
-  public static final String VALID_TO = "validTo";
-  public static final String STATUS = "status";
-  public static final String DESCRIPTION = "description";
-  public static final String MODIFIED_AT = "modifiedAt";
+  public static final String DATE = "date";
+  public static final String INTEGER = "integer";
+  public static final String TEXT = "text";
+  public static final String BOOLEAN = "boolean";
 
 
   public abstract String getType();
