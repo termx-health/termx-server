@@ -26,7 +26,7 @@ public class MapSetFileImportService {
   );
 
   public void process(MapSetFileImportRequest req, byte[] csvFile) {
-    List<MapSetFileImportRow> row = parseRows(csvFile);
+    List<MapSetFileImportRow> rows = parseRows(csvFile);
     // todo (marina): import entities
   }
 
@@ -44,11 +44,11 @@ public class MapSetFileImportService {
       MapSetFileImportRow row = new MapSetFileImportRow();
       row.setSourceCodeSystem(r[headers.indexOf("sourceCodeSystem")]);
       row.setSourceVersion(r[headers.indexOf("sourceVersion")]);
-      row.setSourceCode(r[headers.indexOf("sourceCodeSystem")]);
+      row.setSourceCode(r[headers.indexOf("sourceCode")]);
 
       row.setTargetCodeSystem(r[headers.indexOf("targetCodeSystem")]);
       row.setTargetVersion(r[headers.indexOf("targetVersion")]);
-      row.setTargetCode(r[headers.indexOf("targetCodeSystem")]);
+      row.setTargetCode(r[headers.indexOf("targetCode")]);
 
       row.setEquivalence(r[headers.indexOf("equivalence")]);
       row.setComment(r[headers.indexOf("comment")]);
