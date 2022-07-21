@@ -2,6 +2,7 @@ package com.kodality.termserver.integration.fileimporter.utils;
 
 import com.kodality.commons.model.LocalizedName;
 import io.micronaut.core.annotation.Introspected;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
@@ -48,7 +49,7 @@ public class FileProcessingRequest {
   public static class FileProcessingCodeSystemVersion {
     private String version;
     private String status;
-    private String releaseDate;
+    private LocalDate releaseDate;
 
   }
 }
