@@ -19,6 +19,10 @@ public class EntityPropertyService {
     return Optional.ofNullable(repository.load(id));
   }
 
+  public Optional<EntityProperty> load(String name, String codeSystem) {
+    return Optional.ofNullable(repository.load(name, codeSystem));
+  }
+
   public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {
     return repository.query(params);
   }
