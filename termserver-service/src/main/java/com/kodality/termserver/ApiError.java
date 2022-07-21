@@ -36,6 +36,7 @@ public enum ApiError {
   TE705("TE705", "The version of value set is final and can not be changed."),
   TE706("TE706", "Property type of property {{propertyName}} is not provided"),
   TE707("TE707", "Multiple preferred concept-code properties are selected. Please select one!"),
+  TE708("TE708", "CSV file is missing required headers: {{headers}}"),
   ;
 
 
