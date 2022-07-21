@@ -20,6 +20,6 @@ timeFactor = 1 ## test duration in minutes
 userFactor = 700 ## number of scenarios to run, split evenly during `timeFactor` 
 terminologyApi = https://kefhir.kodality.dev/fhir
 accessToken = OAuth access token with admin privileges (for authenticated requests)
-
+```
 ## Running load tests
 `./gradlew clean gatlingRun`
