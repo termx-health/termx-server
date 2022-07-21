@@ -1,4 +1,4 @@
-package com.kodality.termserver.integration.fileimporter;
+package com.kodality.termserver.integration.fileimporter.codesystem;
 
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
@@ -7,14 +7,14 @@ import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.common.BinaryHttpClient;
-import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisRequest;
-import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisResponse;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingMapper;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest.FileProcessingCodeSystem;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest.FileProcessingCodeSystemVersion;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessor;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisRequest;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisResponse;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingMapper;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingRequest;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystem;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystemVersion;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingResponse;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessor;
 import com.kodality.termserver.ts.codesystem.CodeSystemService;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
@@ -33,7 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
 @RequiredArgsConstructor
-public class FileImporterService {
+public class CodeSystemFileImportService {
   private final ConceptService conceptService;
   private final ValueSetService valueSetService;
   private final CodeSystemService codeSystemService;

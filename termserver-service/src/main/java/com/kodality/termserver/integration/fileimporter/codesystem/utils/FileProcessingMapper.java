@@ -1,4 +1,4 @@
-package com.kodality.termserver.integration.fileimporter.utils;
+package com.kodality.termserver.integration.fileimporter.codesystem.utils;
 
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.CaseSignificance;
@@ -11,10 +11,10 @@ import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest.FileProcessingCodeSystem;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest.FileProcessingCodeSystemVersion;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingEntityPropertyValue;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseProperty;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystem;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystemVersion;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingResponse.FileProcessingEntityPropertyValue;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingResponse.FileProcessingResponseProperty;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet;

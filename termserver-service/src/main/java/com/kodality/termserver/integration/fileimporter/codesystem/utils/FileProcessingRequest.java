@@ -1,4 +1,4 @@
-package com.kodality.termserver.integration.fileimporter.utils;
+package com.kodality.termserver.integration.fileimporter.codesystem.utils;
 
 import com.kodality.commons.model.LocalizedName;
 import io.micronaut.core.annotation.Introspected;
