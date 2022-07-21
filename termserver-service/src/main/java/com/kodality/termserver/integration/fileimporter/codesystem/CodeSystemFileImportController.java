@@ -1,7 +1,7 @@
-package com.kodality.termserver.integration.fileimporter;
+package com.kodality.termserver.integration.fileimporter.codesystem;
 
-import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisRequest;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisRequest;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -10,10 +10,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Controller("/file-importer")
+@Controller("/file-importer/code-system")
 @RequiredArgsConstructor
-public class FileImporterController {
-  private final FileImporterService fileImporterService;
+public class CodeSystemFileImportController {
+  private final CodeSystemFileImportService fileImporterService;
 
   @Post(value = "/analyze")
   public HttpResponse<?> analyze(@Body FileAnalysisRequest request) {
