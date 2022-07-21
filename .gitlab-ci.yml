@@ -17,9 +17,13 @@ build:
   stage: build
   script:
     - ./gradlew clean assemble
+  except:
+    - main
+  only:
+    - branches
 
-release:
-  stage: release
+build_docker:
+  stage: build
   script:
     - ./gradlew clean assemble
     - cd termserver-service
@@ -27,3 +31,17 @@ release:
     - docker push docker.kodality.com/terminology-server:latest
   only:
     - main
+
+release:
+  stage: release
+  script:
+    - export APP_VERSION="$CI_COMMIT_REF_NAME"
+
+    - ./gradlew clean assemble
+
+    - docker build -t docker.kodality.com/terminology-server:$APP_VERSION --build-arg APP_VERSION=$APP_VERSION .
+    - docker push docker.kodality.com/terminology-server:$APP_VERSION
+  only:
+    - /^\d*\.\d*\.\d*$/
+  except:
+    - branches
