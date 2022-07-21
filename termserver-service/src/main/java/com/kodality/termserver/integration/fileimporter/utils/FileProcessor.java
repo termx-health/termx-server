@@ -77,10 +77,15 @@ public class FileProcessor {
       throw ApiError.TE706.toApiException(Map.of("propertyName", p.getName()));
     });
 
+    List<FileProcessingProperty> identifierProperties = importProperties.stream()
+        .filter(p -> IDENTIFIER_PROPERTY.equals(p.getName()))
+        .sorted((o1, o2) -> Boolean.compare(o2.isPreferred(), o1.isPreferred()))
+        .toList();
+
+
     RowListProcessor parser = getParser(type, file);
     List<String> headers = Arrays.asList(parser.getHeaders());
     List<String[]> rows = parser.getRows();
-
 
     var entities = rows.stream().map(r -> {
       Map<String, List<FileProcessingEntityPropertyValue>> entity = new HashMap<>();
@@ -96,10 +101,7 @@ public class FileProcessor {
         entity.put(ep.getPropertyName(), propertyValues);
       }
 
-      List<FileProcessingProperty> identifierProperties = importProperties.stream()
-          .filter(p -> IDENTIFIER_PROPERTY.equals(p.getName()))
-          .sorted((o1, o2) -> Boolean.compare(o2.isPreferred(), o1.isPreferred()))
-          .toList();
+
       for (FileProcessingProperty prop : identifierProperties) {
         int idx = headers.indexOf(prop.getColumnName());
         if (r[idx] != null) {
@@ -240,7 +242,9 @@ public class FileProcessor {
   private RowListProcessor csvProcessor(byte[] csv) {
     RowListProcessor processor = new RowListProcessor();
     CsvParserSettings settings = new CsvParserSettings();
-    settings.setDelimiterDetectionEnabled(true);
+//    settings.setDelimiterDetectionEnabled(true);
+    settings.getFormat().setDelimiter(';');
+    settings.getFormat().setQuote('"');
     settings.setLineSeparatorDetectionEnabled(true);
     settings.setProcessor(processor);
     settings.setHeaderExtractionEnabled(true);
