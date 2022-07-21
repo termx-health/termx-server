@@ -15,6 +15,11 @@ import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequ
 import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest.FileProcessingCodeSystemVersion;
 import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingEntityPropertyValue;
 import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseProperty;
+import com.kodality.termserver.valueset.ValueSet;
+import com.kodality.termserver.valueset.ValueSetVersion;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import com.kodality.termserver.valueset.ValueSetVersionRuleType;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -118,5 +123,28 @@ public class FileProcessingMapper {
             return designation;
           });
         }).collect(Collectors.toList());
+  }
+
+  public ValueSet toValueSet(CodeSystem codeSystem, ValueSet existingValueSet) {
+    ValueSet valueSet = existingValueSet == null ? new ValueSet() : existingValueSet;
+    valueSet.setId(codeSystem.getId());
+    valueSet.setUri(codeSystem.getUri() == null ? valueSet.getUri() : codeSystem.getUri());
+    valueSet.setNames(codeSystem.getNames() == null ? valueSet.getNames() : codeSystem.getNames());
+    return valueSet;
+  }
+
+  public ValueSetVersion toValueSetVersion(FileProcessingCodeSystemVersion fpVersion, String valueSet, CodeSystemVersion codeSystemVersion) {
+    ValueSetVersion version = new ValueSetVersion();
+    version.setValueSet(valueSet);
+    version.setVersion(fpVersion.getVersion());
+    version.setStatus(PublicationStatus.draft);
+    version.setReleaseDate(fpVersion.getReleaseDate());
+    version.setRuleSet(new ValueSetVersionRuleSet().setRules(List.of(
+        new ValueSetVersionRule()
+            .setType(ValueSetVersionRuleType.include)
+            .setCodeSystem(codeSystemVersion.getCodeSystem())
+            .setCodeSystemVersionId(codeSystemVersion.getId())
+    )));
+    return version;
   }
 }

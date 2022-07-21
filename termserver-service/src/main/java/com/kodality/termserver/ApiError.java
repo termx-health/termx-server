@@ -32,6 +32,8 @@ public enum ApiError {
   TE701("TE701", "File has invalid encoding. UTF-8 is required."),
   TE702("TE702", "Property 'concept-code' not provided."),
   TE703("TE703", "Property does not exist."),
+  TE704("TE704", "The version of code system is final and can not be changed."),
+  TE705("TE705", "The version of value set is final and can not be changed."),
   ;
 
 

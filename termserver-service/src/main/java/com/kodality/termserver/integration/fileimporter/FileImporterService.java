@@ -1,5 +1,6 @@
 package com.kodality.termserver.integration.fileimporter;
 
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
@@ -19,6 +20,11 @@ import com.kodality.termserver.ts.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
+import com.kodality.termserver.ts.valueset.ValueSetService;
+import com.kodality.termserver.ts.valueset.ValueSetVersionService;
+import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
+import com.kodality.termserver.valueset.ValueSet;
+import com.kodality.termserver.valueset.ValueSetVersion;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Singleton;
@@ -29,9 +35,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class FileImporterService {
   private final ConceptService conceptService;
+  private final ValueSetService valueSetService;
   private final CodeSystemService codeSystemService;
   private final EntityPropertyService entityPropertyService;
+  private final ValueSetVersionService valueSetVersionService;
   private final CodeSystemVersionService codeSystemVersionService;
+  private final ValueSetVersionRuleService valueSetVersionRuleService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   private final BinaryHttpClient client = new BinaryHttpClient();
@@ -47,11 +56,11 @@ public class FileImporterService {
     byte[] file = client.GET(request.getLink()).body();
     FileProcessor fp = new FileProcessor();
     FileProcessingResponse result = fp.process(request.getType(), file, request.getProperties());
-    saveProcessingResult(request.getCodeSystem(), request.getVersion(), result);
+    saveProcessingResult(request.getCodeSystem(), request.getVersion(), request.isGenerateValueSet(), result);
   }
 
   @Transactional
-  public void saveProcessingResult(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, FileProcessingResponse result) {
+  public void saveProcessingResult(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, boolean generateValueSet, FileProcessingResponse result) {
     FileProcessingMapper mapper = new FileProcessingMapper();
 
     CodeSystem existingCodeSystem = codeSystemService.load(fpCodeSystem.getId()).orElse(null);
@@ -59,6 +68,11 @@ public class FileImporterService {
     codeSystemService.save(codeSystem);
 
     CodeSystemVersion codeSystemVersion = mapper.toCodeSystemVersion(fpVersion, codeSystem.getId());
+    Optional<CodeSystemVersion> existingVersion = codeSystemVersionService.load(codeSystem.getId(), codeSystemVersion.getVersion());
+    existingVersion.ifPresent(version -> codeSystemVersion.setId(version.getId()));
+    if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
+      throw ApiError.TE704.toApiException();
+    }
     codeSystemVersionService.save(codeSystemVersion);
 
     List<EntityProperty> properties = mapper.toProperties(result.getProperties());
@@ -84,6 +98,21 @@ public class FileImporterService {
     }
     if (fpVersion.getStatus().equals(PublicationStatus.retired)) {
       codeSystemVersionService.retire(codeSystem.getId(), codeSystemVersion.getVersion());
+    }
+
+    if (generateValueSet) {
+      ValueSet existingValueSet = valueSetService.load(fpCodeSystem.getId()).orElse(null);
+      ValueSet valueSet = mapper.toValueSet(codeSystem, existingValueSet);
+      valueSetService.save(valueSet);
+
+      ValueSetVersion valueSetVersion = mapper.toValueSetVersion(fpVersion, valueSet.getId(), codeSystemVersion);
+      Optional<ValueSetVersion> existingVSVersion = valueSetVersionService.load(valueSet.getId(), valueSetVersion.getVersion());
+      existingVSVersion.ifPresent(version -> valueSetVersion.setId(version.getId()));
+      if (existingVSVersion.isPresent() && !existingVSVersion.get().getStatus().equals(PublicationStatus.draft)) {
+        throw ApiError.TE705.toApiException();
+      }
+      valueSetVersionService.save(valueSetVersion);
+      valueSetVersionRuleService.save(valueSetVersion.getRuleSet().getRules(), valueSetVersion.getRuleSet().getId());
     }
   }
 }
