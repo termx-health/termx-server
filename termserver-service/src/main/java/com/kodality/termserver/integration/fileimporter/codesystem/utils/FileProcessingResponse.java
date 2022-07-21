@@ -1,4 +1,4 @@
-package com.kodality.termserver.integration.fileimporter.utils;
+package com.kodality.termserver.integration.fileimporter.codesystem.utils;
 
 import java.util.List;
 import java.util.Map;
