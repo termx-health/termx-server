@@ -39,6 +39,7 @@ release:
 
     - ./gradlew clean assemble
 
+    - cd termserver-service
     - docker build -t docker.kodality.com/terminology-server:$APP_VERSION --build-arg APP_VERSION=$APP_VERSION .
     - docker push docker.kodality.com/terminology-server:$APP_VERSION
   only:
