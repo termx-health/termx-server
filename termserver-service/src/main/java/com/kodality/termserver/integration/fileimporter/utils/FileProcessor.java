@@ -34,12 +34,14 @@ import org.apache.commons.lang3.StringUtils;
 import static java.util.stream.IntStream.range;
 
 public class FileProcessor {
-  private static final List<String> DATE_FORMATS = List.of("dd.MM.yyyy", "MM/dd/yyyy", "yyyy-MM-dd", "dd.MM.yy");
   public static final String DATE = "dateTime";
   public static final String INTEGER = "integer";
   public static final String TEXT = "string";
   public static final String BOOLEAN = "boolean";
   public static final String DECIMAL = "decimal";
+
+  public static final String IDENTIFIER_PROPERTY = "concept-code";
+  private static final List<String> DATE_FORMATS = List.of("dd.MM.yyyy", "MM/dd/yyyy", "yyyy-MM-dd", "dd.MM.yy");
 
 
   public FileAnalysisResponse analyze(String type, byte[] file) {
@@ -68,6 +70,12 @@ public class FileProcessor {
     if (!isUTF8File(file)) {
       throw ApiError.TE701.toApiException();
     }
+    if (importProperties.stream().filter(p -> IDENTIFIER_PROPERTY.equals(p.getName()) && p.isPreferred()).count() > 1) {
+      throw ApiError.TE707.toApiException();
+    }
+    importProperties.stream().filter(p -> p.getPropertyType() == null).findFirst().ifPresent(p -> {
+      throw ApiError.TE706.toApiException(Map.of("propertyName", p.getName()));
+    });
 
     RowListProcessor parser = getParser(type, file);
     List<String> headers = Arrays.asList(parser.getHeaders());
@@ -82,20 +90,23 @@ public class FileProcessor {
           continue;
         }
 
-        String rawValue = r[idx];
-        Object transformedValue = transformPropertyValue(rawValue, prop.getPropertyType(), prop.getPropertyTypeFormat());
-
-        FileProcessingEntityPropertyValue ep = new FileProcessingEntityPropertyValue();
-        ep.setColumnName(prop.getColumnName());
-        ep.setPropertyName(prop.getName());
-        ep.setPropertyType(prop.getPropertyType());
-        ep.setPropertyTypeFormat(prop.getPropertyTypeFormat());
-        ep.setLang(prop.getLang());
-        ep.setValue(transformedValue);
-
+        FileProcessingEntityPropertyValue ep = mapPropValue(prop, r[idx]);
         var propertyValues = entity.getOrDefault(ep.getPropertyName(), new ArrayList<>());
         propertyValues.add(ep);
         entity.put(ep.getPropertyName(), propertyValues);
+      }
+
+      List<FileProcessingProperty> identifierProperties = importProperties.stream()
+          .filter(p -> IDENTIFIER_PROPERTY.equals(p.getName()))
+          .sorted((o1, o2) -> Boolean.compare(o2.isPreferred(), o1.isPreferred()))
+          .toList();
+      for (FileProcessingProperty prop : identifierProperties) {
+        int idx = headers.indexOf(prop.getColumnName());
+        if (r[idx] != null) {
+          FileProcessingEntityPropertyValue ep = mapPropValue(prop, r[idx]);
+          entity.put(ep.getPropertyName(), List.of(ep));
+          break;
+        }
       }
 
       return entity;
@@ -124,6 +135,20 @@ public class FileProcessor {
     prop.setColumnTypeFormat(getDateFormat(firstColValue));
     prop.setHasValues(firstColValue != null);
     return prop;
+  }
+
+
+  private FileProcessingEntityPropertyValue mapPropValue(FileProcessingProperty prop, String rawValue) {
+    Object transformedValue = transformPropertyValue(rawValue, prop.getPropertyType(), prop.getPropertyTypeFormat());
+
+    FileProcessingEntityPropertyValue ep = new FileProcessingEntityPropertyValue();
+    ep.setColumnName(prop.getColumnName());
+    ep.setPropertyName(prop.getName());
+    ep.setPropertyType(prop.getPropertyType());
+    ep.setPropertyTypeFormat(prop.getPropertyTypeFormat());
+    ep.setLang(prop.getLang());
+    ep.setValue(transformedValue);
+    return ep;
   }
 
 
