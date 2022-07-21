@@ -47,17 +47,25 @@ public class CodeSystemFileImportService {
 
   public FileAnalysisResponse analyze(FileAnalysisRequest request) {
     byte[] file = client.GET(request.getLink()).body();
-
-    FileProcessor fp = new FileProcessor();
-    return fp.analyze(request.getType(), file);
+    return analyze(request, file);
   }
 
   public void process(FileProcessingRequest request) {
     byte[] file = client.GET(request.getLink()).body();
+    process(request, file);
+  }
+
+  public FileAnalysisResponse analyze(FileAnalysisRequest request, byte[] file) {
+    FileProcessor fp = new FileProcessor();
+    return fp.analyze(request.getType(), file);
+  }
+
+  public void process(FileProcessingRequest request, byte[] file) {
     FileProcessor fp = new FileProcessor();
     FileProcessingResponse result = fp.process(request.getType(), file, request.getProperties());
     saveProcessingResult(request.getCodeSystem(), request.getVersion(), request.isGenerateValueSet(), result);
   }
+
 
   @Transactional
   public void saveProcessingResult(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, boolean generateValueSet, FileProcessingResponse result) {
