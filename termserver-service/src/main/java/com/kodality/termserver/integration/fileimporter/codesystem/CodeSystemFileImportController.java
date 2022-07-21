@@ -51,8 +51,7 @@ public class CodeSystemFileImportController {
     try {
       return file.getBytes();
     } catch (IOException e) {
-      e.printStackTrace();
-      return null;
+      throw new RuntimeException(e);
     }
   }
 }
