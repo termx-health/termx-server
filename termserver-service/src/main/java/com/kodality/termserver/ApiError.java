@@ -29,6 +29,13 @@ public enum ApiError {
   TE601("TE601", "Cannot convert units of different kinds."),
   TE602("TE602", "Could not find common base unit."),
 
+  TE701("TE701", "File has invalid encoding. UTF-8 is required."),
+  TE702("TE702", "Property 'concept-code' not provided."),
+  TE703("TE703", "Property does not exist."),
+  TE704("TE704", "The version of code system is final and can not be changed."),
+  TE705("TE705", "The version of value set is final and can not be changed."),
+  TE706("TE706", "Property type of property {{propertyName}} is not provided"),
+  TE707("TE707", "Multiple preferred concept-code properties are selected. Please select one!"),
   ;
 
 
