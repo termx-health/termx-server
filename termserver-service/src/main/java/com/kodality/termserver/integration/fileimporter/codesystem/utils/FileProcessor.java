@@ -1,10 +1,10 @@
-package com.kodality.termserver.integration.fileimporter.utils;
+package com.kodality.termserver.integration.fileimporter.codesystem.utils;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.integration.fileimporter.utils.FileAnalysisResponse.FileAnalysisProperty;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingRequest.FileProcessingProperty;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingEntityPropertyValue;
-import com.kodality.termserver.integration.fileimporter.utils.FileProcessingResponse.FileProcessingResponseProperty;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisResponse.FileAnalysisProperty;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingProperty;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingResponse.FileProcessingEntityPropertyValue;
+import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingResponse.FileProcessingResponseProperty;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
@@ -242,9 +242,7 @@ public class FileProcessor {
   private RowListProcessor csvProcessor(byte[] csv) {
     RowListProcessor processor = new RowListProcessor();
     CsvParserSettings settings = new CsvParserSettings();
-//    settings.setDelimiterDetectionEnabled(true);
-    settings.getFormat().setDelimiter(';');
-    settings.getFormat().setQuote('"');
+    settings.setDelimiterDetectionEnabled(true);
     settings.setLineSeparatorDetectionEnabled(true);
     settings.setProcessor(processor);
     settings.setHeaderExtractionEnabled(true);

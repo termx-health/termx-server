@@ -1,4 +1,4 @@
-package com.kodality.termserver.integration.fileimporter.utils;
+package com.kodality.termserver.integration.fileimporter.codesystem.utils;
 
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
