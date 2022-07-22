@@ -30,6 +30,11 @@ public class MeasurementUnitController {
     return measurementUnitService.query(params);
   }
 
+  @Get("/kinds")
+  public List<String> loadKinds() {
+    return measurementUnitService.loadKinds();
+  }
+
   @Get("/{id}")
   public MeasurementUnit load(@Parameter Long id) {
     return measurementUnitService.load(id);
