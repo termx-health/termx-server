@@ -1,0 +1,16 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "snomed-ct",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>This code system snomed-ct defines many codes, but they are not represented here</p></div>"
+  },
+  "url": "http://snomed.info/sct",
+  "version": "2021-07-31",
+  "name": "SNOMED CT",
+  "status": "active",
+  "experimental": false,
+  "date": "2021-07-31T00:00:00-04:00",
+  "publisher": "SNOMED International",
+  "content": "not-present"
+}
