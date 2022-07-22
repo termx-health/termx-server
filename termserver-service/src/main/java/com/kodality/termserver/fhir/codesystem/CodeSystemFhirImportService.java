@@ -1,6 +1,7 @@
 package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.termserver.ApiError;
+import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.association.AssociationKind;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
@@ -49,17 +50,17 @@ public class CodeSystemFhirImportService {
     if (!ResourceType.codeSystem.equals(codeSystem.getResourceType())) {
       throw ApiError.TE107.toApiException();
     }
-    importCodeSystem(codeSystem, false);
+    importCodeSystem(codeSystem);
   }
 
   @Transactional
-  public void importCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem, boolean activateVersion) {
+  public void importCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
     CodeSystemVersion version = importService.prepareCodeSystemAndVersion(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem));
     List<EntityProperty> properties = importService.prepareProperties(CodeSystemFhirImportMapper.mapProperties(codeSystem), codeSystem.getId());
     importService.prepareAssociationType(codeSystem.getHierarchyMeaning(), AssociationKind.codesystemHierarchyMeaning);
 
     List<Concept> concepts = CodeSystemFhirImportMapper.mapConcepts(codeSystem.getConcept(), codeSystem, properties, null);
-    importService.importConcepts(concepts, version, activateVersion);
+    importService.importConcepts(concepts, version, PublicationStatus.active.equals(codeSystem.getStatus()));
   }
 
   private String getResource(String url) {

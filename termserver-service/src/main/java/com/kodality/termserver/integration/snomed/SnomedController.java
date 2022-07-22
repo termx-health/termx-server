@@ -2,6 +2,9 @@ package com.kodality.termserver.integration.snomed;
 
 import com.kodality.commons.util.AsyncHelper;
 import com.kodality.termserver.client.SnowstormClient;
+import com.kodality.termserver.common.ImportLogger;
+import com.kodality.termserver.job.JobLogResponse;
+import com.kodality.termserver.snomed.SnomedImportRequest;
 import com.kodality.termserver.snomed.SnomedSearchResult;
 import com.kodality.termserver.snomed.concept.SnomedConcept;
 import com.kodality.termserver.snomed.concept.SnomedConceptSearchParams;
@@ -11,9 +14,12 @@ import com.kodality.termserver.snomed.refset.SnomedRefsetMemberResponse;
 import com.kodality.termserver.snomed.refset.SnomedRefsetResponse;
 import com.kodality.termserver.snomed.refset.SnomedRefsetSearchParams;
 import io.micronaut.context.annotation.Parameter;
+import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Post;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SnomedController {
   private final SnowstormClient snowstormClient;
+  private final SnomedService snomedService;
+  private final ImportLogger importLogger;
 
   //----------------Concepts----------------
 
@@ -62,6 +70,7 @@ public class SnomedController {
 
     return response;
   }
+
   //----------------RefSets----------------
 
   @Get("/refsets{?params*}")
@@ -72,6 +81,28 @@ public class SnomedController {
   @Get("/refset-members{?params*}")
   public SnomedRefsetMemberResponse findRefsetMembers(SnomedRefsetSearchParams params) {
     return snowstormClient.findRefsetMembers(params).join();
+  }
+
+  //----------------Import----------------
+
+
+  @Post("/import")
+  public JobLogResponse importConcepts(@Body SnomedImportRequest request) {
+    JobLogResponse jobLogResponse = importLogger.createJob("snomed-ct", "import");
+    CompletableFuture.runAsync(() -> {
+      try {
+        log.info("SNOMED CT concepts import started");
+        long start = System.currentTimeMillis();
+        snomedService.importConcepts(request);
+        log.info("SNOMED CT concepts import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
+        importLogger.logImport(jobLogResponse.getJobId());
+      } catch (Exception e) {
+        log.error("Error while importing SNOMED CT concepts", e);
+        importLogger.logImport(jobLogResponse.getJobId(), e);
+        throw e;
+      }
+    });
+    return jobLogResponse;
   }
 
 }

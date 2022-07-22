@@ -20,4 +20,6 @@ public class Designation {
   private String status;
 
   private Long supplementId;
+
+  private String designationType;
 }

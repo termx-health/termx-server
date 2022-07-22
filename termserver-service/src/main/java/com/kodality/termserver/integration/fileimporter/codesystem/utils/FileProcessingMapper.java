@@ -50,7 +50,7 @@ public class FileProcessingMapper {
   }
 
   public List<EntityProperty> toProperties(List<FileProcessingResponseProperty> fpProperties) {
-    return fpProperties.stream().filter(fpProperty -> fpProperty.getPropertyType() != null)
+    return fpProperties.stream().filter(fpProperty -> fpProperty.getPropertyType() != null && !CONCEPT_CODE.equals(fpProperty.getPropertyName()))
         .map(fpProperty -> {
           EntityProperty property = new EntityProperty();
           property.setName(fpProperty.getPropertyName());

@@ -47,3 +47,8 @@ liquibase:
 auth:
   oauth:
     jwks-url: ${OAUTH_JWKS_URL:fixme}
+
+snowstorm:
+  url: https://snowstorm.kodality.dev/
+  user: 'termserver-app'
+  password: 'snowbars'

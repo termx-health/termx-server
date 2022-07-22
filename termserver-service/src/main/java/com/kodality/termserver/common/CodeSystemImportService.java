@@ -75,6 +75,14 @@ public class CodeSystemImportService {
     return entityPropertyService.save(entityProperties, codeSystem);
   }
 
+  public EntityProperty prepareProperty(EntityProperty property, String codeSystem) {
+    EntityPropertyQueryParams params = new EntityPropertyQueryParams();
+    params.setNames(property.getName());
+    params.setLimit(1);
+    Optional<EntityProperty> existingProperty = entityPropertyService.query(params).findFirst();
+    return existingProperty.orElseGet(() -> entityPropertyService.save(property, codeSystem));
+  }
+
   public void prepareAssociationType(String code, String kind) {
     if (code == null) {
       return;

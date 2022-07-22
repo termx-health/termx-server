@@ -20,6 +20,6 @@ public class CodeSystemFhirImport extends FileReaderCustomChange {
     log.info("updating codesystem " + name);
 
     CodeSystem cs = JsonUtil.fromJson(asString(content), CodeSystem.class);
-    codeSystemFhirImportService.importCodeSystem(cs, true);
+    codeSystemFhirImportService.importCodeSystem(cs);
   }
 }
