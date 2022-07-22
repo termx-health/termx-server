@@ -2,25 +2,27 @@ version: '3.9'
 services:
   terminology-server:
     restart: unless-stopped
-    image: docker.kodality.com/terminology-server:0.0.0
+    image: docker.kodality.com/terminology-server:latest
     container_name: terminology-server
+    depends_on:
+      - terminology-postgres
     env_file:
       - server.env
-    environment:
-      - DB_URL=jdbc:postgresql://terminology-postgres:5432/termserver
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://terminology-server:8200/health" ]
       interval: 1s
       timeout: 5s
       retries: 60
     ports:
-      - 127.0.0.1:8200:8200
+      - 8200:8200
     mem_reservation: 2g
 
   terminology-web:
     restart: unless-stopped
-    image: docker.kodality.com/terminology-web:0.0.0
+    image: docker.kodality.com/terminology-web:latest
     container_name: terminology-web
+    depends_on:
+      - terminology-server
     volumes:
       - ./env.js:/usr/share/nginx/html/assets/env.js
     ports:
@@ -34,3 +36,5 @@ services:
       - ./pgdata:/var/lib/postgresql/data
     env_file:
       - pg.env
+    ports:
+      - 5432:5432
