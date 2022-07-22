@@ -4,6 +4,12 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
 
+  <changeSet id="snomed-ct" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.CodeSystemFhirImport">
+      <param name="files" value="db/changelog/terminology/data/codesystem/snomed-ct.json"/>
+    </customChange>
+  </changeSet>
+
   <changeSet id="publication-status" author="kodality">
     <customChange class="com.kodality.termserver.liquibase.CodeSystemFhirImport">
       <param name="files" value="db/changelog/terminology/data/codesystem/publication-status.json"/>
