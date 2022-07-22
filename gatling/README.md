@@ -11,6 +11,8 @@
 8. Load created codesystem
 9. Search codesystems
 10. Search valuestes
+11. Upload and analyze CSV code system file with ~7K rows
+12. Upload and analyze TSV code system file with 350 rows 
 ```
 
 ## Configure
