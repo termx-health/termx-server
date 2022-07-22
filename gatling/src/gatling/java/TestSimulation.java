@@ -3,6 +3,8 @@ import java.util.UUID;
 
 import static io.gatling.javaapi.core.CoreDsl.StringBody;
 import static io.gatling.javaapi.core.CoreDsl.scenario;
+import static io.gatling.javaapi.http.HttpDsl.RawFileBodyPart;
+import static io.gatling.javaapi.http.HttpDsl.StringBodyPart;
 import static io.gatling.javaapi.http.HttpDsl.http;
 import static io.gatling.javaapi.http.HttpDsl.status;
 
@@ -98,6 +100,20 @@ public class TestSimulation extends BaseSimulation {
         .exec(req("load created codesystem", "/ts/code-systems/#{cs_id}"))
         .exec(req("load codesystems", "/ts/code-systems?limit=" + searchLimit + "&offset=0&lang=en&versionsDecorated=true"))
         .exec(req("load valuesets", "/ts/value-sets?limit=" + searchLimit + "&offset=0&lang=en&decorated=true"))
+        .exec(
+            http("analyze code-system csv")
+                .post("/file-importer/code-system/analyze")
+                .asMultipartForm()
+                .bodyPart(RawFileBodyPart("file", "data/ncsp.csv"))
+                .bodyPart(StringBodyPart("request", "{\"type\":\"csv\",\"link\":\"C:\\\\fakepath\\\\8.csv\"}"))
+                .check(status().is(200)))
+        .exec(
+            http("analyze code-system tsv")
+                .post("/file-importer/code-system/analyze")
+                .asMultipartForm()
+                .bodyPart(RawFileBodyPart("file", "data/concepts.tsv"))
+                .bodyPart(StringBodyPart("request", "{\"type\":\"tsv\",\"link\":\"C:\\\\fakepath\\\\8.tsv\"}"))
+                .check(status().is(200)))
         ;
   }
 
