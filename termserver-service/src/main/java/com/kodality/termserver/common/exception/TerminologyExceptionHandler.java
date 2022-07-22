@@ -99,6 +99,9 @@ public class TerminologyExceptionHandler implements ExceptionHandler<Throwable, 
   }
 
   protected String substituteParams(Issue issue) {
+    if (issue.getParams() == null) {
+      return issue.getMessage();
+    }
     return StringSubstitutor.replace(issue.getMessage(), issue.getParams(), "{{", "}}");
   }
 
