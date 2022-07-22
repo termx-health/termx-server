@@ -9,6 +9,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class SessionInfo {
+  private String username;
   private List<String> roles;
   private String lang;
 }
