@@ -9,6 +9,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.measurementunit.MeasurementUnit;
 import com.kodality.termserver.measurementunit.MeasurementUnitMapping;
 import com.kodality.termserver.measurementunit.MeasurementUnitQueryParams;
+import io.micronaut.core.util.StringUtils;
 import java.util.List;
 import javax.inject.Singleton;
 
@@ -49,7 +50,7 @@ public class MeasurementUnitRepository extends BaseRepository {
   private SqlBuilder filter(MeasurementUnitQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and mu.code = ?", params.getCode());
-    if (params.getKind() != null && !params.getKind().isEmpty()) {
+    if (StringUtils.isNotEmpty(params.getKind())) {
       sb.append("and mu.kind = ?", params.getKind());
     }
     sb.appendIfNotNull("and mu.period @> ?", params.getDate());
