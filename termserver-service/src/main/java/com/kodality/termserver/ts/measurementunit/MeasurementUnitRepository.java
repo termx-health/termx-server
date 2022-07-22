@@ -9,6 +9,8 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.measurementunit.MeasurementUnit;
 import com.kodality.termserver.measurementunit.MeasurementUnitMapping;
 import com.kodality.termserver.measurementunit.MeasurementUnitQueryParams;
+import io.micronaut.core.util.StringUtils;
+import java.util.List;
 import javax.inject.Singleton;
 
 @Singleton
@@ -29,7 +31,7 @@ public class MeasurementUnitRepository extends BaseRepository {
 
   public QueryResult<MeasurementUnit> query(MeasurementUnitQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder( "select count(1) from terminology.measurement_unit mu where mu.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.measurement_unit mu where mu.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
@@ -40,10 +42,17 @@ public class MeasurementUnitRepository extends BaseRepository {
     });
   }
 
+  public List<String> loadKinds() {
+    SqlBuilder sb = new SqlBuilder("select distinct kind from terminology.measurement_unit mu where mu.sys_status = 'A'");
+    return jdbcTemplate.queryForList(sb.getSql(), String.class);
+  }
+
   private SqlBuilder filter(MeasurementUnitQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and mu.code = ?", params.getCode());
-    sb.appendIfNotNull("and mu.kind = ?", params.getKind());
+    if (StringUtils.isNotEmpty(params.getKind())) {
+      sb.append("and mu.kind = ?", params.getKind());
+    }
     sb.appendIfNotNull("and mu.period @> ?", params.getDate());
     return sb;
   }

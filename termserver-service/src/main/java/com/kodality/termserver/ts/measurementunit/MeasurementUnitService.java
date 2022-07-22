@@ -26,6 +26,10 @@ public class MeasurementUnitService {
     return measurementUnitRepository.query(params);
   }
 
+  public List<String> loadKinds() {
+    return measurementUnitRepository.loadKinds();
+  }
+
   public MeasurementUnit load(Long id) {
     return measurementUnitRepository.load(id);
   }
