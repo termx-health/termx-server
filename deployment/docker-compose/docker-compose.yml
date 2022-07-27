@@ -10,7 +10,7 @@ services:
       - server.env
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://terminology-server:8200/health" ]
-      interval: 1s
+      interval: 5s
       timeout: 5s
       retries: 60
     ports:

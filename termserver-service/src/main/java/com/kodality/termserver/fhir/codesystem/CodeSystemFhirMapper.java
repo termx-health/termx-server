@@ -1,5 +1,6 @@
 package com.kodality.termserver.fhir.codesystem;
 
+import com.kodality.commons.util.DateUtil;
 import com.kodality.termserver.CaseSignificance;
 import com.kodality.termserver.Language;
 import com.kodality.termserver.codesystem.CodeSystem;
@@ -27,7 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
-import lombok.RequiredArgsConstructor;
 
 @Singleton
 public class CodeSystemFhirMapper {
@@ -224,16 +224,21 @@ public class CodeSystemFhirMapper {
         addToProperties(fhirCodeSystem, entityProperty);
         Property fhirProperty = new Property();
         fhirProperty.setCode(entityProperty.getName());
+        Object value = pv.getValue();
         if (entityProperty.getType().equals(EntityPropertyType.code)) {
-          fhirProperty.setValueCode((String) pv.getValue());
+          fhirProperty.setValueCode((String) value);
         } else if (entityProperty.getType().equals(EntityPropertyType.string)) {
-          fhirProperty.setValueString((String) pv.getValue());
+          fhirProperty.setValueString((String) value);
         } else if (entityProperty.getType().equals(EntityPropertyType.bool)) {
-          fhirProperty.setValueBoolean((Boolean) pv.getValue());
+          fhirProperty.setValueBoolean((Boolean) value);
         } else if (entityProperty.getType().equals(EntityPropertyType.decimal)) {
-          fhirProperty.setValueDecimal((BigDecimal) pv.getValue());
+          fhirProperty.setValueDecimal((BigDecimal) value);
         } else if (entityProperty.getType().equals(EntityPropertyType.dateTime)) {
-          fhirProperty.setValueDateTime((OffsetDateTime) pv.getValue());
+          if (value instanceof OffsetDateTime) {
+            fhirProperty.setValueDateTime((OffsetDateTime) value);
+          } else {
+            fhirProperty.setValueDateTime(DateUtil.parseOffsetDateTime((String) value));
+          }
         }
         fhirProperties.add(fhirProperty);
       }
@@ -259,8 +264,9 @@ public class CodeSystemFhirMapper {
   private List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept> getChildConcepts(List<CodeSystemEntityVersion> entities,
                                                                                                 Long targetId, CodeSystem codeSystem,
                                                                                                 com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
-    List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept> result = entities.stream().filter(e -> e.getAssociations().stream().anyMatch(a -> a.getTargetId().equals(targetId)))
-        .map(e -> toFhir(e, codeSystem, entities, fhirCodeSystem)).collect(Collectors.toList());
+    List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept> result =
+        entities.stream().filter(e -> e.getAssociations().stream().anyMatch(a -> a.getTargetId().equals(targetId)))
+            .map(e -> toFhir(e, codeSystem, entities, fhirCodeSystem)).collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result;
   }
 }
