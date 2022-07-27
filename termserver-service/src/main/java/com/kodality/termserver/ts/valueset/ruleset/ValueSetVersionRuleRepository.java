@@ -4,6 +4,8 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import java.util.List;
 import javax.inject.Singleton;
@@ -11,7 +13,7 @@ import javax.inject.Singleton;
 @Singleton
 public class ValueSetVersionRuleRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(ValueSetVersionRule.class, bp -> {
-    bp.addColumnProcessor("concepts", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("concepts", PgBeanProcessor.fromJson(JsonUtil.getListType(ValueSetVersionConcept.class)));
     bp.addColumnProcessor("filters", PgBeanProcessor.fromJson());
   });
 
