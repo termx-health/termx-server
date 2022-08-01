@@ -29,8 +29,10 @@ import java.util.List;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Singleton
 @RequiredArgsConstructor
 public class CodeSystemFileImportService {
@@ -68,7 +70,8 @@ public class CodeSystemFileImportService {
 
 
   @Transactional
-  public void saveProcessingResult(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, boolean generateValueSet, FileProcessingResponse result) {
+  public void saveProcessingResult(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, boolean generateValueSet,
+                                   FileProcessingResponse result) {
     FileProcessingMapper mapper = new FileProcessingMapper();
 
     CodeSystem existingCodeSystem = codeSystemService.load(fpCodeSystem.getId()).orElse(null);
@@ -94,12 +97,15 @@ public class CodeSystemFileImportService {
     });
 
     List<Concept> concepts = mapper.toConcepts(result.getEntities(), properties);
-    concepts.forEach(concept -> {
+    //FIXME: this is very slow, should refactor
+    for (int i = 0; i < concepts.size(); i++) {
+      log.debug("Saving concept {}/{}", i + 1, concepts.size());
+      Concept concept = concepts.get(i);
       conceptService.save(concept, codeSystem.getId());
       codeSystemEntityVersionService.save(concept.getVersions().get(0), concept.getId());
       codeSystemEntityVersionService.activate(concept.getVersions().get(0).getId());
       codeSystemVersionService.linkEntityVersion(codeSystemVersion.getId(), concept.getVersions().get(0).getId());
-    });
+    }
 
     if (fpVersion.getStatus().equals(PublicationStatus.active)) {
       codeSystemVersionService.activate(codeSystem.getId(), codeSystemVersion.getVersion());
