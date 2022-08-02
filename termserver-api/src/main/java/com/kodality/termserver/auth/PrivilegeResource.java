@@ -13,4 +13,14 @@ public class PrivilegeResource {
   private Long id;
   private String resourceType;
   private String resourceId;
+  private PrivilegeResourceActions actions;
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class PrivilegeResourceActions {
+    private boolean view;
+    private boolean edit;
+    private boolean publish;
+  }
 }

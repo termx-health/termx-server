@@ -10,7 +10,9 @@ import javax.inject.Singleton;
 
 @Singleton
 public class PrivilegeResourceRepository extends BaseRepository {
-  private final PgBeanProcessor bp = new PgBeanProcessor(PrivilegeResource.class);
+  private final PgBeanProcessor bp = new PgBeanProcessor(PrivilegeResource.class, bp -> {
+    bp.addColumnProcessor("actions", PgBeanProcessor.fromJson());
+  });
 
   public void save(PrivilegeResource resource, Long privilegeId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -18,6 +20,7 @@ public class PrivilegeResourceRepository extends BaseRepository {
     ssb.property("resource_type", resource.getResourceType());
     ssb.property("resource_id", resource.getResourceId());
     ssb.property("privilege_id", privilegeId);
+    ssb.jsonProperty("actions", resource.getActions());
     SqlBuilder sb = ssb.buildSave("auth.privilege_resource", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     resource.setId(id);

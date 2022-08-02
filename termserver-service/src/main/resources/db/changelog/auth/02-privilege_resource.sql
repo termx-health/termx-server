@@ -1,12 +1,13 @@
 --liquibase formatted sql
 
---changeset kodality:privilege_resource
+--changeset kodality:privilege_resource_1
 drop table if exists privilege_resource;
 create table privilege_resource (
     id                  bigint default nextval('core.s_entity') primary key,
     privilege_id        bigint not null,
-    resource_type       text not null, --ValueSet, CodeSystem, MapSet
-    resource_id         text not null,
+    resource_type       text not null, --ValueSet, CodeSystem, MapSet, Any (any resource), Admin
+    resource_id         text,
+    actions             jsonb,
     sys_created_at      timestamp not null,
     sys_created_by      text not null,
     sys_modified_at     timestamp not null,
