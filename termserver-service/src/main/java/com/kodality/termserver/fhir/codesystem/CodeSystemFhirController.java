@@ -2,6 +2,7 @@ package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.termserver.common.ImportLogger;
+import com.kodality.termserver.fhir.FhirMeasurementUnitConvertor;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
@@ -13,11 +14,13 @@ import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.QueryValue;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import javax.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,6 +31,7 @@ public class CodeSystemFhirController {
   private final ImportLogger importLogger;
   private final CodeSystemFhirService service;
   private final CodeSystemFhirImportService importService;
+  private final FhirMeasurementUnitConvertor fhirMeasurementUnitConvertor;
 
   private static final String JOB_TYPE = "FHIR-CS";
 
@@ -87,6 +91,7 @@ public class CodeSystemFhirController {
     }
     return HttpResponse.ok(parameters);
   }
+
   @Post("/$sync")
   public HttpResponse<?> importFhirCodeSystem(@Body Parameters parameters) {
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);
@@ -107,5 +112,10 @@ public class CodeSystemFhirController {
     });
     Parameters resp = new Parameters().setParameter(List.of(new Parameter().setName("jobId").setValueDecimal(BigDecimal.valueOf(jobLogResponse.getJobId()))));
     return HttpResponse.ok(resp);
+  }
+
+  @Get("/ucum/$translate")
+  public HttpResponse<Parameters> translate(@QueryValue @NotNull BigDecimal value, @QueryValue @NotNull String sourceUnit, @QueryValue @NotNull String targetUnit) {
+    return HttpResponse.ok(fhirMeasurementUnitConvertor.convert(value, sourceUnit, targetUnit));
   }
 }
