@@ -14,6 +14,7 @@ import io.micronaut.web.router.RouteMatch;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,8 @@ import org.reactivestreams.Publisher;
 @Filter("/**")
 @RequiredArgsConstructor
 public class AuthorizationFilter implements HttpServerFilter {
+
+  private final UserPrivilegeStore userPrivilegeStore;
 
   @Override
   public int getOrder() {
@@ -45,14 +48,18 @@ public class AuthorizationFilter implements HttpServerFilter {
     if (!(route instanceof MethodBasedRouteMatch methodRoute) || !methodRoute.hasAnnotation(Authorized.class)) {
       return true;
     }
-    List<String> privileges = sessionInfo.map(SessionInfo::getRoles).orElse(null);
+    if (sessionInfo.isEmpty()) {
+      return false;
+    }
+    Collection<String> privileges = userPrivilegeStore.getPrivileges(sessionInfo.get());
     if (CollectionUtils.isEmpty(privileges)) {
       return false;
     }
-    return methodRoute.getValue(Authorized.class, String[].class).map(authPrivileges -> hasAnyPrivilege(Arrays.asList(authPrivileges), privileges)).orElse(false);
+    return methodRoute.getValue(Authorized.class, String[].class).map(authPrivileges -> hasAnyPrivilege(Arrays.asList(authPrivileges), privileges))
+        .orElse(false);
   }
 
-  public boolean hasAnyPrivilege(List<String> authPrivileges, List<String> userPrivileges) {
+  public boolean hasAnyPrivilege(List<String> authPrivileges, Collection<String> userPrivileges) {
     return userPrivileges.contains("admin") || authPrivileges.stream().anyMatch(ap -> userPrivileges.stream().anyMatch(up -> privilegesMatch(ap, up)));
   }
 

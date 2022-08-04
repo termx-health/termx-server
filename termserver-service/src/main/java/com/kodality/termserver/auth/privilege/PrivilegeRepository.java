@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.Privilege;
 import com.kodality.termserver.auth.PrivilegeQueryParams;
+import io.micronaut.core.util.StringUtils;
 import javax.inject.Singleton;
 
 @Singleton
@@ -48,7 +49,9 @@ public class PrivilegeRepository extends BaseRepository {
 
   private SqlBuilder filter(PrivilegeQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and code = ?", params.getCode());
+    if (StringUtils.isNotEmpty(params.getCode())) {
+      sb.and().in("code", params.getCode());
+    }
     sb.appendIfNotNull("and code ~* ?", params.getCodeContains());
     return sb;
   }

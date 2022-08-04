@@ -55,26 +55,26 @@ public class CodeSystemController {
 
   //----------------CodeSystem----------------
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "{?params*}")
   public QueryResult<CodeSystem> queryCodeSystems(CodeSystemQueryParams params) {
     return codeSystemService.query(params);
   }
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}{?decorate}")
   public CodeSystem getCodeSystem(@PathVariable String codeSystem, Optional<Boolean> decorate) {
     return codeSystemService.load(codeSystem, decorate.orElse(false)).orElseThrow(() -> new NotFoundException("CodeSystem not found: " + codeSystem));
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post
   public HttpResponse<?> saveCodeSystem(@Body @Valid CodeSystem codeSystem) {
     codeSystemService.save(codeSystem);
     return HttpResponse.created(codeSystem);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/duplicate")
   public HttpResponse<?> duplicateCodeSystem(@PathVariable String codeSystem, @Body @Valid CodeSystemDuplicateRequest request) {
     CodeSystem targetCodeSystem = new CodeSystem().setId(request.getCodeSystem()).setUri(request.getCodeSystemUri());
@@ -84,20 +84,20 @@ public class CodeSystemController {
 
   //----------------CodeSystem Version----------------
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/versions{?params*}")
   public QueryResult<CodeSystemVersion> queryCodeSystemVersions(@PathVariable String codeSystem, CodeSystemVersionQueryParams params) {
     params.setCodeSystem(codeSystem);
     return codeSystemVersionService.query(params);
   }
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/versions/{version}")
   public CodeSystemVersion getCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version) {
     return codeSystemVersionService.load(codeSystem, version).orElseThrow(() -> new NotFoundException("CodeSystemVersion not found: " + codeSystem));
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/versions")
   public HttpResponse<?> createCodeSystemVersion(@PathVariable String codeSystem, @Body @Valid CodeSystemVersion version) {
     version.setId(null);
@@ -106,7 +106,7 @@ public class CodeSystemController {
     return HttpResponse.created(version);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Put(uri = "/{codeSystem}/versions/{id}")
   public HttpResponse<?> updateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable Long id, @Body @Valid CodeSystemVersion version) {
     version.setId(id);
@@ -115,21 +115,21 @@ public class CodeSystemController {
     return HttpResponse.created(version);
   }
 
-  @Authorized("*.code-system.publish")
+  @Authorized("*.CodeSystem.publish")
   @Post(uri = "/{codeSystem}/versions/{version}/activate")
   public HttpResponse<?> activateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version) {
     codeSystemVersionService.activate(codeSystem, version);
     return HttpResponse.noContent();
   }
 
-  @Authorized("*.code-system.publish")
+  @Authorized("*.CodeSystem.publish")
   @Post(uri = "/{codeSystem}/versions/{version}/retire")
   public HttpResponse<?> retireCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version) {
     codeSystemVersionService.retire(codeSystem, version);
     return HttpResponse.noContent();
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/versions/{version}/duplicate")
   public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version, @Body @Valid CodeSystemVersionDuplicateRequest request) {
     codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), request.getCodeSystem(), version, codeSystem);
@@ -138,26 +138,26 @@ public class CodeSystemController {
 
   //----------------CodeSystem Concept----------------
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/concepts{?params*}")
   public QueryResult<Concept> queryConcepts(@PathVariable String codeSystem, ConceptQueryParams params) {
     params.setCodeSystem(codeSystem);
     return conceptService.query(params);
   }
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/concepts/{code}")
   public Concept getConcept(@PathVariable String codeSystem, @PathVariable String code) {
     return conceptService.load(codeSystem, code).orElseThrow(() -> new NotFoundException("Concept not found: " + code));
   }
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/versions/{version}/concepts/{code}")
   public Concept getConcept(@PathVariable String codeSystem, @PathVariable String version, @PathVariable String code) {
     return conceptService.load(codeSystem, version, code).orElseThrow(() -> new NotFoundException("Concept not found: " + code));
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/concepts")
   public HttpResponse<?> createConcept(@PathVariable String codeSystem, @Body @Valid Concept concept) {
     concept.setId(null);
@@ -166,7 +166,7 @@ public class CodeSystemController {
     return HttpResponse.created(concept);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Put(uri = "/{codeSystem}/concepts/{id}")
   public HttpResponse<?> updateConcept(@PathVariable String codeSystem, @PathVariable Long id, @Body @Valid Concept concept) {
     concept.setId(id);
@@ -177,14 +177,14 @@ public class CodeSystemController {
 
   //----------------CodeSystem EntityVersion----------------
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/entity-versions{?params*}")
   public QueryResult<CodeSystemEntityVersion> queryEntityVersions(@PathVariable String codeSystem, CodeSystemEntityVersionQueryParams params) {
     params.setCodeSystem(codeSystem);
     return codeSystemEntityVersionService.query(params);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/entities/{entityId}/versions")
   public HttpResponse<?> createEntityVersion(@PathVariable String codeSystem, @PathVariable Long entityId, @Body @Valid CodeSystemEntityVersion version) {
     version.setId(null);
@@ -193,7 +193,7 @@ public class CodeSystemController {
     return HttpResponse.created(version);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Put(uri = "/{codeSystem}/entities/{entityId}/versions/{id}")
   public HttpResponse<?> updateEntityVersion(@PathVariable String codeSystem, @PathVariable Long entityId, @PathVariable Long id, @Body @Valid CodeSystemEntityVersion version) {
     version.setId(id);
@@ -202,35 +202,35 @@ public class CodeSystemController {
     return HttpResponse.created(version);
   }
 
-  @Authorized("*.code-system.publish")
+  @Authorized("*.CodeSystem.publish")
   @Post(uri = "/{codeSystem}/entities/versions/{id}/activate")
   public HttpResponse<?> activateEntityVersion(@PathVariable String codeSystem, @PathVariable Long id) {
     codeSystemEntityVersionService.activate(id);
     return HttpResponse.noContent();
   }
 
-  @Authorized("*.code-system.publish")
+  @Authorized("*.CodeSystem.publish")
   @Post(uri = "/{codeSystem}/entities/versions/{id}/retire")
   public HttpResponse<?> retireEntityVersion(@PathVariable String codeSystem, @PathVariable Long id) {
     codeSystemEntityVersionService.retire(id);
     return HttpResponse.noContent();
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/entities/{entityId}/versions/{id}/duplicate")
   public HttpResponse<?> duplicateEntityVersion(@PathVariable String codeSystem,  @PathVariable Long entityId, @PathVariable Long id) {
     codeSystemEntityVersionService.duplicate(codeSystem, entityId, id);
     return HttpResponse.ok();
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/versions/{version}/entity-versions/{entityVersionId}/membership")
   public HttpResponse<?> linkEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @PathVariable Long entityVersionId) {
     codeSystemVersionService.linkEntityVersion(codeSystem, version, entityVersionId);
     return HttpResponse.ok();
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Delete(uri = "/{codeSystem}/versions/{version}/entity-versions/{entityVersionId}/membership")
   public HttpResponse<?> unlinkEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @PathVariable Long entityVersionId) {
     codeSystemVersionService.unlinkEntityVersion(codeSystem, version, entityVersionId);
@@ -239,20 +239,20 @@ public class CodeSystemController {
 
   //----------------CodeSystem Property----------------
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/entity-properties{?params*}")
   public QueryResult<EntityProperty> queryEntityProperties(@PathVariable String codeSystem, EntityPropertyQueryParams params) {
     params.setCodeSystem(codeSystem);
     return entityPropertyService.query(params);
   }
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/entity-properties/{id}")
   public EntityProperty getEntityProperty(@PathVariable String codeSystem, @PathVariable Long id) {
     return entityPropertyService.load(id).orElseThrow(() -> new NotFoundException("EntityProperty not found: " + id));
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/entity-properties")
   public HttpResponse<?> createEntityProperty(@PathVariable String codeSystem, @Body @Valid EntityProperty property) {
     property.setId(null);
@@ -260,7 +260,7 @@ public class CodeSystemController {
     return HttpResponse.created(property);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Put(uri = "/{codeSystem}/entity-properties/{id}")
   public HttpResponse<?> updateEntityProperty(@PathVariable String codeSystem, @PathVariable Long id, @Body @Valid EntityProperty property) {
     property.setId(id);
@@ -268,7 +268,7 @@ public class CodeSystemController {
     return HttpResponse.created(property);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Delete(uri = "/{codeSystem}/entity-properties/{id}")
   public HttpResponse<?> deleteEntityProperty(@PathVariable String codeSystem, @PathVariable Long id) {
     entityPropertyService.delete(id);
@@ -277,13 +277,13 @@ public class CodeSystemController {
 
   //----------------CodeSystem PropertyValue----------------
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/entity-property-values/{id}")
   public EntityPropertyValue getEntityPropertyValue(@PathVariable String codeSystem, @PathVariable Long id) {
     return entityPropertyValueService.load(id).orElseThrow(() -> new NotFoundException("EntityPropertyValue not found: " + id));
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/entity-versions/{entityVersionId}/entity-property-values")
   public HttpResponse<?> createEntityPropertyValue(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @Body @Valid EntityPropertyValue propertyValue) {
     propertyValue.setId(null);
@@ -291,7 +291,7 @@ public class CodeSystemController {
     return HttpResponse.created(propertyValue);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Put(uri = "/{codeSystem}/entity-versions/{entityVersionId}/entity-property-values/{id}")
   public HttpResponse<?> updateEntityPropertyValue(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid EntityPropertyValue propertyValue) {
     propertyValue.setId(id);
@@ -299,7 +299,7 @@ public class CodeSystemController {
     return HttpResponse.created(propertyValue);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Delete(uri = "/{codeSystem}/entity-property-values/{id}")
   public HttpResponse<?> deleteEntityPropertyValue(@PathVariable String codeSystem, @PathVariable Long id) {
     entityPropertyValueService.delete(id);
@@ -308,13 +308,13 @@ public class CodeSystemController {
 
   //----------------CodeSystem Designation---------------
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/designations/{id}")
   public Designation getDesignation(@PathVariable String codeSystem, @PathVariable Long id) {
     return designationService.load(id).orElseThrow(() -> new NotFoundException("Designation not found: " + id));
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/entity-versions/{entityVersionId}/designations")
   public HttpResponse<?> createDesignation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @Body @Valid Designation designation) {
     designation.setId(null);
@@ -322,7 +322,7 @@ public class CodeSystemController {
     return HttpResponse.created(designation);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Put(uri = "/{codeSystem}/entity-versions/{entityVersionId}/designations/{id}")
   public HttpResponse<?> updateDesignation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid Designation designation) {
     designation.setId(id);
@@ -330,7 +330,7 @@ public class CodeSystemController {
     return HttpResponse.created(designation);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Delete(uri = "/{codeSystem}/designations/{id}")
   public HttpResponse<?> deleteDesignation(@PathVariable String codeSystem, @PathVariable Long id) {
     designationService.delete(id);
@@ -339,13 +339,13 @@ public class CodeSystemController {
 
   //----------------CodeSystem Association---------------
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/associations/{id}")
   public CodeSystemAssociation getAssociation(@PathVariable String codeSystem, @PathVariable Long id) {
     return associationService.load(id).orElseThrow(() -> new NotFoundException("Association not found: " + id));
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/entity-versions/{entityVersionId}/associations")
   public HttpResponse<?> createAssociation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @Body @Valid CodeSystemAssociation association) {
     association.setId(null);
@@ -353,7 +353,7 @@ public class CodeSystemController {
     return HttpResponse.created(association);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Put(uri = "/{codeSystem}/entity-versions/{entityVersionId}/associations/{id}")
   public HttpResponse<?> updateAssociation(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid CodeSystemAssociation association) {
     association.setId(id);
@@ -361,7 +361,7 @@ public class CodeSystemController {
     return HttpResponse.created(association);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Delete(uri = "/{codeSystem}/associations/{id}")
   public HttpResponse<?> deleteAssociation(@PathVariable String codeSystem, @PathVariable Long id) {
     associationService.delete(id);
@@ -370,26 +370,26 @@ public class CodeSystemController {
 
   //----------------CodeSystem Supplement----------------
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/supplements")
   public List<CodeSystemSupplement> getSupplements(@PathVariable String codeSystem) {
     return codeSystemSupplementService.getSupplements(codeSystem);
   }
 
-  @Authorized("*.code-system.view")
+  @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}/supplements/{id}")
   public CodeSystemSupplement getSupplement(@PathVariable String codeSystem, @PathVariable Long id) {
     return codeSystemSupplementService.load(id).orElseThrow(() -> new NotFoundException("Supplement not found: " + id));
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/supplements")
   public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @Body @Valid CodeSystemSupplement supplement) {
     codeSystemSupplementService.save(supplement, codeSystem);
     return HttpResponse.created(supplement);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Put(uri = "/{codeSystem}/supplements/{id}")
   public HttpResponse<?> updateSupplement(@PathVariable String codeSystem, @PathVariable Long id, @Body @Valid CodeSystemSupplement supplement) {
     supplement.setId(id);
@@ -397,14 +397,14 @@ public class CodeSystemController {
     return HttpResponse.created(supplement);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/entities/versions/{entityVersionId}/supplements")
   public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @Body @Valid CodeSystemSupplement supplement) {
     codeSystemSupplementService.save(supplement, entityVersionId);
     return HttpResponse.created(supplement);
   }
 
-  @Authorized("*.code-system.edit")
+  @Authorized("*.CodeSystem.edit")
   @Put(uri = "/{codeSystem}/entities/versions/{entityVersionId}/supplements/{id}")
   public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid CodeSystemSupplement supplement) {
     supplement.setId(id);

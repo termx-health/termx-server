@@ -6,11 +6,11 @@ import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.valueset.ValueSet;
-import com.kodality.termserver.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.valueset.ValueSetVersion;
+import com.kodality.termserver.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -36,19 +36,19 @@ public class ValueSetController {
 
   //----------------ValueSet----------------
 
-  @Authorized("*.value-set.view")
+  @Authorized("*.ValueSet.view")
   @Get(uri = "{?params*}")
   public QueryResult<ValueSet> queryValueSets(ValueSetQueryParams params) {
     return valueSetService.query(params);
   }
 
-  @Authorized("*.value-set.view")
+  @Authorized("*.ValueSet.view")
   @Get(uri = "/{valueSet}")
   public ValueSet getValueSet(@PathVariable String valueSet) {
     return valueSetService.load(valueSet).orElseThrow(() -> new NotFoundException("ValueSet not found: " + valueSet));
   }
 
-  @Authorized("*.value-set.edit")
+  @Authorized("*.ValueSet.edit")
   @Post
   public HttpResponse<?> saveValueSet(@Body @Valid ValueSet valueSet) {
     valueSetService.save(valueSet);
@@ -57,20 +57,20 @@ public class ValueSetController {
 
   //----------------ValueSet Version----------------
 
-  @Authorized("*.value-set.view")
+  @Authorized("*.ValueSet.view")
   @Get(uri = "/{valueSet}/versions{?params*}")
   public QueryResult<ValueSetVersion> queryValueSetVersions(@PathVariable String valueSet, ValueSetVersionQueryParams params) {
     params.setValueSet(valueSet);
     return valueSetVersionService.query(params);
   }
 
-  @Authorized("*.value-set.view")
+  @Authorized("*.ValueSet.view")
   @Get(uri = "/{valueSet}/versions/{version}")
   public ValueSetVersion getValueSetVersion(@PathVariable String valueSet, @PathVariable String version) {
     return valueSetVersionService.load(valueSet, version).orElseThrow(() -> new NotFoundException("Value set version not found: " + version));
   }
 
-  @Authorized("*.value-set.edit")
+  @Authorized("*.ValueSet.edit")
   @Post(uri = "/{valueSet}/versions")
   public HttpResponse<?> createVersion(@PathVariable String valueSet, @Body @Valid ValueSetVersion version) {
     version.setId(null);
@@ -79,7 +79,7 @@ public class ValueSetController {
     return HttpResponse.created(version);
   }
 
-  @Authorized("*.value-set.edit")
+  @Authorized("*.ValueSet.edit")
   @Put(uri = "/{valueSet}/versions/{id}")
   public HttpResponse<?> updateVersion(@PathVariable String valueSet, @PathVariable Long id, @Body @Valid ValueSetVersion version) {
     version.setId(id);
@@ -88,14 +88,14 @@ public class ValueSetController {
     return HttpResponse.created(version);
   }
 
-  @Authorized("*.value-set.publish")
+  @Authorized("*.ValueSet.publish")
   @Post(uri = "/{valueSet}/versions/{version}/activate")
   public HttpResponse<?> activateVersion(@PathVariable String valueSet, @PathVariable String version) {
     valueSetVersionService.activate(valueSet, version);
     return HttpResponse.noContent();
   }
 
-  @Authorized("*.value-set.publish")
+  @Authorized("*.ValueSet.publish")
   @Post(uri = "/{valueSet}/versions/{version}/retire")
   public HttpResponse<?> retireVersion(@PathVariable String valueSet, @PathVariable String version) {
     valueSetVersionService.retire(valueSet, version);
@@ -104,13 +104,13 @@ public class ValueSetController {
 
   //----------------ValueSet Version Concept----------------
 
-  @Authorized("*.value-set.view")
+  @Authorized("*.ValueSet.view")
   @Get(uri = "/{valueSet}/concepts/{id}")
   public ValueSetVersionConcept getConcept(@PathVariable String valueSet, @PathVariable Long id) {
     return valueSetVersionConceptService.load(id).orElseThrow(() -> new NotFoundException("ValueSet version concept not found: " + id));
   }
 
-  @Authorized("*.value-set.edit")
+  @Authorized("*.ValueSet.edit")
   @Post(uri = "/{valueSet}/versions/{version}/concepts")
   public HttpResponse<?> createConcept(@PathVariable String valueSet, @PathVariable String version, @Body @Valid ValueSetVersionConcept concept) {
     concept.setId(null);
@@ -118,7 +118,7 @@ public class ValueSetController {
     return HttpResponse.created(concept);
   }
 
-  @Authorized("*.value-set.edit")
+  @Authorized("*.ValueSet.edit")
   @Put(uri = "/{valueSet}/versions/{version}/concepts/{id}")
   public HttpResponse<?> updateConcept(@PathVariable String valueSet, @PathVariable String version, @PathVariable Long id, @Body @Valid ValueSetVersionConcept concept) {
     concept.setId(id);
@@ -126,14 +126,14 @@ public class ValueSetController {
     return HttpResponse.created(concept);
   }
 
-  @Authorized("*.value-set.edit")
+  @Authorized("*.ValueSet.edit")
   @Delete(uri = "/{valueSet}/concepts/{id}")
   public HttpResponse<?> deleteConcept(@PathVariable String valueSet, @PathVariable Long id) {
     valueSetVersionConceptService.delete(id);
     return HttpResponse.ok();
   }
 
-  @Authorized("*.value-set.view")
+  @Authorized("*.ValueSet.view")
   @Post(uri = "/expand")
   public List<ValueSetVersionConcept> expand(@Body ValueSetExpandRequest request) {
     return valueSetVersionConceptService.expand(request.getValueSet(), request.getValueSetVersion(), request.getRuleSet());
@@ -142,13 +142,13 @@ public class ValueSetController {
 
   //----------------ValueSet Version Rule----------------
 
-  @Authorized("*.value-set.view")
+  @Authorized("*.ValueSet.view")
   @Get(uri = "/{valueSet}/rules/{id}")
   public ValueSetVersionRule getRule(@PathVariable String valueSet, @PathVariable Long id) {
     return valueSetVersionRuleService.load(id).orElseThrow(() -> new NotFoundException("ValueSet version rule not found: " + id));
   }
 
-  @Authorized("*.value-set.edit")
+  @Authorized("*.ValueSet.edit")
   @Post(uri = "/{valueSet}/rule-sets/{ruleSetId}/rules")
   public HttpResponse<?> createRule(@PathVariable String valueSet, @PathVariable Long ruleSetId, @Body @Valid ValueSetVersionRule rule) {
     rule.setId(null);
@@ -156,7 +156,7 @@ public class ValueSetController {
     return HttpResponse.created(rule);
   }
 
-  @Authorized("*.value-set.edit")
+  @Authorized("*.ValueSet.edit")
   @Put(uri = "/{valueSet}/rule-sets/{ruleSetId}/rules/{id}")
   public HttpResponse<?> updateRule(@PathVariable String valueSet, @PathVariable Long ruleSetId, @PathVariable Long id, @Body @Valid ValueSetVersionRule rule) {
     rule.setId(id);
@@ -164,7 +164,7 @@ public class ValueSetController {
     return HttpResponse.created(rule);
   }
 
-  @Authorized("*.value-set.edit")
+  @Authorized("*.ValueSet.edit")
   @Delete(uri = "/{valueSet}/rules/{id}")
   public HttpResponse<?> deleteRule(@PathVariable String valueSet, @PathVariable Long id) {
     valueSetVersionRuleService.delete(id);
