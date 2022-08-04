@@ -12,5 +12,6 @@ import lombok.experimental.Accessors;
 public class MeasurementUnitQueryParams extends QueryParams {
   private String code;
   private String kind;
+  private String searchText;
   private LocalDate date;
 }

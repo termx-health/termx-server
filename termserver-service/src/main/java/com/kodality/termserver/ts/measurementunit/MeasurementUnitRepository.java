@@ -53,6 +53,14 @@ public class MeasurementUnitRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getKind())) {
       sb.append("and mu.kind = ?", params.getKind());
     }
+    if (StringUtils.isNotEmpty(params.getSearchText())) {
+      sb.append("and (");
+      sb.append("mu.kind ilike '%' || ? || '%'  ", params.getSearchText());
+      sb.or("mu.code ilike '%' || ? || '%'", params.getSearchText());
+      sb.or("mu.names::text ilike '%' || ? || '%'", params.getSearchText());
+      sb.or("mu.alias::text ilike '%' || ? || '%'", params.getSearchText());
+      sb.append(")");
+    }
     sb.appendIfNotNull("and mu.period @> ?", params.getDate());
     return sb;
   }
