@@ -64,9 +64,13 @@ public class AuthorizationFilter implements HttpServerFilter {
   }
 
   private boolean privilegesMatch(String authPrivilege, String userPrivilege) {
+    //TODO: simplify
     if (authPrivilege.indexOf('*') == authPrivilege.length() - 1) {
       String start = authPrivilege.substring(0, authPrivilege.length() - 1);
       return userPrivilege.startsWith(start);
+    }
+    if (userPrivilege.startsWith("*.*.")) {
+      return authPrivilege.endsWith(userPrivilege.replace("*.*.", "."));
     }
     if (authPrivilege.indexOf('*') == 0) {
       String start = authPrivilege.substring(1);
