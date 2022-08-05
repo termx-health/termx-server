@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ArrayUtils;
 import org.reactivestreams.Publisher;
 
 @Filter("/**")
@@ -59,24 +60,33 @@ public class AuthorizationFilter implements HttpServerFilter {
         .orElse(false);
   }
 
-  public boolean hasAnyPrivilege(List<String> authPrivileges, Collection<String> userPrivileges) {
+  public static boolean hasAnyPrivilege(List<String> authPrivileges, Collection<String> userPrivileges) {
     return userPrivileges.contains("admin") || authPrivileges.stream().anyMatch(ap -> userPrivileges.stream().anyMatch(up -> privilegesMatch(ap, up)));
   }
 
-  private boolean privilegesMatch(String authPrivilege, String userPrivilege) {
-    //TODO: simplify
-    if (authPrivilege.indexOf('*') == authPrivilege.length() - 1) {
-      String start = authPrivilege.substring(0, authPrivilege.length() - 1);
-      return userPrivilege.startsWith(start);
+  private static boolean privilegesMatch(String authPrivilege, String userPrivilege) {
+    if (authPrivilege.equals("admin")) {
+      return userPrivilege.equals("admin");
     }
-    if (userPrivilege.startsWith("*.*.")) {
-      return authPrivilege.endsWith(userPrivilege.replace("*.*.", "."));
+    String[] authParts = authPrivilege.split("\\.");
+    String[] upParts = userPrivilege.split("\\.");
+
+    if (authParts.length == 2 && authParts[0].equals("*")) { // handle special case like '*.view'
+      authParts = ArrayUtils.addAll(new String[]{"*"}, authParts);
     }
-    if (authPrivilege.indexOf('*') == 0) {
-      String start = authPrivilege.substring(1);
-      return userPrivilege.endsWith(start);
+
+    if (upParts.length == 2 && upParts[0].equals("*")) { // handle special case like '*.view'
+      upParts = ArrayUtils.addAll(new String[]{"*"}, upParts);
     }
-    return userPrivilege.equals(authPrivilege);
+
+    if (upParts.length != 3 && authParts.length != 3) {
+      return false;
+    }
+    return match(upParts[0], authParts[0]) && match(upParts[1], authParts[1]) && match(upParts[2], authParts[2]);
+  }
+
+  private static boolean match(String upPart, String apPart) {
+    return upPart.equals(apPart) || upPart.equals("*");
   }
 
 }
