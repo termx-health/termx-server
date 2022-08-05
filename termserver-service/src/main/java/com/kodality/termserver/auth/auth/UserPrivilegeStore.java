@@ -6,6 +6,7 @@ import com.kodality.termserver.auth.PrivilegeQueryParams;
 import com.kodality.termserver.auth.PrivilegeResource;
 import com.kodality.termserver.auth.PrivilegeResource.PrivilegeResourceActions;
 import com.kodality.termserver.auth.privilege.PrivilegeService;
+import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,10 +30,13 @@ public class UserPrivilegeStore {
 
   public Collection<String> getPrivileges(SessionInfo sessionInfo) {
     return this.privilegeCache.get("privilege-cache", sessionInfo.getUsername(), () -> {
-      PrivilegeQueryParams params = new PrivilegeQueryParams();
-      params.setCode(String.join(",", sessionInfo.getRoles())); //FIXME: groups?
-      params.setLimit(-1);
-      List<Privilege> privileges = this.privilegeService.query(params).getData();
+      List<Privilege> privileges = List.of();
+      if (CollectionUtils.isNotEmpty(sessionInfo.getRoles())) {
+        PrivilegeQueryParams params = new PrivilegeQueryParams();
+        params.setCode(String.join(",", sessionInfo.getRoles()));
+        params.setLimit(-1);
+        privileges = this.privilegeService.query(params).getData();
+      }
       Set<String> calculatedPrivileges = privileges.stream()
           .map(Privilege::getResources)
           .flatMap(Collection::stream)
