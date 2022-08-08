@@ -1,14 +1,14 @@
 package com.kodality.termserver.liquibase;
 
 import com.kodality.commons.micronaut.BeanContext;
-import com.kodality.commons.micronaut.liquibase.FileReaderCustomChange;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.common.AuthorizedFileReaderCustomChange;
 import com.kodality.termserver.fhir.valueset.ValueSetFhirImportService;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ValueSetFhirImport extends FileReaderCustomChange {
+public class ValueSetFhirImport extends AuthorizedFileReaderCustomChange {
   private final ValueSetFhirImportService valueSetFhirImportService;
 
   public ValueSetFhirImport() {
@@ -16,7 +16,7 @@ public class ValueSetFhirImport extends FileReaderCustomChange {
   }
 
   @Override
-  protected void handleFile(String name, byte[] content) {
+  protected void handleMigrationFile(String name, byte[] content) {
     log.info("creating valueset " + name);
 
     ValueSet vs = JsonUtil.fromJson(asString(content), ValueSet.class);

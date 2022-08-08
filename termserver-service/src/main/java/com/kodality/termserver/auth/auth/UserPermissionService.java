@@ -14,7 +14,7 @@ public class UserPermissionService {
   private final UserPrivilegeStore userPrivilegeStore;
 
   public List<String> getPermittedResourceIds(String resourceType, String action) {
-    SessionInfo sessionInfo = SessionStore.get().orElseThrow();
+    SessionInfo sessionInfo = SessionStore.require();
     Collection<String> userPrivileges = userPrivilegeStore.getPrivileges(sessionInfo);
     boolean allResourcesAccessible = checkAllResourcesPermitted(resourceType, action, userPrivileges);
     if (allResourcesAccessible) {
@@ -25,7 +25,7 @@ public class UserPermissionService {
   }
 
   public void checkPermitted(String resourceId, String resourceType, String action) {
-    SessionInfo sessionInfo = SessionStore.get().orElseThrow();
+    SessionInfo sessionInfo = SessionStore.require();
     Collection<String> userPrivileges = userPrivilegeStore.getPrivileges(sessionInfo);
     boolean allResourcesAccessible = checkAllResourcesPermitted(resourceType, action, userPrivileges);
     if (allResourcesAccessible) {

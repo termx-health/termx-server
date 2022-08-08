@@ -1,10 +1,10 @@
 package com.kodality.termserver.liquibase;
 
 import com.kodality.commons.micronaut.BeanContext;
-import com.kodality.commons.micronaut.liquibase.FileReaderCustomChange;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.range.LocalDateRange;
+import com.kodality.termserver.common.AuthorizedFileReaderCustomChange;
 import com.kodality.termserver.measurementunit.MeasurementUnit;
 import com.kodality.termserver.ts.measurementunit.MeasurementUnitService;
 import com.univocity.parsers.common.processor.RowListProcessor;
@@ -19,7 +19,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class MeasurementUnitTsvImport extends FileReaderCustomChange {
+public class MeasurementUnitTsvImport extends AuthorizedFileReaderCustomChange {
   private final MeasurementUnitService measurementUnitService;
 
   public MeasurementUnitTsvImport() {
@@ -27,7 +27,7 @@ public class MeasurementUnitTsvImport extends FileReaderCustomChange {
   }
 
   @Override
-  protected void handleFile(String name, byte[] content) {
+  protected void handleMigrationFile(String name, byte[] content) {
     log.info("Updating measurement units from " + name);
     RowListProcessor processor = csvProcessor(content);
 
