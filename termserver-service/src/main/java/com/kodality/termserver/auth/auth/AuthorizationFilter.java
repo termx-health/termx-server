@@ -25,6 +25,7 @@ import org.reactivestreams.Publisher;
 @RequiredArgsConstructor
 public class AuthorizationFilter implements HttpServerFilter {
 
+  public static final String ADMIN = "admin";
   private final UserPrivilegeStore userPrivilegeStore;
 
   @Override
@@ -61,12 +62,12 @@ public class AuthorizationFilter implements HttpServerFilter {
   }
 
   public static boolean hasAnyPrivilege(List<String> authPrivileges, Collection<String> userPrivileges) {
-    return userPrivileges.contains("admin") || authPrivileges.stream().anyMatch(ap -> userPrivileges.stream().anyMatch(up -> privilegesMatch(ap, up)));
+    return userPrivileges.contains(ADMIN) || authPrivileges.stream().anyMatch(ap -> userPrivileges.stream().anyMatch(up -> privilegesMatch(ap, up)));
   }
 
   private static boolean privilegesMatch(String authPrivilege, String userPrivilege) {
-    if (authPrivilege.equals("admin")) {
-      return userPrivilege.equals("admin");
+    if (authPrivilege.equals(ADMIN)) {
+      return userPrivilege.equals(ADMIN);
     }
     String[] authParts = authPrivilege.split("\\.");
     String[] upParts = userPrivilege.split("\\.");
@@ -86,7 +87,7 @@ public class AuthorizationFilter implements HttpServerFilter {
   }
 
   private static boolean match(String upPart, String apPart) {
-    return upPart.equals(apPart) || upPart.equals("*");
+    return upPart.equals(apPart) || upPart.equals("*") || apPart.equals("*");
   }
 
 }

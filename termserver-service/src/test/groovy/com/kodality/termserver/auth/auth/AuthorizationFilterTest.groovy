@@ -10,14 +10,16 @@ class AuthorizationFilterTest extends Specification {
     AuthorizationFilter.hasAnyPrivilege(authPrivs, userPrivs) == result
     where:
     authPrivs                              | userPrivs                              | result
-    ['*.view']                             | ['icd-10.CodeSystem.view']             | false
-    ['*.*.view']                           | ['icd-10.CodeSystem.view']             | false
-    ['*.CodeSystem.view']                  | ['icd-10.CodeSystem.view']             | false
-    ['admin']                              | ['*.*.edit']                           | false
+    ['*.view']                             | ['icd-10.CodeSystem.view']             | true
+    ['*.*.view']                           | ['icd-10.CodeSystem.view']             | true
+    ['*.CodeSystem.view']                  | ['icd-10.CodeSystem.view']             | true
     ['icd-10.CodeSystem.view', 'a.b.edit'] | ['icd-10.CodeSystem.view']             | true
     ['icd-10.CodeSystem.view']             | ['icd-10.CodeSystem.view', 'a.b.edit'] | true
     ['*.CodeSystem.edit']                  | ['*.*.edit']                           | true
     ['ABS.CodeSystem.edit']                | ['*.edit']                             | true
     ['*.*.view']                           | ['admin']                              | true
+    ['admin']                              | ['*.*.edit']                           | false
+    ['*.CodeSystem.view']                  | ['*.CodeSystem.edit']                  | false
+    ['ABS.CodeSystem.edit']                | ['SBA.CodeSystem.edit']                | false
   }
 }
