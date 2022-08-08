@@ -1,5 +1,6 @@
 package com.kodality.termserver.integration.orphanet;
 
+import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportConfiguration;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.integration.icd10.Icd10Configuration;
@@ -27,7 +28,7 @@ public class OrphanetController {
   public JobLogResponse importIcd10(@NonNull @QueryValue String url, @Body ImportConfiguration configuration) {
     String source = configuration.getSource() == null ? Icd10Configuration.source : configuration.getSource();
     JobLogResponse jobLogResponse = importLogger.createJob(source, JOB_TYPE);
-    CompletableFuture.runAsync(() -> {
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Orphanet import started");
         long start = System.currentTimeMillis();
@@ -39,7 +40,7 @@ public class OrphanetController {
         importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
-    });
+    }));
     return jobLogResponse;
   }
 }

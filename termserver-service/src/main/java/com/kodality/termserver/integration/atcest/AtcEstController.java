@@ -1,5 +1,6 @@
 package com.kodality.termserver.integration.atcest;
 
+import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportConfiguration;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
@@ -25,7 +26,7 @@ public class AtcEstController {
   public JobLogResponse importAtcEst(@NonNull @QueryValue String url, @Body ImportConfiguration configuration) {
     String source = configuration.getSource() == null ? AtcEstConfiguration.source : configuration.getSource();
     JobLogResponse jobLogResponse = importLogger.createJob(source, JOB_TYPE);
-    CompletableFuture.runAsync(() -> {
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("ATC est import started");
         long start = System.currentTimeMillis();
@@ -37,7 +38,7 @@ public class AtcEstController {
         importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
-    });
+    }));
     return jobLogResponse;
   }
 }

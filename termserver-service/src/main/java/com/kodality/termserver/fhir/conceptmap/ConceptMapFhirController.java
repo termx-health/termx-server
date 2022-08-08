@@ -1,5 +1,6 @@
 package com.kodality.termserver.fhir.conceptmap;
 
+import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
@@ -52,7 +53,7 @@ public class ConceptMapFhirController {
   @Post("/$sync")
   public HttpResponse<?> importFhirMapSet(@Body Parameters parameters) {
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);
-    CompletableFuture.runAsync(() -> {
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         List<String> successes = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
@@ -66,7 +67,7 @@ public class ConceptMapFhirController {
         importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
-    });
+    }));
     Parameters resp =  new Parameters().setParameter(List.of(new Parameter().setName("jobId").setValueDecimal(BigDecimal.valueOf(jobLogResponse.getJobId()))));
     return HttpResponse.ok(resp);
   }

@@ -1,5 +1,6 @@
 package com.kodality.termserver.integration.atc;
 
+import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportConfiguration;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
@@ -24,7 +25,7 @@ public class AtcController {
   public JobLogResponse importAtc(@Body ImportConfiguration configuration) {
     String source = configuration.getSource() == null ? AtcConfiguration.source : configuration.getSource();
     JobLogResponse jobLogResponse = importLogger.createJob(source, JOB_TYPE);
-    CompletableFuture.runAsync(() -> {
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("ATC import started");
         long start = System.currentTimeMillis();
@@ -36,7 +37,7 @@ public class AtcController {
         importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
-    });
+    }));
     return jobLogResponse;
   }
 }

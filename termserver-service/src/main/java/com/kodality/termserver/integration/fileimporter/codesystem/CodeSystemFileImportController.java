@@ -1,6 +1,7 @@
 package com.kodality.termserver.integration.fileimporter.codesystem;
 
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisRequest;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingRequest;
@@ -44,7 +45,7 @@ public class CodeSystemFileImportController {
     byte[] importFile = file != null ? readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
     JobLogResponse jobLogResponse = importLogger.createJob( "CS-FILE-IMPORT");
-    CompletableFuture.runAsync(() -> {
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Code system file import started");
         long start = System.currentTimeMillis();
@@ -60,7 +61,7 @@ public class CodeSystemFileImportController {
         importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
-    });
+    }));
     return jobLogResponse;
   }
 

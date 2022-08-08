@@ -1,6 +1,7 @@
 package com.kodality.termserver.integration.snomed;
 
 import com.kodality.commons.util.AsyncHelper;
+import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.client.SnowstormClient;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
@@ -89,7 +90,7 @@ public class SnomedController {
   @Post("/import")
   public JobLogResponse importConcepts(@Body SnomedImportRequest request) {
     JobLogResponse jobLogResponse = importLogger.createJob("snomed-ct", "import");
-    CompletableFuture.runAsync(() -> {
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("SNOMED CT concepts import started");
         long start = System.currentTimeMillis();
@@ -101,7 +102,7 @@ public class SnomedController {
         importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
-    });
+    }));
     return jobLogResponse;
   }
 

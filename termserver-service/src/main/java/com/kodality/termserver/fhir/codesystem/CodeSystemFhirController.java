@@ -1,6 +1,7 @@
 package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.commons.exception.NotFoundException;
+import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.fhir.FhirMeasurementUnitConvertor;
 import com.kodality.termserver.job.JobLogResponse;
@@ -95,7 +96,7 @@ public class CodeSystemFhirController {
   @Post("/$sync")
   public HttpResponse<?> importFhirCodeSystem(@Body Parameters parameters) {
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);
-    CompletableFuture.runAsync(() -> {
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         List<String> successes = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
@@ -109,7 +110,7 @@ public class CodeSystemFhirController {
         importLogger.logImport(jobLogResponse.getJobId(), e);
         throw e;
       }
-    });
+    }));
     Parameters resp = new Parameters().setParameter(List.of(new Parameter().setName("jobId").setValueDecimal(BigDecimal.valueOf(jobLogResponse.getJobId()))));
     return HttpResponse.ok(resp);
   }
