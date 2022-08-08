@@ -9,7 +9,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class Extractor {
+public class Icd10EstExtractor {
 
   public static List<Concept> parseDiagnoses(List<Icd10Est> diagnoses, ImportConfiguration configuration, List<EntityProperty> properties) {
     log.info("Mapping diagnoses to concepts...");

@@ -1,4 +1,4 @@
-package com.kodality.termserver.integration.orphanet.model;
+package com.kodality.termserver.integration.orphanet.utils;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText;
@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ClassificationList {
+public class OrphanetClassificationList {
 
   @JacksonXmlProperty(localName = "count")
   private Integer count;

@@ -1,24 +1,20 @@
 package com.kodality.termserver.integration.atc;
 
 
-import com.kodality.commons.model.LocalizedName;
-import com.kodality.termserver.Language;
 import com.kodality.termserver.association.AssociationKind;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
+import com.kodality.termserver.common.CodeSystemImportService;
+import com.kodality.termserver.common.ImportConfiguration;
 import com.kodality.termserver.integration.atc.utils.AtcMapper;
 import com.kodality.termserver.integration.atc.utils.AtcResponseParser;
-import com.kodality.termserver.common.ImportConfiguration;
-import com.kodality.termserver.common.CodeSystemImportService;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Singleton;
@@ -35,8 +31,6 @@ public class AtcService {
 
   @Transactional
   public void importAtc(ImportConfiguration configuration) {
-    prepareConfiguration(configuration);
-
     CodeSystemVersion version = importService.prepareCodeSystemAndVersion(AtcMapper.mapCodeSystem(configuration));
     List<EntityProperty> properties = importService.prepareProperties(AtcMapper.mapProperties(), configuration.getCodeSystem());
     importService.prepareAssociationType("is-a", AssociationKind.codesystemHierarchyMeaning);
@@ -63,23 +57,5 @@ public class AtcService {
         .header("Content-Type", "application/x-www-form-urlencoded")
         .POST(HttpRequest.BodyPublishers.ofString("code=ATC+code&name=%%%&namesearchtype=containing"))
         .build();
-  }
-
-  private void prepareConfiguration(ImportConfiguration configuration) {
-    configuration.setUri(configuration.getUri() == null ? AtcConfiguration.uri : configuration.getUri());
-    configuration.setVersion(configuration.getVersion() == null ? String.valueOf(LocalDate.now().getYear()) : configuration.getVersion());
-    configuration.setSource(configuration.getSource() == null ? AtcConfiguration.source : configuration.getSource());
-    configuration.setValidFrom(configuration.getValidFrom() == null ? LocalDate.now() : configuration.getValidFrom());
-    configuration.setCodeSystem(configuration.getCodeSystem() == null ? AtcConfiguration.codeSystem : configuration.getCodeSystem());
-    configuration.setCodeSystemName(configuration.getCodeSystemName() == null ? getCodeSystemName() : configuration.getCodeSystemName());
-    configuration.setCodeSystemDescription(
-        configuration.getCodeSystemDescription() == null ? AtcConfiguration.codeSystemDescription : configuration.getCodeSystemDescription());
-  }
-
-  private LocalizedName getCodeSystemName() {
-    Map<String, String> ln = new HashMap<>();
-    ln.put(Language.et, "Rahvusvaheline ATC");
-    ln.put(Language.en, "International ATC");
-    return new LocalizedName(ln);
   }
 }

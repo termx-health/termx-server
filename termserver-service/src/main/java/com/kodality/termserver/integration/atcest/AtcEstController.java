@@ -10,6 +10,7 @@ import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.QueryValue;
 import java.util.concurrent.CompletableFuture;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,9 +24,8 @@ public class AtcEstController {
   private static final String JOB_TYPE = "ATC-est";
 
   @Post("/import")
-  public JobLogResponse importAtcEst(@NonNull @QueryValue String url, @Body ImportConfiguration configuration) {
-    String source = configuration.getSource() == null ? AtcEstConfiguration.source : configuration.getSource();
-    JobLogResponse jobLogResponse = importLogger.createJob(source, JOB_TYPE);
+  public JobLogResponse importAtcEst(@NonNull @QueryValue String url, @Body @Valid @NonNull ImportConfiguration configuration) {
+    JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("ATC est import started");
