@@ -1,0 +1,473 @@
+{
+  "resourceType": "CapabilityStatement",
+  "id": "terminology-server",
+  "url": "https://terminology.kodality.dev/api/fhir/r4/metadata",
+  "version": "4.3.0",
+  "name": "TEHIK TIS Test FHIR Terminology Server Conformance Statement",
+  "status": "active",
+  "date": "2022-08-04T06:17:47.723Z",
+  "contact": [
+    {
+      "telecom": [
+        {
+          "system": "url",
+          "value": "http://wiki.kodality.dev/terminology-server/"
+        }
+      ]
+    }
+  ],
+  "description": "Standard Conformance Statement for the Terminology Server provided by Kodality",
+  "kind": "instance",
+  "instantiates": [
+    "http://hl7.org/fhir/CapabilityStatement/terminology-server"
+  ],
+  "software": {
+    "name": "KTS Terminology Server",
+    "version": "1.0.5",
+    "releaseDate": "2022-07-30T19:50:55.040Z"
+  },
+  "implementation": {
+    "description": "FHIR TS server running at http://terminology.kodality.dev/api/fhir/r4",
+    "url": "http://terminology.kodality.dev/api/fhir/r4"
+  },
+  "fhirVersion": "4.3.0",
+  "format": [
+    "application/fhir+xml",
+    "application/fhir+json"
+  ],
+  "rest": [
+    {
+      "mode": "server",
+      "security": {
+        "cors": true,
+        "service": [
+          {
+            "coding": [
+              {
+                "code": "Certificates",
+                "system": "http://terminology.hl7.org/CodeSystem/restful-security-service"
+              }
+            ]
+          }
+        ]
+      },
+      "interaction": [
+        {
+          "code": "transaction"
+        }
+      ],
+      "documentation": "RESTful Terminology Server",
+      "resource": [
+        {
+          "type": "ValueSet",
+          "profile": "http://hl7.org/fhir/StructureDefinition/ValueSet",
+          "interaction": [
+            {
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+                  "valueCode": "SHALL"
+                }
+              ],
+              "code": "read",
+              "documentation": "Read allows clients to get the logical definitions of the value sets"
+            },
+            {
+              "code": "create",
+              "documentation": "Used for import of FHIR value sets."
+            },
+            {
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+                  "valueCode": "SHALL"
+                }
+              ],
+              "code": "search-type",
+              "documentation": "Search allows clients to find value sets on the server"
+            }
+          ],
+          "searchParam": [
+            {
+              "name": "date",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-date",
+              "type": "date"
+            },
+            {
+              "name": "name",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-name",
+              "type": "string"
+            },
+            {
+              "name": "reference",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-reference",
+              "type": "uri"
+            },
+            {
+              "name": "status",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-status",
+              "type": "token"
+            },
+            {
+              "name": "url",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-url",
+              "type": "uri"
+            },
+            {
+              "name": "version",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-version",
+              "type": "token"
+            }
+          ]
+        },
+        {
+          "type": "CodeSystem",
+          "profile": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+          "interaction": [
+            {
+              "code": "read"
+            },
+            {
+              "code": "vread"
+            },
+            {
+              "code": "create",
+              "documentation": "Used for import of FHIR code systems. The `CodeSystem.url` cannot equal the well-known code system URLs for SNOMED CT and LOINC. "
+            },
+            {
+              "code": "search-type"
+            }
+          ],
+          "readHistory": true,
+          "searchParam": [
+            {
+              "name": "_sort",
+              "type": "string"
+            },
+            {
+              "name": "_count",
+              "type": "number"
+            },
+            {
+              "name": "_id",
+              "type": "string",
+              "documentation": "The ID of the resource"
+            },
+            {
+              "name": "_lastUpdated",
+              "type": "date"
+            },
+            {
+              "name": "_security",
+              "type": "token"
+            },
+            {
+              "name": "_tag",
+              "type": "token"
+            },
+            {
+              "name": "description",
+              "type": "string",
+              "documentation": "The description of the code system"
+            },
+            {
+              "name": "identifier",
+              "type": "token",
+              "documentation": "External identifier for the code system"
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "documentation": "Computationally friendly name of the code system"
+            },
+            {
+              "name": "publisher",
+              "type": "string",
+              "documentation": "Name of the publisher of the code system"
+            },
+            {
+              "name": "status",
+              "type": "token",
+              "documentation": "The current status of the code system"
+            },
+            {
+              "name": "system",
+              "type": "uri",
+              "documentation": "The system for any codes defined by this code system (same as 'url')"
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "documentation": "The human-friendly name of the code system"
+            },
+            {
+              "name": "url",
+              "type": "uri",
+              "documentation": "The uri that identifies the code system"
+            },
+            {
+              "name": "version",
+              "type": "token",
+              "documentation": "The business version of the code system"
+            }
+          ],
+          "operation": [
+            {
+              "name": "validate-code",
+              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-validate-code"
+            },
+            {
+              "name": "subsumes",
+              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-subsumes"
+            },
+            {
+              "name": "lookup",
+              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup"
+            },
+            {
+              "name": "find-matches",
+              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-find-matches"
+            },
+            {
+              "name": "list",
+              "definition": "http://terminology.kodality.dev/fhir/OperationDefinition/CodeSystem-list",
+              "documentation": "Return the list of CodeSystems without concepts."
+            }
+          ]
+        },
+        {
+          "type": "ConceptMap",
+          "profile": "http://hl7.org/fhir/StructureDefinition/ConceptMap",
+          "interaction": [
+            {
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+                  "valueCode": "SHALL"
+                }
+              ],
+              "code": "read",
+              "documentation": "Read allows clients to get the logical definitions of the concept maps"
+            },
+            {
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+                  "valueCode": "SHALL"
+                }
+              ],
+              "code": "search-type",
+              "documentation": "Search allows clients to find concept maps on the server"
+            }
+          ],
+          "searchParam": [
+            {
+              "name": "date",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-date",
+              "type": "date"
+            },
+            {
+              "name": "name",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-name",
+              "type": "string"
+            },
+            {
+              "name": "status",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-status",
+              "type": "token"
+            },
+            {
+              "name": "source",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-source",
+              "type": "reference"
+            },
+            {
+              "name": "target",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-target",
+              "type": "reference"
+            },
+            {
+              "name": "url",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-url",
+              "type": "uri"
+            },
+            {
+              "name": "version",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-version",
+              "type": "token"
+            }
+          ]
+        },
+        {
+          "type": "NamingSystem",
+          "profile": "http://hl7.org/fhir/StructureDefinition/NamingSystem",
+          "interaction": [
+            {
+              "code": "search-type"
+            },
+            {
+              "code": "read"
+            }
+          ],
+          "versioning": "versioned-update",
+          "readHistory": true,
+          "searchParam": [
+            {
+              "name": "_sort",
+              "type": "string"
+            },
+            {
+              "name": "_count",
+              "type": "number"
+            },
+            {
+              "name": "_id",
+              "type": "string",
+              "documentation": "The ID of the resource"
+            },
+            {
+              "name": "_lastUpdated",
+              "type": "date"
+            },
+            {
+              "name": "_security",
+              "type": "token"
+            },
+            {
+              "name": "_tag",
+              "type": "token"
+            },
+            {
+              "name": "description",
+              "type": "string",
+              "documentation": "The description of the naming system"
+            },
+            {
+              "name": "id-type",
+              "type": "token",
+              "documentation": "oid | uuid | uri | other"
+            },
+            {
+              "name": "kind",
+              "type": "token",
+              "documentation": "codesystem | identifier | root"
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "documentation": "Computationally friendly name of the naming system"
+            },
+            {
+              "name": "publisher",
+              "type": "string",
+              "documentation": "Name of the publisher of the naming system"
+            },
+            {
+              "name": "status",
+              "type": "token",
+              "documentation": "The current status of the naming system"
+            },
+            {
+              "name": "value",
+              "type": "string",
+              "documentation": "The unique identifier"
+            }
+          ],
+          "operation": [
+            {
+              "name": "preferred-id",
+              "definition": "http://hl7.org/fhir/OperationDefinition/NamingSystem-preferred-id"
+            }
+          ]
+        }
+      ],
+      "operation": [
+        {
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+              "valueCode": "SHALL"
+            }
+          ],
+          "name": "expand",
+          "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-expand"
+        },
+        {
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+              "valueCode": "SHALL"
+            }
+          ],
+          "name": "validate-code",
+          "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-validate-code"
+        },
+        {
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+              "valueCode": "SHALL"
+            }
+          ],
+          "name": "translate",
+          "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-translate"
+        },
+        {
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+              "valueCode": "SHOULD"
+            }
+          ],
+          "name": "closure",
+          "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-closure"
+        },
+        {
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+              "valueCode": "SHALL"
+            }
+          ],
+          "name": "lookup",
+          "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup"
+        },
+        {
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+              "valueCode": "SHALL"
+            }
+          ],
+          "name": "validate-code",
+          "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-validate-code"
+        },
+        {
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+              "valueCode": "SHOULD"
+            }
+          ],
+          "name": "subsumes",
+          "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-subsumes"
+        },
+        {
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+              "valueCode": "SHOULD"
+            }
+          ],
+          "name": "find-matches",
+          "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-find-matches"
+        }
+      ]
+    }
+  ],
+  "extension" : [
+    {
+      "url" : "http://hl7.org/fhir/StructureDefinition/capabilitystatement-supported-system",
+      "valueUri" : "http://snomed.info/sct"
+    }]
+}

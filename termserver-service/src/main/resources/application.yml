@@ -47,6 +47,9 @@ liquibase:
 auth:
   oauth:
     jwks-url: ${OAUTH_JWKS_URL:fixme}
+  public:
+    endpoints:
+      - '/fhir/CapabilityStatement'
 
 snowstorm:
   url: https://snowstorm.kodality.dev/
