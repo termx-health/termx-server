@@ -3,6 +3,7 @@ package com.kodality.termserver.ts.codesystem;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.CodeSystemVersionQueryParams;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CodeSystemVersionService {
   private final CodeSystemVersionRepository repository;
+  private final UserPermissionService userPermissionService;
 
   @Transactional
   public void save(CodeSystemVersion version) {
@@ -63,6 +65,7 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void activate(String codeSystem, String version) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
     CodeSystemVersion currentVersion = repository.load(codeSystem, version);
     if (currentVersion == null) {
       throw ApiError.TE202.toApiException(Map.of("version", version, "codeSystem", codeSystem));
