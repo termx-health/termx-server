@@ -1,6 +1,7 @@
 package com.kodality.termserver.ts.codesystem;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemVersionQueryParams;
@@ -10,6 +11,7 @@ import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
 import jakarta.inject.Singleton;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +23,11 @@ public class CodeSystemService {
   private final ConceptService conceptService;
   private final EntityPropertyService entityPropertyService;
   private final CodeSystemVersionService codeSystemVersionService;
+  private final UserPermissionService userPermissionService;
 
   @Transactional
   public void save(CodeSystem codeSystem) {
+    userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
     repository.save(codeSystem);
   }
 
@@ -32,10 +36,13 @@ public class CodeSystemService {
   }
 
   public Optional<CodeSystem> load(String codeSystem, boolean decorate) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "view");
     return Optional.ofNullable(repository.load(codeSystem)).map(cs -> decorate ? decorate(cs) : cs);
   }
 
   public QueryResult<CodeSystem> query(CodeSystemQueryParams params) {
+    List<String> permittedResourceIds = userPermissionService.getPermittedResourceIds("CodeSystem", "view");
+    params.setPermittedIds(permittedResourceIds);
     QueryResult<CodeSystem> codeSystems = repository.query(params);
     decorateQueryResult(codeSystems, params);
     return codeSystems;

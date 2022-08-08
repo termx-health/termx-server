@@ -10,6 +10,7 @@ import com.kodality.termserver.ContactDetail;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams.Ordering;
+import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.HashMap;
@@ -37,7 +38,6 @@ public class CodeSystemRepository extends BaseRepository {
     SqlBuilder sb = ssb.buildUpsert("terminology.code_system", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
-
   public CodeSystem load(String codeSystem) {
     String sql = "select * from terminology.code_system where sys_status = 'A' and id = ?";
     return getBean(sql, bp, codeSystem);
@@ -59,6 +59,9 @@ public class CodeSystemRepository extends BaseRepository {
 
   private SqlBuilder filter(CodeSystemQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    if (CollectionUtils.isNotEmpty(params.getPermittedIds())) {
+      sb.and().in("id", params.getPermittedIds());
+    }
     sb.appendIfNotNull("and id = ?", params.getId());
     sb.appendIfNotNull("and id ~* ?", params.getIdContains());
     sb.appendIfNotNull("and uri = ?", params.getUri());
@@ -77,13 +80,16 @@ public class CodeSystemRepository extends BaseRepository {
           params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
 
-    sb.appendIfNotNull("and exists (select 1 from terminology.concept c where c.code_system = cs.id and c.sys_status = 'A' and c.code = ?)", params.getConceptCode());
+    sb.appendIfNotNull("and exists (select 1 from terminology.concept c where c.code_system = cs.id and c.sys_status = 'A' and c.code = ?)",
+        params.getConceptCode());
 
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.version = ?)",
+    sb.appendIfNotNull(
+        "and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.version = ?)",
         params.getVersionVersion());
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.id = ?)",
         params.getVersionId());
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.release_date >= ?)",
+    sb.appendIfNotNull(
+        "and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.release_date >= ?)",
         params.getVersionReleaseDateGe());
     sb.appendIfNotNull(
         "and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and (csv.expiration_date <= ? or expiration_date is null))",
