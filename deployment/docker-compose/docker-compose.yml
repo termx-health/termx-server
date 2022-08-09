@@ -38,3 +38,11 @@ services:
       - pg.env
     ports:
       - 5432:5432
+  terminology-swagger:
+    restart: unless-stopped
+    image: swaggerapi/swagger-ui
+    container_name: terminology-swagger
+    env_file:
+      - swagger.env
+    ports:
+      - 8000:8080

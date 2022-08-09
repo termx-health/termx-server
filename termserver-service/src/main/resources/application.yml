@@ -11,9 +11,9 @@ micronaut:
       swagger:
         paths: classpath:META-INF/swagger
         mapping: /swagger/**
-      swagger-ui:
-        paths: classpath:META-INF/swagger/views/swagger-ui
-        mapping: /swagger-ui/**
+#      swagger-ui:
+#        paths: classpath:META-INF/swagger/views/swagger-ui
+#        mapping: /swagger-ui/**
 endpoints:
   health:
     enabled: true
@@ -50,6 +50,7 @@ auth:
   public:
     endpoints:
       - '/fhir/CapabilityStatement'
+      - '/swagger'
 
 snowstorm:
   url: https://snowstorm.kodality.dev/
