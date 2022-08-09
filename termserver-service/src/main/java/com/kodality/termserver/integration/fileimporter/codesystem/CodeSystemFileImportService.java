@@ -2,7 +2,11 @@ package com.kodality.termserver.integration.fileimporter.codesystem;
 
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.codesystem.CodeSystem;
+import com.kodality.termserver.codesystem.CodeSystemAssociation;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
@@ -15,8 +19,10 @@ import com.kodality.termserver.integration.fileimporter.codesystem.utils.FilePro
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystemVersion;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingResponse;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessor;
+import com.kodality.termserver.ts.association.AssociationTypeService;
 import com.kodality.termserver.ts.codesystem.CodeSystemService;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionService;
+import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
@@ -25,6 +31,7 @@ import com.kodality.termserver.ts.valueset.ValueSetVersionService;
 import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetVersion;
+import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Singleton;
@@ -40,9 +47,11 @@ public class CodeSystemFileImportService {
   private final ValueSetService valueSetService;
   private final CodeSystemService codeSystemService;
   private final EntityPropertyService entityPropertyService;
+  private final AssociationTypeService associationTypeService;
   private final ValueSetVersionService valueSetVersionService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
+  private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   private final BinaryHttpClient client = new BinaryHttpClient();
@@ -96,6 +105,9 @@ public class CodeSystemFileImportService {
       }
     });
 
+    List<AssociationType> associationTypes = mapper.toAssociationTypes(result.getProperties());
+    associationTypes.forEach(associationTypeService::save);
+
     List<Concept> concepts = mapper.toConcepts(result.getEntities(), properties);
     //FIXME: this is very slow, should refactor
     for (int i = 0; i < concepts.size(); i++) {
@@ -106,6 +118,21 @@ public class CodeSystemFileImportService {
       codeSystemEntityVersionService.activate(concept.getVersions().get(0).getId());
       codeSystemVersionService.linkEntityVersion(codeSystemVersion.getId(), concept.getVersions().get(0).getId());
     }
+
+    concepts.forEach(concept -> {
+      List<CodeSystemAssociation> associations = concept.getVersions().get(0).getAssociations();
+      associations.forEach(a -> {
+        a.setCodeSystem(codeSystem.getId());
+        if (a.getTargetCode() != null) {
+          Long targetId = codeSystemEntityVersionService
+              .query(new CodeSystemEntityVersionQueryParams().setCode(a.getTargetCode()).setCodeSystemVersionId(codeSystemVersion.getId()))
+              .findFirst()
+              .map(CodeSystemEntityVersion::getId).orElse(null);
+          a.setTargetId(targetId);
+        }
+      });
+      codeSystemAssociationService.save(associations, concept.getVersions().get(0).getId());
+    });
 
     if (fpVersion.getStatus().equals(PublicationStatus.active)) {
       codeSystemVersionService.activate(codeSystem.getId(), codeSystemVersion.getVersion());
