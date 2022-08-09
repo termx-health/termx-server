@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
 import static java.util.stream.IntStream.range;
@@ -112,7 +113,7 @@ public class FileProcessor {
       }
 
       return entity;
-    }).filter(cs -> !cs.isEmpty()).toList();
+    }).filter(cs -> !cs.isEmpty() && cs.containsKey(IDENTIFIER_PROPERTY)).toList();
 
 
     var properties = importProperties.stream()
@@ -159,7 +160,7 @@ public class FileProcessor {
       return null;
     }
     return switch (type) {
-      case BOOLEAN -> List.of("1", "true").contains(val);
+      case BOOLEAN -> Stream.of("1", "true").anyMatch(v -> v.equalsIgnoreCase(val));
       case INTEGER -> Integer.valueOf(val);
       case DECIMAL -> Double.valueOf(val);
       case DATE -> transformDate(val, dateFormat);
