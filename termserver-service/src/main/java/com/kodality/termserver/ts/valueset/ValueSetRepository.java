@@ -28,7 +28,7 @@ public class ValueSetRepository extends BaseRepository {
     ssb.property("uri", valueSet.getUri());
     ssb.jsonProperty("names", valueSet.getNames());
     ssb.jsonProperty("contacts", valueSet.getContacts());
-    ssb.property("narrative", valueSet.getDescription());
+    ssb.property("narrative", valueSet.getNarrative());
     ssb.property("description", valueSet.getDescription());
 
     SqlBuilder sb = ssb.buildUpsert("terminology.value_set", "id");
