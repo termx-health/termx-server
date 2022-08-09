@@ -1,6 +1,7 @@
 package com.kodality.termserver;
 
 import io.micronaut.runtime.Micronaut;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Contact;
@@ -16,7 +17,8 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
         title = "KTS",
         description = "${openapi.description}",
         contact = @Contact(url = "https://kodality.com", name = "Kodality support", email = "support@kodality.com")
-    )
+    ),
+    externalDocs = @ExternalDocumentation(description = "Read more about KTS", url = "https://wiki.kodality.dev/en/terminology-server")
 )
 @SecurityScheme(name = "openid",
     type = SecuritySchemeType.OAUTH2,
