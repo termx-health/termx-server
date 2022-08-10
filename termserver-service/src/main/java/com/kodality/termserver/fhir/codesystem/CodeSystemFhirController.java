@@ -1,6 +1,8 @@
 package com.kodality.termserver.fhir.codesystem;
 
+import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.NotFoundException;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.fhir.FhirMeasurementUnitConvertor;
@@ -105,10 +107,12 @@ public class CodeSystemFhirController {
         importService.importCodeSystems(parameters, successes, warnings);
         log.info("Fhir code system import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
         importLogger.logImport(jobLogResponse.getJobId(), successes, warnings);
-      } catch (Exception e) {
+      } catch (ApiClientException e) {
         log.error("Error while importing fhir code system", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);
-        throw e;
+      } catch (Exception e) {
+        log.error("Error while importing fhir code system (TE700)", e);
+        importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
       }
     }));
     Parameters resp = new Parameters().setParameter(List.of(new Parameter().setName("jobId").setValueDecimal(BigDecimal.valueOf(jobLogResponse.getJobId()))));

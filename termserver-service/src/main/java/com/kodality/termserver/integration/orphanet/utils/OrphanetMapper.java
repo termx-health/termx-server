@@ -12,50 +12,69 @@ import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyType;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
 import com.kodality.termserver.common.ImportConfiguration;
-import com.kodality.termserver.common.ImportConfigurationMapper;
-import com.kodality.termserver.integration.icd10est.utils.Icd10Est.Node;
+import com.kodality.termserver.common.CodeSystemImportMapper;
 import com.kodality.termserver.integration.orphanet.utils.OrphanetClassificationList.ClassificationNode;
-import io.micronaut.core.util.CollectionUtils;
-import io.micronaut.core.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class OrphanetMapper {
-  public static CodeSystem mapCodeSystem(ImportConfiguration configuration) {
-    return ImportConfigurationMapper.mapCodeSystem(configuration, Language.et);
+  private static final String DISPLAY = "display";
+  private static final String TYPE = "type";
+
+  public static CodeSystem mapCodeSystem(ImportConfiguration configuration, List<ClassificationNode> nodes) {
+    CodeSystem codeSystem = CodeSystemImportMapper.mapCodeSystem(configuration, Language.et);
+    codeSystem.setProperties(mapProperties());
+    codeSystem.setConcepts(parseNodes(nodes, configuration));
+    return codeSystem;
   }
 
-  public static List<EntityProperty> mapProperties() {
+  private static List<EntityProperty> mapProperties() {
     return List.of(
-        new EntityProperty().setName("display").setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
-        new EntityProperty().setName("type").setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
+        new EntityProperty().setName(DISPLAY).setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
+        new EntityProperty().setName(TYPE).setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
   }
 
-  public static Concept mapConcept(ClassificationNode node, ClassificationNode parent, ImportConfiguration configuration, List<EntityProperty> properties) {
+  private static List<Concept> parseNodes(List<ClassificationNode> nodes, ImportConfiguration configuration) {
+    log.info("Mapping nodes to concepts...");
+    List<Concept> concepts = new ArrayList<>();
+    nodes.forEach(n -> concepts.addAll(parseNodeChild(n, null, configuration)));
+    return concepts;
+  }
+
+  private static List<Concept> parseNodeChild(ClassificationNode node, ClassificationNode parent, ImportConfiguration configuration) {
+    List<Concept> concepts = new ArrayList<>();
+    concepts.add(OrphanetMapper.mapConcept(node, parent, configuration));
+    if (node.getClassificationNodeChildList() != null && node.getClassificationNodeChildList().getClassificationNodes() != null) {
+      node.getClassificationNodeChildList().getClassificationNodes().forEach(child -> concepts.addAll(parseNodeChild(child, node, configuration)));
+    }
+    return concepts;
+  }
+
+  private static Concept mapConcept(ClassificationNode node, ClassificationNode parent, ImportConfiguration configuration) {
     Concept concept = new Concept();
     concept.setCodeSystem(configuration.getCodeSystem());
     concept.setCode(node.getDisorder().getOrphaCode());
-    concept.setVersions(List.of(mapConceptVersion(node, parent, configuration, properties)));
+    concept.setVersions(List.of(mapConceptVersion(node, parent, configuration)));
     return concept;
   }
 
-  private static CodeSystemEntityVersion mapConceptVersion(ClassificationNode node, ClassificationNode parent, ImportConfiguration configuration, List<EntityProperty> properties) {
+  private static CodeSystemEntityVersion mapConceptVersion(ClassificationNode node, ClassificationNode parent, ImportConfiguration configuration) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(node.getDisorder().getOrphaCode());
     version.setStatus(PublicationStatus.draft);
-    version.setDesignations(mapDesignations(node, properties));
-    version.setPropertyValues(mapPropertyValues(node, properties));
+    version.setDesignations(mapDesignations(node));
+    version.setPropertyValues(mapPropertyValues(node));
     version.setAssociations(mapAssociations(parent, configuration));
     return version;
   }
 
-  private static List<Designation> mapDesignations(ClassificationNode node, List<EntityProperty> properties) {
-    Long typeId = properties.stream().filter(p -> p.getName().equals("display")).findFirst().map(EntityProperty::getId).orElse(null);
-
+  private static List<Designation> mapDesignations(ClassificationNode node) {
     Designation designation = new Designation();
     designation.setName(node.getDisorder().getName().getValue());
     designation.setLanguage(Language.en);
-    designation.setDesignationTypeId(typeId);
+    designation.setDesignationType(DISPLAY);
     designation.setCaseSignificance(CaseSignificance.entire_term_case_insensitive);
     designation.setDesignationKind("text");
     designation.setStatus(PublicationStatus.active);
@@ -63,14 +82,13 @@ public class OrphanetMapper {
     return List.of(designation);
   }
 
-  private static List<EntityPropertyValue> mapPropertyValues(ClassificationNode node, List<EntityProperty> properties) {
+  private static List<EntityPropertyValue> mapPropertyValues(ClassificationNode node) {
     if (node.getDisorder().getDisorderType() == null || node.getDisorder().getDisorderType().getCategory() == null) {
       return List.of();
     }
-    Long propertyId = properties.stream().filter(p -> p.getName().equals("type")).findFirst().map(EntityProperty::getId).orElse(null);
     EntityPropertyValue value = new EntityPropertyValue();
     value.setValue(node.getDisorder().getDisorderType().getCategory().getValue());
-    value.setEntityPropertyId(propertyId);
+    value.setEntityProperty(TYPE);
     return List.of(value);
   }
 
@@ -79,6 +97,6 @@ public class OrphanetMapper {
     if (parent == null) {
       return associations;
     }
-    return ImportConfigurationMapper.mapAssociations(parent.getDisorder().getOrphaCode(), "is-a", configuration);
+    return CodeSystemImportMapper.mapAssociations(parent.getDisorder().getOrphaCode(), "is-a", configuration);
   }
 }

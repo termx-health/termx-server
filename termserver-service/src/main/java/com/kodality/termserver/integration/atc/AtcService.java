@@ -2,9 +2,7 @@ package com.kodality.termserver.integration.atc;
 
 
 import com.kodality.termserver.association.AssociationKind;
-import com.kodality.termserver.codesystem.CodeSystemVersion;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.EntityProperty;
+import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.common.CodeSystemImportService;
 import com.kodality.termserver.common.ImportConfiguration;
 import com.kodality.termserver.integration.atc.utils.AtcMapper;
@@ -31,14 +29,9 @@ public class AtcService {
 
   @Transactional
   public void importAtc(ImportConfiguration configuration) {
-    CodeSystemVersion version = importService.prepareCodeSystemAndVersion(AtcMapper.mapCodeSystem(configuration));
-    List<EntityProperty> properties = importService.prepareProperties(AtcMapper.mapProperties(), configuration.getCodeSystem());
-    importService.prepareAssociationType("is-a", AssociationKind.codesystemHierarchyMeaning);
-
     Map<String, String> atc = AtcResponseParser.parse(getResource());
-    List<Concept> concepts = AtcMapper.mapConcepts(atc, configuration, properties);
-
-    importService.importConcepts(concepts, version, false);
+    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning));
+    importService.importCodeSystem(AtcMapper.mapCodeSystem(configuration, atc), associationTypes, false);
   }
 
   private String getResource() {

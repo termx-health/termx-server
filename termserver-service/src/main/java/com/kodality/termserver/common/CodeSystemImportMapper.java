@@ -8,7 +8,7 @@ import com.kodality.termserver.codesystem.CodeSystemVersion;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ImportConfigurationMapper {
+public class CodeSystemImportMapper {
 
   public static CodeSystem mapCodeSystem(ImportConfiguration configuration, String lang) {
     CodeSystem codeSystem = new CodeSystem();

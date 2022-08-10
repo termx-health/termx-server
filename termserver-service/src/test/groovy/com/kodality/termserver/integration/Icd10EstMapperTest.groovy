@@ -6,8 +6,9 @@ import com.kodality.termserver.codesystem.Concept
 import com.kodality.termserver.common.ImportConfiguration
 import com.kodality.termserver.common.utils.TemplateUtil
 import com.kodality.termserver.common.utils.XmlMapperUtil
-import com.kodality.termserver.integration.icd10est.utils.Icd10EstExtractor
+
 import com.kodality.termserver.integration.icd10est.utils.Icd10Est
+import com.kodality.termserver.integration.icd10est.utils.Icd10EstMapper
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -45,16 +46,16 @@ class Icd10EstMapperTest extends Specification {
 
   def "Should create concept components"() {
     when:
-    concepts = Icd10EstExtractor.parseNodeChild(icd10Est.getChapter(), Icd10EstExtractor.rootNode(), configuration, [])
+    concepts = Icd10EstMapper.mapCodeSystem(configuration, [icd10Est]).concepts
     then:
     concepts.size() == MatcherUtil.findAllMatches(xml, "<chapter>|<section>|<item>|<subsection>|<sub>").size()
     concepts.size() == concepts.stream().flatMap(c -> c.getVersions().stream()).collect(Collectors.toList()).size()
-    concepts.size() == concepts.stream().flatMap(c -> c.getVersions().stream().flatMap(v -> v.getAssociations().stream())).collect(Collectors.toList()).size()
+    (concepts.size() - 1) == concepts.stream().flatMap(c -> c.getVersions().stream().flatMap(v -> v.getAssociations().stream())).collect(Collectors.toList()).size()
   }
 
   def "Should create designations"() {
     when:
-    concepts = Icd10EstExtractor.parseNodeChild(icd10Est.getChapter(), Icd10EstExtractor.rootNode(), configuration, [])
+    concepts = Icd10EstMapper.mapCodeSystem(configuration, [icd10Est]).concepts
     then:
     concepts.stream().flatMap(c -> c.getVersions().stream().flatMap(v -> v.getDesignations().stream())).collect(Collectors.toList()).size()
         == MatcherUtil.findAllMatches(xml, "<name-est>|<name-eng>|<name-lat>").size()

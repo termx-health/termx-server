@@ -28,6 +28,8 @@ import javax.inject.Singleton;
 
 @Singleton
 public class CodeSystemFhirImportMapper {
+  private static final String DISPLAY = "display";
+  private static final String DEFINITION = "definition";
 
   public static CodeSystem mapCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     CodeSystem codeSystem = new CodeSystem();
@@ -42,6 +44,8 @@ public class CodeSystemFhirImportMapper {
     codeSystem.setNarrative(fhirCodeSystem.getText() == null ? null : fhirCodeSystem.getText().getDiv());
 
     codeSystem.setVersions(mapVersion(fhirCodeSystem));
+    codeSystem.setConcepts(mapConcepts(fhirCodeSystem.getConcept(), fhirCodeSystem, null));
+    codeSystem.setProperties(mapProperties(fhirCodeSystem));
     return codeSystem;
   }
 
@@ -66,10 +70,10 @@ public class CodeSystemFhirImportMapper {
     return List.of(version);
   }
 
-  public static List<EntityProperty> mapProperties(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
+  private static List<EntityProperty> mapProperties(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     List<EntityProperty> defaultProperties = new ArrayList<>();
-    defaultProperties.add(new EntityProperty().setName("display").setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
-    defaultProperties.add(new EntityProperty().setName("definition").setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
+    defaultProperties.add(new EntityProperty().setName(DISPLAY).setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
+    defaultProperties.add(new EntityProperty().setName(DEFINITION).setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
     if (fhirCodeSystem.getProperty() == null) {
       return defaultProperties;
     }
@@ -93,9 +97,9 @@ public class CodeSystemFhirImportMapper {
     properties.addAll(designationProperties);
     return properties;
   }
-  public static List<Concept> mapConcepts(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept> fhirConcepts,
+
+  private static List<Concept> mapConcepts(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept> fhirConcepts,
                                           com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem,
-                                          List<EntityProperty> properties,
                                           com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept parent) {
     List<Concept> concepts = new ArrayList<>();
     if (CollectionUtils.isEmpty(fhirConcepts)) {
@@ -105,10 +109,10 @@ public class CodeSystemFhirImportMapper {
       Concept concept = new Concept();
       concept.setCode(c.getCode());
       concept.setCodeSystem(fhirCodeSystem.getId());
-      concept.setVersions(mapConceptVersion(c, fhirCodeSystem, properties, parent));
+      concept.setVersions(mapConceptVersion(c, fhirCodeSystem, parent));
       concepts.add(concept);
       if (c.getConcept() != null) {
-        concepts.addAll(mapConcepts(c.getConcept(), fhirCodeSystem, properties, c));
+        concepts.addAll(mapConcepts(c.getConcept(), fhirCodeSystem, c));
       }
     });
     return concepts;
@@ -116,24 +120,22 @@ public class CodeSystemFhirImportMapper {
 
   private static List<CodeSystemEntityVersion> mapConceptVersion(com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept c,
                                                                  com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem,
-                                                                 List<EntityProperty> properties,
                                                                  com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept parent) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(c.getCode());
-    version.setDesignations(mapDesignations(c, codeSystem, properties));
-    version.setPropertyValues(mapPropertyValues(c.getProperty(), properties));
+    version.setDesignations(mapDesignations(c, codeSystem));
+    version.setPropertyValues(mapPropertyValues(c.getProperty()));
     version.setAssociations(mapAssociations(parent, codeSystem));
     version.setStatus(PublicationStatus.draft);
     return List.of(version);
   }
 
   private static List<Designation> mapDesignations(com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept c,
-                                                   com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem,
-                                                   List<EntityProperty> properties) {
+                                                   com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
     String caseSignificance = codeSystem.getCaseSensitive() != null && codeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive : CaseSignificance.entire_term_case_insensitive;
 
     Designation display = new Designation();
-    display.setDesignationTypeId(properties.stream().filter(p -> p.getName().equals("display")).findFirst().map(EntityProperty::getId).orElse(null));
+    display.setDesignationType(DISPLAY);
     display.setName(c.getDisplay());
     display.setPreferred(true);
     display.setLanguage(Language.en);
@@ -142,7 +144,7 @@ public class CodeSystemFhirImportMapper {
     display.setStatus("active");
 
     Designation definition = new Designation();
-    definition.setDesignationTypeId(properties.stream().filter(p -> p.getName().equals("definition")).findFirst().map(EntityProperty::getId).orElse(null));
+    definition.setDesignationType(DEFINITION);
     definition.setName(c.getDefinition());
     definition.setLanguage(Language.en);
     definition.setCaseSignificance(caseSignificance);
@@ -158,13 +160,8 @@ public class CodeSystemFhirImportMapper {
     }
 
     designations.addAll(c.getDesignation().stream().map(d -> {
-      Long designationType = properties.stream()
-          .filter(p -> p.getName().equals(d.getUse() == null ? "display" : d.getUse().getCode()))
-          .findFirst()
-          .map(EntityProperty::getId)
-          .orElse(null);
       Designation designation = new Designation();
-      designation.setDesignationTypeId(designationType);
+      designation.setDesignationType(d.getUse() == null ? DISPLAY : d.getUse().getCode());
       designation.setName(d.getValue());
       designation.setLanguage(d.getLanguage());
       designation.setCaseSignificance(caseSignificance);
@@ -176,7 +173,7 @@ public class CodeSystemFhirImportMapper {
     return designations;
   }
 
-  private static List<EntityPropertyValue> mapPropertyValues(List<Property> propertyValues, List<EntityProperty> properties) {
+  private static List<EntityPropertyValue> mapPropertyValues(List<Property> propertyValues) {
     if (propertyValues == null) {
       return new ArrayList<>();
     }
@@ -187,7 +184,7 @@ public class CodeSystemFhirImportMapper {
           v.getValueString(), v.getValueInteger(),
           v.getValueBoolean(), v.getValueDateTime(), v.getValueDecimal()
       ).filter(Objects::nonNull).findFirst().orElse(null));
-      value.setEntityPropertyId(properties.stream().filter(p -> p.getName().equals(v.getCode())).findFirst().map(EntityProperty::getId).orElse(null));
+      value.setEntityProperty(v.getCode());
       return value;
     }).collect(Collectors.toList());
   }

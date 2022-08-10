@@ -10,7 +10,7 @@ import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyType;
 import com.kodality.termserver.common.ImportConfiguration;
-import com.kodality.termserver.common.ImportConfigurationMapper;
+import com.kodality.termserver.common.CodeSystemImportMapper;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,22 +18,26 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class AtcEstMapper {
+  private static final String DISPLAY = "display";
 
-  public static CodeSystem mapCodeSystem(ImportConfiguration configuration) {
-    return ImportConfigurationMapper.mapCodeSystem(configuration, Language.et);
+  public static CodeSystem mapCodeSystem(ImportConfiguration configuration, List<AtcEst> atc) {
+    CodeSystem codeSystem =  CodeSystemImportMapper.mapCodeSystem(configuration, Language.et);
+    codeSystem.setProperties(mapProperties());
+    codeSystem.setConcepts(mapConcepts(atc, configuration));
+    return codeSystem;
   }
 
-  public static List<EntityProperty> mapProperties() {
-    return List.of(new EntityProperty().setName("display").setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
+  private static List<EntityProperty> mapProperties() {
+    return List.of(new EntityProperty().setName(DISPLAY).setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
   }
 
-  public static List<Concept> mapConcepts(List<AtcEst> atc, ImportConfiguration configuration, List<EntityProperty> properties) {
+  private static List<Concept> mapConcepts(List<AtcEst> atc, ImportConfiguration configuration) {
     return atc.stream().map(a -> {
       CodeSystemEntityVersion version = new CodeSystemEntityVersion();
       version.setCode(a.getCode());
       version.setStatus(PublicationStatus.draft);
-      version.setDesignations(mapDesignations(a, properties));
-      version.setAssociations(ImportConfigurationMapper.mapAssociations(findParent(a.getCode(), atc, 1), "is-a", configuration));
+      version.setDesignations(mapDesignations(a));
+      version.setAssociations(CodeSystemImportMapper.mapAssociations(findParent(a.getCode(), atc, 1), "is-a", configuration));
 
       Concept concept = new Concept();
       concept.setCodeSystem(configuration.getCodeSystem());
@@ -43,15 +47,14 @@ public class AtcEstMapper {
     }).collect(Collectors.toList());
   }
 
-  private static List<Designation> mapDesignations(AtcEst atc, List<EntityProperty> properties) {
-    Long term = properties.stream().filter(p -> p.getName().equals("display")).findFirst().map(EntityProperty::getId).orElse(null);
+  private static List<Designation> mapDesignations(AtcEst atc) {
     Designation designation = new Designation();
     designation.setName(atc.getName());
     designation.setLanguage(Language.et);
     designation.setCaseSignificance(CaseSignificance.entire_term_case_insensitive);
     designation.setDesignationKind("text");
     designation.setStatus(PublicationStatus.active);
-    designation.setDesignationTypeId(term);
+    designation.setDesignationType(DISPLAY);
     designation.setPreferred(true);
     return List.of(designation);
   }

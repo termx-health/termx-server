@@ -49,8 +49,7 @@ class CodeSystemControllerSpec extends Specification {
   def "should create new concept"() {
     def concept = new Concept(
         code: 'acura',
-        codeSystem: 'car-brands',
-        displayName: ['en': 'Acura']
+        codeSystem: 'car-brands'
     )
     when:
     codeSystemFactory.createCodeSystem('car-brands')

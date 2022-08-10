@@ -30,7 +30,7 @@ class AtcEstMapperTest extends Specification {
 
   def "should map ATC concepts"() {
     when:
-    def concepts = AtcEstMapper.mapConcepts(atcs, configuration, new ArrayList<>())
+    def concepts = AtcEstMapper.mapCodeSystem(configuration, atcs).concepts
 
     then:
     concepts.size() == 5
@@ -43,9 +43,7 @@ class AtcEstMapperTest extends Specification {
     concepts.versions[0][0].designations[0].status == 'active'
     concepts.versions[0][0].designations[0].name == 'SEEDEKULGLA JA AINEVAHETUS'
     concepts.versions[0][0].designations[0].language == 'et'
-    concepts.versions[0][0].associations.size() == 1
-    concepts.versions[0][0].associations[0].status == 'active'
-    concepts.versions[0][0].associations[0].targetCode == 'classification'
+    concepts.versions[0][0].associations.size() == 0
 
     concepts.versions[1][0].code == 'A01'
     concepts.versions[1][0].associations.size() == 1

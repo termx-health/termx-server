@@ -1,6 +1,8 @@
 package com.kodality.termserver.integration.fileimporter.codesystem;
 
+import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisRequest;
@@ -56,10 +58,12 @@ public class CodeSystemFileImportController {
         }
         log.info("Code system file import took {} seconds", (System.currentTimeMillis() - start) / 1000);
         importLogger.logImport(jobLogResponse.getJobId());
-      } catch (Exception e) {
+      } catch (ApiClientException e) {
         log.error("Error while importing code system file", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);
-        throw e;
+      } catch (Exception e) {
+        log.error("Error while importing code system file (TE700)", e);
+        importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
       }
     }));
     return jobLogResponse;

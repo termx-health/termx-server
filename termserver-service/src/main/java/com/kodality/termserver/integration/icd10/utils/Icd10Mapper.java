@@ -11,7 +11,7 @@ import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyType;
 import com.kodality.termserver.common.ImportConfiguration;
-import com.kodality.termserver.common.ImportConfigurationMapper;
+import com.kodality.termserver.common.CodeSystemImportMapper;
 import com.kodality.termserver.integration.icd10.utils.Icd10.Class;
 import com.kodality.termserver.integration.icd10.utils.Icd10.Fragment;
 import com.kodality.termserver.integration.icd10.utils.Icd10.Para;
@@ -22,64 +22,67 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class Icd10Mapper {
+  private static final String DISPLAY = "display";
+  private static final String SYNONYM = "synonym";
 
-  public static CodeSystem mapCodeSystem(ImportConfiguration configuration) {
-    return ImportConfigurationMapper.mapCodeSystem(configuration, Language.en);
+  public static CodeSystem mapCodeSystem(ImportConfiguration configuration, Icd10 diagnoses) {
+    CodeSystem codeSystem =  CodeSystemImportMapper.mapCodeSystem(configuration, Language.en);
+    codeSystem.setProperties(mapProperties());
+    codeSystem.setConcepts(mapConcepts(diagnoses, configuration));
+    return codeSystem;
   }
 
-  public static List<EntityProperty> mapProperties() {
+  private static List<EntityProperty> mapProperties() {
     return List.of(
-        new EntityProperty().setName("display").setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
-        new EntityProperty().setName("synonym").setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
+        new EntityProperty().setName(DISPLAY).setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
+        new EntityProperty().setName(SYNONYM).setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
   }
 
-  public static List<Concept> mapConcepts(Icd10 diagnoses, ImportConfiguration configuration, List<EntityProperty> properties) {
+  private static List<Concept> mapConcepts(Icd10 diagnoses, ImportConfiguration configuration) {
     List<Concept> concepts = new ArrayList<>();
     for (Class c : diagnoses.getClasses()) {
       if (c.getCode() == null) {
         continue;
       }
-      concepts.add(mapConcept(c, configuration, properties));
+      concepts.add(mapConcept(c, configuration));
     }
     return concepts;
   }
 
-  public static Concept mapConcept(Class diagnosis, ImportConfiguration configuration, List<EntityProperty> properties) {
+  private static Concept mapConcept(Class diagnosis, ImportConfiguration configuration) {
     Concept concept = new Concept();
     concept.setCodeSystem(configuration.getCodeSystem());
     concept.setCode(diagnosis.getCode());
-    concept.setVersions(List.of(mapConceptVersion(diagnosis, configuration, properties)));
+    concept.setVersions(List.of(mapConceptVersion(diagnosis, configuration)));
     return concept;
   }
 
-  private static CodeSystemEntityVersion mapConceptVersion(Class diagnosis, ImportConfiguration configuration, List<EntityProperty> properties) {
+  private static CodeSystemEntityVersion mapConceptVersion(Class diagnosis, ImportConfiguration configuration) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(diagnosis.getCode());
     version.setStatus(PublicationStatus.draft);
-    version.setDesignations(mapDesignations(diagnosis, properties));
+    version.setDesignations(mapDesignations(diagnosis));
     version.setAssociations(mapAssociations(diagnosis, configuration));
     return version;
   }
 
-  private static List<Designation> mapDesignations(Class diagnosis, List<EntityProperty> properties) {
+  private static List<Designation> mapDesignations(Class diagnosis) {
     List<Designation> designations = new ArrayList<>();
-    Long term = properties.stream().filter(p -> p.getName().equals("display")).findFirst().map(EntityProperty::getId).orElse(null);
-    Long synonym = properties.stream().filter(p -> p.getName().equals("synonym")).findFirst().map(EntityProperty::getId).orElse(null);
     diagnosis.getRubrics().forEach(rubric -> {
       boolean main = "preferred".equals(rubric.getKind());
-      designations.add(mapDesignation(removeDoubleQuote(mapLabel(rubric)), main ? term : synonym, main));
+      designations.add(mapDesignation(removeDoubleQuote(mapLabel(rubric)), main ? DISPLAY : SYNONYM, main));
     });
     return designations;
   }
 
-  private static Designation mapDesignation(String name, Long typeId, boolean preferred) {
+  private static Designation mapDesignation(String name, String type, boolean preferred) {
     Designation designation = new Designation();
     designation.setName(name);
     designation.setLanguage(Language.en);
     designation.setCaseSignificance(CaseSignificance.entire_term_case_insensitive);
     designation.setDesignationKind("text");
     designation.setStatus(PublicationStatus.active);
-    designation.setDesignationTypeId(typeId);
+    designation.setDesignationType(type);
     designation.setPreferred(preferred);
     return designation;
   }
@@ -89,7 +92,7 @@ public class Icd10Mapper {
     if (diagnosis.getSuperClass() == null) {
       return associations;
     }
-    return ImportConfigurationMapper.mapAssociations(diagnosis.getSuperClass().getCode(), "is-a", configuration);
+    return CodeSystemImportMapper.mapAssociations(diagnosis.getSuperClass().getCode(), "is-a", configuration);
   }
 
   private static String removeDoubleQuote(String value) {

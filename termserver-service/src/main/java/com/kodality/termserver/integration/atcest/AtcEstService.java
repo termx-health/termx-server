@@ -1,9 +1,7 @@
 package com.kodality.termserver.integration.atcest;
 
 import com.kodality.termserver.association.AssociationKind;
-import com.kodality.termserver.codesystem.CodeSystemVersion;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.EntityProperty;
+import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.common.BinaryHttpClient;
 import com.kodality.termserver.common.CodeSystemImportService;
 import com.kodality.termserver.common.ImportConfiguration;
@@ -26,13 +24,9 @@ public class AtcEstService {
 
   @Transactional
   public void importAtcEst(String url, ImportConfiguration configuration) {
-    CodeSystemVersion version = importService.prepareCodeSystemAndVersion(AtcEstMapper.mapCodeSystem(configuration));
-    List<EntityProperty> properties = importService.prepareProperties(AtcEstMapper.mapProperties(), configuration.getCodeSystem());
-    importService.prepareAssociationType("is-a", AssociationKind.codesystemHierarchyMeaning);
-
     List<AtcEst> atc = AtcEstCsvReader.read(getResource(url));
-    List<Concept> concepts = AtcEstMapper.mapConcepts(atc, configuration, properties);
-    importService.importConcepts(concepts, version, false);
+    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning));
+    importService.importCodeSystem(AtcEstMapper.mapCodeSystem(configuration, atc), associationTypes, false);
   }
 
   private byte[] getResource(String url) {

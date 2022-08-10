@@ -5,6 +5,7 @@ import com.kodality.commons.model.LocalizedName
 import com.kodality.termserver.codesystem.Concept
 import com.kodality.termserver.common.ImportConfiguration
 import com.kodality.termserver.common.utils.TemplateUtil
+import com.kodality.termserver.common.utils.XmlMapperUtil
 import com.kodality.termserver.integration.icd10.utils.Icd10
 import com.kodality.termserver.integration.icd10.utils.Icd10Mapper
 import spock.lang.Shared
@@ -24,7 +25,7 @@ class Icd10MapperTest extends Specification {
   private Icd10 icd10
 
   void setupSpec() {
-    mapper = MapperUtil.getMapper();
+    mapper = XmlMapperUtil.getMapper();
     xml = TemplateUtil.getTemplate("icd10.xml")
   }
 
@@ -45,19 +46,18 @@ class Icd10MapperTest extends Specification {
 
   def "Should create concept components"() {
     when:
-    concepts = Icd10Mapper.mapConcepts(icd10, configuration, [])
+    concepts = Icd10Mapper.mapCodeSystem(configuration, icd10).concepts
     then:
-    //- 1 because of root classifier
-    concepts.size() - 1 == MatcherUtil.findAllMatches(xml, "<Class").size()
-    concepts.size() - 1 == concepts.stream().flatMap(c -> c.getVersions().stream().flatMap(v -> v.getAssociations().stream())).collect(Collectors.toList()).size()
+    concepts.size() == MatcherUtil.findAllMatches(xml, "<Class").size()
+    concepts.size() == concepts.stream().flatMap(c -> c.getVersions().stream().flatMap(v -> v.getAssociations().stream())).collect(Collectors.toList()).size()
   }
 
   def "Should create designations"() {
     when:
-    concepts = Icd10Mapper.mapConcepts(icd10, configuration, []);
+    concepts = Icd10Mapper.mapCodeSystem(configuration, icd10).concepts
     then:
     //- 1 because of root classifier
-    concepts.stream().flatMap(c -> c.getVersions().stream().flatMap(v -> v.getDesignations().stream())).collect(Collectors.toList()).size() - 1
+    concepts.stream().flatMap(c -> c.getVersions().stream().flatMap(v -> v.getDesignations().stream())).collect(Collectors.toList()).size()
         == MatcherUtil.findAllMatches(xml, "<Rubric").size()
   }
 }

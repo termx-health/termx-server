@@ -1,5 +1,7 @@
 package com.kodality.termserver.fhir.conceptmap;
 
+import com.kodality.commons.exception.ApiClientException;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
@@ -62,10 +64,12 @@ public class ConceptMapFhirController {
         importService.importMapSets(parameters, successes, warnings);
         log.info("Fhir map set import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
         importLogger.logImport(jobLogResponse.getJobId(),successes, warnings);
-      } catch (Exception e) {
+      } catch (ApiClientException e) {
         log.error("Error while importing fhir map set", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);
-        throw e;
+      } catch (Exception e) {
+        log.error("Error while importing fhir map set (TE700)", e);
+        importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
       }
     }));
     Parameters resp =  new Parameters().setParameter(List.of(new Parameter().setName("jobId").setValueDecimal(BigDecimal.valueOf(jobLogResponse.getJobId()))));

@@ -1,6 +1,8 @@
 package com.kodality.termserver.integration.snomed;
 
+import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.AsyncHelper;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.client.SnowstormClient;
 import com.kodality.termserver.common.ImportLogger;
@@ -86,7 +88,6 @@ public class SnomedController {
 
   //----------------Import----------------
 
-
   @Post("/import")
   public JobLogResponse importConcepts(@Body SnomedImportRequest request) {
     JobLogResponse jobLogResponse = importLogger.createJob("snomed-ct", "import");
@@ -97,10 +98,12 @@ public class SnomedController {
         snomedService.importConcepts(request);
         log.info("SNOMED CT concepts import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
         importLogger.logImport(jobLogResponse.getJobId());
-      } catch (Exception e) {
+      } catch (ApiClientException e) {
         log.error("Error while importing SNOMED CT concepts", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);
-        throw e;
+      } catch (Exception e) {
+        log.error("Error while importing SNOMED CT concepts", e);
+        importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
       }
     }));
     return jobLogResponse;

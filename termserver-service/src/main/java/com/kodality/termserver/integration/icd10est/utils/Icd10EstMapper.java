@@ -11,8 +11,8 @@ import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyType;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
+import com.kodality.termserver.common.CodeSystemImportMapper;
 import com.kodality.termserver.common.ImportConfiguration;
-import com.kodality.termserver.common.ImportConfigurationMapper;
 import com.kodality.termserver.integration.icd10est.utils.Icd10Est.Node;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
@@ -22,81 +22,103 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Icd10EstMapper {
+  private static final String DISPLAY = "display";
+  private static final String SYNONYM = "synonym";
+  private static final String NOTICE = "notice";
+  private static final String INCLUDE = "include";
+  private static final String EXCLUDE = "exclude";
 
-  public static CodeSystem mapCodeSystem(ImportConfiguration configuration) {
-    return ImportConfigurationMapper.mapCodeSystem(configuration, Language.et);
+
+  public static CodeSystem mapCodeSystem(ImportConfiguration configuration, List<Icd10Est> diagnoses) {
+    CodeSystem codeSystem = CodeSystemImportMapper.mapCodeSystem(configuration, Language.et);
+    codeSystem.setProperties(mapProperties());
+    codeSystem.setConcepts(parseDiagnoses(diagnoses, configuration));
+    return codeSystem;
   }
 
-  public static List<EntityProperty> mapProperties() {
+  private static List<EntityProperty> mapProperties() {
     return List.of(
-        new EntityProperty().setName("display").setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
-        new EntityProperty().setName("synonym").setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
-        new EntityProperty().setName("notice").setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
-        new EntityProperty().setName("include").setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
-        new EntityProperty().setName("exclude").setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
+        new EntityProperty().setName(DISPLAY).setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
+        new EntityProperty().setName(SYNONYM).setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
+        new EntityProperty().setName(NOTICE).setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
+        new EntityProperty().setName(INCLUDE).setType(EntityPropertyType.string).setStatus(PublicationStatus.active),
+        new EntityProperty().setName(EXCLUDE).setType(EntityPropertyType.string).setStatus(PublicationStatus.active));
+  }
+
+  private static List<Concept> parseDiagnoses(List<Icd10Est> diagnoses, ImportConfiguration configuration) {
+    log.info("Mapping diagnoses to concepts...");
+    List<Concept> concepts = new ArrayList<>();
+    diagnoses.forEach(d -> concepts.addAll(parseNodeChild(d.getChapter(), null, configuration)));
+    return concepts;
+  }
+
+  private static List<Concept> parseNodeChild(Node element, Node parent, ImportConfiguration configuration) {
+    List<Concept> concepts = new ArrayList<>();
+    concepts.add(Icd10EstMapper.mapConcept(element, parent, configuration));
+    if (element.getChildren() != null) {
+      element.getChildren().forEach(child -> concepts.addAll(parseNodeChild(child, element, configuration)));
+    }
+    if (element.getSub() != null) {
+      element.getSub().forEach(sub -> parseNodeChild(sub, element, configuration));
+    }
+    return concepts;
   }
 
 
-  public static Concept mapConcept(Node element, Node parent, ImportConfiguration configuration, List<EntityProperty> properties) {
+  private static Concept mapConcept(Node element, Node parent, ImportConfiguration configuration) {
     Concept concept = new Concept();
     concept.setCodeSystem(configuration.getCodeSystem());
     concept.setCode(element.getCode());
-    concept.setVersions(List.of(mapConceptVersion(element, parent, configuration, properties)));
+    concept.setVersions(List.of(mapConceptVersion(element, parent, configuration)));
     return concept;
   }
 
-  private static CodeSystemEntityVersion mapConceptVersion(Node element, Node parent, ImportConfiguration configuration, List<EntityProperty> properties) {
+  private static CodeSystemEntityVersion mapConceptVersion(Node element, Node parent, ImportConfiguration configuration) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(element.getCode());
     version.setStatus(PublicationStatus.draft);
-    version.setDesignations(mapDesignations(element, properties));
-    version.setPropertyValues(mapPropertyValues(element, properties));
+    version.setDesignations(mapDesignations(element));
+    version.setPropertyValues(mapPropertyValues(element));
     version.setAssociations(mapAssociations(parent, configuration));
     return version;
   }
 
-  private static List<Designation> mapDesignations(Node element, List<EntityProperty> properties) {
+  private static List<Designation> mapDesignations(Node element) {
     List<Designation> designations = new ArrayList<>();
-    Long term = properties.stream().filter(p -> p.getName().equals("display")).findFirst().map(EntityProperty::getId).orElse(null);
-    Long synonym = properties.stream().filter(p -> p.getName().equals("synonym")).findFirst().map(EntityProperty::getId).orElse(null);
-    element.getObject().forEach(obj -> {
+   element.getObject().forEach(obj -> {
       boolean main = obj.getHidden() != null && 1 == obj.getHidden();
       if (StringUtils.isNotEmpty(obj.getNameEst())) {
-        designations.add(mapDesignation(obj.getNameEst(), Language.et, main ? term : synonym, main));
+        designations.add(mapDesignation(obj.getNameEst(), Language.et, main ? DISPLAY : SYNONYM, main));
       }
       if (StringUtils.isNotEmpty(obj.getNameEng())) {
-        designations.add(mapDesignation(obj.getNameEng(), Language.en, main ? term : synonym, main));
+        designations.add(mapDesignation(obj.getNameEng(), Language.en, main ? DISPLAY : SYNONYM, main));
       }
       if (StringUtils.isNotEmpty(obj.getNameLat())) {
-        designations.add(mapDesignation(obj.getNameLat(), Language.la, main ? term : synonym, main));
+        designations.add(mapDesignation(obj.getNameLat(), Language.la, main ? DISPLAY : SYNONYM, main));
       }
     });
     return designations;
   }
 
-  private static Designation mapDesignation(String name, String lang, Long typeId, boolean preferred) {
+  private static Designation mapDesignation(String name, String lang, String type, boolean preferred) {
     Designation designation = new Designation();
     designation.setName(name);
     designation.setLanguage(lang);
     designation.setCaseSignificance(CaseSignificance.entire_term_case_insensitive);
     designation.setDesignationKind("text");
     designation.setStatus(PublicationStatus.active);
-    designation.setDesignationTypeId(typeId);
+    designation.setDesignationType(type);
     designation.setPreferred(preferred);
     return designation;
   }
 
-  private static List<EntityPropertyValue> mapPropertyValues(Node element, List<EntityProperty> properties) {
+  private static List<EntityPropertyValue> mapPropertyValues(Node element) {
     List<EntityPropertyValue> values = new ArrayList<>();
-    Long excludeProperty = properties.stream().filter(p -> p.getName().equals("exclude")).findFirst().map(EntityProperty::getId).orElse(null);
-    Long includeProperty = properties.stream().filter(p -> p.getName().equals("include")).findFirst().map(EntityProperty::getId).orElse(null);
-    Long noticeProperty = properties.stream().filter(p -> p.getName().equals("notice")).findFirst().map(EntityProperty::getId).orElse(null);
-
     if (CollectionUtils.isNotEmpty(element.getExclude())) {
       element.getExclude().forEach(exclude -> {
         EntityPropertyValue val = new EntityPropertyValue();
         val.setValue(exclude.getCode() + " " + exclude.getText());
-        val.setEntityPropertyId(excludeProperty);
+        val.setEntityProperty(EXCLUDE);
         values.add(val);
       });
     }
@@ -104,7 +126,7 @@ public class Icd10EstMapper {
       element.getInclude().forEach(include -> {
         EntityPropertyValue val = new EntityPropertyValue();
         val.setValue(include.getText());
-        val.setEntityPropertyId(includeProperty);
+        val.setEntityProperty(INCLUDE);
         values.add(val);
       });
     }
@@ -112,7 +134,7 @@ public class Icd10EstMapper {
       element.getNotice().forEach(notice -> {
         EntityPropertyValue val = new EntityPropertyValue();
         val.setValue(notice);
-        val.setEntityPropertyId(noticeProperty);
+        val.setEntityProperty(NOTICE);
         values.add(val);
       });
     }
@@ -124,6 +146,6 @@ public class Icd10EstMapper {
     if (parent == null) {
       return associations;
     }
-    return ImportConfigurationMapper.mapAssociations(parent.getCode(), "is-a", configuration);
+    return CodeSystemImportMapper.mapAssociations(parent.getCode(), "is-a", configuration);
   }
 }

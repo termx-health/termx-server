@@ -1,5 +1,7 @@
 package com.kodality.termserver.integration.orphanet;
 
+import com.kodality.commons.exception.ApiClientException;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportConfiguration;
 import com.kodality.termserver.common.ImportLogger;
@@ -34,10 +36,12 @@ public class OrphanetController {
         service.importOrpha(url, configuration);
         log.info("Orphanet import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
         importLogger.logImport(jobLogResponse.getJobId());
-      } catch (Exception e) {
+      } catch (ApiClientException e) {
         log.error("Error while importing Orphanet", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);
-        throw e;
+      } catch (Exception e) {
+        log.error("Error while importing Orphanet", e);
+        importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
       }
     }));
     return jobLogResponse;

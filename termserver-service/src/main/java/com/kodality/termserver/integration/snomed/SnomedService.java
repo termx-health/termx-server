@@ -51,15 +51,8 @@ public class SnomedService {
       throw ApiError.TE108.toApiException(Map.of("codeSystem", "snomed-ct"));
     }
 
-    properties.forEach(property -> property.setId(codeSystemImportService.prepareProperty(property, "snomed-ct").getId()));
-    concepts.forEach(concept -> {
-      CodeSystemEntityVersion entityVersion = concept.getVersions().get(0);
-      entityVersion.getDesignations().forEach(d ->
-          d.setDesignationTypeId(properties.stream().filter(p -> p.getName().equals(d.getDesignationType())).findFirst().map(EntityProperty::getId).orElse(null)
-          ));
-      entityVersion.setDesignations(entityVersion.getDesignations().stream().filter(d -> d.getDesignationTypeId() != null).collect(Collectors.toList()));
-    });
-    codeSystemImportService.importConcepts(concepts, version, false);
+    properties = codeSystemImportService.saveProperties(properties, "snomed-ct");
+    codeSystemImportService.saveConcepts(concepts, version, properties);
   }
 
   private List<SnomedConcept> loadRefsetConcepts(String refsetId) {

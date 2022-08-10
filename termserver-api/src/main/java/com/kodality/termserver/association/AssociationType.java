@@ -2,6 +2,7 @@ package com.kodality.termserver.association;
 
 import io.micronaut.core.annotation.Introspected;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
@@ -9,6 +10,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Introspected
 @Accessors(chain = true)
+@NoArgsConstructor
 public class AssociationType {
   private String code;
   private String associationKind;
@@ -16,4 +18,9 @@ public class AssociationType {
   private String reverseName;
   private boolean directed;
   private String description;
+
+  public AssociationType(String code, String associationKind) {
+    this.code = code;
+    this.associationKind = associationKind;
+  }
 }

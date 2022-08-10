@@ -27,7 +27,7 @@ class AtcMapperTest extends Specification {
 
   def "should map ATC concepts"() {
     when:
-    def concepts = AtcMapper.mapConcepts(atcs, configuration, new ArrayList<>())
+    def concepts = AtcMapper.mapCodeSystem(configuration, atcs).concepts
 
     then:
     concepts.size() == 3
@@ -42,9 +42,7 @@ class AtcMapperTest extends Specification {
     A[0].designations[0].status == 'active'
     A[0].designations[0].name == 'ALIMENTARY TRACT AND METABOLISM'
     A[0].designations[0].language == 'en'
-    A[0].associations.size() == 1
-    A[0].associations[0].status == 'active'
-    A[0].associations[0].targetCode == 'classification'
+    A[0].associations.size() == 0
 
     def A01 = concepts.versions.find(v -> v.stream().anyMatch(ver -> ver.code == 'A01'))
     A01[0].code == 'A01'

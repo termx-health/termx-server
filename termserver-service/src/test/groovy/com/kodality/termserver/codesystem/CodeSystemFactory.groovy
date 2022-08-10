@@ -55,8 +55,7 @@ class CodeSystemFactory {
   Concept createConcept(String codesystem, String version, String code) {
     def concept = new Concept(
         code: code,
-        codeSystem: codesystem,
-        displayName: ['en': code]
+        codeSystem: codesystem
     )
     when:
     client.POST("/code-systems/${codesystem}/versions/${version}/concepts", concept, Concept.class).join()

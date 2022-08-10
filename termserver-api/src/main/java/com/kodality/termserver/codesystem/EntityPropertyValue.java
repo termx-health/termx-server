@@ -13,4 +13,6 @@ public class EntityPropertyValue {
   private Long entityPropertyId;
 
   private Long supplementId;
+
+  private String entityProperty;
 }

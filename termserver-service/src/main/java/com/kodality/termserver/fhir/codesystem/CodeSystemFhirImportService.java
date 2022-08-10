@@ -3,9 +3,7 @@ package com.kodality.termserver.fhir.codesystem;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.association.AssociationKind;
-import com.kodality.termserver.codesystem.CodeSystemVersion;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.EntityProperty;
+import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.common.BinaryHttpClient;
 import com.kodality.termserver.common.CodeSystemImportService;
 import com.kodality.zmei.fhir.FhirMapper;
@@ -55,12 +53,8 @@ public class CodeSystemFhirImportService {
 
   @Transactional
   public void importCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
-    CodeSystemVersion version = importService.prepareCodeSystemAndVersion(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem));
-    List<EntityProperty> properties = importService.prepareProperties(CodeSystemFhirImportMapper.mapProperties(codeSystem), codeSystem.getId());
-    importService.prepareAssociationType(codeSystem.getHierarchyMeaning(), AssociationKind.codesystemHierarchyMeaning);
-
-    List<Concept> concepts = CodeSystemFhirImportMapper.mapConcepts(codeSystem.getConcept(), codeSystem, properties, null);
-    importService.importConcepts(concepts, version, PublicationStatus.active.equals(codeSystem.getStatus()));
+    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning));
+    importService.importCodeSystem(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem), associationTypes, PublicationStatus.active.equals(codeSystem.getStatus()));
   }
 
   private String getResource(String url) {
