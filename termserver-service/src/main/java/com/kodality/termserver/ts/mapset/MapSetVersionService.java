@@ -46,7 +46,7 @@ public class MapSetVersionService {
     return repository.query(params);
   }
 
-  public Optional<MapSetVersion> getVersion(String mapSet, String versionCode) {
+  public Optional<MapSetVersion> load(String mapSet, String versionCode) {
     return Optional.ofNullable(repository.load(mapSet, versionCode));
   }
 
@@ -93,7 +93,7 @@ public class MapSetVersionService {
 
   @Transactional
   public void linkEntityVersion(String mapSet, String mapSetVersion, Long entityVersionId) {
-    Optional<Long> currentVersionId = getVersion(mapSet, mapSetVersion).map(MapSetVersion::getId);
+    Optional<Long> currentVersionId = load(mapSet, mapSetVersion).map(MapSetVersion::getId);
     if (currentVersionId.isPresent()) {
       repository.linkEntityVersion(currentVersionId.get(), entityVersionId);
     } else {
@@ -103,7 +103,7 @@ public class MapSetVersionService {
 
   @Transactional
   public void unlinkEntityVersion(String mapSet, String mapSetVersion, Long entityVersionId) {
-    Optional<Long> currentVersionId = getVersion(mapSet, mapSetVersion).map(MapSetVersion::getId);
+    Optional<Long> currentVersionId = load(mapSet, mapSetVersion).map(MapSetVersion::getId);
     if (currentVersionId.isPresent()) {
       repository.unlinkEntityVersion(currentVersionId.get(), entityVersionId);
     } else {

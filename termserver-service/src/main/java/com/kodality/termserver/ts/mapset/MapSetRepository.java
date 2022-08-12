@@ -30,6 +30,8 @@ public class MapSetRepository extends BaseRepository {
     ssb.property("narrative", mapSet.getNarrative());
     ssb.jsonProperty("contacts", mapSet.getContacts());
     ssb.property("description", mapSet.getDescription());
+    ssb.property("source_value_set", mapSet.getSourceValueSet());
+    ssb.property("target_value_set", mapSet.getTargetValueSet());
 
     SqlBuilder sb = ssb.buildUpsert("terminology.map_set", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());

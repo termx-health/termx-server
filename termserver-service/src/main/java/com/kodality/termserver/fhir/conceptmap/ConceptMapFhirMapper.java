@@ -46,6 +46,8 @@ public class ConceptMapFhirMapper {
     fhirConceptMap.setStatus(version.getStatus());
     fhirConceptMap.setPublisher(version.getSource());
     fhirConceptMap.setGroup(toFhirGroup(version.getAssociations()));
+    fhirConceptMap.setSourceCanonical(mapSet.getSourceValueSet());
+    fhirConceptMap.setTargetCanonical(mapSet.getTargetValueSet());
 
     return fhirConceptMap;
   }

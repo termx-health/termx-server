@@ -21,6 +21,17 @@ create table map_set (
 select core.create_table_metadata('map_set');
 --rollback drop table if exists map_set;
 
+--changeset kodality:map_set_value_set
+alter table map_set add column source_value_set text;
+alter table map_set add column target_value_set text;
+
+alter table map_set add constraint map_set_source_value_set_fk foreign key (source_value_set) references value_set(id);
+alter table map_set add constraint map_set_target_value_set_fk foreign key (target_value_set) references value_set(id);
+
+create index map_set_source_value_set_idx on map_set(source_value_set);
+create index map_set_target_value_set_idx on map_set(target_value_set);
+--
+
 --changeset kodality:map_set_version
 drop table if exists map_set_version;
 create table map_set_version (

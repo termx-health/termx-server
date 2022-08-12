@@ -59,7 +59,7 @@ public class MapSetController {
 
   @Get(uri = "/{mapSet}/versions/{version}")
   public MapSetVersion getMapSetVersion(@PathVariable String mapSet, @PathVariable String version) {
-    return mapSetVersionService.getVersion(mapSet, version).orElseThrow(() -> new NotFoundException("Map set version not found: " + version));
+    return mapSetVersionService.load(mapSet, version).orElseThrow(() -> new NotFoundException("Map set version not found: " + version));
   }
 
   @Post(uri = "/{mapSet}/versions")

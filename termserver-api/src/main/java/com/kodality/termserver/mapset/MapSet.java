@@ -19,6 +19,8 @@ public class MapSet {
   private List<ContactDetail> contacts;
   private String narrative;
   private String description;
+  private String sourceValueSet;
+  private String targetValueSet;
 
   private List<MapSetVersion> versions;
   private List<MapSetAssociation> associations;

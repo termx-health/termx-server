@@ -59,7 +59,7 @@ public class CodeSystemImportService {
   }
 
   private void saveCodeSystem(CodeSystem codeSystem) {
-    log.info("Checking, the code system");
+    log.info("Saving code system");
     Optional<CodeSystem> existingCodeSystem = codeSystemService.load(codeSystem.getId());
     if (existingCodeSystem.isEmpty()) {
       log.info("Code system {} does not exist, creating new", codeSystem.getId());
@@ -69,7 +69,7 @@ public class CodeSystemImportService {
 
   private void saveCodeSystemVersion(CodeSystemVersion codeSystemVersion) {
     Optional<CodeSystemVersion> existingVersion = codeSystemVersionService.load(codeSystemVersion.getCodeSystem(), codeSystemVersion.getVersion());
-    if (existingVersion.isPresent() && existingVersion.get().getStatus().equals(PublicationStatus.active)) {
+    if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
       throw ApiError.TE104.toApiException(Map.of("version", codeSystemVersion.getVersion()));
     }
     log.info("Saving code system version {}", codeSystemVersion.getVersion());

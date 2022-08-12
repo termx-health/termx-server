@@ -1,8 +1,19 @@
 package com.kodality.termserver.integration.fileimporter.mapset;
 
 import com.kodality.termserver.ApiError;
+import com.kodality.termserver.association.AssociationType;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termserver.codesystem.Concept;
+import com.kodality.termserver.common.MapSetImportService;
 import com.kodality.termserver.integration.fileimporter.mapset.utils.MapSetFileImportRequest;
 import com.kodality.termserver.integration.fileimporter.mapset.utils.MapSetFileImportRow;
+import com.kodality.termserver.integration.fileimporter.mapset.utils.MapSetFileProcessingMapper;
+import com.kodality.termserver.mapset.MapSet;
+import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.termserver.ts.mapset.MapSetService;
+import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
+import com.kodality.termserver.valueset.ValueSetVersionConcept;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
@@ -10,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +30,11 @@ import lombok.RequiredArgsConstructor;
 @Singleton
 @RequiredArgsConstructor
 public class MapSetFileImportService {
+  private final MapSetService mapSetService;
+  private final MapSetImportService importService;
+  private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+
   private final List<String> VALID_HEADERS = List.of(
       "sourceCodeSystem", "sourceVersion", "sourceCode",
       "targetCodeSystem", "targetVersion", "targetCode",
@@ -27,7 +44,16 @@ public class MapSetFileImportService {
 
   public void process(MapSetFileImportRequest req, byte[] csvFile) {
     List<MapSetFileImportRow> rows = parseRows(csvFile);
-    // todo (marina): import entities
+    saveProcessingResult(req, rows);
+  }
+
+  private void saveProcessingResult(MapSetFileImportRequest req, List<MapSetFileImportRow> rows) {
+    MapSetFileProcessingMapper mapper = new MapSetFileProcessingMapper();
+
+    MapSet existingMapSet = mapSetService.load(req.getMap().getId()).orElse(null);
+    MapSet mapSet = prepareMapSet(mapper.mapMapSet(req, rows, existingMapSet));
+    List<AssociationType> associationTypes = mapper.mapAssociationTypes(rows);
+    importService.importMapSet(mapSet, associationTypes, false);
   }
 
   private List<MapSetFileImportRow> parseRows(byte[] csvFile) {
@@ -70,5 +96,33 @@ public class MapSetFileImportService {
     settings.setHeaderExtractionEnabled(true);
     new CsvParser(settings).parse(new ByteArrayInputStream(csv));
     return processor;
+  }
+
+  private MapSet prepareMapSet(MapSet mapSet) {
+    List<Concept> sourceVSConcepts = valueSetVersionConceptService.expand(mapSet.getSourceValueSet(), null, null).stream().map(ValueSetVersionConcept::getConcept).toList();
+    List<Concept> targetVSConcepts = valueSetVersionConceptService.expand(mapSet.getTargetValueSet(), null, null).stream().map(ValueSetVersionConcept::getConcept).toList();
+    mapSet.getAssociations().forEach(association -> {
+      association.setSource(prepareAssociation(association.getSource(), sourceVSConcepts, mapSet.getAssociations().indexOf(association)));
+      association.setTarget(prepareAssociation(association.getTarget(), targetVSConcepts, mapSet.getAssociations().indexOf(association)));
+    });
+    return mapSet;
+  }
+
+  private CodeSystemEntityVersion prepareAssociation(CodeSystemEntityVersion entityVersion, List<Concept> valueSetConcepts, int index) {
+    Optional<Concept> concept = valueSetConcepts.stream().filter(vsc -> vsc.getCode().equals(entityVersion.getCode())).findFirst();
+    if (concept.isEmpty()) {
+      throw ApiError.TE710.toApiException(Map.of("rowNumber", index));
+    }
+    entityVersion.setCodeSystem(entityVersion.getCodeSystem() == null ? concept.get().getCodeSystem() : entityVersion.getCodeSystem());
+    return findEntityVersion(entityVersion, index);
+  }
+
+  private CodeSystemEntityVersion findEntityVersion(CodeSystemEntityVersion entityVersion, int index) {
+    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
+    params.setCodeSystem(entityVersion.getCodeSystem());
+    params.setCodeSystemVersion(entityVersion.getCodeSystemVersion());
+    params.setCode(entityVersion.getCode());
+    params.setLimit(1);
+    return codeSystemEntityVersionService.query(params).findFirst().orElseThrow(() -> ApiError.TE707.toApiException(Map.of("rowNumber", index)));
   }
 }

@@ -228,7 +228,7 @@ public class ValueSetFhirImportService {
 
     ValueSetVersion version = valueSet.getVersions().get(0);
     Optional<ValueSetVersion> existingVersion = valueSetVersionService.load(valueSet.getId(), version.getVersion());
-    if (existingVersion.isPresent() && existingVersion.get().getStatus().equals(PublicationStatus.active)) {
+    if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
       throw ApiError.TE104.toApiException(Map.of("version", version.getVersion()));
     }
     log.info("Saving value set version {}", version.getVersion());

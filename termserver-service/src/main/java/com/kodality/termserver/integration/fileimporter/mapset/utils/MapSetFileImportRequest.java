@@ -2,6 +2,7 @@ package com.kodality.termserver.integration.fileimporter.mapset.utils;
 
 import com.kodality.commons.model.LocalizedName;
 import io.micronaut.core.annotation.Introspected;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,7 +20,7 @@ public class MapSetFileImportRequest {
   @Setter
   public static class MapSetFileImportRequestMap {
     private String id;
-    private String name;
+    private LocalizedName names;
     private String uri;
   }
 
@@ -27,7 +28,6 @@ public class MapSetFileImportRequest {
   @Setter
   public static class MapSetFileImportRequestVersion {
     private String version;
-    private LocalizedName names;
-    private String uri;
+    private LocalDate releaseDate;
   }
 }

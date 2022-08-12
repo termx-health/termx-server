@@ -4,13 +4,8 @@ import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.codesystem.CodeSystem;
-import com.kodality.termserver.codesystem.CodeSystemAssociation;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
-import com.kodality.termserver.codesystem.CodeSystemVersion;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.common.BinaryHttpClient;
+import com.kodality.termserver.common.CodeSystemImportService;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisRequest;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisResponse;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingMapper;
@@ -19,20 +14,15 @@ import com.kodality.termserver.integration.fileimporter.codesystem.utils.FilePro
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystemVersion;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingResponse;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessor;
-import com.kodality.termserver.ts.association.AssociationTypeService;
 import com.kodality.termserver.ts.codesystem.CodeSystemService;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionService;
-import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationService;
-import com.kodality.termserver.ts.codesystem.concept.ConceptService;
-import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
-import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termserver.ts.valueset.ValueSetService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionService;
 import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetVersion;
-import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -43,16 +33,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class CodeSystemFileImportService {
-  private final ConceptService conceptService;
   private final ValueSetService valueSetService;
   private final CodeSystemService codeSystemService;
-  private final EntityPropertyService entityPropertyService;
-  private final AssociationTypeService associationTypeService;
   private final ValueSetVersionService valueSetVersionService;
+  private final CodeSystemImportService codeSystemImportService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
-  private final CodeSystemAssociationService codeSystemAssociationService;
-  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   private final BinaryHttpClient client = new BinaryHttpClient();
 
@@ -84,61 +70,12 @@ public class CodeSystemFileImportService {
     FileProcessingMapper mapper = new FileProcessingMapper();
 
     CodeSystem existingCodeSystem = codeSystemService.load(fpCodeSystem.getId()).orElse(null);
-    CodeSystem codeSystem = mapper.toCodeSystem(fpCodeSystem, existingCodeSystem);
-    codeSystemService.save(codeSystem);
-
-    CodeSystemVersion codeSystemVersion = mapper.toCodeSystemVersion(fpVersion, codeSystem.getId());
-    Optional<CodeSystemVersion> existingVersion = codeSystemVersionService.load(codeSystem.getId(), codeSystemVersion.getVersion());
-    existingVersion.ifPresent(version -> codeSystemVersion.setId(version.getId()));
-    if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
-      throw ApiError.TE704.toApiException();
-    }
-    codeSystemVersionService.save(codeSystemVersion);
-
-    List<EntityProperty> properties = mapper.toProperties(result.getProperties());
-    properties.forEach(p -> {
-      Optional<EntityProperty> existingProperty = entityPropertyService.load(p.getName(), codeSystem.getId());
-      if (existingProperty.isPresent()) {
-        p.setId(existingProperty.get().getId());
-      } else {
-        entityPropertyService.save(p, codeSystem.getId());
-      }
-    });
-
+    CodeSystem codeSystem = mapper.toCodeSystem(fpCodeSystem, fpVersion, result, existingCodeSystem);
     List<AssociationType> associationTypes = mapper.toAssociationTypes(result.getProperties());
-    associationTypes.forEach(associationTypeService::save);
+    codeSystemImportService.importCodeSystem(codeSystem, associationTypes, fpVersion.getStatus().equals(PublicationStatus.active));
 
-    List<Concept> concepts = mapper.toConcepts(result.getEntities(), properties);
-    //FIXME: this is very slow, should refactor
-    for (int i = 0; i < concepts.size(); i++) {
-      log.debug("Saving concept {}/{}", i + 1, concepts.size());
-      Concept concept = concepts.get(i);
-      conceptService.save(concept, codeSystem.getId());
-      codeSystemEntityVersionService.save(concept.getVersions().get(0), concept.getId());
-      codeSystemEntityVersionService.activate(concept.getVersions().get(0).getId());
-      codeSystemVersionService.linkEntityVersion(codeSystemVersion.getId(), concept.getVersions().get(0).getId());
-    }
-
-    concepts.forEach(concept -> {
-      List<CodeSystemAssociation> associations = concept.getVersions().get(0).getAssociations();
-      associations.forEach(a -> {
-        a.setCodeSystem(codeSystem.getId());
-        if (a.getTargetCode() != null) {
-          Long targetId = codeSystemEntityVersionService
-              .query(new CodeSystemEntityVersionQueryParams().setCode(a.getTargetCode()).setCodeSystemVersionId(codeSystemVersion.getId()))
-              .findFirst()
-              .map(CodeSystemEntityVersion::getId).orElse(null);
-          a.setTargetId(targetId);
-        }
-      });
-      codeSystemAssociationService.save(associations, concept.getVersions().get(0).getId());
-    });
-
-    if (fpVersion.getStatus().equals(PublicationStatus.active)) {
-      codeSystemVersionService.activate(codeSystem.getId(), codeSystemVersion.getVersion());
-    }
     if (fpVersion.getStatus().equals(PublicationStatus.retired)) {
-      codeSystemVersionService.retire(codeSystem.getId(), codeSystemVersion.getVersion());
+      codeSystemVersionService.retire(codeSystem.getId(), codeSystem.getVersions().get(0).getVersion());
     }
 
     if (generateValueSet) {
@@ -146,11 +83,11 @@ public class CodeSystemFileImportService {
       ValueSet valueSet = mapper.toValueSet(codeSystem, existingValueSet);
       valueSetService.save(valueSet);
 
-      ValueSetVersion valueSetVersion = mapper.toValueSetVersion(fpVersion, valueSet.getId(), codeSystemVersion);
+      ValueSetVersion valueSetVersion = mapper.toValueSetVersion(fpVersion, valueSet.getId(), codeSystem.getVersions().get(0));
       Optional<ValueSetVersion> existingVSVersion = valueSetVersionService.load(valueSet.getId(), valueSetVersion.getVersion());
       existingVSVersion.ifPresent(version -> valueSetVersion.setId(version.getId()));
       if (existingVSVersion.isPresent() && !existingVSVersion.get().getStatus().equals(PublicationStatus.draft)) {
-        throw ApiError.TE705.toApiException();
+        throw ApiError.TE104.toApiException(Map.of("version", codeSystem.getVersions().get(0).getVersion()));
       }
       valueSetVersionService.save(valueSetVersion);
       valueSetVersionRuleService.save(valueSetVersion.getRuleSet().getRules(), valueSetVersion.getRuleSet().getId());

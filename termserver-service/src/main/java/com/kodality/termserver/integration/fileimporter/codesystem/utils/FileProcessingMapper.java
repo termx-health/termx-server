@@ -35,17 +35,20 @@ public class FileProcessingMapper {
   public static final String CONCEPT_DEFINITION = "definition";
   public static final String CONCEPT_PARENT = "parent";
 
-  public CodeSystem toCodeSystem(FileProcessingCodeSystem fpCodeSystem, CodeSystem existingCodeSystem) {
+  public CodeSystem toCodeSystem(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, FileProcessingResponse result, CodeSystem existingCodeSystem) {
     CodeSystem codeSystem = existingCodeSystem == null ? new CodeSystem() : existingCodeSystem;
     codeSystem.setId(fpCodeSystem.getId());
     codeSystem.setUri(fpCodeSystem.getUri() == null ? codeSystem.getUri() : fpCodeSystem.getUri());
     codeSystem.setNames(fpCodeSystem.getNames() == null ? codeSystem.getNames() : fpCodeSystem.getNames());
     codeSystem.setContent(CodeSystemContent.complete);
     codeSystem.setDescription(fpCodeSystem.getDescription() == null ? codeSystem.getDescription() : fpCodeSystem.getDescription());
+    codeSystem.setVersions(List.of(toCodeSystemVersion(fpVersion, fpCodeSystem.getId())));
+    codeSystem.setProperties(toProperties(result.getProperties()));
+    codeSystem.setConcepts(toConcepts(result.getEntities()));
     return codeSystem;
   }
 
-  public CodeSystemVersion toCodeSystemVersion(FileProcessingCodeSystemVersion fpVersion, String codeSystem) {
+  private CodeSystemVersion toCodeSystemVersion(FileProcessingCodeSystemVersion fpVersion, String codeSystem) {
     CodeSystemVersion version = new CodeSystemVersion();
     version.setCodeSystem(codeSystem);
     version.setVersion(fpVersion.getVersion());
@@ -54,7 +57,7 @@ public class FileProcessingMapper {
     return version;
   }
 
-  public List<EntityProperty> toProperties(List<FileProcessingResponseProperty> fpProperties) {
+  private List<EntityProperty> toProperties(List<FileProcessingResponseProperty> fpProperties) {
     return fpProperties.stream()
         .filter(fpProperty -> fpProperty.getPropertyType() != null && !List.of(CONCEPT_CODE, CONCEPT_PARENT).contains(fpProperty.getPropertyName()))
         .map(fpProperty -> {
@@ -66,12 +69,12 @@ public class FileProcessingMapper {
         }).collect(Collectors.toList());
   }
 
-  public List<Concept> toConcepts(List<Map<String, List<FileProcessingEntityPropertyValue>>> entities, List<EntityProperty> properties) {
+  private List<Concept> toConcepts(List<Map<String, List<FileProcessingEntityPropertyValue>>> entities) {
     return entities.stream().map(entity -> {
       Concept concept = new Concept();
       concept.setCode(toConceptCode(entity));
       concept.setDescription(toConceptDescription(entity));
-      concept.setVersions(List.of(toConceptVersion(entity, properties)));
+      concept.setVersions(List.of(toConceptVersion(entity)));
       return concept;
     }).collect(Collectors.toList());
   }
@@ -84,17 +87,17 @@ public class FileProcessingMapper {
     return entity.containsKey(CONCEPT_DESCRIPTION) ? entity.get(CONCEPT_DESCRIPTION).stream().findFirst().map(pv -> (String) pv.getValue()).orElse(null) : null;
   }
 
-  private CodeSystemEntityVersion toConceptVersion(Map<String, List<FileProcessingEntityPropertyValue>> entity, List<EntityProperty> properties) {
+  private CodeSystemEntityVersion toConceptVersion(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setStatus(PublicationStatus.draft);
     version.setCode(toConceptCode(entity));
-    version.setPropertyValues(toConceptPropertyValues(entity, properties));
-    version.setDesignations(toConceptDesignations(entity, properties));
+    version.setPropertyValues(toConceptPropertyValues(entity));
+    version.setDesignations(toConceptDesignations(entity));
     version.setAssociations(toConceptAssociations(entity));
     return version;
   }
 
-  private List<EntityPropertyValue> toConceptPropertyValues(Map<String, List<FileProcessingEntityPropertyValue>> entity, List<EntityProperty> properties) {
+  private List<EntityPropertyValue> toConceptPropertyValues(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
     return entity.keySet().stream()
         .filter(key -> !List.of(CONCEPT_CODE, CONCEPT_DESCRIPTION, CONCEPT_DISPLAY, CONCEPT_DEFINITION, CONCEPT_PARENT).contains(key))
         .filter(key -> entity.get(key).stream().noneMatch(e -> e.getLang() != null))
@@ -103,16 +106,13 @@ public class FileProcessingMapper {
           return fpPropertyValues.stream().map(fpPropertyValue -> {
             EntityPropertyValue propertyValue = new EntityPropertyValue();
             propertyValue.setValue(fpPropertyValue.getValue());
-            propertyValue.setEntityPropertyId(properties.stream()
-                .filter(p -> p.getName().equals(fpPropertyValue.getPropertyName()))
-                .map(EntityProperty::getId)
-                .findFirst().orElseThrow(ApiError.TE703::toApiException));
+            propertyValue.setEntityProperty(fpPropertyValue.getPropertyName());
             return propertyValue;
           });
         }).collect(Collectors.toList());
   }
 
-  private List<Designation> toConceptDesignations(Map<String, List<FileProcessingEntityPropertyValue>> entity, List<EntityProperty> properties) {
+  private List<Designation> toConceptDesignations(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
     return entity.keySet().stream()
         .filter(key -> List.of(CONCEPT_DISPLAY, CONCEPT_DEFINITION).contains(key) || entity.get(key).stream().anyMatch(e -> e.getLang() != null))
         .flatMap(key -> {
@@ -123,10 +123,7 @@ public class FileProcessingMapper {
             designation.setLanguage(fpPropertyValue.getLang());
             designation.setStatus(PublicationStatus.active);
             designation.setCaseSignificance(CaseSignificance.entire_term_case_insensitive);
-            designation.setDesignationTypeId(properties.stream()
-                .filter(p -> p.getName().equals(fpPropertyValue.getPropertyName()))
-                .map(EntityProperty::getId)
-                .findFirst().orElseThrow(ApiError.TE703::toApiException));
+            designation.setDesignationType(fpPropertyValue.getPropertyName());
             return designation;
           });
         }).collect(Collectors.toList());

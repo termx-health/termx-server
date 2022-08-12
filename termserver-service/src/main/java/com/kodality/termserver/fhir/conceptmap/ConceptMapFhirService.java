@@ -17,7 +17,6 @@ import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionServi
 import com.kodality.termserver.ts.mapset.MapSetService;
 import com.kodality.termserver.ts.mapset.MapSetVersionService;
 import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
-import com.kodality.termserver.ts.mapset.entity.MapSetEntityVersionService;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
@@ -45,7 +44,6 @@ public class ConceptMapFhirService {
   private final MapSetVersionService mapSetVersionService;
   private final CodeSystemFhirService codeSystemFhirService;
   private final MapSetAssociationService mapSetAssociationService;
-  private final MapSetEntityVersionService mapSetEntityVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   public Parameters translate(Map<String, List<String>> params) {
@@ -82,7 +80,7 @@ public class ConceptMapFhirService {
 
     if (CollectionUtils.isNotEmpty(concepts)) {
       Optional<MapSet> persistedMapSet = mapSetService.load(name.get());
-      Optional<MapSetVersion> persistedMapSetVersion = version.isPresent() ? mapSetVersionService.getVersion(name.get(), version.get()) : Optional.empty();
+      Optional<MapSetVersion> persistedMapSetVersion = version.isPresent() ? mapSetVersionService.load(name.get(), version.get()) : Optional.empty();
       if (persistedMapSet.isPresent()) {
         MapSetVersion mapSetVersion = persistedMapSetVersion.orElse(null);
         if (mapSetVersion == null) {
@@ -114,7 +112,7 @@ public class ConceptMapFhirService {
 
     if (version.isPresent()) {
       Optional<MapSet> mapSet = mapSetService.load(name.get());
-      Optional<MapSetVersion> mapSetVersion = mapSetVersionService.getVersion(name.get(), version.get());
+      Optional<MapSetVersion> mapSetVersion = mapSetVersionService.load(name.get(), version.get());
       if (mapSet.isPresent() && mapSetVersion.isPresent()) {
         MapSetAssociationQueryParams ap = new MapSetAssociationQueryParams().setMapSetVersionId(mapSetVersion.get().getId());
         ap.all();
