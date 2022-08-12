@@ -1,5 +1,6 @@
 package com.kodality.termserver.common;
 
+import com.kodality.commons.exception.ApiException;
 import com.kodality.termserver.job.JobLog.JobDefinition;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.termserver.job.JobLogService;
@@ -8,6 +9,7 @@ import jakarta.inject.Singleton;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.text.StringSubstitutor;
 
 @Singleton
 @RequiredArgsConstructor
@@ -34,14 +36,17 @@ public class ImportLogger {
     logImport(jobId, successes, warnings, null);
   }
 
-  public void logImport(Long jobId, Throwable e) {
+  public void logImport(Long jobId, ApiException e) {
     logImport(jobId, null, null, e);
   }
 
-  public void logImport(Long jobId, List<String> successes, List<String> warnings, Throwable e) {
+  public void logImport(Long jobId, List<String> successes, List<String> warnings, ApiException e) {
     successes = CollectionUtils.isEmpty(successes) ? null : successes;
     warnings = CollectionUtils.isEmpty(warnings) ? null : warnings;
-    List<String> errors = e == null ? null : List.of(ExceptionUtils.getMessage(e));
+    if (e != null && CollectionUtils.isNotEmpty(e.getIssues())) {
+      e.getIssues().forEach(issue -> issue.setMessage(StringSubstitutor.replace(issue.getMessage(), issue.getParams(), "{{", "}}")));
+    }
+    List<String> errors = e == null ? null : List.of(ExceptionUtils.getMessage(new ApiException(e.getHttpStatus(), e.getIssues())));
     jobLogService.finish(jobId, successes, warnings, errors);
   }
 
