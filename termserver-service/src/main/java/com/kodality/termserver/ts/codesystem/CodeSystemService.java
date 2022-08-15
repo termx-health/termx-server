@@ -41,8 +41,6 @@ public class CodeSystemService {
   }
 
   public QueryResult<CodeSystem> query(CodeSystemQueryParams params) {
-    List<String> permittedResourceIds = userPermissionService.getPermittedResourceIds("CodeSystem", "view");
-    params.setPermittedIds(permittedResourceIds);
     QueryResult<CodeSystem> codeSystems = repository.query(params);
     decorateQueryResult(codeSystems, params);
     return codeSystems;

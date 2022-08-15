@@ -37,6 +37,9 @@ public class UserPermissionService {
   }
 
   private boolean checkAllResourcesPermitted(String resourceType, String action, Collection<String> userPrivileges) {
-    return userPrivileges.stream().anyMatch(p -> p.equals(AuthorizationFilter.ADMIN) || p.equals("*." + resourceType + "." + action));
+    return userPrivileges.stream().anyMatch(p -> p.equals(AuthorizationFilter.ADMIN) ||
+        p.equals("*." + action) ||
+        p.equals("*.*." + action) ||
+        p.equals("*." + resourceType + "." + action));
   }
 }

@@ -207,13 +207,13 @@ public class ValueSetFhirImportService {
               .setDesignationKind(c.getDisplay().getDesignationKind()))
           .findFirst().ifPresentOrElse(c::setDisplay, () -> {
             c.getDisplay().setDesignationTypeId(propertyId);
-            designationService.save(c.getDisplay(), codeSystemEntityVersionId);
+            designationService.save(c.getDisplay(), codeSystemEntityVersionId, c.getConcept().getCodeSystem());
           });
     }
     if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
       c.getAdditionalDesignations().forEach(d -> {
         d.setDesignationTypeId(propertyId);
-        designationService.save(d, codeSystemEntityVersionId);
+        designationService.save(d, codeSystemEntityVersionId, c.getConcept().getCodeSystem());
       });
     }
   }

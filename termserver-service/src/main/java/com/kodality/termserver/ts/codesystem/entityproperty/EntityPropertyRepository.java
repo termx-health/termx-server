@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
+import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
@@ -61,6 +62,9 @@ public class EntityPropertyRepository extends BaseRepository {
       sb.and().in("ep.name", params.getNames());
     }
     sb.appendIfNotNull("and ep.code_system = ?", params.getCodeSystem());
+    if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
+      sb.and().in("ep.code_system", params.getPermittedCodeSystems());
+    }
     return sb;
   }
 

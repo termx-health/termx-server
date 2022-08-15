@@ -1,5 +1,6 @@
 package com.kodality.termserver.auth.auth;
 
+import io.micronaut.core.annotation.AnnotationMetadata;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.http.HttpAttributes;
 import io.micronaut.http.HttpRequest;
@@ -57,15 +58,23 @@ public class AuthorizationFilter implements HttpServerFilter {
     if (CollectionUtils.isEmpty(privileges)) {
       return false;
     }
-    return methodRoute.getValue(Authorized.class, String[].class).map(authPrivileges -> hasAnyPrivilege(Arrays.asList(authPrivileges), privileges))
-        .orElse(false);
+
+    AnnotationMetadata annotationMetadata = methodRoute.getAnnotationMetadata();
+
+    return methodRoute.getValue(Authorized.class, String[].class).map(authPrivileges ->
+        hasAnyPrivilege(Arrays.asList(authPrivileges), privileges, annotationMetadata.stringValue(ResourceId.class))
+    ).orElse(false);
   }
 
   public static boolean hasAnyPrivilege(List<String> authPrivileges, Collection<String> userPrivileges) {
-    return userPrivileges.contains(ADMIN) || authPrivileges.stream().anyMatch(ap -> userPrivileges.stream().anyMatch(up -> privilegesMatch(ap, up)));
+    return hasAnyPrivilege(authPrivileges, userPrivileges, Optional.empty());
   }
 
-  private static boolean privilegesMatch(String authPrivilege, String userPrivilege) {
+  public static boolean hasAnyPrivilege(List<String> authPrivileges, Collection<String> userPrivileges, Optional<String> resourceId) {
+    return userPrivileges.contains(ADMIN) || authPrivileges.stream().anyMatch(ap -> userPrivileges.stream().anyMatch(up -> privilegesMatch(ap, up, resourceId)));
+  }
+
+  private static boolean privilegesMatch(String authPrivilege, String userPrivilege, Optional<String> resourceId) {
     if (authPrivilege.equals(ADMIN)) {
       return userPrivilege.equals(ADMIN);
     }
@@ -83,7 +92,7 @@ public class AuthorizationFilter implements HttpServerFilter {
     if (upParts.length != 3 && authParts.length != 3) {
       return false;
     }
-    return match(upParts[0], authParts[0]) && match(upParts[1], authParts[1]) && match(upParts[2], authParts[2]);
+    return match(upParts[0], authParts[0]) && match(upParts[1], authParts[1]) && match(upParts[2], authParts[2]) && match(upParts[0], resourceId.orElse("*"));
   }
 
   private static boolean match(String upPart, String apPart) {

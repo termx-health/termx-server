@@ -2,6 +2,7 @@ package com.kodality.termserver.ts.codesystem;
 
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
@@ -37,8 +38,12 @@ public class CodeSystemDuplicateService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
+  private final UserPermissionService userPermissionService;
+
   @Transactional
   public void duplicateCodeSystem(CodeSystem targetCodeSystem, String sourceCodeSystem) {
+    userPermissionService.checkPermitted(targetCodeSystem.getId(), "CodeSystem", "edit");
+
     CodeSystem sourceCs = codeSystemService.load(sourceCodeSystem, true).orElse(null);
     if (sourceCs == null) {
       throw ApiError.TE201.toApiException(Map.of("codeSystem", sourceCodeSystem));
@@ -67,6 +72,8 @@ public class CodeSystemDuplicateService {
 
   @Transactional
   public void duplicateCodeSystemVersion(String targetVersionVersion, String targetCodeSystem, String sourceVersionVersion, String sourceCodeSystem) {
+    userPermissionService.checkPermitted(targetCodeSystem, "CodeSystem", "edit");
+
     CodeSystemVersion version = codeSystemVersionService.load(sourceCodeSystem, sourceVersionVersion).orElse(null);
     if (version == null) {
       throw ApiError.TE202.toApiException(Map.of("version", sourceVersionVersion, "codeSystem", sourceCodeSystem));
@@ -151,7 +158,7 @@ public class CodeSystemDuplicateService {
           a.setId(null);
           a.setTargetId(entityVersionsMap.get(a.getTargetId()));
         });
-        codeSystemAssociationService.save(associations, version.getId());
+        codeSystemAssociationService.save(associations, version.getId(), version.getCodeSystem());
       }
     }));
   }

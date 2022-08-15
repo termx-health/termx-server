@@ -2,6 +2,7 @@ package com.kodality.termserver.ts.codesystem.concept;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystemEntityType;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
@@ -25,8 +26,12 @@ public class ConceptService {
   private final ValueSetVersionRepository valueSetVersionRepository;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
+  private final UserPermissionService userPermissionService;
+
   @Transactional
   public Concept save(Concept concept, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
     concept.setType(CodeSystemEntityType.concept);
     concept.setCodeSystem(codeSystem);
 

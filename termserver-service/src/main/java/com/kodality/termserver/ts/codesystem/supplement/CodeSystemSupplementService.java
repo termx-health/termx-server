@@ -1,11 +1,9 @@
 package com.kodality.termserver.ts.codesystem.supplement;
 
-import com.kodality.termserver.codesystem.CodeSystem;
-import com.kodality.termserver.codesystem.CodeSystemQueryParams;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
-import com.kodality.termserver.ts.codesystem.CodeSystemService;
 import com.kodality.termserver.codesystem.CodeSystemSupplement;
 import com.kodality.termserver.codesystem.CodeSystemSupplementType;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
@@ -22,10 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CodeSystemSupplementService {
   private final CodeSystemSupplementRepository repository;
-  private final CodeSystemService codeSystemService;
   private final DesignationService designationService;
   private final EntityPropertyService entityPropertyService;
   private final EntityPropertyValueService entityPropertyValueService;
+
+  private final UserPermissionService userPermissionService;
 
   public List<CodeSystemSupplement> getSupplements(String codeSystem) {
     return repository.getSupplements(codeSystem);
@@ -37,6 +36,8 @@ public class CodeSystemSupplementService {
 
   @Transactional
   public void save(CodeSystemSupplement supplement, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
     if (supplement.getTargetType().equals(CodeSystemSupplementType.property)) {
       EntityProperty property = (EntityProperty) supplement.getTarget();
       entityPropertyService.save(property, codeSystem);
@@ -48,18 +49,19 @@ public class CodeSystemSupplementService {
   }
 
   @Transactional
-  public void save(CodeSystemSupplement supplement, Long codeSystemEntityVersionId) {
+  public void save(CodeSystemSupplement supplement, Long codeSystemEntityVersionId, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
     if (supplement.getTargetType().equals(CodeSystemSupplementType.propertyValue)) {
       EntityPropertyValue propertyValue = (EntityPropertyValue) supplement.getTarget();
-      entityPropertyValueService.save(propertyValue, codeSystemEntityVersionId);
+      entityPropertyValueService.save(propertyValue, codeSystemEntityVersionId, supplement.getCodeSystem());
       supplement.setTarget(propertyValue);
     }
     if (supplement.getTargetType().equals(CodeSystemSupplementType.designation)) {
       Designation designation = (Designation) supplement.getTarget();
-      designationService.save(designation, codeSystemEntityVersionId);
+      designationService.save(designation, codeSystemEntityVersionId, supplement.getCodeSystem());
       supplement.setTarget(designation);
     }
-    String codeSystem = codeSystemService.query(new CodeSystemQueryParams().setCodeSystemEntityVersionId(codeSystemEntityVersionId)).findFirst().map(CodeSystem::getId).orElse(null);
     supplement.setCodeSystem(codeSystem);
     supplement.setCreated(supplement.getCreated() == null ? OffsetDateTime.now() : supplement.getCreated());
     repository.save(supplement);

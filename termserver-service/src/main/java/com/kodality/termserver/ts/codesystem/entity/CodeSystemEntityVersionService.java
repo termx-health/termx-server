@@ -3,6 +3,7 @@ package com.kodality.termserver.ts.codesystem.entity;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
@@ -28,17 +29,21 @@ public class CodeSystemEntityVersionService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionRepository repository;
 
+  private final UserPermissionService userPermissionService;
+
   @Transactional
   public CodeSystemEntityVersion save(CodeSystemEntityVersion version, Long codeSystemEntityId) {
+    userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
+
     if (!PublicationStatus.draft.equals(version.getStatus())) {
       throw ApiError.TE101.toApiException();
     }
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
     repository.save(version, codeSystemEntityId);
 
-    designationService.save(version.getDesignations(), version.getId());
-    entityPropertyValueService.save(version.getPropertyValues(), version.getId());
-    codeSystemAssociationService.save(prepareAssociations(version.getAssociations()), version.getId());
+    designationService.save(version.getDesignations(), version.getId(), version.getCodeSystem());
+    entityPropertyValueService.save(version.getPropertyValues(), version.getId(), version.getCodeSystem());
+    codeSystemAssociationService.save(prepareAssociations(version.getAssociations()), version.getId(), version.getCodeSystem());
     return version;
   }
 
@@ -72,6 +77,7 @@ public class CodeSystemEntityVersionService {
     if (currentVersion == null) {
       throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
+    userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "edit");
     if (PublicationStatus.active.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' is already activated, skipping activation process.", versionId);
       return;
@@ -85,6 +91,7 @@ public class CodeSystemEntityVersionService {
     if (currentVersion == null) {
       throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
+    userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "edit");
     if (PublicationStatus.retired.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' is already retired, skipping retirement process.", versionId);
       return;

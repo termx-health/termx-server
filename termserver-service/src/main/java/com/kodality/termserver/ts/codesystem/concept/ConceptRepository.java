@@ -8,6 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.PipeUtil;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
+import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.Arrays;
@@ -54,6 +55,9 @@ public class ConceptRepository extends BaseRepository {
   private SqlBuilder filter(ConceptQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and c.code_system = ?", params.getCodeSystem());
+    if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
+      sb.and().in("c.code_system", params.getPermittedCodeSystems());
+    }
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs where cs.id = c.code_system and cs.uri = ?)", params.getCodeSystemUri());
     sb.appendIfNotNull("and c.code ~* ?", params.getCodeContains());
     if (StringUtils.isNotEmpty(params.getTextContains())) {

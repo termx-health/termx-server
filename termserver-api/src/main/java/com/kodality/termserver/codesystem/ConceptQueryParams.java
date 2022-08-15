@@ -2,6 +2,7 @@ package com.kodality.termserver.codesystem;
 
 import com.kodality.commons.model.QueryParams;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -14,6 +15,7 @@ public class ConceptQueryParams extends QueryParams {
   private String codeContains;
   private String textContains;
   private String codeSystem;
+  private List<String> permittedCodeSystems;
   private String codeSystemUri;
   private String codeSystemVersion;
   private Long codeSystemVersionId;

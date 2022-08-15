@@ -1,6 +1,7 @@
 package com.kodality.termserver.ts.codesystem.entityproperty;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
 import java.time.OffsetDateTime;
@@ -14,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class EntityPropertyService {
   private final EntityPropertyRepository repository;
+
+  private final UserPermissionService userPermissionService;
 
   public Optional<EntityProperty> load(Long id) {
     return Optional.ofNullable(repository.load(id));
@@ -29,6 +32,8 @@ public class EntityPropertyService {
 
   @Transactional
   public List<EntityProperty> save(List<EntityProperty> entityProperties, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
     repository.retain(entityProperties, codeSystem);
     if (entityProperties != null) {
       entityProperties.forEach(p -> {
@@ -41,13 +46,16 @@ public class EntityPropertyService {
 
   @Transactional
   public EntityProperty save(EntityProperty entityProperty, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
     entityProperty.setCreated(entityProperty.getCreated() == null ? OffsetDateTime.now() : entityProperty.getCreated());
     repository.save(entityProperty, codeSystem);
     return entityProperty;
   }
 
   @Transactional
-  public void delete(Long id) {
+  public void delete(Long id, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
     repository.delete(id);
   }
 }

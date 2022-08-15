@@ -21,10 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CodeSystemVersionService {
   private final CodeSystemVersionRepository repository;
+
   private final UserPermissionService userPermissionService;
 
   @Transactional
   public void save(CodeSystemVersion version) {
+    userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
+
     if (!PublicationStatus.draft.equals(version.getStatus()) && version.getId() == null) {
       throw ApiError.TE101.toApiException();
     }
@@ -88,6 +91,8 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void retire(String codeSystem, String version) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
+
     CodeSystemVersion currentVersion = repository.load(codeSystem, version);
     if (currentVersion == null) {
       throw ApiError.TE202.toApiException(Map.of("version", version, "codeSystem", codeSystem));
@@ -101,6 +106,8 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void save(List<CodeSystemVersion> versions, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
     repository.retainVersions(versions, codeSystem);
     if (versions != null) {
       versions.forEach(this::save);
@@ -109,6 +116,8 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void linkEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
     Optional<Long> versionId = load(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
     if (versionId.isPresent()) {
       repository.linkEntityVersion(versionId.get(), entityVersionId);
@@ -124,6 +133,8 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void unlinkEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
     Optional<Long> versionId = load(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
     if (versionId.isPresent()) {
       repository.unlinkEntityVersion(versionId.get(), entityVersionId);

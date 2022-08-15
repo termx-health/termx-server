@@ -10,6 +10,7 @@ import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.CodeSystemVersionQueryParams;
+import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.util.List;
 
@@ -64,6 +65,9 @@ public class CodeSystemVersionRepository extends BaseRepository {
   private SqlBuilder filter(CodeSystemVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and code_system = ?", params.getCodeSystem());
+    if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
+      sb.and().in("code_system", params.getPermittedCodeSystems());
+    }
     sb.appendIfNotNull("and version = ?", params.getVersion());
     sb.appendIfNotNull("and status = ?", params.getStatus());
     sb.appendIfNotNull("and release_date <= ?", params.getReleaseDateLe());

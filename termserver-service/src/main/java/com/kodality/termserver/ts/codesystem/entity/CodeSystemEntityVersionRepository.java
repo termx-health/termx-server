@@ -8,6 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
+import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import javax.inject.Singleton;
 
@@ -68,6 +69,9 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
           "exists(select 1 from terminology.designation d where d.code_system_entity_version_id = csev.id and d.name ~* ? ))", params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
     sb.appendIfNotNull("and cse.code_system = ?", params.getCodeSystem());
+    if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
+      sb.and().in("cse.code_system", params.getPermittedCodeSystems());
+    }
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs " +
         "where cse.code_system = cs.id and cs.uri = ? and cs.sys_status = 'A')", params.getCodeSystemUri());
     sb.appendIfNotNull("and exists (select 1 from terminology.entity_version_code_system_version_membership evcsvm " +

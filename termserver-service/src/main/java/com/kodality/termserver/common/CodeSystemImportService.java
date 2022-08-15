@@ -3,6 +3,7 @@ package com.kodality.termserver.common;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.association.AssociationType;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.ts.association.AssociationTypeService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
@@ -41,9 +42,12 @@ public class CodeSystemImportService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
+  private final UserPermissionService userPermissionService;
 
   @Transactional
   public void importCodeSystem(CodeSystem codeSystem, List<AssociationType> associationTypes, boolean activateVersion) {
+    userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
+
     associationTypes.forEach(associationTypeService::save);
 
     saveCodeSystem(codeSystem);
@@ -78,6 +82,8 @@ public class CodeSystemImportService {
   }
 
   public List<EntityProperty> saveProperties(List<EntityProperty> properties, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
     List<EntityProperty> existingProperties = entityPropertyService.query(new EntityPropertyQueryParams().setCodeSystem(codeSystem)).getData();
     List<EntityProperty> entityProperties = new ArrayList<>(existingProperties);
     entityProperties.addAll(properties.stream().filter(p -> existingProperties.stream().noneMatch(ep -> ep.getName().equals(p.getName()))).toList());
@@ -85,6 +91,8 @@ public class CodeSystemImportService {
   }
 
   public void saveConcepts(List<Concept> concepts, CodeSystemVersion version, List<EntityProperty> entityProperties) {
+    userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
+
     log.info("Creating '{}' concepts", concepts.size());
     concepts.forEach(concept -> {
       conceptService.save(concept, version.getCodeSystem());
@@ -101,7 +109,7 @@ public class CodeSystemImportService {
     log.info("Creating associations between code system entity versions");
     concepts.forEach(concept -> {
       List<CodeSystemAssociation> associations = prepareCodeSystemAssociations(concept.getVersions().get(0).getAssociations(), version.getId());
-      codeSystemAssociationService.save(associations, concept.getVersions().get(0).getId());
+      codeSystemAssociationService.save(associations, concept.getVersions().get(0).getId(), version.getCodeSystem());
     });
 
     log.info("Import finished.");

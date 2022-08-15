@@ -1,11 +1,10 @@
 package com.kodality.termserver.ts.codesystem.association;
 
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.codesystem.CodeSystemEntityType;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityService;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +16,8 @@ public class CodeSystemAssociationService {
   private final CodeSystemAssociationRepository repository;
   private final CodeSystemEntityService codeSystemEntityService;
 
+  private final UserPermissionService userPermissionService;
+
   public List<CodeSystemAssociation> loadAll(Long codeSystemEntityVersionId) {
     return repository.loadAll(codeSystemEntityVersionId);
   }
@@ -26,22 +27,27 @@ public class CodeSystemAssociationService {
   }
 
   @Transactional
-  public void save(List<CodeSystemAssociation> associations, Long codeSystemEntityVersionId) {
+  public void save(List<CodeSystemAssociation> associations, Long codeSystemEntityVersionId, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
     repository.retain(associations, codeSystemEntityVersionId);
     if (associations != null) {
-      associations.forEach(association -> save(association, codeSystemEntityVersionId));
+      associations.forEach(association -> save(association, codeSystemEntityVersionId, codeSystem));
     }
   }
 
   @Transactional
-  public void save(CodeSystemAssociation association, Long codeSystemEntityVersionId) {
+  public void save(CodeSystemAssociation association, Long codeSystemEntityVersionId, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
     association.setType(CodeSystemEntityType.association);
     codeSystemEntityService.save(association);
     repository.save(association, codeSystemEntityVersionId);
   }
 
   @Transactional
-  public void delete(Long id) {
+  public void delete(Long id, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
     repository.delete(id);
   }
 
