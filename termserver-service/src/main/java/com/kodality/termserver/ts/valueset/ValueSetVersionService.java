@@ -3,6 +3,7 @@ package com.kodality.termserver.ts.valueset;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleSetService;
 import com.kodality.termserver.valueset.ValueSetVersion;
@@ -23,8 +24,12 @@ public class ValueSetVersionService {
   private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
 
+  private final UserPermissionService userPermissionService;
+
   @Transactional
   public void save(ValueSetVersion version) {
+    userPermissionService.checkPermitted(version.getValueSet(), "ValueSet", "edit");
+
     if (!PublicationStatus.draft.equals(version.getStatus()) && version.getId() == null) {
       throw ApiError.TE101.toApiException();
     }
@@ -62,6 +67,8 @@ public class ValueSetVersionService {
 
   @Transactional
   public void activate(String valueSet, String version) {
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
+
     ValueSetVersion currentVersion = repository.load(valueSet, version);
     if (currentVersion == null) {
       throw ApiError.TE401.toApiException(Map.of("version", version, "valueSet", valueSet));
@@ -84,6 +91,8 @@ public class ValueSetVersionService {
 
   @Transactional
   public void retire(String valueSet, String version) {
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
+
     ValueSetVersion currentVersion = repository.load(valueSet, version);
     if (currentVersion == null) {
       throw ApiError.TE301.toApiException(Map.of("version", version, "valueSet", valueSet));

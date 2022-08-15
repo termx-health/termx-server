@@ -9,6 +9,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
+import io.micronaut.core.util.CollectionUtils;
 import javax.inject.Singleton;
 
 @Singleton
@@ -66,6 +67,9 @@ public class ValueSetVersionRepository extends BaseRepository {
   private SqlBuilder filter(ValueSetVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and vsv.value_set = ?", params.getValueSet());
+    if (CollectionUtils.isNotEmpty(params.getPermittedValueSets())) {
+      sb.and().in("vsv.value_set", params.getPermittedValueSets());
+    }
     sb.appendIfNotNull("and exists (select 1 from value_set vs where vs.id = vsv.value_set and vs.uri = ? and vs.sys_status = 'A')", params.getValueSetUri());
     sb.appendIfNotNull("and vsv.version = ?", params.getVersion());
     sb.appendIfNotNull("and vsv.status = ?", params.getStatus());

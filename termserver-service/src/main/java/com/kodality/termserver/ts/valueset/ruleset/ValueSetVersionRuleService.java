@@ -1,5 +1,6 @@
 package com.kodality.termserver.ts.valueset.ruleset;
 
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ValueSetVersionRuleService {
   private final ValueSetVersionRuleRepository repository;
 
+  private final UserPermissionService userPermissionService;
+
   public Optional<ValueSetVersionRule> load(Long id) {
     return Optional.ofNullable(repository.load(id));
   }
@@ -21,20 +24,24 @@ public class ValueSetVersionRuleService {
   }
 
   @Transactional
-  public void save(List<ValueSetVersionRule> rules, Long ruleSetId) {
+  public void save(List<ValueSetVersionRule> rules, Long ruleSetId, String valueSet) {
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
+
     repository.retain(rules, ruleSetId);
     if (rules != null) {
-      rules.forEach(rule -> save(rule, ruleSetId));
+      rules.forEach(rule -> save(rule, ruleSetId, valueSet));
     }
   }
 
   @Transactional
-  public void save(ValueSetVersionRule rule, Long ruleSetId) {
+  public void save(ValueSetVersionRule rule, Long ruleSetId, String valueSet) {
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
     repository.save(rule, ruleSetId);
   }
 
   @Transactional
-  public void delete(Long id) {
+  public void delete(Long id, String valueSet) {
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
     repository.delete(id);
   }
 

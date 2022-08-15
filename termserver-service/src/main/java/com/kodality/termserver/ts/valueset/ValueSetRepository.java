@@ -10,6 +10,7 @@ import com.kodality.termserver.ContactDetail;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
 import com.kodality.termserver.valueset.ValueSetQueryParams.Ordering;
+import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,6 +59,9 @@ public class ValueSetRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and id = ?", params.getId());
     sb.appendIfNotNull("and id ~* ?", params.getIdContains());
+    if (CollectionUtils.isNotEmpty(params.getPermittedIds())) {
+      sb.and().in("id", params.getPermittedIds());
+    }
     sb.appendIfNotNull("and uri = ?", params.getUri());
     sb.appendIfNotNull("and uri ~* ?", params.getUriContains());
     sb.appendIfNotNull("and description = ?", params.getDescription());

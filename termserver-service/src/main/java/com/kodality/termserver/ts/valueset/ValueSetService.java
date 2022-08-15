@@ -1,6 +1,7 @@
 package com.kodality.termserver.ts.valueset;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
@@ -15,12 +16,15 @@ public class ValueSetService {
   private final ValueSetRepository repository;
   private final ValueSetVersionService valueSetVersionService;
 
+  private final UserPermissionService userPermissionService;
+
   public Optional<ValueSet> load(String id) {
     return Optional.ofNullable(repository.load(id));
   }
 
   @Transactional
   public void save(ValueSet valueSet) {
+    userPermissionService.checkPermitted(valueSet.getId(), "ValueSet", "edit");
     repository.save(valueSet);
   }
 

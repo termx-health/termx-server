@@ -3,6 +3,7 @@ package com.kodality.termserver.ts.valueset.concept;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRepository;
@@ -28,6 +29,8 @@ public class ValueSetVersionConceptService {
   private final ValueSetVersionConceptRepository repository;
   private final ValueSetVersionRepository valueSetVersionRepository;
 
+  private final UserPermissionService userPermissionService;
+
   public Optional<ValueSetVersionConcept> load(Long id) {
     return Optional.ofNullable(repository.load(id));
   }
@@ -46,6 +49,8 @@ public class ValueSetVersionConceptService {
 
   @Transactional
   public void save(ValueSetVersionConcept concept, String valueSet, String valueSetVersion) {
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
+
     ValueSetVersion version = valueSetVersionRepository.load(valueSet, valueSetVersion);
     if (version == null) {
       throw ApiError.TE301.toApiException(Map.of("version", valueSetVersion, "valueSet", valueSet));
@@ -59,7 +64,8 @@ public class ValueSetVersionConceptService {
   }
 
   @Transactional
-  public void delete(Long id) {
+  public void delete(Long id, String valueSet) {
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
     repository.delete(id);
   }
 

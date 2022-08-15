@@ -90,7 +90,7 @@ public class CodeSystemFileImportService {
         throw ApiError.TE104.toApiException(Map.of("version", codeSystem.getVersions().get(0).getVersion()));
       }
       valueSetVersionService.save(valueSetVersion);
-      valueSetVersionRuleService.save(valueSetVersion.getRuleSet().getRules(), valueSetVersion.getRuleSet().getId());
+      valueSetVersionRuleService.save(valueSetVersion.getRuleSet().getRules(), valueSetVersion.getRuleSet().getId(), valueSet.getId());
     }
   }
 }
