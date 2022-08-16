@@ -3,6 +3,7 @@ package com.kodality.termserver.fhir.codesystem;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.termserver.ApiError;
+import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.fhir.FhirMeasurementUnitConvertor;
@@ -38,6 +39,7 @@ public class CodeSystemFhirController {
 
   private static final String JOB_TYPE = "FHIR-CS";
 
+  @Authorized("*.CodeSystem.view")
   @Get("/{codeSystemVersionId}")
   public HttpResponse<?> getCodeSystem(Long codeSystemVersionId) {
     CodeSystem codeSystem = service.get(codeSystemVersionId);
@@ -47,6 +49,7 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(codeSystem);
   }
 
+  @Authorized("*.CodeSystem.view")
   @Get("/$lookup{?params*}")
   public HttpResponse<?> lookup(Map<String, List<String>> params) {
     Parameters parameters = service.lookup(params);
@@ -56,6 +59,7 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(parameters);
   }
 
+  @Authorized("*.CodeSystem.view")
   @Get("/$validate-code{?params*}")
   public HttpResponse<?> validateCode(Map<String, List<String>> params) {
     Parameters parameters = service.validateCode(params);
@@ -65,6 +69,7 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(parameters);
   }
 
+  @Authorized("*.CodeSystem.view")
   @Get("/$subsumes{?params*}")
   public HttpResponse<?> subsumes(Map<String, List<String>> params) {
     OperationOutcome outcome = new OperationOutcome();
@@ -75,6 +80,7 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(parameters);
   }
 
+  @Authorized("*.CodeSystem.view")
   @Post("/$subsumes")
   public HttpResponse<?> subsumes(@Body Parameters params) {
     OperationOutcome outcome = new OperationOutcome();
@@ -85,6 +91,7 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(parameters);
   }
 
+  @Authorized("*.CodeSystem.view")
   @Post("/$find-matches")
   public HttpResponse<?> findMatches(@Body Parameters params) {
     OperationOutcome outcome = new OperationOutcome();
@@ -95,6 +102,7 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(parameters);
   }
 
+  @Authorized("*.CodeSystem.edit")
   @Post("/$sync")
   public HttpResponse<?> importFhirCodeSystem(@Body Parameters parameters) {
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);
@@ -119,6 +127,7 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(resp);
   }
 
+  @Authorized("*.MeasurementUnit.view")
   @Get("/ucum/$translate")
   public HttpResponse<Parameters> translate(@QueryValue @NotNull BigDecimal value, @QueryValue @NotNull String sourceUnit, @QueryValue @NotNull String targetUnit) {
     return HttpResponse.ok(fhirMeasurementUnitConvertor.convert(value, sourceUnit, targetUnit));

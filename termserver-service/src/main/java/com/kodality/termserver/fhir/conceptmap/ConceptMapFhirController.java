@@ -2,6 +2,7 @@ package com.kodality.termserver.fhir.conceptmap;
 
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.termserver.ApiError;
+import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
@@ -33,6 +34,7 @@ public class ConceptMapFhirController {
 
   private static final String JOB_TYPE = "FHIR-MS";
 
+  @Authorized("*.MapSet.view")
   @Get("/$translate{?params*}")
   public HttpResponse<?> translate(Map<String, List<String>> params) {
     Parameters parameters = service.translate(params);
@@ -42,6 +44,7 @@ public class ConceptMapFhirController {
     return HttpResponse.ok(parameters);
   }
 
+  @Authorized("*.MapSet.edit")
   @Post("/$closure")
   public HttpResponse<?> closure(@Body Parameters params) {
     OperationOutcome outcome = new OperationOutcome();
@@ -52,6 +55,7 @@ public class ConceptMapFhirController {
     return HttpResponse.ok(conceptMap);
   }
 
+  @Authorized("*.MapSet.edit")
   @Post("/$sync")
   public HttpResponse<?> importFhirMapSet(@Body Parameters parameters) {
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);

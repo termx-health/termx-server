@@ -3,6 +3,7 @@ package com.kodality.termserver.fhir.valueset;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.termserver.ApiError;
+import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.job.JobLogResponse;
@@ -33,7 +34,7 @@ public class ValueSetFhirController {
 
   private static final String JOB_TYPE = "FHIR-VS";
 
-
+  @Authorized("*.ValueSet.view")
   @Get("/{valueSetVersionId}")
   public HttpResponse<?> getValueSet(Long valueSetVersionId) {
     ValueSet valueSet = service.get(valueSetVersionId);
@@ -43,6 +44,7 @@ public class ValueSetFhirController {
     return HttpResponse.ok(valueSet);
   }
 
+  @Authorized("*.ValueSet.view")
   @Get("/$expand{?params*}")
   public HttpResponse<?> expand(Map<String, List<String>> params) {
     OperationOutcome outcome = new OperationOutcome();
@@ -53,6 +55,7 @@ public class ValueSetFhirController {
     return HttpResponse.ok(valueSet);
   }
 
+  @Authorized("*.ValueSet.view")
   @Get("/$validate-code{?params*}")
   public HttpResponse<?> validateCode(Map<String, List<String>> params) {
     OperationOutcome outcome = new OperationOutcome();
@@ -63,6 +66,7 @@ public class ValueSetFhirController {
     return HttpResponse.ok(parameters);
   }
 
+  @Authorized("*.ValueSet.edit")
   @Post("/$sync")
   public HttpResponse<?> importFhirValueSet(@Body Parameters parameters) {
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);

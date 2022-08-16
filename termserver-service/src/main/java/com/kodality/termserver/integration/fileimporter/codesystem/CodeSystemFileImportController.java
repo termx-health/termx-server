@@ -3,6 +3,7 @@ package com.kodality.termserver.integration.fileimporter.codesystem;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.ApiError;
+import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisRequest;
@@ -30,6 +31,7 @@ public class CodeSystemFileImportController {
   private final CodeSystemFileImportService fileImporterService;
   private final ImportLogger importLogger;
 
+  @Authorized("*.CodeSystem.view")
   @Post(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA)
   public HttpResponse<?> analyze(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
     FileAnalysisRequest req = JsonUtil.fromJson(request.getValue(), FileAnalysisRequest.class);
@@ -41,6 +43,7 @@ public class CodeSystemFileImportController {
     return HttpResponse.ok(fileImporterService.analyze(req));
   }
 
+  @Authorized("*.CodeSystem.edit")
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
     FileProcessingRequest req = JsonUtil.fromJson(request.getValue(), FileProcessingRequest.class);

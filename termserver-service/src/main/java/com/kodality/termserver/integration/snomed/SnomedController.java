@@ -3,6 +3,7 @@ package com.kodality.termserver.integration.snomed;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.AsyncHelper;
 import com.kodality.termserver.ApiError;
+import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.client.SnowstormClient;
 import com.kodality.termserver.common.ImportLogger;
@@ -36,11 +37,13 @@ public class SnomedController {
 
   //----------------Concepts----------------
 
+  @Authorized("*.Snomed.view")
   @Get("/concepts/{conceptId}")
   public SnomedConcept loadConcept(@Parameter String conceptId) {
     return snowstormClient.loadConcept(conceptId).join();
   }
 
+  @Authorized("*.Snomed.view")
   @Get("/concepts/{conceptId}/children")
   public List<SnomedConcept> findConceptChildren(@Parameter String conceptId) {
     List<SnomedConcept> concepts = snowstormClient.findConceptChildren(conceptId).join();
@@ -50,6 +53,7 @@ public class SnomedController {
     return concepts;
   }
 
+  @Authorized("*.Snomed.view")
   @Get("/concepts{?params*}")
   public SnomedSearchResult<SnomedConcept> findConcepts(SnomedConceptSearchParams params) {
     SnomedSearchResult<SnomedConcept> concepts = snowstormClient.queryConcepts(params).join();
@@ -63,6 +67,7 @@ public class SnomedController {
 
   //----------------Descriptions----------------
 
+  @Authorized("*.Snomed.view")
   @Get("/concept-descriptions{?params*}")
   public SnomedDescriptionItemResponse findConceptDescriptions(SnomedDescriptionItemSearchParams params) {
     SnomedDescriptionItemResponse response = snowstormClient.findConceptDescriptions(params).join();
@@ -76,11 +81,13 @@ public class SnomedController {
 
   //----------------RefSets----------------
 
+  @Authorized("*.Snomed.view")
   @Get("/refsets{?params*}")
   public SnomedRefsetResponse findRefsets(SnomedRefsetSearchParams params) {
     return snowstormClient.findRefsets(params).join();
   }
 
+  @Authorized("*.Snomed.view")
   @Get("/refset-members{?params*}")
   public SnomedRefsetMemberResponse findRefsetMembers(SnomedRefsetSearchParams params) {
     return snowstormClient.findRefsetMembers(params).join();
@@ -88,6 +95,7 @@ public class SnomedController {
 
   //----------------Import----------------
 
+  @Authorized("*.CodeSystem.edit")
   @Post("/import")
   public JobLogResponse importConcepts(@Body SnomedImportRequest request) {
     JobLogResponse jobLogResponse = importLogger.createJob("snomed-ct", "import");

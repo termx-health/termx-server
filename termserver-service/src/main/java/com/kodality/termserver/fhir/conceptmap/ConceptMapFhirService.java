@@ -1,9 +1,9 @@
 package com.kodality.termserver.fhir.conceptmap;
 
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.Language;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirService;
@@ -45,6 +45,7 @@ public class ConceptMapFhirService {
   private final CodeSystemFhirService codeSystemFhirService;
   private final MapSetAssociationService mapSetAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+  private final UserPermissionService userPermissionService;
 
   public Parameters translate(Map<String, List<String>> params) {
     FhirQueryParams fhirParams = new FhirQueryParams(params);
@@ -60,9 +61,9 @@ public class ConceptMapFhirService {
         .setAssociationSourceSystemVersion(fhirParams.getFirst("version").orElse(null))
         .setAssociationTargetSystem(fhirParams.getFirst("targetSystem").orElse(null))
         .setAssociationsDecorated(true);
-    QueryResult<MapSet> mapSets = mapSetService.query(msParams);
-
-    return mapper.toFhirParameters(mapSets.findFirst().orElse(null));
+    Optional<MapSet> mapSet = mapSetService.query(msParams).findFirst();
+    mapSet.ifPresent(ms -> userPermissionService.checkPermitted(ms.getId(), "MapSet", "view"));
+    return mapper.toFhirParameters(mapSet.orElse(null));
   }
 
   @Transactional

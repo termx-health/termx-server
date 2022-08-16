@@ -1,7 +1,7 @@
 package com.kodality.termserver.fhir.codesystem;
 
-import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
@@ -41,6 +41,8 @@ public class CodeSystemFhirService {
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
+  private final UserPermissionService userPermissionService;
+
   public Parameters lookup(Map<String, List<String>> params) {
     FhirQueryParams fhirParams = new FhirQueryParams(params);
     if (fhirParams.getFirst("code").isEmpty() || fhirParams.getFirst("system").isEmpty()) {
@@ -55,9 +57,9 @@ public class CodeSystemFhirService {
         .setVersionReleaseDateGe(fhirParams.getFirst("date").map(d -> LocalDateTime.parse(d).toLocalDate()).orElse(null))
         .setVersionExpirationDateLe(fhirParams.getFirst("date").map(d -> LocalDateTime.parse(d).toLocalDate()).orElse(null))
         .setVersionsDecorated(true).setConceptsDecorated(true).setPropertiesDecorated(true);
-    QueryResult<CodeSystem> codeSystems = codeSystemService.query(csParams);
-
-    return mapper.toFhirParameters(codeSystems.findFirst().orElse(null), fhirParams);
+    Optional<CodeSystem> codeSystem = codeSystemService.query(csParams).findFirst();
+    codeSystem.ifPresent(cs -> userPermissionService.checkPermitted(cs.getId(), "CodeSystem", "view"));
+    return mapper.toFhirParameters(codeSystem.orElse(null), fhirParams);
   }
 
   public Parameters validateCode(Map<String, List<String>> params) {
@@ -70,9 +72,9 @@ public class CodeSystemFhirService {
         .setCode(fhirParams.getFirst("code").orElse(null))
         .setCodeSystemVersion(fhirParams.getFirst("version").orElse(null))
         .setCodeSystemUri(fhirParams.getFirst("system").orElse(null));
-    QueryResult<Concept> concepts = conceptService.query(cParams);
-
-    return mapper.toFhirParameters(concepts.findFirst().orElse(null), fhirParams);
+    Optional<Concept> concept = conceptService.query(cParams).findFirst();
+    concept.ifPresent(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
+    return mapper.toFhirParameters(concept.orElse(null), fhirParams);
   }
 
   public Parameters subsumes(Map<String, List<String>> params, OperationOutcome outcome) {
@@ -100,6 +102,7 @@ public class CodeSystemFhirService {
           ));
       return null;
     }
+    codeSystem.ifPresent(cs -> userPermissionService.checkPermitted(cs.getId(), "CodeSystem", "view"));
 
     String versionVersion = fhirParams.getFirst("version").isPresent() ? fhirParams.getFirst("version").get() :
         codeSystemVersionService.loadLastVersion(codeSystem.get().getId(), PublicationStatus.active).getVersion();
@@ -140,6 +143,7 @@ public class CodeSystemFhirService {
       outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText(String.format("Concept with code '%s' not found", codingA.get().getValueCoding().getCode()))));
       return null;
     }
+    conceptA.ifPresent(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
 
     String versionB = codingB.get().getValueCoding().getVersion() != null ? codingB.get().getValueCoding().getVersion() :
         codeSystemVersionService.loadLastVersionByUri(codingB.get().getValueCoding().getSystem()).getVersion();
@@ -148,6 +152,7 @@ public class CodeSystemFhirService {
       outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText(String.format("Concept with code '%s' not found", codingB.get().getValueCoding().getCode()))));
       return null;
     }
+    conceptB.ifPresent(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
 
     return subsumes(conceptA.get(), conceptB.get());
   }
@@ -211,7 +216,7 @@ public class CodeSystemFhirService {
           .filter(pm -> match.stream().noneMatch(em -> em.getId().equals(pm.getId())))
           .toList());
     }
-
+    match.forEach(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
     return new Parameters().setParameter(match.stream().map(c ->
         new Parameter()
             .setName("match")
@@ -222,7 +227,7 @@ public class CodeSystemFhirService {
             )).collect(Collectors.toList()));
   }
 
-  public Optional<Concept> findConcept(String uri, String code, String version) {
+  private Optional<Concept> findConcept(String uri, String code, String version) {
     ConceptQueryParams conceptParams = new ConceptQueryParams();
     conceptParams.setCode(code);
     conceptParams.setCodeSystemUri(uri);
@@ -255,6 +260,7 @@ public class CodeSystemFhirService {
     if (codeSystem == null) {
       return null;
     }
+    userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "view");
     CodeSystemVersion version = codeSystemVersionService.load(codeSystemVersionId);
     CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(version.getId());
     codeSystemEntityVersionParams.all();
