@@ -1,6 +1,7 @@
 package com.kodality.termserver.namingsystem;
 
 import com.kodality.commons.model.QueryParams;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,6 +10,7 @@ import lombok.Setter;
 public class NamingSystemQueryParams extends QueryParams {
   private String id;
   private String idContains;
+  private List<String> permittedIds;
   private String name;
   private String nameContains;
   private String source;

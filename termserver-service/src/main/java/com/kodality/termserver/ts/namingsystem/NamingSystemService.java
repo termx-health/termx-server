@@ -3,6 +3,7 @@ package com.kodality.termserver.ts.namingsystem;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.namingsystem.NamingSystem;
 import com.kodality.termserver.namingsystem.NamingSystemQueryParams;
 import java.time.OffsetDateTime;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class NamingSystemService {
   private final NamingSystemRepository repository;
+  private final UserPermissionService userPermissionService;
 
   public QueryResult<NamingSystem> query(NamingSystemQueryParams params) {
     return repository.query(params);
@@ -29,6 +31,8 @@ public class NamingSystemService {
 
   @Transactional
   public void save(NamingSystem namingSystem) {
+    userPermissionService.checkPermitted(namingSystem.getId(), "NamingSystem", "edit");
+
     namingSystem.setCreated(namingSystem.getCreated() == null ? OffsetDateTime.now() : namingSystem.getCreated());
     repository.save(namingSystem);
   }
@@ -39,6 +43,7 @@ public class NamingSystemService {
     if (namingSystem == null) {
       throw ApiError.TE501.toApiException(Map.of("namingSystem", id));
     }
+    userPermissionService.checkPermitted(namingSystem.getId(), "NamingSystem", "publish");
     if (PublicationStatus.retired.equals(namingSystem.getStatus())) {
       log.warn("NamingSystem '{}' is already retired, skipping retirement process.", id);
       return;
@@ -53,6 +58,7 @@ public class NamingSystemService {
     if (namingSystem == null) {
       throw ApiError.TE501.toApiException(Map.of("namingSystem", id));
     }
+    userPermissionService.checkPermitted(namingSystem.getId(), "NamingSystem", "publish");
     if (PublicationStatus.active.equals(namingSystem.getStatus())) {
       log.warn("NamingSystem '{}' is already activated, skipping activation process.", id);
       return;
