@@ -8,6 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetEntityVersionQueryParams;
+import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
 import javax.inject.Singleton;
 
@@ -64,6 +65,9 @@ public class MapSetEntityVersionRepository extends BaseRepository {
     sb.appendIfNotNull("and msev.map_set_entity_id = ?", params.getMapSetEntityId());
     sb.appendIfNotNull("and msev.status = ?", params.getStatus());
     sb.appendIfNotNull("and mse.map_set = ?", params.getMapSet());
+    if (CollectionUtils.isNotEmpty(params.getPermittedMapSets())) {
+      sb.and().in("mse.map_set", params.getPermittedMapSets());
+    }
     sb.appendIfNotNull("and exists (select 1 from terminology.entity_version_map_set_version_membership evmsvm " +
         "where evmsvm.map_set_entity_version_id = msev.id and evmsvm.map_set_version_id = ?)", params.getMapSetVersionId());
     sb.appendIfNotNull("and msev.description ~* ?", params.getDescriptionContains());

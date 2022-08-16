@@ -77,7 +77,7 @@ public class CodeSystemEntityVersionService {
     if (currentVersion == null) {
       throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
-    userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "edit");
+    userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "publish");
     if (PublicationStatus.active.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' is already activated, skipping activation process.", versionId);
       return;
@@ -91,7 +91,7 @@ public class CodeSystemEntityVersionService {
     if (currentVersion == null) {
       throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
-    userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "edit");
+    userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "publish");
     if (PublicationStatus.retired.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' is already retired, skipping retirement process.", versionId);
       return;

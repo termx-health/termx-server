@@ -10,6 +10,7 @@ import com.kodality.termserver.ContactDetail;
 import com.kodality.termserver.mapset.MapSet;
 import com.kodality.termserver.mapset.MapSetQueryParams;
 import com.kodality.termserver.mapset.MapSetQueryParams.Ordering;
+import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,6 +61,9 @@ public class MapSetRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and ms.id = ?", params.getId());
     sb.appendIfNotNull("and ms.id ~* ?", params.getIdContains());
+    if (CollectionUtils.isNotEmpty(params.getPermittedIds())) {
+      sb.and().in("ms.id", params.getPermittedIds());
+    }
     sb.appendIfNotNull("and ms.uri = ?", params.getUri());
     sb.appendIfNotNull("and ms.uri ~* ?", params.getUriContains());
     sb.appendIfNotNull("and ms.description = ?", params.getDescription());

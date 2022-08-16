@@ -10,6 +10,7 @@ import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetVersion;
 import com.kodality.termserver.mapset.MapSetVersionQueryParams;
+import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
 import javax.inject.Singleton;
 
@@ -57,6 +58,9 @@ public class MapSetVersionRepository extends BaseRepository {
   private SqlBuilder filter(MapSetVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and map_set = ?", params.getMapSet());
+    if (CollectionUtils.isNotEmpty(params.getPermittedMapSets())) {
+      sb.and().in("map_set", params.getPermittedMapSets());
+    }
     sb.appendIfNotNull("and version = ?", params.getVersion());
     sb.appendIfNotNull("and status = ?", params.getStatus());
     sb.appendIfNotNull("and release_date <= ?", params.getReleaseDateLe());

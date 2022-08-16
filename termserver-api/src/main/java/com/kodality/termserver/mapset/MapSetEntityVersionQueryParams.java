@@ -1,6 +1,7 @@
 package com.kodality.termserver.mapset;
 
 import com.kodality.commons.model.QueryParams;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -13,6 +14,7 @@ public class MapSetEntityVersionQueryParams extends QueryParams {
   private Long mapSetVersionId;
   private String mapSetVersion;
   private String mapSet;
+  private List<String> permittedMapSets;
   private String status;
   private String descriptionContains;
 }

@@ -4,6 +4,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetVersion;
 import com.kodality.termserver.mapset.MapSetVersionQueryParams;
@@ -21,9 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MapSetVersionService {
   private final MapSetVersionRepository repository;
+  private final UserPermissionService userPermissionService;
 
   @Transactional
   public void save(MapSetVersion version) {
+    userPermissionService.checkPermitted(version.getMapSet(), "MapSet", "edit");
+
     if (!PublicationStatus.draft.equals(version.getStatus()) && version.getId() == null) {
       throw ApiError.TE101.toApiException();
     }
@@ -52,6 +56,8 @@ public class MapSetVersionService {
 
   @Transactional
   public void activate(String mapSet, String version) {
+    userPermissionService.checkPermitted(mapSet, "MapSet", "publish");
+
     MapSetVersion currentVersion = repository.load(mapSet, version);
     if (currentVersion == null) {
       throw ApiError.TE401.toApiException(Map.of("version", version, "mapSet", mapSet));
@@ -74,6 +80,8 @@ public class MapSetVersionService {
 
   @Transactional
   public void retire(String mapSet, String version) {
+    userPermissionService.checkPermitted(mapSet, "MapSet", "publish");
+
     MapSetVersion currentVersion = repository.load(mapSet, version);
     if (currentVersion == null) {
       throw ApiError.TE401.toApiException(Map.of("version", version, "mapSet", mapSet));
@@ -93,6 +101,8 @@ public class MapSetVersionService {
 
   @Transactional
   public void linkEntityVersion(String mapSet, String mapSetVersion, Long entityVersionId) {
+    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
+
     Optional<Long> currentVersionId = load(mapSet, mapSetVersion).map(MapSetVersion::getId);
     if (currentVersionId.isPresent()) {
       repository.linkEntityVersion(currentVersionId.get(), entityVersionId);
@@ -103,6 +113,8 @@ public class MapSetVersionService {
 
   @Transactional
   public void unlinkEntityVersion(String mapSet, String mapSetVersion, Long entityVersionId) {
+    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
+
     Optional<Long> currentVersionId = load(mapSet, mapSetVersion).map(MapSetVersion::getId);
     if (currentVersionId.isPresent()) {
       repository.unlinkEntityVersion(currentVersionId.get(), entityVersionId);

@@ -1,6 +1,7 @@
 package com.kodality.termserver.ts.mapset;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.mapset.MapSet;
 import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
 import com.kodality.termserver.mapset.MapSetQueryParams;
@@ -18,12 +19,15 @@ public class MapSetService {
   private final MapSetVersionService mapSetVersionService;
   private final MapSetAssociationService mapSetAssociationService;
 
+  private final UserPermissionService userPermissionService;
+
   public Optional<MapSet> load(String id) {
     return Optional.ofNullable(repository.load(id));
   }
 
   @Transactional
   public void save(MapSet mapSet) {
+    userPermissionService.checkPermitted(mapSet.getId(), "MapSet", "edit");
     repository.save(mapSet);
   }
 

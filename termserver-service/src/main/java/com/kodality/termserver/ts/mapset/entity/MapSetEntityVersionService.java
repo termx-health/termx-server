@@ -3,6 +3,7 @@ package com.kodality.termserver.ts.mapset.entity;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetEntityVersionQueryParams;
 import java.time.OffsetDateTime;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MapSetEntityVersionService {
   private final MapSetEntityVersionRepository repository;
+  private final UserPermissionService userPermissionService;
 
   public MapSetEntityVersion load(Long id) {
     return repository.load(id);
@@ -25,6 +27,8 @@ public class MapSetEntityVersionService {
 
   @Transactional
   public MapSetEntityVersion save(MapSetEntityVersion version, Long mapSetEntityId) {
+    userPermissionService.checkPermitted(version.getMapSet(), "MapSet", "edit");
+
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
     repository.save(version, mapSetEntityId);
     return version;
@@ -48,6 +52,7 @@ public class MapSetEntityVersionService {
     if (currentVersion == null) {
       throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
+    userPermissionService.checkPermitted(currentVersion.getMapSet(), "MapSet", "edit");
     if (PublicationStatus.active.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' is already activated, skipping activation process.", versionId);
       return;
@@ -61,6 +66,7 @@ public class MapSetEntityVersionService {
     if (currentVersion == null) {
       throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
+    userPermissionService.checkPermitted(currentVersion.getMapSet(), "MapSet", "edit");
     if (PublicationStatus.retired.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' is already retired, skipping retirement process.", versionId);
       return;

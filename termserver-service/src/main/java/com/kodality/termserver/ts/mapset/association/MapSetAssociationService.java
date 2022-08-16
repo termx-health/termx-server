@@ -1,6 +1,7 @@
 package com.kodality.termserver.ts.mapset.association;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.mapset.MapSetAssociation;
 import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
@@ -21,6 +22,8 @@ public class MapSetAssociationService {
   private final MapSetEntityService mapSetEntityService;
   private final MapSetEntityVersionService mapSetEntityVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+
+  private final UserPermissionService userPermissionService;
 
   public QueryResult<MapSetAssociation> query(MapSetAssociationQueryParams params) {
     QueryResult<MapSetAssociation> associations = repository.query(params);
@@ -57,6 +60,8 @@ public class MapSetAssociationService {
 
   @Transactional
   public MapSetAssociation save(MapSetAssociation association, String mapSet) {
+    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
+
     association.setMapSet(mapSet);
     mapSetEntityService.save(association);
     repository.save(association);

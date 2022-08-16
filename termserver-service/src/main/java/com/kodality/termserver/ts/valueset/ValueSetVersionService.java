@@ -67,7 +67,7 @@ public class ValueSetVersionService {
 
   @Transactional
   public void activate(String valueSet, String version) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
 
     ValueSetVersion currentVersion = repository.load(valueSet, version);
     if (currentVersion == null) {
@@ -91,7 +91,7 @@ public class ValueSetVersionService {
 
   @Transactional
   public void retire(String valueSet, String version) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
 
     ValueSetVersion currentVersion = repository.load(valueSet, version);
     if (currentVersion == null) {

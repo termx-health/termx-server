@@ -8,6 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.mapset.MapSetAssociation;
 import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
+import io.micronaut.core.util.CollectionUtils;
 import javax.inject.Singleton;
 
 @Singleton
@@ -59,6 +60,9 @@ public class MapSetAssociationRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and msa.id = ?", params.getId());
     sb.appendIfNotNull("and msa.map_set = ?", params.getMapSet());
+    if (CollectionUtils.isNotEmpty(params.getPermittedMapSets())) {
+      sb.and().in("msa.map_set", params.getPermittedMapSets());
+    }
     sb.appendIfNotNull("and msa.status = ?", params.getStatus());
     sb.appendIfNotNull("and msa.association_type = ?", params.getType());
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
