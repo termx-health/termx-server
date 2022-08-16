@@ -168,10 +168,7 @@ public class FileProcessingMapper {
 
   public List<AssociationType> toAssociationTypes(List<FileProcessingResponseProperty> properties) {
     return properties.stream().anyMatch(p -> CONCEPT_PARENT.equals(p.getPropertyName())) ?
-        List.of(new AssociationType()
-            .setCode("is-a")
-            .setAssociationKind(AssociationKind.codesystemHierarchyMeaning)
-            .setDirected(true)) :
+        List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true)) :
         List.of();
   }
 }

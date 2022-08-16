@@ -31,7 +31,7 @@ public class OrphanetService {
       return;
     }
     List<ClassificationNode> classificationNodes = classificationList.getClassifications().get(0).getClassificationNodeRootList().getClassificationNodes();
-    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning));
+    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
     importService.importCodeSystem(OrphanetMapper.mapCodeSystem(configuration, classificationNodes), associationTypes, false);
   }
 

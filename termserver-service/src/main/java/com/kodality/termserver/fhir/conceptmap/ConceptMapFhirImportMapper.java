@@ -76,11 +76,7 @@ public class ConceptMapFhirImportMapper {
       if (target.getCode() == null) {
         return;
       }
-      AssociationType associationType = new AssociationType();
-      associationType.setCode(target.getEquivalence());
-      associationType.setDirected(true);
-      associationType.setAssociationKind(AssociationKind.conceptMapEquivalence);
-      associationTypes.add(associationType);
+      associationTypes.add(new AssociationType(target.getEquivalence(), AssociationKind.conceptMapEquivalence, true));
     })));
     return associationTypes;
   }

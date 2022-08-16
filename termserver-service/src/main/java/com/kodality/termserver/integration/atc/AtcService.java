@@ -30,7 +30,7 @@ public class AtcService {
   @Transactional
   public void importAtc(ImportConfiguration configuration) {
     Map<String, String> atc = AtcResponseParser.parse(getResource());
-    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning));
+    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
     importService.importCodeSystem(AtcMapper.mapCodeSystem(configuration, atc), associationTypes, false);
   }
 

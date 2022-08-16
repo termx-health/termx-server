@@ -1,6 +1,7 @@
 package com.kodality.termserver.association;
 
 import com.kodality.commons.model.QueryParams;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -11,4 +12,5 @@ import lombok.experimental.Accessors;
 public class AssociationTypeQueryParams extends QueryParams {
   private String code;
   private String codeContains;
+  private List<String> permittedCodes;
 }

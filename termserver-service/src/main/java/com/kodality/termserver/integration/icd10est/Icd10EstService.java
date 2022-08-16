@@ -24,7 +24,7 @@ public class Icd10EstService {
   @Transactional
   public void importIcd10Est(String url, ImportConfiguration configuration) {
     List<Icd10Est> diagnoses = new Icd10EstZipReader().handleZipPack(getResource(url));
-    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning));
+    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
     importService.importCodeSystem(Icd10EstMapper.mapCodeSystem(configuration, diagnoses), associationTypes, false);
   }
 

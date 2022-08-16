@@ -24,7 +24,7 @@ public class Icd10Service {
   @Transactional
   public void importIcd10(String url, ImportConfiguration configuration) {
     Icd10 diagnoses = new Icd10ZipReader().handleZipPack(getResource(url));
-    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning));
+    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
     importService.importCodeSystem(Icd10Mapper.mapCodeSystem(configuration, diagnoses), associationTypes, false);
   }
 

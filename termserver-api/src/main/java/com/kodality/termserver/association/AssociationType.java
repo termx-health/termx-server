@@ -19,8 +19,9 @@ public class AssociationType {
   private boolean directed;
   private String description;
 
-  public AssociationType(String code, String associationKind) {
+  public AssociationType(String code, String associationKind, boolean directed) {
     this.code = code;
     this.associationKind = associationKind;
+    this.directed = directed;
   }
 }

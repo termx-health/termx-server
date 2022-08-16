@@ -25,7 +25,7 @@ public class AtcEstService {
   @Transactional
   public void importAtcEst(String url, ImportConfiguration configuration) {
     List<AtcEst> atc = AtcEstCsvReader.read(getResource(url));
-    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning));
+    List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
     importService.importCodeSystem(AtcEstMapper.mapCodeSystem(configuration, atc), associationTypes, false);
   }
 

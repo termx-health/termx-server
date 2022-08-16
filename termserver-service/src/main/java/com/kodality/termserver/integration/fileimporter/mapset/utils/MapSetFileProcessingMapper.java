@@ -66,11 +66,7 @@ public class MapSetFileProcessingMapper {
       if (row.getEquivalence() == null) {
         return;
       }
-      AssociationType associationType = new AssociationType();
-      associationType.setCode(row.getEquivalence());
-      associationType.setDirected(true);
-      associationType.setAssociationKind(AssociationKind.conceptMapEquivalence);
-      associationTypes.add(associationType);
+      associationTypes.add(new AssociationType(row.getEquivalence(), AssociationKind.conceptMapEquivalence, true));
     });
     return associationTypes;
   }
