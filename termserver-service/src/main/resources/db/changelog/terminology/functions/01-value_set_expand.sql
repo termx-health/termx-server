@@ -38,6 +38,14 @@ with rule_set as (
         select jsonb_array_elements(ir.concepts) c
         from include_rules ir
     ),
+    include_rule_filters as (
+        select jsonb_array_elements(ir.filters) f
+        from include_rules ir
+    ),
+    exclude_rule_filters as (
+        select jsonb_array_elements(er.filters) f
+        from exclude_rules er
+    ),
     rule_concepts as (
         select jsonb_build_object('id', c.id, 'code', c.code) concept, (irc.c -> 'display') display, (irc.c -> 'additionalDesignations') additional_designations
         from terminology.concept c
@@ -57,7 +65,20 @@ with rule_set as (
                                          where evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = csv.id and csv.id = ir.code_system_version_id)
                            ) and
                        (not exists(select jsonb_array_elements(ir.concepts))
-                               or c.id in (select (jsonb_array_elements(ir.concepts) -> 'concept' ->> 'id')::bigint))
+                               or c.id in (select (jsonb_array_elements(ir.concepts) -> 'concept' ->> 'id')::bigint)
+                           ) and
+                       (not exists(select jsonb_array_elements(ir.filters))
+                               or exists (select 1 from entity_property_value epv
+                                   inner join code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A'
+                                   where csev.code_system_entity_id = c.id and exists(select 1 from include_rule_filters irf
+                                        where ((irf.f -> 'property' ->> 'id') is null or (irf.f -> 'property' ->> 'id')::bigint = epv.entity_property_id) and
+                                              (coalesce(irf.f ->> 'value', '') = '' or (irf.f ->> 'value')::jsonb = epv.value)))
+                               or exists (select 1 from designation d
+                                   inner join code_system_entity_version csev on csev.id = d.code_system_entity_version_id and csev.sys_status = 'A'
+                                   where csev.code_system_entity_id = c.id and exists(select 1 from include_rule_filters irf
+                                        where ((irf.f -> 'property' ->> 'id') is null or (irf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
+                                              (coalesce(irf.f ->> 'value', '') = '' or (irf.f ->> 'value')::text = d.name)))
+                           )
                 ) and
             not exists(select 1
                        from exclude_rules er
@@ -73,7 +94,20 @@ with rule_set as (
                                              where evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = csv.id and csv.id = er.code_system_version_id)
                                ) and
                            (not exists(select jsonb_array_elements(er.concepts))
-                                   or c.id in (select (jsonb_array_elements(er.concepts) -> 'concept' ->> 'id')::bigint))
+                                   or c.id in (select (jsonb_array_elements(er.concepts) -> 'concept' ->> 'id')::bigint)
+                               ) and
+                           (not exists(select jsonb_array_elements(er.filters))
+                                   or exists (select 1 from entity_property_value epv
+                                       inner join code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A'
+                                       where csev.code_system_entity_id = c.id and exists(select 1 from exclude_rule_filters erf
+                                             where ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = epv.entity_property_id) and
+                                                   (coalesce(erf.f ->> 'value', '') = '' or (erf.f ->> 'value')::jsonb = epv.value)))
+                                   or exists (select 1 from designation d
+                                       inner join code_system_entity_version csev on csev.id = d.code_system_entity_version_id and csev.sys_status = 'A'
+                                       where csev.code_system_entity_id = c.id and exists(select 1 from exclude_rule_filters erf
+                                              where ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
+                                                    (coalesce(erf.f ->> 'value', '') = '' or (erf.f ->> 'value')::text = d.name)))
+                               )
                 )
     ),
     value_set_concepts as (
