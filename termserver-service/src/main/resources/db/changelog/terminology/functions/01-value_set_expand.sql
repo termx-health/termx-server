@@ -97,13 +97,13 @@ with rule_set as (
                                    or c.id in (select (jsonb_array_elements(er.concepts) -> 'concept' ->> 'id')::bigint)
                                ) and
                            (not exists(select jsonb_array_elements(er.filters))
-                                   or exists (select 1 from entity_property_value epv
-                                       inner join code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A'
+                                   or exists (select 1 from terminology.entity_property_value epv
+                                       inner join terminology.code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A'
                                        where csev.code_system_entity_id = c.id and exists(select 1 from exclude_rule_filters erf
                                              where ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = epv.entity_property_id) and
                                                    (coalesce(erf.f ->> 'value', '') = '' or (erf.f ->> 'value')::jsonb = epv.value)))
-                                   or exists (select 1 from designation d
-                                       inner join code_system_entity_version csev on csev.id = d.code_system_entity_version_id and csev.sys_status = 'A'
+                                   or exists (select 1 from terminology.designation d
+                                       inner join terminology.code_system_entity_version csev on csev.id = d.code_system_entity_version_id and csev.sys_status = 'A'
                                        where csev.code_system_entity_id = c.id and exists(select 1 from exclude_rule_filters erf
                                               where ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
                                                     (coalesce(erf.f ->> 'value', '') = '' or (erf.f ->> 'value')::text = d.name)))
