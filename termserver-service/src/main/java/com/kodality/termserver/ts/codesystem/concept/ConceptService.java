@@ -12,6 +12,7 @@ import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRepository;
 import com.kodality.termserver.valueset.ValueSetVersion;
+import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +40,15 @@ public class ConceptService {
     existingConcept.ifPresent(value -> concept.setId(value.getId()));
     codeSystemEntityService.save(concept);
     repository.save(concept);
+    return concept;
+  }
+
+  @Transactional
+  public Concept saveWithVersions(Concept concept, String codeSystem) {
+    save(concept, codeSystem);
+    if (CollectionUtils.isNotEmpty(concept.getVersions())) {
+      concept.getVersions().stream().filter(v -> PublicationStatus.draft.equals(v.getStatus())).forEach(version -> codeSystemEntityVersionService.save(version, concept.getId()));
+    }
     return concept;
   }
 

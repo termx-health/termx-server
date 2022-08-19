@@ -34,6 +34,7 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
+import io.micronaut.http.annotation.QueryValue;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
@@ -166,19 +167,27 @@ public class CodeSystemController {
 
   @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/concepts")
-  public HttpResponse<?> createConcept(@PathVariable @ResourceId String codeSystem, @Body @Valid Concept concept) {
+  public HttpResponse<?> createConcept(@PathVariable @ResourceId String codeSystem, @QueryValue Optional<Boolean> full, @Body @Valid Concept concept) {
     concept.setId(null);
     concept.setCodeSystem(codeSystem);
-    conceptService.save(concept, codeSystem);
+    if (full.orElse(false)) {
+      conceptService.saveWithVersions(concept, codeSystem);
+    } else {
+      conceptService.save(concept, codeSystem);
+    }
     return HttpResponse.created(concept);
   }
 
   @Authorized("*.CodeSystem.edit")
   @Put(uri = "/{codeSystem}/concepts/{id}")
-  public HttpResponse<?> updateConcept(@PathVariable @ResourceId String codeSystem, @PathVariable Long id, @Body @Valid Concept concept) {
+  public HttpResponse<?> updateConcept(@PathVariable @ResourceId String codeSystem, @PathVariable Long id, @QueryValue Optional<Boolean> full, @Body @Valid Concept concept) {
     concept.setId(id);
     concept.setCodeSystem(codeSystem);
-    conceptService.save(concept, codeSystem);
+    if (full.orElse(false)) {
+      conceptService.saveWithVersions(concept, codeSystem);
+    } else {
+      conceptService.save(concept, codeSystem);
+    }
     return HttpResponse.created(concept);
   }
 

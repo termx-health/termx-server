@@ -40,6 +40,7 @@ public class CodeSystemAssociationService {
   public void save(CodeSystemAssociation association, Long codeSystemEntityVersionId, String codeSystem) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
 
+    association.setCodeSystem(codeSystem);
     association.setType(CodeSystemEntityType.association);
     codeSystemEntityService.save(association);
     repository.save(association, codeSystemEntityVersionId);
