@@ -49,7 +49,7 @@ public class CodeSystemFileImportController {
     FileProcessingRequest req = JsonUtil.fromJson(request.getValue(), FileProcessingRequest.class);
     byte[] importFile = file != null ? readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
-    JobLogResponse jobLogResponse = importLogger.createJob( "CS-FILE-IMPORT");
+    JobLogResponse jobLogResponse = importLogger.createJob("CS-FILE-IMPORT");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Code system file import started");

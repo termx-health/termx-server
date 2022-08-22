@@ -41,6 +41,7 @@ public enum ApiError {
   TE708("TE708", "CSV file is missing required headers: {{headers}}"),
   TE709("TE709", "Concept code not found in provided CodeSystem. (Row nr {{rowNumber}})"),
   TE710("TE710", "Concept code not found in provided ValueSet. (Row nr {{rowNumber}})"),
+  TE711("TE711", "File loading by link failed."),
   ;
 
 

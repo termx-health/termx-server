@@ -43,13 +43,21 @@ public class CodeSystemFileImportService {
   private final BinaryHttpClient client = new BinaryHttpClient();
 
   public FileAnalysisResponse analyze(FileAnalysisRequest request) {
-    byte[] file = client.GET(request.getLink()).body();
+    byte[] file = loadFile(request.getLink());
     return analyze(request, file);
   }
 
   public void process(FileProcessingRequest request) {
-    byte[] file = client.GET(request.getLink()).body();
+    byte[] file = loadFile(request.getLink());
     process(request, file);
+  }
+
+  private byte[] loadFile(String link) {
+    try {
+      return client.GET(link).body();
+    } catch (Exception e) {
+      throw ApiError.TE711.toApiException();
+    }
   }
 
   public FileAnalysisResponse analyze(FileAnalysisRequest request, byte[] file) {
