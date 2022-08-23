@@ -37,7 +37,10 @@ public class ConceptService {
     concept.setCodeSystem(codeSystem);
 
     Optional<Concept> existingConcept = load(codeSystem, concept.getCode());
-    existingConcept.ifPresent(value -> concept.setId(value.getId()));
+    existingConcept.ifPresent(value -> {
+      concept.setId(value.getId());
+      concept.setCodeSystem(value.getCodeSystem());
+    });
     codeSystemEntityService.save(concept);
     repository.save(concept);
     return concept;
@@ -47,7 +50,10 @@ public class ConceptService {
   public Concept saveWithVersions(Concept concept, String codeSystem) {
     save(concept, codeSystem);
     if (CollectionUtils.isNotEmpty(concept.getVersions())) {
-      concept.getVersions().stream().filter(v -> PublicationStatus.draft.equals(v.getStatus())).forEach(version -> codeSystemEntityVersionService.save(version, concept.getId()));
+      concept.getVersions().stream().filter(v -> PublicationStatus.draft.equals(v.getStatus())).forEach(version -> {
+        version.setCodeSystem(codeSystem);
+        codeSystemEntityVersionService.save(version, concept.getId());
+      });
     }
     return concept;
   }
@@ -55,30 +61,30 @@ public class ConceptService {
   public QueryResult<Concept> query(ConceptQueryParams params) {
     prepareParams(params);
     QueryResult<Concept> concepts = repository.query(params);
-    concepts.getData().forEach(c -> decorate(c, params.getCodeSystemVersion()));
+    concepts.getData().forEach(c -> decorate(c, params.getCodeSystem(), params.getCodeSystemVersion()));
     return concepts;
   }
 
   public Optional<Concept> load(Long id) {
-    return Optional.ofNullable(repository.load(id)).map(c -> decorate(c, null));
+    return Optional.ofNullable(repository.load(id)).map(c -> decorate(c, null,null));
   }
 
   public Optional<Concept> load(String codeSystem, String code) {
-    return Optional.ofNullable(repository.load(codeSystem, code)).map(c -> decorate(c, null));
+    return Optional.ofNullable(repository.load(codeSystem, code)).map(c -> decorate(c, codeSystem, null));
   }
 
   public Optional<Concept> load(String codeSystem, String codeSystemVersion, String code) {
     return query(new ConceptQueryParams()
         .setCodeSystem(codeSystem)
         .setCodeSystemVersion(codeSystemVersion)
-        .setCode(code)).findFirst().map(c -> decorate(c, codeSystemVersion));
+        .setCode(code)).findFirst().map(c -> decorate(c, codeSystem, codeSystemVersion));
   }
 
-  private Concept decorate(Concept concept, String codeSystemVersion) {
+  private Concept decorate(Concept concept, String codeSystem, String codeSystemVersion) {
     List<CodeSystemEntityVersion> versions = codeSystemEntityVersionService.query(new CodeSystemEntityVersionQueryParams()
         .setCodeSystemEntityId(concept.getId())
         .setCodeSystemVersion(codeSystemVersion)
-        .setCodeSystem(concept.getCodeSystem())).getData();
+        .setCodeSystem(codeSystem)).getData();
     concept.setVersions(versions);
     return concept;
   }

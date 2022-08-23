@@ -41,6 +41,15 @@ create index code_system_entity_version_code_system_entity_idx on code_system_en
 select core.create_table_metadata('code_system_entity_version');
 --rollback drop table if exists code_system_entity_version;
 
+--changeset kodality:code_system_entity_version-code_system
+alter table code_system_entity_version add column code_system text;
+alter table code_system_entity_version add constraint code_system_entity_version_code_system_fk foreign key (code_system) references code_system(id);
+create index code_system_entity_version_code_system_idx on code_system_entity_version(code_system);
+
+update code_system_entity_version set code_system = cse.code_system from terminology.code_system_entity cse where cse.id = code_system_entity_id and cse.sys_status = 'A';
+alter table code_system_entity_version alter column code_system set not null;
+--
+
 --changeset kodality:entity_version_code_system_version_membership
 drop table if exists entity_version_code_system_version_membership;
 create table entity_version_code_system_version_membership (

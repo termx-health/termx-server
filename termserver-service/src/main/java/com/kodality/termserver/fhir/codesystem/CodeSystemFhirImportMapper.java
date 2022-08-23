@@ -123,6 +123,7 @@ public class CodeSystemFhirImportMapper {
                                                                  com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept parent) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(c.getCode());
+    version.setCodeSystem(codeSystem.getId());
     version.setDesignations(mapDesignations(c, codeSystem));
     version.setPropertyValues(mapPropertyValues(c.getProperty()));
     version.setAssociations(mapAssociations(parent, codeSystem));

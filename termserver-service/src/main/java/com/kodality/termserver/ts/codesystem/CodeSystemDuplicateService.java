@@ -56,6 +56,7 @@ public class CodeSystemDuplicateService {
       targetCodeSystem.setCaseSensitive(sourceCs.getCaseSensitive());
       targetCodeSystem.setNarrative(sourceCs.getNarrative());
       targetCodeSystem.setDescription(sourceCs.getDescription());
+      targetCodeSystem.setBaseCodeSystem(sourceCs.getId());
       codeSystemService.save(targetCodeSystem);
     }
 
@@ -63,11 +64,17 @@ public class CodeSystemDuplicateService {
     versions.forEach(v -> v.setId(null).setCreated(null).setStatus(PublicationStatus.draft).setCodeSystem(targetCodeSystem.getId()));
     codeSystemVersionService.save(versions, targetCodeSystem.getId());
 
+    Map<Long, Long> propertyMap = new HashMap<>();
     List<EntityProperty> properties = sourceCs.getProperties();
-    properties.forEach(p -> p.setId(null));
+    properties.forEach(p -> {
+      Long sourceId = p.getId();
+      p.setId(null);
+      entityPropertyService.save(p, targetCodeSystem.getId());
+      propertyMap.put(sourceId, p.getId());
+    });
     entityPropertyService.save(properties, targetCodeSystem.getId());
 
-    duplicateConcepts(versions, sourceCodeSystem, null, targetCodeSystem.getId());
+    duplicateConcepts(versions, sourceCodeSystem, null, targetCodeSystem.getId(), propertyMap);
   }
 
   @Transactional
@@ -86,19 +93,24 @@ public class CodeSystemDuplicateService {
     version.setCreated(null);
     codeSystemVersionService.save(version);
 
+
+    Map<Long, Long> propertyMap = new HashMap<>();
     if (!sourceCodeSystem.equals(targetCodeSystem)) {
-      EntityPropertyQueryParams propertyParams = new EntityPropertyQueryParams();
-      propertyParams.setCodeSystem(sourceCodeSystem);
+      EntityPropertyQueryParams propertyParams = new EntityPropertyQueryParams().setCodeSystem(sourceCodeSystem);
       propertyParams.all();
       List<EntityProperty> properties = entityPropertyService.query(propertyParams).getData();
-      properties.forEach(p -> p.setId(null));
-      entityPropertyService.save(properties, targetCodeSystem);
+      properties.forEach(p -> {
+        Long sourceId = p.getId();
+        p.setId(null);
+        entityPropertyService.save(p, targetCodeSystem);
+        propertyMap.put(sourceId, p.getId());
+      });
     }
 
-    duplicateConcepts(List.of(version), sourceCodeSystem, sourceVersionVersion, targetCodeSystem);
+    duplicateConcepts(List.of(version), sourceCodeSystem, sourceVersionVersion, targetCodeSystem, propertyMap);
   }
 
-  private void duplicateConcepts(List<CodeSystemVersion> versions, String sourceCodeSystem, String sourceVersionVersion, String targetCodeSystem) {
+  private void duplicateConcepts(List<CodeSystemVersion> versions, String sourceCodeSystem, String sourceVersionVersion, String targetCodeSystem, Map<Long, Long> propertyMap) {
     if (sourceCodeSystem.equals(targetCodeSystem)) {
       duplicateEntityVersionMembership(versions, sourceCodeSystem, sourceVersionVersion, null);
     } else {
@@ -106,7 +118,7 @@ public class CodeSystemDuplicateService {
       conceptParams.all();
       List<Concept> concepts = conceptService.query(conceptParams).getData();
 
-      Map<Long, Long> entityVersionsMap = duplicateConcepts(concepts, targetCodeSystem);
+      Map<Long, Long> entityVersionsMap = duplicateConcepts(concepts, targetCodeSystem, propertyMap);
       duplicateEntityVersionMembership(versions, sourceCodeSystem, sourceVersionVersion, entityVersionsMap);
       duplicateEntityVersionAssociations(concepts, entityVersionsMap);
     }
@@ -129,7 +141,7 @@ public class CodeSystemDuplicateService {
     });
   }
 
-  private Map<Long, Long> duplicateConcepts(List<Concept> concepts, String targetCodeSystem) {
+  private Map<Long, Long> duplicateConcepts(List<Concept> concepts, String targetCodeSystem, Map<Long, Long> propertyMap) {
     Map<Long, Long> entityVersionsMap = new HashMap<>();
     concepts.forEach(c -> {
       c.setId(null);
@@ -137,8 +149,9 @@ public class CodeSystemDuplicateService {
       c.getVersions().forEach(v -> {
         Long sourceId = v.getId();
         v.setId(null);
-        v.getDesignations().forEach(d -> d.setId(null));
-        v.getPropertyValues().forEach(pv -> pv.setId(null));
+        v.setCodeSystem(targetCodeSystem);
+        v.getDesignations().forEach(d -> d.setId(null).setDesignationTypeId(propertyMap.getOrDefault(d.getDesignationTypeId(), d.getDesignationTypeId())));
+        v.getPropertyValues().forEach(pv -> pv.setId(null).setEntityPropertyId(propertyMap.getOrDefault(pv.getEntityPropertyId(), pv.getEntityPropertyId())));
         v.setAssociations(new ArrayList<>());
         v.setStatus(PublicationStatus.draft);
         codeSystemEntityVersionService.save(v, c.getId());

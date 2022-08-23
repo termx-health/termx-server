@@ -21,7 +21,7 @@ public class AtcEstMapper {
   private static final String DISPLAY = "display";
 
   public static CodeSystem mapCodeSystem(ImportConfiguration configuration, List<AtcEst> atc) {
-    CodeSystem codeSystem =  CodeSystemImportMapper.mapCodeSystem(configuration, Language.et);
+    CodeSystem codeSystem = CodeSystemImportMapper.mapCodeSystem(configuration, Language.et);
     codeSystem.setProperties(mapProperties());
     codeSystem.setConcepts(mapConcepts(atc, configuration));
     return codeSystem;
@@ -32,9 +32,10 @@ public class AtcEstMapper {
   }
 
   private static List<Concept> mapConcepts(List<AtcEst> atc, ImportConfiguration configuration) {
-    return atc.stream().map(a -> {
+    return atc.stream().filter(a -> a.getCode() != null).map(a -> {
       CodeSystemEntityVersion version = new CodeSystemEntityVersion();
       version.setCode(a.getCode());
+      version.setCodeSystem(configuration.getCodeSystem());
       version.setStatus(PublicationStatus.draft);
       version.setDesignations(mapDesignations(a));
       version.setAssociations(CodeSystemImportMapper.mapAssociations(findParent(a.getCode(), atc, 1), "is-a", configuration));

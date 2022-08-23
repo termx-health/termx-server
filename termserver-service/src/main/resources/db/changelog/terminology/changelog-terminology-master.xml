@@ -19,10 +19,12 @@
     <changeSet dbms="PostgreSQL" id="functions" runOnChange="true" author="marina.ivnva@gmail.com">
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/01-value_set_expand.sql" />
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/02-rule_set_expand.sql" />
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/11-code_system_closure.sql" />
 
         <rollback>
             drop function if exists terminology.value_set_expand(bigint);
             drop function if exists terminology.rule_set_expand(jsonb);
+            drop function if exists terminology.code_system_closure(text);
         </rollback>
     </changeSet>
 

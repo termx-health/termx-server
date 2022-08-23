@@ -24,6 +24,12 @@ create table code_system (
 select core.create_table_metadata('code_system');
 --rollback drop table if exists code_system;
 
+--changeset kodality:code_system-base_code_system
+alter table code_system add column base_code_system text;
+alter table code_system add constraint code_system_base_code_system_fk foreign key (base_code_system) references code_system(id);
+create index code_system_base_code_system_idx on code_system(base_code_system);
+--
+
 --changeset kodality:code_system_version
 drop table if exists code_system_version;
 create table code_system_version (

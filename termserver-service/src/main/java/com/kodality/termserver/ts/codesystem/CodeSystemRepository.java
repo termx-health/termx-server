@@ -34,6 +34,7 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.property("case_sensitive", codeSystem.getCaseSensitive());
     ssb.property("narrative", codeSystem.getNarrative());
     ssb.property("description", codeSystem.getDescription());
+    ssb.property("base_code_system", codeSystem.getBaseCodeSystem());
 
     SqlBuilder sb = ssb.buildUpsert("terminology.code_system", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());

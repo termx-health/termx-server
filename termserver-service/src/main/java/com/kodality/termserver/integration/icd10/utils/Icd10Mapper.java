@@ -60,6 +60,7 @@ public class Icd10Mapper {
   private static CodeSystemEntityVersion mapConceptVersion(Class diagnosis, ImportConfiguration configuration) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(diagnosis.getCode());
+    version.setCodeSystem(configuration.getCodeSystem());
     version.setStatus(PublicationStatus.draft);
     version.setDesignations(mapDesignations(diagnosis));
     version.setAssociations(mapAssociations(diagnosis, configuration));

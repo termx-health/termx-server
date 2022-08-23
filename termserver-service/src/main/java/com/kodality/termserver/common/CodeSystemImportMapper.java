@@ -18,6 +18,7 @@ public class CodeSystemImportMapper {
     codeSystem.setDescription(configuration.getCodeSystemDescription());
     codeSystem.setVersions(mapVersions(configuration, lang));
     codeSystem.setContent(CodeSystemContent.complete);
+    codeSystem.setBaseCodeSystem(configuration.getBaseCodeSystem());
     return codeSystem;
   }
 

@@ -12,11 +12,14 @@ import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Singleton
 public class ConceptRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(Concept.class);
+
+  private final Map<String, String> orderMapping = Map.of("code", "code");
 
   public void save(Concept concept) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -35,7 +38,7 @@ public class ConceptRepository extends BaseRepository {
   }
 
   public Concept load(String codeSystem, String code) {
-    String sql = "select * from terminology.concept where sys_status = 'A' and code_system = ? and code = ?";
+    String sql = "select * from terminology.concept where sys_status = 'A' and code_system = any (terminology.code_system_closure(?)) and code = ?";
     return getBean(sql, bp, codeSystem, code);
   }
 
@@ -47,6 +50,7 @@ public class ConceptRepository extends BaseRepository {
     }, p -> {
       SqlBuilder sb = new SqlBuilder("select * from terminology.concept c where c.sys_status = 'A'");
       sb.append(filter(params));
+      sb.append(order(params, orderMapping));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
@@ -54,7 +58,7 @@ public class ConceptRepository extends BaseRepository {
 
   private SqlBuilder filter(ConceptQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and c.code_system = ?", params.getCodeSystem());
+    sb.appendIfNotNull(" and c.code_system = any (terminology.code_system_closure(?))", params.getCodeSystem());
     if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
       sb.and().in("c.code_system", params.getPermittedCodeSystems());
     }
@@ -84,7 +88,7 @@ public class ConceptRepository extends BaseRepository {
       sb.appendIfNotNull("and csv.release_date <= ?", params.getCodeSystemVersionReleaseDateLe());
       sb.appendIfNotNull("and (csv.expiration_date >= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateGe());
       sb.appendIfNotNull("and (csv.expiration_date <= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateLe());
-      sb.appendIfNotNull("and csv.code_system = ?", params.getCodeSystem());
+      sb.appendIfNotNull(" and c.code_system = any (terminology.code_system_closure(?))", params.getCodeSystem());
       sb.append(")");
     }
     sb.appendIfNotNull("and exists( select 1 from terminology.value_set_expand(?) vse where (vse.concept ->> 'id')::bigint = c.id)",
@@ -101,9 +105,9 @@ public class ConceptRepository extends BaseRepository {
       if (StringUtils.isNotEmpty(params.getPropertyValues())) {
         String[] propertyValues = params.getPropertyValues().split(",");
         sb.append("and (").append(Arrays.stream(propertyValues).map(pv -> {
-              String[] pipe = PipeUtil.parsePipe(pv);
-              return new SqlBuilder().append("ep.name = ?", pipe[0]).appendIfTrue(pipe.length == 2, "and epv.value @> to_jsonb(?::text)", pipe[1]).toPrettyString();
-            }).collect(Collectors.joining(" and "))).append(")");
+          String[] pipe = PipeUtil.parsePipe(pv);
+          return new SqlBuilder().append("ep.name = ?", pipe[0]).appendIfTrue(pipe.length == 2, "and epv.value @> to_jsonb(?::text)", pipe[1]).toPrettyString();
+        }).collect(Collectors.joining(" and "))).append(")");
       }
       if (StringUtils.isNotEmpty(params.getPropertyValuesPartial())) {
         String[] propertyValues = params.getPropertyValuesPartial().split(",");

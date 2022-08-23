@@ -44,7 +44,7 @@ public class FileProcessingMapper {
     codeSystem.setDescription(fpCodeSystem.getDescription() == null ? codeSystem.getDescription() : fpCodeSystem.getDescription());
     codeSystem.setVersions(List.of(toCodeSystemVersion(fpVersion, fpCodeSystem.getId())));
     codeSystem.setProperties(toProperties(result.getProperties()));
-    codeSystem.setConcepts(toConcepts(result.getEntities()));
+    codeSystem.setConcepts(toConcepts(codeSystem.getId(), result.getEntities()));
     return codeSystem;
   }
 
@@ -69,12 +69,13 @@ public class FileProcessingMapper {
         }).collect(Collectors.toList());
   }
 
-  private List<Concept> toConcepts(List<Map<String, List<FileProcessingEntityPropertyValue>>> entities) {
+  private List<Concept> toConcepts(String codeSystem, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities) {
     return entities.stream().map(entity -> {
       Concept concept = new Concept();
+      concept.setCodeSystem(codeSystem);
       concept.setCode(toConceptCode(entity));
       concept.setDescription(toConceptDescription(entity));
-      concept.setVersions(List.of(toConceptVersion(entity)));
+      concept.setVersions(List.of(toConceptVersion(codeSystem, entity)));
       return concept;
     }).collect(Collectors.toList());
   }
@@ -87,8 +88,9 @@ public class FileProcessingMapper {
     return entity.containsKey(CONCEPT_DESCRIPTION) ? entity.get(CONCEPT_DESCRIPTION).stream().findFirst().map(pv -> (String) pv.getValue()).orElse(null) : null;
   }
 
-  private CodeSystemEntityVersion toConceptVersion(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
+  private CodeSystemEntityVersion toConceptVersion(String codeSystem, Map<String, List<FileProcessingEntityPropertyValue>> entity) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
+    version.setCodeSystem(codeSystem);
     version.setStatus(PublicationStatus.draft);
     version.setCode(toConceptCode(entity));
     version.setPropertyValues(toConceptPropertyValues(entity));

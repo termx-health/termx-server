@@ -20,6 +20,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", version.getId());
     ssb.property("code_system_entity_id", codeSystemEntityId);
+    ssb.property("code_system", version.getCodeSystem());
     ssb.property("code", version.getCode());
     ssb.property("description", version.getDescription());
     ssb.property("status", version.getStatus());
@@ -31,23 +32,17 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
   }
 
   public CodeSystemEntityVersion load(Long id) {
-    String sql = "select csev.*, cse.code_system from terminology.code_system_entity_version csev " +
-        "inner join terminology.code_system_entity cse on cse.id = csev.code_system_entity_id and cse.sys_status = 'A' " +
-        "where csev.sys_status = 'A' and csev.id = ?";
+    String sql = "select * from terminology.code_system_entity_version csev where csev.sys_status = 'A' and csev.id = ?";
     return getBean(sql, bp, id);
   }
 
   public QueryResult<CodeSystemEntityVersion> query(CodeSystemEntityVersionQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_entity_version csev " +
-          "inner join terminology.code_system_entity cse on cse.id = csev.code_system_entity_id and cse.sys_status = 'A' " +
-          "where csev.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_entity_version csev where csev.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select csev.*, cse.code_system from terminology.code_system_entity_version csev " +
-          "inner join terminology.code_system_entity cse on cse.id = csev.code_system_entity_id and cse.sys_status = 'A' " +
-          "where csev.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select * from terminology.code_system_entity_version csev where csev.sys_status = 'A'");
       sb.append(filter(params));
       sb.append("order by created");
       sb.append(limit(params));
@@ -68,12 +63,12 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
       sb.append("and (csev.code ~* ? or csev.description ~* ? or " +
           "exists(select 1 from terminology.designation d where d.code_system_entity_version_id = csev.id and d.name ~* ? ))", params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
-    sb.appendIfNotNull("and cse.code_system = ?", params.getCodeSystem());
+    sb.appendIfNotNull("and csev.code_system = ?", params.getCodeSystem());
     if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
-      sb.and().in("cse.code_system", params.getPermittedCodeSystems());
+      sb.and().in("csev.code_system", params.getPermittedCodeSystems());
     }
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs " +
-        "where cse.code_system = cs.id and cs.uri = ? and cs.sys_status = 'A')", params.getCodeSystemUri());
+        "where csev.code_system = cs.id and cs.uri = ? and cs.sys_status = 'A')", params.getCodeSystemUri());
     sb.appendIfNotNull("and exists (select 1 from terminology.entity_version_code_system_version_membership evcsvm " +
         "where evcsvm.code_system_entity_version_id = csev.id and evcsvm.code_system_version_id = ?)", params.getCodeSystemVersionId());
     if (params.getCodeSystemVersion() != null) {

@@ -63,6 +63,7 @@ public class OrphanetMapper {
   private static CodeSystemEntityVersion mapConceptVersion(ClassificationNode node, ClassificationNode parent, ImportConfiguration configuration) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(node.getDisorder().getOrphaCode());
+    version.setCodeSystem(configuration.getCodeSystem());
     version.setStatus(PublicationStatus.draft);
     version.setDesignations(mapDesignations(node));
     version.setPropertyValues(mapPropertyValues(node));

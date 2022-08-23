@@ -76,6 +76,7 @@ public class Icd10EstMapper {
   private static CodeSystemEntityVersion mapConceptVersion(Node element, Node parent, ImportConfiguration configuration) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(element.getCode());
+    version.setCodeSystem(configuration.getCodeSystem());
     version.setStatus(PublicationStatus.draft);
     version.setDesignations(mapDesignations(element));
     version.setPropertyValues(mapPropertyValues(element));

@@ -35,6 +35,7 @@ public class AtcMapper {
     return atc.entrySet().stream().map(e -> {
       CodeSystemEntityVersion version = new CodeSystemEntityVersion();
       version.setCode(e.getKey());
+      version.setCodeSystem(configuration.getCodeSystem());
       version.setStatus(PublicationStatus.draft);
       version.setDesignations(mapDesignations(e));
       version.setAssociations(CodeSystemImportMapper.mapAssociations(findParent(e.getKey(), atc, 1), "is-a", configuration));

@@ -19,6 +19,7 @@ public class ImportConfiguration {
   private LocalDate validTo;
   @NonNull
   private String codeSystem;
+  private String baseCodeSystem;
   @NonNull
   private LocalizedName codeSystemName;
   private String codeSystemDescription;

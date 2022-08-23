@@ -22,6 +22,8 @@ public class CodeSystem {
   private String narrative;
   private String description;
 
+  private String baseCodeSystem;
+
   private List<Concept> concepts;
   private List<EntityProperty> properties;
   private List<CodeSystemVersion> versions;
