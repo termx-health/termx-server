@@ -4,7 +4,7 @@ create or replace function terminology.code_system_closure(
     p_code_system_id text
 )
     returns text[]
-    language sql
+    language sql stable
 as
 $function$
 with recursive rec as (

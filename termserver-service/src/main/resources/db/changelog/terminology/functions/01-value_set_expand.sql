@@ -9,7 +9,7 @@ create or replace function terminology.value_set_expand(
         display                 jsonb,
         additional_designations jsonb
     )
-    language sql
+    language sql stable
 as
 $function$
 with rule_set as (
