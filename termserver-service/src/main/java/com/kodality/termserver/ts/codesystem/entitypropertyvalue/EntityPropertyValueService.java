@@ -1,7 +1,9 @@
 package com.kodality.termserver.ts.codesystem.entitypropertyvalue;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
+import com.kodality.termserver.codesystem.EntityPropertyValueQueryParams;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Singleton;
@@ -43,5 +45,9 @@ public class EntityPropertyValueService {
   public void delete(Long id, String codeSystem) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
     repository.delete(id);
+  }
+
+  public QueryResult<EntityPropertyValue> query(EntityPropertyValueQueryParams params) {
+    return repository.query(params);
   }
 }

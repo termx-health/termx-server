@@ -11,9 +11,13 @@ import com.kodality.termserver.codesystem.ConceptQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 @Singleton
 public class ConceptRepository extends BaseRepository {
@@ -37,9 +41,13 @@ public class ConceptRepository extends BaseRepository {
     return getBean(sql, bp, id);
   }
 
-  public Concept load(String codeSystem, String code) {
-    String sql = "select * from terminology.concept where sys_status = 'A' and code_system = any (terminology.code_system_closure(?)) and code = ?";
-    return getBean(sql, bp, codeSystem, code);
+  public Concept load(List<String> codeSystems, String code) {
+    SqlBuilder sb = new SqlBuilder("select * from terminology.concept where sys_status = 'A'");
+    sb.and("code = ?", code);
+    if (CollectionUtils.isNotEmpty(codeSystems)) {
+      sb.and().in("code_system", codeSystems);
+    }
+    return getBean(sb.getSql(), bp, sb.getParams());
   }
 
   public QueryResult<Concept> query(ConceptQueryParams params) {
@@ -58,7 +66,12 @@ public class ConceptRepository extends BaseRepository {
 
   private SqlBuilder filter(ConceptQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull(" and c.code_system = any (terminology.code_system_closure(?))", params.getCodeSystem());
+    if (StringUtils.isNotEmpty(params.getId())) {
+      sb.and().in("c.id ", params.getId(), Long::valueOf);
+    }
+    if (StringUtils.isNotEmpty(params.getCodeSystem())) {
+      sb.and().in("c.code_system ", params.getCodeSystem());
+    }
     if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
       sb.and().in("c.code_system", params.getPermittedCodeSystems());
     }
@@ -88,11 +101,14 @@ public class ConceptRepository extends BaseRepository {
       sb.appendIfNotNull("and csv.release_date <= ?", params.getCodeSystemVersionReleaseDateLe());
       sb.appendIfNotNull("and (csv.expiration_date >= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateGe());
       sb.appendIfNotNull("and (csv.expiration_date <= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateLe());
-      sb.appendIfNotNull(" and c.code_system = any (terminology.code_system_closure(?))", params.getCodeSystem());
+      if (StringUtils.isNotEmpty(params.getCodeSystem())) {
+        sb.and().in("c.code_system ", params.getCodeSystem());
+      }
       sb.append(")");
     }
-    sb.appendIfNotNull("and exists( select 1 from terminology.value_set_expand(?) vse where (vse.concept ->> 'id')::bigint = c.id)",
-        params.getValueSetVersionId());
+    if (StringUtils.isNotEmpty(params.getValueSetExpandResultIds())) {
+      sb.and().in("c.id ", params.getValueSetExpandResultIds(), Long::valueOf);
+    }
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
         "where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status = ?)", params.getCodeSystemEntityStatus());
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
@@ -119,5 +135,24 @@ public class ConceptRepository extends BaseRepository {
       sb.append(")");
     }
     return sb;
+  }
+
+  public void batchUpsert(List<Concept> concepts) {
+    String query = "insert into terminology.concept (id, code, code_system, description) values (?,?,?,?) " +
+        "on conflict (id) do update " +
+        "set code = excluded.code, description = excluded.description ";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override
+      public void setValues(PreparedStatement ps, int i) throws SQLException {
+        ps.setLong(1, concepts.get(i).getId());
+        ps.setString(2, concepts.get(i).getCode());
+        ps.setString(3, concepts.get(i).getCodeSystem());
+        ps.setString(4, concepts.get(i).getDescription());
+      }
+      @Override
+      public int getBatchSize() {
+        return concepts.size();
+      }
+    });
   }
 }

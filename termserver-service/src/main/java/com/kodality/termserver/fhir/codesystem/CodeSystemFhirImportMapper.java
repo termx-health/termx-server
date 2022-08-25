@@ -160,7 +160,7 @@ public class CodeSystemFhirImportMapper {
       return designations;
     }
 
-    designations.addAll(c.getDesignation().stream().map(d -> {
+    designations.addAll(c.getDesignation().stream().filter(d -> d.getLanguage() != null).map(d -> {
       Designation designation = new Designation();
       designation.setDesignationType(d.getUse() == null ? DISPLAY : d.getUse().getCode());
       designation.setName(d.getValue());

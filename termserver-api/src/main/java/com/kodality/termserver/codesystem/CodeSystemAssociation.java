@@ -11,6 +11,7 @@ public class CodeSystemAssociation extends CodeSystemEntity {
   private String associationType;
   private String status;
   private Long targetId;
+  private Long sourceId;
 
   private String targetCode;
 }

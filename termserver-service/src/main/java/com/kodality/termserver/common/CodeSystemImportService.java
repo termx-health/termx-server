@@ -24,11 +24,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
+
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toCollection;
 
 @Slf4j
 @Singleton
@@ -93,24 +99,32 @@ public class CodeSystemImportService {
   public void saveConcepts(List<Concept> concepts, CodeSystemVersion version, List<EntityProperty> entityProperties) {
     userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
 
+    concepts = concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new)); //removes duplicate codes
     log.info("Creating '{}' concepts", concepts.size());
-    concepts.forEach(concept -> {
-      conceptService.save(concept, version.getCodeSystem());
-
-      CodeSystemEntityVersion entityVersion = prepareEntityVersion(concept.getVersions().get(0), entityProperties);
-      codeSystemEntityVersionService.save(entityVersion, concept.getId());
-      codeSystemEntityVersionService.activate(entityVersion.getId());
-    });
+    conceptService.batchSave(concepts, version.getCodeSystem());
     log.info("Concepts created");
 
-    log.info("Linking code system version and entity versions");
-    codeSystemVersionService.saveEntityVersions(version.getId(), concepts.stream().map(c -> c.getVersions().get(0)).collect(Collectors.toList()));
+    log.info("Creating '{}' concept versions", concepts.size());
+    concepts.forEach(concept -> {
+      CodeSystemEntityVersion entityVersion = prepareEntityVersion(concept.getVersions().get(0), entityProperties);
+      codeSystemEntityVersionService.save(entityVersion, concept.getId());
+    });
+    log.info("Concept versions created");
+
+    log.info("Activating entity versions and linking them with code system version");
+    List<Long> entityVersionIds = concepts.stream().map(concept -> concept.getVersions().get(0).getId()).toList();
+    IntStream.range(0,(entityVersionIds.size()+1000-1)/1000).mapToObj(i -> entityVersionIds.subList(i*1000, Math.min(entityVersionIds.size(), (i+1)*1000))).forEach(batch ->{
+      codeSystemEntityVersionService.activate(batch);
+      codeSystemVersionService.linkEntityVersions(version.getId(), batch);
+    });
+    log.info("Linkage created");
 
     log.info("Creating associations between code system entity versions");
     concepts.forEach(concept -> {
       List<CodeSystemAssociation> associations = prepareCodeSystemAssociations(concept.getVersions().get(0).getAssociations(), version.getId());
       codeSystemAssociationService.save(associations, concept.getVersions().get(0).getId(), version.getCodeSystem());
     });
+    log.info("Associations created");
 
     log.info("Import finished.");
   }

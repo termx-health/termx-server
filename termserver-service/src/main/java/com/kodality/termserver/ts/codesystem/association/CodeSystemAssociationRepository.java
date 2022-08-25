@@ -4,7 +4,10 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
+import com.kodality.termserver.codesystem.CodeSystemAssociationQueryParams;
+import io.micronaut.core.util.StringUtils;
 import java.util.List;
 import javax.inject.Singleton;
 
@@ -12,6 +15,7 @@ import javax.inject.Singleton;
 public class CodeSystemAssociationRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(CodeSystemAssociation.class, bp -> {
     bp.overrideColumnMapping("target_code_system_entity_version_id", "targetId");
+    bp.overrideColumnMapping("source_code_system_entity_version_id", "sourceId");
   });
 
   public void save(CodeSystemAssociation association, Long codeSystemEntityVersionId) {
@@ -48,4 +52,26 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder("update terminology.code_system_association set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
+
+  public QueryResult<CodeSystemAssociation> query(CodeSystemAssociationQueryParams params) {
+    return query(params, p -> {
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_association where sys_status = 'A'");
+      sb.append(filter(params));
+      return queryForObject(sb.getSql(), Integer.class, sb.getParams());
+    }, p -> {
+      SqlBuilder sb = new SqlBuilder("select * from terminology.code_system_association where sys_status = 'A'");
+      sb.append(filter(params));
+      sb.append(limit(params));
+      return getBeans(sb.getSql(), bp, sb.getParams());
+    });
+  }
+
+  private SqlBuilder filter(CodeSystemAssociationQueryParams params) {
+    SqlBuilder sb = new SqlBuilder();
+    if (StringUtils.isNotEmpty(params.getCodeSystemEntityVersionId())) {
+      sb.and().in("source_code_system_entity_version_id", params.getCodeSystemEntityVersionId(), Long::valueOf);
+    }
+    return sb;
+  }
+
 }

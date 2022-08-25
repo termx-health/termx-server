@@ -104,6 +104,8 @@ public class ValueSetFhirImportMapper {
       concept.setAdditionalDesignations(mapDesignations(c.getDesignation()));
       concept.setDisplay(new Designation()
           .setName(c.getDisplay())
+          .setLanguage(Language.en)
+          .setPreferred(true)
           .setDesignationKind("text")
           .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)
           .setStatus(PublicationStatus.active));
@@ -116,7 +118,7 @@ public class ValueSetFhirImportMapper {
       return null;
     }
     return designation.stream().map(d -> new Designation()
-        .setLanguage(d.getLanguage())
+        .setLanguage(d.getLanguage() == null ? Language.en : d.getLanguage())
         .setName(d.getValue())
         .setDesignationKind("text")
         .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)

@@ -1,7 +1,9 @@
 package com.kodality.termserver.ts.codesystem.association;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
+import com.kodality.termserver.codesystem.CodeSystemAssociationQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemEntityType;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityService;
 import java.util.List;
@@ -50,6 +52,10 @@ public class CodeSystemAssociationService {
   public void delete(Long id, String codeSystem) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
     repository.delete(id);
+  }
+
+  public QueryResult<CodeSystemAssociation> query(CodeSystemAssociationQueryParams params) {
+    return repository.query(params);
   }
 
 }

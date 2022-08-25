@@ -1,6 +1,7 @@
 package com.kodality.termserver.ts.codesystem.entity;
 
 import com.kodality.termserver.codesystem.CodeSystemEntity;
+import java.util.List;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,5 +19,10 @@ public class CodeSystemEntityService {
   public CodeSystemEntity save(CodeSystemEntity entity) {
     repository.save(entity);
     return entity;
+  }
+
+  @Transactional
+  public void batchSave(List<CodeSystemEntity> entities, String codeSystem) {
+    repository.batchUpsert(entities, codeSystem);
   }
 }

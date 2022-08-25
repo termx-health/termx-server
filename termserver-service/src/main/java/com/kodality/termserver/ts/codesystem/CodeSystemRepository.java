@@ -14,6 +14,7 @@ import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Singleton
@@ -39,9 +40,15 @@ public class CodeSystemRepository extends BaseRepository {
     SqlBuilder sb = ssb.buildUpsert("terminology.code_system", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
+
   public CodeSystem load(String codeSystem) {
     String sql = "select * from terminology.code_system where sys_status = 'A' and id = ?";
     return getBean(sql, bp, codeSystem);
+  }
+
+  public List<String> closure(String codeSystem) {
+    String sql = "select * from unnest(terminology.code_system_closure(?))";
+    return jdbcTemplate.queryForList(sql, String.class, codeSystem);
   }
 
   public QueryResult<CodeSystem> query(CodeSystemQueryParams params) {

@@ -203,8 +203,7 @@ public class ValueSetFhirImportService {
 
     if (c.getDisplay() != null) {
       designationService
-          .query(new DesignationQueryParams().setConceptCode(c.getConcept().getCode()).setName(c.getDisplay().getName())
-              .setDesignationKind(c.getDisplay().getDesignationKind()))
+          .query(new DesignationQueryParams().setConceptCode(c.getConcept().getCode()).setName(c.getDisplay().getName()).setDesignationKind(c.getDisplay().getDesignationKind()))
           .findFirst().ifPresentOrElse(c::setDisplay, () -> {
             c.getDisplay().setDesignationTypeId(propertyId);
             designationService.save(c.getDisplay(), codeSystemEntityVersionId, c.getConcept().getCodeSystem());

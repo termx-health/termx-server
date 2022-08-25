@@ -11,6 +11,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class ConceptQueryParams extends QueryParams {
+  private String id;
   private String code;
   private String codeContains;
   private String textContains;
@@ -29,6 +30,7 @@ public class ConceptQueryParams extends QueryParams {
   private String valueSetUri;
   private String valueSetVersion;
   private Long valueSetVersionId;
+  private String valueSetExpandResultIds;
   private String propertyValues; //propertyName|value
   private String propertyValuesPartial; //propertyName|value
 }

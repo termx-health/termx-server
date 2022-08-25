@@ -5,8 +5,13 @@ import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
+import com.kodality.termserver.codesystem.CodeSystemAssociationQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termserver.codesystem.Designation;
+import com.kodality.termserver.codesystem.DesignationQueryParams;
+import com.kodality.termserver.codesystem.EntityPropertyValue;
+import com.kodality.termserver.codesystem.EntityPropertyValueQueryParams;
 import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.ts.codesystem.entitypropertyvalue.EntityPropertyValueService;
@@ -53,7 +58,7 @@ public class CodeSystemEntityVersionService {
 
   public QueryResult<CodeSystemEntityVersion> query(CodeSystemEntityVersionQueryParams params) {
     QueryResult<CodeSystemEntityVersion> versions = repository.query(params);
-    versions.getData().forEach(this::decorate);
+    versions.setData(decorate(versions.getData()));
     return versions;
   }
 
@@ -71,6 +76,21 @@ public class CodeSystemEntityVersionService {
     return version;
   }
 
+  public List<CodeSystemEntityVersion> decorate(List<CodeSystemEntityVersion> versions) {
+    String versionIds = versions.stream().map(CodeSystemEntityVersion::getId).map(String::valueOf).collect(Collectors.joining(","));
+
+    List<Designation> designations = designationService.query(new DesignationQueryParams().setCodeSystemEntityVersionId(versionIds)).getData();
+    List<EntityPropertyValue> propertyValues = entityPropertyValueService.query(new EntityPropertyValueQueryParams().setCodeSystemEntityVersionId(versionIds)).getData();
+    List<CodeSystemAssociation> associations = codeSystemAssociationService.query(new CodeSystemAssociationQueryParams().setCodeSystemEntityVersionId(versionIds)).getData();
+
+    versions.forEach(v -> {
+      v.setDesignations(designations.stream().filter(d -> d.getCodeSystemEntityVersionId().equals(v.getId())).collect(Collectors.toList()));
+      v.setPropertyValues(propertyValues.stream().filter(pv -> pv.getCodeSystemEntityVersionId().equals(v.getId())).collect(Collectors.toList()));
+      v.setAssociations(associations.stream().filter(a -> a.getSourceId().equals(v.getId())).collect(Collectors.toList()));
+    });
+    return versions;
+  }
+
   @Transactional
   public void activate(Long versionId) {
     CodeSystemEntityVersion currentVersion = repository.load(versionId);
@@ -83,6 +103,19 @@ public class CodeSystemEntityVersionService {
       return;
     }
     repository.activate(versionId);
+  }
+
+  @Transactional
+  public void activate(List<Long> versionIds) {
+    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
+    params.setIds(versionIds.stream().map(String::valueOf).collect(Collectors.joining(",")));
+    params.setLimit(versionIds.size());
+    List<CodeSystemEntityVersion> currentVersions = repository.query(params).getData();
+    if (currentVersions.size() != versionIds.size()) {
+      throw ApiError.TE109.toApiException();
+    }
+    currentVersions.forEach(currentVersion -> userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "publish"));
+    repository.activate(versionIds);
   }
 
   @Transactional

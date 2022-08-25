@@ -4,13 +4,17 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.auth.auth.UserPermissionService;
+import com.kodality.termserver.codesystem.Concept;
+import com.kodality.termserver.codesystem.ConceptQueryParams;
+import com.kodality.termserver.codesystem.Designation;
+import com.kodality.termserver.codesystem.DesignationQueryParams;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRepository;
-import com.kodality.termserver.valueset.ValueSetVersionConceptQueryParams;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionConcept;
+import com.kodality.termserver.valueset.ValueSetVersionConceptQueryParams;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,7 +75,7 @@ public class ValueSetVersionConceptService {
 
   public List<ValueSetVersionConcept> expand(String valueSet, String valueSetVersion, ValueSetVersionRuleSet ruleSet) {
     if (ruleSet != null) {
-      return repository.expand(ruleSet).stream().map(this::decorate).collect(Collectors.toList());
+      return decorate(repository.expand(ruleSet));
     }
     if (valueSet == null) {
       return new ArrayList<>();
@@ -82,18 +86,35 @@ public class ValueSetVersionConceptService {
     if (version == null) {
       return new ArrayList<>();
     }
-    return repository.expand(version.getId()).stream().map(this::decorate).collect(Collectors.toList());
+    List<ValueSetVersionConcept> expand = repository.expand(version.getId());
+    return decorate(expand);
   }
 
-  private ValueSetVersionConcept decorate(ValueSetVersionConcept c) {
-    c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? c.getDisplay() : designationService.load(c.getDisplay().getId()).orElse(c.getDisplay()));
-    c.setConcept(c.getConcept() == null || c.getConcept().getId() == null ? c.getConcept() : conceptService.load(c.getConcept().getId()).orElse(c.getConcept()));
-    if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
-      c.setAdditionalDesignations(c.getAdditionalDesignations().stream()
-          .map(d -> d.getId() == null ? d : designationService.load(d.getId()).orElse(d))
-          .collect(Collectors.toList()));
-    }
-    return c;
+  private List<ValueSetVersionConcept> decorate(List<ValueSetVersionConcept> concepts) {
+    List<String> designationIds = new ArrayList<>();
+    designationIds.addAll(concepts.stream().filter(c -> c.getDisplay() != null && c.getDisplay().getId() != null).map(c -> String.valueOf(c.getDisplay().getId())).toList());
+    designationIds.addAll(concepts.stream().filter(c -> CollectionUtils.isNotEmpty(c.getAdditionalDesignations())).flatMap(c -> c.getAdditionalDesignations().stream()).filter(ad -> ad.getId() != null).map(ad -> String.valueOf(ad.getId())).toList());
+    DesignationQueryParams designationParams = new DesignationQueryParams();
+    designationParams.setId(String.join(",", designationIds));
+    designationParams.setLimit(designationIds.size());
+    List<Designation> designations = designationService.query(designationParams).getData();
+
+    List<String> conceptIds = concepts.stream().filter(c -> c.getConcept() != null && c.getConcept().getId() != null).map(c -> String.valueOf(c.getConcept().getId())).toList();
+    ConceptQueryParams conceptParams = new ConceptQueryParams();
+    conceptParams.setId(String.join(",", conceptIds));
+    conceptParams.setLimit(conceptIds.size());
+    List<Concept> conceptList = conceptService.query(conceptParams).getData();
+
+    concepts.forEach(c -> {
+      c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? c.getDisplay() : designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
+      c.setConcept(c.getConcept() == null || c.getConcept().getId() == null ? c.getConcept() : conceptList.stream().filter(cl -> cl.getId().equals(c.getConcept().getId())).findFirst().orElse(c.getConcept()));
+      if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
+        c.setAdditionalDesignations(c.getAdditionalDesignations().stream()
+            .map(ad -> ad.getId() == null ? ad : designations.stream().filter(d -> d.getId().equals(ad.getId())).findFirst().orElse(ad))
+            .collect(Collectors.toList()));
+      }
+    });
+    return concepts;
   }
 
   public QueryResult<ValueSetVersionConcept> query(ValueSetVersionConceptQueryParams params) {
@@ -102,7 +123,7 @@ public class ValueSetVersionConceptService {
     }
     QueryResult<ValueSetVersionConcept> concepts = repository.query(params);
     if (params.isDecorated()) {
-      concepts.getData().forEach(this::decorate);
+      concepts.setData(decorate(concepts.getData()));
     }
     return concepts;
   }

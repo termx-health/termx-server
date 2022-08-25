@@ -12,6 +12,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
@@ -146,6 +147,11 @@ public class CodeSystemVersionService {
   @Transactional
   public void saveEntityVersions(Long codeSystemVersionId, List<CodeSystemEntityVersion> entityVersions) {
     repository.unlinkEntityVersions(entityVersions, codeSystemVersionId);
-    repository.linkEntityVersions(entityVersions, codeSystemVersionId);
+    repository.linkEntityVersions(entityVersions.stream().map(CodeSystemEntityVersion::getId).collect(Collectors.toList()), codeSystemVersionId);
+  }
+
+  @Transactional
+  public void linkEntityVersions(Long codeSystemVersionId, List<Long> entityVersionIds) {
+    repository.linkEntityVersions(entityVersionIds, codeSystemVersionId);
   }
 }

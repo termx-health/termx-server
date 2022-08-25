@@ -11,6 +11,7 @@ public class EntityPropertyValue {
   private Long id;
   private Object value;
   private Long entityPropertyId;
+  private Long codeSystemEntityVersionId;
 
   private Long supplementId;
 

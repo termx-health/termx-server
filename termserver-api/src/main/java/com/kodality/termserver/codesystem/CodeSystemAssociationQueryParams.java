@@ -8,13 +8,6 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class DesignationQueryParams extends QueryParams {
-  private String id;
-  private String name;
-  private String language;
-  private String designationKind;
+public class CodeSystemAssociationQueryParams extends QueryParams {
   private String codeSystemEntityVersionId;
-
-  private Long conceptId;
-  private String conceptCode;
 }

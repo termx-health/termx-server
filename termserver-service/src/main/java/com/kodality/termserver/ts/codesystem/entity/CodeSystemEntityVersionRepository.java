@@ -4,12 +4,14 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
+import java.util.List;
 import javax.inject.Singleton;
 
 @Singleton
@@ -53,15 +55,22 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
   private SqlBuilder filter(CodeSystemEntityVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and csev.code_system_entity_id = ?", params.getCodeSystemEntityId());
+    if (StringUtils.isNotEmpty(params.getCodeSystemEntityIds())) {
+      sb.and().in("csev.code_system_entity_id ", params.getCodeSystemEntityIds(), Long::valueOf);
+    }
     sb.appendIfNotNull("and csev.status = ?", params.getStatus());
     sb.appendIfNotNull("and csev.code ~* ?", params.getCodeContains());
     sb.appendIfNotNull("and csev.description ~* ?", params.getDescriptionContains());
+    if (StringUtils.isNotEmpty(params.getIds())) {
+      sb.and().in("csev.id ", params.getIds(), Long::valueOf);
+    }
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("csev.code ", params.getCode());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
       sb.append("and (csev.code ~* ? or csev.description ~* ? or " +
-          "exists(select 1 from terminology.designation d where d.code_system_entity_version_id = csev.id and d.name ~* ? ))", params.getTextContains(), params.getTextContains(), params.getTextContains());
+              "exists(select 1 from terminology.designation d where d.code_system_entity_version_id = csev.id and d.name ~* ? ))", params.getTextContains(),
+          params.getTextContains(), params.getTextContains());
     }
     sb.appendIfNotNull("and csev.code_system = ?", params.getCodeSystem());
     if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
@@ -84,6 +93,11 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
   public void activate(Long versionId) {
     String sql = "update terminology.code_system_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.active, versionId, PublicationStatus.active);
+  }
+
+  public void activate(List<Long> versionIds) {
+    String sql = "update terminology.code_system_entity_version set status = ? where id = any(?::bigint[]) and sys_status = 'A' and status <> ?";
+    jdbcTemplate.update(sql, PublicationStatus.active, PgUtil.array(versionIds), PublicationStatus.active);
   }
 
   public void retire(Long versionId) {

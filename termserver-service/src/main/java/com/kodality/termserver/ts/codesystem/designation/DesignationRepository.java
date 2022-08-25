@@ -64,6 +64,9 @@ public class DesignationRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getId())) {
       sb.and().in("d.id", params.getId(), Long::valueOf);
     }
+    if (StringUtils.isNotEmpty(params.getCodeSystemEntityVersionId())) {
+      sb.and().in("d.code_system_entity_version_id", params.getCodeSystemEntityVersionId(), Long::valueOf);
+    }
     sb.appendIfNotNull("and d.name = ?", params.getName());
     sb.appendIfNotNull("and d.language = ?", params.getLanguage());
     sb.appendIfNotNull("and d.designation_kind = ?", params.getDesignationKind());
