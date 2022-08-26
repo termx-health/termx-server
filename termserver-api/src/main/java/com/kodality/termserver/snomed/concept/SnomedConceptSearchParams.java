@@ -19,4 +19,6 @@ public class SnomedConceptSearchParams extends QueryParams {
   private Boolean groupByConcept;
   private Boolean active;
   private Boolean conceptActive;
+
+  private boolean all;
 }

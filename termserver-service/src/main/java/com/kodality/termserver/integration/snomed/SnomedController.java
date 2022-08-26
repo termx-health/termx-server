@@ -32,8 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SnomedController {
   private final SnowstormClient snowstormClient;
-  private final SnomedService snomedService;
-  private final ImportLogger importLogger;
 
   //----------------Concepts----------------
 
@@ -91,30 +89,6 @@ public class SnomedController {
   @Get("/refset-members{?params*}")
   public SnomedRefsetMemberResponse findRefsetMembers(SnomedRefsetSearchParams params) {
     return snowstormClient.findRefsetMembers(params).join();
-  }
-
-  //----------------Import----------------
-
-  @Authorized("*.CodeSystem.edit")
-  @Post("/import")
-  public JobLogResponse importConcepts(@Body SnomedImportRequest request) {
-    JobLogResponse jobLogResponse = importLogger.createJob("snomed-ct", "import");
-    CompletableFuture.runAsync(SessionStore.wrap(() -> {
-      try {
-        log.info("SNOMED CT concepts import started");
-        long start = System.currentTimeMillis();
-        snomedService.importConcepts(request);
-        log.info("SNOMED CT concepts import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
-        importLogger.logImport(jobLogResponse.getJobId());
-      } catch (ApiClientException e) {
-        log.error("Error while importing SNOMED CT concepts", e);
-        importLogger.logImport(jobLogResponse.getJobId(), e);
-      } catch (Exception e) {
-        log.error("Error while importing SNOMED CT concepts", e);
-        importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
-      }
-    }));
-    return jobLogResponse;
   }
 
 }

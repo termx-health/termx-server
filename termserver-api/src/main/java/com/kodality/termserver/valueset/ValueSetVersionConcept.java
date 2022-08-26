@@ -15,4 +15,6 @@ public class ValueSetVersionConcept {
   private Concept concept;
   private Designation display;
   private List<Designation> additionalDesignations;
+
+  private boolean active;
 }

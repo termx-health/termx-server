@@ -4,12 +4,12 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.ConceptQueryParams;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.DesignationQueryParams;
-import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
+import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRepository;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionConcept;
@@ -28,10 +28,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class ValueSetVersionConceptService {
-  private final ConceptService conceptService;
   private final DesignationService designationService;
+  private final ValueSetExpandService valueSetExpandService;
   private final ValueSetVersionConceptRepository repository;
   private final ValueSetVersionRepository valueSetVersionRepository;
+  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   private final UserPermissionService userPermissionService;
 
@@ -73,41 +74,28 @@ public class ValueSetVersionConceptService {
     repository.delete(id);
   }
 
-  public List<ValueSetVersionConcept> expand(String valueSet, String valueSetVersion, ValueSetVersionRuleSet ruleSet) {
-    if (ruleSet != null) {
-      return decorate(repository.expand(ruleSet));
-    }
-    if (valueSet == null) {
-      return new ArrayList<>();
-    }
-    ValueSetVersion version = valueSetVersion == null ?
-        valueSetVersionRepository.loadLastVersion(valueSet, PublicationStatus.active) :
-        valueSetVersionRepository.load(valueSet, valueSetVersion);
-    if (version == null) {
-      return new ArrayList<>();
-    }
-    List<ValueSetVersionConcept> expand = repository.expand(version.getId());
-    return decorate(expand);
-  }
-
-  private List<ValueSetVersionConcept> decorate(List<ValueSetVersionConcept> concepts) {
+  public List<ValueSetVersionConcept> decorate(List<ValueSetVersionConcept> concepts) {
     List<String> designationIds = new ArrayList<>();
-    designationIds.addAll(concepts.stream().filter(c -> c.getDisplay() != null && c.getDisplay().getId() != null).map(c -> String.valueOf(c.getDisplay().getId())).toList());
-    designationIds.addAll(concepts.stream().filter(c -> CollectionUtils.isNotEmpty(c.getAdditionalDesignations())).flatMap(c -> c.getAdditionalDesignations().stream()).filter(ad -> ad.getId() != null).map(ad -> String.valueOf(ad.getId())).toList());
+    designationIds.addAll(
+        concepts.stream().filter(c -> c.getDisplay() != null && c.getDisplay().getId() != null).map(c -> String.valueOf(c.getDisplay().getId())).toList());
+    designationIds.addAll(
+        concepts.stream().filter(c -> CollectionUtils.isNotEmpty(c.getAdditionalDesignations())).flatMap(c -> c.getAdditionalDesignations().stream())
+            .filter(ad -> ad.getId() != null).map(ad -> String.valueOf(ad.getId())).toList());
     DesignationQueryParams designationParams = new DesignationQueryParams();
     designationParams.setId(String.join(",", designationIds));
     designationParams.setLimit(designationIds.size());
     List<Designation> designations = designationService.query(designationParams).getData();
 
     List<String> conceptIds = concepts.stream().filter(c -> c.getConcept() != null && c.getConcept().getId() != null).map(c -> String.valueOf(c.getConcept().getId())).toList();
-    ConceptQueryParams conceptParams = new ConceptQueryParams();
-    conceptParams.setId(String.join(",", conceptIds));
-    conceptParams.setLimit(conceptIds.size());
-    List<Concept> conceptList = conceptService.query(conceptParams).getData();
+    CodeSystemEntityVersionQueryParams entityVersionParams = new CodeSystemEntityVersionQueryParams();
+    entityVersionParams.setCodeSystemEntityIds(String.join(",", conceptIds));
+    entityVersionParams.setStatus(PublicationStatus.active);
+    entityVersionParams.all();
+    List<CodeSystemEntityVersion> activeVersions = CollectionUtils.isEmpty(conceptIds) ? new ArrayList<>() : codeSystemEntityVersionService.query(entityVersionParams).getData();
 
     concepts.forEach(c -> {
       c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? c.getDisplay() : designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
-      c.setConcept(c.getConcept() == null || c.getConcept().getId() == null ? c.getConcept() : conceptList.stream().filter(cl -> cl.getId().equals(c.getConcept().getId())).findFirst().orElse(c.getConcept()));
+      c.setActive(c.isActive() || activeVersions.stream().anyMatch(av -> av.getCode().equals(c.getConcept().getCode())));
       if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
         c.setAdditionalDesignations(c.getAdditionalDesignations().stream()
             .map(ad -> ad.getId() == null ? ad : designations.stream().filter(d -> d.getId().equals(ad.getId())).findFirst().orElse(ad))
@@ -126,5 +114,28 @@ public class ValueSetVersionConceptService {
       concepts.setData(decorate(concepts.getData()));
     }
     return concepts;
+  }
+
+  public List<ValueSetVersionConcept> expand(String valueSet, String valueSetVersion, ValueSetVersionRuleSet ruleSet) {
+    Long versionId = null;
+    if (valueSet != null) {
+      ValueSetVersion version = valueSetVersion == null ? valueSetVersionRepository.loadLastVersion(valueSet, PublicationStatus.active) :
+          valueSetVersionRepository.load(valueSet, valueSetVersion);
+      versionId = version == null ? null : version.getId();
+    }
+
+    List<ValueSetVersionConcept> internalExpand = internalExpand(versionId, ruleSet);
+    internalExpand.addAll(valueSetExpandService.snomedExpand(versionId, ruleSet));
+    return internalExpand;
+  }
+
+  private List<ValueSetVersionConcept> internalExpand(Long versionId, ValueSetVersionRuleSet ruleSet) {
+    if (ruleSet != null) {
+      return decorate(repository.expand(ruleSet));
+    }
+    if (versionId != null) {
+      return decorate(repository.expand(versionId));
+    }
+    return new ArrayList<>();
   }
 }
