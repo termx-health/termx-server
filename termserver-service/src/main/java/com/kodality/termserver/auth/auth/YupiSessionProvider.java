@@ -33,8 +33,9 @@ public class YupiSessionProvider extends SessionProvider {
 
   private SessionInfo yupiDroopy() {
     SessionInfo s = new SessionInfo();
+    s.setUsername("yupi");
     s.setLang("en");
-    s.setRoles(List.of("admin"));
+    s.setRoles(List.of("kts-admin"));
     return s;
   }
 }
