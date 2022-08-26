@@ -27,7 +27,7 @@ In case you are using an existing database, run SQL commands between EOSQL via s
 ```bash 
 ./gradlew run
 ``` 
-###Test
+### Test
 Query `http://localhost:8200/fhir/CapabilityStatement`
 
 ## Authentication
