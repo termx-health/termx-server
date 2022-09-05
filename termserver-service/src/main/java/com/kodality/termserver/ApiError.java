@@ -20,6 +20,7 @@ public enum ApiError {
 
   TE201("TE201", "Code system '{{codeSystem}}' not found."),
   TE202("TE202", "Version '{{version}}' of code system '{{codeSystem}}' doesn't exist."),
+  TE203("TE203", "Property is used, can't be deleted."),
 
   TE301("TE301", "Version '{{version}}' of value set '{{valueSet}}' doesn't exist."),
   TE302("TE302", "Value set '{{valueSet}}' doesn't have active version."),

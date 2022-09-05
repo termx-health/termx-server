@@ -10,4 +10,5 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class EntityPropertyValueQueryParams extends QueryParams {
   private String codeSystemEntityVersionId;
+  private Long propertyId;
 }

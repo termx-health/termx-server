@@ -70,6 +70,7 @@ public class DesignationRepository extends BaseRepository {
     sb.appendIfNotNull("and d.name = ?", params.getName());
     sb.appendIfNotNull("and d.language = ?", params.getLanguage());
     sb.appendIfNotNull("and d.designation_kind = ?", params.getDesignationKind());
+    sb.appendIfNotNull("and d.designation_type_id = ?", params.getDesignationTypeId());
     sb.appendIfNotNull("and exists( select 1 from terminology.concept c " +
         "inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A' " +
         "where c.code = ? and c.sys_status = 'A' and csev.id = d.code_system_entity_version_id)", params.getConceptCode());

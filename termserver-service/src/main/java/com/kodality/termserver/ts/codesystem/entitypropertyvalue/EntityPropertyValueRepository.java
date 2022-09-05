@@ -71,6 +71,7 @@ public class EntityPropertyValueRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCodeSystemEntityVersionId())) {
       sb.and().in("epv.code_system_entity_version_id", params.getCodeSystemEntityVersionId(), Long::valueOf);
     }
+    sb.appendIfNotNull("and epv.entity_property_id = ?", params.getPropertyId());
    return sb;
   }
 

@@ -1,9 +1,14 @@
 package com.kodality.termserver.ts.codesystem.entityproperty;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.auth.UserPermissionService;
+import com.kodality.termserver.codesystem.DesignationQueryParams;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
+import com.kodality.termserver.codesystem.EntityPropertyValueQueryParams;
+import com.kodality.termserver.ts.codesystem.designation.DesignationService;
+import com.kodality.termserver.ts.codesystem.entitypropertyvalue.EntityPropertyValueService;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class EntityPropertyService {
   private final EntityPropertyRepository repository;
+  private final DesignationService designationService;
+  private final EntityPropertyValueService entityPropertyValueService;
 
   private final UserPermissionService userPermissionService;
 
@@ -56,6 +63,22 @@ public class EntityPropertyService {
   @Transactional
   public void delete(Long id, String codeSystem) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
+    if (checkPropertyUsed(id)) {
+      throw ApiError.TE203.toApiException();
+    }
     repository.delete(id);
+  }
+
+  private boolean checkPropertyUsed(Long id) {
+    EntityPropertyValueQueryParams propertyValueParams = new EntityPropertyValueQueryParams();
+    propertyValueParams.setPropertyId(id);
+    propertyValueParams.setLimit(0);
+
+    DesignationQueryParams designationParams = new DesignationQueryParams();
+    designationParams.setDesignationTypeId(id);
+    designationParams.setLimit(0);
+    return entityPropertyValueService.query(propertyValueParams).getMeta().getTotal() > 0 ||
+        designationService.query(designationParams).getMeta().getTotal() > 0;
   }
 }
