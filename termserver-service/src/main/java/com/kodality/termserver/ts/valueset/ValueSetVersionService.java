@@ -46,7 +46,7 @@ public class ValueSetVersionService {
     }
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
     repository.save(version);
-    valueSetVersionRuleSetService.save(version.getRuleSet(), version.getId());
+    valueSetVersionRuleSetService.save(version.getRuleSet(), version.getId(), version.getValueSet());
   }
 
   public ValueSetVersion load(Long id) {
@@ -115,5 +115,14 @@ public class ValueSetVersionService {
 
   public ValueSetVersion loadLastVersionByUri(String uri) {
     return repository.loadLastVersionByUri(uri);
+  }
+
+  @Transactional
+  public void cancel(Long id, String valueSet) {
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
+
+    valueSetVersionConceptService.cancel(id, valueSet);
+    valueSetVersionRuleSetService.cancel(id, valueSet);
+    repository.cancel(id);
   }
 }

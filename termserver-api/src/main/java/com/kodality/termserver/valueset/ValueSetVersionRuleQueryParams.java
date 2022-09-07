@@ -11,4 +11,6 @@ import lombok.experimental.Accessors;
 public class ValueSetVersionRuleQueryParams extends QueryParams {
   private String codeSystem;
   private String codeSystemVersionIds;
+  private String valueSet;
+  private String valueSetVersionIds;
 }

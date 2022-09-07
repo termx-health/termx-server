@@ -32,6 +32,7 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public class ValueSetController {
   private final ValueSetService valueSetService;
+  private final ValueSetDeleteService valueSetDeleteService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
@@ -58,6 +59,13 @@ public class ValueSetController {
   public HttpResponse<?> saveValueSet(@Body @Valid ValueSet valueSet) {
     valueSetService.save(valueSet);
     return HttpResponse.created(valueSet);
+  }
+
+  @Authorized("*.ValueSet.publish")
+  @Delete(uri = "/{valueSet}")
+  public HttpResponse<?> deleteValueSet(@PathVariable @ResourceId String valueSet) {
+    valueSetDeleteService.deleteValueSet(valueSet);
+    return HttpResponse.ok();
   }
 
   //----------------ValueSet Version----------------

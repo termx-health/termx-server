@@ -118,7 +118,7 @@ public class CodeSystemDeleteService {
     }
     ValueSetVersionRuleQueryParams valueSetVersionRuleParams = new ValueSetVersionRuleQueryParams();
     valueSetVersionRuleParams.setCodeSystemVersionIds(codeSystemVersions.stream().map(v -> String.valueOf(v.getId())).collect(Collectors.joining(",")));
-    valueSetVersionRuleParams.setLimit(1);
+    valueSetVersionRuleParams.setLimit(0);
     if (valueSetVersionRuleService.query(valueSetVersionRuleParams).getMeta().getTotal() > 0) {
       throw ApiError.TE207.toApiException();
     }

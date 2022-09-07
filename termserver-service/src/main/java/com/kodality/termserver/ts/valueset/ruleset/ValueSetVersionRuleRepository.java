@@ -78,6 +78,11 @@ public class ValueSetVersionRuleRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCodeSystemVersionIds())) {
       sb.and().in("vsvr.code_system_version_id", params.getCodeSystemVersionIds(), Long::valueOf);
     }
+
+    sb.appendIfNotNull("and vsvr.value_set = ?", params.getValueSet());
+    if (StringUtils.isNotEmpty(params.getValueSetVersionIds())) {
+      sb.and().in("vsvr.value_set_version_id", params.getValueSetVersionIds(), Long::valueOf);
+    }
     return sb;
   }
 }

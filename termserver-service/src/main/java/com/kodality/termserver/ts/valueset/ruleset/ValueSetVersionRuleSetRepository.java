@@ -26,4 +26,10 @@ public class ValueSetVersionRuleSetRepository extends BaseRepository {
     String sql = "select * from terminology.value_set_version_rule_set where sys_status = 'A' and value_set_version_id = ? ";
     return getBean(sql, bp, valueSetVersionId);
   }
+
+  public void cancel(Long id) {
+    SqlBuilder sb = new SqlBuilder("update terminology.value_set_version_rule_set set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
 }

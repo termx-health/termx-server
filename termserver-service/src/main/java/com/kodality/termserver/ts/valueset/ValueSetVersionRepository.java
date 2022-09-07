@@ -100,4 +100,9 @@ public class ValueSetVersionRepository extends BaseRepository {
     return getBean(sql, bp, uri);
   }
 
+  public void cancel(Long id) {
+    SqlBuilder sb = new SqlBuilder("update terminology.value_set_version set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
 }

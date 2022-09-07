@@ -29,6 +29,10 @@ public enum ApiError {
 
   TE301("TE301", "Version '{{version}}' of value set '{{valueSet}}' doesn't exist."),
   TE302("TE302", "Value set '{{valueSet}}' doesn't have active version."),
+  TE303("TE303", "Value set is required, can't be deleted."),
+  TE304("TE304", "Value set is used in map set '{{mapSet}}', can't be deleted."),
+  TE305("TE305", "Value set is used in other value set rule, can't be deleted."),
+  TE306("TE306", "Value set version is used in other value set rule, can't be deleted."),
 
   TE401("TE401", "Version '{{version}}' of map set '{{mapSet}}' doesn't exist."),
 

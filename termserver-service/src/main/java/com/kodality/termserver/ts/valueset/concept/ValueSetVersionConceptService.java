@@ -138,4 +138,10 @@ public class ValueSetVersionConceptService {
     }
     return new ArrayList<>();
   }
+
+  @Transactional
+  public void cancel(Long valueSetVersionId, String valueSet) {
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
+    save(List.of(), valueSetVersionId);
+  }
 }

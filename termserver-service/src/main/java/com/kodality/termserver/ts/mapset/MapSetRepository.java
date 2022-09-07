@@ -70,6 +70,8 @@ public class MapSetRepository extends BaseRepository {
     sb.appendIfNotNull("and ms.description ~* ?", params.getDescriptionContains());
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ms.names) where value = ?)", params.getName());
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ms.names) where value ~* ?)", params.getNameContains());
+    sb.appendIfNotNull("and ms.source_value_set = ?", params.getSourceValueSet());
+    sb.appendIfNotNull("and ms.target_value_set = ?", params.getTargetValueSet());
 
     if (StringUtils.isNotEmpty(params.getText())) {
       sb.append("and (ms.id = ? or ms.uri = ? or ms.description = ? or exists (select 1 from jsonb_each_text(ms.names) where value = ?))", params.getText(), params.getText(), params.getText(), params.getText());

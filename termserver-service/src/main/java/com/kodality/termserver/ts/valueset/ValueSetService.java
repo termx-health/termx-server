@@ -42,4 +42,10 @@ public class ValueSetService {
     params.all();
     valueSet.setVersions(valueSetVersionService.query(params).getData());
   }
+
+  @Transactional
+  public void cancel(String valueSet) {
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
+    repository.cancel(valueSet);
+  }
 }

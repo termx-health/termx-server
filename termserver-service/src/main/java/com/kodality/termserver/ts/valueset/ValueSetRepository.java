@@ -92,4 +92,8 @@ public class ValueSetRepository extends BaseRepository {
     return sortMap;
   }
 
+  public void cancel(String valueSet) {
+    SqlBuilder sb = new SqlBuilder("update terminology.value_set set sys_status = 'C' where id = ? and sys_status = 'A'", valueSet);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }
