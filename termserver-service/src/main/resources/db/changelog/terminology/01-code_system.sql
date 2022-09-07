@@ -30,6 +30,11 @@ alter table code_system add constraint code_system_base_code_system_fk foreign k
 create index code_system_base_code_system_idx on code_system(base_code_system);
 --
 
+--changeset kodality:code_system-code_system_ukey
+alter table code_system drop constraint code_system_ukey;
+create unique index code_system_ukey on code_system (uri) where (sys_status = 'A');
+--
+
 --changeset kodality:code_system_version
 drop table if exists code_system_version;
 create table code_system_version (
@@ -57,3 +62,8 @@ create index code_system_version_code_system_idx on code_system_version(code_sys
 
 select core.create_table_metadata('code_system_version');
 --rollback drop table if exists code_system_version;
+
+--changeset kodality:code_system_version-code_system_version_ukey
+alter table code_system_version drop constraint code_system_version_ukey;
+create unique index code_system_version_ukey on code_system_version (code_system, version) where (sys_status = 'A');
+--

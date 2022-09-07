@@ -9,6 +9,7 @@ import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.mapset.MapSetAssociation;
 import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import javax.inject.Singleton;
 
 @Singleton
@@ -65,8 +66,11 @@ public class MapSetAssociationRepository extends BaseRepository {
     }
     sb.appendIfNotNull("and msa.status = ?", params.getStatus());
     sb.appendIfNotNull("and msa.association_type = ?", params.getType());
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
-        "where msa.source_code_system_entity_version_id = csev.id and csev.code = ? and csev.sys_status = 'A')", params.getSourceCode());
+    if (StringUtils.isNotEmpty(params.getSourceCode())) {
+      sb.append("and exists (select 1 from terminology.code_system_entity_version csev where msa.source_code_system_entity_version_id = csev.id")
+          .and().in("csev.code", params.getSourceCode())
+          .append("and csev.sys_status = 'A')");
+    }
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity cse " +
         "inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
         "where msa.source_code_system_entity_version_id = csev.id and cse.code_system = ? and cse.sys_status = 'A')", params.getSourceSystem());
@@ -78,8 +82,11 @@ public class MapSetAssociationRepository extends BaseRepository {
         "inner join terminology.code_system_entity cse on cse.code_system = csv.code_system and cse.sys_status = 'A' " +
         "inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
         "where msa.source_code_system_entity_version_id = csev.id and csv.version = ? and csv.sys_status = 'A')", params.getSourceSystemVersion());
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
-        "where msa.target_code_system_entity_version_id = csev.id and csev.code = ? and csev.sys_status = 'A')", params.getTargetCode());
+    if (StringUtils.isNotEmpty(params.getTargetCode())) {
+      sb.append("and exists (select 1 from terminology.code_system_entity_version csev where msa.target_code_system_entity_version_id = csev.id")
+          .and().in("csev.code", params.getTargetCode())
+          .append("and csev.sys_status = 'A')");
+    }
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity cse " +
         "inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
         "where msa.target_code_system_entity_version_id = csev.id and cse.code_system = ? and cse.sys_status = 'A')", params.getTargetSystem());

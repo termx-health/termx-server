@@ -21,6 +21,11 @@ create table map_set (
 select core.create_table_metadata('map_set');
 --rollback drop table if exists map_set;
 
+--changeset kodality:map_set-map_set_ukey
+alter table map_set drop constraint map_set_ukey;
+create unique index map_set_ukey on map_set (uri) where (sys_status = 'A');
+--
+
 --changeset kodality:map_set_value_set
 alter table map_set add column source_value_set text;
 alter table map_set add column target_value_set text;
@@ -58,6 +63,11 @@ create index map_set_version_map_set_idx on map_set_version(map_set);
 
 select core.create_table_metadata('map_set_version');
 --rollback drop table if exists map_set_version;
+
+--changeset kodality:map_set_version-map_set_version_ukey
+alter table map_set_version drop constraint map_set_version_ukey;
+create unique index map_set_version_ukey on map_set_version (map_set, version) where (sys_status = 'A');
+--
 
 --changeset kodality:map_set_entity
 drop table if exists map_set_entity;

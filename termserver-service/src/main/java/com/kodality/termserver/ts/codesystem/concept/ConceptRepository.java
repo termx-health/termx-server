@@ -155,4 +155,9 @@ public class ConceptRepository extends BaseRepository {
       }
     });
   }
+
+  public void cancel(Long id) {
+    SqlBuilder sb = new SqlBuilder("update terminology.concept set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }

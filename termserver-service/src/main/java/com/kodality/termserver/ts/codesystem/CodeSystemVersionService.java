@@ -154,4 +154,12 @@ public class CodeSystemVersionService {
   public void linkEntityVersions(Long codeSystemVersionId, List<Long> entityVersionIds) {
     repository.linkEntityVersions(entityVersionIds, codeSystemVersionId);
   }
+
+  @Transactional
+  public void cancel(Long id, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
+
+    repository.unlinkEntityVersions(List.of(), id);
+    repository.cancel(id);
+  }
 }

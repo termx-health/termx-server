@@ -21,6 +21,11 @@ public enum ApiError {
   TE201("TE201", "Code system '{{codeSystem}}' not found."),
   TE202("TE202", "Version '{{version}}' of code system '{{codeSystem}}' doesn't exist."),
   TE203("TE203", "Property is used, can't be deleted."),
+  TE204("TE204", "Code system is required, can't be deleted."),
+  TE205("TE205", "Code system is base for code system '{{codeSystem}}', can't be deleted."),
+  TE206("TE206", "Code system is used in value set, can't be deleted."),
+  TE207("TE207", "Code system version is used in value set, can't be deleted."),
+  TE208("TE208", "Concept version is used in map set '{{mapSet}}', can't be deleted."),
 
   TE301("TE301", "Version '{{version}}' of value set '{{valueSet}}' doesn't exist."),
   TE302("TE302", "Value set '{{valueSet}}' doesn't have active version."),

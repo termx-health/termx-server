@@ -25,4 +25,9 @@ public class CodeSystemEntityService {
   public void batchSave(List<CodeSystemEntity> entities, String codeSystem) {
     repository.batchUpsert(entities, codeSystem);
   }
+
+  @Transactional
+  public void cancel(Long id) {
+    repository.cancel(id);
+  }
 }

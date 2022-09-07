@@ -4,10 +4,13 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.valueset.ValueSetVersionConcept;
+import com.kodality.termserver.valueset.ValueSetVersionRuleQueryParams;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
+import io.micronaut.core.util.StringUtils;
 import java.util.List;
 import javax.inject.Singleton;
 
@@ -54,5 +57,27 @@ public class ValueSetVersionRuleRepository extends BaseRepository {
   public void delete(Long id) {
     SqlBuilder sb = new SqlBuilder("update terminology.value_set_version_rule set sys_status = 'C' where id = ?", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
+  public QueryResult<ValueSetVersionRule> query(ValueSetVersionRuleQueryParams params) {
+    return query(params, p -> {
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.value_set_version_rule vsvr where vsvr.sys_status = 'A' ");
+      sb.append(filter(params));
+      return queryForObject(sb.getSql(), Integer.class, sb.getParams());
+    }, p -> {
+      SqlBuilder sb = new SqlBuilder("select vsvr.* from terminology.value_set_version_rule vsvr where vsvr.sys_status = 'A' ");
+      sb.append(filter(params));
+      sb.append(limit(params));
+      return getBeans(sb.getSql(), bp, sb.getParams());
+    });
+  }
+
+  private SqlBuilder filter(ValueSetVersionRuleQueryParams params) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.appendIfNotNull("and vsvr.code_system = ?", params.getCodeSystem());
+    if (StringUtils.isNotEmpty(params.getCodeSystemVersionIds())) {
+      sb.and().in("vsvr.code_system_version_id", params.getCodeSystemVersionIds(), Long::valueOf);
+    }
+    return sb;
   }
 }

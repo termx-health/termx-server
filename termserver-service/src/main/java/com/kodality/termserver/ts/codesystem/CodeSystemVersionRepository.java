@@ -146,4 +146,9 @@ public class CodeSystemVersionRepository extends BaseRepository {
         "order by csv.release_date desc";
     return getBean(sql, bp, uri);
   }
+
+  public void cancel(Long id) {
+    SqlBuilder sb = new SqlBuilder("update terminology.code_system_version set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }

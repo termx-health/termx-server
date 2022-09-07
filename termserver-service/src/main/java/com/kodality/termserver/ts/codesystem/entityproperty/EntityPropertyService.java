@@ -61,13 +61,13 @@ public class EntityPropertyService {
   }
 
   @Transactional
-  public void delete(Long id, String codeSystem) {
+  public void cancel(Long id, String codeSystem) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
 
     if (checkPropertyUsed(id)) {
       throw ApiError.TE203.toApiException();
     }
-    repository.delete(id);
+    repository.cancel(id);
   }
 
   private boolean checkPropertyUsed(Long id) {

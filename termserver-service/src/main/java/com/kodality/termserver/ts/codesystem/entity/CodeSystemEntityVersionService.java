@@ -150,4 +150,15 @@ public class CodeSystemEntityVersionService {
     }
     save(version, entityId);
   }
+
+  @Transactional
+  public void cancel(Long id, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
+    designationService.save(List.of(), id, codeSystem);
+    entityPropertyValueService.save(List.of(), id, codeSystem);
+    codeSystemAssociationService.save(List.of(), id, codeSystem);
+
+    repository.cancel(id);
+  }
 }

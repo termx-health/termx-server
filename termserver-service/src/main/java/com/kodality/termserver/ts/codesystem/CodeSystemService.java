@@ -91,4 +91,10 @@ public class CodeSystemService {
     propertyParams.all();
     codeSystem.setProperties(entityPropertyService.query(propertyParams).getData());
   }
+
+  @Transactional
+  public void cancel(String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
+    repository.cancel(codeSystem);
+  }
 }

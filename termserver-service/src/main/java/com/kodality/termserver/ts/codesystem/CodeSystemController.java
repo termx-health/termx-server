@@ -50,6 +50,7 @@ public class CodeSystemController {
   private final EntityPropertyService entityPropertyService;
   private final EntityPropertyValueService entityPropertyValueService;
   private final DesignationService designationService;
+  private final CodeSystemDeleteService codeSystemDeleteService;
   private final CodeSystemAssociationService associationService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemDuplicateService codeSystemDuplicateService;
@@ -85,6 +86,13 @@ public class CodeSystemController {
   public HttpResponse<?> duplicateCodeSystem(@PathVariable String codeSystem, @Body @Valid CodeSystemDuplicateRequest request) {
     CodeSystem targetCodeSystem = new CodeSystem().setId(request.getCodeSystem()).setUri(request.getCodeSystemUri());
     codeSystemDuplicateService.duplicateCodeSystem(targetCodeSystem, codeSystem);
+    return HttpResponse.ok();
+  }
+
+  @Authorized("*.CodeSystem.publish")
+  @Delete(uri = "/{codeSystem}")
+  public HttpResponse<?> deleteCodeSystem(@PathVariable @ResourceId String codeSystem) {
+    codeSystemDeleteService.deleteCodeSystem(codeSystem);
     return HttpResponse.ok();
   }
 
@@ -289,7 +297,7 @@ public class CodeSystemController {
   @Authorized("*.CodeSystem.edit")
   @Delete(uri = "/{codeSystem}/entity-properties/{id}")
   public HttpResponse<?> deleteEntityProperty(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
-    entityPropertyService.delete(id, codeSystem);
+    entityPropertyService.cancel(id, codeSystem);
     return HttpResponse.ok();
   }
 

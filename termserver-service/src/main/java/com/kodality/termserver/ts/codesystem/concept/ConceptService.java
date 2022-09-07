@@ -159,4 +159,11 @@ public class ConceptService {
     }
   }
 
+  @Transactional
+  public void cancel(Long conceptId, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
+    codeSystemEntityService.cancel(conceptId);
+    repository.cancel(conceptId);
+  }
 }

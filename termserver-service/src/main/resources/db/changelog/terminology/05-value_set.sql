@@ -21,6 +21,11 @@ create table value_set (
 select core.create_table_metadata('value_set');
 --rollback drop table if exists value_set;
 
+--changeset kodality:value_set-value_set_ukey
+alter table value_set drop constraint value_set_ukey;
+create unique index value_set_ukey on value_set (uri) where (sys_status = 'A');
+--
+
 --changeset kodality:value_set_version
 drop table if exists value_set_version;
 create table value_set_version (
@@ -49,6 +54,11 @@ create index value_set_version_value_set_idx on value_set_version(value_set);
 select core.create_table_metadata('value_set_version');
 --rollback drop table if exists value_set_version;
 
+--changeset kodality:value_set_version-value_set_version_ukey
+alter table value_set_version drop constraint value_set_version_ukey;
+create unique index value_set_version_ukey on value_set_version (value_set, version) where (sys_status = 'A');
+--
+
 --changeset kodality:value_set_version_rule_set
 drop table if exists value_set_version_rule_set;
 create table value_set_version_rule_set (
@@ -68,6 +78,11 @@ create table value_set_version_rule_set (
 create index value_set_version_rule_set_value_set_version_idx on value_set_version_rule_set(value_set_version_id);
 select core.create_table_metadata('value_set_version_rule_set');
 --rollback drop table if exists value_set_version_rule_set;
+
+--changeset kodality:value_set_version_rule_set-value_set_version_rule_set_value_set_version_ukey
+alter table value_set_version_rule_set drop constraint value_set_version_rule_set_value_set_version_ukey;
+create unique index value_set_version_rule_set_value_set_version_ukey on value_set_version_rule_set (value_set_version_id) where (sys_status = 'A');
+--
 
 --changeset kodality:value_set_version_rule
 drop table if exists value_set_version_rule;

@@ -76,6 +76,7 @@ public class CodeSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and uri ~* ?", params.getUriContains());
     sb.appendIfNotNull("and description = ?", params.getDescription());
     sb.appendIfNotNull("and description ~* ?", params.getDescriptionContains());
+    sb.appendIfNotNull("and base_code_system = ?", params.getBaseCodeSystem());
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(cs.names) where value = ?)", params.getName());
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(cs.names) where value ~* ?)", params.getNameContains());
 
@@ -121,4 +122,8 @@ public class CodeSystemRepository extends BaseRepository {
     return sortMap;
   }
 
+  public void cancel(String codeSystem) {
+    SqlBuilder sb = new SqlBuilder("update terminology.code_system set sys_status = 'C' where id = ? and sys_status = 'A'", codeSystem);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }

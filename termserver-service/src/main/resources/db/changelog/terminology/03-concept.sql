@@ -21,3 +21,8 @@ create index concept_code_system_idx on concept(code_system);
 
 select core.create_table_metadata('concept');
 --rollback drop table if exists concept;
+
+--changeset kodality:concept-concept_code_system_code_ukey
+alter table concept drop constraint concept_code_system_code_ukey;
+create unique index concept_code_system_code_ukey on concept (code_system, code) where (sys_status = 'A');
+--

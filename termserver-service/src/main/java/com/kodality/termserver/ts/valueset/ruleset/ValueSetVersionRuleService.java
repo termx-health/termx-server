@@ -1,6 +1,8 @@
 package com.kodality.termserver.ts.valueset.ruleset;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.UserPermissionService;
+import com.kodality.termserver.valueset.ValueSetVersionRuleQueryParams;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +45,10 @@ public class ValueSetVersionRuleService {
   public void delete(Long id, String valueSet) {
     userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
     repository.delete(id);
+  }
+
+  public QueryResult<ValueSetVersionRule> query(ValueSetVersionRuleQueryParams params) {
+    return repository.query(params);
   }
 
 }

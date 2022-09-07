@@ -63,5 +63,10 @@ public class CodeSystemEntityRepository extends BaseRepository {
       }
     });
   }
+
+  public void cancel(Long id) {
+    SqlBuilder sb = new SqlBuilder("update terminology.code_system_entity set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }
 
