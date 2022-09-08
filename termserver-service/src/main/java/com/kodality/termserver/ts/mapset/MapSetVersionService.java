@@ -126,4 +126,10 @@ public class MapSetVersionService {
   public MapSetVersion loadLastVersion(String mapSet, String status) {
     return repository.loadLastVersion(mapSet, status);
   }
+
+  @Transactional
+  public void cancel(Long versionId, String mapSet) {
+    userPermissionService.checkPermitted(mapSet, "MapSet", "publish");
+    repository.cancel(versionId);
+  }
 }

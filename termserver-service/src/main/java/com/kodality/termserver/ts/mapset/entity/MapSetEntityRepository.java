@@ -25,4 +25,9 @@ public class MapSetEntityRepository extends BaseRepository {
     String sql = "select * from terminology.map_set_entity where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }
+
+  public void cancel(Long id) {
+    SqlBuilder sb = new SqlBuilder("update terminology.map_set_entity set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }

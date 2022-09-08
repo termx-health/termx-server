@@ -73,4 +73,10 @@ public class MapSetEntityVersionService {
     }
     repository.retire(versionId);
   }
+
+  @Transactional
+  public void cancel(Long versionId, String mapSet) {
+    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
+    repository.cancel(versionId);
+  }
 }

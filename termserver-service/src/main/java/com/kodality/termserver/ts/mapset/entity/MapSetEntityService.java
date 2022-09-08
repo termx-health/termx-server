@@ -19,4 +19,9 @@ public class MapSetEntityService {
     repository.save(entity);
     return entity;
   }
+
+  @Transactional
+  public void cancel(Long id) {
+    repository.cancel(id);
+  }
 }

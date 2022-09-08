@@ -57,4 +57,10 @@ public class MapSetService {
       mapSet.setVersions(mapSetVersionService.query(versionParams).getData());
     }
   }
+
+  @Transactional
+  public void cancel(String mapSet) {
+    userPermissionService.checkPermitted(mapSet, "MapSet", "publish");
+    repository.cancel(mapSet);
+  }
 }

@@ -30,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MapSetController {
   private final MapSetService mapSetService;
+  private final MapSetDeleteService mapSetDeleteService;
   private final MapSetVersionService mapSetVersionService;
   private final MapSetAssociationService mapSetAssociationService;
   private final MapSetEntityVersionService mapSetEntityVersionService;
@@ -56,6 +57,13 @@ public class MapSetController {
   public HttpResponse<?> saveMapSet(@Body @Valid MapSet mapSet) {
     mapSetService.save(mapSet);
     return HttpResponse.created(mapSet);
+  }
+
+  @Authorized("*.MapSet.publish")
+  @Delete(uri = "/{mapSet}")
+  public HttpResponse<?> deleteMapSet(@PathVariable @ResourceId String mapSet) {
+    mapSetDeleteService.deleteMapSet(mapSet);
+    return HttpResponse.ok();
   }
 
   //----------------MapSet Version----------------

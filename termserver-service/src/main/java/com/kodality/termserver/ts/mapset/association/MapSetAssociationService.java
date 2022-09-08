@@ -70,4 +70,10 @@ public class MapSetAssociationService {
   }
 
 
+  @Transactional
+  public void cancel(Long id, String mapSet) {
+    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
+    mapSetEntityService.cancel(id);
+    repository.cancel(id);
+  }
 }

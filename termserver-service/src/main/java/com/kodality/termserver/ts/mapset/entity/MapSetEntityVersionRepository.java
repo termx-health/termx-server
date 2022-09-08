@@ -90,6 +90,11 @@ public class MapSetEntityVersionRepository extends BaseRepository {
     String sql = "update terminology.map_set_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.retired, versionId, PublicationStatus.retired);
   }
+
+  public void cancel(Long versionId) {
+    SqlBuilder sb = new SqlBuilder("update terminology.map_set_entity_version set sys_status = 'C' where id = ? and sys_status = 'A'", versionId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }
 
 

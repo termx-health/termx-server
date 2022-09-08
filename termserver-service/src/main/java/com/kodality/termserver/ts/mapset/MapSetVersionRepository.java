@@ -124,4 +124,8 @@ public class MapSetVersionRepository extends BaseRepository {
     return getBean(sql, bp, mapSet, status);
   }
 
+  public void cancel(Long mapSetVersionId) {
+    SqlBuilder sb = new SqlBuilder("update terminology.map_set_version set sys_status = 'C' where id = ? and sys_status = 'A'", mapSetVersionId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }

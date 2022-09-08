@@ -121,4 +121,8 @@ public class MapSetRepository extends BaseRepository {
     return sortMap;
   }
 
+  public void cancel(String mapSet) {
+    SqlBuilder sb = new SqlBuilder("update terminology.map_set set sys_status = 'C' where id = ? and sys_status = 'A'", mapSet);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }
