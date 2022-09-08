@@ -10,6 +10,7 @@ import com.kodality.termserver.namingsystem.NamingSystemQueryParams;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
@@ -54,5 +55,12 @@ public class NamingSystemController {
   public HttpResponse<?> retireNamingSystem(@PathVariable @ResourceId String namingSystem) {
     namingSystemService.retire(namingSystem);
     return HttpResponse.noContent();
+  }
+
+  @Authorized("*.NamingSystem.publish")
+  @Delete(uri = "/{namingSystem}")
+  public HttpResponse<?> deleteNamingSystem(@PathVariable @ResourceId String namingSystem) {
+    namingSystemService.cancel(namingSystem);
+    return HttpResponse.ok();
   }
 }

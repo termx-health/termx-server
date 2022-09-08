@@ -112,4 +112,9 @@ public class NamingSystemRepository extends BaseRepository {
     }
     return sortMap;
   }
+
+  public void cancel(String id) {
+    SqlBuilder sb = new SqlBuilder("update terminology.naming_system set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }

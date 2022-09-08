@@ -65,4 +65,10 @@ public class NamingSystemService {
     }
     repository.activate(id);
   }
+
+  @Transactional
+  public void cancel(String id) {
+    userPermissionService.checkPermitted(id, "NamingSystem", "publish");
+    repository.cancel(id);
+  }
 }
