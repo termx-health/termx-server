@@ -30,4 +30,10 @@ public class AssociationTypeService {
   public QueryResult<AssociationType> query(AssociationTypeQueryParams params) {
     return repository.query(params);
   }
+
+  @Transactional
+  public void cancel(String code) {
+    userPermissionService.checkPermitted(code, "AssociationType", "publish");
+    repository.cancel(code);
+  }
 }

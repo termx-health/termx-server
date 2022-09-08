@@ -53,6 +53,10 @@ public enum ApiError {
   TE709("TE709", "Concept code not found in provided CodeSystem. (Row nr {{rowNumber}})"),
   TE710("TE710", "Concept code not found in provided ValueSet. (Row nr {{rowNumber}})"),
   TE711("TE711", "File loading by link failed."),
+
+  TE801("TE801", "Association type is required, can't be deleted."),
+  TE802("TE802", "Association type is used in code system '{{codeSystem}}' association, can't be deleted."),
+  TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted."),
   ;
 
 

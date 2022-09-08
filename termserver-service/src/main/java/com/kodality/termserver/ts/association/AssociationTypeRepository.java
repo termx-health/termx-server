@@ -50,4 +50,9 @@ public class AssociationTypeRepository extends BaseRepository {
     sb.appendIfNotNull("and code ~* ?", params.getCodeContains());
     return sb;
   }
+
+  public void cancel(String code) {
+    SqlBuilder sb = new SqlBuilder("update terminology.association_type set sys_status = 'C' where code = ? and sys_status = 'A'", code);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }

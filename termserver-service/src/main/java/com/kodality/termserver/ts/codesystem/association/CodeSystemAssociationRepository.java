@@ -71,6 +71,9 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCodeSystemEntityVersionId())) {
       sb.and().in("source_code_system_entity_version_id", params.getCodeSystemEntityVersionId(), Long::valueOf);
     }
+    if (StringUtils.isNotEmpty(params.getAssociationType())) {
+      sb.and().in("association_type", params.getAssociationType());
+    }
     return sb;
   }
 

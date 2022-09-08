@@ -10,6 +10,7 @@ import com.kodality.termserver.auth.auth.UserPermissionService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class AssociationTypeController {
   private final AssociationTypeService associationTypeService;
   private final UserPermissionService userPermissionService;
+  private final AssociationTypeDeleteService associationTypeDeleteService;
 
   @Authorized("*.AssociationType.view")
   @Get(uri = "{?params*}")
@@ -48,6 +50,13 @@ public class AssociationTypeController {
   public HttpResponse<?> updateAssociationType(@PathVariable @ResourceId String code, @Body @Valid AssociationType associationType) {
     associationType.setCode(code);
     associationTypeService.save(associationType);
+    return HttpResponse.ok();
+  }
+
+  @Authorized("*.AssociationType.publish")
+  @Delete(uri = "/{code}")
+  public HttpResponse<?> deleteAssociationType(@PathVariable @ResourceId String code) {
+    associationTypeDeleteService.delete(code);
     return HttpResponse.ok();
   }
 }
