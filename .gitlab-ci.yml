@@ -46,3 +46,20 @@ release:
     - /^\d*\.\d*\.\d*$/
   except:
     - branches
+
+release snapshot:
+  stage: release
+  script:
+    - ./gradlew publish
+  only:
+    - main
+
+release tag:
+  stage: release
+  script:
+    - export APP_VERSION="$CI_COMMIT_REF_NAME"
+    - ./gradlew publish -Pversion="$APP_VERSION"
+  only:
+    - /^\d*\.\d*$/
+  except:
+    - branches
