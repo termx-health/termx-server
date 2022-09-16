@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Singleton;
-import liquibase.repackaged.org.apache.commons.collections4.MapUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,8 +73,8 @@ public class MeasurementUnitService {
     Optional<MeasurementUnit> persisted = query(params).findFirst();
     persisted.ifPresent(p -> {
       unit.setId(p.getId());
-      unit.setNames(MapUtils.isNotEmpty(unit.getNames()) ? mergeLocalizedName(unit.getNames(), p.getNames()) : p.getNames());
-      unit.setAlias(MapUtils.isNotEmpty(unit.getAlias()) ? mergeLocalizedName(unit.getAlias(), p.getAlias()) : p.getAlias());
+      unit.setNames(CollectionUtils.isNotEmpty(unit.getNames()) ? mergeLocalizedName(unit.getNames(), p.getNames()) : p.getNames());
+      unit.setAlias(CollectionUtils.isNotEmpty(unit.getAlias()) ? mergeLocalizedName(unit.getAlias(), p.getAlias()) : p.getAlias());
       unit.setPeriod(unit.getPeriod() != null && unit.getPeriod().getLower() != null ? unit.getPeriod() : p.getPeriod());
       unit.setOrdering(unit.getOrdering() != null ? unit.getOrdering() : p.getOrdering());
       unit.setRounding(unit.getRounding() != null ? unit.getRounding() : p.getRounding());
@@ -88,7 +87,7 @@ public class MeasurementUnitService {
   }
 
   private LocalizedName mergeLocalizedName(LocalizedName names, LocalizedName persistedNames) {
-    if (MapUtils.isEmpty(persistedNames)) {
+    if (CollectionUtils.isEmpty(persistedNames)) {
       return names;
     }
     persistedNames.keySet().forEach(pl -> names.putIfAbsent(pl, persistedNames.get(pl)));

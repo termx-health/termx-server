@@ -1,8 +1,8 @@
 --liquibase formatted sql
 
 --changeset kodality:measurement_unit
-drop table if exists measurement_unit;
-create table measurement_unit (
+drop table if exists terminology.measurement_unit;
+create table terminology.measurement_unit (
   id                    bigint default nextval('core.s_entity') primary key,
   code                  text not null,
   names                 jsonb not null,
@@ -22,12 +22,12 @@ create table measurement_unit (
   sys_modified_at       timestamp,
   sys_modified_by       text
 );
-select core.create_table_metadata('measurement_unit');
---rollback drop table measurement_unit;
+select core.create_table_metadata('terminology.measurement_unit');
+--rollback drop table terminology.measurement_unit;
 
 --changeset kodality:measurement_unit_mapping
-drop table if exists measurement_unit_mapping;
-create table measurement_unit_mapping (
+drop table if exists terminology.measurement_unit_mapping;
+create table terminology.measurement_unit_mapping (
   id                    bigserial not null,
   measurement_unit_id   bigint not null,
   system                text not null,
@@ -40,12 +40,12 @@ create table measurement_unit_mapping (
   sys_created_by        text not null,
   sys_modified_at       timestamp,
   sys_modified_by       text,
-  constraint measurement_unit_mapping_measurement_unit_fk foreign key (measurement_unit_id) references measurement_unit(id)
+  constraint measurement_unit_mapping_measurement_unit_fk foreign key (measurement_unit_id) references terminology.measurement_unit(id)
 );
-select core.create_table_metadata('measurement_unit_mapping');
+create unique index measurement_unit_mapping_uix on terminology.measurement_unit_mapping (measurement_unit_id, system, system_unit) where (sys_status = 'A');
+create index measurement_unit_mapping_measurement_unit_idx on terminology.measurement_unit_mapping (measurement_unit_id);
 
-create index measurement_unit_mapping_measurement_unit_idx on measurement_unit_mapping (measurement_unit_id);
-CREATE UNIQUE INDEX measurement_unit_mapping_uix ON measurement_unit_mapping (measurement_unit_id, system, system_unit) WHERE (sys_status = 'A');
---rollback drop table measurement_unit_mapping;
+select core.create_table_metadata('terminology.measurement_unit_mapping');
+--rollback drop table terminology.measurement_unit_mapping;
 
 

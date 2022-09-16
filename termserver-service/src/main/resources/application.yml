@@ -44,6 +44,8 @@ liquibase:
       enabled: true
       change-log: 'classpath:/db/changelog/changelog-master.xml'
       default-schema: 'public'
+      parameters:
+        app-username: ${datasources.default.username}
 auth:
   oauth:
     jwks-url: ${OAUTH_JWKS_URL:fixme}

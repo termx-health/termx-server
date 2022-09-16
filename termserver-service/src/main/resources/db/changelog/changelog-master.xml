@@ -4,8 +4,9 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
 
-    <include file="changelog-core.xml" relativeToChangelogFile="true"/>
-    <include file="changelog-audit.xml" relativeToChangelogFile="true"/>
+    <include file="core-db/changelog/core/changelog.xml" relativeToChangelogFile="false"/>
+    <include file="core-db/changelog/audit/changelog.xml" relativeToChangelogFile="false"/>
+
     <include file="01-init-user.sql" relativeToChangelogFile="true"/>
     <include file="auth/changelog-auth-master.xml" relativeToChangelogFile="true"/>
     <include file="job/changelog-job-master.xml" relativeToChangelogFile="true"/>

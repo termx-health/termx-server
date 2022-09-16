@@ -1,13 +1,14 @@
 --liquibase formatted sql
 
 --changeset kodality:code_system
-drop table if exists code_system;
-create table code_system (
+drop table if exists terminology.code_system;
+create table terminology.code_system (
     id                  text                primary key,
     uri                 text,
     identifiers         jsonb,
     names               jsonb               not null,
     content             text                not null,
+    base_code_system    text,
     contacts            jsonb,
     case_sensitive      text,
     narrative           text,
@@ -18,26 +19,17 @@ create table code_system (
     sys_modified_by     text                not null,
     sys_status          char(1) default 'A' not null collate "C",
     sys_version         int                 not null,
-    constraint code_system_ukey unique (uri)
+    constraint code_system_base_code_system_fk foreign key (base_code_system) references terminology.code_system(id)
 );
+create unique index code_system_ukey on terminology.code_system (uri) where (sys_status = 'A');
+create index code_system_base_code_system_idx on terminology.code_system(base_code_system);
 
-select core.create_table_metadata('code_system');
---rollback drop table if exists code_system;
-
---changeset kodality:code_system-base_code_system
-alter table code_system add column base_code_system text;
-alter table code_system add constraint code_system_base_code_system_fk foreign key (base_code_system) references code_system(id);
-create index code_system_base_code_system_idx on code_system(base_code_system);
---
-
---changeset kodality:code_system-code_system_ukey
-alter table code_system drop constraint code_system_ukey;
-create unique index code_system_ukey on code_system (uri) where (sys_status = 'A');
---
+select core.create_table_metadata('terminology.code_system');
+--rollback drop table if exists terminology.code_system;
 
 --changeset kodality:code_system_version
-drop table if exists code_system_version;
-create table code_system_version (
+drop table if exists terminology.code_system_version;
+create table terminology.code_system_version (
     id                  bigint      default nextval('core.s_entity') primary key,
     code_system         text                      not null,
     version             text                      not null,
@@ -55,15 +47,10 @@ create table code_system_version (
     sys_modified_by     text                      not null,
     sys_status          char(1)     default 'A'   not null collate "C",
     sys_version         int                       not null,
-    constraint code_system_version_ukey unique (code_system, version),
-    constraint code_system_version_code_system_fk foreign key (code_system) references code_system(id)
+    constraint code_system_version_code_system_fk foreign key (code_system) references terminology.code_system(id)
 );
-create index code_system_version_code_system_idx on code_system_version(code_system);
+create unique index code_system_version_ukey on terminology.code_system_version (code_system, version) where (sys_status = 'A');
+create index code_system_version_code_system_idx on terminology.code_system_version(code_system);
 
-select core.create_table_metadata('code_system_version');
---rollback drop table if exists code_system_version;
-
---changeset kodality:code_system_version-code_system_version_ukey
-alter table code_system_version drop constraint code_system_version_ukey;
-create unique index code_system_version_ukey on code_system_version (code_system, version) where (sys_status = 'A');
---
+select core.create_table_metadata('terminology.code_system_version');
+--rollback drop table if exists terminology.code_system_version;

@@ -8,6 +8,7 @@ import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.valueset.ValueSet;
+import com.kodality.termserver.valueset.ValueSetExpandRequest;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionConcept;
@@ -183,13 +184,5 @@ public class ValueSetController {
   public HttpResponse<?> deleteRule(@PathVariable @ResourceId String valueSet, @PathVariable Long id) {
     valueSetVersionRuleService.delete(id, valueSet);
     return HttpResponse.ok();
-  }
-
-  @Getter
-  @Setter
-  private static class ValueSetExpandRequest {
-    private String valueSet;
-    private String valueSetVersion;
-    private ValueSetVersionRuleSet ruleSet;
   }
 }

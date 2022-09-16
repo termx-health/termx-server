@@ -156,7 +156,7 @@ public class MapSetController {
 
   @Authorized("*.MapSet.view")
   @Get(uri = "/{mapSet}/entity-versions{?params*}")
-  public QueryResult<MapSetEntityVersion> searchEntityVersions(@PathVariable @ResourceId String mapSet, MapSetEntityVersionQueryParams params) {
+  public QueryResult<MapSetEntityVersion> queryEntityVersions(@PathVariable @ResourceId String mapSet, MapSetEntityVersionQueryParams params) {
     params.setPermittedMapSets(userPermissionService.getPermittedResourceIds("MapSet", "view"));
     params.setMapSet(mapSet);
     return mapSetEntityVersionService.query(params);

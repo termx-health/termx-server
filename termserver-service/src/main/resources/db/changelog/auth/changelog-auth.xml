@@ -10,12 +10,6 @@
         </sql>
     </changeSet>
 
-    <changeSet id="set_search_path_auth" author="kodality" runAlways="true">
-        <sql>
-            SET search_path TO auth,core,public;
-        </sql>
-    </changeSet>
-
     <changeSet id="default_privileges_for_schema_auth" author="kodality">
         <sql>
             GRANT USAGE ON SCHEMA auth TO termserver_app;
@@ -26,14 +20,6 @@
             GRANT USAGE ON SCHEMA auth TO termserver_viewer;
             ALTER DEFAULT PRIVILEGES IN SCHEMA auth GRANT EXECUTE ON FUNCTIONS TO termserver_viewer;
             ALTER DEFAULT PRIVILEGES IN SCHEMA auth GRANT SELECT ON TABLES TO termserver_viewer;
-        </sql>
-    </changeSet>
-
-    <changeSet dbms="PostgreSQL" id="auth_set_search_path_for_auth_schema" author="kodality">
-        <sql>
-            select core.set_schema_search_path('termserver_admin', 'auth', p_action := 'BEGIN');
-            select core.set_schema_search_path('termserver_app', 'auth', p_action := 'BEGIN');
-            select core.set_schema_search_path('termserver_viewer', 'auth', p_action := 'BEGIN');
         </sql>
     </changeSet>
 

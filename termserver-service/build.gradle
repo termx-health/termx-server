@@ -1,50 +1,20 @@
 plugins {
   id("com.github.johnrengelman.shadow") version "7.1.0"
-  id("io.micronaut.application") version "2.0.8"
-  id("org.liquibase.gradle") version "2.0.4"
-}
-
-apply from: "build-liquibase.gradle"
-
-version = "0.1"
-group = "com.kodality.termserver.service"
-
-repositories {
-  mavenCentral()
-}
-
-micronaut {
-  runtime("netty")
-  testRuntime("spock2")
-  processing {
-    incremental(true)
-    annotations("com.kodality.termserver.*")
-  }
-}
-
-run {
-  if (project.hasProperty('debug')) {
-    jvmArgs += ['-Xdebug', "-Xrunjdwp:transport=dt_socket,address=" + project.getProperty('debug') + ",server=y,suspend=n"]
-  }
-  if (project.hasProperty('dev')) {
-    jvmArgs += ['-Dauth.dev.allowed=true', '-Dmicronaut.environments=dev']
-  }
+  id("application")
 }
 
 dependencies {
-  annotationProcessor("io.micronaut:micronaut-http-validation")
-  annotationProcessor("io.micronaut:micronaut-inject-java")
-  annotationProcessor("io.micronaut.spring:micronaut-spring-annotation")
-  annotationProcessor("io.micronaut.openapi:micronaut-openapi")
+  annotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
+  annotationProcessor "io.micronaut:micronaut-inject-java"
 
   implementation project(':termserver-api')
 
   implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
   implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}") { changing = true }
   implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
-  implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsVersion}") { changing = true }
-  implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.commonsVersion}") { changing = true }
   implementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
+  implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}") { changing = true }
+  implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.commonsMicronautVersion}") { changing = true }
   implementation("com.kodality.zmei:zmei-fhir:${rootProject.zmeiVersion}") { changing = true }
   implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}") { changing = true }
 
@@ -52,18 +22,18 @@ dependencies {
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${rootProject.jacksonVersion}")
   implementation("com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${rootProject.jacksonVersion}")
 
+
   implementation "org.apache.commons:commons-io:1.3.2"
 
-  implementation("io.micronaut:micronaut-http:${rootProject.micronautVersion}")
-  implementation("io.micronaut:micronaut-validation:${rootProject.micronautVersion}")
-  implementation("io.micronaut:micronaut-http-client")
-  implementation("io.micronaut:micronaut-http-server")
+  implementation platform("io.micronaut:micronaut-bom:$micronautVersion")
+  implementation("io.micronaut:micronaut-inject")
+  implementation("io.micronaut:micronaut-validation")
   implementation("io.micronaut:micronaut-runtime")
-  implementation("org.liquibase:liquibase-core:4.9.0")
-  implementation("io.micronaut.sql:micronaut-jdbc-hikari")
-  implementation("io.micronaut.spring:micronaut-spring")
-  implementation("javax.annotation:javax.annotation-api")
-  implementation("io.micronaut:micronaut-inject-java")
+  implementation("io.micronaut:micronaut-management")
+  implementation("io.micronaut:micronaut-http-server-netty")
+  implementation("io.micronaut.liquibase:micronaut-liquibase")
+
+  implementation("org.liquibase:liquibase-core:4.16.0")
   implementation("io.reactivex.rxjava2:rxjava:2.2.21")
   implementation("io.swagger.core.v3:swagger-annotations")
   implementation("com.univocity:univocity-parsers:2.9.1")
@@ -86,4 +56,13 @@ dependencies {
 
 application {
   mainClass.set("com.kodality.termserver.TerminologyServerApplication")
+}
+
+run {
+  if (project.hasProperty('debug')) {
+    jvmArgs += ['-Xdebug', "-Xrunjdwp:transport=dt_socket,address=" + project.getProperty('debug') + ",server=y,suspend=n"]
+  }
+  if (project.hasProperty('dev')) {
+    jvmArgs += ['-Dauth.dev.allowed=true', '-Dmicronaut.environments=dev']
+  }
 }

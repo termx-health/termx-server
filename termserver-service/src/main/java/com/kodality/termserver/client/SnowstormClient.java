@@ -19,7 +19,6 @@ public class SnowstormClient {
   protected HttpClient client;
   private static final String branch = "MAIN/";
 
-
   public SnowstormClient() {
   }
 

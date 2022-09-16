@@ -1,4 +1,3 @@
-apply plugin: "java-library"
 apply plugin: "maven-publish"
 
 dependencies {
@@ -9,3 +8,25 @@ dependencies {
   api("io.micronaut:micronaut-core:${rootProject.micronautVersion}")
   api("io.micronaut:micronaut-context:${rootProject.micronautVersion}")
 }
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      artifactId = project.name
+      from components.java
+    }
+  }
+  repositories {
+    maven {
+      def releasesRepoUrl = "https://kexus.kodality.com/repository/maven-releases/"
+      def snapshotsRepoUrl = "https://kexus.kodality.com/repository/maven-snapshots/"
+      url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+      credentials {
+        username = project.hasProperty('kodalityNexusUser') ? project.property('kodalityNexusUser') : System.getenv('KODALITY_NEXUS_USER')
+        password = project.hasProperty('kodalityNexusPassword') ? project.property('kodalityNexusPassword') : System.getenv('KODALITY_NEXUS_PASSWORD')
+      }
+    }
+  }
+}
+
+

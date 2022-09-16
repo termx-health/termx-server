@@ -16,6 +16,7 @@ import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationSe
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
+import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +25,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
-import liquibase.repackaged.org.apache.commons.collections4.MapUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -135,7 +135,7 @@ public class CodeSystemDuplicateService {
       List<CodeSystemEntityVersion> entityVersions = codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData();
       codeSystemVersionService.saveEntityVersions(
           v.getId(),
-          MapUtils.isNotEmpty(entityVersionsMap) ?
+          CollectionUtils.isNotEmpty(entityVersionsMap) ?
               entityVersions.stream().peek(ev -> ev.setId(entityVersionsMap.get(ev.getId()))).collect(Collectors.toList()) : entityVersions
       );
     });

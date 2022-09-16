@@ -1,8 +1,8 @@
 --liquibase formatted sql
 
 --changeset kodality:privilege
-drop table if exists privilege;
-create table privilege (
+drop table if exists auth.privilege;
+create table auth.privilege (
     id                  bigint default nextval('core.s_entity') primary key,
     code                text not null,
     names               jsonb,
@@ -14,5 +14,5 @@ create table privilege (
     sys_version 		int  not null
 );
 
-select core.create_table_metadata('privilege');
---rollback drop table if exists privilege;
+select core.create_table_metadata('auth.privilege');
+--rollback drop table if exists auth.privilege;

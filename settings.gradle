@@ -1,4 +1,5 @@
 rootProject.name="terminology-server"
 include 'termserver-api'
+include 'termserver-client'
 include 'termserver-service'
 include 'gatling'
