@@ -5,6 +5,9 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.auth.auth.ResourceId;
 import com.kodality.termserver.auth.auth.UserPermissionService;
+import com.kodality.termserver.codesystem.Concept;
+import com.kodality.termserver.codesystem.ConceptQueryParams;
+import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.valueset.ValueSet;
@@ -32,6 +35,7 @@ import lombok.Setter;
 @Controller("/ts/value-sets")
 @RequiredArgsConstructor
 public class ValueSetController {
+  private final ConceptService conceptService;
   private final ValueSetService valueSetService;
   private final ValueSetDeleteService valueSetDeleteService;
   private final ValueSetVersionService valueSetVersionService;
@@ -120,14 +124,23 @@ public class ValueSetController {
   //----------------ValueSet Version Concept----------------
 
   @Authorized("*.ValueSet.view")
-  @Get(uri = "/{valueSet}/concepts/{id}")
-  public ValueSetVersionConcept getConcept(@PathVariable @ResourceId String valueSet, @PathVariable Long id) {
+  @Get(uri = "/{valueSet}/concepts{?params*}")
+  public QueryResult<Concept> queryConcepts(@PathVariable @ResourceId String valueSet, ConceptQueryParams params) {
+    params.setValueSet(valueSet);
+    return conceptService.query(params);
+  }
+
+  //----------------ValueSet Version Concept----------------
+
+  @Authorized("*.ValueSet.view")
+  @Get(uri = "/{valueSet}/versions/{version}/concepts/{id}")
+  public ValueSetVersionConcept getValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version, @PathVariable Long id) {
     return valueSetVersionConceptService.load(id).orElseThrow(() -> new NotFoundException("ValueSet version concept not found: " + id));
   }
 
   @Authorized("*.ValueSet.edit")
   @Post(uri = "/{valueSet}/versions/{version}/concepts")
-  public HttpResponse<?> createConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version, @Body @Valid ValueSetVersionConcept concept) {
+  public HttpResponse<?> createValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version, @Body @Valid ValueSetVersionConcept concept) {
     concept.setId(null);
     valueSetVersionConceptService.save(concept, valueSet, version);
     return HttpResponse.created(concept);
@@ -135,7 +148,7 @@ public class ValueSetController {
 
   @Authorized("*.ValueSet.edit")
   @Put(uri = "/{valueSet}/versions/{version}/concepts/{id}")
-  public HttpResponse<?> updateConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version, @PathVariable Long id, @Body @Valid ValueSetVersionConcept concept) {
+  public HttpResponse<?> updateValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version, @PathVariable Long id, @Body @Valid ValueSetVersionConcept concept) {
     concept.setId(id);
     valueSetVersionConceptService.save(concept, valueSet, version);
     return HttpResponse.created(concept);
@@ -143,7 +156,7 @@ public class ValueSetController {
 
   @Authorized("*.ValueSet.edit")
   @Delete(uri = "/{valueSet}/concepts/{id}")
-  public HttpResponse<?> deleteConcept(@PathVariable @ResourceId String valueSet, @PathVariable Long id) {
+  public HttpResponse<?> deleteValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable Long id) {
     valueSetVersionConceptService.delete(id, valueSet);
     return HttpResponse.ok();
   }

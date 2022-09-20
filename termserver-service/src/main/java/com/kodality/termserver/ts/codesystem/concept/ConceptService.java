@@ -146,16 +146,16 @@ public class ConceptService {
       String[] codeSystems = params.getCodeSystem().split(",");
       params.setCodeSystem(Arrays.stream(codeSystems).map(cs -> String.join(",", codeSystemRepository.closure(cs))).collect(Collectors.joining(",")));
     }
-    if (params.getValueSetVersionId() != null) {
-      params.setValueSetExpandResultIds(valueSetVersionConceptRepository.expand(params.getValueSetVersionId()).stream()
-          .map(c -> String.valueOf(c.getConcept().getId())).collect(Collectors.joining(",")));
-    }
     if (params.getValueSet() != null && params.getValueSetVersion() == null) {
       ValueSetVersion valueSetVersion = valueSetVersionRepository.loadLastVersion(params.getValueSet(), PublicationStatus.active);
       params.setValueSetVersionId(valueSetVersion == null ? null : valueSetVersion.getId());
     }
     if (params.getValueSet() != null && params.getValueSetVersion() != null) {
       params.setValueSetVersionId(valueSetVersionRepository.load(params.getValueSet(), params.getValueSetVersion()).getId());
+    }
+    if (params.getValueSetVersionId() != null) {
+      params.setValueSetExpandResultIds(valueSetVersionConceptRepository.expand(params.getValueSetVersionId()).stream()
+          .map(c -> String.valueOf(c.getConcept().getId())).collect(Collectors.joining(",")));
     }
   }
 

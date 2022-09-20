@@ -4,6 +4,8 @@ import com.kodality.commons.client.BaseHttpClient;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.codesystem.Concept;
+import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetExpandRequest;
 import com.kodality.termserver.valueset.ValueSetQueryParams;
@@ -40,8 +42,12 @@ public class ValueSetClient {
     return client.GET("/" + valueSet + "/versions/" + version, ValueSetVersion.class);
   }
 
-  public CompletableFuture<ValueSetVersionConcept> getConcept(String valueSet, Long id) {
-    return client.GET("/" + valueSet + "/concepts/" + id, ValueSetVersionConcept.class);
+  public CompletableFuture<QueryResult<Concept>> queryConcepts(String valueSet, ConceptQueryParams params) {
+    return client.GET("/" + valueSet + "/concepts?" + BaseHttpClient.toQueryParams(params), JsonUtil.getParametricType(QueryResult.class, Concept.class));
+  }
+
+  public CompletableFuture<ValueSetVersionConcept> getValueSetConcept(String valueSet, String version, Long id) {
+    return client.GET("/" + valueSet + "/versions/" + version + "/concepts/" + id, ValueSetVersionConcept.class);
   }
 
   public CompletableFuture<List<ValueSetVersionConcept>> expand(ValueSetExpandRequest request) {
