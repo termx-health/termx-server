@@ -2,6 +2,7 @@ package com.kodality.termserver.measurementunit;
 
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.range.LocalDateRange;
+import io.micronaut.core.annotation.Introspected;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import lombok.experimental.Accessors;
 
 @Getter
 @Setter
+@Introspected
 @Accessors(chain = true)
 public class MeasurementUnit {
   private Long id;

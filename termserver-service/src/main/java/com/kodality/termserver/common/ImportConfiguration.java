@@ -1,6 +1,7 @@
 package com.kodality.termserver.common;
 
 import com.kodality.commons.model.LocalizedName;
+import io.micronaut.core.annotation.Introspected;
 import java.time.LocalDate;
 import lombok.Getter;
 import lombok.NonNull;
@@ -8,6 +9,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@Introspected
 public class ImportConfiguration {
   @NonNull
   private String uri;

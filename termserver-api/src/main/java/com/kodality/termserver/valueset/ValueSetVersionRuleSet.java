@@ -1,6 +1,7 @@
 package com.kodality.termserver.valueset;
 
 import com.kodality.termserver.codesystem.EntityProperty;
+import io.micronaut.core.annotation.Introspected;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.Getter;
@@ -18,6 +19,7 @@ public class ValueSetVersionRuleSet {
 
   @Getter
   @Setter
+  @Introspected
   @Accessors(chain = true)
   public static class ValueSetVersionRule {
     private Long id;

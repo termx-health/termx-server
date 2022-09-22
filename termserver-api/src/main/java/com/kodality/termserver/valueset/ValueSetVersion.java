@@ -1,5 +1,6 @@
 package com.kodality.termserver.valueset;
 
+import io.micronaut.core.annotation.Introspected;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -8,6 +9,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@Introspected
 public class ValueSetVersion {
   private Long id;
   private String valueSet;

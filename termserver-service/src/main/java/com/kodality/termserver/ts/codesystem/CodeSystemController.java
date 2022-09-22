@@ -26,6 +26,7 @@ import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionServi
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termserver.ts.codesystem.entitypropertyvalue.EntityPropertyValueService;
 import com.kodality.termserver.ts.codesystem.supplement.CodeSystemSupplementService;
+import io.micronaut.core.annotation.Introspected;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -440,6 +441,7 @@ public class CodeSystemController {
 
   @Getter
   @Setter
+  @Introspected
   private static class CodeSystemDuplicateRequest {
     private String codeSystem;
     private String codeSystemUri;
@@ -447,6 +449,7 @@ public class CodeSystemController {
 
   @Getter
   @Setter
+  @Introspected
   private static class CodeSystemVersionDuplicateRequest {
     private String codeSystem;
     private String version;
