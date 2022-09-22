@@ -46,7 +46,7 @@ public class ValueSetExpandService {
   }
 
   private List<ValueSetVersionConcept> snomedRuleExpand(ValueSetVersionRule rule) {
-    List<ValueSetVersionConcept> ruleConcepts = rule.getConcepts() == null ? new ArrayList<>() : prepare(rule.getConcepts());
+    List<ValueSetVersionConcept> ruleConcepts = CollectionUtils.isEmpty(rule.getConcepts()) ? new ArrayList<>() : prepare(rule.getConcepts());
     if (CollectionUtils.isEmpty(rule.getFilters())) {
       return ruleConcepts;
     }
