@@ -6,6 +6,7 @@ plugins {
 dependencies {
   annotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
   annotationProcessor "io.micronaut:micronaut-inject-java"
+  annotationProcessor "io.micronaut.openapi:micronaut-openapi"
 
   implementation project(':termserver-api')
 
