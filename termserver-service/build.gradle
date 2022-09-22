@@ -14,6 +14,7 @@ dependencies {
   implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}") { changing = true }
   implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
   implementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
+  implementation("com.kodality.commons:commons-cache:${rootProject.commonsVersion}") { changing = true }
   implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}") { changing = true }
   implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.commonsMicronautVersion}") { changing = true }
   implementation("com.kodality.zmei:zmei-fhir:${rootProject.zmeiVersion}") { changing = true }
