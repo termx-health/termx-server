@@ -11,5 +11,6 @@
     <include file="auth/changelog-auth-master.xml" relativeToChangelogFile="true"/>
     <include file="job/changelog-job-master.xml" relativeToChangelogFile="true"/>
     <include file="terminology/changelog-terminology-master.xml" relativeToChangelogFile="true"/>
+    <include file="thesaurus/changelog-thesaurus-master.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
