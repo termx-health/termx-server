@@ -12,4 +12,6 @@ import lombok.experimental.Accessors;
 public class Concept extends CodeSystemEntity {
   private String code;
   private String description;
+
+  private Boolean leaf;
 }

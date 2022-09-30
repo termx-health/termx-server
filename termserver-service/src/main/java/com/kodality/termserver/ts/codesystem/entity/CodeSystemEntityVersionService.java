@@ -15,6 +15,7 @@ import com.kodality.termserver.codesystem.EntityPropertyValueQueryParams;
 import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.ts.codesystem.entitypropertyvalue.EntityPropertyValueService;
+import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,11 +78,20 @@ public class CodeSystemEntityVersionService {
   }
 
   public List<CodeSystemEntityVersion> decorate(List<CodeSystemEntityVersion> versions) {
+    if (CollectionUtils.isEmpty(versions)) {
+      return versions;
+    }
     String versionIds = versions.stream().map(CodeSystemEntityVersion::getId).map(String::valueOf).collect(Collectors.joining(","));
 
-    List<Designation> designations = designationService.query(new DesignationQueryParams().setCodeSystemEntityVersionId(versionIds)).getData();
-    List<EntityPropertyValue> propertyValues = entityPropertyValueService.query(new EntityPropertyValueQueryParams().setCodeSystemEntityVersionId(versionIds)).getData();
-    List<CodeSystemAssociation> associations = codeSystemAssociationService.query(new CodeSystemAssociationQueryParams().setCodeSystemEntityVersionId(versionIds)).getData();
+    DesignationQueryParams designationParams = new DesignationQueryParams().setCodeSystemEntityVersionId(versionIds);
+    designationParams.setLimit(-1);
+    List<Designation> designations = designationService.query(designationParams).getData();
+    EntityPropertyValueQueryParams entityPropertyValueParams = new EntityPropertyValueQueryParams().setCodeSystemEntityVersionId(versionIds);
+    entityPropertyValueParams.setLimit(-1);
+    List<EntityPropertyValue> propertyValues = entityPropertyValueService.query(entityPropertyValueParams).getData();
+    CodeSystemAssociationQueryParams codeSystemAssociationParams = new CodeSystemAssociationQueryParams().setCodeSystemEntityVersionId(versionIds);
+    codeSystemAssociationParams.setLimit(-1);
+    List<CodeSystemAssociation> associations = codeSystemAssociationService.query(codeSystemAssociationParams).getData();
 
     versions.forEach(v -> {
       v.setDesignations(designations.stream().filter(d -> d.getCodeSystemEntityVersionId().equals(v.getId())).collect(Collectors.toList()));

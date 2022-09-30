@@ -56,12 +56,27 @@ public class ConceptRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from terminology.concept c where c.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select c.*, " + isLeaf(params) + "as leaf from terminology.concept c where c.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(order(params, orderMapping));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
+  }
+
+  private String isLeaf(ConceptQueryParams params) {
+    if (params.getPropertyRoot() != null || params.getPropertySource() != null) {
+      Long propertyId = params.getPropertyRoot() != null ? params.getPropertyRoot() : Long.valueOf(PipeUtil.parsePipe(params.getPropertySource())[0]);
+      return new SqlBuilder(" (not exists(select 1 from terminology.entity_property_value epv " +
+          "where epv.sys_status = 'A' and epv.entity_property_id = ? and epv.value = to_jsonb(c.code::text))) ", propertyId).toPrettyString();
+    }
+    if (params.getAssociationRoot() != null || params.getAssociationSource() != null) {
+      String association = params.getAssociationRoot() != null ? params.getAssociationRoot() : PipeUtil.parsePipe(params.getAssociationSource())[0];
+      return new SqlBuilder(" (not exists(select 1 from terminology.code_system_association csa " +
+          "inner join terminology.code_system_entity_version csev on csev.id = csa.target_code_system_entity_version_id and csev.sys_status = 'A' " +
+          "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)) ", association).toPrettyString();
+    }
+    return " false ";
   }
 
   private SqlBuilder filter(ConceptQueryParams params) {
@@ -134,6 +149,30 @@ public class ConceptRepository extends BaseRepository {
       }
       sb.append(")");
     }
+    sb.appendIfNotNull("and not exists(select 1 from terminology.entity_property_value epv " +
+        "inner join terminology.code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A' " +
+        "where epv.sys_status = 'A' and csev.code_system_entity_id = c.id and epv.entity_property_id = ?)", params.getPropertyRoot());
+    sb.appendIfNotNull("and not exists(select 1 from terminology.code_system_association csa " +
+        "inner join terminology.code_system_entity_version csev on csev.id = csa.source_code_system_entity_version_id and csev.sys_status = 'A' " +
+        "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)", params.getAssociationRoot());
+    if (StringUtils.isNotEmpty(params.getPropertySource())) {
+      String[] pipe = PipeUtil.parsePipe(params.getPropertySource());
+      sb.append("and exists (select 1 from terminology.entity_property_value epv " +
+              "inner join terminology.code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A' " +
+              "where epv.sys_status = 'A' and csev.code_system_entity_id = c.id and epv.entity_property_id = ? and epv.value = to_jsonb(?::text))",
+          Long.valueOf(pipe[0]), pipe[1]);
+    }
+    if (StringUtils.isNotEmpty(params.getAssociationSource())) {
+      String[] pipe = PipeUtil.parsePipe(params.getAssociationSource());
+      sb.append("and exists (select 1 from terminology.code_system_association csa " +
+          "inner join terminology.code_system_entity_version csev on csev.id = csa.source_code_system_entity_version_id and csev.sys_status = 'A' " +
+          "left join terminology.code_system_entity_version csevt on csevt.id = csa.target_code_system_entity_version_id and csevt.sys_status = 'A' " +
+          "left join terminology.concept ct on ct.id = csevt.code_system_entity_id and ct.sys_status = 'A' " +
+          "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ? and ct.code = ?)", pipe[0], pipe[1]);
+    }
+    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_association csa " +
+        "inner join terminology.code_system_entity_version csev on csev.id = csa.source_code_system_entity_version_id and csev.sys_status = 'A' " +
+        "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)", params.getAssociationType());
     return sb;
   }
 
@@ -149,6 +188,7 @@ public class ConceptRepository extends BaseRepository {
         ps.setString(3, concepts.get(i).getCodeSystem());
         ps.setString(4, concepts.get(i).getDescription());
       }
+
       @Override
       public int getBatchSize() {
         return concepts.size();
