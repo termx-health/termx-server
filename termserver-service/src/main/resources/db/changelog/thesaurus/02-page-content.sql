@@ -9,6 +9,7 @@ create table thesaurus.page_content (
     slug                text not null,
     lang                text not null,
     content             text not null,
+    content_type        text not null,
 
     sys_created_at      timestamp not null,
     sys_created_by      text not null,

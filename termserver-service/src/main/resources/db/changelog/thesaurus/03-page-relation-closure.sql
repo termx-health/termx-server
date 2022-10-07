@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset kodality:page_relation_closure
 drop materialized view if exists thesaurus.page_relation_closure;
 create materialized view thesaurus.page_relation_closure
 as
@@ -23,5 +26,4 @@ with tree as (
 select h1.id as parent_id, h2.id as child_id, h2.depth - h1.depth as distance, h2.path as path
 from hier h1, hier h2
 where h2.path ~~ (h1.path || '%'::text);
-
-
+--rollback drop materialized view if exists thesaurus.page_relation_closure;

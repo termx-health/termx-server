@@ -1,6 +1,9 @@
 --liquibase formatted sql
 
 --changeset kodality:page
+drop materialized view if exists thesaurus.page_relation_closure;
+drop table if exists thesaurus.page_relation;
+drop table if exists thesaurus.page_content;
 drop table if exists thesaurus.page;
 create table thesaurus.page (
     id                  bigint default nextval('core.s_entity') primary key,

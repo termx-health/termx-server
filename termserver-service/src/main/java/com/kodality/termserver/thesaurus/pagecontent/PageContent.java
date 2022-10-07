@@ -14,4 +14,5 @@ public class PageContent {
   private String slug;
   private String lang;
   private String content;
+  private String contentType;
 }

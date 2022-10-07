@@ -38,12 +38,15 @@ dependencies {
   implementation("io.micronaut.liquibase:micronaut-liquibase")
   implementation("com.github.slugify:slugify:3.0.2")
 
-  implementation("org.liquibase:liquibase-core:4.16.0")
+  implementation('org.liquibase:liquibase-core:4.16.1')
   implementation("io.reactivex.rxjava2:rxjava:2.2.21")
   implementation("io.swagger.core.v3:swagger-annotations")
   implementation("com.univocity:univocity-parsers:2.9.1")
   implementation("com.auth0:java-jwt:4.0.0")
-  implementation("com.auth0:jwks-rsa:0.21.1")
+  implementation('com.auth0:jwks-rsa:0.21.2')
+  implementation("io.github.furstenheim:copy_down:1.1")
+  implementation('org.commonmark:commonmark:0.19.0')
+
 
   testCompileOnly("org.projectlombok:lombok:1.18.24")
   testAnnotationProcessor("org.projectlombok:lombok:1.18.22")

@@ -20,9 +20,15 @@ public class PageContentRepository extends BaseRepository {
     ssb.property("slug", content.getSlug());
     ssb.property("lang", content.getLang());
     ssb.property("content", content.getContent());
+    ssb.property("content_type", content.getContentType());
     SqlBuilder sb = ssb.buildSave("thesaurus.page_content", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     content.setId(id);
+  }
+
+  public PageContent load(Long id) {
+    String sql = "select * from thesaurus.page_content where sys_status = 'A' and id = ?";
+    return getBean(sql, bp, id);
   }
 
   public List<PageContent> loadAll(Long pageId) {
