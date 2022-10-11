@@ -4,6 +4,7 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.thesaurus.pagecontent.PageContent;
 import com.kodality.termserver.thesaurus.pagecontent.PageContentService;
+import com.kodality.termserver.thesaurus.pagerelation.PageRelation;
 import com.kodality.termserver.thesaurus.pagerelation.PageRelationService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -68,6 +69,12 @@ public class PageController {
   @Get(uri = "/{id}/path")
   public List<Long> getPath(@PathVariable Long id) {
     return relationService.getPath(id);
+  }
+
+  @Post(uri = "/{id}/relations")
+  public HttpResponse<?> savePageRelations(@PathVariable Long id, @Body List<PageRelation> relations) {
+    relationService.save(relations, id);
+    return HttpResponse.ok();
   }
 
   @Getter
