@@ -1,4 +1,4 @@
-package com.kodality.termserver.thesaurus.pagerelation;
+package com.kodality.termserver.thesaurus.pagelink;
 
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
@@ -12,18 +12,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
 @RequiredArgsConstructor
-public class PageRelationService {
-  private final PageRelationRepository repository;
+public class PageLinkService {
+  private final PageLinkRepository repository;
 
-  public List<PageRelation> loadAll(Long pageId) {
+  public List<PageLink> loadAll(Long pageId) {
     return repository.loadAll(pageId);
   }
 
   @Transactional
-  public void save(List<PageRelation> relations, Long pageId) {
-    repository.retain(relations, pageId);
-    if (CollectionUtils.isNotEmpty(relations)) {
-      relations.forEach(r -> repository.save(r, pageId));
+  public void save(List<PageLink> links, Long pageId) {
+    repository.retain(links, pageId);
+    if (CollectionUtils.isNotEmpty(links)) {
+      links.forEach(l -> repository.save(l, pageId));
     }
     repository.refreshClosureView();
   }

@@ -3,7 +3,7 @@ package com.kodality.termserver.thesaurus;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.thesaurus.pagecontent.PageContent;
 import com.kodality.termserver.thesaurus.pagecontent.PageContentService;
-import com.kodality.termserver.thesaurus.pagerelation.PageRelationService;
+import com.kodality.termserver.thesaurus.pagelink.PageLinkService;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PageService {
   private final PageRepository repository;
   private final PageContentService pageContentService;
-  private final PageRelationService pageRelationService;
+  private final PageLinkService pageLinkService;
 
   public Optional<Page> load(Long id) {
     return Optional.ofNullable(repository.load(id)).map(this::decorate);
@@ -30,7 +30,7 @@ public class PageService {
   public Page save(Page page, PageContent content) {
     repository.save(page);
     pageContentService.save(content, page.getId());
-    pageRelationService.save(page.getRelations(), page.getId());
+    pageLinkService.save(page.getLinks(), page.getId());
     return load(page.getId()).orElse(null);
   }
 
@@ -41,7 +41,7 @@ public class PageService {
 
   private Page decorate(Page page) {
     page.setContents(pageContentService.loadAll(page.getId()));
-    page.setRelations(pageRelationService.loadAll(page.getId()));
+    page.setLinks(pageLinkService.loadAll(page.getId()));
     return page;
   }
 }

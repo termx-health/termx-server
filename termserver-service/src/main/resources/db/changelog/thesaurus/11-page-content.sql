@@ -3,7 +3,7 @@
 --changeset kodality:page_content
 drop table if exists thesaurus.page_content;
 create table thesaurus.page_content (
-    id                  bigint default nextval('core.s_entity') primary key,
+    id                  bigserial not null primary key,
     page_id             bigint not null,
     name                text not null,
     slug                text not null,

@@ -4,8 +4,8 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.thesaurus.pagecontent.PageContent;
 import com.kodality.termserver.thesaurus.pagecontent.PageContentService;
-import com.kodality.termserver.thesaurus.pagerelation.PageRelation;
-import com.kodality.termserver.thesaurus.pagerelation.PageRelationService;
+import com.kodality.termserver.thesaurus.pagelink.PageLink;
+import com.kodality.termserver.thesaurus.pagelink.PageLinkService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -24,7 +24,7 @@ import lombok.Setter;
 public class PageController {
   private final PageService pageService;
   private final PageContentService contentService;
-  private final PageRelationService relationService;
+  private final PageLinkService linkService;
 
   @Get(uri = "/{id}")
   public Page getPage(@PathVariable Long id) {
@@ -68,12 +68,12 @@ public class PageController {
 
   @Get(uri = "/{id}/path")
   public List<Long> getPath(@PathVariable Long id) {
-    return relationService.getPath(id);
+    return linkService.getPath(id);
   }
 
-  @Post(uri = "/{id}/relations")
-  public HttpResponse<?> savePageRelations(@PathVariable Long id, @Body List<PageRelation> relations) {
-    relationService.save(relations, id);
+  @Post(uri = "/{id}/links")
+  public HttpResponse<?> savePageLinks(@PathVariable Long id, @Body List<PageLink> links) {
+    linkService.save(links, id);
     return HttpResponse.ok();
   }
 

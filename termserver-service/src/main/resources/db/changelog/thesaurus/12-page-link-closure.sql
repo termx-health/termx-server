@@ -1,13 +1,13 @@
 --liquibase formatted sql
 
---changeset kodality:page_relation_closure
-drop materialized view if exists thesaurus.page_relation_closure;
-create materialized view thesaurus.page_relation_closure
+--changeset kodality:page_link_closure
+drop materialized view if exists thesaurus.page_link_closure;
+create materialized view thesaurus.page_link_closure
 as
 with tree as (
-    select p.id, pr.source_id as parent_id
+    select p.id, pl.source_id as parent_id
     from thesaurus.page p
-             left outer join thesaurus.page_relation pr on pr.target_id = p.id and pr.sys_status = 'A'
+             left outer join thesaurus.page_link pl on pl.target_id = p.id and pl.sys_status = 'A'
     where p.sys_status = 'A'
 ),
     hier as (
@@ -26,4 +26,4 @@ with tree as (
 select h1.id as parent_id, h2.id as child_id, h2.depth - h1.depth as distance, h2.path as path
 from hier h1, hier h2
 where h2.path ~~ (h1.path || '%'::text);
---rollback drop materialized view if exists thesaurus.page_relation_closure;
+--rollback drop materialized view if exists thesaurus.page_link_closure;

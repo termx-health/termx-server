@@ -2,7 +2,7 @@ package com.kodality.termserver.thesaurus;
 
 
 import com.kodality.termserver.thesaurus.pagecontent.PageContent;
-import com.kodality.termserver.thesaurus.pagerelation.PageRelation;
+import com.kodality.termserver.thesaurus.pagelink.PageLink;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,5 +16,5 @@ public class Page {
   private String status;
   private boolean leaf;
   private List<PageContent> contents;
-  private List<PageRelation> relations;
+  private List<PageLink> links;
 }
