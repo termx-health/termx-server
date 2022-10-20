@@ -1,4 +1,4 @@
-package com.kodality.termserver.thesaurus.pagelink;
+package com.kodality.termserver.thesaurus.page;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -11,7 +11,6 @@ import javax.inject.Singleton;
 public class StructureDefinitionRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(StructureDefinition.class);
 
-
   public void save(StructureDefinition structureDefinition) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", structureDefinition.getId());

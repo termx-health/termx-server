@@ -1,8 +1,6 @@
-package com.kodality.termserver.thesaurus;
+package com.kodality.termserver.thesaurus.page;
 
 
-import com.kodality.termserver.thesaurus.pagecontent.PageContent;
-import com.kodality.termserver.thesaurus.pagelink.PageLink;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +12,10 @@ import lombok.experimental.Accessors;
 public class Page {
   private Long id;
   private String status;
+  private Long templateId;
   private boolean leaf;
   private List<PageContent> contents;
   private List<PageLink> links;
+  private List<PageTag> tags;
+  private List<PageRelation> relations;
 }

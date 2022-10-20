@@ -1,4 +1,4 @@
-package com.kodality.termserver.thesaurus.pagecontent;
+package com.kodality.termserver.thesaurus.page;
 
 import com.kodality.commons.model.QueryParams;
 import lombok.Getter;

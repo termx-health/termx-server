@@ -1,6 +1,8 @@
 package com.kodality.termserver.thesaurus.pagecontent;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.thesaurus.page.PageContent;
+import com.kodality.termserver.thesaurus.page.PageContentQueryParams;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import lombok.RequiredArgsConstructor;

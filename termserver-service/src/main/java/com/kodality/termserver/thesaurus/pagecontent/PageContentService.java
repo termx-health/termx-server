@@ -3,20 +3,25 @@ package com.kodality.termserver.thesaurus.pagecontent;
 import com.github.slugify.Slugify;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
-import io.github.furstenheim.CopyDown;
+import com.kodality.termserver.common.utils.TextUtil;
+import com.kodality.termserver.thesaurus.page.Page;
+import com.kodality.termserver.thesaurus.page.PageContent;
+import com.kodality.termserver.thesaurus.page.PageContentQueryParams;
+import com.kodality.termserver.thesaurus.page.PageRepository;
+import com.kodality.termserver.thesaurus.template.TemplateContentService;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
 import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
 @RequiredArgsConstructor
 public class PageContentService {
+  private final PageRepository pageRepository;
   private final PageContentRepository repository;
+  private final TemplateContentService templateContentService;
 
   public PageContent load(Long contentId) {
     return repository.load(contentId);
@@ -32,30 +37,27 @@ public class PageContentService {
 
   @Transactional
   public void save(PageContent content, Long pageId) {
-    repository.save(validate(prepare(content)), pageId);
+    repository.save(validate(prepare(content, pageId)), pageId);
   }
 
-  private PageContent prepare(PageContent c) {
-    String slug = Slugify.builder().build().slugify(c.getName());
-    c.setSlug(slug);
+  private PageContent prepare(PageContent c, Long pageId) {
+    c.setSlug(Slugify.builder().build().slugify(c.getName()));
     c.setContent(c.getContent() == null ? "" : c.getContent());
-    if (c.getId() != null) {
+
+    if (isNew(c)) {
+      Page page = pageRepository.load(pageId);
+      c.setContent(templateContentService.findContent(page.getTemplateId(), c.getLang()).orElse(c.getContent()));
+    } else {
       PageContent currentContent = load(c.getId());
       if (!currentContent.getContentType().equals(c.getContentType())) {
-        c.setContent(convertContent(c.getContent(), currentContent.getContentType(), c.getContentType()));
+        c.setContent(TextUtil.convertText(c.getContent(), currentContent.getContentType(), c.getContentType()));
       }
     }
     return c;
   }
 
-  private String convertContent(String content, String fromType, String toType) {
-    if ("html".equals(fromType) && "markdown".equals(toType)) {
-      return new CopyDown().convert(content);
-    }
-    if ("markdown".equals(fromType) && "html".equals(toType)) {
-      return HtmlRenderer.builder().build().render(Parser.builder().build().parse(content));
-    }
-    return content;
+  private boolean isNew(PageContent c) {
+    return c.getId() == null;
   }
 
   private PageContent validate(PageContent c) {

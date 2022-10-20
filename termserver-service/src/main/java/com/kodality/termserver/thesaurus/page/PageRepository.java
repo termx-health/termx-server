@@ -1,4 +1,4 @@
-package com.kodality.termserver.thesaurus;
+package com.kodality.termserver.thesaurus.page;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
@@ -17,6 +17,7 @@ public class PageRepository extends BaseRepository {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", page.getId());
     ssb.property("status", page.getStatus());
+    ssb.property("template_id", page.getTemplateId());
     SqlBuilder sb = ssb.buildSave("thesaurus.page", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     page.setId(id);

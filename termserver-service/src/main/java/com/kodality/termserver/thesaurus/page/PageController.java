@@ -1,10 +1,8 @@
-package com.kodality.termserver.thesaurus;
+package com.kodality.termserver.thesaurus.page;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.thesaurus.pagecontent.PageContent;
 import com.kodality.termserver.thesaurus.pagecontent.PageContentService;
-import com.kodality.termserver.thesaurus.pagelink.PageLink;
 import com.kodality.termserver.thesaurus.pagelink.PageLinkService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;

@@ -1,5 +1,6 @@
 package com.kodality.termserver.thesaurus.pagelink;
 
+import com.kodality.termserver.thesaurus.page.PageLink;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.Arrays;

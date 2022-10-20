@@ -5,6 +5,8 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.thesaurus.page.PageContent;
+import com.kodality.termserver.thesaurus.page.PageContentQueryParams;
 import java.util.List;
 import javax.inject.Singleton;
 
