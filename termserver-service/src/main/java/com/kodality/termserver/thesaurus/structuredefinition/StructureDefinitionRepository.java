@@ -44,6 +44,7 @@ public class StructureDefinitionRepository extends BaseRepository {
 
   private SqlBuilder filter(StructureDefinitionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.appendIfNotNull("and sd.code = ?", params.getCode());
     sb.appendIfNotNull("and sd.code ~* ?", params.getTextContains());
     return sb;
   }
