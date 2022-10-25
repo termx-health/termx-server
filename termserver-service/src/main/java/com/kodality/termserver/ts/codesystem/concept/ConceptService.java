@@ -148,6 +148,7 @@ public class ConceptService {
     }
     if (params.getValueSet() != null && params.getValueSetVersion() == null) {
       ValueSetVersion valueSetVersion = valueSetVersionRepository.loadLastVersion(params.getValueSet(), PublicationStatus.active);
+      valueSetVersion = valueSetVersion == null ? valueSetVersionRepository.loadLastVersion(params.getValueSet(), PublicationStatus.draft) : valueSetVersion;
       params.setValueSetVersionId(valueSetVersion == null ? null : valueSetVersion.getId());
     }
     if (params.getValueSet() != null && params.getValueSetVersion() != null) {
