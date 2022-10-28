@@ -64,14 +64,14 @@ public class CodeSystemFhirService {
 
   public Parameters validateCode(Map<String, List<String>> params) {
     FhirQueryParams fhirParams = new FhirQueryParams(params);
-    if (fhirParams.getFirst("code").isEmpty() || fhirParams.getFirst("system").isEmpty()) {
+    if (fhirParams.getFirst("code").isEmpty() || fhirParams.getFirst("url").isEmpty()) {
       return new Parameters();
     }
 
     ConceptQueryParams cParams = new ConceptQueryParams()
         .setCode(fhirParams.getFirst("code").orElse(null))
         .setCodeSystemVersion(fhirParams.getFirst("version").orElse(null))
-        .setCodeSystemUri(fhirParams.getFirst("system").orElse(null));
+        .setCodeSystemUri(fhirParams.getFirst("url").orElse(null));
     Optional<Concept> concept = conceptService.query(cParams).findFirst();
     concept.ifPresent(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
     return mapper.toFhirParameters(concept.orElse(null), fhirParams);
