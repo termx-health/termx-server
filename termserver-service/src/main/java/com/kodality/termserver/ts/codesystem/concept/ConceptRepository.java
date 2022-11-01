@@ -178,7 +178,7 @@ public class ConceptRepository extends BaseRepository {
 
   public void batchUpsert(List<Concept> concepts) {
     String query = "insert into terminology.concept (id, code, code_system, description) values (?,?,?,?) " +
-        "on conflict (id) do update " +
+        "on conflict (code_system, code) where sys_status = 'A' do update " +
         "set code = excluded.code, description = excluded.description ";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override

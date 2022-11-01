@@ -59,7 +59,7 @@ public class CodeSystemFhirImportService {
 
   private String getResource(String url) {
     log.info("Loading fhir code system from {}", url);
-    return new String(client.GET(url).body(), StandardCharsets.ISO_8859_1);
+    return new String(client.GET(url).body(), StandardCharsets.UTF_8);
   }
 
 }
