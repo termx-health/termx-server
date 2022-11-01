@@ -56,7 +56,7 @@ public class ValueSetFhirImportMapper {
     version.setSource(valueSet.getPublisher());
     version.setSupportedLanguages(List.of(Language.en));
     version.setStatus(PublicationStatus.draft);
-    version.setReleaseDate(LocalDate.from(valueSet.getDate()));
+    version.setReleaseDate(valueSet.getDate() == null ? LocalDate.now() : LocalDate.from(valueSet.getDate()));
     version.setRuleSet(mapRuleSet(valueSet));
     version.setConcepts(mapConcepts(valueSet));
     return version;

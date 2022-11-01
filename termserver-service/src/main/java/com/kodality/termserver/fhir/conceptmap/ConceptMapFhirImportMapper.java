@@ -38,7 +38,7 @@ public class ConceptMapFhirImportMapper {
     version.setVersion(conceptMap.getVersion());
     version.setSupportedLanguages(List.of(Language.en));
     version.setStatus(PublicationStatus.draft);
-    version.setReleaseDate(LocalDate.from(conceptMap.getDate()));
+    version.setReleaseDate(conceptMap.getDate() == null ? LocalDate.now() : LocalDate.from(conceptMap.getDate()));
     version.setSource(conceptMap.getPublisher());
     return version;
   }
