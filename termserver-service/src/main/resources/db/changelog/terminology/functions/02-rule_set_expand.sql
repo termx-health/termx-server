@@ -71,7 +71,7 @@ with rule_set as (
                                or exists (select 1 from terminology.entity_property_value epv
                                    where csev.id = epv.code_system_entity_version_id and exists(select 1 from include_rule_filters irf
                                          where ((irf.f -> 'property' ->> 'id') is null or (irf.f -> 'property' ->> 'id')::bigint = epv.entity_property_id) and
-                                               (coalesce(irf.f ->> 'value', '') = '' or (irf.f ->> 'value') = epv.value)))
+                                               (coalesce(irf.f ->> 'value', '') = '' or (irf.f ->> 'value')::jsonb = epv.value)))
                                or exists (select 1 from terminology.designation d
                                    where csev.id = d.code_system_entity_version_id and exists(select 1 from include_rule_filters irf
                                          where ((irf.f -> 'property' ->> 'id') is null or (irf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
@@ -96,7 +96,7 @@ with rule_set as (
                                    or exists (select 1 from terminology.entity_property_value epv
                                        where csev.id = epv.code_system_entity_version_id and exists(select 1 from exclude_rule_filters erf
                                              where ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = epv.entity_property_id) and
-                                                   (coalesce(erf.f ->> 'value', '') = '' or (erf.f ->> 'value') = epv.value)))
+                                                   (coalesce(erf.f ->> 'value', '') = '' or (erf.f ->> 'value')::jsonb = epv.value)))
                                    or exists (select 1 from terminology.designation d
                                        where csev.id = d.code_system_entity_version_id and exists(select 1 from exclude_rule_filters erf
                                              where ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
