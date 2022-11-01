@@ -16,7 +16,8 @@ with rule_set as (
     select * from jsonb_to_record(p_rule_set) as x("lockedDate" timestamp, inactive boolean, rules jsonb)
 ),
     rules as (
-        select (jsonb_array_elements(rs.rules) ->> 'type')::text type,
+        select (jsonb_array_elements(rs.rules) ->> 'id')::text id,
+            (jsonb_array_elements(rs.rules) ->> 'type')::text type,
             (jsonb_array_elements(rs.rules) ->> 'codeSystem')::text code_system,
             (jsonb_array_elements(rs.rules) ->> 'codeSystemVersionId')::bigint code_system_version_id,
             (jsonb_array_elements(rs.rules) ->> 'concepts')::jsonb concepts,
@@ -40,11 +41,11 @@ with rule_set as (
         from include_rules ir
     ),
     include_rule_filters as (
-        select jsonb_array_elements(ir.filters) f
+        select ir.id, jsonb_array_elements(ir.filters) f
         from include_rules ir
     ),
     exclude_rule_filters as (
-        select jsonb_array_elements(er.filters) f
+        select er.id, jsonb_array_elements(er.filters) f
         from exclude_rules er
     ),
     rule_concepts as (
@@ -67,14 +68,14 @@ with rule_set as (
                        (not exists(select jsonb_array_elements(ir.concepts))
                                or c.id in (select (jsonb_array_elements(ir.concepts) -> 'concept' ->> 'id')::bigint)
                            ) and
-                       (not exists(select 1 from include_rule_filters)
+                       (not exists(select 1 from include_rule_filters irf where irf.id = ir.id)
                                or exists (select 1 from terminology.entity_property_value epv
                                    where csev.id = epv.code_system_entity_version_id and exists(select 1 from include_rule_filters irf
-                                         where ((irf.f -> 'property' ->> 'id') is null or (irf.f -> 'property' ->> 'id')::bigint = epv.entity_property_id) and
-                                               (coalesce(irf.f ->> 'value', '') = '' or (irf.f ->> 'value')::jsonb = epv.value)))
+                                         where irf.id = ir.id and ((irf.f -> 'property' ->> 'id') is null or (irf.f -> 'property' ->> 'id')::bigint = epv.entity_property_id) and
+                                               (coalesce(irf.f ->> 'value', '') = '' or to_jsonb((irf.f ->> 'value')::text) = epv.value)))
                                or exists (select 1 from terminology.designation d
                                    where csev.id = d.code_system_entity_version_id and exists(select 1 from include_rule_filters irf
-                                         where ((irf.f -> 'property' ->> 'id') is null or (irf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
+                                         where irf.id = ir.id and ((irf.f -> 'property' ->> 'id') is null or (irf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
                                                (coalesce(irf.f ->> 'value', '') = '' or (irf.f ->> 'value')::text = d.name)))
                            )
                 ) and
@@ -92,14 +93,14 @@ with rule_set as (
                            (not exists(select jsonb_array_elements(er.concepts))
                                    or c.id in (select (jsonb_array_elements(er.concepts) -> 'concept' ->> 'id')::bigint)
                                ) and
-                           (not exists(select 1 from exclude_rule_filters)
+                           (not exists(select 1 from exclude_rule_filters erf where erf.id = er.id)
                                    or exists (select 1 from terminology.entity_property_value epv
                                        where csev.id = epv.code_system_entity_version_id and exists(select 1 from exclude_rule_filters erf
-                                             where ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = epv.entity_property_id) and
-                                                   (coalesce(erf.f ->> 'value', '') = '' or (erf.f ->> 'value')::jsonb = epv.value)))
+                                             where erf.id = er.id and ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = epv.entity_property_id) and
+                                                   (coalesce(erf.f ->> 'value', '') = '' or to_jsonb((erf.f ->> 'value')::text) = epv.value)))
                                    or exists (select 1 from terminology.designation d
                                        where csev.id = d.code_system_entity_version_id and exists(select 1 from exclude_rule_filters erf
-                                             where ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
+                                             where erf.id = er.id and ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
                                                    (coalesce(erf.f ->> 'value', '') = '' or (erf.f ->> 'value')::text = d.name)))
                                )
                 )
