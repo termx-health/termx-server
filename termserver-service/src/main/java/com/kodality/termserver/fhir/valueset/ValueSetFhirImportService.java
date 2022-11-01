@@ -74,7 +74,9 @@ public class ValueSetFhirImportService {
         importValueSet(url);
         successes.add(String.format("ValueSet from resource %s imported", url));
       } catch (Exception e) {
-        warnings.add(String.format("ValueSet from resource %s was not imported due to error: %s", url, e.getMessage()));
+        String warning = String.format("ValueSet from resource %s was not imported due to error: %s", url, e.getMessage());
+        log.error(warning, e);
+        warnings.add(warning);
       }
     });
   }
