@@ -19,7 +19,9 @@ public class TemplateService {
   }
 
   public QueryResult<Template> query(TemplateQueryParams params) {
-    return repository.query(params);
+    QueryResult<Template> res = repository.query(params);
+    res.getData().forEach(this::decorate);
+    return res;
   }
 
   @Transactional

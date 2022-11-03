@@ -44,6 +44,7 @@ public class TemplateRepository extends BaseRepository {
 
   private SqlBuilder filter(TemplateQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.appendIfNotNull("and t.code = ?", params.getCode());
     sb.appendIfNotNull("and (t.code ~* ? or exists (select 1 from jsonb_each_text(t.names) where value ~* ?))", params.getTextContains());
     return sb;
   }

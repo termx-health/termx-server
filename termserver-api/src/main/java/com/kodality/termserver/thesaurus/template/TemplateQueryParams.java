@@ -9,5 +9,6 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class TemplateQueryParams extends QueryParams {
+  private String code;
   private String textContains;
 }
