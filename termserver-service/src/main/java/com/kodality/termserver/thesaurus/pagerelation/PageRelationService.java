@@ -50,6 +50,9 @@ public class PageRelationService {
         return;
       }
       String type = target.split(":")[0];
+      if (!List.of("cs", "vs", "ms", "concept", "page").contains(type)) {
+        return;
+      }
       target = target.split(":")[1];
 
       PageRelation relation = new PageRelation();
