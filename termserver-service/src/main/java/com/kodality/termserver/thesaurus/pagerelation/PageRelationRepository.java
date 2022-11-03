@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.thesaurus.page.PageRelation;
 import com.kodality.termserver.thesaurus.page.PageRelationQueryParams;
+import io.micronaut.core.util.StringUtils;
 import java.util.List;
 import javax.inject.Singleton;
 
@@ -56,7 +57,9 @@ public class PageRelationRepository extends BaseRepository {
   private SqlBuilder filter(PageRelationQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and type = ?", params.getType());
-    sb.appendIfNotNull("and target = ?", params.getTarget());
+    if (StringUtils.isNotEmpty(params.getTarget())) {
+      sb.and().in("target", params.getTarget());
+    }
     return sb;
   }
 }
