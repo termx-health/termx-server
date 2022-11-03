@@ -1,6 +1,6 @@
 package com.kodality.termserver.thesaurus.page;
 
-import com.kodality.commons.model.CodeName;
+import com.kodality.commons.model.QueryParams;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -8,10 +8,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class PageRelation {
-  private Long id;
-  private Long pageId;
-  private CodeName content;
-  private String target;
+public class PageRelationQueryParams extends QueryParams {
   private String type;
+  private String target;
 }

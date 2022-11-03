@@ -4,6 +4,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.kodality.commons.model.LocalizedName
 import com.kodality.termserver.codesystem.Concept
 import com.kodality.termserver.common.ImportConfiguration
+import com.kodality.termserver.common.utils.MatcherUtil
 import com.kodality.termserver.common.utils.TemplateUtil
 import com.kodality.termserver.common.utils.XmlMapperUtil
 

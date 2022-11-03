@@ -8,6 +8,7 @@ import com.kodality.termserver.thesaurus.page.Page;
 import com.kodality.termserver.thesaurus.page.PageContent;
 import com.kodality.termserver.thesaurus.page.PageContentQueryParams;
 import com.kodality.termserver.thesaurus.page.PageRepository;
+import com.kodality.termserver.thesaurus.pagerelation.PageRelationService;
 import com.kodality.termserver.thesaurus.template.TemplateContentService;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PageContentService {
   private final PageRepository pageRepository;
   private final PageContentRepository repository;
+  private final PageRelationService pageRelationService;
   private final TemplateContentService templateContentService;
 
   public PageContent load(Long contentId) {
@@ -38,6 +40,7 @@ public class PageContentService {
   @Transactional
   public void save(PageContent content, Long pageId) {
     repository.save(validate(prepare(content, pageId)), pageId);
+    pageRelationService.save(content, pageId);
   }
 
   private PageContent prepare(PageContent c, Long pageId) {

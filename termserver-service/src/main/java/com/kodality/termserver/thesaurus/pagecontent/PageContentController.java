@@ -13,7 +13,7 @@ public class PageContentController {
   private final PageContentService pageContentService;
 
   @Get(uri = "{?params*}")
-  public QueryResult<PageContent> queryPages(PageContentQueryParams params) {
+  public QueryResult<PageContent> queryPageContents(PageContentQueryParams params) {
     return pageContentService.query(params);
   }
 }

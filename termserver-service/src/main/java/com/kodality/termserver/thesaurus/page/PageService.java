@@ -3,6 +3,7 @@ package com.kodality.termserver.thesaurus.page;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.thesaurus.pagecontent.PageContentService;
 import com.kodality.termserver.thesaurus.pagelink.PageLinkService;
+import com.kodality.termserver.thesaurus.pagerelation.PageRelationService;
 import com.kodality.termserver.thesaurus.pagetag.PageTagService;
 import java.util.Optional;
 import javax.inject.Singleton;
@@ -16,6 +17,7 @@ public class PageService {
   private final PageTagService pageTagService;
   private final PageLinkService pageLinkService;
   private final PageContentService pageContentService;
+  private final PageRelationService pageRelationService;
 
   public Optional<Page> load(Long id) {
     return Optional.ofNullable(repository.load(id)).map(this::decorate);
@@ -45,6 +47,7 @@ public class PageService {
     page.setContents(pageContentService.loadAll(page.getId()));
     page.setLinks(pageLinkService.loadAll(page.getId()));
     page.setTags(pageTagService.loadAll(page.getId()));
+    page.setRelations(pageRelationService.loadAll(page.getId()));
     return page;
   }
 }

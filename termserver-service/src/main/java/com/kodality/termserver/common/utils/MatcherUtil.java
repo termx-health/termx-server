@@ -1,4 +1,4 @@
-package com.kodality.termserver.integration;
+package com.kodality.termserver.common.utils;
 
 import java.util.ArrayList;
 import java.util.List;
