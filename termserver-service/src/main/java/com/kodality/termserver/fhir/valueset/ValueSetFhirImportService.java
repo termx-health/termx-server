@@ -31,7 +31,7 @@ import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.ResourceType;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
-import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.nio.charset.StandardCharsets;
@@ -65,7 +65,7 @@ public class ValueSetFhirImportService {
 
   public void importValueSets(Parameters parameters, List<String> successes, List<String> warnings) {
     List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ? parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(
-        Parameter::getValueString).toList() : Collections.emptyList();
+        ParametersParameter::getValueString).toList() : Collections.emptyList();
     if (urls.isEmpty()) {
       throw ApiError.TE106.toApiException();
     }
