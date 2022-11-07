@@ -15,7 +15,7 @@ import com.kodality.termserver.valueset.ValueSetQueryParams;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.ResourceType;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
-import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
 import io.micronaut.core.util.CollectionUtils;
 import java.nio.charset.StandardCharsets;
@@ -37,7 +37,7 @@ public class ConceptMapFhirImportService {
 
   public void importMapSets(Parameters parameters, List<String> successes, List<String> warnings) {
     List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ?
-        parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(Parameter::getValueString).toList() : Collections.emptyList();
+        parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(ParametersParameter::getValueString).toList() : Collections.emptyList();
     if (urls.isEmpty()) {
       throw ApiError.TE106.toApiException();
     }

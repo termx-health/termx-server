@@ -11,11 +11,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserPermissionService {
 
-  private final UserPrivilegeStore userPrivilegeStore;
-
   public List<String> getPermittedResourceIds(String resourceType, String action) {
-    SessionInfo sessionInfo = SessionStore.require();
-    Collection<String> userPrivileges = userPrivilegeStore.getPrivileges(sessionInfo);
+    Collection<String> userPrivileges = SessionStore.require().getPrivileges();
     boolean allResourcesAccessible = checkAllResourcesPermitted(resourceType, action, userPrivileges);
     if (allResourcesAccessible) {
       return List.of();
@@ -25,8 +22,7 @@ public class UserPermissionService {
   }
 
   public void checkPermitted(String resourceId, String resourceType, String action) {
-    SessionInfo sessionInfo = SessionStore.require();
-    Collection<String> userPrivileges = userPrivilegeStore.getPrivileges(sessionInfo);
+    Collection<String> userPrivileges = SessionStore.require().getPrivileges();
     boolean allResourcesAccessible = checkAllResourcesPermitted(resourceType, action, userPrivileges);
     if (allResourcesAccessible) {
       return;

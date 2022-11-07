@@ -4,6 +4,8 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.auth.auth.ResourceId;
+import com.kodality.termserver.auth.auth.SessionInfo.AuthenticationProvider;
+import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
@@ -19,6 +21,7 @@ import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
+import com.kodality.termserver.fhir.codesystem.CodeSystemFhirClientService;
 import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
@@ -59,12 +62,16 @@ public class CodeSystemController {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   private final UserPermissionService userPermissionService;
+  private final CodeSystemFhirClientService fhirClient;
 
   //----------------CodeSystem----------------
 
   @Authorized("*.CodeSystem.view")
   @Get(uri = "{?params*}")
   public QueryResult<CodeSystem> queryCodeSystems(CodeSystemQueryParams params) {
+    if (SessionStore.require().getProvider().equals(AuthenticationProvider.smart)) {
+      return fhirClient.search(params);
+    }
     params.setPermittedIds(userPermissionService.getPermittedResourceIds("CodeSystem", "view"));
     return codeSystemService.query(params);
   }
@@ -72,6 +79,9 @@ public class CodeSystemController {
   @Authorized("*.CodeSystem.view")
   @Get(uri = "/{codeSystem}{?decorate}")
   public CodeSystem getCodeSystem(@PathVariable @ResourceId String codeSystem, Optional<Boolean> decorate) {
+    if (SessionStore.require().getProvider().equals(AuthenticationProvider.smart)) {
+      return fhirClient.load(codeSystem);
+    }
     return codeSystemService.load(codeSystem, decorate.orElse(false)).orElseThrow(() -> new NotFoundException("CodeSystem not found: " + codeSystem));
   }
 

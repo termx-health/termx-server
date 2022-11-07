@@ -5,7 +5,7 @@ import com.kodality.termserver.measurementunit.MeasurementUnit;
 import com.kodality.termserver.ts.measurementunit.MeasurementUnitService;
 import com.kodality.termserver.ts.measurementunit.converter.MeasurementUnitConverter;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
-import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
 import jakarta.inject.Singleton;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -29,14 +29,14 @@ public class FhirMeasurementUnitConvertor {
       converted = measurementUnitConverter.convert(value, source, target);
     } catch (ApiException e) {
       log.error("Failed to convert {} from {} to {}", value, source, target, e);
-      parameters.setParameter(List.of(new Parameter().setName("result").setValueBoolean(false)));
+      parameters.setParameter(List.of(new ParametersParameter().setName("result").setValueBoolean(false)));
       return parameters;
     }
     MeasurementUnit targetUnit = measurementUnitService.load(target);
-    Parameter result = new Parameter().setName("result").setValueBoolean(true);
+    ParametersParameter result = new ParametersParameter().setName("result").setValueBoolean(true);
     int rounding = targetUnit.getRounding() != null ? targetUnit.getRounding().intValue() : 2;
-    Parameter factor = new Parameter().setName("factor").setValueDecimal(converted.setScale(rounding, RoundingMode.HALF_UP));
-    Parameter scalar = new Parameter().setName("scalar").setValueString(converted.toString());
+    ParametersParameter factor = new ParametersParameter().setName("factor").setValueDecimal(converted.setScale(rounding, RoundingMode.HALF_UP));
+    ParametersParameter scalar = new ParametersParameter().setName("scalar").setValueString(converted.toString());
     parameters.setParameter(List.of(result, factor, scalar));
     return parameters;
   }

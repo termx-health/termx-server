@@ -4,6 +4,7 @@ import com.kodality.commons.micronaut.liquibase.FileReaderCustomChange;
 import com.kodality.termserver.auth.auth.SessionInfo;
 import com.kodality.termserver.auth.auth.SessionStore;
 import java.util.List;
+import java.util.Set;
 
 public abstract class AuthorizedFileReaderCustomChange extends FileReaderCustomChange {
 
@@ -12,7 +13,7 @@ public abstract class AuthorizedFileReaderCustomChange extends FileReaderCustomC
     try {
       SessionInfo sessionInfo = new SessionInfo();
       sessionInfo.setUsername("liquibase");
-      sessionInfo.setRoles(List.of("kts-admin"));
+      sessionInfo.setPrivileges(Set.of("*.*.edit", "*.*.view", "*.*.publish"));
       SessionStore.setLocal(sessionInfo);
 
       handleMigrationFile(name, content);

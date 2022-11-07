@@ -7,6 +7,7 @@ import com.kodality.termserver.auth.PrivilegeResource;
 import com.kodality.termserver.auth.PrivilegeResource.PrivilegeResourceActions;
 import com.kodality.termserver.auth.privilege.PrivilegeService;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,33 +18,35 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
-public class UserPrivilegeStore {
+public class PrivilegeStore {
 
   private final CacheManager privilegeCache = new CacheManager();
   private final PrivilegeService privilegeService;
 
 
-  public UserPrivilegeStore(PrivilegeService privilegeService) {
+  public PrivilegeStore(PrivilegeService privilegeService) {
     privilegeCache.initCache("privilege-cache", 1000, 600);
     this.privilegeService = privilegeService;
   }
 
-  public Collection<String> getPrivileges(SessionInfo sessionInfo) {
-    return this.privilegeCache.get("privilege-cache", sessionInfo.getUsername(), () -> {
-      List<Privilege> privileges = List.of();
-      if (CollectionUtils.isNotEmpty(sessionInfo.getRoles())) {
-        PrivilegeQueryParams params = new PrivilegeQueryParams();
-        params.setCode(String.join(",", sessionInfo.getRoles()));
-        params.setLimit(-1);
-        privileges = this.privilegeService.query(params).getData();
-      }
-      Set<String> calculatedPrivileges = privileges.stream()
-          .map(Privilege::getResources)
-          .flatMap(Collection::stream)
-          .flatMap(resource -> calculate(resource).stream())
-          .collect(Collectors.toSet());
-      log.info("Caching user {} privileges: {}", sessionInfo.getUsername(), calculatedPrivileges);
-      return calculatedPrivileges;
+  public Set<String> getPrivileges(List<String> roles) {
+    if (roles == null) {
+      return Set.of();
+    }
+    return roles.stream().flatMap(r -> getPrivileges(r).stream()).collect(Collectors.toSet());
+  }
+
+  public Set<String> getPrivileges(String role) {
+    if (StringUtils.isEmpty(role)) {
+      return Set.of();
+    }
+    return this.privilegeCache.get("privilege-cache", role, () -> {
+      PrivilegeQueryParams params = new PrivilegeQueryParams();
+      params.setCode(role);
+      params.setLimit(1);
+      return this.privilegeService.query(params).findFirst()
+          .map(p -> p.getResources().stream().flatMap(r -> calculate(r).stream()).collect(Collectors.toSet()))
+          .orElse(Set.of());
     });
   }
 

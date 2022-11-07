@@ -12,7 +12,7 @@ import com.kodality.zmei.fhir.datatypes.ContactDetail;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Narrative;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
-import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroup;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElement;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElementTarget;
@@ -73,29 +73,29 @@ public class ConceptMapFhirMapper {
   public Parameters toFhirParameters(MapSet ms) {
     Parameters parameters = new Parameters();
     if (ms != null) {
-      List<Parameter> parameter = new ArrayList<>();
-      List<Parameter> matches = extractMatches(ms);
-      parameter.add(new Parameter().setName("result").setValueBoolean(CollectionUtils.isNotEmpty(matches)));
+      List<ParametersParameter> parameter = new ArrayList<>();
+      List<ParametersParameter> matches = extractMatches(ms);
+      parameter.add(new ParametersParameter().setName("result").setValueBoolean(CollectionUtils.isNotEmpty(matches)));
       parameter.addAll(matches);
       parameters.setParameter(parameter);
     } else {
-      List<Parameter> parameter = new ArrayList<>();
-      parameter.add(new Parameter().setName("result").setValueBoolean(false));
+      List<ParametersParameter> parameter = new ArrayList<>();
+      parameter.add(new ParametersParameter().setName("result").setValueBoolean(false));
       parameters.setParameter(parameter);
     }
     return parameters;
   }
 
-  private List<Parameter> extractMatches(MapSet ms) {
+  private List<ParametersParameter> extractMatches(MapSet ms) {
     if (ms.getAssociations() == null) {
       return new ArrayList<>();
     }
     return ms.getAssociations().stream().map(association -> {
-      List<Parameter> parts = new ArrayList<>();
+      List<ParametersParameter> parts = new ArrayList<>();
       String csUri = codeSystemService.query(new CodeSystemQueryParams().setCodeSystemEntityVersionId(association.getTarget().getId())).findFirst().map(CodeSystem::getUri).orElse(null);
-      parts.add(new Parameter().setName("equivalence").setValueCode(association.getAssociationType()));
-      parts.add(new Parameter().setName("concept").setValueCoding(new Coding().setCode(association.getTarget().getCode()).setSystem(csUri)));
-      return new Parameter().setName("match").setPart(parts);
+      parts.add(new ParametersParameter().setName("equivalence").setValueCode(association.getAssociationType()));
+      parts.add(new ParametersParameter().setName("concept").setValueCoding(new Coding().setCode(association.getTarget().getCode()).setSystem(csUri)));
+      return new ParametersParameter().setName("match").setPart(parts);
     }).collect(Collectors.toList());
   }
 }

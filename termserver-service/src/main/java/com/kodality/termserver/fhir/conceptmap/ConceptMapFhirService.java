@@ -20,7 +20,7 @@ import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
-import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
@@ -69,9 +69,9 @@ public class ConceptMapFhirService {
   @Transactional
   public ConceptMap closure(Parameters params, OperationOutcome outcome) {
     outcome.setIssue(new ArrayList<>());
-    Optional<String> name = params.getParameter().stream().filter(p -> p.getName().equals("name")).map(Parameter::getValueString).findFirst();
-    Optional<String> version = params.getParameter().stream().filter(p -> p.getName().equals("version")).map(Parameter::getValueString).findFirst();
-    List<Coding> concepts = params.getParameter().stream().filter(p -> p.getName().equals("concept")).map(Parameter::getValueCoding).toList();
+    Optional<String> name = params.getParameter().stream().filter(p -> p.getName().equals("name")).map(ParametersParameter::getValueString).findFirst();
+    Optional<String> version = params.getParameter().stream().filter(p -> p.getName().equals("version")).map(ParametersParameter::getValueString).findFirst();
+    List<Coding> concepts = params.getParameter().stream().filter(p -> p.getName().equals("concept")).map(ParametersParameter::getValueCoding).toList();
 
     if (name.isEmpty()) {
       outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("required")
@@ -157,14 +157,14 @@ public class ConceptMapFhirService {
       OperationOutcome outcome = new OperationOutcome();
       Parameters res = codeSystemFhirService.subsumes(
           new Parameters().setParameter(List.of(
-              new Parameter().setName("codingA").setValueCoding(source),
-              new Parameter().setName("codingB").setValueCoding(target))),
+              new ParametersParameter().setName("codingA").setValueCoding(source),
+              new ParametersParameter().setName("codingB").setValueCoding(target))),
           outcome);
       if (res != null) {
         MapSetAssociation a = new MapSetAssociation();
         a.setSource(findEntityVersion(source));
         a.setTarget(findEntityVersion(target));
-        a.setAssociationType(res.getParameter().stream().filter(p -> p.getName().equals("outcome")).findFirst().map(Parameter::getValueCode).orElse(null));
+        a.setAssociationType(res.getParameter().stream().filter(p -> p.getName().equals("outcome")).findFirst().map(ParametersParameter::getValueCode).orElse(null));
         a.setStatus(PublicationStatus.active);
         a.setVersions(new ArrayList<>(List.of(new MapSetEntityVersion().setStatus(PublicationStatus.active))));
         associations.add(a);

@@ -1,6 +1,8 @@
 package com.kodality.termserver.ts.codesystem;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.auth.auth.SessionInfo.AuthenticationProvider;
+import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
@@ -9,6 +11,7 @@ import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
+import com.kodality.zmei.fhir.client.FhirClient;
 import jakarta.inject.Singleton;
 import java.time.LocalDate;
 import java.util.List;

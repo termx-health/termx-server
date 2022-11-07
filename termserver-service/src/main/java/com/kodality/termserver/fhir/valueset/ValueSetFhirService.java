@@ -13,7 +13,7 @@ import com.kodality.termserver.valueset.ValueSetVersionConceptQueryParams;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
-import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
@@ -117,13 +117,13 @@ public class ValueSetFhirService {
     }
 
     Parameters parameters = new Parameters();
-    List<Parameter> parameter = new ArrayList<>();
+    List<ParametersParameter> parameter = new ArrayList<>();
     String paramDisplay = fhirParams.getFirst("display").orElse(null);
     String conceptDisplay = findDisplay(concept.get(), paramDisplay);
-    parameter.add(new Parameter().setName("result").setValueBoolean(paramDisplay == null || paramDisplay.equals(conceptDisplay)));
-    parameter.add(new Parameter().setName("display").setValueString(conceptDisplay));
+    parameter.add(new ParametersParameter().setName("result").setValueBoolean(paramDisplay == null || paramDisplay.equals(conceptDisplay)));
+    parameter.add(new ParametersParameter().setName("display").setValueString(conceptDisplay));
     if (!(paramDisplay == null || paramDisplay.equals(conceptDisplay))) {
-      parameter.add(new Parameter().setName("message").setValueString(String.format("The display '%s' is incorrect", paramDisplay)));
+      parameter.add(new ParametersParameter().setName("message").setValueString(String.format("The display '%s' is incorrect", paramDisplay)));
     }
     parameters.setParameter(parameter);
     return parameters;
