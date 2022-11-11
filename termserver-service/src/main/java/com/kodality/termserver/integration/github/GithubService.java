@@ -3,6 +3,7 @@ package com.kodality.termserver.integration.github;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.kodality.commons.cache.CacheManager;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.auth.auth.SessionInfo;
 import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.integration.github.GithubController.ExportData;
 import io.micronaut.context.annotation.Value;
@@ -23,6 +24,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -40,6 +42,9 @@ public class GithubService {
   @Value("${github.client.secret}")
   private String clientSecret;
 
+  @Value("${github.public-link}")
+  private String appPublicLink;
+
   public GithubService() {
     // Github oauth token lives 8 hours, we expire cache after 7
     // Token may be refreshed instead of expiring in the future
@@ -56,8 +61,17 @@ public class GithubService {
     return GITHUB_OAUTH + "/authorize?client_id=" + clientId + "&state=" + stateEncoded;
   }
 
-  public void authorizeUser(String state, String code) {
+  public String authorizeUser(String state, String code) {
+    String token = getAccessToken(code);
     String user = new QueryStringDecoder(URLDecoder.decode(state, StandardCharsets.UTF_8)).parameters().get("username").get(0);
+    this.cacheManager.getCache("user-token").put(user, token);
+    if (isAppInstalled(user)) {
+      return state;
+    }
+    return this.appPublicLink + "/installations/new?state=" + state;
+  }
+
+  private String getAccessToken(String code) {
     Map<String, String> payload = new HashMap<>();
     payload.put("client_id", clientId);
     payload.put("client_secret", clientSecret);
@@ -80,7 +94,25 @@ public class GithubService {
     HttpResponse<String> response = send(request);
     Map<String, String> map = JsonUtil.fromJson(response.body(), new TypeReference<>() {});
     String token = map.get("access_token");
-    this.cacheManager.getCache("user-token").put(user, token);
+    return token;
+  }
+
+  private boolean isAppInstalled(String user) {
+    try {
+      SessionStore.setLocal(new SessionInfo().setUsername(user));
+      String json = getInstallations();
+      Map map = JsonUtil.fromJson(json, Map.class);
+      if (map.isEmpty() || !map.containsKey("installations")) {
+        return false;
+      }
+      List installations = (List) map.get("installations");
+      if (installations.isEmpty()) {
+        return false;
+      }
+      return true;
+    } finally {
+      SessionStore.clearLocal();
+    }
   }
 
   public String getInstallations() {

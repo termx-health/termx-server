@@ -21,8 +21,8 @@ public class GithubController {
 
   @Get("/cb")
   public HttpResponse<?> authCallback(@QueryValue String state, @QueryValue String code) throws URISyntaxException {
-    githubService.authorizeUser(state, code);
-    return HttpResponse.redirect(new URI(state));
+    String redirectUri = githubService.authorizeUser(state, code);
+    return HttpResponse.redirect(new URI(redirectUri));
   }
 
   @Post("/authorize")
