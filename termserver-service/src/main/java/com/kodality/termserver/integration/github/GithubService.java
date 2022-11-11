@@ -42,8 +42,8 @@ public class GithubService {
   @Value("${github.client.secret}")
   private String clientSecret;
 
-  @Value("${github.public-link}")
-  private String appPublicLink;
+  @Value("${github.app-name}")
+  private String appName;
 
   public GithubService() {
     // Github oauth token lives 8 hours, we expire cache after 7
@@ -68,7 +68,7 @@ public class GithubService {
     if (isAppInstalled(user)) {
       return state;
     }
-    return this.appPublicLink + "/installations/new?state=" + state;
+    return "https://github.com/apps/" + this.appName + "/installations/new?state=" + state;
   }
 
   private String getAccessToken(String code) {
@@ -93,8 +93,7 @@ public class GithubService {
         .build();
     HttpResponse<String> response = send(request);
     Map<String, String> map = JsonUtil.fromJson(response.body(), new TypeReference<>() {});
-    String token = map.get("access_token");
-    return token;
+    return map.get("access_token");
   }
 
   private boolean isAppInstalled(String user) {
