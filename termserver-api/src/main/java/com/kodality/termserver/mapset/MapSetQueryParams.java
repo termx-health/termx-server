@@ -29,7 +29,10 @@ public class MapSetQueryParams extends QueryParams {
   private String associationSourceSystem;
   private String associationSourceSystemUri;
   private String associationSourceSystemVersion;
+  private String associationTargetCode;
   private String associationTargetSystem;
+  private String associationTargetSystemUri;
+  private String associationTargetSystemVersion;
   private boolean associationsDecorated;
 
   private String versionVersion;

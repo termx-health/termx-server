@@ -77,6 +77,16 @@ public class ValueSetRepository extends BaseRepository {
     }
 
     sb.appendIfNotNull("and exists (select 1 from terminology.value_set_version vsv where vsv.value_set = vs.id and vsv.sys_status = 'A' and vsv.id = ?)", params.getVersionId());
+
+    if (StringUtils.isNotEmpty(params.getCodeSystem()) || StringUtils.isNotEmpty(params.getConceptCode())) {
+      sb.append("and exists(select 1 from terminology.value_set_version_rule vsvr " +
+          "inner join terminology.value_set_version_rule_set vsvrs on vsvrs.id = vsvr.rule_set_id and vsvrs.sys_status = 'A' " +
+          "inner join terminology.value_set_version vsv on vsv.id = vsvrs.value_set_version_id and vsv.sys_status = 'A' " +
+          "where vsv.value_set = vs.id and vsvr.sys_status = 'A' and vsvr.type = 'include'");
+      sb.appendIfNotNull("and vsvr.code_system = ?", params.getCodeSystem());
+      sb.appendIfNotNull("and exists (select 1 from terminology.value_set_expand(vsv.id) vse where (vse.concept ->> 'code') = ?)", params.getConceptCode());
+      sb.append(")");
+    }
     return sb;
   }
 
