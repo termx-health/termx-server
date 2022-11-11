@@ -27,6 +27,9 @@ public class ValueSetQueryParams extends QueryParams {
 
   private boolean decorated;
 
+  private String codeSystem;
+  private String conceptCode;
+
   private String lang;
   public interface Ordering {
     String id = "id";
