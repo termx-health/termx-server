@@ -13,13 +13,12 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public class AuthController {
 
-  private final UserPrivilegeStore userPrivilegeStore;
+  private final PrivilegeStore userPrivilegeStore;
 
   @Get("/userinfo")
   public UserInfo getUserInfo() {
     SessionInfo sessionInfo = SessionStore.get().orElseThrow();
-    Collection<String> privileges = userPrivilegeStore.getPrivileges(sessionInfo);
-    return new UserInfo(sessionInfo.getUsername(), privileges);
+    return new UserInfo(sessionInfo.getUsername(), sessionInfo.getPrivileges());
   }
 
   @Getter

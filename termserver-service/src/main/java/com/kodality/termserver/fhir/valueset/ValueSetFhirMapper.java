@@ -2,22 +2,22 @@ package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.termserver.Language;
 import com.kodality.termserver.valueset.ValueSet;
+import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
-import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionRuleType;
 import com.kodality.zmei.fhir.datatypes.ContactDetail;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Narrative;
-import com.kodality.zmei.fhir.resource.terminology.ValueSet.Compose;
-import com.kodality.zmei.fhir.resource.terminology.ValueSet.Concept;
-import com.kodality.zmei.fhir.resource.terminology.ValueSet.Contains;
-import com.kodality.zmei.fhir.resource.terminology.ValueSet.Designation;
-import com.kodality.zmei.fhir.resource.terminology.ValueSet.Expansion;
-import com.kodality.zmei.fhir.resource.terminology.ValueSet.Filter;
-import com.kodality.zmei.fhir.resource.terminology.ValueSet.Include;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConcept;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeFilter;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -49,8 +49,8 @@ public class ValueSetFhirMapper {
     return fhirValueSet;
   }
 
-  private Compose toFhirCompose(ValueSetVersionRuleSet ruleSet) {
-    Compose compose = new Compose();
+  private ValueSetCompose toFhirCompose(ValueSetVersionRuleSet ruleSet) {
+    ValueSetCompose compose = new ValueSetCompose();
     compose.setInactive(ruleSet.getInactive());
     compose.setLockedDate(ruleSet.getLockedDate());
     compose.setInclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.include));
@@ -58,12 +58,12 @@ public class ValueSetFhirMapper {
     return compose;
   }
 
-  private List<Include> toFhirInclude(List<ValueSetVersionRule> rules, String type) {
+  private List<ValueSetComposeInclude> toFhirInclude(List<ValueSetVersionRule> rules, String type) {
     if (CollectionUtils.isEmpty(rules)) {
       return null;
     }
     return rules.stream().filter(r -> r.getType().equals(type)).map(rule -> {
-      Include include = new Include();
+      ValueSetComposeInclude include = new ValueSetComposeInclude();
       include.setSystem(rule.getCodeSystem());
       include.setConcept(toFhirConcept(rule.getConcepts()));
       include.setFilter(toFhirFilter(rule.getFilters()));
@@ -72,16 +72,16 @@ public class ValueSetFhirMapper {
     }).collect(Collectors.toList());
   }
 
-  private List<Concept> toFhirConcept(List<ValueSetVersionConcept> concepts) {
+  private List<ValueSetComposeIncludeConcept> toFhirConcept(List<ValueSetVersionConcept> concepts) {
     if (CollectionUtils.isEmpty(concepts)) {
       return null;
     }
     return concepts.stream().map(valueSetConcept -> {
-      Concept concept = new Concept();
+      ValueSetComposeIncludeConcept concept = new ValueSetComposeIncludeConcept();
       concept.setCode(valueSetConcept.getConcept().getCode());
       concept.setDisplay(valueSetConcept.getDisplay().getName());
       concept.setDesignation(valueSetConcept.getAdditionalDesignations().stream().map(d -> {
-        Designation designation = new Designation();
+        ValueSetComposeIncludeConceptDesignation designation = new ValueSetComposeIncludeConceptDesignation();
         designation.setValue(d.getName());
         designation.setLanguage(d.getLanguage());
         return designation;
@@ -90,12 +90,12 @@ public class ValueSetFhirMapper {
     }).collect(Collectors.toList());
   }
 
-  private List<Filter> toFhirFilter(List<ValueSetRuleFilter> filters) {
+  private List<ValueSetComposeIncludeFilter> toFhirFilter(List<ValueSetRuleFilter> filters) {
     if (CollectionUtils.isEmpty(filters)) {
       return null;
     }
     return filters.stream().map(valueSetRuleFilter -> {
-      Filter filter = new Filter();
+      ValueSetComposeIncludeFilter filter = new ValueSetComposeIncludeFilter();
       filter.setValue(valueSetRuleFilter.getValue());
       filter.setOp(valueSetRuleFilter.getOperator());
       filter.setProperty(valueSetRuleFilter.getProperty().getName());
@@ -109,19 +109,19 @@ public class ValueSetFhirMapper {
     return fhirValueSet;
   }
 
-  private Expansion toFhirExpansion(List<ValueSetVersionConcept> concepts) {
-    Expansion expansion = new Expansion();
+  private ValueSetExpansion toFhirExpansion(List<ValueSetVersionConcept> concepts) {
+    ValueSetExpansion expansion = new ValueSetExpansion();
     if (concepts == null) {
       return expansion;
     }
     expansion.setTotal(concepts.size());
     expansion.setContains(concepts.stream().map(valueSetConcept -> {
-      Contains contains = new Contains();
+      ValueSetExpansionContains contains = new ValueSetExpansionContains();
       contains.setCode(valueSetConcept.getConcept().getCode());
       contains.setSystem(valueSetConcept.getConcept().getCodeSystem());
       contains.setDisplay(valueSetConcept.getDisplay() == null ? null : valueSetConcept.getDisplay().getName());
       contains.setDesignation(valueSetConcept.getAdditionalDesignations() == null ? null : valueSetConcept.getAdditionalDesignations().stream().map(designation -> {
-        Designation d = new Designation();
+        ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
         d.setValue(designation.getName());
         d.setLanguage(designation.getLanguage());
         return d;

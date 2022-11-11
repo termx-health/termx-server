@@ -9,7 +9,7 @@ import com.kodality.termserver.common.ImportLogger;
 import com.kodality.termserver.fhir.FhirMeasurementUnitConvertor;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
-import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import io.micronaut.core.util.CollectionUtils;
@@ -123,7 +123,7 @@ public class CodeSystemFhirController {
         importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
       }
     }));
-    Parameters resp = new Parameters().setParameter(List.of(new Parameter().setName("jobId").setValueDecimal(BigDecimal.valueOf(jobLogResponse.getJobId()))));
+    Parameters resp = new Parameters().setParameter(List.of(new ParametersParameter().setName("jobId").setValueDecimal(BigDecimal.valueOf(jobLogResponse.getJobId()))));
     return HttpResponse.ok(resp);
   }
 

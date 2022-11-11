@@ -11,6 +11,8 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.kodality.commons.cache.CacheManager;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.auth.Privilege;
+import com.kodality.termserver.auth.auth.SessionInfo.AuthenticationProvider;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.cookie.Cookie;
@@ -33,8 +35,10 @@ public class OAuthSessionProvider extends SessionProvider {
 
   private final HttpClient jwksClient;
   private final CacheManager jwksCache = new CacheManager();
+  private final PrivilegeStore privilegeStore;
 
-  public OAuthSessionProvider(@Value("${auth.oauth.jwks-url}") String userinfoUrl) {
+  public OAuthSessionProvider(@Value("${auth.oauth.jwks-url}") String userinfoUrl, PrivilegeStore privilegeStore) {
+    this.privilegeStore = privilegeStore;
     jwksCache.initCache("jwks", 1, 600);
     this.jwksClient = new HttpClient(userinfoUrl);
   }
@@ -59,6 +63,9 @@ public class OAuthSessionProvider extends SessionProvider {
       String token = StringUtils.trim(StringUtils.substringAfter(auth, BEARER));
       DecodedJWT jwt = JWT.decode(token);
       Jwk jwk = getJwks().get(jwt.getKeyId());
+      if (jwk == null) {
+        return null;
+      }
       Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey(), null).verify(jwt);
 
       if (jwt.getExpiresAt().before(new Date())) {
@@ -67,7 +74,8 @@ public class OAuthSessionProvider extends SessionProvider {
       String payload = new String(Base64.getUrlDecoder().decode(jwt.getPayload()));
       Map<String, Object> map = JsonUtil.toMap(payload);
       SessionInfo info = new SessionInfo();
-      info.setRoles((List<String>) map.get("roles"));
+      info.setProvider(AuthenticationProvider.sso);
+      info.setPrivileges(privilegeStore.getPrivileges( (List<String>) map.get("roles")));
       info.setUsername((String) map.get("preferred_username"));
       return info;
     } catch (SignatureVerificationException | JwkException | JWTDecodeException e) {

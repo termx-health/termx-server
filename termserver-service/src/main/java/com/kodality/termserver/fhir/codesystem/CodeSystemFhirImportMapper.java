@@ -15,7 +15,8 @@ import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyType;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
-import com.kodality.zmei.fhir.resource.terminology.CodeSystem.Property;
+import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
+import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -40,7 +41,8 @@ public class CodeSystemFhirImportMapper {
     codeSystem.setContacts(fhirCodeSystem.getContact() == null ? null :
         fhirCodeSystem.getContact().stream().map(CodeSystemFhirImportMapper::mapCodeSystemContact).collect(Collectors.toList()));
     codeSystem.setDescription(fhirCodeSystem.getDescription());
-    codeSystem.setCaseSensitive(fhirCodeSystem.getCaseSensitive() != null && fhirCodeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive : CaseSignificance.entire_term_case_insensitive);
+    codeSystem.setCaseSensitive(fhirCodeSystem.getCaseSensitive() != null && fhirCodeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
+        CaseSignificance.entire_term_case_insensitive);
     codeSystem.setNarrative(fhirCodeSystem.getText() == null ? null : fhirCodeSystem.getText().getDiv());
 
     codeSystem.setVersions(mapVersion(fhirCodeSystem));
@@ -78,12 +80,6 @@ public class CodeSystemFhirImportMapper {
       return defaultProperties;
     }
 
-    List<EntityProperty> designationProperties = fhirCodeSystem.getConcept().stream()
-        .filter(c -> c.getDesignation() != null)
-        .flatMap(c -> c.getDesignation().stream())
-        .filter(d -> d.getUse() != null && d.getUse().getCode() != null)
-        .map(d -> new EntityProperty().setName(d.getUse().getCode()).setType(EntityPropertyType.string).setStatus(PublicationStatus.active)).toList();
-
     List<EntityProperty> properties = fhirCodeSystem.getProperty().stream().map(p -> {
       EntityProperty property = new EntityProperty();
       property.setName(p.getCode());
@@ -92,15 +88,21 @@ public class CodeSystemFhirImportMapper {
       property.setStatus(PublicationStatus.active);
       return property;
     }).collect(Collectors.toList());
-
     properties.addAll(defaultProperties);
-    properties.addAll(designationProperties);
+
+    if (fhirCodeSystem.getConcept() != null) {
+      List<EntityProperty> designationProperties = fhirCodeSystem.getConcept().stream()
+          .filter(c -> c.getDesignation() != null)
+          .flatMap(c -> c.getDesignation().stream())
+          .filter(d -> d.getUse() != null && d.getUse().getCode() != null)
+          .map(d -> new EntityProperty().setName(d.getUse().getCode()).setType(EntityPropertyType.string).setStatus(PublicationStatus.active)).toList();
+      properties.addAll(designationProperties);
+    }
     return properties;
   }
 
-  private static List<Concept> mapConcepts(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept> fhirConcepts,
-                                          com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem,
-                                          com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept parent) {
+  private static List<Concept> mapConcepts(List<CodeSystemConcept> fhirConcepts,
+                                           com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem, CodeSystemConcept parent) {
     List<Concept> concepts = new ArrayList<>();
     if (CollectionUtils.isEmpty(fhirConcepts)) {
       return concepts;
@@ -118,9 +120,9 @@ public class CodeSystemFhirImportMapper {
     return concepts;
   }
 
-  private static List<CodeSystemEntityVersion> mapConceptVersion(com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept c,
+  private static List<CodeSystemEntityVersion> mapConceptVersion(CodeSystemConcept c,
                                                                  com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem,
-                                                                 com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept parent) {
+                                                                 CodeSystemConcept parent) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(c.getCode());
     version.setCodeSystem(codeSystem.getId());
@@ -131,9 +133,10 @@ public class CodeSystemFhirImportMapper {
     return List.of(version);
   }
 
-  private static List<Designation> mapDesignations(com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept c,
+  private static List<Designation> mapDesignations(CodeSystemConcept c,
                                                    com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
-    String caseSignificance = codeSystem.getCaseSensitive() != null && codeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive : CaseSignificance.entire_term_case_insensitive;
+    String caseSignificance = codeSystem.getCaseSensitive() != null && codeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
+        CaseSignificance.entire_term_case_insensitive;
 
     Designation display = new Designation();
     display.setDesignationType(DISPLAY);
@@ -174,7 +177,7 @@ public class CodeSystemFhirImportMapper {
     return designations;
   }
 
-  private static List<EntityPropertyValue> mapPropertyValues(List<Property> propertyValues) {
+  private static List<EntityPropertyValue> mapPropertyValues(List<CodeSystemConceptProperty> propertyValues) {
     if (propertyValues == null) {
       return new ArrayList<>();
     }
@@ -190,7 +193,7 @@ public class CodeSystemFhirImportMapper {
     }).collect(Collectors.toList());
   }
 
-  private static List<CodeSystemAssociation> mapAssociations(com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept parent,
+  private static List<CodeSystemAssociation> mapAssociations(CodeSystemConcept parent,
                                                              com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
     if (parent == null) {
       return new ArrayList<>();

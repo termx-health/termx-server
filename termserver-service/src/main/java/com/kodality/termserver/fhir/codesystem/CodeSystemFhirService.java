@@ -16,7 +16,7 @@ import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionServi
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
-import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
+import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
@@ -123,8 +123,8 @@ public class CodeSystemFhirService {
 
   public Parameters subsumes(Parameters params, OperationOutcome outcome) {
     outcome.setIssue(new ArrayList<>());
-    Optional<Parameter> codingA = params.getParameter().stream().filter(p -> p.getName().equals("codingA")).findFirst();
-    Optional<Parameter> codingB = params.getParameter().stream().filter(p -> p.getName().equals("codingB")).findFirst();
+    Optional<ParametersParameter> codingA = params.getParameter().stream().filter(p -> p.getName().equals("codingA")).findFirst();
+    Optional<ParametersParameter> codingB = params.getParameter().stream().filter(p -> p.getName().equals("codingB")).findFirst();
     if (codingA.isEmpty()) {
       outcome.getIssue().add(
           new OperationOutcomeIssue().setSeverity("error").setCode("required").setDetails(new CodeableConcept().setText("Parameter 'codingA' not provided")));
@@ -169,7 +169,7 @@ public class CodeSystemFhirService {
     boolean subsumedBy = codeBProperties.stream().allMatch(bp -> codeAProperties.stream().anyMatch(ap -> ap.equals(bp)));
 
     return new Parameters().setParameter(new ArrayList<>(List.of(
-        new Parameter()
+        new ParametersParameter()
             .setName("outcome")
             .setValueCode(subsumes && subsumedBy ? "equivalent" : subsumes ? "subsumes" : subsumedBy ? "subsumed-by" : "not-subsumed")
     )));
@@ -179,10 +179,10 @@ public class CodeSystemFhirService {
   public Parameters findMatches(Parameters params, OperationOutcome outcome) {
     outcome.setIssue(new ArrayList<>());
 
-    Optional<String> system = params.getParameter().stream().filter(p -> "system".equals(p.getName())).map(Parameter::getValueString).findFirst();
-    Optional<String> version = params.getParameter().stream().filter(p -> "version".equals(p.getName())).map(Parameter::getValueString).findFirst();
-    Optional<Boolean> exact = params.getParameter().stream().filter(p -> "exact".equals(p.getName())).map(Parameter::getValueBoolean).findFirst();
-    List<Parameter> properties = params.getParameter().stream().filter(p -> "property".equals(p.getName())).toList();
+    Optional<String> system = params.getParameter().stream().filter(p -> "system".equals(p.getName())).map(ParametersParameter::getValueString).findFirst();
+    Optional<String> version = params.getParameter().stream().filter(p -> "version".equals(p.getName())).map(ParametersParameter::getValueString).findFirst();
+    Optional<Boolean> exact = params.getParameter().stream().filter(p -> "exact".equals(p.getName())).map(ParametersParameter::getValueBoolean).findFirst();
+    List<ParametersParameter> properties = params.getParameter().stream().filter(p -> "property".equals(p.getName())).toList();
     if (system.isEmpty() || CollectionUtils.isEmpty(properties)) {
       if (system.isEmpty()) {
         outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("required").setDetails(new CodeableConcept().setText("Parameter system is not provided")));
@@ -194,8 +194,8 @@ public class CodeSystemFhirService {
     }
 
     String propertyValues = properties.stream().map(p -> {
-      Optional<String> property = p.getPart().stream().filter(part -> part.getName().equals("code")).map(Parameter::getValueCode).findFirst();
-      Optional<String> propertyValue = p.getPart().stream().filter(part -> part.getName().equals("value")).map(Parameter::getValueString).findFirst();
+      Optional<String> property = p.getPart().stream().filter(part -> part.getName().equals("code")).map(ParametersParameter::getValueCode).findFirst();
+      Optional<String> propertyValue = p.getPart().stream().filter(part -> part.getName().equals("value")).map(ParametersParameter::getValueString).findFirst();
       if (property.isEmpty()) {
         return null;
       }
@@ -218,7 +218,7 @@ public class CodeSystemFhirService {
     }
     match.forEach(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
     return new Parameters().setParameter(match.stream().map(c ->
-        new Parameter()
+        new ParametersParameter()
             .setName("match")
             .setValueCoding(
                 new Coding()

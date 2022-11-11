@@ -10,15 +10,16 @@ import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.valueset.ValueSet;
+import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
-import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionRuleType;
-import com.kodality.zmei.fhir.resource.terminology.ValueSet.Concept;
-import com.kodality.zmei.fhir.resource.terminology.ValueSet.Filter;
-import com.kodality.zmei.fhir.resource.terminology.ValueSet.Include;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConcept;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeFilter;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -72,8 +73,7 @@ public class ValueSetFhirImportMapper {
     ruleSet.setRules(mapRules(valueSet.getCompose().getInclude(), valueSet.getCompose().getExclude()));
     return ruleSet;
   }
-
-  private static List<ValueSetVersionRule> mapRules(List<Include> include, List<Include> exclude) {
+  private static List<ValueSetVersionRule> mapRules(List<ValueSetComposeInclude> include, List<ValueSetComposeInclude> exclude) {
     List<ValueSetVersionRule> rules = new ArrayList<>();
     if (CollectionUtils.isNotEmpty(include)) {
       rules.addAll(include.stream().map(inc -> mapRule(inc, ValueSetVersionRuleType.include)).toList());
@@ -84,7 +84,7 @@ public class ValueSetFhirImportMapper {
     return rules;
   }
 
-  private static ValueSetVersionRule mapRule(Include r, String type) {
+  private static ValueSetVersionRule mapRule(ValueSetComposeInclude r, String type) {
     ValueSetVersionRule rule = new ValueSetVersionRule();
     rule.setType(type);
     rule.setCodeSystem(r.getSystem());
@@ -94,7 +94,7 @@ public class ValueSetFhirImportMapper {
     return rule;
   }
 
-  private static List<ValueSetVersionConcept> mapRuleConcepts(List<Concept> concepts) {
+  private static List<ValueSetVersionConcept> mapRuleConcepts(List<ValueSetComposeIncludeConcept> concepts) {
     if (CollectionUtils.isEmpty(concepts)) {
       return null;
     }
@@ -113,7 +113,7 @@ public class ValueSetFhirImportMapper {
     }).collect(Collectors.toList());
   }
 
-  private static List<Designation> mapDesignations(List<com.kodality.zmei.fhir.resource.terminology.ValueSet.Designation> designation) {
+  private static List<Designation> mapDesignations(List<ValueSetComposeIncludeConceptDesignation> designation) {
     if (CollectionUtils.isEmpty(designation)) {
       return null;
     }
@@ -125,7 +125,7 @@ public class ValueSetFhirImportMapper {
         .setStatus(PublicationStatus.active)).collect(Collectors.toList());
   }
 
-  private static List<ValueSetRuleFilter> mapRuleFilters(List<Filter> filters) {
+  private static List<ValueSetRuleFilter> mapRuleFilters(List<ValueSetComposeIncludeFilter> filters) {
     if (CollectionUtils.isEmpty(filters)) {
       return null;
     }

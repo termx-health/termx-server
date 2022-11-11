@@ -8,6 +8,7 @@ import com.kodality.termserver.common.AuthorizedFileReaderCustomChange;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -24,7 +25,7 @@ public class CodeSystemFhirImport extends AuthorizedFileReaderCustomChange {
     try {
       SessionInfo sessionInfo = new SessionInfo();
       sessionInfo.setUsername("liquibase");
-      sessionInfo.setRoles(List.of("kts-admin"));
+      sessionInfo.setPrivileges(Set.of("*.*.edit", "*.*.view", "*.*.publish"));
       SessionStore.setLocal(sessionInfo);
 
       CodeSystem cs = JsonUtil.fromJson(asString(content), CodeSystem.class);

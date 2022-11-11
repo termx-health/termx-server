@@ -3,6 +3,7 @@ package com.kodality.termserver.auth.auth;
 import io.micronaut.core.annotation.AnnotationMetadata;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.http.HttpAttributes;
+import io.micronaut.http.HttpMethod;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.MutableHttpResponse;
@@ -27,7 +28,7 @@ import org.reactivestreams.Publisher;
 public class AuthorizationFilter implements HttpServerFilter {
 
   public static final String ADMIN = "admin";
-  private final UserPrivilegeStore userPrivilegeStore;
+  private final PrivilegeStore userPrivilegeStore;
 
   @Override
   public int getOrder() {
@@ -46,6 +47,9 @@ public class AuthorizationFilter implements HttpServerFilter {
 
   @SuppressWarnings("rawtypes")
   private boolean checkPermissions(HttpRequest<?> request) {
+    if (request.getMethod() == HttpMethod.OPTIONS) {
+      return true;
+    }
     Optional<SessionInfo> sessionInfo = request.getAttribute(SessionStore.KEY, SessionInfo.class);
     RouteMatch route = request.getAttribute(HttpAttributes.ROUTE_MATCH, RouteMatch.class).orElse(null);
     if (!(route instanceof MethodBasedRouteMatch methodRoute) || !methodRoute.hasAnnotation(Authorized.class)) {
@@ -54,7 +58,7 @@ public class AuthorizationFilter implements HttpServerFilter {
     if (sessionInfo.isEmpty()) {
       return false;
     }
-    Collection<String> privileges = userPrivilegeStore.getPrivileges(sessionInfo.get());
+    Collection<String> privileges = sessionInfo.get().getPrivileges();
     if (CollectionUtils.isEmpty(privileges)) {
       return false;
     }

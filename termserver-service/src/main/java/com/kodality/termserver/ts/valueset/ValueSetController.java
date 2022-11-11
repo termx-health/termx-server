@@ -4,9 +4,12 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.auth.auth.ResourceId;
+import com.kodality.termserver.auth.auth.SessionInfo.AuthenticationProvider;
+import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
+import com.kodality.termserver.fhir.valueset.ValueSetFhirClientService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
@@ -16,7 +19,6 @@ import com.kodality.termserver.valueset.ValueSetQueryParams;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -28,9 +30,7 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import java.util.List;
 import javax.validation.Valid;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 @Controller("/ts/value-sets")
 @RequiredArgsConstructor
@@ -43,12 +43,16 @@ public class ValueSetController {
   private final ValueSetVersionConceptService valueSetVersionConceptService;
 
   private final UserPermissionService userPermissionService;
+  private final ValueSetFhirClientService fhirClient;
 
   //----------------ValueSet----------------
 
   @Authorized("*.ValueSet.view")
   @Get(uri = "{?params*}")
   public QueryResult<ValueSet> queryValueSets(ValueSetQueryParams params) {
+    if (SessionStore.require().getProvider().equals(AuthenticationProvider.smart)) {
+      return fhirClient.search(params);
+    }
     params.setPermittedIds(userPermissionService.getPermittedResourceIds("ValueSet", "view"));
     return valueSetService.query(params);
   }
@@ -56,6 +60,9 @@ public class ValueSetController {
   @Authorized("*.ValueSet.view")
   @Get(uri = "/{valueSet}")
   public ValueSet getValueSet(@PathVariable @ResourceId String valueSet) {
+    if (SessionStore.require().getProvider().equals(AuthenticationProvider.smart)) {
+      return fhirClient.load(valueSet);
+    }
     return valueSetService.load(valueSet).orElseThrow(() -> new NotFoundException("ValueSet not found: " + valueSet));
   }
 

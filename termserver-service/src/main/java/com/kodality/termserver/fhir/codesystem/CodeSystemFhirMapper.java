@@ -15,9 +15,11 @@ import com.kodality.zmei.fhir.datatypes.ContactDetail;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Narrative;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
-import com.kodality.zmei.fhir.resource.infrastructure.Parameters.Parameter;
-import com.kodality.zmei.fhir.resource.terminology.CodeSystem.Property;
-import com.kodality.zmei.fhir.resource.terminology.CodeSystem.PropertyDescription;
+import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
+import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
+import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptDesignation;
+import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
+import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemProperty;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.math.BigDecimal;
@@ -35,10 +37,10 @@ public class CodeSystemFhirMapper {
   public Parameters toFhirParameters(CodeSystem cs, FhirQueryParams fhirParams) {
     Parameters parameters = new Parameters();
     if (cs != null) {
-      List<Parameter> parameter = new ArrayList<>();
-      parameter.add(new Parameter().setName("name").setValueString(cs.getId()));
-      parameter.add(new Parameter().setName("version").setValueString(extractVersion(cs)));
-      parameter.add(new Parameter().setName("display").setValueString(extractDisplay(cs)));
+      List<ParametersParameter> parameter = new ArrayList<>();
+      parameter.add(new ParametersParameter().setName("name").setValueString(cs.getId()));
+      parameter.add(new ParametersParameter().setName("version").setValueString(extractVersion(cs)));
+      parameter.add(new ParametersParameter().setName("display").setValueString(extractDisplay(cs)));
       parameter.addAll(extractDesignations(cs));
       parameter.addAll(extractProperties(cs, fhirParams.get("property")));
       parameters.setParameter(parameter);
@@ -49,13 +51,13 @@ public class CodeSystemFhirMapper {
   public Parameters toFhirParameters(Concept c, FhirQueryParams fhirParams) {
     Parameters parameters = new Parameters();
     if (c != null) {
-      List<Parameter> parameter = new ArrayList<>();
+      List<ParametersParameter> parameter = new ArrayList<>();
       String conceptDisplay = extractDisplay(c);
       boolean result = fhirParams.getFirst("display").map(d -> d.equals(conceptDisplay)).orElse(true);
-      parameter.add(new Parameter().setName("result").setValueBoolean(result));
-      parameter.add(new Parameter().setName("display").setValueString(conceptDisplay));
+      parameter.add(new ParametersParameter().setName("result").setValueBoolean(result));
+      parameter.add(new ParametersParameter().setName("display").setValueString(conceptDisplay));
       if (!result) {
-        parameter.add(new Parameter().setName("message").setValueString("The display '" + fhirParams.getFirst("display").get() + "' is incorrect"));
+        parameter.add(new ParametersParameter().setName("message").setValueString("The display '" + fhirParams.getFirst("display").get() + "' is incorrect"));
       }
       parameters.setParameter(parameter);
     }
@@ -78,51 +80,51 @@ public class CodeSystemFhirMapper {
         .map(Designation::getName).orElse(null);
   }
 
-  private List<Parameter> extractDesignations(CodeSystem cs) {
+  private List<ParametersParameter> extractDesignations(CodeSystem cs) {
     if (!hasDesignations(cs)) {
       return new ArrayList<>();
     }
     return cs.getConcepts().get(0).getVersions().get(0).getDesignations().stream()
         .filter(d -> !d.isPreferred())
         .map(d -> {
-          List<Parameter> part = new ArrayList<>();
-          part.add(new Parameter().setName("value").setValueString(d.getName()));
-          part.add(new Parameter().setName("language").setValueCode(d.getLanguage()));
-          return new Parameter().setName("designation").setPart(part);
+          List<ParametersParameter> part = new ArrayList<>();
+          part.add(new ParametersParameter().setName("value").setValueString(d.getName()));
+          part.add(new ParametersParameter().setName("language").setValueCode(d.getLanguage()));
+          return new ParametersParameter().setName("designation").setPart(part);
         }).collect(Collectors.toList());
   }
 
-  private List<Parameter> extractProperties(CodeSystem cs, List<String> properties) {
+  private List<ParametersParameter> extractProperties(CodeSystem cs, List<String> properties) {
     if (!hasProperties(cs)) {
       return new ArrayList<>();
     }
     return cs.getConcepts().get(0).getVersions().get(0).getPropertyValues().stream()
         .map(p -> {
-          List<Parameter> part = new ArrayList<>();
+          List<ParametersParameter> part = new ArrayList<>();
           Optional<EntityProperty> property = cs.getProperties().stream()
               .filter(pr -> (CollectionUtils.isEmpty(properties) || properties.contains(pr.getName())) && pr.getId().equals(p.getEntityPropertyId()))
               .findFirst();
           if (property.isPresent()) {
-            part.add(new Parameter().setName("code").setValueCode(property.get().getName()));
-            part.add(new Parameter().setName("description").setValueCode(property.get().getDescription()));
+            part.add(new ParametersParameter().setName("code").setValueCode(property.get().getName()));
+            part.add(new ParametersParameter().setName("description").setValueCode(property.get().getDescription()));
             if (property.get().getType().equals("code")) {
-              part.add(new Parameter().setName("value").setValueCode((String) p.getValue()));
+              part.add(new ParametersParameter().setName("value").setValueCode((String) p.getValue()));
             }
             if (property.get().getType().equals("string")) {
-              part.add(new Parameter().setName("value").setValueString((String) p.getValue()));
+              part.add(new ParametersParameter().setName("value").setValueString((String) p.getValue()));
             }
             if (property.get().getType().equals("boolean")) {
-              part.add(new Parameter().setName("value").setValueBoolean((Boolean) p.getValue()));
+              part.add(new ParametersParameter().setName("value").setValueBoolean((Boolean) p.getValue()));
             }
             if (property.get().getType().equals("dateTime")) {
-              part.add(new Parameter().setName("value").setValueDateTime((OffsetDateTime) p.getValue()));
+              part.add(new ParametersParameter().setName("value").setValueDateTime((OffsetDateTime) p.getValue()));
             }
             if (property.get().getType().equals("decimal")) {
-              part.add(new Parameter().setName("value").setValueDecimal((BigDecimal) p.getValue()));
+              part.add(new ParametersParameter().setName("value").setValueDecimal((BigDecimal) p.getValue()));
             }
             //TODO value type coding
           }
-          return new Parameter().setName("property").setPart(part);
+          return new ParametersParameter().setName("property").setPart(part);
         }).collect(Collectors.toList());
   }
 
@@ -179,10 +181,10 @@ public class CodeSystemFhirMapper {
     return fhirCodeSystem;
   }
 
-  private com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept toFhir(CodeSystemEntityVersion e, CodeSystem codeSystem,
-                                                                                List<CodeSystemEntityVersion> entities,
-                                                                                com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
-    com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept concept = new com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept();
+  private CodeSystemConcept toFhir(CodeSystemEntityVersion e, CodeSystem codeSystem,
+                                   List<CodeSystemEntityVersion> entities,
+                                   com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
+    CodeSystemConcept concept = new CodeSystemConcept();
     concept.setCode(e.getCode());
     concept.setDisplay(findDesignation(e.getDesignations(), codeSystem.getProperties(), "display"));
     concept.setDefinition(findDesignation(e.getDesignations(), codeSystem.getProperties(), "definition"));
@@ -192,14 +194,14 @@ public class CodeSystemFhirMapper {
     return concept;
   }
 
-  private List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.Designation> getDesignations(List<Designation> designations,
-                                                                                                   List<EntityProperty> properties) {
+  private List<CodeSystemConceptDesignation> getDesignations(List<Designation> designations,
+                                                             List<EntityProperty> properties) {
     List<Long> propertyIds =
         properties.stream().filter(p -> p.getName().equals("display") || p.getName().equals("definition")).map(EntityProperty::getId).toList();
-    List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.Designation> result =
+    List<CodeSystemConceptDesignation> result =
         designations.stream().filter(d -> !propertyIds.contains(d.getDesignationTypeId())).map(d -> {
-          com.kodality.zmei.fhir.resource.terminology.CodeSystem.Designation fhirDesignation =
-              new com.kodality.zmei.fhir.resource.terminology.CodeSystem.Designation();
+          CodeSystemConceptDesignation fhirDesignation =
+              new CodeSystemConceptDesignation();
           fhirDesignation.setLanguage(d.getLanguage());
           fhirDesignation.setValue(d.getName());
           return fhirDesignation;
@@ -215,14 +217,14 @@ public class CodeSystemFhirMapper {
     return designations.stream().filter(d -> d.getDesignationTypeId().equals(property.getId())).findFirst().map(Designation::getName).orElse(null);
   }
 
-  private List<Property> getProperties(List<EntityPropertyValue> propertyValues, List<EntityProperty> properties,
-                                       com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
-    List<Property> fhirProperties = new ArrayList<>();
+  private List<CodeSystemConceptProperty> getProperties(List<EntityPropertyValue> propertyValues, List<EntityProperty> properties,
+                                                        com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
+    List<CodeSystemConceptProperty> fhirProperties = new ArrayList<>();
     propertyValues.forEach(pv -> {
       EntityProperty entityProperty = properties.stream().filter(p -> p.getId().equals(pv.getEntityPropertyId())).findFirst().orElse(null);
       if (entityProperty != null) {
         addToProperties(fhirCodeSystem, entityProperty);
-        Property fhirProperty = new Property();
+        CodeSystemConceptProperty fhirProperty = new CodeSystemConceptProperty();
         fhirProperty.setCode(entityProperty.getName());
         Object value = pv.getValue();
         if (entityProperty.getType().equals(EntityPropertyType.code)) {
@@ -247,7 +249,7 @@ public class CodeSystemFhirMapper {
   }
 
   private void addToProperties(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem, EntityProperty entityProperty) {
-    PropertyDescription propertyDescription = new PropertyDescription();
+    CodeSystemProperty propertyDescription = new CodeSystemProperty();
     propertyDescription.setCode(entityProperty.getName());
     propertyDescription.setType(entityProperty.getType());
     propertyDescription.setDescription(entityProperty.getDescription());
@@ -261,10 +263,10 @@ public class CodeSystemFhirMapper {
     }
   }
 
-  private List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept> getChildConcepts(List<CodeSystemEntityVersion> entities,
-                                                                                                Long targetId, CodeSystem codeSystem,
-                                                                                                com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
-    List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.Concept> result =
+  private List<CodeSystemConcept> getChildConcepts(List<CodeSystemEntityVersion> entities,
+                                                   Long targetId, CodeSystem codeSystem,
+                                                   com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
+    List<CodeSystemConcept> result =
         entities.stream().filter(e -> e.getAssociations().stream().anyMatch(a -> a.getTargetId().equals(targetId)))
             .map(e -> toFhir(e, codeSystem, entities, fhirCodeSystem)).collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result;
