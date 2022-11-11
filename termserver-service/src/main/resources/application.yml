@@ -53,8 +53,16 @@ auth:
     endpoints:
       - '/fhir/CapabilityStatement'
       - '/swagger'
+      - '/github/cb'
 
 snowstorm:
   url: https://snowstorm.kodality.dev/
   user: termserver-app
   password: ''
+
+github:
+  client:
+    id: 'client-id'
+    secret: 'secret'
+  app-id: 1234
+  private-key-path: '/path/to/private-key.pem'
