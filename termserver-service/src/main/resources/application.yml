@@ -65,5 +65,5 @@ github:
     id: 'client-id'
     secret: 'secret'
   app-id: 1234
-  app-name: 'some-app-name'
+  app-name: ${GITHUB_APP-NAME}
   private-key-path: '/path/to/private-key.pem'
