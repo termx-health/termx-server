@@ -26,6 +26,7 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     ssb.property("code_system", association.getCodeSystem());
     ssb.property("association_type", association.getAssociationType());
     ssb.property("status", association.getStatus());
+    ssb.property("sys_status", "A");
 
     SqlBuilder sb = ssb.buildUpsert("terminology.code_system_association", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());

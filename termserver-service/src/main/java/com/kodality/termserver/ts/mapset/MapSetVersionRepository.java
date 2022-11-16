@@ -98,6 +98,8 @@ public class MapSetVersionRepository extends BaseRepository {
       SaveSqlBuilder ssb = new SaveSqlBuilder();
       ssb.property("map_set_entity_version_id", v.getId());
       ssb.property("map_set_version_id", mapSetVersionId);
+      ssb.property("sys_status", "A");
+
       SqlBuilder sb = ssb.buildUpsert("terminology.entity_version_map_set_version_membership", "map_set_entity_version_id", "map_set_version_id");
       jdbcTemplate.update(sb.getSql(), sb.getParams());
     });
@@ -115,6 +117,7 @@ public class MapSetVersionRepository extends BaseRepository {
     ssb.property("map_set_entity_version_id", entityVersionId);
     ssb.property("map_set_version_id", mapSetVersionId);
     ssb.property("sys_status", "A");
+
     SqlBuilder sb = ssb.buildUpsert("terminology.entity_version_map_set_version_membership", "map_set_entity_version_id", "map_set_version_id", "sys_status");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }

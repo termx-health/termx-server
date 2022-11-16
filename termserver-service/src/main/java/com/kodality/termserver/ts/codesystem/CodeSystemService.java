@@ -1,17 +1,20 @@
 package com.kodality.termserver.ts.codesystem;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.auth.auth.SessionInfo.AuthenticationProvider;
-import com.kodality.termserver.auth.auth.SessionStore;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
+import com.kodality.termserver.codesystem.CodeSystemTransactionRequest;
+import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.codesystem.ConceptQueryParams;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
-import com.kodality.zmei.fhir.client.FhirClient;
+import com.kodality.termserver.ts.valueset.ValueSetService;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import com.kodality.termserver.valueset.ValueSetVersionRuleType;
 import jakarta.inject.Singleton;
 import java.time.LocalDate;
 import java.util.List;
@@ -26,12 +29,37 @@ public class CodeSystemService {
   private final ConceptService conceptService;
   private final EntityPropertyService entityPropertyService;
   private final CodeSystemVersionService codeSystemVersionService;
+  private final ValueSetService valueSetService;
   private final UserPermissionService userPermissionService;
 
   @Transactional
   public void save(CodeSystem codeSystem) {
     userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
     repository.save(codeSystem);
+  }
+
+  @Transactional
+  public void save(CodeSystemTransactionRequest request) {
+    CodeSystem codeSystem = request.getCodeSystem();
+    userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
+    repository.save(codeSystem);
+
+    CodeSystemVersion version = request.getVersion();
+    version.setCodeSystem(codeSystem.getId());
+    version.setReleaseDate(version.getReleaseDate() == null ? LocalDate.now() : version.getReleaseDate());
+    codeSystemVersionService.save(version);
+
+    entityPropertyService.save(request.getProperties(), codeSystem.getId());
+
+    if (request.getValueSet() != null) {
+      request.getValueSet().getValueSet().setNames(request.getValueSet().getValueSet().getNames() == null ? codeSystem.getNames() : request.getValueSet().getValueSet().getNames());
+      request.getValueSet().getVersion().setRuleSet(new ValueSetVersionRuleSet().setRules(List.of(new ValueSetVersionRule()
+          .setCodeSystem(codeSystem.getId())
+          .setCodeSystemVersionId(version.getId())
+          .setType(ValueSetVersionRuleType.include)
+      )));
+      valueSetService.save(request.getValueSet());
+    }
   }
 
   public Optional<CodeSystem> load(String codeSystem) {

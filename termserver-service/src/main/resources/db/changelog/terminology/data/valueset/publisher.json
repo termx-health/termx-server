@@ -1,0 +1,18 @@
+{
+  "resourceType" : "ValueSet",
+  "id" : "publisher",
+  "url" : "http://tx.hl7.ee/ValueSet/publisher",
+  "version" : "1",
+  "name" : "Publisher",
+  "title" : "Publisher",
+  "status" : "active",
+  "experimental" : false,
+  "date" : "2022-11-01T12:00:00+10:00",
+  "publisher" : "kts",
+  "immutable" : true,
+  "compose" : {
+    "include" : [{
+      "system" : "http://tx.hl7.ee/CodeSystem/publisher"
+    }]
+  }
+}

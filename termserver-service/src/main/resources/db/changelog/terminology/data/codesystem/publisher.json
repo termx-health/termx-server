@@ -1,0 +1,72 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "publisher",
+  "url": "http://tx.hl7.ee/CodeSystem/publisher",
+  "version": "1",
+  "name": "Publisher",
+  "title": "Publisher",
+  "status": "active",
+  "experimental": false,
+  "date": "2022-11-01T12:00:00+10:00",
+  "caseSensitive": true,
+  "content": "complete",
+  "property": [
+    {
+      "code": "uri",
+      "description": "URI",
+      "type": "string"
+    }
+  ],
+  "concept": [
+    {
+      "code": "snomed-ct",
+      "display": "SNOMED CT",
+      "property": [
+        {
+          "code": "uri",
+          "valueString": "http://snomed.info/sct"
+        }
+      ]
+    },
+    {
+      "code": "loinc",
+      "display": "LOINC",
+      "property": [
+        {
+          "code": "uri",
+          "valueString": "http://loinc.org"
+        }
+      ]
+    },
+    {
+      "code": "hl7",
+      "display": "HL7 terminology",
+      "property": [
+        {
+          "code": "uri",
+          "valueString": "http://terminology.hl7.org"
+        }
+      ]
+    },
+    {
+      "code": "hl7-ee",
+      "display": "HL7 Estonia",
+      "property": [
+        {
+          "code": "uri",
+          "valueString": "http://terminology.hl7.ee"
+        }
+      ]
+    },
+    {
+      "code": "kts",
+      "display": "KTS",
+      "property": [
+        {
+          "code": "uri",
+          "valueString": "http://tx.hl7.ee"
+        }
+      ]
+    }
+  ]
+}

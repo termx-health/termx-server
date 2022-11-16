@@ -64,4 +64,10 @@
     </customChange>
   </changeSet>
 
+  <changeSet id="publisher" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.CodeSystemFhirImport">
+      <param name="files" value="db/changelog/terminology/data/codesystem/publisher.json"/>
+    </customChange>
+  </changeSet>
+
 </databaseChangeLog>

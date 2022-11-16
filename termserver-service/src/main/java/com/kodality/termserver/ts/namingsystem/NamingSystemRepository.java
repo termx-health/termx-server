@@ -33,6 +33,7 @@ public class NamingSystemRepository extends BaseRepository {
     ssb.jsonProperty("identifiers", namingSystem.getIdentifiers());
     ssb.property("status", namingSystem.getStatus());
     ssb.property("created", namingSystem.getCreated());
+    ssb.property("sys_status", "A");
 
     SqlBuilder sb = ssb.buildUpsert("terminology.naming_system", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());

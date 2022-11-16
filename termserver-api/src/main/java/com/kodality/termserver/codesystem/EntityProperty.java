@@ -16,6 +16,11 @@ public class EntityProperty {
   private String type;
   private String description;
   private String status;
+
+  private Integer orderNumber;
+  private boolean preferred;
+  private boolean required;
+
   private OffsetDateTime created;
 
   private Long supplementId;

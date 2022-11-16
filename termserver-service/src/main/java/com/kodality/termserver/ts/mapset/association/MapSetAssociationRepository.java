@@ -29,6 +29,7 @@ public class MapSetAssociationRepository extends BaseRepository {
     ssb.property("source_code_system_entity_version_id", association.getSource().getId());
     ssb.property("association_type", association.getAssociationType());
     ssb.property("status", association.getStatus());
+    ssb.property("sys_status", "A");
 
     SqlBuilder sb = ssb.buildUpsert("terminology.map_set_association", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());

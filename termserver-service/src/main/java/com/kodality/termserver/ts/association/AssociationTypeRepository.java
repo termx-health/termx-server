@@ -21,6 +21,7 @@ public class AssociationTypeRepository extends BaseRepository {
     ssb.property("reverse_name", associationType.getReverseName());
     ssb.property("directed", associationType.isDirected());
     ssb.property("description", associationType.getDescription());
+    ssb.property("sys_status", "A");
 
     SqlBuilder sb = ssb.buildUpsert("terminology.association_type", "code");
     jdbcTemplate.update(sb.getSql(), sb.getParams());

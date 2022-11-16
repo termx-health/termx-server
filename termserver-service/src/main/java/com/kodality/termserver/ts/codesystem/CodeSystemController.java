@@ -13,6 +13,7 @@ import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemSupplement;
+import com.kodality.termserver.codesystem.CodeSystemTransactionRequest;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
 import com.kodality.termserver.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.codesystem.Concept;
@@ -88,6 +89,13 @@ public class CodeSystemController {
   @Authorized("*.CodeSystem.edit")
   @Post
   public HttpResponse<?> saveCodeSystem(@Body @Valid CodeSystem codeSystem) {
+    codeSystemService.save(codeSystem);
+    return HttpResponse.created(codeSystem);
+  }
+
+  @Authorized("*.CodeSystem.edit")
+  @Post("/transaction")
+  public HttpResponse<?> saveCodeSystemTransaction(@Body @Valid CodeSystemTransactionRequest codeSystem) {
     codeSystemService.save(codeSystem);
     return HttpResponse.created(codeSystem);
   }

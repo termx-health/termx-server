@@ -31,6 +31,7 @@ public class ConceptRepository extends BaseRepository {
     ssb.property("code", concept.getCode());
     ssb.property("code_system", concept.getCodeSystem());
     ssb.property("description", concept.getDescription());
+    ssb.property("sys_status", "A");
 
     SqlBuilder sb = ssb.buildUpsert("terminology.concept", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());

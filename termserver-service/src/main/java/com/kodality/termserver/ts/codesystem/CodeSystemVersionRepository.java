@@ -114,6 +114,8 @@ public class CodeSystemVersionRepository extends BaseRepository {
       SaveSqlBuilder ssb = new SaveSqlBuilder();
       ssb.property("code_system_entity_version_id", id);
       ssb.property("code_system_version_id", codeSystemVersionId);
+      ssb.property("sys_status", "A");
+
       SqlBuilder sb = ssb.buildUpsert("terminology.entity_version_code_system_version_membership", "code_system_entity_version_id", "code_system_version_id");
       jdbcTemplate.update(sb.getSql(), sb.getParams());
     });
@@ -131,6 +133,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
     ssb.property("code_system_entity_version_id", entityVersionId);
     ssb.property("code_system_version_id", codeSystemVersionId);
     ssb.property("sys_status", "A");
+
     SqlBuilder sb = ssb.buildUpsert("terminology.entity_version_code_system_version_membership", "code_system_entity_version_id", "code_system_version_id", "sys_status");
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }

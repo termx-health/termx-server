@@ -31,6 +31,7 @@ public class ValueSetRepository extends BaseRepository {
     ssb.jsonProperty("contacts", valueSet.getContacts());
     ssb.property("narrative", valueSet.getNarrative());
     ssb.property("description", valueSet.getDescription());
+    ssb.property("sys_status", "A");
 
     SqlBuilder sb = ssb.buildUpsert("terminology.value_set", "id");
     jdbcTemplate.update(sb.getSql(), sb.getParams());

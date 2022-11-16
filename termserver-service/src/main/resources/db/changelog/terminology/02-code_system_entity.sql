@@ -88,6 +88,11 @@ create index entity_property_code_system_idx on terminology.entity_property(code
 select core.create_table_metadata('terminology.entity_property');
 --rollback drop table if exists terminology.entity_property;
 
+--changeset kodality:entity_property-order|preferred|required
+alter table terminology.entity_property add column order_number smallint;
+alter table terminology.entity_property add column preferred boolean;
+alter table terminology.entity_property add column required boolean;
+--
 
 --changeset kodality:terminology.entity_property_value
 drop table if exists terminology.entity_property_value;

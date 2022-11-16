@@ -26,6 +26,9 @@ public class EntityPropertyRepository extends BaseRepository {
     ssb.property("type", entityProperty.getType());
     ssb.property("description", entityProperty.getDescription());
     ssb.property("status", entityProperty.getStatus());
+    ssb.property("order_number", entityProperty.getOrderNumber());
+    ssb.property("preferred", entityProperty.isPreferred());
+    ssb.property("required", entityProperty.isRequired());
     ssb.property("created", entityProperty.getCreated());
 
     SqlBuilder sb = ssb.buildSave("terminology.entity_property", "id");
