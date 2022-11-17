@@ -21,3 +21,8 @@ create unique index structure_definition_code_ukey on thesaurus.structure_defini
 
 select core.create_table_metadata('thesaurus.structure_definition');
 --rollback drop table if exists thesaurus.structure_definition;
+
+--changeset kodality:structure_definition-version|parent
+alter table thesaurus.structure_definition add column version text;
+alter table thesaurus.structure_definition add column parent text;
+--

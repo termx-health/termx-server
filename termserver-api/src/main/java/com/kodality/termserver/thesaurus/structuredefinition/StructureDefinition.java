@@ -14,4 +14,6 @@ public class StructureDefinition {
   private String content;
   private String contentType;
   private String contentFormat;
+  private String parent;
+  private String version;
 }

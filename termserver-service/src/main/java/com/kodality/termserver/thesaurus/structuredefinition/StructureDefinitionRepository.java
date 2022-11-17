@@ -19,6 +19,8 @@ public class StructureDefinitionRepository extends BaseRepository {
     ssb.property("content", structureDefinition.getContent());
     ssb.property("content_type", structureDefinition.getContentType());
     ssb.property("content_format", structureDefinition.getContentFormat());
+    ssb.property("parent", structureDefinition.getParent());
+    ssb.property("version", structureDefinition.getVersion());
     SqlBuilder sb = ssb.buildSave("thesaurus.structure_definition", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     structureDefinition.setId(id);
