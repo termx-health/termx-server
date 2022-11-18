@@ -9,5 +9,5 @@ import lombok.Setter;
 @Introspected
 public class FileAnalysisRequest {
   private String link;
-  private String type; // csv; tsv
+  private String type; // csv; tsv; json;
 }

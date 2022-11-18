@@ -6,6 +6,7 @@ import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.common.BinaryHttpClient;
 import com.kodality.termserver.common.CodeSystemImportService;
+import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisRequest;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisResponse;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileProcessingMapper;
@@ -21,6 +22,7 @@ import com.kodality.termserver.ts.valueset.ValueSetVersionService;
 import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetVersion;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +41,7 @@ public class CodeSystemFileImportService {
   private final CodeSystemImportService codeSystemImportService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
+  private final CodeSystemFhirImportService codeSystemFhirImportService;
 
   private final BinaryHttpClient client = new BinaryHttpClient();
 
@@ -67,6 +70,10 @@ public class CodeSystemFileImportService {
 
   public void process(FileProcessingRequest request, byte[] file) {
     FileProcessor fp = new FileProcessor();
+    if ("json".equals(request.getType())) {
+      codeSystemFhirImportService.importCodeSystem(new String(file, StandardCharsets.UTF_8));
+      return;
+    }
     FileProcessingResponse result = fp.process(request.getType(), file, request.getProperties());
     saveProcessingResult(request.getCodeSystem(), request.getVersion(), request.isGenerateValueSet(), result);
   }

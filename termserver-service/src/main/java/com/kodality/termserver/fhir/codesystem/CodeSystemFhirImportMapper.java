@@ -147,17 +147,19 @@ public class CodeSystemFhirImportMapper {
     display.setDesignationKind("text");
     display.setStatus("active");
 
-    Designation definition = new Designation();
-    definition.setDesignationType(DEFINITION);
-    definition.setName(c.getDefinition());
-    definition.setLanguage(Language.en);
-    definition.setCaseSignificance(caseSignificance);
-    definition.setDesignationKind("text");
-    definition.setStatus("active");
-
     List<Designation> designations = new ArrayList<>();
     designations.add(display);
-    designations.add(definition);
+
+    if (c.getDefinition() != null) {
+      Designation definition = new Designation();
+      definition.setDesignationType(DEFINITION);
+      definition.setName(c.getDefinition());
+      definition.setLanguage(Language.en);
+      definition.setCaseSignificance(caseSignificance);
+      definition.setDesignationKind("text");
+      definition.setStatus("active");
+      designations.add(definition);
+    }
 
     if (c.getDesignation() == null) {
       return designations;
@@ -199,7 +201,7 @@ public class CodeSystemFhirImportMapper {
       return new ArrayList<>();
     }
     CodeSystemAssociation association = new CodeSystemAssociation();
-    association.setAssociationType(codeSystem.getHierarchyMeaning());
+    association.setAssociationType(codeSystem.getHierarchyMeaning() == null ? "is-a" : codeSystem.getHierarchyMeaning());
     association.setStatus(PublicationStatus.active);
     association.setTargetCode(parent.getCode());
     association.setCodeSystem(codeSystem.getId());

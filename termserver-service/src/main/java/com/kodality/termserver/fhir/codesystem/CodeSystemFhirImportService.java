@@ -34,7 +34,8 @@ public class CodeSystemFhirImportService {
     }
     urls.forEach(url -> {
       try {
-        importCodeSystem(url);
+        String resource = getResource(url);
+        importCodeSystem(resource);
         successes.add(String.format("CodeSystem from resource %s imported", url));
       } catch (Exception e) {
         warnings.add(String.format("CodeSystem from resource %s was not imported due to error: %s", url, e.getMessage()));
@@ -42,8 +43,7 @@ public class CodeSystemFhirImportService {
     });
   }
 
-  public void importCodeSystem(String url) {
-    String resource = getResource(url);
+  public void importCodeSystem(String resource) {
     com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem =
         FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
     if (!ResourceType.codeSystem.equals(codeSystem.getResourceType())) {
