@@ -19,11 +19,13 @@ import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.Put;
 import io.micronaut.http.annotation.QueryValue;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import javax.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +57,13 @@ public class CodeSystemFhirController {
   public HttpResponse<?> searchCodeSystems(Map<String, List<String>> params) {
     Bundle bundle = service.search(params);
     return HttpResponse.ok(bundle);
+  }
+
+  @Authorized("*.CodeSystem.edit")
+  @Put("{?params*}")
+  public HttpResponse<?> saveCodeSystem(@QueryValue Optional<String> url, @QueryValue Optional<String> version, @Body CodeSystem codeSystem) {
+    service.save(url, version, codeSystem);
+    return HttpResponse.ok();
   }
 
   @Authorized("*.CodeSystem.view")

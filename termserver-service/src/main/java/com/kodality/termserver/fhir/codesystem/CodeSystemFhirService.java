@@ -1,5 +1,6 @@
 package com.kodality.termserver.fhir.codesystem;
 
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
@@ -40,6 +41,7 @@ public class CodeSystemFhirService {
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+  private final CodeSystemFhirImportService fhirImportService;
 
   private final UserPermissionService userPermissionService;
 
@@ -295,5 +297,14 @@ public class CodeSystemFhirService {
           csv.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
           return mapper.toFhir(cs, csv);
         })).collect(Collectors.toList()));
+  }
+
+  public void save(Optional<String> url, Optional<String> version, com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
+    if (url.isEmpty() || version.isEmpty()) {
+      throw ApiError.TE712.toApiException();
+    }
+    codeSystem.setUrl(url.get());
+    codeSystem.setVersion(version.get());
+    fhirImportService.importCodeSystem(codeSystem);
   }
 }
