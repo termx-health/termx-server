@@ -55,8 +55,8 @@ public class CodeSystemVersionService {
     return repository.load(id);
   }
 
-  public CodeSystemVersion loadLastVersion(String codeSystem, String status) {
-    return repository.loadLastVersion(codeSystem, status);
+  public CodeSystemVersion loadLastVersion(String codeSystem) {
+    return repository.loadLastVersion(codeSystem);
   }
 
   public CodeSystemVersion loadLastVersionByUri(String uri) {

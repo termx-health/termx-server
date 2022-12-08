@@ -1,6 +1,5 @@
 package com.kodality.termserver.fhir.codesystem;
 
-import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
@@ -17,6 +16,7 @@ import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
+import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
@@ -105,7 +105,7 @@ public class CodeSystemFhirService {
     codeSystem.ifPresent(cs -> userPermissionService.checkPermitted(cs.getId(), "CodeSystem", "view"));
 
     String versionVersion = fhirParams.getFirst("version").isPresent() ? fhirParams.getFirst("version").get() :
-        codeSystemVersionService.loadLastVersion(codeSystem.get().getId(), PublicationStatus.active).getVersion();
+        codeSystemVersionService.loadLastVersion(codeSystem.get().getId()).getVersion();
     Optional<Concept> conceptA = findConcept(fhirParams.getFirst("system").get(), fhirParams.getFirst("codeA").get(), versionVersion);
     if (conceptA.isEmpty()) {
       outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found")
@@ -140,7 +140,8 @@ public class CodeSystemFhirService {
         codeSystemVersionService.loadLastVersionByUri(codingA.get().getValueCoding().getSystem()).getVersion();
     Optional<Concept> conceptA = findConcept(codingA.get().getValueCoding().getSystem(), codingA.get().getValueCoding().getCode(), versionA);
     if (conceptA.isEmpty()) {
-      outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText(String.format("Concept with code '%s' not found", codingA.get().getValueCoding().getCode()))));
+      outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found")
+          .setDetails(new CodeableConcept().setText(String.format("Concept with code '%s' not found", codingA.get().getValueCoding().getCode()))));
       return null;
     }
     conceptA.ifPresent(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
@@ -149,7 +150,8 @@ public class CodeSystemFhirService {
         codeSystemVersionService.loadLastVersionByUri(codingB.get().getValueCoding().getSystem()).getVersion();
     Optional<Concept> conceptB = findConcept(codingB.get().getValueCoding().getSystem(), codingB.get().getValueCoding().getCode(), versionB);
     if (conceptB.isEmpty()) {
-      outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText(String.format("Concept with code '%s' not found", codingB.get().getValueCoding().getCode()))));
+      outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found")
+          .setDetails(new CodeableConcept().setText(String.format("Concept with code '%s' not found", codingB.get().getValueCoding().getCode()))));
       return null;
     }
     conceptB.ifPresent(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
@@ -185,10 +187,12 @@ public class CodeSystemFhirService {
     List<ParametersParameter> properties = params.getParameter().stream().filter(p -> "property".equals(p.getName())).toList();
     if (system.isEmpty() || CollectionUtils.isEmpty(properties)) {
       if (system.isEmpty()) {
-        outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("required").setDetails(new CodeableConcept().setText("Parameter system is not provided")));
+        outcome.getIssue().add(
+            new OperationOutcomeIssue().setSeverity("error").setCode("required").setDetails(new CodeableConcept().setText("Parameter system is not provided")));
       }
       if (CollectionUtils.isEmpty(properties)) {
-        outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("required").setDetails(new CodeableConcept().setText("Parameter property is not provided")));
+        outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("required")
+            .setDetails(new CodeableConcept().setText("Parameter property is not provided")));
       }
       return null;
     }
@@ -267,5 +271,29 @@ public class CodeSystemFhirService {
     version.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
     return mapper.toFhir(codeSystem, version);
 
+  }
+
+  public Bundle search(Map<String, List<String>> params) {
+    FhirQueryParams fhirParams = new FhirQueryParams(params);
+    CodeSystemQueryParams queryParams = new CodeSystemQueryParams();
+    queryParams.setVersionVersion(fhirParams.getFirst("version").orElse(null));
+    queryParams.setUri(fhirParams.getFirst("system").orElse(fhirParams.getFirst("url").orElse(null)));
+    queryParams.setNameContains(fhirParams.getFirst("title").orElse(fhirParams.getFirst("name").orElse(null)));
+    queryParams.setVersionStatus(fhirParams.getFirst("status").orElse(null));
+    queryParams.setVersionSource(fhirParams.getFirst("source").orElse(null));
+    queryParams.setDescriptionContains(fhirParams.getFirst("description").orElse(null));
+    queryParams.setContent(fhirParams.getFirst("content-mode").orElse(null));
+    queryParams.setConceptCode(fhirParams.getFirst("code").orElse(null));
+    queryParams.setVersionsDecorated(true);
+    queryParams.setPropertiesDecorated(true);
+    queryParams.setLimit(fhirParams.getCount());
+    List<CodeSystem> codeSystems = codeSystemService.query(queryParams).getData();
+    return Bundle.of("searchset", codeSystems.stream()
+        .flatMap(cs -> cs.getVersions().stream().map(csv -> {
+          CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(csv.getId());
+          codeSystemEntityVersionParams.all();
+          csv.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
+          return mapper.toFhir(cs, csv);
+        })).collect(Collectors.toList()));
   }
 }

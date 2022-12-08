@@ -75,6 +75,7 @@ public class CodeSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and id ~* ?", params.getIdContains());
     sb.appendIfNotNull("and uri = ?", params.getUri());
     sb.appendIfNotNull("and uri ~* ?", params.getUriContains());
+    sb.appendIfNotNull("and content = ?", params.getContent());
     sb.appendIfNotNull("and description = ?", params.getDescription());
     sb.appendIfNotNull("and description ~* ?", params.getDescriptionContains());
     sb.appendIfNotNull("and base_code_system = ?", params.getBaseCodeSystem());
@@ -93,17 +94,17 @@ public class CodeSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and exists (select 1 from terminology.concept c where c.code_system = cs.id and c.sys_status = 'A' and c.code = ?)",
         params.getConceptCode());
 
-    sb.appendIfNotNull(
-        "and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.version = ?)",
-        params.getVersionVersion());
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.id = ?)",
-        params.getVersionId());
-    sb.appendIfNotNull(
-        "and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and csv.release_date >= ?)",
-        params.getVersionReleaseDateGe());
-    sb.appendIfNotNull(
-        "and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A' and (csv.expiration_date <= ? or expiration_date is null))",
-        params.getVersionExpirationDateLe());
+    if (params.getVersionId() != null || params.getVersionVersion() != null || params.getVersionStatus() != null || params.getVersionSource() != null ||
+        params.getVersionReleaseDateGe() != null || params.getVersionExpirationDateLe() != null) {
+      sb.append("and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A'");
+      sb.appendIfNotNull("and csv.id = ?", params.getVersionId());
+      sb.appendIfNotNull("and csv.version = ?", params.getVersionVersion());
+      sb.appendIfNotNull("and csv.status = ?", params.getVersionStatus());
+      sb.appendIfNotNull("and csv.source = ?", params.getVersionSource());
+      sb.appendIfNotNull("and csv.release_date >= ?", params.getVersionReleaseDateGe());
+      sb.appendIfNotNull("and (csv.expiration_date <= ? or expiration_date is null)", params.getVersionExpirationDateLe());
+      sb.append(")");
+    }
 
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity cse " +
         "inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +

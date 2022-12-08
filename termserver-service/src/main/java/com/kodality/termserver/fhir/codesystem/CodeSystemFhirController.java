@@ -10,6 +10,7 @@ import com.kodality.termserver.fhir.FhirMeasurementUnitConvertor;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
+import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import io.micronaut.core.util.CollectionUtils;
@@ -47,6 +48,13 @@ public class CodeSystemFhirController {
       throw new NotFoundException("CodeSystem not found");
     }
     return HttpResponse.ok(codeSystem);
+  }
+
+  @Authorized("*.CodeSystem.view")
+  @Get("{?params*}")
+  public HttpResponse<?> searchCodeSystems(Map<String, List<String>> params) {
+    Bundle bundle = service.search(params);
+    return HttpResponse.ok(bundle);
   }
 
   @Authorized("*.CodeSystem.view")

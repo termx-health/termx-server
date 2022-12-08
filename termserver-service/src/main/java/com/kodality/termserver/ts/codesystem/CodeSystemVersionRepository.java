@@ -138,9 +138,9 @@ public class CodeSystemVersionRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public CodeSystemVersion loadLastVersion(String codeSystem, String status) {
-    String sql = "select * from terminology.code_system_version where sys_status = 'A' and code_system = ? and status = ? order by release_date desc";
-    return getBean(sql, bp, codeSystem, status);
+  public CodeSystemVersion loadLastVersion(String codeSystem) {
+    String sql = "select * from terminology.code_system_version where sys_status = 'A' and code_system = ? and (status = 'active' or status = 'draft') order by release_date desc";
+    return getBean(sql, bp, codeSystem);
   }
 
   public CodeSystemVersion loadLastVersionByUri(String uri) {
