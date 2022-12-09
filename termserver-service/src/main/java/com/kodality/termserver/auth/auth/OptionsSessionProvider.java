@@ -15,7 +15,7 @@ public class OptionsSessionProvider extends SessionProvider {
   @Override
   public SessionInfo authenticate(HttpRequest<?> request) {
     if (request.getMethod() == HttpMethod.OPTIONS) {
-      return new SessionInfo().setUsername("test");
+      return new SessionInfo();
     }
     return null;
   }
