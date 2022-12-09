@@ -17,11 +17,13 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.cookie.Cookie;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +38,10 @@ public class OAuthSessionProvider extends SessionProvider {
   private final HttpClient jwksClient;
   private final CacheManager jwksCache = new CacheManager();
   private final PrivilegeStore privilegeStore;
+
+  @Value("${auth.public.endpoints:[]}")
+  private List<String> publicEndpoints;
+  private static final List<String> DEFAULT_PUBLIC = Arrays.asList("/health", "/info");
 
   public OAuthSessionProvider(@Value("${auth.oauth.jwks-url}") String userinfoUrl, PrivilegeStore privilegeStore) {
     this.privilegeStore = privilegeStore;
@@ -55,7 +61,18 @@ public class OAuthSessionProvider extends SessionProvider {
         .filter(auth -> auth.startsWith(BEARER))
         .or(() -> request.getCookies().findCookie(OAUTH_TOKEN_COOKIE).map(Cookie::getValue))
         .map(this::getSessionInfo)
-        .orElse(null);
+        .orElse(authenticatePublic(request));
+  }
+
+  public SessionInfo authenticatePublic(HttpRequest<?> request) {
+    if (Stream.concat(DEFAULT_PUBLIC.stream(), publicEndpoints.stream()).anyMatch(prefix -> startsWith(request.getPath(), prefix))) {
+      return new SessionInfo();
+    }
+    return null;
+  }
+
+  private boolean startsWith(String path, String prefix) {
+    return path.equals(prefix) || path.startsWith(prefix + "/");
   }
 
   private SessionInfo getSessionInfo(String auth) {

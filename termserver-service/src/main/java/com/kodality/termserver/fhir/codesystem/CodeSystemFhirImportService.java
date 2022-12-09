@@ -7,9 +7,12 @@ import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.common.BinaryHttpClient;
 import com.kodality.termserver.common.CodeSystemImportService;
 import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.resource.Resource;
 import com.kodality.zmei.fhir.resource.ResourceType;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
+import com.kodality.zmei.fhir.resource.other.Bundle;
+import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import io.micronaut.core.util.CollectionUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -44,16 +47,21 @@ public class CodeSystemFhirImportService {
   }
 
   public void importCodeSystem(String resource) {
-    com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem =
-        FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
-    if (!ResourceType.codeSystem.equals(codeSystem.getResourceType())) {
-      throw ApiError.TE107.toApiException();
+    Resource res = FhirMapper.fromJson(resource, Resource.class);
+    if ("Bundle".equals(res.getResourceType())) {
+      Bundle bundle = FhirMapper.fromJson(resource, Bundle.class);
+      bundle.getEntry().forEach(e -> importCodeSystem((CodeSystem) e.getResource()));
+    } else {
+      com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
+      importCodeSystem(codeSystem);
     }
-    importCodeSystem(codeSystem);
   }
 
   @Transactional
   public void importCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
+    if (!ResourceType.codeSystem.equals(codeSystem.getResourceType())) {
+      throw ApiError.TE107.toApiException();
+    }
     List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
     importService.importCodeSystem(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem), associationTypes,
         PublicationStatus.active.equals(codeSystem.getStatus()));

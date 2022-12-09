@@ -1,7 +1,6 @@
 package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
@@ -42,8 +41,6 @@ public class CodeSystemFhirService {
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final CodeSystemFhirImportService fhirImportService;
-
-  private final UserPermissionService userPermissionService;
 
   public Parameters lookup(Map<String, List<String>> params) {
     FhirQueryParams fhirParams = new FhirQueryParams(params);
@@ -143,7 +140,6 @@ public class CodeSystemFhirService {
           .setDetails(new CodeableConcept().setText(String.format("Concept with code '%s' not found", codingA.get().getValueCoding().getCode()))));
       return null;
     }
-    conceptA.ifPresent(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
 
     String versionB = codingB.get().getValueCoding().getVersion() != null ? codingB.get().getValueCoding().getVersion() :
         codeSystemVersionService.loadLastVersionByUri(codingB.get().getValueCoding().getSystem()).getVersion();
@@ -153,7 +149,6 @@ public class CodeSystemFhirService {
           .setDetails(new CodeableConcept().setText(String.format("Concept with code '%s' not found", codingB.get().getValueCoding().getCode()))));
       return null;
     }
-    conceptB.ifPresent(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
 
     return subsumes(conceptA.get(), conceptB.get());
   }
