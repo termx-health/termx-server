@@ -60,7 +60,6 @@ public class CodeSystemFhirService {
         .setVersionExpirationDateLe(fhirParams.getFirst("date").map(d -> LocalDateTime.parse(d).toLocalDate()).orElse(null))
         .setVersionsDecorated(true).setConceptsDecorated(true).setPropertiesDecorated(true);
     Optional<CodeSystem> codeSystem = codeSystemService.query(csParams).findFirst();
-    codeSystem.ifPresent(cs -> userPermissionService.checkPermitted(cs.getId(), "CodeSystem", "view"));
     return mapper.toFhirParameters(codeSystem.orElse(null), fhirParams);
   }
 
@@ -75,7 +74,6 @@ public class CodeSystemFhirService {
         .setCodeSystemVersion(fhirParams.getFirst("version").orElse(null))
         .setCodeSystemUri(fhirParams.getFirst("url").orElse(null));
     Optional<Concept> concept = conceptService.query(cParams).findFirst();
-    concept.ifPresent(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
     return mapper.toFhirParameters(concept.orElse(null), fhirParams);
   }
 
@@ -104,7 +102,6 @@ public class CodeSystemFhirService {
           ));
       return null;
     }
-    codeSystem.ifPresent(cs -> userPermissionService.checkPermitted(cs.getId(), "CodeSystem", "view"));
 
     String versionVersion = fhirParams.getFirst("version").isPresent() ? fhirParams.getFirst("version").get() :
         codeSystemVersionService.loadLastVersion(codeSystem.get().getId()).getVersion();
@@ -222,7 +219,6 @@ public class CodeSystemFhirService {
           .filter(pm -> match.stream().noneMatch(em -> em.getId().equals(pm.getId())))
           .toList());
     }
-    match.forEach(c -> userPermissionService.checkPermitted(c.getCodeSystem(), "CodeSystem", "view"));
     return new Parameters().setParameter(match.stream().map(c ->
         new ParametersParameter()
             .setName("match")
@@ -266,7 +262,6 @@ public class CodeSystemFhirService {
     if (codeSystem == null) {
       return null;
     }
-    userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "view");
     CodeSystemVersion version = codeSystemVersionService.load(codeSystemVersionId);
     CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(version.getId());
     codeSystemEntityVersionParams.all();

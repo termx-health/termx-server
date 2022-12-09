@@ -42,7 +42,6 @@ public class CodeSystemFhirController {
 
   private static final String JOB_TYPE = "FHIR-CS";
 
-  @Authorized("*.CodeSystem.view")
   @Get("/{codeSystemVersionId}")
   public HttpResponse<?> getCodeSystem(Long codeSystemVersionId) {
     CodeSystem codeSystem = service.get(codeSystemVersionId);
@@ -52,7 +51,6 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(codeSystem);
   }
 
-  @Authorized("*.CodeSystem.view")
   @Get("{?params*}")
   public HttpResponse<?> searchCodeSystems(Map<String, List<String>> params) {
     Bundle bundle = service.search(params);
@@ -66,7 +64,6 @@ public class CodeSystemFhirController {
     return HttpResponse.ok();
   }
 
-  @Authorized("*.CodeSystem.view")
   @Get("/$lookup{?params*}")
   public HttpResponse<?> lookup(Map<String, List<String>> params) {
     Parameters parameters = service.lookup(params);
@@ -76,7 +73,6 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(parameters);
   }
 
-  @Authorized("*.CodeSystem.view")
   @Get("/$validate-code{?params*}")
   public HttpResponse<?> validateCode(Map<String, List<String>> params) {
     Parameters parameters = service.validateCode(params);
@@ -86,7 +82,6 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(parameters);
   }
 
-  @Authorized("*.CodeSystem.view")
   @Get("/$subsumes{?params*}")
   public HttpResponse<?> subsumes(Map<String, List<String>> params) {
     OperationOutcome outcome = new OperationOutcome();
@@ -97,7 +92,6 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(parameters);
   }
 
-  @Authorized("*.CodeSystem.view")
   @Post("/$subsumes")
   public HttpResponse<?> subsumes(@Body Parameters params) {
     OperationOutcome outcome = new OperationOutcome();
@@ -108,7 +102,6 @@ public class CodeSystemFhirController {
     return HttpResponse.ok(parameters);
   }
 
-  @Authorized("*.CodeSystem.view")
   @Post("/$find-matches")
   public HttpResponse<?> findMatches(@Body Parameters params) {
     OperationOutcome outcome = new OperationOutcome();

@@ -52,6 +52,7 @@ auth:
   public:
     endpoints:
       - '/fhir/CapabilityStatement'
+      - '/fhir/CodeSystem'
       - '/swagger'
       - '/github/cb'
 
