@@ -94,7 +94,7 @@ public class ValueSetVersionRepository extends BaseRepository {
   }
 
   public ValueSetVersion loadLastVersionByUri(String uri) {
-    String sql = "select * from terminology.value_set_version vsv where vsv.sys_status = 'A' and " +
+    String sql = "select * from terminology.value_set_version vsv where vsv.sys_status = 'A' and (vsv.status = 'active' or vsv.status = 'draft') and " +
         "exists (select 1 from terminology.value_set vs where vs.id = vsv.value_set and vs.uri = ? and vs.sys_status = 'A') " +
         "order by vsv.release_date desc";
     return getBean(sql, bp, uri);

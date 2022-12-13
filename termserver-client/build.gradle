@@ -7,6 +7,8 @@ dependencies {
     implementation ("com.kodality.commons:commons-cache:${rootProject.commonsVersion}") {changing = true}
 
     implementation("com.kodality.zmei:zmei-fhir:${rootProject.zmeiVersion}")
+    implementation("com.kodality.zmei:zmei-fhir-client:${rootProject.zmeiVersion}")
+    implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}")
 }
 
 publishing {

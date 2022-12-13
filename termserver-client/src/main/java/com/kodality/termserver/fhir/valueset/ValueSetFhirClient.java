@@ -1,40 +1,33 @@
 package com.kodality.termserver.fhir.valueset;
 
-import com.kodality.commons.client.BaseHttpClient;
-import com.kodality.commons.client.HttpClient;
+import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.client.FhirClient;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
-import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.Builder;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
-public class ValueSetFhirClient {
-  protected HttpClient client;
+public class ValueSetFhirClient extends FhirClient<ValueSet> {
 
-  public ValueSetFhirClient(){}
-
-  public ValueSetFhirClient(String url, Function<String, HttpClient> clientProvider) {
-    client = clientProvider.apply(url + "/fhir/CodeSystem");
-  }
-
-  public CompletableFuture<Bundle> search(FhirQueryParams params) {
-    return client.GET("?" + BaseHttpClient.toQueryParams(params), Bundle.class);
-  }
-
-  public CompletableFuture<ValueSet> save(FhirQueryParams params, ValueSet valueSet) {
-    return client.PUT("?" + BaseHttpClient.toQueryParams(params), valueSet, ValueSet.class);
+  public ValueSetFhirClient(String url, Consumer<Builder> enhancer) {
+    super(url + "/fhir/ValueSet", ValueSet.class, enhancer);
   }
 
   public CompletableFuture<ValueSet> expand(FhirQueryParams params) {
-    return client.GET("/$expand?" + BaseHttpClient.toQueryParams(params), ValueSet.class);
+    HttpRequest request = builder("/$expand?" + toQueryParams(params)).GET().build();
+    return executeAsync(request).thenApply(r -> FhirMapper.fromJson(r.body(), ValueSet.class));
   }
 
   public CompletableFuture<Parameters> validateCode(FhirQueryParams params) {
-    return client.GET("/$validate-code?" + BaseHttpClient.toQueryParams(params), Parameters.class);
+    HttpRequest request = builder("/$validate-code?" + toQueryParams(params)).GET().build();
+    return executeAsync(request).thenApply(r -> FhirMapper.fromJson(r.body(), Parameters.class));
   }
 
   public CompletableFuture<Parameters> sync(Parameters params) {
-    return client.POST("/$sync", params, Parameters.class);
+    HttpRequest request = builder("/$sync?" + toQueryParams(params)).GET().build();
+    return executeAsync(request).thenApply(r -> FhirMapper.fromJson(r.body(), Parameters.class));
   }
 }

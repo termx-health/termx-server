@@ -70,31 +70,37 @@ public class ValueSetFhirService {
   public com.kodality.zmei.fhir.resource.terminology.ValueSet expand(Map<String, List<String>> params, OperationOutcome outcome) {
     outcome.setIssue(new ArrayList<>());
     FhirQueryParams fhirParams = new FhirQueryParams(params);
-    if (fhirParams.getFirst("url").isEmpty() || fhirParams.getFirst("valueSetVersion").isEmpty()) {
-      outcome.getIssue().addAll(Stream.of("url", "valueSetVersion").filter(key -> fhirParams.getFirst(key).isEmpty())
-          .map(key -> new OperationOutcomeIssue().setSeverity("error").setCode("required")
-              .setDetails(new CodeableConcept().setText(String.format("Parameter '%s' not provided", key)))).toList());
-      return null;
-    }
-    ValueSetVersionQueryParams vsvParams = new ValueSetVersionQueryParams();
-    vsvParams.setValueSetUri(fhirParams.getFirst("url").get());
-    vsvParams.setVersion(fhirParams.getFirst("valueSetVersion").get());
-    vsvParams.setDecorated(true);
-    vsvParams.setLimit(1);
-    ValueSetVersion version = valueSetVersionService.query(vsvParams).findFirst().orElse(null);
-    if (version == null) {
-      outcome.getIssue()
-          .add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("Value set version not found")));
+    if (fhirParams.getFirst("url").isEmpty()) {
+      outcome.getIssue().add(new OperationOutcomeIssue()
+          .setSeverity("error").setCode("required").setDetails(new CodeableConcept().setText(String.format("Parameter '%s' not provided", "url"))));
       return null;
     }
 
     ValueSetQueryParams vsParams = new ValueSetQueryParams();
-    vsParams.setVersionId(version.getId());
+    vsParams.setUri(fhirParams.getFirst("url").get());
     vsParams.setLimit(1);
     ValueSet valueSet = valueSetService.query(vsParams).findFirst().orElse(null);
     if (valueSet == null) {
-      outcome.getIssue()
-          .add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("Value set not found")));
+      outcome.getIssue().add(new OperationOutcomeIssue()
+          .setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("Value set not found")));
+      return null;
+    }
+
+    ValueSetVersion version;
+    if (fhirParams.getFirst("valueSetVersion").isPresent()) {
+      ValueSetVersionQueryParams vsvParams = new ValueSetVersionQueryParams();
+      vsvParams.setValueSetUri(fhirParams.getFirst("url").get());
+      vsvParams.setVersion(fhirParams.getFirst("valueSetVersion").get());
+      vsvParams.setDecorated(true);
+      vsvParams.setLimit(1);
+      version = valueSetVersionService.query(vsvParams).findFirst().orElse(null);
+    } else {
+      version = valueSetVersionService.loadLastVersionByUri(fhirParams.getFirst("url").get());
+    }
+
+    if (version == null) {
+      outcome.getIssue().add(new OperationOutcomeIssue()
+          .setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("Value set version not found")));
       return null;
     }
     userPermissionService.checkPermitted(valueSet.getId(), "ValueSet", "view");
@@ -115,7 +121,9 @@ public class ValueSetFhirService {
 
     Optional<ValueSetVersion> valueSetVersion = fhirParams.getFirst("valueSetVersion").isEmpty() ?
         Optional.ofNullable(valueSetVersionService.loadLastVersionByUri(fhirParams.getFirst("url").get())) :
-        valueSetVersionService.query(new ValueSetVersionQueryParams().setValueSetUri(fhirParams.getFirst("url").get()).setVersion(fhirParams.getFirst("valueSetVersion").get())).findFirst();
+        valueSetVersionService.query(
+                new ValueSetVersionQueryParams().setValueSetUri(fhirParams.getFirst("url").get()).setVersion(fhirParams.getFirst("valueSetVersion").get()))
+            .findFirst();
 
     if (valueSetVersion.isEmpty()) {
       outcome.getIssue()
