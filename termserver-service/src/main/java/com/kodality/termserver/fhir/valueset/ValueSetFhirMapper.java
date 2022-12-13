@@ -50,6 +50,9 @@ public class ValueSetFhirMapper {
   }
 
   private ValueSetCompose toFhirCompose(ValueSetVersionRuleSet ruleSet) {
+    if (ruleSet == null) {
+      return null;
+    }
     ValueSetCompose compose = new ValueSetCompose();
     compose.setInactive(ruleSet.getInactive());
     compose.setLockedDate(ruleSet.getLockedDate());

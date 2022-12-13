@@ -114,7 +114,7 @@ public class ValueSetVersionService {
   }
 
   public ValueSetVersion loadLastVersionByUri(String uri) {
-    return repository.loadLastVersionByUri(uri);
+    return decorate(repository.loadLastVersionByUri(uri));
   }
 
   @Transactional
