@@ -272,7 +272,7 @@ public class CodeSystemFhirService {
     queryParams.setUri(fhirParams.getFirst("system").orElse(fhirParams.getFirst("url").orElse(null)));
     queryParams.setNameContains(fhirParams.getFirst("title").orElse(fhirParams.getFirst("name").orElse(null)));
     queryParams.setVersionStatus(fhirParams.getFirst("status").orElse(null));
-    queryParams.setVersionSource(fhirParams.getFirst("source").orElse(null));
+    queryParams.setVersionSource(fhirParams.getFirst("publisher").orElse(null));
     queryParams.setDescriptionContains(fhirParams.getFirst("description").orElse(null));
     queryParams.setContent(fhirParams.getFirst("content-mode").orElse(null));
     queryParams.setConceptCode(fhirParams.getFirst("code").orElse(null));

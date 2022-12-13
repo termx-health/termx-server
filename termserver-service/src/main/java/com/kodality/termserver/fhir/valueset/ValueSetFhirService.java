@@ -14,6 +14,7 @@ import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters.ParametersParameter;
+import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +46,23 @@ public class ValueSetFhirService {
     userPermissionService.checkPermitted(valueSet.getId(), "ValueSet", "view");
     ValueSetVersion version = valueSetVersionService.load(valueSetVersionId);
     return mapper.toFhir(valueSet, version);
+  }
+
+  public Bundle search(Map<String, List<String>> params) {
+    FhirQueryParams fhirParams = new FhirQueryParams(params);
+    ValueSetQueryParams queryParams = new ValueSetQueryParams();
+    queryParams.setVersionVersion(fhirParams.getFirst("version").orElse(null));
+    queryParams.setUri(fhirParams.getFirst("url").orElse(null));
+    queryParams.setNameContains(fhirParams.getFirst("title").orElse(fhirParams.getFirst("name").orElse(null)));
+    queryParams.setVersionStatus(fhirParams.getFirst("status").orElse(null));
+    queryParams.setCodeSystemUri(fhirParams.getFirst("reference").orElse(null));
+    queryParams.setVersionSource(fhirParams.getFirst("publisher").orElse(null));
+    queryParams.setDescriptionContains(fhirParams.getFirst("description").orElse(null));
+    queryParams.setConceptCode(fhirParams.getFirst("code").orElse(null));
+    queryParams.setLimit(fhirParams.getCount());
+    List<ValueSet> valueSets = valueSetService.query(queryParams).getData();
+    return Bundle.of("searchset", valueSets.stream()
+        .flatMap(vs -> vs.getVersions().stream().map(vsv -> mapper.toFhir(vs, vsv))).collect(Collectors.toList()));
   }
 
   public com.kodality.zmei.fhir.resource.terminology.ValueSet expand(Map<String, List<String>> params, OperationOutcome outcome) {

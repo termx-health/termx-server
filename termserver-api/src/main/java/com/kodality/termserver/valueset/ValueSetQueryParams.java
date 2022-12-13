@@ -24,10 +24,14 @@ public class ValueSetQueryParams extends QueryParams {
   private String textContains;
 
   private Long versionId;
+  private String versionVersion;
+  private String versionStatus;
+  private String versionSource;
 
   private boolean decorated;
 
   private String codeSystem;
+  private String codeSystemUri;
   private String conceptCode;
 
   private String lang;
