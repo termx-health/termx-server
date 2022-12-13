@@ -17,10 +17,13 @@ import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.Put;
+import io.micronaut.http.annotation.QueryValue;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +52,13 @@ public class ValueSetFhirController {
   public HttpResponse<?> searchCodeSystems(Map<String, List<String>> params) {
     Bundle bundle = service.search(params);
     return HttpResponse.ok(bundle);
+  }
+
+  @Authorized("*.ValueSet.edit")
+  @Put("{?params*}")
+  public HttpResponse<?> saveValueSet(@QueryValue Optional<String> url, @QueryValue Optional<String> version, @Body ValueSet valueSet) {
+    service.save(url, version, valueSet);
+    return HttpResponse.ok(valueSet);
   }
 
   @Authorized("*.ValueSet.view")

@@ -1,5 +1,6 @@
 package com.kodality.termserver.fhir.valueset;
 
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.ts.valueset.ValueSetService;
@@ -35,6 +36,7 @@ public class ValueSetFhirService {
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final ValueSetFhirImportService fhirImportService;
 
   private final UserPermissionService userPermissionService;
 
@@ -162,5 +164,14 @@ public class ValueSetFhirService {
       }
     }
     return c.getDisplay() == null || c.getDisplay().getName() == null ? c.getConcept().getCode() : c.getDisplay().getName();
+  }
+
+  public void save(Optional<String> url, Optional<String> version, com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
+    if (url.isEmpty() || version.isEmpty()) {
+      throw ApiError.TE712.toApiException();
+    }
+    valueSet.setUrl(url.get());
+    valueSet.setVersion(version.get());
+    fhirImportService.importValueSet(valueSet, false);
   }
 }

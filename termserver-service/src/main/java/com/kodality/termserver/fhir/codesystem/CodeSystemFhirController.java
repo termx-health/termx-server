@@ -61,7 +61,7 @@ public class CodeSystemFhirController {
   @Put("{?params*}")
   public HttpResponse<?> saveCodeSystem(@QueryValue Optional<String> url, @QueryValue Optional<String> version, @Body CodeSystem codeSystem) {
     service.save(url, version, codeSystem);
-    return HttpResponse.ok();
+    return HttpResponse.ok(codeSystem);
   }
 
   @Get("/$lookup{?params*}")

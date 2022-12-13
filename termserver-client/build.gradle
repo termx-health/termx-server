@@ -5,6 +5,8 @@ dependencies {
     implementation ("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
     implementation ("com.kodality.commons:commons-util:${rootProject.commonsVersion}") {changing = true}
     implementation ("com.kodality.commons:commons-cache:${rootProject.commonsVersion}") {changing = true}
+
+    implementation("com.kodality.zmei:zmei-fhir:${rootProject.zmeiVersion}")
 }
 
 publishing {
