@@ -15,7 +15,7 @@ public class ValueSetFhirClient {
   public ValueSetFhirClient(){}
 
   public ValueSetFhirClient(String url, Function<String, HttpClient> clientProvider) {
-    client = clientProvider.apply(url + "/api/fhir/CodeSystem");
+    client = clientProvider.apply(url + "/fhir/CodeSystem");
   }
 
   public CompletableFuture<Bundle> search(FhirQueryParams params) {
