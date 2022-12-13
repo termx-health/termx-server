@@ -15,6 +15,7 @@ public class DesignationQueryParams extends QueryParams {
   private String designationKind;
   private Long designationTypeId;
   private String codeSystemEntityVersionId;
+  private String codeSystem;
 
   private Long conceptId;
   private String conceptCode;

@@ -17,6 +17,7 @@ import com.kodality.termserver.valueset.ValueSetVersionConceptQueryParams;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,11 +77,11 @@ public class ValueSetVersionConceptService {
 
   public List<ValueSetVersionConcept> decorate(List<ValueSetVersionConcept> concepts) {
     List<String> designationIds = new ArrayList<>();
-    designationIds.addAll(
-        concepts.stream().filter(c -> c.getDisplay() != null && c.getDisplay().getId() != null).map(c -> String.valueOf(c.getDisplay().getId())).toList());
-    designationIds.addAll(
-        concepts.stream().filter(c -> CollectionUtils.isNotEmpty(c.getAdditionalDesignations())).flatMap(c -> c.getAdditionalDesignations().stream())
-            .filter(ad -> ad.getId() != null).map(ad -> String.valueOf(ad.getId())).toList());
+    designationIds.addAll(concepts.stream().filter(c -> c.getDisplay() != null && c.getDisplay().getId() != null)
+        .map(c -> String.valueOf(c.getDisplay().getId())).toList());
+    designationIds.addAll(concepts.stream().filter(c -> CollectionUtils.isNotEmpty(c.getAdditionalDesignations()))
+        .flatMap(c -> c.getAdditionalDesignations().stream())
+        .filter(ad -> ad.getId() != null).map(ad -> String.valueOf(ad.getId())).toList());
     DesignationQueryParams designationParams = new DesignationQueryParams();
     designationParams.setId(String.join(",", designationIds));
     designationParams.setLimit(designationIds.size());
@@ -94,7 +95,7 @@ public class ValueSetVersionConceptService {
     List<CodeSystemEntityVersion> activeVersions = CollectionUtils.isEmpty(conceptIds) ? new ArrayList<>() : codeSystemEntityVersionService.query(entityVersionParams).getData();
 
     concepts.forEach(c -> {
-      c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? c.getDisplay() : designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
+      c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? findDefDisplay(c.getConcept().getCode(), c.getConcept().getCodeSystem()) : designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
       c.setActive(c.isActive() || activeVersions.stream().anyMatch(av -> av.getCode().equals(c.getConcept().getCode())));
       if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
         c.setAdditionalDesignations(c.getAdditionalDesignations().stream()
@@ -103,6 +104,14 @@ public class ValueSetVersionConceptService {
       }
     });
     return concepts;
+  }
+
+  private Designation findDefDisplay(String code, String codeSystem) {
+    DesignationQueryParams params = new DesignationQueryParams().setConceptCode(code).setCodeSystem(codeSystem);
+    params.all();
+    List<Designation> designations = designationService.query(params).getData();
+    designations.sort(Comparator.comparing(d -> !d.isPreferred()));
+    return designations.stream().findFirst().orElse(null);
   }
 
   public QueryResult<ValueSetVersionConcept> query(ValueSetVersionConceptQueryParams params) {

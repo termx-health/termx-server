@@ -47,7 +47,7 @@ with rule_set as (
         from exclude_rules er
     ),
     rule_concepts as (
-        select jsonb_build_object('id', c.id, 'code', c.code) concept, (irc.c -> 'display') display, (irc.c -> 'additionalDesignations') additional_designations
+        select jsonb_build_object('id', c.id, 'code', c.code, 'codeSystem', c.code_system) concept, (irc.c -> 'display') display, (irc.c -> 'additionalDesignations') additional_designations
         from terminology.concept c
                  left join include_rule_concepts irc on (irc.c -> 'concept' ->> 'id')::bigint = c.id
                  left join terminology.code_system_entity_version csev on  csev.code_system_entity_id = c.id and csev.sys_status = 'A'
