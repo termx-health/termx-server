@@ -130,24 +130,10 @@ public class ConceptRepository extends BaseRepository {
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
         "where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
     if (StringUtils.isNotEmpty(params.getPropertyValues()) || StringUtils.isNotEmpty(params.getPropertyValuesPartial())) {
-      sb.append("and exists (select 1 from terminology.entity_property_value epv " +
-          "inner join terminology.entity_property ep on ep.id = epv.entity_property_id and ep.sys_status = 'A' " +
-          "inner join terminology.code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A' " +
-          "where csev.code_system_entity_id = c.id and epv.sys_status = 'A'");
-      if (StringUtils.isNotEmpty(params.getPropertyValues())) {
-        String[] propertyValues = params.getPropertyValues().split(",");
-        sb.append("and (").append(Arrays.stream(propertyValues).map(pv -> {
-          String[] pipe = PipeUtil.parsePipe(pv);
-          return new SqlBuilder().append("ep.name = ?", pipe[0]).appendIfTrue(pipe.length == 2, "and epv.value @> to_jsonb(?::text)", pipe[1]).toPrettyString();
-        }).collect(Collectors.joining(" and "))).append(")");
-      }
-      if (StringUtils.isNotEmpty(params.getPropertyValuesPartial())) {
-        String[] propertyValues = params.getPropertyValuesPartial().split(",");
-        sb.append("and (").append(Arrays.stream(propertyValues).map(pv -> {
-          String[] pipe = PipeUtil.parsePipe(pv);
-          return new SqlBuilder().append("ep.name = ?", pipe[0]).appendIfTrue(pipe.length == 2, "and epv.value @> to_jsonb(?::text)", pipe[1]).toPrettyString();
-        }).collect(Collectors.joining(" or "))).append(")");
-      }
+      sb.append("and (1<>1");
+      sb.append("or").append(checkProperty(params.getPropertyValues(), params.getPropertyValuesPartial()));
+      sb.append("or").append(checkDesignation(params.getPropertyValues(), params.getPropertyValuesPartial()));
+      sb.append("or").append(checkAssociation(params.getPropertyValues(), params.getPropertyValuesPartial()));
       sb.append(")");
     }
     sb.appendIfNotNull("and not exists(select 1 from terminology.entity_property_value epv " +
@@ -175,6 +161,65 @@ public class ConceptRepository extends BaseRepository {
         "inner join terminology.code_system_entity_version csev on csev.id = csa.source_code_system_entity_version_id and csev.sys_status = 'A' " +
         "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)", params.getAssociationType());
     return sb;
+  }
+
+  private String checkProperty(String propertyValues, String propertyValuesPartial) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.append("exists (select 1 from terminology.entity_property_value epv " +
+        "inner join terminology.entity_property ep on ep.id = epv.entity_property_id and ep.sys_status = 'A' " +
+        "inner join terminology.code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A' " +
+        "where csev.code_system_entity_id = c.id and epv.sys_status = 'A'");
+    if (StringUtils.isNotEmpty(propertyValues)) {
+      sb.append(checkPropertyValue(propertyValues, "ep.name = ?", "epv.value @> to_jsonb(?::text)", true));
+    }
+    if (StringUtils.isNotEmpty(propertyValuesPartial)) {
+      sb.append(checkPropertyValue(propertyValuesPartial,"ep.name = ?", "epv.value @> to_jsonb(?::text)", false));
+    }
+    sb.append(")");
+    return sb.toPrettyString();
+  }
+
+  private String checkDesignation(String propertyValues, String propertyValuesPartial) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.append("exists (select 1 from terminology.designation d " +
+        "inner join terminology.entity_property ep on ep.id = d.designation_type_id and ep.sys_status = 'A' " +
+        "inner join terminology.code_system_entity_version csev on csev.id = d.code_system_entity_version_id and csev.sys_status = 'A' " +
+        "where csev.code_system_entity_id = c.id and d.sys_status = 'A'");
+    if (StringUtils.isNotEmpty(propertyValues)) {
+      sb.append(checkPropertyValue(propertyValues,"ep.name = ?", "d.name = ?", true));
+    }
+    if (StringUtils.isNotEmpty(propertyValuesPartial)) {
+      sb.append(checkPropertyValue(propertyValuesPartial, "ep.name = ?", "d.name ~* ?", false));
+    }
+    sb.append(")");
+    return sb.toPrettyString();
+  }
+
+  private String checkAssociation(String propertyValues, String propertyValuesPartial) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.append("exists (select 1 from terminology.code_system_association csa " +
+        "inner join terminology.association_type at on at.code = csa.association_type and at.sys_status = 'A' " +
+        "inner join terminology.code_system_entity_version target on target.id = csa.target_code_system_entity_version_id and target.sys_status = 'A'  " +
+        "inner join terminology.code_system_entity_version source on source.id = csa.source_code_system_entity_version_id and source.sys_status = 'A' " +
+        "where source.code_system_entity_id = c.id and csa.sys_status = 'A'");
+    if (StringUtils.isNotEmpty(propertyValues)) {
+      sb.append(checkPropertyValue(propertyValues,"at.code = ?", "target.code = ?", true));
+    }
+    if (StringUtils.isNotEmpty(propertyValuesPartial)) {
+      sb.append(checkPropertyValue(propertyValuesPartial,"at.code = ?", "target.code = ?", false));
+    }
+    sb.append(")");
+    return sb.toPrettyString();
+  }
+
+  private String checkPropertyValue(String values, String nameField, String valueField, boolean exact) {
+    SqlBuilder sb = new SqlBuilder();
+    String[] propertyValues = values.split(",");
+    sb.append("and (").append(Arrays.stream(propertyValues).map(pv -> {
+      String[] pipe = PipeUtil.parsePipe(pv);
+      return new SqlBuilder().append(nameField, pipe[0]).appendIfTrue(pipe.length == 2, "and " + valueField, pipe[1]).toPrettyString();
+    }).collect(Collectors.joining(exact ? " and " : " or "))).append(")");
+    return sb.toPrettyString();
   }
 
   public void batchUpsert(List<Concept> concepts) {
