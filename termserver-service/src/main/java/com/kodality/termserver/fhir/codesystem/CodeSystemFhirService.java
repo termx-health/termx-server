@@ -268,8 +268,8 @@ public class CodeSystemFhirService {
   public Bundle search(Map<String, List<String>> params) {
     FhirQueryParams fhirParams = new FhirQueryParams(params);
     CodeSystemQueryParams queryParams = new CodeSystemQueryParams();
-    queryParams.setVersionVersion(fhirParams.getFirst("version").orElse(null));
     queryParams.setUri(fhirParams.getFirst("system").orElse(fhirParams.getFirst("url").orElse(null)));
+    queryParams.setVersionVersion(fhirParams.getFirst("version").orElse(queryParams.getUri() == null ? null : codeSystemVersionService.loadLastVersionByUri(queryParams.getUri()).getVersion()));
     queryParams.setNameContains(fhirParams.getFirst("title").orElse(fhirParams.getFirst("name").orElse(null)));
     queryParams.setVersionStatus(fhirParams.getFirst("status").orElse(null));
     queryParams.setVersionSource(fhirParams.getFirst("publisher").orElse(null));
