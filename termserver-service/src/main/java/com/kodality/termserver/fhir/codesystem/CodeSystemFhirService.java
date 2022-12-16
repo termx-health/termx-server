@@ -1,6 +1,7 @@
 package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.termserver.ApiError;
+import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
@@ -12,6 +13,8 @@ import com.kodality.termserver.ts.codesystem.CodeSystemService;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.zmei.fhir.Extension;
+import com.kodality.zmei.fhir.datatypes.Attachment;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
@@ -214,14 +217,15 @@ public class CodeSystemFhirService {
           .filter(pm -> match.stream().noneMatch(em -> em.getId().equals(pm.getId())))
           .toList());
     }
-    return new Parameters().setParameter(match.stream().map(c ->
-        new ParametersParameter()
-            .setName("match")
-            .setValueCoding(
-                new Coding()
-                    .setSystem(c.getCodeSystem())
-                    .setCode(c.getCode())
-            )).collect(Collectors.toList()));
+    return new Parameters().setParameter(match.stream().map(c -> {
+      Coding coding = new Coding();
+      coding.setSystem(c.getCodeSystem());
+      coding.setCode(c.getCode());
+      coding.setExtension(c.getVersions().stream().filter(v -> !PublicationStatus.retired.equals(v.getStatus()))
+          .flatMap(v -> v.getDesignations().stream().filter(d -> !PublicationStatus.retired.equals(d.getStatus()))
+              .map(d -> new Extension().setValueAttachment(new Attachment().setLanguage(d.getLanguage()).setData(d.getName())))).toList());
+      return new ParametersParameter().setName("match").setValueCoding(coding);
+    }).toList());
   }
 
   private Optional<Concept> findConcept(String uri, String code, String version) {
