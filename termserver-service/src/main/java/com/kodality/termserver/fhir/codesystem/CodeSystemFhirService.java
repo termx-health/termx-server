@@ -286,7 +286,9 @@ public class CodeSystemFhirService {
     List<CodeSystem> codeSystems = codeSystemService.query(queryParams).getData();
     return Bundle.of("searchset", codeSystems.stream()
         .flatMap(cs -> cs.getVersions().stream().map(csv -> {
-          CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(csv.getId());
+          CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
+              .setCodeSystemVersionId(csv.getId())
+              .setCode(fhirParams.getFirst("code").orElse(null));
           codeSystemEntityVersionParams.all();
           csv.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
           return mapper.toFhir(cs, csv);
