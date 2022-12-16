@@ -13,6 +13,7 @@ import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRu
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,12 @@ public class ValueSetExpandService {
   private List<ValueSetVersionConcept> snomedRuleExpand(ValueSetVersionRule rule) {
     List<ValueSetVersionConcept> ruleConcepts = CollectionUtils.isEmpty(rule.getConcepts()) ? new ArrayList<>() : prepare(rule.getConcepts());
     if (CollectionUtils.isEmpty(rule.getFilters())) {
+      ruleConcepts.forEach(c -> {
+        if (c.getDisplay() == null || c.getDisplay().getName() == null) {
+          Optional<SnomedConcept> concept = snomedService.searchConcepts(new SnomedConceptSearchParams().setConceptIds(List.of(c.getConcept().getCode()))).stream().findFirst();
+          c.setDisplay(concept.map(sc -> new Designation().setName(sc.getPt().getTerm()).setLanguage(sc.getPt().getLang())).orElse(null));
+        }
+      });
       return ruleConcepts;
     }
     rule.getFilters().forEach(f -> ruleConcepts.addAll(snomedService.searchConcepts(new SnomedConceptSearchParams().setEcl(composeEcl(f)).setAll(true)).stream()
