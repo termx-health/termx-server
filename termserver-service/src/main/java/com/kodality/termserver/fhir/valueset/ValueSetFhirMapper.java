@@ -21,6 +21,7 @@ import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionCon
 import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
@@ -83,12 +84,13 @@ public class ValueSetFhirMapper {
       ValueSetComposeIncludeConcept concept = new ValueSetComposeIncludeConcept();
       concept.setCode(valueSetConcept.getConcept().getCode());
       concept.setDisplay(valueSetConcept.getDisplay().getName());
-      concept.setDesignation(valueSetConcept.getAdditionalDesignations().stream().map(d -> {
-        ValueSetComposeIncludeConceptDesignation designation = new ValueSetComposeIncludeConceptDesignation();
-        designation.setValue(d.getName());
-        designation.setLanguage(d.getLanguage());
-        return designation;
-      }).collect(Collectors.toList()));
+      concept.setDesignation(valueSetConcept.getAdditionalDesignations() == null ? new ArrayList<>() :
+          valueSetConcept.getAdditionalDesignations().stream().map(d -> {
+            ValueSetComposeIncludeConceptDesignation designation = new ValueSetComposeIncludeConceptDesignation();
+            designation.setValue(d.getName());
+            designation.setLanguage(d.getLanguage());
+            return designation;
+          }).collect(Collectors.toList()));
       return concept;
     }).collect(Collectors.toList());
   }
@@ -123,12 +125,13 @@ public class ValueSetFhirMapper {
       contains.setCode(valueSetConcept.getConcept().getCode());
       contains.setSystem(valueSetConcept.getConcept().getCodeSystem());
       contains.setDisplay(valueSetConcept.getDisplay() == null ? null : valueSetConcept.getDisplay().getName());
-      contains.setDesignation(valueSetConcept.getAdditionalDesignations() == null ? null : valueSetConcept.getAdditionalDesignations().stream().map(designation -> {
-        ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
-        d.setValue(designation.getName());
-        d.setLanguage(designation.getLanguage());
-        return d;
-      }).collect(Collectors.toList()));
+      contains.setDesignation(
+          valueSetConcept.getAdditionalDesignations() == null ? null : valueSetConcept.getAdditionalDesignations().stream().map(designation -> {
+            ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
+            d.setValue(designation.getName());
+            d.setLanguage(designation.getLanguage());
+            return d;
+          }).collect(Collectors.toList()));
       return contains;
     }).collect(Collectors.toList()));
     return expansion;
