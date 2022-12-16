@@ -134,6 +134,7 @@ public class ConceptRepository extends BaseRepository {
       sb.append("or").append(checkProperty(params.getPropertyValues(), params.getPropertyValuesPartial()));
       sb.append("or").append(checkDesignation(params.getPropertyValues(), params.getPropertyValuesPartial()));
       sb.append("or").append(checkAssociation(params.getPropertyValues(), params.getPropertyValuesPartial()));
+      sb.append("or").append(checkCode(params.getPropertyValues(), params.getPropertyValuesPartial()));
       sb.append(")");
     }
     sb.appendIfNotNull("and not exists(select 1 from terminology.entity_property_value epv " +
@@ -161,6 +162,18 @@ public class ConceptRepository extends BaseRepository {
         "inner join terminology.code_system_entity_version csev on csev.id = csa.source_code_system_entity_version_id and csev.sys_status = 'A' " +
         "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)", params.getAssociationType());
     return sb;
+  }
+
+  private String checkCode(String propertyValues, String propertyValuesPartial) {
+    SqlBuilder sb = new SqlBuilder();
+    if (StringUtils.isNotEmpty(propertyValues) && "code".equals(PipeUtil.parsePipe(propertyValues)[0])) {
+      sb.append("code = ?", PipeUtil.parsePipe(propertyValues)[1]);
+    } else if (StringUtils.isNotEmpty(propertyValuesPartial) && "code".equals(PipeUtil.parsePipe(propertyValuesPartial)[0])) {
+      sb.append("code ~* ?", PipeUtil.parsePipe(propertyValuesPartial)[1]);
+    } else {
+      sb.append("1 <> 1");
+    }
+    return sb.toPrettyString();
   }
 
   private String checkProperty(String propertyValues, String propertyValuesPartial) {
