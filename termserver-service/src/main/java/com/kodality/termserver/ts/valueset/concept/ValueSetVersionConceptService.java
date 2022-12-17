@@ -108,7 +108,7 @@ public class ValueSetVersionConceptService {
         params.all();
         List<Designation> csDesignations = designationService.query(params).getData();
         designations.sort(Comparator.comparing(d -> !d.isPreferred()));
-        c.setDisplay(c.getDisplay() == null && c.getDisplay().getName() == null ? designations.stream().findFirst().orElse(null) : c.getDisplay());
+        c.setDisplay(c.getDisplay() == null || c.getDisplay().getName() == null ? designations.stream().findFirst().orElse(null) : c.getDisplay());
         c.setAdditionalDesignations(CollectionUtils.isEmpty(c.getAdditionalDesignations()) ? csDesignations : c.getAdditionalDesignations());
       }
     });
