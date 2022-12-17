@@ -95,23 +95,24 @@ public class ValueSetVersionConceptService {
     List<CodeSystemEntityVersion> activeVersions = CollectionUtils.isEmpty(conceptIds) ? new ArrayList<>() : codeSystemEntityVersionService.query(entityVersionParams).getData();
 
     concepts.forEach(c -> {
-      c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? findDefDisplay(c.getConcept().getCode(), c.getConcept().getCodeSystem()) : designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
+      c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? null : designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
       c.setActive(c.isActive() || activeVersions.stream().anyMatch(av -> av.getCode().equals(c.getConcept().getCode())));
       if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
         c.setAdditionalDesignations(c.getAdditionalDesignations().stream()
             .map(ad -> ad.getId() == null ? ad : designations.stream().filter(d -> d.getId().equals(ad.getId())).findFirst().orElse(ad))
             .collect(Collectors.toList()));
       }
+
+      if (c.getDisplay() == null || c.getDisplay().getName() == null || CollectionUtils.isEmpty(c.getAdditionalDesignations())) {
+        DesignationQueryParams params = new DesignationQueryParams().setConceptCode(c.getConcept().getCode()).setCodeSystem(c.getConcept().getCodeSystem());
+        params.all();
+        List<Designation> csDesignations = designationService.query(params).getData();
+        designations.sort(Comparator.comparing(d -> !d.isPreferred()));
+        c.setDisplay(c.getDisplay() == null && c.getDisplay().getName() == null ? designations.stream().findFirst().orElse(null) : c.getDisplay());
+        c.setAdditionalDesignations(CollectionUtils.isEmpty(c.getAdditionalDesignations()) ? csDesignations : c.getAdditionalDesignations());
+      }
     });
     return concepts;
-  }
-
-  private Designation findDefDisplay(String code, String codeSystem) {
-    DesignationQueryParams params = new DesignationQueryParams().setConceptCode(code).setCodeSystem(codeSystem);
-    params.all();
-    List<Designation> designations = designationService.query(params).getData();
-    designations.sort(Comparator.comparing(d -> !d.isPreferred()));
-    return designations.stream().findFirst().orElse(null);
   }
 
   public QueryResult<ValueSetVersionConcept> query(ValueSetVersionConceptQueryParams params) {
