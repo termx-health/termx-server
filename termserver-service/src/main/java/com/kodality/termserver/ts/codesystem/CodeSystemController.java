@@ -460,7 +460,7 @@ public class CodeSystemController {
   @Getter
   @Setter
   @Introspected
-  private static class CodeSystemDuplicateRequest {
+  public static class CodeSystemDuplicateRequest {
     private String codeSystem;
     private String codeSystemUri;
   }
@@ -468,7 +468,7 @@ public class CodeSystemController {
   @Getter
   @Setter
   @Introspected
-  private static class CodeSystemVersionDuplicateRequest {
+  public static class CodeSystemVersionDuplicateRequest {
     private String codeSystem;
     private String version;
   }
