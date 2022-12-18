@@ -129,8 +129,7 @@ public class ValueSetVersionConceptService {
   public List<ValueSetVersionConcept> expand(String valueSet, String valueSetVersion, ValueSetVersionRuleSet ruleSet) {
     Long versionId = null;
     if (valueSet != null) {
-      ValueSetVersion version = valueSetVersion == null ? valueSetVersionRepository.loadLastVersion(valueSet, PublicationStatus.active) : valueSetVersionRepository.load(valueSet, valueSetVersion);
-      version = version == null ? valueSetVersionRepository.loadLastVersion(valueSet, PublicationStatus.draft) : version;
+      ValueSetVersion version = valueSetVersion == null ? valueSetVersionRepository.loadLastVersion(valueSet) : valueSetVersionRepository.load(valueSet, valueSetVersion);
       versionId = version == null ? null : version.getId();
     }
 

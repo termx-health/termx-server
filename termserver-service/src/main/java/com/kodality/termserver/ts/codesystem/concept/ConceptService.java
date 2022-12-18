@@ -147,8 +147,7 @@ public class ConceptService {
       params.setCodeSystem(Arrays.stream(codeSystems).map(cs -> String.join(",", codeSystemRepository.closure(cs))).collect(Collectors.joining(",")));
     }
     if (params.getValueSet() != null && params.getValueSetVersion() == null) {
-      ValueSetVersion valueSetVersion = valueSetVersionRepository.loadLastVersion(params.getValueSet(), PublicationStatus.active);
-      valueSetVersion = valueSetVersion == null ? valueSetVersionRepository.loadLastVersion(params.getValueSet(), PublicationStatus.draft) : valueSetVersion;
+      ValueSetVersion valueSetVersion = valueSetVersionRepository.loadLastVersion(params.getValueSet());
       params.setValueSetVersionId(valueSetVersion == null ? null : valueSetVersion.getId());
     }
     if (params.getValueSet() != null && params.getValueSetVersion() != null) {
