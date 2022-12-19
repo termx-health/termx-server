@@ -4,6 +4,7 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.ContactDetail;
@@ -23,6 +24,7 @@ public class CodeSystemRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(CodeSystem.class, bp -> {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
+    bp.addColumnProcessor("supported_languages", PgBeanProcessor.fromArray());
   });
 
   public void save(CodeSystem codeSystem) {
@@ -35,6 +37,7 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.property("case_sensitive", codeSystem.getCaseSensitive());
     ssb.property("narrative", codeSystem.getNarrative());
     ssb.property("description", codeSystem.getDescription());
+    ssb.property("supported_languages", "?::text[]", PgUtil.array(codeSystem.getSupportedLanguages()));
     ssb.property("base_code_system", codeSystem.getBaseCodeSystem());
     ssb.property("sys_status", "A");
 
