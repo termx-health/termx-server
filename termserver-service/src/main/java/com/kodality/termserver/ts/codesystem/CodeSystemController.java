@@ -163,6 +163,13 @@ public class CodeSystemController {
     return HttpResponse.noContent();
   }
 
+  @Authorized("*.CodeSystem.publish")
+  @Post(uri = "/{codeSystem}/versions/{version}/draft")
+  public HttpResponse<?> saveAsDraftCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version) {
+    codeSystemVersionService.saveAsDraft(codeSystem, version);
+    return HttpResponse.noContent();
+  }
+
   @Authorized("*.CodeSystem.edit")
   @Post(uri = "/{codeSystem}/versions/{version}/duplicate")
   public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version, @Body @Valid CodeSystemVersionDuplicateRequest request) {
@@ -257,6 +264,13 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/entities/versions/{id}/retire")
   public HttpResponse<?> retireEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
     codeSystemEntityVersionService.retire(id);
+    return HttpResponse.noContent();
+  }
+
+  @Authorized("*.CodeSystem.publish")
+  @Post(uri = "/{codeSystem}/entities/versions/{id}/draft")
+  public HttpResponse<?> saveAsDraftEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
+    codeSystemEntityVersionService.saveAsDraft(id);
     return HttpResponse.noContent();
   }
 

@@ -87,6 +87,11 @@ public class CodeSystemVersionRepository extends BaseRepository {
     jdbcTemplate.update(sql, PublicationStatus.retired, codeSystem, version, PublicationStatus.retired);
   }
 
+  public void saveAsDraft(String codeSystem, String version) {
+    String sql = "update terminology.code_system_version set status = ? where code_system = ? and version = ? and sys_status = 'A' and status <> ?";
+    jdbcTemplate.update(sql, PublicationStatus.draft, codeSystem, version, PublicationStatus.draft);
+  }
+
   public void saveExpirationDate(CodeSystemVersion version) {
     String sql = "update terminology.code_system_version set expiration_date = ? where id = ?";
     jdbcTemplate.update(sql, version.getExpirationDate(), version.getId());

@@ -104,6 +104,21 @@ public class ValueSetVersionService {
     repository.retire(valueSet, version);
   }
 
+  @Transactional
+  public void saveAsDraft(String valueSet, String version) {
+    userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
+
+    ValueSetVersion currentVersion = repository.load(valueSet, version);
+    if (currentVersion == null) {
+      throw ApiError.TE301.toApiException(Map.of("version", version, "valueSet", valueSet));
+    }
+    if (PublicationStatus.draft.equals(currentVersion.getStatus())) {
+      log.warn("Version '{}' of valueSet '{}' is already draft, skipping retirement process.", version, valueSet);
+      return;
+    }
+    repository.saveAsDraft(valueSet, version);
+  }
+
   private ValueSetVersion decorate(ValueSetVersion version) {
     if (version == null) {
       return null;

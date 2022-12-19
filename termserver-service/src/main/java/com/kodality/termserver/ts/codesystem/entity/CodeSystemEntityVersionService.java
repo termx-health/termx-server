@@ -143,6 +143,20 @@ public class CodeSystemEntityVersionService {
   }
 
   @Transactional
+  public void saveAsDraft(Long versionId) {
+    CodeSystemEntityVersion currentVersion = repository.load(versionId);
+    if (currentVersion == null) {
+      throw ApiError.TE105.toApiException(Map.of("version", versionId));
+    }
+    userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "publish");
+    if (PublicationStatus.draft.equals(currentVersion.getStatus())) {
+      log.warn("Version '{}' is already draft, skipping retirement process.", versionId);
+      return;
+    }
+    repository.saveAsDraft(versionId);
+  }
+
+  @Transactional
   public void duplicate(String codeSystem, Long entityId, Long id) {
     CodeSystemEntityVersion version = load(id);
     version.setId(null);

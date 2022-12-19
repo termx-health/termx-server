@@ -105,6 +105,11 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     jdbcTemplate.update(sql, PublicationStatus.retired, versionId, PublicationStatus.retired);
   }
 
+  public void saveAsDraft(Long versionId) {
+    String sql = "update terminology.code_system_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
+    jdbcTemplate.update(sql, PublicationStatus.retired, versionId, PublicationStatus.retired);
+  }
+
   public void cancel(Long id) {
     SqlBuilder sb = new SqlBuilder("update terminology.code_system_entity_version set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());

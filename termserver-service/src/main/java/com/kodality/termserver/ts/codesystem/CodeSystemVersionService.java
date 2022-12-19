@@ -106,6 +106,21 @@ public class CodeSystemVersionService {
   }
 
   @Transactional
+  public void saveAsDraft(String codeSystem, String version) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
+
+    CodeSystemVersion currentVersion = repository.load(codeSystem, version);
+    if (currentVersion == null) {
+      throw ApiError.TE202.toApiException(Map.of("version", version, "codeSystem", codeSystem));
+    }
+    if (PublicationStatus.draft.equals(currentVersion.getStatus())) {
+      log.warn("Version '{}' of codesystem '{}' is already draft, skipping retirement process.", version, codeSystem);
+      return;
+    }
+    repository.saveAsDraft(codeSystem, version);
+  }
+
+  @Transactional
   public void save(List<CodeSystemVersion> versions, String codeSystem) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
 

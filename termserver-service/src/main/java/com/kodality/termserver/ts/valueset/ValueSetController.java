@@ -128,6 +128,13 @@ public class ValueSetController {
     return HttpResponse.noContent();
   }
 
+  @Authorized("*.ValueSet.publish")
+  @Post(uri = "/{valueSet}/versions/{version}/draft")
+  public HttpResponse<?> saveAsDraft(@PathVariable @ResourceId String valueSet, @PathVariable String version) {
+    valueSetVersionService.saveAsDraft(valueSet, version);
+    return HttpResponse.noContent();
+  }
+
   //----------------ValueSet Version Concept----------------
 
   @Authorized("*.ValueSet.view")
