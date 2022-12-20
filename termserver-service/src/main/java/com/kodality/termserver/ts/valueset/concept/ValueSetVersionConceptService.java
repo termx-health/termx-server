@@ -77,11 +77,8 @@ public class ValueSetVersionConceptService {
 
   public List<ValueSetVersionConcept> decorate(List<ValueSetVersionConcept> concepts) {
     List<String> designationIds = new ArrayList<>();
-    designationIds.addAll(concepts.stream().filter(c -> c.getDisplay() != null && c.getDisplay().getId() != null)
-        .map(c -> String.valueOf(c.getDisplay().getId())).toList());
-    designationIds.addAll(concepts.stream().filter(c -> CollectionUtils.isNotEmpty(c.getAdditionalDesignations()))
-        .flatMap(c -> c.getAdditionalDesignations().stream())
-        .filter(ad -> ad.getId() != null).map(ad -> String.valueOf(ad.getId())).toList());
+    designationIds.addAll(concepts.stream().filter(c -> c.getDisplay() != null && c.getDisplay().getId() != null).map(c -> String.valueOf(c.getDisplay().getId())).toList());
+    designationIds.addAll(concepts.stream().filter(c -> CollectionUtils.isNotEmpty(c.getAdditionalDesignations())).flatMap(c -> c.getAdditionalDesignations().stream()).filter(ad -> ad.getId() != null).map(ad -> String.valueOf(ad.getId())).toList());
     DesignationQueryParams designationParams = new DesignationQueryParams();
     designationParams.setId(String.join(",", designationIds));
     designationParams.setLimit(designationIds.size());
@@ -90,23 +87,21 @@ public class ValueSetVersionConceptService {
     List<String> conceptIds = concepts.stream().filter(c -> c.getConcept() != null && c.getConcept().getId() != null).map(c -> String.valueOf(c.getConcept().getId())).toList();
     CodeSystemEntityVersionQueryParams entityVersionParams = new CodeSystemEntityVersionQueryParams();
     entityVersionParams.setCodeSystemEntityIds(String.join(",", conceptIds));
-    entityVersionParams.setStatus(PublicationStatus.active);
+    entityVersionParams.setStatus(String.join(",", List.of(PublicationStatus.active, PublicationStatus.draft)));
     entityVersionParams.all();
-    List<CodeSystemEntityVersion> activeVersions = CollectionUtils.isEmpty(conceptIds) ? new ArrayList<>() : codeSystemEntityVersionService.query(entityVersionParams).getData();
+    List<CodeSystemEntityVersion> versions = CollectionUtils.isEmpty(conceptIds) ? new ArrayList<>() : codeSystemEntityVersionService.query(entityVersionParams).getData();
 
     concepts.forEach(c -> {
+      List<CodeSystemEntityVersion> conceptVersions = versions.stream().filter(v -> v.getCode().equals(c.getConcept().getCode())).toList();
+      c.getConcept().setVersions(conceptVersions);
       c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? null : designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
-      c.setActive(c.isActive() || activeVersions.stream().anyMatch(av -> av.getCode().equals(c.getConcept().getCode())));
-      if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
-        c.setAdditionalDesignations(c.getAdditionalDesignations().stream()
-            .map(ad -> ad.getId() == null ? ad : designations.stream().filter(d -> d.getId().equals(ad.getId())).findFirst().orElse(ad))
-            .collect(Collectors.toList()));
-      }
+      c.setActive(c.isActive() || conceptVersions.stream().anyMatch(v -> PublicationStatus.active.equals(v.getStatus())));
+      c.setAdditionalDesignations(CollectionUtils.isNotEmpty(c.getAdditionalDesignations()) ? c.getAdditionalDesignations().stream()
+          .map(ad -> ad.getId() == null ? ad : designations.stream().filter(d -> d.getId().equals(ad.getId())).findFirst().orElse(ad))
+          .collect(Collectors.toList()) : null);
 
       if (c.getDisplay() == null || c.getDisplay().getName() == null || CollectionUtils.isEmpty(c.getAdditionalDesignations())) {
-        DesignationQueryParams params = new DesignationQueryParams().setConceptCode(c.getConcept().getCode()).setCodeSystem(c.getConcept().getCodeSystem());
-        params.all();
-        List<Designation> csDesignations = designationService.query(params).getData();
+        List<Designation> csDesignations = conceptVersions.stream().flatMap(v -> v.getDesignations().stream()).toList();
         designations.sort(Comparator.comparing(d -> !d.isPreferred()));
         c.setDisplay(c.getDisplay() == null || c.getDisplay().getName() == null ? designations.stream().findFirst().orElse(null) : c.getDisplay());
         c.setAdditionalDesignations(CollectionUtils.isEmpty(c.getAdditionalDesignations()) ? csDesignations : c.getAdditionalDesignations());

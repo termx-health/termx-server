@@ -58,7 +58,9 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCodeSystemEntityIds())) {
       sb.and().in("csev.code_system_entity_id ", params.getCodeSystemEntityIds(), Long::valueOf);
     }
-    sb.appendIfNotNull("and csev.status = ?", params.getStatus());
+    if (StringUtils.isNotEmpty(params.getStatus())) {
+      sb.and().in("csev.status ", params.getStatus());
+    }
     sb.appendIfNotNull("and csev.code ~* ?", params.getCodeContains());
     sb.appendIfNotNull("and csev.description ~* ?", params.getDescriptionContains());
     if (StringUtils.isNotEmpty(params.getIds())) {
