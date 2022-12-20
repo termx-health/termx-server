@@ -5,3 +5,7 @@ micronaut:
 auth:
   oauth:
     jwks-url: https://auth.kodality.dev/realms/terminology/protocol/openid-connect/certs
+snowstorm:
+  password: snow1eopard
+github:
+  app-name: terminology-server

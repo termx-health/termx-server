@@ -8,6 +8,7 @@ import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
 import com.kodality.termserver.valueset.ValueSetVersionRuleType;
+import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.ContactDetail;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Narrative;
@@ -126,12 +127,21 @@ public class ValueSetFhirMapper {
       contains.setSystem(valueSetConcept.getConcept().getCodeSystem());
       contains.setDisplay(valueSetConcept.getDisplay() == null ? null : valueSetConcept.getDisplay().getName());
       contains.setDesignation(
-          valueSetConcept.getAdditionalDesignations() == null ? null : valueSetConcept.getAdditionalDesignations().stream().map(designation -> {
+          valueSetConcept.getAdditionalDesignations() == null ? new ArrayList<>() : valueSetConcept.getAdditionalDesignations().stream().map(designation -> {
             ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
             d.setValue(designation.getName());
             d.setLanguage(designation.getLanguage());
             return d;
           }).collect(Collectors.toList()));
+      contains.getDesignation().addAll(
+        valueSetConcept.getConcept().getVersions() == null ? new ArrayList<>() : valueSetConcept.getConcept().getVersions().stream().flatMap(v ->
+            v.getPropertyValues().stream().map(pv -> {
+              ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
+              d.setValue(String.valueOf(pv.getValue()));
+              d.setUse(new Coding(pv.getEntityProperty()));
+              return d;
+            })).toList()
+      );
       return contains;
     }).collect(Collectors.toList()));
     return expansion;
