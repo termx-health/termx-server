@@ -134,13 +134,14 @@ public class ValueSetFhirMapper {
             return d;
           }).collect(Collectors.toList()));
       contains.getDesignation().addAll(
-        valueSetConcept.getConcept().getVersions() == null ? new ArrayList<>() : valueSetConcept.getConcept().getVersions().stream().flatMap(v ->
-            v.getPropertyValues().stream().map(pv -> {
-              ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
-              d.setValue(String.valueOf(pv.getValue()));
-              d.setUse(new Coding(pv.getEntityProperty()));
-              return d;
-            })).toList()
+        valueSetConcept.getConcept().getVersions() == null ? new ArrayList<>() : valueSetConcept.getConcept().getVersions().stream().filter(v -> v.getPropertyValues() != null)
+            .flatMap(v ->
+              v.getPropertyValues().stream().map(pv -> {
+                ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
+                d.setValue(String.valueOf(pv.getValue()));
+                d.setUse(new Coding(pv.getEntityProperty()));
+                return d;
+              })).toList()
       );
       return contains;
     }).collect(Collectors.toList()));
