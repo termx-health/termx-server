@@ -35,6 +35,7 @@ public class ConceptQueryParams extends QueryParams {
   private String propertyValuesPartial; //propertyName|value
   private Long propertyRoot;
   private String associationRoot;
+  private String associationLeaf;
   private String propertySource; //propertyId|sourceCode
   private String associationSource; //association|sourceCode
   private String associationType;

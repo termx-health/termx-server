@@ -143,6 +143,9 @@ public class ConceptRepository extends BaseRepository {
     sb.appendIfNotNull("and not exists(select 1 from terminology.code_system_association csa " +
         "inner join terminology.code_system_entity_version csev on csev.id = csa.source_code_system_entity_version_id and csev.sys_status = 'A' " +
         "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)", params.getAssociationRoot());
+    sb.appendIfNotNull("and not exists(select 1 from terminology.code_system_association csa " +
+        "inner join terminology.code_system_entity_version csev on csev.id = csa.target_code_system_entity_version_id and csev.sys_status = 'A' " +
+        "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)", params.getAssociationLeaf());
     if (StringUtils.isNotEmpty(params.getPropertySource())) {
       String[] pipe = PipeUtil.parsePipe(params.getPropertySource());
       sb.append("and exists (select 1 from terminology.entity_property_value epv " +
