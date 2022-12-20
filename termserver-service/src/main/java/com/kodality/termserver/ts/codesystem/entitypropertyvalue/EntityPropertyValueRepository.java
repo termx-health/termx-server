@@ -17,7 +17,7 @@ public class EntityPropertyValueRepository extends BaseRepository {
     bp.addColumnProcessor("value", PgBeanProcessor.fromJson());
   });
 
-  String from = " from terminology.entity_property_value epv left join terminology.code_system_supplement css on css.target_id = epv.id and css.target_type = 'EntityPropertyValue' ";
+  String from = " from terminology.entity_property_value epv inner join terminology.entity_property ep on ep.id = epv.entity_property_id left join terminology.code_system_supplement css on css.target_id = epv.id and css.target_type = 'EntityPropertyValue' ";
 
   public void save(EntityPropertyValue value, Long codeSystemEntityVersionId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -32,12 +32,12 @@ public class EntityPropertyValueRepository extends BaseRepository {
   }
 
   public List<EntityPropertyValue> loadAll(Long codeSystemEntityVersionId) {
-    String sql = "select epv.*, css.id supplement_id" + from + "where epv.sys_status = 'A' and epv.code_system_entity_version_id = ?";
+    String sql = "select epv.*, ep.name as entity_property, css.id supplement_id" + from + "where epv.sys_status = 'A' and epv.code_system_entity_version_id = ?";
     return getBeans(sql, bp, codeSystemEntityVersionId);
   }
 
   public EntityPropertyValue load(Long id) {
-    String sql = "select epv.*, css.id supplement_id" + from + "where epv.sys_status = 'A' and epv.id = ?";
+    String sql = "select epv.*, ep.name as entity_property, css.id supplement_id" + from + "where epv.sys_status = 'A' and epv.id = ?";
     return getBean(sql, bp, id);
   }
 
@@ -59,7 +59,7 @@ public class EntityPropertyValueRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select epv.*, css.id supplement_id" + from + "where epv.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select epv.*, ep.name as entity_property, css.id supplement_id" + from + "where epv.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
