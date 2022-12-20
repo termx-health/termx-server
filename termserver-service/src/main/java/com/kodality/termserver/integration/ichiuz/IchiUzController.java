@@ -25,7 +25,7 @@ public class IchiUzController {
   private final IchiUzService service;
   private final ImportLogger importLogger;
 
-  private static final String JOB_TYPE = "RHK-10";
+  private static final String JOB_TYPE = "ICHI";
 
   @Authorized("*.CodeSystem.edit")
   @Post("/import")
