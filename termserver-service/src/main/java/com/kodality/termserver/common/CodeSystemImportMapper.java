@@ -5,6 +5,7 @@ import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.codesystem.CodeSystemContent;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
+import io.micronaut.core.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +39,7 @@ public class CodeSystemImportMapper {
 
   public static List<CodeSystemAssociation> mapAssociations(String targetCode, String associationType, ImportConfiguration configuration) {
     List<CodeSystemAssociation> associations = new ArrayList<>();
-    if (targetCode == null) {
+    if (StringUtils.isEmpty(targetCode)) {
       return associations;
     }
     CodeSystemAssociation association = new CodeSystemAssociation();
