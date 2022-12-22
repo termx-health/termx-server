@@ -143,6 +143,16 @@ public class ValueSetFhirMapper {
                 return d;
               })).toList()
       );
+      contains.getDesignation().addAll(
+          valueSetConcept.getConcept().getVersions() == null ? new ArrayList<>() : valueSetConcept.getConcept().getVersions().stream().filter(v -> v.getAssociations() != null)
+              .flatMap(v ->
+                  v.getAssociations().stream().map(a -> {
+                    ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
+                    d.setValue(String.valueOf(a.getTargetCode()));
+                    d.setUse(new Coding(a.getAssociationType()));
+                    return d;
+                  })).toList()
+      );
       return contains;
     }).collect(Collectors.toList()));
     return expansion;

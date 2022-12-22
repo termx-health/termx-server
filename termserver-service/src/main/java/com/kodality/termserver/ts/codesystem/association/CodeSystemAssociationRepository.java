@@ -18,6 +18,8 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     bp.overrideColumnMapping("source_code_system_entity_version_id", "sourceId");
   });
 
+  private String from = " from terminology.code_system_association csa inner join terminology.code_system_entity_version csev on csev.sys_status = 'A' and csev.id = target_code_system_entity_version_id ";
+
   public void save(CodeSystemAssociation association, Long codeSystemEntityVersionId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", association.getId());
@@ -33,12 +35,12 @@ public class CodeSystemAssociationRepository extends BaseRepository {
   }
 
   public List<CodeSystemAssociation> loadAll(Long codeSystemEntityVersionId) {
-    String sql = "select * from terminology.code_system_association where sys_status = 'A' and source_code_system_entity_version_id = ?";
+    String sql = "select csa.*, csev.code as target_code " + from + "where csa.sys_status = 'A' and csa.source_code_system_entity_version_id = ?";
     return getBeans(sql, bp, codeSystemEntityVersionId);
   }
 
   public CodeSystemAssociation load(Long id) {
-    String sql = "select * from terminology.code_system_association where sys_status = 'A' and id = ?";
+    String sql = "select csa.*, csev.code as target_code " + from + "where csa.sys_status = 'A' and csa.id = ?";
     return getBean(sql, bp, id);
   }
 
@@ -56,11 +58,11 @@ public class CodeSystemAssociationRepository extends BaseRepository {
 
   public QueryResult<CodeSystemAssociation> query(CodeSystemAssociationQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_association where sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1)" + from + "where csa.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from terminology.code_system_association where sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select csa.*, csev.code as target_code " + from + "where csa.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -70,10 +72,10 @@ public class CodeSystemAssociationRepository extends BaseRepository {
   private SqlBuilder filter(CodeSystemAssociationQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     if (StringUtils.isNotEmpty(params.getCodeSystemEntityVersionId())) {
-      sb.and().in("source_code_system_entity_version_id", params.getCodeSystemEntityVersionId(), Long::valueOf);
+      sb.and().in("csa.source_code_system_entity_version_id", params.getCodeSystemEntityVersionId(), Long::valueOf);
     }
     if (StringUtils.isNotEmpty(params.getAssociationType())) {
-      sb.and().in("association_type", params.getAssociationType());
+      sb.and().in("csa.association_type", params.getAssociationType());
     }
     return sb;
   }
