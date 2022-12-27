@@ -138,28 +138,28 @@ public class CodeSystemFhirImportMapper {
     String caseSignificance = codeSystem.getCaseSensitive() != null && codeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
         CaseSignificance.entire_term_case_insensitive;
 
-//    Designation display = new Designation();
-//    display.setDesignationType(DISPLAY);
-//    display.setName(c.getDisplay());
-//    display.setPreferred(true);
-//    display.setLanguage(Language.en);
-//    display.setCaseSignificance(caseSignificance);
-//    display.setDesignationKind("text");
-//    display.setStatus("active");
+    Designation display = new Designation();
+    display.setDesignationType(DISPLAY);
+    display.setName(c.getDisplay());
+    display.setPreferred(true);
+    display.setLanguage(Language.en);
+    display.setCaseSignificance(caseSignificance);
+    display.setDesignationKind("text");
+    display.setStatus("active");
 
     List<Designation> designations = new ArrayList<>();
-//    designations.add(display);
+    designations.add(display);
 
-//    if (c.getDefinition() != null) {
-//      Designation definition = new Designation();
-//      definition.setDesignationType(DEFINITION);
-//      definition.setName(c.getDefinition());
-//      definition.setLanguage(Language.en);
-//      definition.setCaseSignificance(caseSignificance);
-//      definition.setDesignationKind("text");
-//      definition.setStatus("active");
-//      designations.add(definition);
-//    }
+    if (c.getDefinition() != null) {
+      Designation definition = new Designation();
+      definition.setDesignationType(DEFINITION);
+      definition.setName(c.getDefinition());
+      definition.setLanguage(Language.en);
+      definition.setCaseSignificance(caseSignificance);
+      definition.setDesignationKind("text");
+      definition.setStatus("active");
+      designations.add(definition);
+    }
 
     if (c.getDesignation() == null) {
       return designations;
