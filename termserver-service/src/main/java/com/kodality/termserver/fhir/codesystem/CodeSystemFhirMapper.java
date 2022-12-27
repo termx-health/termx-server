@@ -188,24 +188,19 @@ public class CodeSystemFhirMapper {
     concept.setCode(e.getCode());
     concept.setDisplay(findDesignation(e.getDesignations(), codeSystem.getProperties(), "display"));
     concept.setDefinition(findDesignation(e.getDesignations(), codeSystem.getProperties(), "definition"));
-    concept.setDesignation(getDesignations(e.getDesignations(), codeSystem.getProperties()));
+    concept.setDesignation(getDesignations(e.getDesignations()));
     concept.setProperty(getProperties(e.getPropertyValues(), codeSystem.getProperties(), fhirCodeSystem));
     concept.setConcept(getChildConcepts(entities, e.getId(), codeSystem, fhirCodeSystem));
     return concept;
   }
 
-  private List<CodeSystemConceptDesignation> getDesignations(List<Designation> designations,
-                                                             List<EntityProperty> properties) {
-    List<Long> propertyIds =
-        properties.stream().filter(p -> p.getName().equals("display") || p.getName().equals("definition")).map(EntityProperty::getId).toList();
-    List<CodeSystemConceptDesignation> result =
-        designations.stream().filter(d -> !propertyIds.contains(d.getDesignationTypeId())).map(d -> {
-          CodeSystemConceptDesignation fhirDesignation =
-              new CodeSystemConceptDesignation();
-          fhirDesignation.setLanguage(d.getLanguage());
-          fhirDesignation.setValue(d.getName());
-          return fhirDesignation;
-        }).collect(Collectors.toList());
+  private List<CodeSystemConceptDesignation> getDesignations(List<Designation> designations) {
+    List<CodeSystemConceptDesignation> result = designations.stream().map(d -> {
+      CodeSystemConceptDesignation fhirDesignation = new CodeSystemConceptDesignation();
+      fhirDesignation.setLanguage(d.getLanguage());
+      fhirDesignation.setValue(d.getName());
+      return fhirDesignation;
+    }).collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result;
   }
 
