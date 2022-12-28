@@ -161,6 +161,14 @@ public class ConceptRepository extends BaseRepository {
           "left join terminology.concept ct on ct.id = csevt.code_system_entity_id and ct.sys_status = 'A' " +
           "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ? and ct.code = ?)", pipe[0], pipe[1]);
     }
+    if (StringUtils.isNotEmpty(params.getAssociationTarget())) {
+      String[] pipe = PipeUtil.parsePipe(params.getAssociationTarget());
+      sb.append("and exists (select 1 from terminology.code_system_association csa " +
+          "inner join terminology.code_system_entity_version csev on csev.id = csa.target_code_system_entity_version_id and csev.sys_status = 'A' " +
+          "left join terminology.code_system_entity_version csevs on csevs.id = csa.source_code_system_entity_version_id and csevs.sys_status = 'A' " +
+          "left join terminology.concept c_source on c_source.id = csevs.code_system_entity_id and c_source.sys_status = 'A' " +
+          "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ? and c_source.code = ?)", pipe[0], pipe[1]);
+    }
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_association csa " +
         "inner join terminology.code_system_entity_version csev on csev.id = csa.source_code_system_entity_version_id and csev.sys_status = 'A' " +
         "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)", params.getAssociationType());
