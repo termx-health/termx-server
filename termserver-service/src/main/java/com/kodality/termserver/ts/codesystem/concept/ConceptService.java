@@ -137,7 +137,7 @@ public class ConceptService {
         .setCodeSystemEntityIds(concepts.stream().map(CodeSystemEntity::getId).map(String::valueOf).collect(Collectors.joining(",")))
         .setCodeSystemVersion(codeSystemVersion)
         .setCodeSystem(codeSystem)).getData();
-    concepts.forEach(c -> c.setVersions(versions.stream().filter(v -> v.getCodeSystem().equals(c.getCodeSystem()) && v.getCode().equals(c.getCode())).collect(Collectors.toList())));
+    concepts.forEach(c -> c.setVersions(versions.stream().filter(v -> v.getCode().equals(c.getCode())).collect(Collectors.toList())));
     return concepts;
   }
 
