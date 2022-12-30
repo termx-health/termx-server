@@ -63,8 +63,8 @@ public class ConceptService {
 
     List<Concept> existingConcepts = new ArrayList<>();
 
-    IntStream.range(0,(concepts.size()+1000-1)/1000)
-        .mapToObj(i -> concepts.subList(i*1000, Math.min(concepts.size(), (i+1)*1000)))
+    IntStream.range(0, (concepts.size() + 1000 - 1) / 1000)
+        .mapToObj(i -> concepts.subList(i * 1000, Math.min(concepts.size(), (i + 1) * 1000)))
         .forEach(batch -> {
           ConceptQueryParams params = new ConceptQueryParams();
           params.setLimit(batch.size());
@@ -109,7 +109,7 @@ public class ConceptService {
   }
 
   public Optional<Concept> load(Long id) {
-    return Optional.ofNullable(repository.load(id)).map(c -> decorate(c, null,null));
+    return Optional.ofNullable(repository.load(id)).map(c -> decorate(c, null, null));
   }
 
   public Optional<Concept> load(String codeSystem, String code) {
@@ -133,10 +133,12 @@ public class ConceptService {
   }
 
   private List<Concept> decorate(List<Concept> concepts, String codeSystem, String codeSystemVersion) {
-    List<CodeSystemEntityVersion> versions = codeSystemEntityVersionService.query(new CodeSystemEntityVersionQueryParams()
-        .setCodeSystemEntityIds(concepts.stream().map(CodeSystemEntity::getId).map(String::valueOf).collect(Collectors.joining(",")))
-        .setCodeSystemVersion(codeSystemVersion)
-        .setCodeSystem(codeSystem)).getData();
+    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
+    params.setCodeSystemEntityIds(concepts.stream().map(CodeSystemEntity::getId).map(String::valueOf).collect(Collectors.joining(",")));
+    params.setCodeSystemVersion(codeSystemVersion);
+    params.setCodeSystem(codeSystem);
+    params.all();
+    List<CodeSystemEntityVersion> versions = codeSystemEntityVersionService.query(params).getData();
     concepts.forEach(c -> c.setVersions(versions.stream().filter(v -> v.getCode().equals(c.getCode())).collect(Collectors.toList())));
     return concepts;
   }

@@ -15,7 +15,7 @@ import java.util.List;
 public class DesignationRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(Designation.class);
 
-  String from = " from terminology.designation d left join terminology.code_system_supplement css on css.target_id = d.id and css.target_type = 'Designation' ";
+  String from = " from terminology.designation d left join terminology.code_system_supplement css on css.target_id = d.id and css.target_type = 'Designation' and css.sys_status = 'A'";
 
   public void save(Designation designation, Long codeSystemEntityVersionId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();

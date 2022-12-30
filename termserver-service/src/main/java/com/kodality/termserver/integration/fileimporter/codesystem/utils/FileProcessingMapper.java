@@ -124,6 +124,7 @@ public class FileProcessingMapper {
             designation.setName((String) fpPropertyValue.getValue());
             designation.setLanguage(fpPropertyValue.getLang());
             designation.setStatus(PublicationStatus.active);
+            designation.setPreferred(CONCEPT_DISPLAY.equals(key));
             designation.setCaseSignificance(CaseSignificance.entire_term_case_insensitive);
             designation.setDesignationType(fpPropertyValue.getPropertyName());
             return designation;
