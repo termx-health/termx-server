@@ -183,7 +183,7 @@ public class FileProcessor {
     if (val == null) {
       return null;
     }
-    if (List.of("0", "1", "false", "true").contains(val)) {
+    if (Stream.of("0", "1", "false", "true").anyMatch(v -> v.equalsIgnoreCase(val))) {
       return BOOLEAN;
     } else if (StringUtils.isNumeric(val)) {
       try {
