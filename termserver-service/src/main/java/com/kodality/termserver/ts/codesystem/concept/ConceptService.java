@@ -135,10 +135,11 @@ public class ConceptService {
 
   private List<Concept> decorate(List<Concept> concepts, String codeSystem, String codeSystemVersion) {
     CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
-    params.setCodeSystemEntityIds(concepts.stream().map(CodeSystemEntity::getId).map(String::valueOf).collect(Collectors.joining(",")));
+    List<String> csEntityIds = concepts.stream().map(CodeSystemEntity::getId).map(String::valueOf).toList();
+    params.setCodeSystemEntityIds(String.join(",", csEntityIds));
     params.setCodeSystemVersion(codeSystemVersion);
     params.setCodeSystem(codeSystem);
-    params.all();
+    params.setLimit(csEntityIds.size());
     List<CodeSystemEntityVersion> versions = codeSystemEntityVersionService.query(params).getData();
     concepts.forEach(c -> c.setVersions(versions.stream().filter(v -> v.getCode().equals(c.getCode())).collect(Collectors.toList())));
     return concepts;
