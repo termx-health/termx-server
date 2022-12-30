@@ -17,7 +17,9 @@ public class EntityPropertyValueRepository extends BaseRepository {
     bp.addColumnProcessor("value", PgBeanProcessor.fromJson());
   });
 
-  String from = " from terminology.entity_property_value epv inner join terminology.entity_property ep on ep.id = epv.entity_property_id left join terminology.code_system_supplement css on css.target_id = epv.id and css.target_type = 'EntityPropertyValue' ";
+  String from = " from terminology.entity_property_value epv " +
+      "inner join terminology.entity_property ep on ep.id = epv.entity_property_id " +
+      "left join terminology.code_system_supplement css on css.target_id = epv.id and css.target_type = 'EntityPropertyValue' ";
 
   public void save(EntityPropertyValue value, Long codeSystemEntityVersionId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();

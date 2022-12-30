@@ -131,6 +131,7 @@ public class ValueSetFhirMapper {
             ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
             d.setValue(designation.getName());
             d.setLanguage(designation.getLanguage());
+            d.setUse(new Coding(designation.getDesignationType()));
             return d;
           }).collect(Collectors.toList()));
       contains.getDesignation().addAll(

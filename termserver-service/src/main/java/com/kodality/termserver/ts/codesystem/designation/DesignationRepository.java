@@ -15,7 +15,9 @@ import java.util.List;
 public class DesignationRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(Designation.class);
 
-  String from = " from terminology.designation d left join terminology.code_system_supplement css on css.target_id = d.id and css.target_type = 'Designation' and css.sys_status = 'A'";
+  String from = " from terminology.designation d " +
+      "inner join terminology.entity_property ep on ep.id = d.designation_type_id " +
+      "left join terminology.code_system_supplement css on css.target_id = d.id and css.target_type = 'Designation' and css.sys_status = 'A'";
 
   public void save(Designation designation, Long codeSystemEntityVersionId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -37,12 +39,12 @@ public class DesignationRepository extends BaseRepository {
   }
 
   public Designation load(Long id) {
-    String sql = "select d.*, css.id supplement_id" + from + "where d.sys_status = 'A' and d.id = ?";
+    String sql = "select d.*, ep.name as designation_type, css.id supplement_id" + from + "where d.sys_status = 'A' and d.id = ?";
     return getBean(sql, bp, id);
   }
 
   public List<Designation> loadAll(Long codeSystemEntityVersionId) {
-    String sql = "select d.*, css.id supplement_id" + from + "where d.sys_status = 'A' and d.code_system_entity_version_id = ?";
+    String sql = "select d.*, ep.name as designation_type, css.id supplement_id" + from + "where d.sys_status = 'A' and d.code_system_entity_version_id = ?";
     return getBeans(sql, bp, codeSystemEntityVersionId);
   }
 
@@ -52,7 +54,7 @@ public class DesignationRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select d.*, css.id supplement_id" + from + "where d.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select d.*, ep.name as designation_type, css.id supplement_id" + from + "where d.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
