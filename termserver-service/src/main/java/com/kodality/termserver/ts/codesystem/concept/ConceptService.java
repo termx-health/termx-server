@@ -16,6 +16,7 @@ import com.kodality.termserver.ts.valueset.ValueSetVersionRepository;
 import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptRepository;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,6 +104,9 @@ public class ConceptService {
 
   public QueryResult<Concept> query(ConceptQueryParams params) {
     prepareParams(params);
+    if (StringUtils.isEmpty(params.getCodeSystem())) {
+      return QueryResult.empty();
+    }
     QueryResult<Concept> concepts = repository.query(params);
     concepts.setData(decorate(concepts.getData(), params.getCodeSystem(), params.getCodeSystemVersion()));
     return concepts;
