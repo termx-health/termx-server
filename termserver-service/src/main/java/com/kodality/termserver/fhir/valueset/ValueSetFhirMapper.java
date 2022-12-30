@@ -23,6 +23,7 @@ import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
@@ -127,32 +128,36 @@ public class ValueSetFhirMapper {
       contains.setSystem(valueSetConcept.getConcept().getCodeSystem());
       contains.setDisplay(valueSetConcept.getDisplay() == null ? null : valueSetConcept.getDisplay().getName());
       contains.setDesignation(
-          valueSetConcept.getAdditionalDesignations() == null ? new ArrayList<>() : valueSetConcept.getAdditionalDesignations().stream().map(designation -> {
-            ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
-            d.setValue(designation.getName());
-            d.setLanguage(designation.getLanguage());
-            d.setUse(new Coding(designation.getDesignationType()));
-            return d;
-          }).collect(Collectors.toList()));
-      contains.getDesignation().addAll(
-        valueSetConcept.getConcept().getVersions() == null ? new ArrayList<>() : valueSetConcept.getConcept().getVersions().stream().filter(v -> v.getPropertyValues() != null)
-            .flatMap(v ->
-              v.getPropertyValues().stream().map(pv -> {
+          valueSetConcept.getAdditionalDesignations() == null ? new ArrayList<>() : valueSetConcept.getAdditionalDesignations().stream()
+              .sorted(Comparator.comparing(d -> !d.isPreferred()))
+              .map(designation -> {
                 ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
-                d.setValue(String.valueOf(pv.getValue()));
-                d.setUse(new Coding(pv.getEntityProperty()));
+                d.setValue(designation.getName());
+                d.setLanguage(designation.getLanguage());
+                d.setUse(new Coding(designation.getDesignationType()));
                 return d;
-              })).toList()
+              }).collect(Collectors.toList()));
+      contains.getDesignation().addAll(
+          valueSetConcept.getConcept().getVersions() == null ? new ArrayList<>() :
+              valueSetConcept.getConcept().getVersions().stream().filter(v -> v.getPropertyValues() != null)
+                  .flatMap(v ->
+                      v.getPropertyValues().stream().map(pv -> {
+                        ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
+                        d.setValue(String.valueOf(pv.getValue()));
+                        d.setUse(new Coding(pv.getEntityProperty()));
+                        return d;
+                      })).toList()
       );
       contains.getDesignation().addAll(
-          valueSetConcept.getConcept().getVersions() == null ? new ArrayList<>() : valueSetConcept.getConcept().getVersions().stream().filter(v -> v.getAssociations() != null)
-              .flatMap(v ->
-                  v.getAssociations().stream().map(a -> {
-                    ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
-                    d.setValue(String.valueOf(a.getTargetCode()));
-                    d.setUse(new Coding(a.getAssociationType()));
-                    return d;
-                  })).toList()
+          valueSetConcept.getConcept().getVersions() == null ? new ArrayList<>() :
+              valueSetConcept.getConcept().getVersions().stream().filter(v -> v.getAssociations() != null)
+                  .flatMap(v ->
+                      v.getAssociations().stream().map(a -> {
+                        ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
+                        d.setValue(String.valueOf(a.getTargetCode()));
+                        d.setUse(new Coding(a.getAssociationType()));
+                        return d;
+                      })).toList()
       );
       return contains;
     }).collect(Collectors.toList()));
