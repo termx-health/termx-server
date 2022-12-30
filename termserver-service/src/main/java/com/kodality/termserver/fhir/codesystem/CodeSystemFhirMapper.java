@@ -11,6 +11,7 @@ import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyType;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
+import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.ContactDetail;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Narrative;
@@ -199,6 +200,7 @@ public class CodeSystemFhirMapper {
       CodeSystemConceptDesignation fhirDesignation = new CodeSystemConceptDesignation();
       fhirDesignation.setLanguage(d.getLanguage());
       fhirDesignation.setValue(d.getName());
+      fhirDesignation.setUse(new Coding(d.getDesignationType()));
       return fhirDesignation;
     }).collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result;
