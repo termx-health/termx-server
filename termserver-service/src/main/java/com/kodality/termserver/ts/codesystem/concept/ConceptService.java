@@ -104,9 +104,6 @@ public class ConceptService {
 
   public QueryResult<Concept> query(ConceptQueryParams params) {
     prepareParams(params);
-    if (StringUtils.isEmpty(params.getCodeSystem())) {
-      return QueryResult.empty();
-    }
     QueryResult<Concept> concepts = repository.query(params);
     concepts.setData(decorate(concepts.getData(), params.getCodeSystem(), params.getCodeSystemVersion()));
     return concepts;
@@ -151,6 +148,9 @@ public class ConceptService {
     if (params.getCodeSystem() != null) {
       String[] codeSystems = params.getCodeSystem().split(",");
       params.setCodeSystem(Arrays.stream(codeSystems).map(cs -> String.join(",", codeSystemRepository.closure(cs))).collect(Collectors.joining(",")));
+      if (StringUtils.isEmpty(params.getCodeSystem())) {
+        params.setCodeSystem(String.join(",", codeSystems));
+      }
     }
     if (params.getValueSet() != null && params.getValueSetVersion() == null) {
       ValueSetVersion valueSetVersion = valueSetVersionRepository.loadLastVersion(params.getValueSet());
