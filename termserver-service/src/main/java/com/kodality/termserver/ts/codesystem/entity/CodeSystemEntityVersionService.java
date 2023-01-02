@@ -13,6 +13,7 @@ import com.kodality.termserver.codesystem.DesignationQueryParams;
 import com.kodality.termserver.codesystem.EntityPropertyValue;
 import com.kodality.termserver.codesystem.EntityPropertyValueQueryParams;
 import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationService;
+import com.kodality.termserver.ts.codesystem.concept.ConceptRefreshViewJob;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.ts.codesystem.entitypropertyvalue.EntityPropertyValueService;
 import io.micronaut.core.util.CollectionUtils;
@@ -34,6 +35,7 @@ public class CodeSystemEntityVersionService {
   private final EntityPropertyValueService entityPropertyValueService;
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionRepository repository;
+  private final ConceptRefreshViewJob conceptRefreshViewJob;
 
   private final UserPermissionService userPermissionService;
 
@@ -50,6 +52,7 @@ public class CodeSystemEntityVersionService {
     designationService.save(version.getDesignations(), version.getId(), version.getCodeSystem());
     entityPropertyValueService.save(version.getPropertyValues(), version.getId(), version.getCodeSystem());
     codeSystemAssociationService.save(prepareAssociations(version.getAssociations()), version.getId(), version.getCodeSystem());
+    conceptRefreshViewJob.refreshView();
     return version;
   }
 
@@ -113,6 +116,7 @@ public class CodeSystemEntityVersionService {
       return;
     }
     repository.activate(versionId);
+    conceptRefreshViewJob.refreshView();
   }
 
   @Transactional
@@ -126,6 +130,7 @@ public class CodeSystemEntityVersionService {
     }
     currentVersions.forEach(currentVersion -> userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "publish"));
     repository.activate(versionIds);
+    conceptRefreshViewJob.refreshView();
   }
 
   @Transactional
@@ -140,6 +145,7 @@ public class CodeSystemEntityVersionService {
       return;
     }
     repository.retire(versionId);
+    conceptRefreshViewJob.refreshView();
   }
 
   @Transactional
@@ -154,6 +160,7 @@ public class CodeSystemEntityVersionService {
       return;
     }
     repository.saveAsDraft(versionId);
+    conceptRefreshViewJob.refreshView();
   }
 
   @Transactional
@@ -184,5 +191,6 @@ public class CodeSystemEntityVersionService {
     codeSystemAssociationService.save(List.of(), id, codeSystem);
 
     repository.cancel(id);
+    conceptRefreshViewJob.refreshView();
   }
 }

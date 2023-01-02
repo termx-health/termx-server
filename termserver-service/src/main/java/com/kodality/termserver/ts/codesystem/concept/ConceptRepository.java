@@ -270,4 +270,9 @@ public class ConceptRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder("update terminology.concept set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
+
+  public void refreshClosureView() {
+    String sql = "select terminology.refresh_concept_closure()";
+    jdbcTemplate.queryForObject(sql, String.class);
+  }
 }
