@@ -128,7 +128,7 @@ public class CodeSystemRepository extends BaseRepository {
   }
 
   public void cancel(String codeSystem) {
-    SqlBuilder sb = new SqlBuilder("update terminology.code_system set sys_status = 'C' where id = ? and sys_status = 'A'", codeSystem);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
+    SqlBuilder sb = new SqlBuilder("select * from terminology.cancel_code_system(?)", codeSystem);
+    jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
   }
 }

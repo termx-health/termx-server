@@ -55,7 +55,6 @@ public class CodeSystemController {
   private final EntityPropertyService entityPropertyService;
   private final EntityPropertyValueService entityPropertyValueService;
   private final DesignationService designationService;
-  private final CodeSystemDeleteService codeSystemDeleteService;
   private final CodeSystemAssociationService associationService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemDuplicateService codeSystemDuplicateService;
@@ -111,7 +110,7 @@ public class CodeSystemController {
   @Authorized("*.CodeSystem.publish")
   @Delete(uri = "/{codeSystem}")
   public HttpResponse<?> deleteCodeSystem(@PathVariable @ResourceId String codeSystem) {
-    codeSystemDeleteService.deleteCodeSystem(codeSystem);
+    codeSystemService.cancel(codeSystem);
     return HttpResponse.ok();
   }
 

@@ -1,6 +1,7 @@
 package com.kodality.termserver.ts.codesystem;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
@@ -126,6 +127,11 @@ public class CodeSystemService {
   @Transactional
   public void cancel(String codeSystem) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
+    List<String> requiredCodeSystems = List.of("codesystem-content-mode", "concept-property-type", "contact-point-system", "contact-point-use",
+        "filter-operator", "namingsystem-identifier-type", "namingsystem-type", "publication-status", "snomed-ct", "v3-ietf3066");
+    if (requiredCodeSystems.contains(codeSystem)) {
+      throw ApiError.TE204.toApiException();
+    }
     repository.cancel(codeSystem);
   }
 }
