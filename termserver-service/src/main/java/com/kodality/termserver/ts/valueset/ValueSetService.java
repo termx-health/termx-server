@@ -1,6 +1,7 @@
 package com.kodality.termserver.ts.valueset;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.valueset.ValueSet;
@@ -9,6 +10,7 @@ import com.kodality.termserver.valueset.ValueSetTransactionRequest;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +67,11 @@ public class ValueSetService {
   @Transactional
   public void cancel(String valueSet) {
     userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
+    List<String> requiredCodeSystems = List.of("codesystem-content-mode", "concept-property-type", "contact-point-system", "contact-point-use",
+        "filter-operator", "languages", "namingsystem-identifier-type", "namingsystem-type", "publication-status", "publisher");
+    if (requiredCodeSystems.contains(valueSet)) {
+      throw ApiError.TE303.toApiException();
+    }
     repository.cancel(valueSet);
   }
 }

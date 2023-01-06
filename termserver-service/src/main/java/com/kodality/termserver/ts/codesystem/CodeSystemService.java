@@ -128,7 +128,7 @@ public class CodeSystemService {
   public void cancel(String codeSystem) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
     List<String> requiredCodeSystems = List.of("codesystem-content-mode", "concept-property-type", "contact-point-system", "contact-point-use",
-        "filter-operator", "namingsystem-identifier-type", "namingsystem-type", "publication-status", "snomed-ct", "v3-ietf3066");
+        "filter-operator", "namingsystem-identifier-type", "namingsystem-type", "publication-status", "publisher", "snomed-ct", "v3-ietf3066");
     if (requiredCodeSystems.contains(codeSystem)) {
       throw ApiError.TE204.toApiException();
     }

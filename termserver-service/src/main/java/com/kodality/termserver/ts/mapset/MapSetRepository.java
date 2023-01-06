@@ -130,7 +130,7 @@ public class MapSetRepository extends BaseRepository {
   }
 
   public void cancel(String mapSet) {
-    SqlBuilder sb = new SqlBuilder("update terminology.map_set set sys_status = 'C' where id = ? and sys_status = 'A'", mapSet);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
+    SqlBuilder sb = new SqlBuilder("select * from terminology.cancel_map_set(?)", mapSet);
+    jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
   }
 }

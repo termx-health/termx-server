@@ -29,6 +29,10 @@
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/22-delete_entity.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/23-cancel_code_system.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/24-delete_code_system.sql"/>
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/25-cancel_map_set.sql"/>
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/26-delete_map_set.sql"/>
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/27-cancel_value_set.sql"/>
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/28-delete_value_set.sql"/>
 
         <rollback>
             drop function if exists terminology.value_set_expand(bigint);
@@ -39,6 +43,10 @@
             drop function if exists terminology.delete_entity(bigint);
             drop function if exists terminology.cancel_code_system(text);
             drop function if exists terminology.delete_code_system(text);
+            drop function if exists terminology.cancel_map_set(text);
+            drop function if exists terminology.delete_map_set(text);
+            drop function if exists terminology.cancel_value_set(text);
+            drop function if exists terminology.delete_value_set(text);
         </rollback>
     </changeSet>
 

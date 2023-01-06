@@ -37,7 +37,6 @@ import lombok.RequiredArgsConstructor;
 public class ValueSetController {
   private final ConceptService conceptService;
   private final ValueSetService valueSetService;
-  private final ValueSetDeleteService valueSetDeleteService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
@@ -76,7 +75,7 @@ public class ValueSetController {
   @Authorized("*.ValueSet.publish")
   @Delete(uri = "/{valueSet}")
   public HttpResponse<?> deleteValueSet(@PathVariable @ResourceId String valueSet) {
-    valueSetDeleteService.deleteValueSet(valueSet);
+    valueSetService.cancel(valueSet);
     return HttpResponse.ok();
   }
 
