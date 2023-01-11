@@ -78,9 +78,15 @@ public class ValueSetFhirService {
           .setSeverity("error").setCode("required").setDetails(new CodeableConcept().setText(String.format("Parameter '%s' not provided", "url"))));
       return null;
     }
+    return expand(null, params, outcome);
+  }
+
+  public com.kodality.zmei.fhir.resource.terminology.ValueSet expand(String valuesetId, Map<String, List<String>> params, OperationOutcome outcome) {
+    FhirQueryParams fhirParams = new FhirQueryParams(params);
 
     ValueSetQueryParams vsParams = new ValueSetQueryParams();
-    vsParams.setUri(fhirParams.getFirst("url").get());
+    vsParams.setUri(fhirParams.getFirst("url").orElse(null));
+    vsParams.setId(valuesetId);
     vsParams.setLimit(1);
     ValueSet valueSet = valueSetService.query(vsParams).findFirst().orElse(null);
     if (valueSet == null) {

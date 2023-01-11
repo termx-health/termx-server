@@ -70,6 +70,16 @@ public class ValueSetFhirController {
     return HttpResponse.ok(valueSet);
   }
 
+  @Get("/{valueSetId}/$expand{?params*}")
+  public HttpResponse<?> expand(String valueSetId, Map<String, List<String>> params) {
+    OperationOutcome outcome = new OperationOutcome();
+    ValueSet valueSet = service.expand(valueSetId, params, outcome);
+    if (valueSet == null) {
+      return HttpResponse.badRequest(outcome);
+    }
+    return HttpResponse.ok(valueSet);
+  }
+
   @Get("/$validate-code{?params*}")
   public HttpResponse<?> validateCode(Map<String, List<String>> params) {
     OperationOutcome outcome = new OperationOutcome();
