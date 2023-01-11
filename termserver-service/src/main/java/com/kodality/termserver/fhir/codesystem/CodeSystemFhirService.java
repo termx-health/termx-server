@@ -24,6 +24,7 @@ import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -253,18 +254,24 @@ public class CodeSystemFhirService {
     return new OperationOutcome(issue);
   }
 
-  public com.kodality.zmei.fhir.resource.terminology.CodeSystem get(Long codeSystemVersionId) {
-    CodeSystem codeSystem = codeSystemService.query(new CodeSystemQueryParams()
-        .setVersionId(codeSystemVersionId)
-        .setPropertiesDecorated(true)
-    ).findFirst().orElse(null);
+  public com.kodality.zmei.fhir.resource.terminology.CodeSystem get(String codeSystemId, Map<String, List<String>> params) {
+    String versionCode = Optional.ofNullable(params.getOrDefault("version", null)).map(v -> String.join(",", v)).orElse(null);
+
+    CodeSystemQueryParams codeSystemParams = new CodeSystemQueryParams();
+    codeSystemParams.setId(codeSystemId);
+    codeSystemParams.setVersionVersion(versionCode);
+    codeSystemParams.setPropertiesDecorated(true);
+    codeSystemParams.setLimit(1);
+    CodeSystem codeSystem = codeSystemService.query(codeSystemParams).findFirst().orElse(null);
     if (codeSystem == null) {
       return null;
     }
-    CodeSystemVersion version = codeSystemVersionService.load(codeSystemVersionId);
-    CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(version.getId());
-    codeSystemEntityVersionParams.all();
-    version.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
+    CodeSystemVersion version = StringUtils.isEmpty(versionCode) ? codeSystemVersionService.loadLastVersion(codeSystemId) : codeSystemVersionService.load(codeSystemId, versionCode).orElse(null);
+    if (version != null) {
+      CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(version.getId());
+      codeSystemEntityVersionParams.all();
+      version.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
+    }
     return mapper.toFhir(codeSystem, version);
 
   }

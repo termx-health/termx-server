@@ -53,6 +53,8 @@ auth:
     endpoints:
       - '/fhir/CapabilityStatement'
       - '/fhir/CodeSystem'
+      - '/fhir/ValueSet'
+      - '/fhir/ConceptMap'
       - '/swagger'
       - '/github/cb'
 

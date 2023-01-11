@@ -42,9 +42,9 @@ public class CodeSystemFhirController {
 
   private static final String JOB_TYPE = "FHIR-CS";
 
-  @Get("/{codeSystemVersionId}")
-  public HttpResponse<?> getCodeSystem(Long codeSystemVersionId) {
-    CodeSystem codeSystem = service.get(codeSystemVersionId);
+  @Get("/{codeSystemId}{?params*}")
+  public HttpResponse<?> getCodeSystem(String codeSystemId, Map<String, List<String>> params) {
+    CodeSystem codeSystem = service.get(codeSystemId, params);
     if (codeSystem == null) {
       throw new NotFoundException("CodeSystem not found");
     }

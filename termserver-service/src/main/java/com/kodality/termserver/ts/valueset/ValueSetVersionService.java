@@ -57,6 +57,10 @@ public class ValueSetVersionService {
     return Optional.ofNullable(decorate(repository.load(valueSet, versionCode)));
   }
 
+  public ValueSetVersion loadLastVersion(String valueSet) {
+    return repository.loadLastVersion(valueSet);
+  }
+
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
     QueryResult<ValueSetVersion> versions = repository.query(params);
     if (params.isDecorated()) {

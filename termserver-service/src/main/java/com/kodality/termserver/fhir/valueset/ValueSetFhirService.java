@@ -1,7 +1,6 @@
 package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.ts.valueset.ValueSetService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionService;
@@ -20,6 +19,7 @@ import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,15 +38,18 @@ public class ValueSetFhirService {
   private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final ValueSetFhirImportService fhirImportService;
 
-  private final UserPermissionService userPermissionService;
+  public com.kodality.zmei.fhir.resource.terminology.ValueSet get(String valueSetId, Map<String, List<String>> params) {
+    String versionCode = Optional.ofNullable(params.getOrDefault("version", null)).map(v -> String.join(",", v)).orElse(null);
 
-  public com.kodality.zmei.fhir.resource.terminology.ValueSet get(Long valueSetVersionId) {
-    ValueSet valueSet = valueSetService.query(new ValueSetQueryParams().setVersionId(valueSetVersionId)).findFirst().orElse(null);
+    ValueSetQueryParams valueSetParams = new ValueSetQueryParams();
+    valueSetParams.setId(valueSetId);
+    valueSetParams.setVersionVersion(versionCode);
+    valueSetParams.setLimit(1);
+    ValueSet valueSet = valueSetService.query(valueSetParams).findFirst().orElse(null);
     if (valueSet == null) {
       return null;
     }
-    userPermissionService.checkPermitted(valueSet.getId(), "ValueSet", "view");
-    ValueSetVersion version = valueSetVersionService.load(valueSetVersionId);
+    ValueSetVersion version = StringUtils.isEmpty(versionCode) ? valueSetVersionService.loadLastVersion(valueSetId) : valueSetVersionService.load(valueSetId, versionCode).orElse(null);
     return mapper.toFhir(valueSet, version);
   }
 
@@ -81,8 +84,7 @@ public class ValueSetFhirService {
     vsParams.setLimit(1);
     ValueSet valueSet = valueSetService.query(vsParams).findFirst().orElse(null);
     if (valueSet == null) {
-      outcome.getIssue().add(new OperationOutcomeIssue()
-          .setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("Value set not found")));
+      outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("Value set not found")));
       return null;
     }
 
@@ -95,7 +97,7 @@ public class ValueSetFhirService {
       vsvParams.setLimit(1);
       version = valueSetVersionService.query(vsvParams).findFirst().orElse(null);
     } else {
-      version = valueSetVersionService.loadLastVersionByUri(fhirParams.getFirst("url").get());
+      version = valueSetVersionService.loadLastVersion(valueSet.getId());
     }
 
     if (version == null) {
@@ -103,8 +105,6 @@ public class ValueSetFhirService {
           .setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("Value set version not found")));
       return null;
     }
-    userPermissionService.checkPermitted(valueSet.getId(), "ValueSet", "view");
-
     List<ValueSetVersionConcept> expandedConcepts = valueSetVersionConceptService.expand(valueSet.getId(), version.getVersion(), null);
     return mapper.toFhir(valueSet, version, expandedConcepts);
   }
@@ -121,8 +121,9 @@ public class ValueSetFhirService {
 
     Optional<ValueSetVersion> valueSetVersion = fhirParams.getFirst("valueSetVersion").isEmpty() ?
         Optional.ofNullable(valueSetVersionService.loadLastVersionByUri(fhirParams.getFirst("url").get())) :
-        valueSetVersionService.query(
-                new ValueSetVersionQueryParams().setValueSetUri(fhirParams.getFirst("url").get()).setVersion(fhirParams.getFirst("valueSetVersion").get()))
+        valueSetVersionService.query(new ValueSetVersionQueryParams()
+            .setValueSetUri(fhirParams.getFirst("url").get())
+            .setVersion(fhirParams.getFirst("valueSetVersion").get()))
             .findFirst();
 
     if (valueSetVersion.isEmpty()) {
@@ -130,7 +131,6 @@ public class ValueSetFhirService {
           .add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("ValueSet version not found")));
       return null;
     }
-    userPermissionService.checkPermitted(valueSetVersion.get().getValueSet(), "ValueSet", "view");
 
     ValueSetVersionConceptQueryParams cParams = new ValueSetVersionConceptQueryParams()
         .setConceptCode(fhirParams.getFirst("code").orElse(null))

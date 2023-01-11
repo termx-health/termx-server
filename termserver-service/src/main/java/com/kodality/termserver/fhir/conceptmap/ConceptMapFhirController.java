@@ -34,7 +34,6 @@ public class ConceptMapFhirController {
 
   private static final String JOB_TYPE = "FHIR-MS";
 
-  @Authorized("*.MapSet.view")
   @Get("/$translate{?params*}")
   public HttpResponse<?> translate(Map<String, List<String>> params) {
     Parameters parameters = service.translate(params);

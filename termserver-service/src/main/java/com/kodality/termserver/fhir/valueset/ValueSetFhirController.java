@@ -38,10 +38,9 @@ public class ValueSetFhirController {
 
   private static final String JOB_TYPE = "FHIR-VS";
 
-  @Authorized("*.ValueSet.view")
-  @Get("/{valueSetVersionId}")
-  public HttpResponse<?> getValueSet(Long valueSetVersionId) {
-    ValueSet valueSet = service.get(valueSetVersionId);
+  @Get("/{valueSetId}{?params*}")
+  public HttpResponse<?> getValueSet(String valueSetId, Map<String, List<String>> params) {
+    ValueSet valueSet = service.get(valueSetId, params);
     if (valueSet == null) {
       throw new NotFoundException("ValueSet not found");
     }
@@ -61,7 +60,6 @@ public class ValueSetFhirController {
     return HttpResponse.ok(valueSet);
   }
 
-  @Authorized("*.ValueSet.view")
   @Get("/$expand{?params*}")
   public HttpResponse<?> expand(Map<String, List<String>> params) {
     OperationOutcome outcome = new OperationOutcome();
@@ -72,7 +70,6 @@ public class ValueSetFhirController {
     return HttpResponse.ok(valueSet);
   }
 
-  @Authorized("*.ValueSet.view")
   @Get("/$validate-code{?params*}")
   public HttpResponse<?> validateCode(Map<String, List<String>> params) {
     OperationOutcome outcome = new OperationOutcome();

@@ -43,12 +43,13 @@ public class ValueSetFhirMapper {
         .collect(Collectors.toList()));
     fhirValueSet.setText(valueSet.getNarrative() == null ? null : new Narrative().setDiv(valueSet.getNarrative()));
     fhirValueSet.setDescription(valueSet.getDescription());
-    fhirValueSet.setVersion(version.getVersion());
-    fhirValueSet.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
-    fhirValueSet.setStatus(version.getStatus());
-    fhirValueSet.setPublisher(version.getSource());
-    fhirValueSet.setCompose(toFhirCompose(version.getRuleSet()));
-
+    if (version != null) {
+      fhirValueSet.setVersion(version.getVersion());
+      fhirValueSet.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
+      fhirValueSet.setStatus(version.getStatus());
+      fhirValueSet.setPublisher(version.getSource());
+      fhirValueSet.setCompose(toFhirCompose(version.getRuleSet()));
+    }
     return fhirValueSet;
   }
 

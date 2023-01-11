@@ -170,15 +170,16 @@ public class CodeSystemFhirMapper {
     fhirCodeSystem.setCaseSensitive(
         codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
 
-    fhirCodeSystem.setVersion(version.getVersion());
-    fhirCodeSystem.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
-    fhirCodeSystem.setStatus(version.getStatus());
-    fhirCodeSystem.setPublisher(version.getSource());
-    fhirCodeSystem.setConcept(version.getEntities().stream()
-        .filter(e -> CollectionUtils.isEmpty(e.getAssociations()))
-        .map(e -> toFhir(e, codeSystem, version.getEntities(), fhirCodeSystem))
-        .collect(Collectors.toList()));
-
+    if (version != null) {
+      fhirCodeSystem.setVersion(version.getVersion());
+      fhirCodeSystem.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
+      fhirCodeSystem.setStatus(version.getStatus());
+      fhirCodeSystem.setPublisher(version.getSource());
+      fhirCodeSystem.setConcept(version.getEntities().stream()
+          .filter(e -> CollectionUtils.isEmpty(e.getAssociations()))
+          .map(e -> toFhir(e, codeSystem, version.getEntities(), fhirCodeSystem))
+          .collect(Collectors.toList()));
+    }
     return fhirCodeSystem;
   }
 
