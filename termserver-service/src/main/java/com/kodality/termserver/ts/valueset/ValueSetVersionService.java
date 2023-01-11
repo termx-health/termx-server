@@ -58,7 +58,7 @@ public class ValueSetVersionService {
   }
 
   public ValueSetVersion loadLastVersion(String valueSet) {
-    return repository.loadLastVersion(valueSet);
+    return decorate(repository.loadLastVersion(valueSet));
   }
 
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
