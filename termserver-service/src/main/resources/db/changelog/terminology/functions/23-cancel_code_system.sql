@@ -56,6 +56,10 @@ update terminology.code_system_version
 set sys_status = 'D'
 where code_system = p_code_system;
 
+update terminology.entity_property
+set sys_status = 'D'
+where code_system = p_code_system;
+
 update terminology.code_system
 set sys_status = 'D'
 where id = p_code_system;

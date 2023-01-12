@@ -44,6 +44,9 @@ where code_system = p_code_system;
 delete from terminology.code_system_version
 where code_system = p_code_system;
 
+delete from terminology.entity_property
+where code_system = p_code_system;
+
 delete from terminology.code_system
 where id = p_code_system;
 
