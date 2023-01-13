@@ -15,6 +15,7 @@ import lombok.experimental.Accessors;
 public class ValueSetVersionConcept {
   private Long id;
   private Concept concept;
+  private Long conceptVersionId;
   private Designation display;
   private List<Designation> additionalDesignations;
 

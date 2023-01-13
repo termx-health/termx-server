@@ -6,6 +6,7 @@ create or replace function terminology.rule_set_expand(
     returns table (
         id                      bigint,
         concept                 jsonb,
+        concept_version_id      bigint,
         display                 jsonb,
         additional_designations jsonb
     )
@@ -49,7 +50,7 @@ with rule_set as (
         from exclude_rules er
     ),
     rule_concepts as (
-        select jsonb_build_object('id', c.id, 'code', c.code) concept, (irc.c -> 'display') display, (irc.c -> 'additionalDesignations') additional_designations
+        select jsonb_build_object('id', c.id, 'code', c.code) concept, csev.id concept_version_id, (irc.c -> 'display') display, (irc.c -> 'additionalDesignations') additional_designations
         from terminology.concept c
                  left join include_rule_concepts irc on (irc.c -> 'concept' ->> 'id')::bigint = c.id
                  left join terminology.code_system_entity_version csev on  csev.code_system_entity_id = c.id and csev.sys_status = 'A'
@@ -109,7 +110,7 @@ with rule_set as (
         select s.* from include_rules ir, lateral terminology.value_set_expand(ir.value_set_version_id) s
     )
 select *
-from (select null::bigint, rc.concept, rc.display, rc.additional_designations
+from (select null::bigint, rc.concept, rc.concept_version_id, rc.display, rc.additional_designations
       from rule_concepts rc
       union all
       select *

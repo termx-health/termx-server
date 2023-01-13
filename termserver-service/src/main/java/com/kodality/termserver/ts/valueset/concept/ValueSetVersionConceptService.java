@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
@@ -84,15 +85,15 @@ public class ValueSetVersionConceptService {
     designationParams.setLimit(designationIds.size());
     List<Designation> designations = designationService.query(designationParams).getData();
 
-    List<String> conceptIds = concepts.stream().filter(c -> c.getConcept() != null && c.getConcept().getId() != null).map(c -> String.valueOf(c.getConcept().getId())).toList();
+    List<String> versionIds = concepts.stream().map(ValueSetVersionConcept::getConceptVersionId).filter(Objects::nonNull).map(String::valueOf).toList();
     CodeSystemEntityVersionQueryParams entityVersionParams = new CodeSystemEntityVersionQueryParams();
-    entityVersionParams.setCodeSystemEntityIds(String.join(",", conceptIds));
+    entityVersionParams.setIds(String.join(",", versionIds));
     entityVersionParams.setStatus(String.join(",", List.of(PublicationStatus.active, PublicationStatus.draft)));
     entityVersionParams.all();
-    List<CodeSystemEntityVersion> versions = CollectionUtils.isEmpty(conceptIds) ? new ArrayList<>() : codeSystemEntityVersionService.query(entityVersionParams).getData();
+    List<CodeSystemEntityVersion> versions = CollectionUtils.isEmpty(versionIds) ? new ArrayList<>() : codeSystemEntityVersionService.query(entityVersionParams).getData();
 
     concepts.forEach(c -> {
-      List<CodeSystemEntityVersion> conceptVersions = versions.stream().filter(v -> v.getCode().equals(c.getConcept().getCode())).toList();
+      List<CodeSystemEntityVersion> conceptVersions = versions.stream().filter(v -> v.getId().equals(c.getConceptVersionId())).toList();
       c.getConcept().setVersions(conceptVersions);
       c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? null : designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
       c.setActive(c.isActive() || conceptVersions.stream().anyMatch(v -> PublicationStatus.active.equals(v.getStatus())));
