@@ -102,9 +102,8 @@ public class ValueSetVersionConceptService {
           .collect(Collectors.toList()) : null);
 
       if (c.getDisplay() == null || c.getDisplay().getName() == null || CollectionUtils.isEmpty(c.getAdditionalDesignations())) {
-        List<Designation> csDesignations = conceptVersions.stream().flatMap(v -> v.getDesignations().stream()).toList();
-        designations.sort(Comparator.comparing(d -> !d.isPreferred()));
-        c.setDisplay(c.getDisplay() == null || c.getDisplay().getName() == null ? designations.stream().findFirst().orElse(null) : c.getDisplay());
+        List<Designation> csDesignations = conceptVersions.stream().flatMap(v -> v.getDesignations().stream()).sorted(Comparator.comparing(d -> !d.isPreferred())).toList();
+        c.setDisplay(c.getDisplay() == null || c.getDisplay().getName() == null ? csDesignations.stream().findFirst().orElse(null) : c.getDisplay());
         c.setAdditionalDesignations(CollectionUtils.isEmpty(c.getAdditionalDesignations()) ? csDesignations : c.getAdditionalDesignations());
       }
     });

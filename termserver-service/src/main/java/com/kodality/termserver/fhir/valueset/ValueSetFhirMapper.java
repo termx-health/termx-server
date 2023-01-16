@@ -86,7 +86,7 @@ public class ValueSetFhirMapper {
     return concepts.stream().map(valueSetConcept -> {
       ValueSetComposeIncludeConcept concept = new ValueSetComposeIncludeConcept();
       concept.setCode(valueSetConcept.getConcept().getCode());
-      concept.setDisplay(valueSetConcept.getDisplay().getName());
+      concept.setDisplay(valueSetConcept.getDisplay() == null ? null : valueSetConcept.getDisplay().getName());
       concept.setDesignation(valueSetConcept.getAdditionalDesignations() == null ? new ArrayList<>() :
           valueSetConcept.getAdditionalDesignations().stream().map(d -> {
             ValueSetComposeIncludeConceptDesignation designation = new ValueSetComposeIncludeConceptDesignation();
