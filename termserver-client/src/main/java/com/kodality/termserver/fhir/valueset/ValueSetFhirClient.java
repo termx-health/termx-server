@@ -16,6 +16,11 @@ public class ValueSetFhirClient extends FhirClient<ValueSet> {
     super(url + "/fhir/ValueSet", ValueSet.class, enhancer);
   }
 
+  public CompletableFuture<ValueSet> expand(String code, FhirQueryParams params) {
+    HttpRequest request = builder("/" + code + "/$expand?" + toQueryParams(params)).GET().build();
+    return executeAsync(request).thenApply(r -> FhirMapper.fromJson(r.body(), ValueSet.class));
+  }
+
   public CompletableFuture<ValueSet> expand(FhirQueryParams params) {
     HttpRequest request = builder("/$expand?" + toQueryParams(params)).GET().build();
     return executeAsync(request).thenApply(r -> FhirMapper.fromJson(r.body(), ValueSet.class));
