@@ -1,0 +1,16 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "ucum",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><p>This code system <code>http://unitsofmeasure.org</code> defines many codes, but they are not represented here</p></div>"
+  },
+  "url": "http://unitsofmeasure.org",
+  "version": "3.0.1",
+  "name": "Unified Code for Units of Measure (UCUM)",
+  "status": "draft",
+  "experimental": false,
+  "date": "2020-11-03T00:00:00-04:00",
+  "publisher": "LOINC and Health Data Standards, Regenstrief Institute, Inc.",
+  "content": "not-present"
+}

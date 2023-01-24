@@ -1,4 +1,4 @@
-package com.kodality.termserver.ts.valueset.concept;
+package com.kodality.termserver.ts.valueset.concept.external;
 
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.integration.snomed.SnomedMapper;
@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 
 @Singleton
 @RequiredArgsConstructor
-public class ValueSetExpandService {
+public class SnomedExpandProvider extends ValueSetExternalExpandProvider {
   private final SnomedMapper snomedMapper;
   private final SnomedService snomedService;
   private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
@@ -29,7 +29,8 @@ public class ValueSetExpandService {
   private static final String SNOMED_IS_A = "is-a";
   private static final String SNOMED_IN = "in";
 
-  public List<ValueSetVersionConcept> snomedExpand(Long versionId, ValueSetVersionRuleSet ruleSet) {
+  @Override
+  public List<ValueSetVersionConcept> expand(Long versionId, ValueSetVersionRuleSet ruleSet) {
     if (versionId != null) {
       ruleSet = valueSetVersionRuleSetService.load(versionId).orElse(ruleSet);
     }

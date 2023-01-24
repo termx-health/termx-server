@@ -11,6 +11,7 @@ import com.kodality.termserver.codesystem.DesignationQueryParams;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRepository;
+import com.kodality.termserver.ts.valueset.concept.external.ValueSetExternalExpandProvider;
 import com.kodality.termserver.valueset.ValueSetVersion;
 import com.kodality.termserver.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.valueset.ValueSetVersionConceptQueryParams;
@@ -31,7 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ValueSetVersionConceptService {
   private final DesignationService designationService;
-  private final ValueSetExpandService valueSetExpandService;
+  private final List<ValueSetExternalExpandProvider> externalExpandProviders;
   private final ValueSetVersionConceptRepository repository;
   private final ValueSetVersionRepository valueSetVersionRepository;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
@@ -129,7 +130,9 @@ public class ValueSetVersionConceptService {
     }
 
     List<ValueSetVersionConcept> internalExpand = internalExpand(versionId, ruleSet);
-    internalExpand.addAll(valueSetExpandService.snomedExpand(versionId, ruleSet));
+    for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
+      internalExpand.addAll(provider.expand(versionId, ruleSet));
+    }
     return internalExpand;
   }
 
