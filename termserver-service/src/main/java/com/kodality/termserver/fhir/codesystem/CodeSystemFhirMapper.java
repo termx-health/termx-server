@@ -232,9 +232,9 @@ public class CodeSystemFhirMapper {
         } else if (entityProperty.getType().equals(EntityPropertyType.bool)) {
           fhirProperty.setValueBoolean((Boolean) value);
         } else if (entityProperty.getType().equals(EntityPropertyType.decimal)) {
-          fhirProperty.setValueDecimal((BigDecimal) value);
+          fhirProperty.setValueDecimal(BigDecimal.valueOf((Long) value));
         } else if (entityProperty.getType().equals(EntityPropertyType.integer)) {
-          fhirProperty.setValueInteger((Integer) value);
+          fhirProperty.setValueInteger(Integer.valueOf(String.valueOf(value)));
         } else if (entityProperty.getType().equals(EntityPropertyType.dateTime)) {
           if (value instanceof OffsetDateTime) {
             fhirProperty.setValueDateTime((OffsetDateTime) value);
