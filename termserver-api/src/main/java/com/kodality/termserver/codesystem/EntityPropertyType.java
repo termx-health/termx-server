@@ -7,4 +7,5 @@ public interface EntityPropertyType {
   String bool = "boolean";
   String dateTime = "dateTime";
   String decimal = "decimal";
+  String integer = "integer";
 }

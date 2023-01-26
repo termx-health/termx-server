@@ -233,6 +233,8 @@ public class CodeSystemFhirMapper {
           fhirProperty.setValueBoolean((Boolean) value);
         } else if (entityProperty.getType().equals(EntityPropertyType.decimal)) {
           fhirProperty.setValueDecimal((BigDecimal) value);
+        } else if (entityProperty.getType().equals(EntityPropertyType.integer)) {
+          fhirProperty.setValueInteger((Integer) value);
         } else if (entityProperty.getType().equals(EntityPropertyType.dateTime)) {
           if (value instanceof OffsetDateTime) {
             fhirProperty.setValueDateTime((OffsetDateTime) value);
