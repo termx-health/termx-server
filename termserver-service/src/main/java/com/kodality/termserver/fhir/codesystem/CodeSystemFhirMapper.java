@@ -225,6 +225,10 @@ public class CodeSystemFhirMapper {
         CodeSystemConceptProperty fhirProperty = new CodeSystemConceptProperty();
         fhirProperty.setCode(entityProperty.getName());
         Object value = pv.getValue();
+        if (entityProperty.getType().equals(EntityPropertyType.coding)) {
+          Concept concept = (Concept) value;
+          fhirProperty.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
+        }
         if (entityProperty.getType().equals(EntityPropertyType.code)) {
           fhirProperty.setValueCode((String) value);
         } else if (entityProperty.getType().equals(EntityPropertyType.string)) {
