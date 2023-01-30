@@ -1,5 +1,6 @@
 package com.kodality.termserver.fhir.valueset;
 
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.Language;
 import com.kodality.termserver.valueset.ValueSet;
 import com.kodality.termserver.valueset.ValueSetVersion;
@@ -144,7 +145,7 @@ public class ValueSetFhirMapper {
                   .flatMap(v ->
                       v.getPropertyValues().stream().map(pv -> {
                         ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
-                        d.setValue(String.valueOf(pv.getValue()));
+                        d.setValue(JsonUtil.toJson(pv.getValue()));
                         d.setUse(new Coding(pv.getEntityProperty()));
                         return d;
                       })).toList()
@@ -155,7 +156,7 @@ public class ValueSetFhirMapper {
                   .flatMap(v ->
                       v.getAssociations().stream().map(a -> {
                         ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
-                        d.setValue(String.valueOf(a.getTargetCode()));
+                        d.setValue(a.getTargetCode());
                         d.setUse(new Coding(a.getAssociationType()));
                         return d;
                       })).toList()
