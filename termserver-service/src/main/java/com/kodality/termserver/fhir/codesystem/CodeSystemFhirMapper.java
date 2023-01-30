@@ -1,6 +1,7 @@
 package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.commons.util.DateUtil;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.CaseSignificance;
 import com.kodality.termserver.Language;
 import com.kodality.termserver.codesystem.CodeSystem;
@@ -226,7 +227,7 @@ public class CodeSystemFhirMapper {
         fhirProperty.setCode(entityProperty.getName());
         Object value = pv.getValue();
         if (entityProperty.getType().equals(EntityPropertyType.coding)) {
-          Concept concept = (Concept) value;
+          Concept concept = JsonUtil.fromJson(JsonUtil.toJson(value), Concept.class);
           fhirProperty.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
         }
         if (entityProperty.getType().equals(EntityPropertyType.code)) {
