@@ -39,5 +39,7 @@ public class ConceptQueryParams extends QueryParams {
   private String propertySource; //propertyId|sourceCode
   private String associationSource; //association|sourceCode
   private String associationTarget; //association|sourceCode
+  private String associationSourceRecursive; //association|sourceCode
+  private String associationTargetRecursive; //association|sourceCode
   private String associationType;
 }

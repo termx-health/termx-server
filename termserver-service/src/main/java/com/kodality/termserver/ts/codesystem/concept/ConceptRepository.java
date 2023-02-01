@@ -23,7 +23,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 public class ConceptRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(Concept.class);
 
-  private final Map<String, String> orderMapping = Map.of("code", "code");
+  private final Map<String, String> orderMapping = Map.of("code", "c.code");
 
   public void save(Concept concept) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -52,12 +52,25 @@ public class ConceptRepository extends BaseRepository {
   }
 
   public QueryResult<Concept> query(ConceptQueryParams params) {
+    String join = "left join terminology.code_system cs on cs.id = c.code_system and cs.sys_status = 'A' " +
+        "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A' " +
+        "left join terminology.designation d on d.code_system_entity_version_id = csev.id and d.sys_status = 'A' " +
+        "left join terminology.entity_property_value epv on epv.code_system_entity_version_id = csev.id and epv.sys_status = 'A' " +
+        "left join terminology.entity_property ep on ep.id = epv.entity_property_id and ep.sys_status = 'A' " +
+        "left join terminology.entity_property dp on dp.id = d.designation_type_id and dp.sys_status = 'A' " +
+        "left join terminology.code_system_association csa_s on csa_s.source_code_system_entity_version_id = csev.id and csa_s.sys_status = 'A' " +
+        "left join terminology.code_system_association csa_t on csa_t.target_code_system_entity_version_id = csev.id and csa_t.sys_status = 'A' " +
+        "left join terminology.code_system_entity_version c_t on c_t.id = csa_s.target_code_system_entity_version_id and c_t.sys_status = 'A' " +
+        "left join terminology.code_system_entity_version c_s on c_s.id = csa_t.source_code_system_entity_version_id and c_s.sys_status = 'A' " +
+        "left join terminology.association_type at on (at.code = csa_s.association_type or at.code = csa_t.association_type) and at.sys_status = 'A' " +
+        "left join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_entity_version_id = csev.id  and evcsvm.sys_status = 'A' " +
+        "left join terminology.code_system_version csv on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A' ";
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.concept c where c.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(distinct(c.code)) from terminology.concept c " + join);
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select c.*, " + isLeaf(params) + "as leaf from terminology.concept c where c.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select distinct on (c.code) c.*, " + isLeaf(params) + "as leaf from terminology.concept c " + join);
       sb.append(filter(params));
       sb.append(order(params, orderMapping));
       sb.append(limit(params));
@@ -82,6 +95,7 @@ public class ConceptRepository extends BaseRepository {
 
   private SqlBuilder filter(ConceptQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.append("where c.sys_status = 'A'");
     if (StringUtils.isNotEmpty(params.getId())) {
       sb.and().in("c.id ", params.getId(), Long::valueOf);
     }
@@ -91,44 +105,25 @@ public class ConceptRepository extends BaseRepository {
     if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
       sb.and().in("c.code_system", params.getPermittedCodeSystems());
     }
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs where cs.id = c.code_system and cs.uri = ?)", params.getCodeSystemUri());
+    sb.appendIfNotNull("and cs.uri = ?", params.getCodeSystemUri());
     sb.appendIfNotNull("and c.code ~* ?", params.getCodeContains());
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (c.code ~* ? or exists(select 1 from terminology.designation d " +
-              "inner join terminology.code_system_entity_version csev on d.code_system_entity_version_id = csev.id where csev.code_system_entity_id = c.id and d.name ~* ?))",
-          params.getTextContains(), params.getTextContains());
+      sb.append("and (c.code ~* ? or d.name ~* ?)", params.getTextContains(), params.getTextContains());
     }
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("c.code ", params.getCode());
     }
-    if (params.getCodeSystemVersion() != null ||
-        params.getCodeSystemVersionId() != null ||
-        params.getCodeSystemVersionReleaseDateGe() != null ||
-        params.getCodeSystemVersionReleaseDateLe() != null ||
-        params.getCodeSystemVersionExpirationDateGe() != null ||
-        params.getCodeSystemVersionExpirationDateLe() != null) {
-      sb.append("and exists (select 1 from terminology.code_system_version csv " +
-          "inner join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A' " +
-          "inner join terminology.code_system_entity_version csev on csev.id = evcsvm.code_system_entity_version_id and csev.sys_status = 'A' " +
-          "where csev.code_system_entity_id = c.id and csv.sys_status = 'A'");
-      sb.appendIfNotNull("and csv.id = ?", params.getCodeSystemVersionId());
-      sb.appendIfNotNull("and csv.version = ?", params.getCodeSystemVersion());
-      sb.appendIfNotNull("and csv.release_date >= ?", params.getCodeSystemVersionReleaseDateGe());
-      sb.appendIfNotNull("and csv.release_date <= ?", params.getCodeSystemVersionReleaseDateLe());
-      sb.appendIfNotNull("and (csv.expiration_date >= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateGe());
-      sb.appendIfNotNull("and (csv.expiration_date <= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateLe());
-      if (StringUtils.isNotEmpty(params.getCodeSystem())) {
-        sb.and().in("c.code_system ", params.getCodeSystem());
-      }
-      sb.append(")");
-    }
+    sb.appendIfNotNull("and csv.id = ?", params.getCodeSystemVersionId());
+    sb.appendIfNotNull("and csv.version = ?", params.getCodeSystemVersion());
+    sb.appendIfNotNull("and csv.release_date >= ?", params.getCodeSystemVersionReleaseDateGe());
+    sb.appendIfNotNull("and csv.release_date <= ?", params.getCodeSystemVersionReleaseDateLe());
+    sb.appendIfNotNull("and (csv.expiration_date >= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateGe());
+    sb.appendIfNotNull("and (csv.expiration_date <= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateLe());
     if (StringUtils.isNotEmpty(params.getValueSetExpandResultIds())) {
       sb.and().in("c.id ", params.getValueSetExpandResultIds(), Long::valueOf);
     }
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
-        "where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status = ?)", params.getCodeSystemEntityStatus());
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
-        "where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
+    sb.appendIfNotNull("and csev.status = ?", params.getCodeSystemEntityStatus());
+    sb.appendIfNotNull("and csev.id = ?", params.getCodeSystemEntityVersionId());
     if (StringUtils.isNotEmpty(params.getPropertyValues()) || StringUtils.isNotEmpty(params.getPropertyValuesPartial())) {
       sb.append("and (1<>1");
       sb.append("or").append(checkProperty(params.getPropertyValues(), params.getPropertyValuesPartial()));
@@ -137,50 +132,53 @@ public class ConceptRepository extends BaseRepository {
       sb.append("or").append(checkCode(params.getPropertyValues(), params.getPropertyValuesPartial()));
       sb.append(")");
     }
-    sb.appendIfNotNull("and not exists(select 1 from terminology.entity_property_value epv " +
-        "inner join terminology.code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A' " +
-        "where epv.sys_status = 'A' and csev.code_system_entity_id = c.id and epv.entity_property_id = ?)", params.getPropertyRoot());
-    sb.appendIfNotNull("and not exists(select 1 from terminology.code_system_association csa " +
-        "inner join terminology.code_system_entity_version csev on csev.id = csa.source_code_system_entity_version_id and csev.sys_status = 'A' " +
-        "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)", params.getAssociationRoot());
-    sb.appendIfNotNull("and not exists(select 1 from terminology.code_system_association csa " +
-        "inner join terminology.code_system_entity_version csev on csev.id = csa.target_code_system_entity_version_id and csev.sys_status = 'A' " +
-        "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)", params.getAssociationLeaf());
+    sb.appendIfNotNull("and (epv.entity_property_id <> ? or epv.entity_property_id is null)", params.getPropertyRoot());
+    sb.appendIfNotNull("and (csa_s.association_type <> ? or csa_s.association_type is null)", params.getAssociationRoot());
+    sb.appendIfNotNull("and (csa_t.association_type <> ? or csa_t.association_type is null)", params.getAssociationLeaf());
     if (StringUtils.isNotEmpty(params.getPropertySource())) {
       String[] pipe = PipeUtil.parsePipe(params.getPropertySource());
-      sb.append("and exists (select 1 from terminology.entity_property_value epv " +
-              "inner join terminology.code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A' " +
-              "where epv.sys_status = 'A' and csev.code_system_entity_id = c.id and epv.entity_property_id = ? and epv.value = to_jsonb(?::text))",
-          Long.valueOf(pipe[0]), pipe[1]);
+      sb.append("and epv.entity_property_id = ? and epv.value = to_jsonb(?::text)", Long.valueOf(pipe[0]), pipe[1]);
     }
     if (StringUtils.isNotEmpty(params.getAssociationSource())) {
       String[] pipe = PipeUtil.parsePipe(params.getAssociationSource());
-      sb.append("and exists (select 1 from terminology.code_system_association csa " +
-          "inner join terminology.code_system_entity_version csev on csev.id = csa.source_code_system_entity_version_id and csev.sys_status = 'A' " +
-          "left join terminology.code_system_entity_version csevt on csevt.id = csa.target_code_system_entity_version_id and csevt.sys_status = 'A' " +
-          "left join terminology.concept ct on ct.id = csevt.code_system_entity_id and ct.sys_status = 'A' " +
-          "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ? and ct.code = ?)", pipe[0], pipe[1]);
+      sb.append("and csa_s.association_type = ? and c_t.code = ?", pipe[0], pipe[1]);
     }
     if (StringUtils.isNotEmpty(params.getAssociationTarget())) {
       String[] pipe = PipeUtil.parsePipe(params.getAssociationTarget());
-      sb.append("and exists (select 1 from terminology.code_system_association csa " +
-          "inner join terminology.code_system_entity_version csev on csev.id = csa.target_code_system_entity_version_id and csev.sys_status = 'A' " +
-          "left join terminology.code_system_entity_version csevs on csevs.id = csa.source_code_system_entity_version_id and csevs.sys_status = 'A' " +
-          "left join terminology.concept c_source on c_source.id = csevs.code_system_entity_id and c_source.sys_status = 'A' " +
-          "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ? and c_source.code = ?)", pipe[0], pipe[1]);
+      sb.append("and csa_t.association_type = ? and c_s.code = ?", pipe[0], pipe[1]);
     }
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_association csa " +
-        "inner join terminology.code_system_entity_version csev on csev.id = csa.source_code_system_entity_version_id and csev.sys_status = 'A' " +
-        "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)", params.getAssociationType());
+    sb.appendIfNotNull("and csa_s.association_type = ?", params.getAssociationType());
+    if (StringUtils.isNotEmpty(params.getAssociationSourceRecursive()) || StringUtils.isNotEmpty(params.getAssociationTargetRecursive())) {
+      String from = "from terminology.concept as cc " +
+          "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = cc.id and csev.sys_status = 'A' " +
+          "left join terminology.code_system_association csa_s on csa_s.source_code_system_entity_version_id = csev.id and csa_s.sys_status = 'A' " +
+          "left join terminology.code_system_association csa_t on csa_t.target_code_system_entity_version_id = csev.id and csa_t.sys_status = 'A' " +
+          "left join terminology.code_system_entity_version c_s on c_s.id = csa_t.source_code_system_entity_version_id and c_s.sys_status = 'A' " +
+          "left join terminology.code_system_entity_version c_t on c_t.id = csa_s.target_code_system_entity_version_id and c_t.sys_status = 'A'";
+      String from1 = from.replaceAll("cc", "c1").replaceAll("csev", "csev1").replaceAll("csa_s", "csa_s1").replaceAll("csa_t", "csa_t1").replaceAll("c_s", "c_s1").replaceAll("c_t", "c_t1");
+      String from2 = from.replaceAll("cc", "c2").replaceAll("csev", "csev2").replaceAll("csa_s", "csa_s2").replaceAll("csa_t", "csa_t2").replaceAll("c_s", "c_s2").replaceAll("c_t", "c_t2");
+      if (StringUtils.isNotEmpty(params.getAssociationSourceRecursive())) {
+        String[] pipe = PipeUtil.parsePipe(params.getAssociationSourceRecursive());
+        sb.append("and c.code in (with recursive concept_codes as ( select c1.code, c_s1.code parent " + from1 + " where")
+            .append("csa_s1.association_type = ? and c_t1.code = ?", pipe[0], pipe[1])
+            .append("union select c2.code, c_s2.code parent " + from2 + " inner join concept_codes rec on c_t2.code = rec.code) select code from concept_codes)");
+      }
+      if (StringUtils.isNotEmpty(params.getAssociationTargetRecursive())) {
+        String[] pipe = PipeUtil.parsePipe(params.getAssociationTargetRecursive());
+        sb.append("and c.code in (with recursive concept_codes as ( select c1.code, c_t1.code parent " + from1 + " where")
+            .append("csa_t1.association_type = ? and c_s1.code = ?", pipe[0], pipe[1])
+            .append("union select c2.code, c_t2.code parent " + from2 + " inner join concept_codes rec on c_s2.code = rec.code) select code from concept_codes)");
+      }
+    }
     return sb;
   }
 
   private String checkCode(String propertyValues, String propertyValuesPartial) {
     SqlBuilder sb = new SqlBuilder();
     if (StringUtils.isNotEmpty(propertyValues) && "code".equals(PipeUtil.parsePipe(propertyValues)[0])) {
-      sb.append("code = ?", PipeUtil.parsePipe(propertyValues)[1]);
+      sb.append("c.code = ?", PipeUtil.parsePipe(propertyValues)[1]);
     } else if (StringUtils.isNotEmpty(propertyValuesPartial) && "code".equals(PipeUtil.parsePipe(propertyValuesPartial)[0])) {
-      sb.append("code ~* ?", PipeUtil.parsePipe(propertyValuesPartial)[1]);
+      sb.append("c.code ~* ?", PipeUtil.parsePipe(propertyValuesPartial)[1]);
     } else {
       sb.append("1 <> 1");
     }
@@ -189,57 +187,41 @@ public class ConceptRepository extends BaseRepository {
 
   private String checkProperty(String propertyValues, String propertyValuesPartial) {
     SqlBuilder sb = new SqlBuilder();
-    sb.append("exists (select 1 from terminology.entity_property_value epv " +
-        "inner join terminology.entity_property ep on ep.id = epv.entity_property_id and ep.sys_status = 'A' " +
-        "inner join terminology.code_system_entity_version csev on csev.id = epv.code_system_entity_version_id and csev.sys_status = 'A' " +
-        "where csev.code_system_entity_id = c.id and epv.sys_status = 'A'");
     if (StringUtils.isNotEmpty(propertyValues)) {
       sb.append(checkPropertyValue(propertyValues, "ep.name = ?", "epv.value @> to_jsonb(?::text)", true));
     }
     if (StringUtils.isNotEmpty(propertyValuesPartial)) {
-      sb.append(checkPropertyValue(propertyValuesPartial,"ep.name = ?", "epv.value @> to_jsonb(?::text)", false));
+      sb.append(checkPropertyValue(propertyValuesPartial, "ep.name = ?", "epv.value @> to_jsonb(?::text)", false));
     }
-    sb.append(")");
     return sb.toPrettyString();
   }
 
   private String checkDesignation(String propertyValues, String propertyValuesPartial) {
     SqlBuilder sb = new SqlBuilder();
-    sb.append("exists (select 1 from terminology.designation d " +
-        "inner join terminology.entity_property ep on ep.id = d.designation_type_id and ep.sys_status = 'A' " +
-        "inner join terminology.code_system_entity_version csev on csev.id = d.code_system_entity_version_id and csev.sys_status = 'A' " +
-        "where csev.code_system_entity_id = c.id and d.sys_status = 'A'");
     if (StringUtils.isNotEmpty(propertyValues)) {
-      sb.append(checkPropertyValue(propertyValues,"ep.name = ?", "d.name = ?", true));
+      sb.append(checkPropertyValue(propertyValues, "dp.name = ?", "d.name = ?", true));
     }
     if (StringUtils.isNotEmpty(propertyValuesPartial)) {
-      sb.append(checkPropertyValue(propertyValuesPartial, "ep.name = ?", "d.name ~* ?", false));
+      sb.append(checkPropertyValue(propertyValuesPartial, "dp.name = ?", "d.name ~* ?", false));
     }
-    sb.append(")");
     return sb.toPrettyString();
   }
 
   private String checkAssociation(String propertyValues, String propertyValuesPartial) {
     SqlBuilder sb = new SqlBuilder();
-    sb.append("exists (select 1 from terminology.code_system_association csa " +
-        "inner join terminology.association_type at on at.code = csa.association_type and at.sys_status = 'A' " +
-        "inner join terminology.code_system_entity_version target on target.id = csa.target_code_system_entity_version_id and target.sys_status = 'A'  " +
-        "inner join terminology.code_system_entity_version source on source.id = csa.source_code_system_entity_version_id and source.sys_status = 'A' " +
-        "where source.code_system_entity_id = c.id and csa.sys_status = 'A'");
     if (StringUtils.isNotEmpty(propertyValues)) {
-      sb.append(checkPropertyValue(propertyValues,"at.code = ?", "target.code = ?", true));
+      sb.append(checkPropertyValue(propertyValues, "at.code = ?", "c_t.code = ?", true));
     }
     if (StringUtils.isNotEmpty(propertyValuesPartial)) {
-      sb.append(checkPropertyValue(propertyValuesPartial,"at.code = ?", "target.code = ?", false));
+      sb.append(checkPropertyValue(propertyValuesPartial, "at.code = ?", "c_t.code = ?", false));
     }
-    sb.append(")");
     return sb.toPrettyString();
   }
 
   private String checkPropertyValue(String values, String nameField, String valueField, boolean exact) {
     SqlBuilder sb = new SqlBuilder();
     String[] propertyValues = values.split(",");
-    sb.append("and (").append(Arrays.stream(propertyValues).map(pv -> {
+    sb.append("(").append(Arrays.stream(propertyValues).map(pv -> {
       String[] pipe = PipeUtil.parsePipe(pv);
       return new SqlBuilder().append(nameField, pipe[0]).appendIfTrue(pipe.length == 2, "and " + valueField, pipe[1]).toPrettyString();
     }).collect(Collectors.joining(exact ? " and " : " or "))).append(")");
