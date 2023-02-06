@@ -50,7 +50,8 @@ public class UcumExpandProvider extends ValueSetExternalExpandProvider {
         params.setCode(c.getConcept().getCode());
         params.setLimit(1);
         Optional<MeasurementUnit> concept = measurementUnitService.query(params).findFirst();
-        c.setAdditionalDesignations(concept.map(unit -> unit.getNames().entrySet().stream().map(n -> new Designation().setName(n.getValue()).setLanguage(n.getKey())).toList()).orElse(null));
+        c.setAdditionalDesignations(concept.map(unit -> unit.getNames().entrySet().stream().map(n -> new Designation().setName(n.getValue()).setLanguage(n.getKey()).setDesignationType("display")).toList()).orElse(new ArrayList<>()));
+        c.getAdditionalDesignations().addAll(concept.map(unit -> unit.getAlias().entrySet().stream().map(n -> new Designation().setName(n.getValue()).setLanguage(n.getKey()).setDesignationType("alias")).toList()).orElse(new ArrayList<>()));
         c.setActive(true);
       });
       return ruleConcepts;
