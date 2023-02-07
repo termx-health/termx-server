@@ -1,5 +1,6 @@
 package com.kodality.termserver.ts.valueset.concept.external;
 
+import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.measurementunit.MeasurementUnit;
 import com.kodality.termserver.measurementunit.MeasurementUnitQueryParams;
@@ -23,6 +24,7 @@ public class UcumExpandProvider extends ValueSetExternalExpandProvider {
   private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
 
   private static final String UCUM = "ucum";
+  private static final String UCUM_KIND = "kind";
 
   @Override
   public List<ValueSetVersionConcept> expand(Long versionId, ValueSetVersionRuleSet ruleSet) {
@@ -56,6 +58,22 @@ public class UcumExpandProvider extends ValueSetExternalExpandProvider {
       });
       return ruleConcepts;
     }
+    rule.getFilters().forEach(f -> {
+      if (UCUM_KIND.equals(f.getProperty().getName())) {
+        MeasurementUnitQueryParams params = new MeasurementUnitQueryParams();
+        params.setKind(f.getValue());
+        params.all();
+        ruleConcepts.addAll(measurementUnitService.query(params).getData().stream()
+            .map(c -> {
+              ValueSetVersionConcept concept = new ValueSetVersionConcept();
+              concept.setConcept(new Concept().setCode(c.getCode()));
+              concept.setActive(true);
+              concept.setAdditionalDesignations(c.getNames().entrySet().stream().map(n -> new Designation().setName(n.getValue()).setLanguage(n.getKey()).setDesignationType("display")).collect(Collectors.toList()));
+              concept.getAdditionalDesignations().addAll(c.getAlias().entrySet().stream().map(n -> new Designation().setName(n.getValue()).setLanguage(n.getKey()).setDesignationType("alias")).toList());
+              return concept;
+            }).toList());
+      }
+    });
     return ruleConcepts;
   }
 }

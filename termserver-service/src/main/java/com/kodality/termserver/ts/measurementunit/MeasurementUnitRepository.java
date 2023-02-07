@@ -51,7 +51,7 @@ public class MeasurementUnitRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and mu.code = ?", params.getCode());
     if (StringUtils.isNotEmpty(params.getKind())) {
-      sb.append("and mu.kind = ?", params.getKind());
+      sb.and().in("mu.kind", params.getKind());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
       sb.append("and (");
