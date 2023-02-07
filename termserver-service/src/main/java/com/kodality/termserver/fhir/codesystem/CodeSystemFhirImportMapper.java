@@ -98,7 +98,7 @@ public class CodeSystemFhirImportMapper {
           .map(d -> new EntityProperty().setName(d.getUse().getCode()).setType(EntityPropertyType.string).setStatus(PublicationStatus.active)).toList();
       properties.addAll(designationProperties);
     }
-    return properties;
+    return properties.stream().collect(Collectors.toMap(EntityProperty::getName, p -> p, (p, q) -> p)).values().stream().toList();
   }
 
   private static List<Concept> mapConcepts(List<CodeSystemConcept> fhirConcepts,

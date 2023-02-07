@@ -2,6 +2,8 @@ package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.codesystem.CodeSystem;
+import com.kodality.termserver.codesystem.CodeSystemContent;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.codesystem.CodeSystemQueryParams;
@@ -24,10 +26,10 @@ import com.kodality.termserver.ts.valueset.ValueSetVersionService;
 import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.valueset.ValueSet;
-import com.kodality.termserver.valueset.ValueSetVersionConcept;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termserver.valueset.ValueSetVersion;
+import com.kodality.termserver.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
+import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.ResourceType;
 import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
@@ -119,7 +121,9 @@ public class ValueSetFhirImportService {
     rules.forEach(r -> {
       prepareRuleValueSet(r);
       prepareRuleCodeSystem(r, lockedDate);
-      prepareConcepts(r.getConcepts(), r.getCodeSystem(), r.getCodeSystemVersionId());
+      if (!CodeSystemContent.notPresent.equals(codeSystemService.load(r.getCodeSystem()).map(CodeSystem::getContent).orElse(null))) {
+        prepareConcepts(r.getConcepts(), r.getCodeSystem(), r.getCodeSystemVersionId());
+      }
     });
   }
 
@@ -177,7 +181,7 @@ public class ValueSetFhirImportService {
             new CodeSystemEntityVersionQueryParams()
                 .setCodeSystem(c.getConcept().getCodeSystem())
                 .setCode(c.getConcept().getCode())
-                .setStatus(PublicationStatus.draft))
+                .setStatus(String.join(",", PublicationStatus.draft, PublicationStatus.active)))
         .findFirst()
         .orElse(
             new CodeSystemEntityVersion()

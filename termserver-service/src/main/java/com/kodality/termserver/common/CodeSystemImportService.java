@@ -4,21 +4,23 @@ import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 import com.kodality.termserver.association.AssociationType;
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.ts.association.AssociationTypeService;
 import com.kodality.termserver.codesystem.CodeSystem;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
-import com.kodality.termserver.ts.codesystem.CodeSystemService;
 import com.kodality.termserver.codesystem.CodeSystemVersion;
-import com.kodality.termserver.ts.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.codesystem.Concept;
 import com.kodality.termserver.codesystem.EntityProperty;
 import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
+import com.kodality.termserver.codesystem.EntityPropertyType;
+import com.kodality.termserver.ts.association.AssociationTypeService;
+import com.kodality.termserver.ts.codesystem.CodeSystemService;
+import com.kodality.termserver.ts.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
+import com.kodality.zmei.fhir.datatypes.Coding;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
@@ -131,8 +133,18 @@ public class CodeSystemImportService {
 
   private CodeSystemEntityVersion prepareEntityVersion(CodeSystemEntityVersion entityVersion, List<EntityProperty> properties) {
     if (CollectionUtils.isNotEmpty(entityVersion.getPropertyValues())) {
-      entityVersion.getPropertyValues().forEach(pv -> pv.setEntityPropertyId(pv.getEntityPropertyId() != null ? pv.getEntityPropertyId() :
-          pv.getEntityProperty() != null ? properties.stream().filter(p -> pv.getEntityProperty().equals(p.getName())).findFirst().map(EntityProperty::getId).orElse(null) : null));
+      entityVersion.getPropertyValues().forEach(pv -> {
+        Optional<EntityProperty> property = properties.stream().filter(p -> p.getName().equals(pv.getEntityProperty()) || p.getId().equals(pv.getEntityPropertyId())).findFirst();
+        if (property.isPresent()) {
+          pv.setEntityPropertyId(property.get().getId());
+          if (property.get().getType().equals(EntityPropertyType.coding)) {
+            try {
+              Coding coding = (Coding) pv.getValue();
+              conceptService.load(coding.getSystem(), coding.getCode()).ifPresent(pv::setValue);
+            } catch (RuntimeException ignored) {}
+          }
+        }
+      });
       entityVersion.setPropertyValues(entityVersion.getPropertyValues().stream().filter(pv -> pv.getEntityPropertyId() != null).collect(Collectors.toList()));
     }
     if (CollectionUtils.isNotEmpty(entityVersion.getDesignations())) {
