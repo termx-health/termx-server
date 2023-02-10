@@ -2,7 +2,7 @@ package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.client.FhirClient;
-import com.kodality.zmei.fhir.resource.infrastructure.Parameters;
+import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
 import java.net.http.HttpRequest;
