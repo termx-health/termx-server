@@ -26,6 +26,9 @@ where code_system_entity_version_id in (select id from terminology.code_system_e
 delete from terminology.code_system_entity_version
 where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system);
 
+delete from terminology.code_system_entity_version
+where code_system = p_code_system;
+
 delete from terminology.code_system_association
 where id in (select id from terminology.code_system_entity where code_system = p_code_system);
 
