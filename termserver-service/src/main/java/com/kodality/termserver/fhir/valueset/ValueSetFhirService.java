@@ -66,7 +66,7 @@ public class ValueSetFhirService {
     queryParams.setConceptCode(fhirParams.getFirst("code").orElse(null));
     queryParams.setLimit(fhirParams.getCount());
     List<ValueSet> valueSets = valueSetService.query(queryParams).getData();
-    return Bundle.of("searchset", valueSets.stream()
+    return Bundle.of("searchset", valueSets.stream().filter(vs -> vs.getVersions() != null)
         .flatMap(vs -> vs.getVersions().stream().map(vsv -> mapper.toFhir(vs, vsv))).collect(Collectors.toList()));
   }
 

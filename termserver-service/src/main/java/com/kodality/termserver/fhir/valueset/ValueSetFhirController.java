@@ -48,7 +48,7 @@ public class ValueSetFhirController {
   }
 
   @Get("{?params*}")
-  public HttpResponse<?> searchCodeSystems(Map<String, List<String>> params) {
+  public HttpResponse<?> searchValueSets(Map<String, List<String>> params) {
     Bundle bundle = service.search(params);
     return HttpResponse.ok(bundle);
   }
