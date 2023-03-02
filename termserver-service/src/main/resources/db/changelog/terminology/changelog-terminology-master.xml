@@ -15,6 +15,9 @@
     <include file="08-code_system_supplement.sql" relativeToChangelogFile="true"/>
     <include file="09-naming_system.sql" relativeToChangelogFile="true"/>
     <include file="10-measurement_unit.sql" relativeToChangelogFile="true"/>
+    <include file="20-project.sql" relativeToChangelogFile="true"/>
+    <include file="21-package.sql" relativeToChangelogFile="true"/>
+    <include file="22-terminology_server.sql" relativeToChangelogFile="true"/>
 
     <include file="views/concept_closure.sql" relativeToChangelogFile="true"/>
     <include file="views/concept_name.sql" relativeToChangelogFile="true"/>

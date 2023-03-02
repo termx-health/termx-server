@@ -3,11 +3,18 @@ package com.kodality.termserver.ts.mapset;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.mapset.MapSet;
+import com.kodality.termserver.mapset.MapSetAssociation;
 import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
 import com.kodality.termserver.mapset.MapSetQueryParams;
+import com.kodality.termserver.mapset.MapSetTransactionRequest;
+import com.kodality.termserver.mapset.MapSetVersion;
 import com.kodality.termserver.mapset.MapSetVersionQueryParams;
 import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
+import io.micronaut.core.util.CollectionUtils;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +29,12 @@ public class MapSetService {
   private final UserPermissionService userPermissionService;
 
   public Optional<MapSet> load(String id) {
-    return Optional.ofNullable(repository.load(id));
+    return load(id, false);
+  }
+
+  public Optional<MapSet> load(String id, boolean decorate) {
+    return Optional.ofNullable(repository.load(id))
+        .map(ms -> decorate ? decorate(ms, new MapSetQueryParams().setAssociationsDecorated(true).setVersionsDecorated(true)) : ms);
   }
 
   @Transactional
@@ -31,13 +43,31 @@ public class MapSetService {
     repository.save(mapSet);
   }
 
+  @Transactional
+  public void save(MapSetTransactionRequest request) {
+    MapSet mapSet = request.getMapSet();
+    userPermissionService.checkPermitted(mapSet.getId(), "MapSet", "edit");
+    repository.save(mapSet);
+
+    MapSetVersion version = request.getVersion();
+    version.setMapSet(mapSet.getId());
+    version.setReleaseDate(version.getReleaseDate() == null ? LocalDate.now() : version.getReleaseDate());
+    mapSetVersionService.save(version);
+
+    List<MapSetAssociation> associations = request.getAssociations();
+    if (CollectionUtils.isNotEmpty(request.getAssociations())) {
+      associations.forEach(association -> mapSetAssociationService.save(association, version.getMapSet()));
+      mapSetVersionService.saveEntityVersions(version.getId(), associations.stream().map(a -> a.getVersions().get(0)).collect(Collectors.toList()));
+    }
+  }
+
   public QueryResult<MapSet> query(MapSetQueryParams params) {
     QueryResult<MapSet> mapSets = repository.query(params);
     mapSets.getData().forEach(ms -> decorate(ms, params));
     return mapSets;
   }
 
-  private void decorate(MapSet mapSet, MapSetQueryParams params) {
+  private MapSet decorate(MapSet mapSet, MapSetQueryParams params) {
     if (params.isAssociationsDecorated()) {
       MapSetAssociationQueryParams associationParams = new MapSetAssociationQueryParams();
       associationParams.setMapSet(mapSet.getId());
@@ -56,6 +86,7 @@ public class MapSetService {
       versionParams.all();
       mapSet.setVersions(mapSetVersionService.query(versionParams).getData());
     }
+    return mapSet;
   }
 
   @Transactional

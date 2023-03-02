@@ -11,6 +11,7 @@ import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetEntityVersionQueryParams;
 import com.kodality.termserver.mapset.MapSetQueryParams;
+import com.kodality.termserver.mapset.MapSetTransactionRequest;
 import com.kodality.termserver.mapset.MapSetVersion;
 import com.kodality.termserver.mapset.MapSetVersionQueryParams;
 import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
@@ -23,6 +24,7 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
+import java.util.Optional;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -46,14 +48,21 @@ public class MapSetController {
   }
 
   @Authorized("*.MapSet.view")
-  @Get(uri = "/{mapSet}")
-  public MapSet getMapSet(@PathVariable @ResourceId String mapSet) {
-    return mapSetService.load(mapSet).orElseThrow(() -> new NotFoundException("MapSet not found: " + mapSet));
+  @Get(uri = "/{mapSet}{?decorate}")
+  public MapSet getMapSet(@PathVariable @ResourceId String mapSet, Optional<Boolean> decorate) {
+    return mapSetService.load(mapSet, decorate.orElse(false)).orElseThrow(() -> new NotFoundException("MapSet not found: " + mapSet));
   }
 
   @Authorized("*.MapSet.edit")
   @Post
   public HttpResponse<?> saveMapSet(@Body @Valid MapSet mapSet) {
+    mapSetService.save(mapSet);
+    return HttpResponse.created(mapSet);
+  }
+
+  @Authorized("*.CodeSystem.edit")
+  @Post("/transaction")
+  public HttpResponse<?> saveMapSetTransaction(@Body @Valid MapSetTransactionRequest mapSet) {
     mapSetService.save(mapSet);
     return HttpResponse.created(mapSet);
   }

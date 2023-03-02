@@ -56,12 +56,21 @@ public class CodeSystemRepository extends BaseRepository {
   }
 
   public QueryResult<CodeSystem> query(CodeSystemQueryParams params) {
+    String join =
+        "left join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A' " +
+        "left join terminology.code_system_entity cse on cse.code_system = cs.id and cse.sys_status = 'A' " +
+        "left join terminology.concept c on c.id = cse.id and c.sys_status = 'A' " +
+        "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
+        "left join terminology.package_version_resource pvr on pvr.resource_type = 'code-system' and pvr.resource_id = cs.id and pvr.sys_status = 'A' " +
+        "left join terminology.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
+        "left join terminology.package p on p.id = pv.package_id and p.sys_status = 'A' " +
+        "left join terminology.project pr on pr.id = p.project_id and pr.sys_status = 'A' ";
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system cs where cs.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select count(distinct(cs.id)) from terminology.code_system cs " + join);
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select cs.* from terminology.code_system cs where cs.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select distinct on (cs.id) cs.* from terminology.code_system cs " + join);
       sb.append(filter(params));
       sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));
@@ -71,55 +80,48 @@ public class CodeSystemRepository extends BaseRepository {
 
   private SqlBuilder filter(CodeSystemQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.append("where cs.sys_status = 'A'");
     if (CollectionUtils.isNotEmpty(params.getPermittedIds())) {
-      sb.and().in("id", params.getPermittedIds());
+      sb.and().in("cs.id", params.getPermittedIds());
     }
-    sb.appendIfNotNull("and id = ?", params.getId());
-    sb.appendIfNotNull("and id ~* ?", params.getIdContains());
-    sb.appendIfNotNull("and uri = ?", params.getUri());
-    sb.appendIfNotNull("and uri ~* ?", params.getUriContains());
-    sb.appendIfNotNull("and content = ?", params.getContent());
-    sb.appendIfNotNull("and description = ?", params.getDescription());
-    sb.appendIfNotNull("and description ~* ?", params.getDescriptionContains());
-    sb.appendIfNotNull("and base_code_system = ?", params.getBaseCodeSystem());
-    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(cs.names) where value = ?)", params.getName());
-    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(cs.names) where value ~* ?)", params.getNameContains());
-
+    sb.appendIfNotNull("and cs.id = ?", params.getId());
+    sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("cs.id", p));
+    sb.appendIfNotNull("and cs.id ~* ?", params.getIdContains());
+    sb.appendIfNotNull("and cs.uri = ?", params.getUri());
+    sb.appendIfNotNull("and cs.uri ~* ?", params.getUriContains());
+    sb.appendIfNotNull("and cs.content = ?", params.getContent());
+    sb.appendIfNotNull("and cs.description = ?", params.getDescription());
+    sb.appendIfNotNull("and cs.description ~* ?", params.getDescriptionContains());
+    sb.appendIfNotNull("and cs.base_code_system = ?", params.getBaseCodeSystem());
+    sb.appendIfNotNull("and cs.exists (select 1 from jsonb_each_text(cs.names) where value = ?)", params.getName());
+    sb.appendIfNotNull("and cs.exists (select 1 from jsonb_each_text(cs.names) where value ~* ?)", params.getNameContains());
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and (id = ? or uri = ? or description = ? or exists (select 1 from jsonb_each_text(cs.names) where value = ?))", params.getText(),
-          params.getText(), params.getText(), params.getText());
+      sb.append("and (cs.id = ? or cs.uri = ? or cs.description = ? or exists (select 1 from jsonb_each_text(cs.names) where value = ?))",
+          params.getText(), params.getText(), params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (id ~* ? or uri ~* ? or description ~* ? or exists (select 1 from jsonb_each_text(cs.names) where value ~* ?))", params.getTextContains(),
-          params.getTextContains(), params.getTextContains(), params.getTextContains());
+      sb.append("and (cs.id ~* ? or cs.uri ~* ? or cs.description ~* ? or exists (select 1 from jsonb_each_text(cs.names) where value ~* ?))",
+          params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
-
-    sb.appendIfNotNull("and exists (select 1 from terminology.concept c where c.code_system = cs.id and c.sys_status = 'A' and c.code = ?)",
-        params.getConceptCode());
-
-    if (params.getVersionId() != null || params.getVersionVersion() != null || params.getVersionStatus() != null || params.getVersionSource() != null ||
-        params.getVersionReleaseDateGe() != null || params.getVersionExpirationDateLe() != null) {
-      sb.append("and exists (select 1 from terminology.code_system_version csv where csv.code_system = cs.id and csv.sys_status = 'A'");
-      sb.appendIfNotNull("and csv.id = ?", params.getVersionId());
-      sb.appendIfNotNull("and csv.version = ?", params.getVersionVersion());
-      sb.appendIfNotNull("and csv.status = ?", params.getVersionStatus());
-      sb.appendIfNotNull("and csv.source = ?", params.getVersionSource());
-      sb.appendIfNotNull("and csv.release_date >= ?", params.getVersionReleaseDateGe());
-      sb.appendIfNotNull("and (csv.expiration_date <= ? or expiration_date is null)", params.getVersionExpirationDateLe());
-      sb.append(")");
-    }
-
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity cse " +
-        "inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
-        "where cse.code_system = cs.id and cse.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
+    sb.appendIfNotNull("and c.code = ?", params.getConceptCode());
+    sb.appendIfNotNull("and csv.id = ?", params.getVersionId());
+    sb.appendIfNotNull("and csv.version = ?", params.getVersionVersion());
+    sb.appendIfNotNull("and csv.status = ?", params.getVersionStatus());
+    sb.appendIfNotNull("and csv.source = ?", params.getVersionSource());
+    sb.appendIfNotNull("and csv.release_date >= ?", params.getVersionReleaseDateGe());
+    sb.appendIfNotNull("and (csv.expiration_date <= ? or expiration_date is null)", params.getVersionExpirationDateLe());
+    sb.appendIfNotNull("and csev.id = ?", params.getCodeSystemEntityVersionId());
+    sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
+    sb.appendIfNotNull("and p.id = ?", params.getPackageId());
+    sb.appendIfNotNull("and pr.id = ?", params.getProjectId());
     return sb;
   }
 
   private Map<String, String> sortMap(String lang) {
     Map<String, String> sortMap = new HashMap<>(Map.of(
-        Ordering.id, "id",
-        Ordering.uri, "uri",
-        Ordering.description, "description"
+        Ordering.id, "cs.id",
+        Ordering.uri, "cs.uri",
+        Ordering.description, "cs.description"
     ));
     if (StringUtils.isNotEmpty(lang)) {
       sortMap.put(Ordering.name, "cs.names ->> '" + lang + "'");

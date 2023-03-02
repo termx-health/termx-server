@@ -59,6 +59,7 @@ public enum ApiError {
   TE802("TE802", "Association type is used in code system '{{codeSystem}}' association, can't be deleted."),
   TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted."),
 
+  TE901("TE901", "Current installation is already defined."),
 
   THE101("THE101", "Generated slug '{{slug}}' already exists, please change content name.")
   ;

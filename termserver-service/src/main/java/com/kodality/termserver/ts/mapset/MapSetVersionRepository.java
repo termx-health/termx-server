@@ -122,9 +122,9 @@ public class MapSetVersionRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public MapSetVersion loadLastVersion(String mapSet, String status) {
-    String sql = "select * from terminology.map_set_version where sys_status = 'A' and map_set = ? and status = ? order by release_date, version desc";
-    return getBean(sql, bp, mapSet, status);
+  public MapSetVersion loadLastVersion(String mapSet) {
+    String sql = "select * from terminology.map_set_version where sys_status = 'A' and map_set = ? and (status = 'active' or status = 'draft') order by release_date desc";
+    return getBean(sql, bp, mapSet);
   }
 
   public void cancel(Long mapSetVersionId) {

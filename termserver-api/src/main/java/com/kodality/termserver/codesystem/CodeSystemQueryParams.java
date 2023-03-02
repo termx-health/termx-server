@@ -12,6 +12,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class CodeSystemQueryParams extends QueryParams {
   private String id;
+  private String ids;
   private String idContains;
   private List<String> permittedIds;
   private String uri;
@@ -43,6 +44,11 @@ public class CodeSystemQueryParams extends QueryParams {
   private Long codeSystemEntityVersionId;
 
   private String lang;
+
+  private Long projectId;
+  private Long packageId;
+  private Long packageVersionId;
+
   public interface Ordering {
     String id = "id";
     String uri = "uri";

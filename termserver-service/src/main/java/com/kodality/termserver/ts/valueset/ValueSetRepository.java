@@ -43,12 +43,20 @@ public class ValueSetRepository extends BaseRepository {
   }
 
   public QueryResult<ValueSet> query(ValueSetQueryParams params) {
+    String join = "left join terminology.value_set_version vsv on vsv.value_set = vs.id and vsv.sys_status = 'A' " +
+        "left join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A' " +
+        "left join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' " +
+        "left join terminology.code_system cs on cs.id = vsvr.code_system and cs.sys_status = 'A' " +
+        "left join terminology.package_version_resource pvr on pvr.resource_type = 'value-set' and pvr.resource_id = vs.id and pvr.sys_status = 'A' " +
+        "left join terminology.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
+        "left join terminology.package p on p.id = pv.package_id and p.sys_status = 'A' " +
+        "left join terminology.project pr on pr.id = p.project_id and pr.sys_status = 'A' ";
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.value_set vs where vs.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select count(distinct(vs.id)) from terminology.value_set vs " + join);
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select vs.* from terminology.value_set vs where vs.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select distinct on (vs.id) vs.* from terminology.value_set vs " + join);
       sb.append(filter(params));
       sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));
@@ -58,44 +66,37 @@ public class ValueSetRepository extends BaseRepository {
 
   private SqlBuilder filter(ValueSetQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and id = ?", params.getId());
-    sb.appendIfNotNull("and id ~* ?", params.getIdContains());
+    sb.append("where vs.sys_status = 'A'");
+    sb.appendIfNotNull("and vs.id = ?", params.getId());
+    sb.appendIfNotNull("and vs.id ~* ?", params.getIdContains());
+    sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("vs.id", p));
     if (CollectionUtils.isNotEmpty(params.getPermittedIds())) {
-      sb.and().in("id", params.getPermittedIds());
+      sb.and().in("vs.id", params.getPermittedIds());
     }
-    sb.appendIfNotNull("and uri = ?", params.getUri());
-    sb.appendIfNotNull("and uri ~* ?", params.getUriContains());
-    sb.appendIfNotNull("and description = ?", params.getDescription());
-    sb.appendIfNotNull("and description ~* ?", params.getDescriptionContains());
+    sb.appendIfNotNull("and vs.uri = ?", params.getUri());
+    sb.appendIfNotNull("and vs.uri ~* ?", params.getUriContains());
+    sb.appendIfNotNull("and vs.description = ?", params.getDescription());
+    sb.appendIfNotNull("and vs.description ~* ?", params.getDescriptionContains());
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(vs.names) where value = ?)", params.getName());
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(vs.names) where value ~* ?)", params.getNameContains());
-
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and (id = ? or uri = ? or description = ? or exists (select 1 from jsonb_each_text(vs.names) where value = ?))", params.getText(), params.getText(), params.getText(), params.getText());
+      sb.append("and (vs.id = ? or vs.uri = ? or vs.description = ? or exists (select 1 from jsonb_each_text(vs.names) where value = ?))",
+          params.getText(), params.getText(), params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (id ~* ? or uri ~* ? or description ~* ? or exists (select 1 from jsonb_each_text(vs.names) where value ~* ?))", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
+      sb.append("and (vs.id ~* ? or vs.uri ~* ? or vs.description ~* ? or exists (select 1 from jsonb_each_text(vs.names) where value ~* ?))",
+          params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
-
-    if (params.getVersionId() != null || params.getVersionVersion() != null || params.getVersionSource() != null || params.getVersionStatus() != null) {
-      sb.append("and exists (select 1 from terminology.value_set_version vsv where vsv.value_set = vs.id and vsv.sys_status = 'A'");
-      sb.appendIfNotNull("and vsv.id = ?", params.getVersionId());
-      sb.appendIfNotNull("and vsv.version = ?", params.getVersionVersion());
-      sb.appendIfNotNull("and vsv.source = ?", params.getVersionSource());
-      sb.appendIfNotNull("and vsv.status = ?", params.getVersionStatus());
-      sb.append(")");
-    }
-
-    if (StringUtils.isNotEmpty(params.getCodeSystem()) || StringUtils.isNotEmpty(params.getConceptCode()) || StringUtils.isNotEmpty(params.getCodeSystemUri())) {
-      sb.append("and exists(select 1 from terminology.value_set_version_rule vsvr " +
-          "inner join terminology.value_set_version_rule_set vsvrs on vsvrs.id = vsvr.rule_set_id and vsvrs.sys_status = 'A' " +
-          "inner join terminology.value_set_version vsv on vsv.id = vsvrs.value_set_version_id and vsv.sys_status = 'A' " +
-          "where vsv.value_set = vs.id and vsvr.sys_status = 'A' and vsvr.type = 'include'");
-      sb.appendIfNotNull("and vsvr.code_system = ?", params.getCodeSystem());
-      sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs where cs.id = vsvr.code_system and cs.uri = ?)", params.getCodeSystemUri());
-      sb.appendIfNotNull("and exists (select 1 from terminology.value_set_expand(vsv.id) vse where (vse.concept ->> 'code') = ?)", params.getConceptCode());
-      sb.append(")");
-    }
+    sb.appendIfNotNull("and vsv.id = ?", params.getVersionId());
+    sb.appendIfNotNull("and vsv.version = ?", params.getVersionVersion());
+    sb.appendIfNotNull("and vsv.source = ?", params.getVersionSource());
+    sb.appendIfNotNull("and vsv.status = ?", params.getVersionStatus());
+    sb.appendIfNotNull("and vsvr.type = 'include' and vsvr.code_system = ?", params.getCodeSystem());
+    sb.appendIfNotNull("and vsvr.type = 'include' and cs.uri = ?", params.getCodeSystemUri());
+    sb.appendIfNotNull("and vsv.id is not null and exists (select 1 from terminology.value_set_expand(vsv.id) vse where (vse.concept ->> 'code') = ?)", params.getConceptCode());
+    sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
+    sb.appendIfNotNull("and p.id = ?", params.getPackageId());
+    sb.appendIfNotNull("and pr.id = ?", params.getProjectId());
     return sb;
   }
 

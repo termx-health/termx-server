@@ -11,6 +11,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ValueSetQueryParams extends QueryParams {
   private String id;
+  private String ids;
   private String idContains;
   private List<String> permittedIds;
   private String uri;
@@ -35,6 +36,11 @@ public class ValueSetQueryParams extends QueryParams {
   private String conceptCode;
 
   private String lang;
+
+  private Long projectId;
+  private Long packageId;
+  private Long packageVersionId;
+
   public interface Ordering {
     String id = "id";
     String uri = "uri";

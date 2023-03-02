@@ -1,0 +1,33 @@
+package com.kodality.termserver.project.projectpackage.version;
+
+import com.kodality.termserver.project.projectpackage.PackageVersion;
+import com.kodality.termserver.project.projectpackage.resource.PackageResourceService;
+import java.util.List;
+import javax.inject.Singleton;
+import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
+
+@Singleton
+@RequiredArgsConstructor
+public class PackageVersionService {
+  private final PackageVersionRepository repository;
+  private final PackageResourceService resourceService;
+
+  @Transactional
+  public void save(Long packageId, PackageVersion version) {
+    repository.save(packageId, version);
+    resourceService.save(version.getId(), version.getResources());
+  }
+
+  public PackageVersion load(Long id) {
+    return repository.load(id);
+  }
+
+  public List<PackageVersion> loadAll(Long packageId) {
+    return repository.loadAll(packageId);
+  }
+
+  public void delete(Long id) {
+    repository.delete(id);
+  }
+}

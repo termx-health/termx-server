@@ -18,13 +18,14 @@ import com.kodality.termserver.ts.mapset.MapSetVersionService;
 import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
-import com.kodality.zmei.fhir.resource.other.Parameters;
-import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
+import com.kodality.zmei.fhir.resource.other.Parameters;
+import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +45,23 @@ public class ConceptMapFhirService {
   private final CodeSystemFhirService codeSystemFhirService;
   private final MapSetAssociationService mapSetAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+
+  public ConceptMap get(String mapSetId, Map<String, List<String>> params) {
+    String versionCode = Optional.ofNullable(params.getOrDefault("version", null)).map(v -> String.join(",", v)).orElse(null);
+
+    MapSetQueryParams mapSetQueryParams = new MapSetQueryParams();
+    mapSetQueryParams.setId(mapSetId);
+    mapSetQueryParams.setVersionVersion(versionCode);
+    mapSetQueryParams.setAssociationsDecorated(true);
+    mapSetQueryParams.setVersionsDecorated(true);
+    mapSetQueryParams.setLimit(1);
+    MapSet mapSet = mapSetService.query(mapSetQueryParams).findFirst().orElse(null);
+    if (mapSet == null) {
+      return null;
+    }
+    MapSetVersion version = StringUtils.isEmpty(versionCode) ? mapSetVersionService.loadLastVersion(mapSetId) : mapSetVersionService.load(mapSetId, versionCode).orElse(null);
+    return mapper.toFhir(mapSet, version);
+  }
 
   public Parameters translate(Map<String, List<String>> params) {
     FhirQueryParams fhirParams = new FhirQueryParams(params);
@@ -86,7 +104,7 @@ public class ConceptMapFhirService {
           if (version.isPresent()) {
             mapSetVersion.setVersion(version.get());
           } else {
-            MapSetVersion lastVersion = mapSetVersionService.loadLastVersion(persistedMapSet.get().getId(), PublicationStatus.active);
+            MapSetVersion lastVersion = mapSetVersionService.loadLastVersion(persistedMapSet.get().getId());
             try {
               mapSetVersion.setVersion(String.valueOf(Long.parseLong(lastVersion.getVersion()) + 1));
             } catch (Exception e) {

@@ -5,9 +5,11 @@ import com.kodality.termserver.ApiError;
 import com.kodality.termserver.PublicationStatus;
 
 import com.kodality.termserver.auth.auth.UserPermissionService;
+import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
 import com.kodality.termserver.mapset.MapSetEntityVersion;
 import com.kodality.termserver.mapset.MapSetVersion;
 import com.kodality.termserver.mapset.MapSetVersionQueryParams;
+import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MapSetVersionService {
   private final MapSetVersionRepository repository;
+  private final MapSetAssociationService associationService;
   private final UserPermissionService userPermissionService;
 
   @Transactional
@@ -47,7 +50,15 @@ public class MapSetVersionService {
   }
 
   public QueryResult<MapSetVersion> query(MapSetVersionQueryParams params) {
-    return repository.query(params);
+    QueryResult<MapSetVersion> versions = repository.query(params);
+    versions.getData().forEach(this::decorate);
+    return versions;
+  }
+
+  private void decorate(MapSetVersion mapSetVersion) {
+    MapSetAssociationQueryParams params = new MapSetAssociationQueryParams().setMapSet(mapSetVersion.getMapSet()).setMapSetVersion(mapSetVersion.getVersion());
+    params.all();
+    mapSetVersion.setAssociations(associationService.query(params).getData());
   }
 
   public Optional<MapSetVersion> load(String mapSet, String versionCode) {
@@ -123,8 +134,8 @@ public class MapSetVersionService {
     }
   }
 
-  public MapSetVersion loadLastVersion(String mapSet, String status) {
-    return repository.loadLastVersion(mapSet, status);
+  public MapSetVersion loadLastVersion(String mapSet) {
+    return repository.loadLastVersion(mapSet);
   }
 
   @Transactional

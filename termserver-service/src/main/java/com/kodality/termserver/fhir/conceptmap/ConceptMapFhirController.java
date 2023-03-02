@@ -1,6 +1,7 @@
 package com.kodality.termserver.fhir.conceptmap;
 
 import com.kodality.commons.exception.ApiClientException;
+import com.kodality.commons.exception.NotFoundException;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.auth.auth.SessionStore;
@@ -33,6 +34,16 @@ public class ConceptMapFhirController {
   private final ConceptMapFhirImportService importService;
 
   private static final String JOB_TYPE = "FHIR-MS";
+
+  @Get("/{mapSetId}{?params*}")
+  public HttpResponse<?> getCodeSystem(String mapSetId, Map<String, List<String>> params) {
+    ConceptMap conceptMap = service.get(mapSetId, params);
+    if (conceptMap == null) {
+      throw new NotFoundException("ConceptMap not found");
+    }
+    return HttpResponse.ok(conceptMap);
+  }
+
 
   @Get("/$translate{?params*}")
   public HttpResponse<?> translate(Map<String, List<String>> params) {

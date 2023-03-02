@@ -45,12 +45,26 @@ public class MapSetRepository extends BaseRepository {
   }
 
   public QueryResult<MapSet> query(MapSetQueryParams params) {
+    String join = "left join terminology.map_set_version msv on msv.map_set = ms.id and msv.sys_status = 'A' " +
+        "left join terminology.map_set_association msa on msa.map_set = ms.id and msa.sys_status = 'A' " +
+        "left join terminology.code_system_entity_version csev_s on csev_s.id = msa.source_code_system_entity_version_id and csev_s.sys_status = 'A' " +
+        "left join terminology.code_system_entity_version csev_t on csev_t.id = msa.target_code_system_entity_version_id and csev_t.sys_status = 'A' " +
+        "left join terminology.code_system_entity cse_s on cse_s.id = csev_s.code_system_entity_id and cse_s.sys_status = 'A' " +
+        "left join terminology.code_system_entity cse_t on cse_t.id = csev_t.code_system_entity_id and cse_t.sys_status = 'A' " +
+        "left join terminology.code_system_version csv_s on csv_s.code_system = cse_s.code_system and csv_s.sys_status = 'A' " +
+        "left join terminology.code_system_version csv_t on csv_t.code_system = cse_t.code_system and csv_t.sys_status = 'A' " +
+        "left join terminology.code_system cs_s on cs_s.id = csv_s.code_system and cs_s.sys_status = 'A' " +
+        "left join terminology.code_system cs_t on cs_t.id = csv_t.code_system and cs_t.sys_status = 'A' " +
+        "left join terminology.package_version_resource pvr on pvr.resource_type = 'map-set' and pvr.resource_id = ms.id and pvr.sys_status = 'A' " +
+        "left join terminology.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
+        "left join terminology.package p on p.id = pv.package_id and p.sys_status = 'A' " +
+        "left join terminology.project pr on pr.id = p.project_id and pr.sys_status = 'A' ";
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.map_set ms where ms.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select count(distinct(ms.id)) from terminology.map_set ms " + join);
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select ms.* from terminology.map_set ms where ms.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select distinct on (ms.id) ms.* from terminology.map_set ms " + join);
       sb.append(filter(params));
       sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));
@@ -60,7 +74,9 @@ public class MapSetRepository extends BaseRepository {
 
   private SqlBuilder filter(MapSetQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.append("where ms.sys_status = 'A'");
     sb.appendIfNotNull("and ms.id = ?", params.getId());
+    sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("ms.id", p));
     sb.appendIfNotNull("and ms.id ~* ?", params.getIdContains());
     if (CollectionUtils.isNotEmpty(params.getPermittedIds())) {
       sb.and().in("ms.id", params.getPermittedIds());
@@ -73,47 +89,26 @@ public class MapSetRepository extends BaseRepository {
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ms.names) where value ~* ?)", params.getNameContains());
     sb.appendIfNotNull("and ms.source_value_set = ?", params.getSourceValueSet());
     sb.appendIfNotNull("and ms.target_value_set = ?", params.getTargetValueSet());
-
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and (ms.id = ? or ms.uri = ? or ms.description = ? or exists (select 1 from jsonb_each_text(ms.names) where value = ?))", params.getText(),
-          params.getText(), params.getText(), params.getText());
+      sb.append("and (ms.id = ? or ms.uri = ? or ms.description = ? or exists (select 1 from jsonb_each_text(ms.names) where value = ?))",
+          params.getText(), params.getText(), params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
       sb.append("and (ms.id ~* ? or ms.uri ~* ? or ms.description ~* ? or exists (select 1 from jsonb_each_text(ms.names) where value ~* ?))",
           params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
-
-    sb.appendIfNotNull("and exists (select 1 from terminology.map_set_version msv where msv.map_set = ms.id and msv.sys_status = 'A' and msv.version = ?)",
-        params.getVersionVersion());
-
-    if (StringUtils.isNotEmpty(params.getAssociationSourceCode()) || StringUtils.isNotEmpty(params.getAssociationSourceSystem()) ||
-        StringUtils.isNotEmpty(params.getAssociationSourceSystemUri()) || StringUtils.isNotEmpty(params.getAssociationSourceSystemVersion())) {
-      sb.append("and exists (select 1 from terminology.code_system_version csv " +
-          "inner join terminology.code_system cs on cs.id = csv.code_system and cs.sys_status = 'A' " +
-          "inner join terminology.code_system_entity cse on cse.code_system = csv.code_system and cse.sys_status = 'A' " +
-          "inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
-          "inner join terminology.map_set_association msa on msa.source_code_system_entity_version_id = csev.id and msa.sys_status = 'A' " +
-          "where msa.map_set = ms.id and csv.sys_status = 'A'");
-      sb.appendIfNotNull("and csev.code = ?", params.getAssociationSourceCode());
-      sb.appendIfNotNull("and cs.id = ?", params.getAssociationSourceSystem());
-      sb.appendIfNotNull("and cs.uri = ?", params.getAssociationSourceSystemUri());
-      sb.appendIfNotNull("and csv.version = ?", params.getAssociationSourceSystemVersion());
-      sb.append(")");
-    }
-    if (StringUtils.isNotEmpty(params.getAssociationTargetCode()) || StringUtils.isNotEmpty(params.getAssociationTargetSystem()) ||
-        StringUtils.isNotEmpty(params.getAssociationTargetSystemUri()) || StringUtils.isNotEmpty(params.getAssociationTargetSystemVersion())) {
-      sb.append("and exists (select 1 from terminology.code_system_version csv " +
-          "inner join terminology.code_system cs on cs.id = csv.code_system and cs.sys_status = 'A' " +
-          "inner join terminology.code_system_entity cse on cse.code_system = csv.code_system and cse.sys_status = 'A' " +
-          "inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
-          "inner join terminology.map_set_association msa on msa.target_code_system_entity_version_id = csev.id and msa.sys_status = 'A' " +
-          "where msa.map_set = ms.id and csv.sys_status = 'A'");
-      sb.appendIfNotNull("and csev.code = ?", params.getAssociationTargetCode());
-      sb.appendIfNotNull("and cs.id = ?", params.getAssociationTargetSystem());
-      sb.appendIfNotNull("and cs.uri = ?", params.getAssociationTargetSystemUri());
-      sb.appendIfNotNull("and csv.version = ?", params.getAssociationTargetSystemVersion());
-      sb.append(")");
-    }
+    sb.appendIfNotNull("and msv.version = ?", params.getVersionVersion());
+    sb.appendIfNotNull("and csev_s.code = ?", params.getAssociationSourceCode());
+    sb.appendIfNotNull("and cs_s.id = ?", params.getAssociationSourceSystem());
+    sb.appendIfNotNull("and cs_s.uri = ?", params.getAssociationSourceSystemUri());
+    sb.appendIfNotNull("and csv_s.version = ?", params.getAssociationSourceSystemVersion());
+    sb.appendIfNotNull("and csev_t.code = ?", params.getAssociationTargetCode());
+    sb.appendIfNotNull("and cs_t.id = ?", params.getAssociationTargetSystem());
+    sb.appendIfNotNull("and cs_t.uri = ?", params.getAssociationTargetSystemUri());
+    sb.appendIfNotNull("and csv_t.version = ?", params.getAssociationTargetSystemVersion());
+    sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
+    sb.appendIfNotNull("and p.id = ?", params.getPackageId());
+    sb.appendIfNotNull("and pr.id = ?", params.getProjectId());
     return sb;
   }
 

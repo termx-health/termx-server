@@ -273,7 +273,6 @@ public class CodeSystemFhirService {
       version.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
     }
     return mapper.toFhir(codeSystem, version);
-
   }
 
   public Bundle search(Map<String, List<String>> params) {

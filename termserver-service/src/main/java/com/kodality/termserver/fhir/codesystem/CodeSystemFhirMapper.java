@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -179,6 +180,7 @@ public class CodeSystemFhirMapper {
       fhirCodeSystem.setConcept(version.getEntities().stream()
           .filter(e -> CollectionUtils.isEmpty(e.getAssociations()))
           .map(e -> toFhir(e, codeSystem, version.getEntities(), fhirCodeSystem))
+          .sorted(Comparator.comparing(CodeSystemConcept::getCode))
           .collect(Collectors.toList()));
     }
     return fhirCodeSystem;
