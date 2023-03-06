@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TerminologyServerController {
   private final TerminologyServerService terminologyServerService;
+  private final TerminologyServerResourceService terminologyServerResourceService;
 
   @Authorized("*.TerminologyServer.edit")
   @Post()
@@ -40,5 +41,11 @@ public class TerminologyServerController {
   @Get("/{?params*}")
   public QueryResult<TerminologyServer> search(TerminologyServerQueryParams params) {
     return terminologyServerService.query(params);
+  }
+
+  @Authorized("*.TerminologyServer.view")
+  @Post("/resource")
+  public TerminologyServerResourceResponse getResource(@Valid @Body TerminologyServerResourceRequest request) {
+    return terminologyServerResourceService.getResource(request);
   }
 }

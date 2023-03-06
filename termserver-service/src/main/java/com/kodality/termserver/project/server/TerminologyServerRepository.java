@@ -33,6 +33,11 @@ public class TerminologyServerRepository extends BaseRepository {
     return getBean(sql, bp, id);
   }
 
+  public TerminologyServer load(String code) {
+    String sql = "select * from terminology.terminology_server where code = ? and sys_status = 'A'";
+    return getBean(sql, bp, code);
+  }
+
   public QueryResult<TerminologyServer> query(TerminologyServerQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from terminology.terminology_server ts where ts.sys_status = 'A'");

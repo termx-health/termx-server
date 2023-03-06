@@ -25,6 +25,10 @@ public class TerminologyServerService {
     return repository.load(id);
   }
 
+  public TerminologyServer load(String code) {
+    return repository.load(code);
+  }
+
   public QueryResult<TerminologyServer> query(TerminologyServerQueryParams params) {
     return repository.query(params);
   }

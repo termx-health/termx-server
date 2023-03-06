@@ -201,12 +201,13 @@ public class CodeSystemFhirMapper {
 
   private List<CodeSystemConceptDesignation> getDesignations(List<Designation> designations) {
     List<CodeSystemConceptDesignation> result = designations.stream().map(d -> {
-      CodeSystemConceptDesignation fhirDesignation = new CodeSystemConceptDesignation();
-      fhirDesignation.setLanguage(d.getLanguage());
-      fhirDesignation.setValue(d.getName());
-      fhirDesignation.setUse(new Coding(d.getDesignationType()));
-      return fhirDesignation;
-    }).collect(Collectors.toList());
+          CodeSystemConceptDesignation fhirDesignation = new CodeSystemConceptDesignation();
+          fhirDesignation.setLanguage(d.getLanguage());
+          fhirDesignation.setValue(d.getName());
+          fhirDesignation.setUse(new Coding(d.getDesignationType()));
+          return fhirDesignation;
+        }).sorted(Comparator.comparing(CodeSystemConceptDesignation::getLanguage)).sorted(Comparator.comparing(d -> d.getUse().getCode()))
+        .collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result;
   }
 
@@ -252,6 +253,7 @@ public class CodeSystemFhirMapper {
         fhirProperties.add(fhirProperty);
       }
     });
+    fhirProperties.sort(Comparator.comparing(CodeSystemConceptProperty::getCode));
     return CollectionUtils.isEmpty(fhirProperties) ? null : fhirProperties;
   }
 
