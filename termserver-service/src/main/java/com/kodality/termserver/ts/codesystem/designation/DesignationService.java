@@ -5,9 +5,12 @@ import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.DesignationQueryParams;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
@@ -37,6 +40,15 @@ public class DesignationService {
     if (designations != null) {
       designations.forEach(designation -> save(designation, codeSystemEntityVersionId, codeSystem));
     }
+  }
+
+  @Transactional
+  public void batchUpsert(Map<Long, List<Designation>> designations, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
+    List<Entry<Long, List<Designation>>> entries = designations.entrySet().stream().toList();
+    repository.retain(entries);
+    repository.save(entries.stream().flatMap(e -> e.getValue().stream().map(v -> Pair.of(e.getKey(), v))).toList());
   }
 
   @Transactional

@@ -8,9 +8,12 @@ import com.kodality.termserver.codesystem.CodeSystemEntityType;
 import com.kodality.termserver.ts.codesystem.concept.ConceptRefreshViewJob;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityService;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
@@ -50,6 +53,16 @@ public class CodeSystemAssociationService {
     repository.save(association, codeSystemEntityVersionId);
     conceptRefreshViewJob.refreshView();
   }
+
+  @Transactional
+  public void batchUpsert(Map<Long, List<CodeSystemAssociation>> associations, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
+    List<Entry<Long, List<CodeSystemAssociation>>> entries = associations.entrySet().stream().toList();
+    repository.retain(entries);
+    repository.save(entries.stream().flatMap(e -> e.getValue().stream().map(v -> Pair.of(e.getKey(), v))).toList());
+  }
+
 
   @Transactional
   public void delete(Long id, String codeSystem) {

@@ -5,11 +5,18 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.codesystem.Designation;
 import com.kodality.termserver.codesystem.DesignationQueryParams;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Objects;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 @Singleton
 public class DesignationRepository extends BaseRepository {
@@ -96,5 +103,55 @@ public class DesignationRepository extends BaseRepository {
   public void delete(Long id) {
     SqlBuilder sb = new SqlBuilder("update terminology.designation set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
+  public void retain(List<Entry<Long, List<Designation>>> designations) {
+    String query = "update terminology.designation set sys_status = 'C' where code_system_entity_version_id = ? and sys_status = 'A' and id not in " +
+        "(select jsonb_array_elements(?::jsonb)::bigint)";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override
+      public void setValues(PreparedStatement ps, int i) throws SQLException {
+        ps.setLong(1, designations.get(i).getKey());
+        ps.setString(2, JsonUtil.toJson(designations.get(i).getValue().stream().map(Designation::getId).filter(Objects::nonNull).toList()));
+      }
+      @Override
+      public int getBatchSize() {
+        return designations.size();
+      }
+    });
+  }
+
+  public void save(List<Pair<Long, Designation>> designations) {
+    List<Pair<Long, Designation>> designationsToInsert = designations.stream().filter(p -> p.getValue().getId() == null).toList();
+    String query = "insert into terminology.designation (code_system_entity_version_id, designation_type_id, name, language, rendering, preferred, case_significance, designation_kind, description, status) values (?,?,?,?,?,?,?,?,?,?)";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
+        DesignationRepository.this.setValues(ps, i, designationsToInsert);
+      }
+      @Override public int getBatchSize() {return designationsToInsert.size();}
+    });
+
+    List<Pair<Long, Designation>> designationsToUpdate = designations.stream().filter(p -> p.getValue().getId() != null).toList();
+    query = "update terminology.designation SET code_system_entity_version_id = ?, designation_type_id = ? , name = ?, language = ?, rendering = ?, preferred = ?, case_significance = ?, designation_kind = ?, description = ?, status = ? where id = ?";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
+        DesignationRepository.this.setValues(ps, i, designationsToUpdate);
+        ps.setLong(12, designationsToUpdate.get(i).getValue().getId());
+      }
+      @Override public int getBatchSize() {return designationsToUpdate.size();}
+    });
+  }
+
+  private void setValues(PreparedStatement ps, int i, List<Pair<Long, Designation>> designations) throws SQLException {
+    ps.setLong(1, designations.get(i).getKey());
+    ps.setLong(2, designations.get(i).getValue().getDesignationTypeId());
+    ps.setString(3, designations.get(i).getValue().getName());
+    ps.setString(4, designations.get(i).getValue().getLanguage());
+    ps.setString(5, designations.get(i).getValue().getRendering());
+    ps.setBoolean(6, designations.get(i).getValue().isPreferred());
+    ps.setString(7, designations.get(i).getValue().getCaseSignificance());
+    ps.setString(8, designations.get(i).getValue().getDesignationKind());
+    ps.setString(9, designations.get(i).getValue().getDescription());
+    ps.setString(10, designations.get(i).getValue().getStatus());
   }
 }

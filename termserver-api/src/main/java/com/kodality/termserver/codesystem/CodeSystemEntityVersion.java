@@ -24,4 +24,6 @@ public class CodeSystemEntityVersion {
   private List<CodeSystemAssociation> associations;
 
   private String codeSystemVersion;
+
+  private Long codeSystemEntityId;
 }

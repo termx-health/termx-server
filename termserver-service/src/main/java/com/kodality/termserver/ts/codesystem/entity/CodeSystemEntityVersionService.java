@@ -56,6 +56,27 @@ public class CodeSystemEntityVersionService {
     return version;
   }
 
+  @Transactional
+  public void batchSave(Map<Long, CodeSystemEntityVersion> versions, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+    versions.values().forEach(v -> {
+      if (!PublicationStatus.draft.equals(v.getStatus())) {
+        throw ApiError.TE101.toApiException();
+      }
+      v.setCreated(v.getCreated() == null ? OffsetDateTime.now() : v.getCreated());
+    });
+
+    repository.batchUpsert(versions);
+
+    Map<Long, List<Designation>> designations = versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getDesignations));
+    Map<Long, List<EntityPropertyValue>> propertyValues = versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getPropertyValues));
+    Map<Long, List<CodeSystemAssociation>> associations = versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, ev -> prepareAssociations(ev.getAssociations())));
+    designationService.batchUpsert(designations, codeSystem);
+    entityPropertyValueService.batchUpsert(propertyValues, codeSystem);
+    codeSystemAssociationService.batchUpsert(associations, codeSystem);
+    conceptRefreshViewJob.refreshView();
+  }
+
   public CodeSystemEntityVersion load(Long id) {
     return decorate(repository.load(id));
   }

@@ -11,8 +11,17 @@ import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.IntStream;
 import javax.inject.Singleton;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 @Singleton
 public class CodeSystemEntityVersionRepository extends BaseRepository {
@@ -117,6 +126,56 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
   public void cancel(Long id) {
     SqlBuilder sb = new SqlBuilder("update terminology.code_system_entity_version set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
+  public void batchUpsert(Map<Long, CodeSystemEntityVersion> versions) {
+    List<Entry<Long, CodeSystemEntityVersion>> versionsToInsert = versions.entrySet().stream().filter(e -> e.getValue().getId() == null).toList();
+    String query = "insert into terminology.code_system_entity_version (code_system_entity_id, code_system, code, description, status, created) values (?,?,?,?,?,?::timestamp)";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
+        CodeSystemEntityVersionRepository.this.setValues(ps, i, versionsToInsert);
+      }
+      @Override public int getBatchSize() {return versionsToInsert.size();}
+    });
+
+    List<Entry<Long, CodeSystemEntityVersion>> versionsToUpdate = versions.entrySet().stream().filter(e -> e.getValue().getId() != null).toList();
+    query = "update terminology.code_system_entity_version set code_system_entity_id = ?, code_system = ?, code = ?, description = ?, status = ?, created = ?::timestamp where id = ?";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
+        CodeSystemEntityVersionRepository.this.setValues(ps, i, versionsToUpdate);
+        ps.setLong(7, versionsToUpdate.get(i).getValue().getId());
+      }
+      @Override public int getBatchSize() {return versionsToUpdate.size();}
+    });
+
+    List<CodeSystemEntityVersion> newVersions = new ArrayList<>();
+    List<Long> entityIds = versions.keySet().stream().toList();
+    List<Long> existingIds = versionsToUpdate.stream().map(v -> v.getValue().getId()).filter(Objects::nonNull).toList();
+    IntStream.range(0,(entityIds.size()+1000-1)/1000).mapToObj(i -> entityIds.subList(i*1000, Math.min(entityIds.size(), (i+1)*1000))).forEach(batch -> {
+      SqlBuilder sb = new SqlBuilder("select * from terminology.code_system_entity_version where sys_status = 'A'");
+      sb.and().in("code_system_entity_id", batch);
+      List<CodeSystemEntityVersion> beans = getBeans(sb.getSql(), bp, sb.getParams());
+      newVersions.addAll(beans.stream().filter(v -> !existingIds.contains(v.getId())).toList());
+    });
+
+    versions.forEach((key, value) -> {
+      if (value.getId() == null && CollectionUtils.isNotEmpty(newVersions)) {
+        Optional<CodeSystemEntityVersion> version = newVersions.stream().filter(ver -> ver.getCodeSystemEntityId().equals(key)).findFirst();
+        version.ifPresent(v -> {
+          value.setId(version.get().getId());
+          newVersions.remove(version.get());
+        });
+      }
+    });
+  }
+
+  private void setValues(PreparedStatement ps, int i, List<Entry<Long, CodeSystemEntityVersion>> versionsToInsert) throws SQLException {
+    ps.setLong(1, versionsToInsert.get(i).getKey());
+    ps.setString(2, versionsToInsert.get(i).getValue().getCodeSystem());
+    ps.setString(3, versionsToInsert.get(i).getValue().getCode());
+    ps.setString(4, versionsToInsert.get(i).getValue().getDescription());
+    ps.setString(5, versionsToInsert.get(i).getValue().getStatus());
+    ps.setString(6, versionsToInsert.get(i).getValue().getCreated().toString());
   }
 }
 

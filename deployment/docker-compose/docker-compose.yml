@@ -38,6 +38,7 @@ services:
       - pg.env
     ports:
       - 5432:5432
+    shm_size: 1g
   terminology-swagger:
     restart: unless-stopped
     image: swaggerapi/swagger-ui

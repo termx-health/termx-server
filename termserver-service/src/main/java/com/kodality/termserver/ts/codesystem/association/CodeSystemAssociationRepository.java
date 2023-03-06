@@ -5,11 +5,18 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.codesystem.CodeSystemAssociationQueryParams;
 import io.micronaut.core.util.StringUtils;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Objects;
 import javax.inject.Singleton;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 @Singleton
 public class CodeSystemAssociationRepository extends BaseRepository {
@@ -78,6 +85,51 @@ public class CodeSystemAssociationRepository extends BaseRepository {
       sb.and().in("csa.association_type", params.getAssociationType());
     }
     return sb;
+  }
+
+  public void retain(List<Entry<Long, List<CodeSystemAssociation>>> associations) {
+    String query = "update terminology.code_system_association set sys_status = 'C' where source_code_system_entity_version_id = ? and sys_status = 'A' and id not in " +
+        "(select jsonb_array_elements(?::jsonb)::bigint)";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override
+      public void setValues(PreparedStatement ps, int i) throws SQLException {
+        ps.setLong(1, associations.get(i).getKey());
+        ps.setString(2, JsonUtil.toJson(associations.get(i).getValue().stream().map(CodeSystemAssociation::getId).filter(Objects::nonNull).toList()));
+      }
+      @Override
+      public int getBatchSize() {
+        return associations.size();
+      }
+    });
+  }
+
+  public void save(List<Pair<Long, CodeSystemAssociation>> associations) {
+    List<Pair<Long, CodeSystemAssociation>> associationsToInsert = associations.stream().filter(p -> p.getValue().getId() == null).toList();
+    String query = "insert into terminology.code_system_association (source_code_system_entity_version_id, target_code_system_entity_version_id, code_system, association_type, status) values (?,?,?,?,?)";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
+        CodeSystemAssociationRepository.this.setValues(ps, i, associationsToInsert);
+      }
+      @Override public int getBatchSize() {return associationsToInsert.size();}
+    });
+
+    List<Pair<Long, CodeSystemAssociation>> associationsToUpdate = associations.stream().filter(p -> p.getValue().getId() != null).toList();
+    query = "update terminology.code_system_association SET source_code_system_entity_version_id = ?, target_code_system_entity_version_id = ? , code_system = ?, association_type = ?, status = ? where id = ?";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
+        CodeSystemAssociationRepository.this.setValues(ps, i, associationsToUpdate);
+        ps.setLong(6, associationsToUpdate.get(i).getValue().getId());
+      }
+      @Override public int getBatchSize() {return associationsToUpdate.size();}
+    });
+  }
+
+  private void setValues(PreparedStatement ps, int i, List<Pair<Long, CodeSystemAssociation>> associations) throws SQLException {
+    ps.setLong(1, associations.get(i).getKey());
+    ps.setLong(2, associations.get(i).getValue().getTargetId());
+    ps.setString(3, associations.get(i).getValue().getCodeSystem());
+    ps.setString(4, associations.get(i).getValue().getAssociationType());
+    ps.setString(5, associations.get(i).getValue().getStatus());
   }
 
 }

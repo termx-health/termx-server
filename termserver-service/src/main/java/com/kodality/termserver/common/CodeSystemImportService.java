@@ -32,6 +32,7 @@ import java.util.stream.IntStream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
 import static java.util.Comparator.comparing;
@@ -107,10 +108,10 @@ public class CodeSystemImportService {
     log.info("Concepts created");
 
     log.info("Creating '{}' concept versions", concepts.size());
-    concepts.forEach(concept -> {
-      CodeSystemEntityVersion entityVersion = prepareEntityVersion(concept.getVersions().get(0), entityProperties);
-      codeSystemEntityVersionService.save(entityVersion, concept.getId());
-    });
+    Map<Long, CodeSystemEntityVersion> entityVersionMap = concepts.stream()
+        .map(concept -> Pair.of(concept.getId(), prepareEntityVersion(concept.getVersions().get(0), entityProperties)))
+        .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+    codeSystemEntityVersionService.batchSave(entityVersionMap, version.getCodeSystem());
     log.info("Concept versions created");
 
     log.info("Activating entity versions and linking them with code system version");
