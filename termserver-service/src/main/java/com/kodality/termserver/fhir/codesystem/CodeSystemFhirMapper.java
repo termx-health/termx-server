@@ -216,7 +216,7 @@ public class CodeSystemFhirMapper {
     if (property == null) {
       return null;
     }
-    return designations.stream().filter(d -> d.getDesignationTypeId().equals(property.getId())).findFirst().map(Designation::getName).orElse(null);
+    return designations.stream().filter(d -> d.getDesignationTypeId().equals(property.getId())).min(Comparator.comparing(Designation::getLanguage)).map(Designation::getName).orElse(null);
   }
 
   private List<CodeSystemConceptProperty> getProperties(List<EntityPropertyValue> propertyValues, List<EntityProperty> properties,
