@@ -240,7 +240,7 @@ public class CodeSystemFhirMapper {
         } else if (entityProperty.getType().equals(EntityPropertyType.bool)) {
           fhirProperty.setValueBoolean((Boolean) value);
         } else if (entityProperty.getType().equals(EntityPropertyType.decimal)) {
-          fhirProperty.setValueDecimal(BigDecimal.valueOf((Long) value));
+          fhirProperty.setValueDecimal(BigDecimal.valueOf((Double) value));
         } else if (entityProperty.getType().equals(EntityPropertyType.integer)) {
           fhirProperty.setValueInteger(Integer.valueOf(String.valueOf(value)));
         } else if (entityProperty.getType().equals(EntityPropertyType.dateTime)) {
