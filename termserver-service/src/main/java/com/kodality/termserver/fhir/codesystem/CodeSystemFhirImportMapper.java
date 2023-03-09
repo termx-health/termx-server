@@ -135,8 +135,21 @@ public class CodeSystemFhirImportMapper {
 
   private static List<Designation> mapDesignations(CodeSystemConcept c,
                                                    com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
-    String caseSignificance = codeSystem.getCaseSensitive() != null && codeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
-        CaseSignificance.entire_term_case_insensitive;
+    String caseSignificance = codeSystem.getCaseSensitive() != null && codeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive : CaseSignificance.entire_term_case_insensitive;
+
+    if (c.getDesignation() == null) {
+      c.setDesignation(new ArrayList<>());
+    }
+    List<Designation> designations = c.getDesignation().stream().filter(d -> d.getLanguage() != null).map(d -> {
+      Designation designation = new Designation();
+      designation.setDesignationType(d.getUse() == null ? DISPLAY : d.getUse().getCode());
+      designation.setName(d.getValue());
+      designation.setLanguage(d.getLanguage());
+      designation.setCaseSignificance(caseSignificance);
+      designation.setDesignationKind("text");
+      designation.setStatus("active");
+      return designation;
+    }).collect(Collectors.toList());
 
     Designation display = new Designation();
     display.setDesignationType(DISPLAY);
@@ -146,9 +159,9 @@ public class CodeSystemFhirImportMapper {
     display.setCaseSignificance(caseSignificance);
     display.setDesignationKind("text");
     display.setStatus("active");
-
-    List<Designation> designations = new ArrayList<>();
-    designations.add(display);
+    if (designations.stream().noneMatch(d -> isSameDesignation(d, display))) {
+      designations.add(display);
+    }
 
     if (c.getDefinition() != null) {
       Designation definition = new Designation();
@@ -158,25 +171,15 @@ public class CodeSystemFhirImportMapper {
       definition.setCaseSignificance(caseSignificance);
       definition.setDesignationKind("text");
       definition.setStatus("active");
-      designations.add(definition);
+      if (designations.stream().noneMatch(d -> isSameDesignation(d, definition))) {
+        designations.add(display);
+      }
     }
-
-    if (c.getDesignation() == null) {
-      return designations;
-    }
-
-    designations.addAll(c.getDesignation().stream().filter(d -> d.getLanguage() != null).map(d -> {
-      Designation designation = new Designation();
-      designation.setDesignationType(d.getUse() == null ? DISPLAY : d.getUse().getCode());
-      designation.setName(d.getValue());
-      designation.setLanguage(d.getLanguage());
-      designation.setCaseSignificance(caseSignificance);
-      designation.setDesignationKind("text");
-      designation.setStatus("active");
-      return designation;
-    }).toList());
-
     return designations;
+  }
+
+  private static boolean isSameDesignation(Designation d1, Designation d2) {
+    return d1.getDesignationType().equals(d2.getDesignationType()) && d1.getName().equals(d2.getName());
   }
 
   private static List<EntityPropertyValue> mapPropertyValues(List<CodeSystemConceptProperty> propertyValues) {

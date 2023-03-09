@@ -1,5 +1,6 @@
 package com.kodality.termserver.project.projectpackage;
 
+import io.micronaut.core.annotation.Introspected;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,10 +20,13 @@ public class PackageVersion {
   @Getter
   @Setter
   @Accessors(chain = true)
+  @Introspected
   public static class PackageResource {
     private Long id;
     private String resourceType;
     private String resourceId;
     private String terminologyServer;
+
+    private Long versionId;
   }
 }

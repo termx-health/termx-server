@@ -2,9 +2,14 @@ package com.kodality.termserver.project;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.kodality.termserver.project.ProjectOverview.ProjectOverviewPackage;
+import com.kodality.termserver.project.overview.ProjectOverview;
+import com.kodality.termserver.project.overview.ProjectOverview.ProjectOverviewPackage;
+import com.kodality.termserver.project.overview.ProjectOverviewRequest;
+import com.kodality.termserver.project.overview.ProjectOverviewResponse;
 import com.kodality.termserver.project.projectpackage.PackageVersion.PackageResource;
 import com.kodality.termserver.project.projectpackage.resource.PackageResourceService;
+import com.kodality.termserver.project.server.TerminologyServer;
+import com.kodality.termserver.project.server.TerminologyServerService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +24,7 @@ import static java.util.stream.Collectors.toList;
 @RequiredArgsConstructor
 public class ProjectOverviewService {
   private final PackageResourceService packageResourceService;
+  private final TerminologyServerService terminologyServerService;
 
   public ProjectOverviewResponse compose(ProjectOverviewRequest request) {
     ProjectOverview overview = new ProjectOverview();
@@ -41,13 +47,17 @@ public class ProjectOverviewService {
     try {
       return new YAMLMapper().writeValueAsString(obj);
     } catch (JsonProcessingException e) {
-      e.printStackTrace();
-      return null;
+      throw new RuntimeException(e);
     }
   }
 
   private Map<String, Map<String, List<String>>> groupByTerminologyServer(List<PackageResource> resources) {
-    Map<String, List<PackageResource>> groupedByServer = resources.stream().collect(groupingBy(PackageResource::getTerminologyServer));
+    TerminologyServer currentServer = terminologyServerService.loadCurrentInstallation();
+    if (currentServer != null) {
+      resources.forEach(r -> r.setTerminologyServer(r.getTerminologyServer() == null ? currentServer.getCode() : r.getTerminologyServer()));
+    }
+
+    Map<String, List<PackageResource>> groupedByServer = resources.stream().filter(r -> r.getTerminologyServer() != null).collect(groupingBy(PackageResource::getTerminologyServer));
     Map<String, Map<String, List<String>>> res = new HashMap<>();
     groupedByServer.keySet().forEach(server ->
         res.put(server, groupedByServer.get(server).stream().collect(

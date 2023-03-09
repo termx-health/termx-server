@@ -13,6 +13,12 @@ public class PackageService {
   private final PackageVersionService versionService;
 
   @Transactional
+  public Package save(Package p, Long projectId) {
+    repository.save(p, projectId);
+    return p;
+  }
+
+  @Transactional
   public Package save(PackageTransactionRequest request, Long projectId) {
     Package p = request.getPack();
     repository.save(p, projectId);
@@ -22,6 +28,10 @@ public class PackageService {
 
   public Package load(Long id) {
     return repository.load(id);
+  }
+
+  public Package load(Long projectId, String code) {
+    return repository.load(projectId, code);
   }
 
   public List<Package> loadAll(Long projectId) {

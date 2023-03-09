@@ -29,6 +29,11 @@ public class PackageRepository extends BaseRepository {
     return getBean(sb.getSql(), bp, sb.getParams());
   }
 
+  public Package load(Long projectId, String code) {
+    SqlBuilder sb = new SqlBuilder("select * from terminology.package where project_id = ? and code = ? and sys_status = 'A'", projectId, code);
+    return getBean(sb.getSql(), bp, sb.getParams());
+  }
+
   public List<Package> loadAll(Long projectId) {
     SqlBuilder sb = new SqlBuilder("select * from terminology.package where project_id = ? and sys_status = 'A'", projectId);
     return getBeans(sb.getSql(), bp, sb.getParams());

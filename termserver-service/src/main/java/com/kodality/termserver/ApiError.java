@@ -61,6 +61,9 @@ public enum ApiError {
 
   TE901("TE901", "Current installation is already defined."),
   TE902("TE902", "Requested resource type is not implemented."),
+  TE903("TE903", "Project not specified."),
+  TE904("TE904", "Package or package version not specified."),
+  TE905("TE905", "Terminology server for current installation is not defined."),
 
   THE101("THE101", "Generated slug '{{slug}}' already exists, please change content name.")
   ;
@@ -77,17 +80,11 @@ public enum ApiError {
   }
 
   public ApiException toApiException() {
-    ApiClientException exception = new ApiClientException(code, message);
-    exception.getIssues().forEach(issue -> issue.setParams(Map.of())); //TODO fix in commons
-    return exception;
+    return new ApiClientException(code, message);
   }
 
   public ApiException toApiException(Map<String, Object> params) {
-    return new ApiClientException(toIssue(params));
-  }
-
-  public Issue toIssue(Map<String, Object> params) {
-    return Issue.error(code, message).setParams(params);
+    return new ApiClientException(Issue.error(code, message).setParams(params));
   }
 
 }

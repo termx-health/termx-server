@@ -29,20 +29,20 @@ public class TerminologyServerService {
     return repository.load(code);
   }
 
+  public TerminologyServer loadCurrentInstallation() {
+    return repository.loadCurrentInstallation();
+  }
+
   public QueryResult<TerminologyServer> query(TerminologyServerQueryParams params) {
     return repository.query(params);
   }
 
   private void validate(TerminologyServer server) {
     if (server.isCurrentInstallation()) {
-      TerminologyServerQueryParams params = new TerminologyServerQueryParams();
-      params.setCurrentInstallation(true);
-      params.setLimit(1);
-      query(params).findFirst().ifPresent(current -> {
-        if (!current.getId().equals(server.getId())) {
-          throw ApiError.TE901.toApiException();
-        }
-      });
+      TerminologyServer currentInstallation = loadCurrentInstallation();
+      if (currentInstallation != null && !currentInstallation.getId().equals(server.getId())) {
+        throw ApiError.TE901.toApiException();
+      }
     }
   }
 

@@ -1,4 +1,4 @@
-package com.kodality.termserver.project;
+package com.kodality.termserver.project.diff;
 
 import io.micronaut.core.annotation.Introspected;
 import lombok.Getter;
@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 @Introspected
-public class ProjectOverviewRequest {
+public class ProjectDiffRequest {
   private String projectCode;
   private String packageCode;
   private String version;

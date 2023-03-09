@@ -9,9 +9,9 @@ import com.kodality.termserver.common.CodeSystemImportService;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.Resource;
 import com.kodality.zmei.fhir.resource.ResourceType;
+import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
-import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import io.micronaut.core.util.CollectionUtils;
 import java.nio.charset.StandardCharsets;
@@ -37,13 +37,17 @@ public class CodeSystemFhirImportService {
     }
     urls.forEach(url -> {
       try {
-        String resource = getResource(url);
-        importCodeSystem(resource);
+        importCodeSystemFromUrl(url);
         successes.add(String.format("CodeSystem from resource %s imported", url));
       } catch (Exception e) {
         warnings.add(String.format("CodeSystem from resource %s was not imported due to error: %s", url, e.getMessage()));
       }
     });
+  }
+
+  public void importCodeSystemFromUrl(String url) {
+    String resource = getResource(url);
+    importCodeSystem(resource);
   }
 
   public void importCodeSystem(String resource) {
@@ -52,7 +56,8 @@ public class CodeSystemFhirImportService {
       Bundle bundle = FhirMapper.fromJson(resource, Bundle.class);
       bundle.getEntry().forEach(e -> importCodeSystem((CodeSystem) e.getResource()));
     } else {
-      com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
+      com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem =
+          FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
       importCodeSystem(codeSystem);
     }
   }

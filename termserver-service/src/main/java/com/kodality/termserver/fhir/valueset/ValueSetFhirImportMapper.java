@@ -101,6 +101,7 @@ public class ValueSetFhirImportMapper {
     return concepts.stream().map(c -> {
       ValueSetVersionConcept concept = new ValueSetVersionConcept();
       concept.setConcept(new com.kodality.termserver.codesystem.Concept().setCode(c.getCode()));
+      concept.setDisplay(c.getDisplay() != null ? new Designation().setName(c.getDisplay()) : null);
       concept.setAdditionalDesignations(mapDesignations(c.getDesignation()));
       return concept;
     }).collect(Collectors.toList());

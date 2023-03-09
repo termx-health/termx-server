@@ -38,6 +38,11 @@ public class TerminologyServerRepository extends BaseRepository {
     return getBean(sql, bp, code);
   }
 
+  public TerminologyServer loadCurrentInstallation() {
+    String sql = "select * from terminology.terminology_server where current_installation is true and sys_status = 'A'";
+    return getBean(sql, bp);
+  }
+
   public QueryResult<TerminologyServer> query(TerminologyServerQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from terminology.terminology_server ts where ts.sys_status = 'A'");
@@ -53,6 +58,9 @@ public class TerminologyServerRepository extends BaseRepository {
 
   private SqlBuilder filter(TerminologyServerQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    if (StringUtils.isNotEmpty(params.getCodes())) {
+      sb.and().in("ts.code", params.getCodes());
+    }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
       sb.append("and (ts.code ~* ? or cs.root_url ~* ? or exists (select 1 from jsonb_each_text(ts.names) where value ~* ?))",
           params.getTextContains(), params.getTextContains(), params.getTextContains());

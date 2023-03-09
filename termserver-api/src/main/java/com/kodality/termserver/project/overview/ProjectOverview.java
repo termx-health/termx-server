@@ -1,4 +1,4 @@
-package com.kodality.termserver.project;
+package com.kodality.termserver.project.overview;
 
 import java.util.List;
 import java.util.Map;

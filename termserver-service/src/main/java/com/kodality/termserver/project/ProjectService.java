@@ -23,6 +23,10 @@ public class ProjectService {
     return repository.load(id);
   }
 
+  public Project load(String code) {
+    return repository.load(code);
+  }
+
   public QueryResult<Project> query(ProjectQueryParams params) {
     return repository.query(params);
   }

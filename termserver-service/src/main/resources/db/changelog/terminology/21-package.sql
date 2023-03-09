@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset kodality:package
+--changeset kodality:package-1
 drop table if exists terminology.package_version_resource;
 drop table if exists terminology.package_version;
 drop table if exists terminology.package;
@@ -43,7 +43,7 @@ create table terminology.package_version_resource (
     version_id            bigint not null,
     resource_id           text not null,
     resource_type         text not null,
-    terminology_server    text not null,
+    terminology_server    text,
     sys_status            char(1) default 'A' not null collate "C",
     sys_version           integer not null,
     sys_created_at        timestamptz not null,

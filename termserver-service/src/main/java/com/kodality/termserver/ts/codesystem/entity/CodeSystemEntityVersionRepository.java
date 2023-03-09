@@ -154,6 +154,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     IntStream.range(0,(entityIds.size()+1000-1)/1000).mapToObj(i -> entityIds.subList(i*1000, Math.min(entityIds.size(), (i+1)*1000))).forEach(batch -> {
       SqlBuilder sb = new SqlBuilder("select * from terminology.code_system_entity_version where sys_status = 'A'");
       sb.and().in("code_system_entity_id", batch);
+      sb.append("order by sys_created_at desc");
       List<CodeSystemEntityVersion> beans = getBeans(sb.getSql(), bp, sb.getParams());
       newVersions.addAll(beans.stream().filter(v -> !existingIds.contains(v.getId())).toList());
     });

@@ -16,8 +16,14 @@ public class PackageResourceService {
   public void save(Long versionId, List<PackageResource> resources) {
     repository.retain(resources, versionId);
     if (CollectionUtils.isNotEmpty(resources)) {
-      resources.forEach(r -> repository.save(versionId, r));
+      resources.forEach(r -> save(versionId, r));
     }
+  }
+
+  @Transactional
+  public PackageResource save(Long versionId, PackageResource resource) {
+    repository.save(versionId, resource);
+    return resource;
   }
 
   public List<PackageResource> loadAll(String projectCode, String packageCode, String version) {

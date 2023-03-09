@@ -23,6 +23,10 @@ public class PackageVersionService {
     return repository.load(id);
   }
 
+  public PackageVersion load(Long packageId, String version) {
+    return repository.load(packageId, version);
+  }
+
   public List<PackageVersion> loadAll(Long packageId) {
     return repository.loadAll(packageId);
   }

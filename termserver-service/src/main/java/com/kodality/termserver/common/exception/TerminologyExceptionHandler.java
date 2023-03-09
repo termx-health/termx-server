@@ -7,11 +7,9 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.micronaut.exception.DefaultExceptionHandler;
 import com.kodality.commons.model.Issue;
 import com.kodality.commons.util.JsonUtil;
-import io.micronaut.context.annotation.Replaces;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
-import io.micronaut.http.server.exceptions.ExceptionHandler;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletionException;
@@ -25,8 +23,7 @@ import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @Singleton
-@Replaces(DefaultExceptionHandler.class)
-public class TerminologyExceptionHandler implements ExceptionHandler<Throwable, HttpResponse<?>> {
+public class TerminologyExceptionHandler extends DefaultExceptionHandler {
 
   @Override
   public HttpResponse<?> handle(HttpRequest request, Throwable exception) {
@@ -99,10 +96,7 @@ public class TerminologyExceptionHandler implements ExceptionHandler<Throwable, 
   }
 
   protected String substituteParams(Issue issue) {
-    if (issue.getParams() == null) {
-      return issue.getMessage();
-    }
-    return StringSubstitutor.replace(issue.getMessage(), issue.getParams(), "{{", "}}");
+    return issue.getParams() == null ? issue.getMessage() : StringSubstitutor.replace(issue.getMessage(), issue.getParams(), "{{", "}}");
   }
 
 }

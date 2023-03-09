@@ -34,6 +34,11 @@ public class PackageVersionRepository extends BaseRepository {
     return getBean(sb.getSql(), bp, sb.getParams());
   }
 
+  public PackageVersion load(Long packageId, String version) {
+    SqlBuilder sb = new SqlBuilder("select * from terminology.package_version where package_id = ? and version = ? and sys_status = 'A'", packageId, version);
+    return getBean(sb.getSql(), bp, sb.getParams());
+  }
+
   public List<PackageVersion> loadAll(Long packageId) {
     SqlBuilder sb = new SqlBuilder("select pv.*");
     sb.append(", (select jsonb_agg(t.r) from (select json_build_object('id', pvr.id, 'resourceId', pvr.resource_id, 'resourceType', pvr.resource_type, 'terminologyServer', pvr.terminology_server) as r ");
