@@ -254,7 +254,7 @@ public class CodeSystemFhirMapper {
       }
     });
     fhirProperties.sort(Comparator.comparing(CodeSystemConceptProperty::getCode));
-    return CollectionUtils.isEmpty(fhirProperties) ? null : fhirProperties;
+    return CollectionUtils.isEmpty(fhirProperties) ? null : fhirProperties.stream().sorted(Comparator.comparing(CodeSystemConceptProperty::getCode)).toList();
   }
 
   private void addToProperties(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem, EntityProperty entityProperty) {
@@ -278,6 +278,6 @@ public class CodeSystemFhirMapper {
     List<CodeSystemConcept> result =
         entities.stream().filter(e -> e.getAssociations().stream().anyMatch(a -> a.getTargetId().equals(targetId)))
             .map(e -> toFhir(e, codeSystem, entities, fhirCodeSystem)).collect(Collectors.toList());
-    return CollectionUtils.isEmpty(result) ? null : result;
+    return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
   }
 }
