@@ -102,13 +102,6 @@ public class ValueSetFhirImportMapper {
       ValueSetVersionConcept concept = new ValueSetVersionConcept();
       concept.setConcept(new com.kodality.termserver.codesystem.Concept().setCode(c.getCode()));
       concept.setAdditionalDesignations(mapDesignations(c.getDesignation()));
-      concept.setDisplay(new Designation()
-          .setName(c.getDisplay())
-          .setLanguage(Language.en)
-          .setPreferred(true)
-          .setDesignationKind("text")
-          .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)
-          .setStatus(PublicationStatus.active));
       return concept;
     }).collect(Collectors.toList());
   }

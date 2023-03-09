@@ -222,7 +222,7 @@ public class CodeSystemFhirMapper {
   private List<CodeSystemConceptProperty> getProperties(List<EntityPropertyValue> propertyValues, List<EntityProperty> properties,
                                                         com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     List<CodeSystemConceptProperty> fhirProperties = new ArrayList<>();
-    propertyValues.forEach(pv -> {
+    propertyValues.stream().sorted(Comparator.comparing(EntityPropertyValue::getEntityPropertyId)).forEach(pv -> {
       EntityProperty entityProperty = properties.stream().filter(p -> p.getId().equals(pv.getEntityPropertyId())).findFirst().orElse(null);
       if (entityProperty != null) {
         addToProperties(fhirCodeSystem, entityProperty);
