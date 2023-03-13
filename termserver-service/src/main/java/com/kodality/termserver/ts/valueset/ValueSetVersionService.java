@@ -139,9 +139,6 @@ public class ValueSetVersionService {
   @Transactional
   public void cancel(Long id, String valueSet) {
     userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
-
-    valueSetVersionConceptService.cancel(id, valueSet);
-    valueSetVersionRuleSetService.cancel(id, valueSet);
     repository.cancel(id);
   }
 }

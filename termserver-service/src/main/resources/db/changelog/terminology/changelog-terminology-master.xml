@@ -38,6 +38,9 @@
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/26-delete_map_set.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/27-cancel_value_set.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/28-delete_value_set.sql"/>
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/29-cancel_code_system_version.sql"/>
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/30-cancel_map_set_version.sql"/>
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/31-cancel_value_set_version.sql"/>
 
         <rollback>
             drop function if exists terminology.value_set_expand(bigint);

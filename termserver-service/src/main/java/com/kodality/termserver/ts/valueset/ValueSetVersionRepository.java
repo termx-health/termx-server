@@ -106,8 +106,8 @@ public class ValueSetVersionRepository extends BaseRepository {
   }
 
   public void cancel(Long id) {
-    SqlBuilder sb = new SqlBuilder("update terminology.value_set_version set sys_status = 'C' where id = ? and sys_status = 'A'", id);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
+    SqlBuilder sb = new SqlBuilder("select * from terminology.cancel_value_set_version(?)", id);
+    jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
   }
 
 }

@@ -29,4 +29,8 @@ public class PackageResourceService {
   public List<PackageResource> loadAll(String projectCode, String packageCode, String version) {
     return repository.loadAll(projectCode, packageCode, version);
   }
+
+  public PackageResource load(Long id) {
+    return repository.load(id);
+  }
 }

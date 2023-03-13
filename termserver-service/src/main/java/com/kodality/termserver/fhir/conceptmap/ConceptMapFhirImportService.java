@@ -58,9 +58,14 @@ public class ConceptMapFhirImportService {
     if (!ResourceType.conceptMap.equals(conceptMap.getResourceType())) {
       throw ApiError.TE107.toApiException();
     }
-    MapSet mapSet = prepareMapSet(ConceptMapFhirImportMapper.mapMapSet(conceptMap));
-    List<AssociationType> associationTypes = ConceptMapFhirImportMapper.mapAssociationTypes(conceptMap);
-    mapSetImportService.importMapSet(mapSet, associationTypes, false);
+    importMapSet(conceptMap, false);
+  }
+
+  @Transactional
+  public void importMapSet(com.kodality.zmei.fhir.resource.terminology.ConceptMap fhirConceptMap, boolean activateVersion) {
+    MapSet mapSet = prepareMapSet(ConceptMapFhirImportMapper.mapMapSet(fhirConceptMap));
+    List<AssociationType> associationTypes = ConceptMapFhirImportMapper.mapAssociationTypes(fhirConceptMap);
+    mapSetImportService.importMapSet(mapSet, associationTypes, activateVersion);
   }
 
   private String getResource(String url) {
@@ -77,8 +82,10 @@ public class ConceptMapFhirImportService {
 
   private void prepareAssociations(List<MapSetAssociation> associations) {
     associations.forEach(association -> {
-      association.setSource(findEntityVersion(association.getSource().getCodeSystem(), association.getSource().getCodeSystemVersion(), association.getSource().getCode()));
-      association.setTarget(findEntityVersion(association.getTarget().getCodeSystem(), association.getTarget().getCodeSystemVersion(), association.getTarget().getCode()));
+      association.setSource(
+          findEntityVersion(association.getSource().getCodeSystem(), association.getSource().getCodeSystemVersion(), association.getSource().getCode()));
+      association.setTarget(
+          findEntityVersion(association.getTarget().getCodeSystem(), association.getTarget().getCodeSystemVersion(), association.getTarget().getCode()));
     });
   }
 

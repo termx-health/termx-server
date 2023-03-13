@@ -32,15 +32,4 @@ public class ValueSetVersionRuleSetService {
     userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
     repository.save(ruleSet, valueSetVersionId);
   }
-
-  @Transactional
-  public void cancel(Long valueSetVersionId, String valueSet) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
-
-    Optional<ValueSetVersionRuleSet> ruleSet = load(valueSetVersionId);
-    if (ruleSet.isPresent()) {
-      valueSetVersionRuleService.save(List.of(), ruleSet.get().getId(), valueSet);
-      repository.cancel(ruleSet.get().getId());
-    }
-  }
 }

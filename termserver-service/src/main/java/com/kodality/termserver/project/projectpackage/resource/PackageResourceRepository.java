@@ -43,4 +43,9 @@ public class PackageResourceRepository extends BaseRepository {
     sb.appendIfNotNull("and pv.version = ?", version);
     return getBeans(sb.getSql(), bp, sb.getParams());
   }
+
+  public PackageResource load(Long id) {
+    String sql = "select * from terminology.package_version_resource pvr where pvr.id = ? and pvr.sys_status = 'A'";
+    return getBean(sql, bp, id);
+  }
 }
