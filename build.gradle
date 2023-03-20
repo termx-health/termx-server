@@ -23,8 +23,6 @@ allprojects {
   dependencies {
     compileOnly "org.projectlombok:lombok:1.18.24"
     annotationProcessor "org.projectlombok:lombok:1.18.24"
-
-    implementation('com.kodality.termsupp:observation-definition:1.0-SNAPSHOT') { changing = true }
   }
 
   java {
