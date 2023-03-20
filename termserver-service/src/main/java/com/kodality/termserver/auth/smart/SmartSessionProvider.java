@@ -1,10 +1,8 @@
 package com.kodality.termserver.auth.smart;
 
-import com.kodality.termserver.auth.auth.SessionInfo;
+import com.kodality.termserver.auth.SessionInfo;
 import com.kodality.termserver.auth.auth.SessionProvider;
-import io.micronaut.http.HttpMethod;
 import io.micronaut.http.HttpRequest;
-import java.util.stream.Stream;
 import javax.inject.Singleton;
 
 @Singleton

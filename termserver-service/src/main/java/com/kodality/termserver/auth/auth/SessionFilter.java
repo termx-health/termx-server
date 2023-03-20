@@ -1,5 +1,7 @@
 package com.kodality.termserver.auth.auth;
 
+import com.kodality.termserver.auth.SessionInfo;
+import com.kodality.termserver.auth.SessionStore;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpStatus;

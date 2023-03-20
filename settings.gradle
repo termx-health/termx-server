@@ -1,5 +1,3 @@
-//includeBuild '../terminology-supplement'
-
 rootProject.name="terminology-server"
 
 include 'edition-int'
@@ -16,3 +14,5 @@ include 'gatling'
 include 'thesaurus'
 include 'snomed'
 include 'ucum'
+include 'observation-definition'
+

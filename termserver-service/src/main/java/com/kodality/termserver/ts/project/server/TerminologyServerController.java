@@ -1,7 +1,7 @@
 package com.kodality.termserver.ts.project.server;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.auth.auth.Authorized;
+import com.kodality.termserver.auth.Authorized;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;

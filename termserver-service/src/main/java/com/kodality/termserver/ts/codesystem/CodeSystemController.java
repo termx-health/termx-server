@@ -2,10 +2,10 @@ package com.kodality.termserver.ts.codesystem;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.auth.auth.Authorized;
-import com.kodality.termserver.auth.auth.ResourceId;
-import com.kodality.termserver.auth.auth.SessionInfo.AuthenticationProvider;
-import com.kodality.termserver.auth.auth.SessionStore;
+import com.kodality.termserver.auth.Authorized;
+import com.kodality.termserver.auth.ResourceId;
+import com.kodality.termserver.auth.SessionInfo.AuthenticationProvider;
+import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirClientService;
 import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationService;

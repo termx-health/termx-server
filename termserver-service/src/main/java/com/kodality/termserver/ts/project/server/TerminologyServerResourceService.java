@@ -2,7 +2,7 @@ package com.kodality.termserver.ts.project.server;
 
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.auth.auth.SessionStore;
+import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.ts.project.projectpackage.PackageResourceType;
 import com.kodality.zmei.fhir.client.FhirClient;
 import com.kodality.zmei.fhir.resource.DomainResource;

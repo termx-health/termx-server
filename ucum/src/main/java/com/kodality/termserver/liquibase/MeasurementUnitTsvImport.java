@@ -5,7 +5,6 @@ import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.range.LocalDateRange;
 import com.kodality.termserver.AuthorizedFileReaderCustomChange;
-import com.kodality.termserver.auth.CommonSessionProvider;
 import com.kodality.termserver.measurementunit.MeasurementUnitService;
 import com.kodality.termserver.ucum.MeasurementUnit;
 import com.univocity.parsers.common.processor.RowListProcessor;
@@ -24,7 +23,6 @@ public class MeasurementUnitTsvImport extends AuthorizedFileReaderCustomChange {
   private final MeasurementUnitService measurementUnitService;
 
   public MeasurementUnitTsvImport() {
-    super(BeanContext.getBean(CommonSessionProvider.class));
     measurementUnitService = BeanContext.getBean(MeasurementUnitService.class);
   }
 

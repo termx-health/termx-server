@@ -1,6 +1,6 @@
 package com.kodality.termserver.ts.project.projectpackage;
 
-import com.kodality.termserver.auth.auth.Authorized;
+import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.ts.project.projectpackage.version.PackageVersionService;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.HttpResponse;

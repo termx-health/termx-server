@@ -3,7 +3,7 @@ package com.kodality.termserver.auth.privilege;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.Privilege;
 import com.kodality.termserver.auth.PrivilegeQueryParams;
-import com.kodality.termserver.auth.auth.Authorized;
+import com.kodality.termserver.auth.Authorized;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;

@@ -4,6 +4,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.auth.auth.UserPermissionService;
+import com.kodality.termserver.ts.ValueSetExternalExpandProvider;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.Designation;
@@ -15,6 +16,7 @@ import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConceptQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
+import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleSetService;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -35,6 +37,7 @@ public class ValueSetVersionConceptService {
   private final ValueSetVersionConceptRepository repository;
   private final ValueSetVersionRepository valueSetVersionRepository;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+  private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
 
   private final UserPermissionService userPermissionService;
 
@@ -129,8 +132,12 @@ public class ValueSetVersionConceptService {
     }
 
     List<ValueSetVersionConcept> internalExpand = internalExpand(versionId, ruleSet);
+
+    if (versionId != null) {
+      ruleSet = valueSetVersionRuleSetService.load(versionId).orElse(ruleSet);
+    }
     for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
-      internalExpand.addAll(provider.expand(versionId, ruleSet));
+      internalExpand.addAll(provider.expand(ruleSet));
     }
     return internalExpand;
   }

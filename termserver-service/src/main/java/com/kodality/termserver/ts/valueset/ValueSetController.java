@@ -2,10 +2,10 @@ package com.kodality.termserver.ts.valueset;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.auth.auth.Authorized;
-import com.kodality.termserver.auth.auth.ResourceId;
-import com.kodality.termserver.auth.auth.SessionInfo.AuthenticationProvider;
-import com.kodality.termserver.auth.auth.SessionStore;
+import com.kodality.termserver.auth.Authorized;
+import com.kodality.termserver.auth.ResourceId;
+import com.kodality.termserver.auth.SessionInfo.AuthenticationProvider;
+import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;

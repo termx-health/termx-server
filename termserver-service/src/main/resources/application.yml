@@ -70,6 +70,3 @@ github:
   app-id: ${GITHUB_APP_ID}
   app-name: ${GITHUB_APP_NAME}
   private-key-path: '/path/to/private-key.pem'
-
-supplement:
-  observation-definition: true

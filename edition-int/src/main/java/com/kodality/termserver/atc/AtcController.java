@@ -3,7 +3,7 @@ package com.kodality.termserver.atc;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.Authorized;
-import com.kodality.termserver.auth.CommonSessionProvider;
+import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.termserver.job.logger.ImportLogger;
@@ -23,7 +23,6 @@ public class AtcController {
 
   private final AtcService atcService;
   private final ImportLogger importLogger;
-  private final CommonSessionProvider commonSessionProvider;
 
   private static final String JOB_TYPE = "ATC";
 
@@ -31,7 +30,7 @@ public class AtcController {
   @Post("/import")
   public JobLogResponse importAtc(@Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);
-    CompletableFuture.runAsync(commonSessionProvider.wrap(() -> {
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("ATC import started");
         long start = System.currentTimeMillis();

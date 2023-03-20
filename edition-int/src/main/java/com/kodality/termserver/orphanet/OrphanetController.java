@@ -3,7 +3,7 @@ package com.kodality.termserver.orphanet;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.Authorized;
-import com.kodality.termserver.auth.CommonSessionProvider;
+import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.termserver.job.logger.ImportLogger;
@@ -24,7 +24,6 @@ public class OrphanetController {
 
   private final OrphanetService service;
   private final ImportLogger importLogger;
-  private final CommonSessionProvider sessionProvider;
 
   private static final String JOB_TYPE = "Orphanet";
 
@@ -32,7 +31,7 @@ public class OrphanetController {
   @Post("/import")
   public JobLogResponse importIcd10(@NonNull @QueryValue String url, @Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);
-    CompletableFuture.runAsync(sessionProvider.wrap(() -> {
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Orphanet import started");
         long start = System.currentTimeMillis();

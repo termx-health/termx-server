@@ -2,8 +2,8 @@ package com.kodality.termserver.ts.project.projectpackage.resource;
 
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.auth.auth.Authorized;
-import com.kodality.termserver.auth.auth.SessionStore;
+import com.kodality.termserver.auth.Authorized;
+import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.termserver.job.logger.ImportLogger;
 import com.kodality.termserver.ts.project.projectpackage.PackageVersion.PackageResource;

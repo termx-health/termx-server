@@ -2,8 +2,8 @@ package com.kodality.termserver.ts.mapset;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.auth.auth.Authorized;
-import com.kodality.termserver.auth.auth.ResourceId;
+import com.kodality.termserver.auth.Authorized;
+import com.kodality.termserver.auth.ResourceId;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
 import com.kodality.termserver.ts.mapset.entity.MapSetEntityVersionService;

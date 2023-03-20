@@ -1,7 +1,7 @@
 package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.auth.auth.SessionStore;
+import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
 import com.kodality.zmei.fhir.client.FhirClient;
 import com.kodality.zmei.fhir.resource.other.Bundle;

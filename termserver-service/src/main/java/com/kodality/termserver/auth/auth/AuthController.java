@@ -1,5 +1,7 @@
 package com.kodality.termserver.auth.auth;
 
+import com.kodality.termserver.auth.SessionInfo;
+import com.kodality.termserver.auth.SessionStore;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import java.util.Collection;
@@ -12,8 +14,6 @@ import lombok.Setter;
 @Controller("/auth")
 @RequiredArgsConstructor
 public class AuthController {
-
-  private final PrivilegeStore userPrivilegeStore;
 
   @Get("/userinfo")
   public UserInfo getUserInfo() {

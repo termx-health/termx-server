@@ -1,5 +1,9 @@
 package com.kodality.termserver.auth.auth;
 
+import com.kodality.termserver.auth.Authorized;
+import com.kodality.termserver.auth.ResourceId;
+import com.kodality.termserver.auth.SessionInfo;
+import com.kodality.termserver.auth.SessionStore;
 import io.micronaut.core.annotation.AnnotationMetadata;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.http.HttpAttributes;
@@ -16,11 +20,8 @@ import io.micronaut.web.router.RouteMatch;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.ArrayUtils;
 import org.reactivestreams.Publisher;
 
 @Filter("/**")
@@ -28,7 +29,6 @@ import org.reactivestreams.Publisher;
 public class AuthorizationFilter implements HttpServerFilter {
 
   public static final String ADMIN = "admin";
-  private final PrivilegeStore userPrivilegeStore;
 
   @Override
   public int getOrder() {
@@ -55,52 +55,13 @@ public class AuthorizationFilter implements HttpServerFilter {
     if (!(route instanceof MethodBasedRouteMatch methodRoute) || !methodRoute.hasAnnotation(Authorized.class)) {
       return true;
     }
-    if (sessionInfo.isEmpty()) {
-      return false;
-    }
-    Collection<String> privileges = sessionInfo.get().getPrivileges();
-    if (CollectionUtils.isEmpty(privileges)) {
+    if (sessionInfo.isEmpty() || CollectionUtils.isEmpty(sessionInfo.get().getPrivileges())) {
       return false;
     }
 
     AnnotationMetadata annotationMetadata = methodRoute.getAnnotationMetadata();
-
     return methodRoute.getValue(Authorized.class, String[].class).map(authPrivileges ->
-        hasAnyPrivilege(Arrays.asList(authPrivileges), privileges, annotationMetadata.stringValue(ResourceId.class))
+        sessionInfo.get().hasAnyPrivilege(Arrays.asList(authPrivileges), annotationMetadata.stringValue(ResourceId.class))
     ).orElse(false);
   }
-
-  public static boolean hasAnyPrivilege(List<String> authPrivileges, Collection<String> userPrivileges) {
-    return hasAnyPrivilege(authPrivileges, userPrivileges, Optional.empty());
-  }
-
-  public static boolean hasAnyPrivilege(List<String> authPrivileges, Collection<String> userPrivileges, Optional<String> resourceId) {
-    return userPrivileges.contains(ADMIN) || authPrivileges.stream().anyMatch(ap -> userPrivileges.stream().anyMatch(up -> privilegesMatch(ap, up, resourceId)));
-  }
-
-  private static boolean privilegesMatch(String authPrivilege, String userPrivilege, Optional<String> resourceId) {
-    if (authPrivilege.equals(ADMIN)) {
-      return userPrivilege.equals(ADMIN);
-    }
-    String[] authParts = authPrivilege.split("\\.");
-    String[] upParts = userPrivilege.split("\\.");
-
-    if (authParts.length == 2 && authParts[0].equals("*")) { // handle special case like '*.view'
-      authParts = ArrayUtils.addAll(new String[]{"*"}, authParts);
-    }
-
-    if (upParts.length == 2 && upParts[0].equals("*")) { // handle special case like '*.view'
-      upParts = ArrayUtils.addAll(new String[]{"*"}, upParts);
-    }
-
-    if (upParts.length != 3 && authParts.length != 3) {
-      return false;
-    }
-    return match(upParts[0], authParts[0]) && match(upParts[1], authParts[1]) && match(upParts[2], authParts[2]) && match(upParts[0], resourceId.orElse("*"));
-  }
-
-  private static boolean match(String upPart, String apPart) {
-    return upPart.equals(apPart) || upPart.equals("*") || apPart.equals("*");
-  }
-
 }

@@ -3,7 +3,7 @@ package com.kodality.termserver.icd10est;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.Authorized;
-import com.kodality.termserver.auth.CommonSessionProvider;
+import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.termserver.job.logger.ImportLogger;
@@ -23,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 public class Icd10EstController {
   private final Icd10EstService service;
   private final ImportLogger importLogger;
-  private final CommonSessionProvider sessionProvider;
 
   private static final String JOB_TYPE = "RHK-10";
 
@@ -31,7 +30,7 @@ public class Icd10EstController {
   @Post("/import")
   public JobLogResponse importIcd10Est(@NonNull @QueryValue String url, @Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);
-    CompletableFuture.runAsync(sessionProvider.wrap(() -> {
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("ICD-10 est import started");
         long start = System.currentTimeMillis();

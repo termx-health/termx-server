@@ -1,6 +1,7 @@
 package com.kodality.termserver.auth.auth;
 
 import com.kodality.commons.exception.ForbiddenException;
+import com.kodality.termserver.auth.SessionStore;
 import jakarta.inject.Singleton;
 import java.util.Collection;
 import java.util.List;

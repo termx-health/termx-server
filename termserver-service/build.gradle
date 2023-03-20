@@ -13,13 +13,12 @@ dependencies {
   implementation project(':termserver-common')
   implementation project(':snomed')
   implementation project(':ucum')
+  implementation project(':observation-definition')
   implementation project(':thesaurus')
 
   implementation project(':edition-int')
   implementation project(':edition-est')
   implementation project(':edition-uzb')
-
-  implementation('com.kodality.termsupp:observation-definition:1.0-SNAPSHOT') { changing = true }
 
   implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
   implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}") { changing = true }
