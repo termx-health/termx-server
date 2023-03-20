@@ -1,17 +1,17 @@
 package com.kodality.termserver.fhir.conceptmap;
 
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.termserver.Language;
-import com.kodality.termserver.PublicationStatus;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termserver.ts.Language;
+import com.kodality.termserver.ts.PublicationStatus;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirService;
-import com.kodality.termserver.mapset.MapSet;
-import com.kodality.termserver.mapset.MapSetAssociation;
-import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
-import com.kodality.termserver.mapset.MapSetEntityVersion;
-import com.kodality.termserver.mapset.MapSetQueryParams;
-import com.kodality.termserver.mapset.MapSetVersion;
+import com.kodality.termserver.ts.mapset.MapSet;
+import com.kodality.termserver.ts.mapset.MapSetAssociation;
+import com.kodality.termserver.ts.mapset.MapSetAssociationQueryParams;
+import com.kodality.termserver.ts.mapset.MapSetEntityVersion;
+import com.kodality.termserver.ts.mapset.MapSetQueryParams;
+import com.kodality.termserver.ts.mapset.MapSetVersion;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.mapset.MapSetService;
 import com.kodality.termserver.ts.mapset.MapSetVersionService;

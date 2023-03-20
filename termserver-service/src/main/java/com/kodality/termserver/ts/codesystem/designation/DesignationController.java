@@ -1,8 +1,8 @@
 package com.kodality.termserver.ts.codesystem.designation;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.codesystem.Designation;
-import com.kodality.termserver.codesystem.DesignationQueryParams;
+import com.kodality.termserver.ts.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.DesignationQueryParams;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import lombok.RequiredArgsConstructor;

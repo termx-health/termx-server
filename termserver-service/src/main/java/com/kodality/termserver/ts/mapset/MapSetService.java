@@ -2,13 +2,6 @@ package com.kodality.termserver.ts.mapset;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.mapset.MapSet;
-import com.kodality.termserver.mapset.MapSetAssociation;
-import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
-import com.kodality.termserver.mapset.MapSetQueryParams;
-import com.kodality.termserver.mapset.MapSetTransactionRequest;
-import com.kodality.termserver.mapset.MapSetVersion;
-import com.kodality.termserver.mapset.MapSetVersionQueryParams;
 import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;

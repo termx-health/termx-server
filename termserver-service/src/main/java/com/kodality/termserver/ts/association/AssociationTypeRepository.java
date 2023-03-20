@@ -5,8 +5,6 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.association.AssociationType;
-import com.kodality.termserver.association.AssociationTypeQueryParams;
 import javax.inject.Singleton;
 
 @Singleton

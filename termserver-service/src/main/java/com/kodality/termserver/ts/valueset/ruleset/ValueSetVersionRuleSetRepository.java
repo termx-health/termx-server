@@ -4,7 +4,7 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
 import javax.inject.Singleton;
 
 @Singleton

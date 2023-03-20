@@ -4,8 +4,8 @@ import com.kodality.commons.client.BaseHttpClient;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termserver.association.AssociationType;
-import com.kodality.termserver.association.AssociationTypeQueryParams;
+import com.kodality.termserver.ts.association.AssociationType;
+import com.kodality.termserver.ts.association.AssociationTypeQueryParams;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 

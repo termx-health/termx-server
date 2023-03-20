@@ -1,8 +1,7 @@
 package com.kodality.termserver.ts.valueset.ruleset;
 
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
-import java.util.List;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;

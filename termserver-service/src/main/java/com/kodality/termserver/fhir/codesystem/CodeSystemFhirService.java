@@ -1,14 +1,14 @@
 package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.PublicationStatus;
-import com.kodality.termserver.codesystem.CodeSystem;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
-import com.kodality.termserver.codesystem.CodeSystemQueryParams;
-import com.kodality.termserver.codesystem.CodeSystemVersion;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.ConceptQueryParams;
-import com.kodality.termserver.codesystem.EntityPropertyValue;
+import com.kodality.termserver.ts.PublicationStatus;
+import com.kodality.termserver.ts.codesystem.CodeSystem;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
+import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
+import com.kodality.termserver.ts.codesystem.Concept;
+import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
+import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
 import com.kodality.termserver.ts.codesystem.CodeSystemService;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;

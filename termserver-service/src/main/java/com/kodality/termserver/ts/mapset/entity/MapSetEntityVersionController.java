@@ -1,11 +1,9 @@
 package com.kodality.termserver.ts.mapset.entity;
 
-import com.kodality.termserver.mapset.MapSetEntityVersion;
-import io.micronaut.http.HttpResponse;
+import com.kodality.termserver.ts.mapset.MapSetEntityVersion;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
-import io.micronaut.http.annotation.Post;
 import lombok.RequiredArgsConstructor;
 
 @Controller("/ts/map-set-entity-versions")

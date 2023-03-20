@@ -6,11 +6,11 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.resultset.ResultSetUtil;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
-import com.kodality.termserver.codesystem.CodeSystemSupplement;
-import com.kodality.termserver.codesystem.CodeSystemSupplementType;
-import com.kodality.termserver.codesystem.Designation;
-import com.kodality.termserver.codesystem.EntityProperty;
-import com.kodality.termserver.codesystem.EntityPropertyValue;
+import com.kodality.termserver.ts.codesystem.CodeSystemSupplement;
+import com.kodality.termserver.ts.codesystem.CodeSystemSupplementType;
+import com.kodality.termserver.ts.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.EntityProperty;
+import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
 import java.util.List;
 import javax.inject.Singleton;
 

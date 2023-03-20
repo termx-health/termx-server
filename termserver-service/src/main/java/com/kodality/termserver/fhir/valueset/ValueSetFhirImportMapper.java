@@ -2,20 +2,21 @@ package com.kodality.termserver.fhir.valueset;
 
 
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.termserver.CaseSignificance;
-import com.kodality.termserver.ContactDetail;
-import com.kodality.termserver.ContactDetail.Telecom;
-import com.kodality.termserver.Language;
-import com.kodality.termserver.PublicationStatus;
-import com.kodality.termserver.codesystem.Designation;
-import com.kodality.termserver.codesystem.EntityProperty;
-import com.kodality.termserver.valueset.ValueSet;
-import com.kodality.termserver.valueset.ValueSetVersion;
-import com.kodality.termserver.valueset.ValueSetVersionConcept;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
-import com.kodality.termserver.valueset.ValueSetVersionRuleType;
+import com.kodality.termserver.ts.CaseSignificance;
+import com.kodality.termserver.ts.ContactDetail;
+import com.kodality.termserver.ts.ContactDetail.Telecom;
+import com.kodality.termserver.ts.Language;
+import com.kodality.termserver.ts.PublicationStatus;
+import com.kodality.termserver.ts.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.EntityProperty;
+import com.kodality.termserver.ts.codesystem.Concept;
+import com.kodality.termserver.ts.valueset.ValueSet;
+import com.kodality.termserver.ts.valueset.ValueSetVersion;
+import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleType;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConcept;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation;
@@ -100,7 +101,7 @@ public class ValueSetFhirImportMapper {
     }
     return concepts.stream().map(c -> {
       ValueSetVersionConcept concept = new ValueSetVersionConcept();
-      concept.setConcept(new com.kodality.termserver.codesystem.Concept().setCode(c.getCode()));
+      concept.setConcept(new Concept().setCode(c.getCode()));
       concept.setDisplay(c.getDisplay() != null ? new Designation().setName(c.getDisplay()) : null);
       concept.setAdditionalDesignations(mapDesignations(c.getDesignation()));
       return concept;
@@ -144,7 +145,7 @@ public class ValueSetFhirImportMapper {
           .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)
           .setStatus(PublicationStatus.active));
       vsConcept.setAdditionalDesignations(mapDesignations(c.getDesignation()));
-      com.kodality.termserver.codesystem.Concept concept = new com.kodality.termserver.codesystem.Concept().setCode(c.getCode());
+      Concept concept = new Concept().setCode(c.getCode());
       concept.setCodeSystem(c.getSystem());
       vsConcept.setConcept(concept);
       return vsConcept;

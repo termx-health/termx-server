@@ -2,8 +2,8 @@ package com.kodality.termserver.ts.valueset.ruleset;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.valueset.ValueSetVersionRuleQueryParams;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleQueryParams;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Singleton;

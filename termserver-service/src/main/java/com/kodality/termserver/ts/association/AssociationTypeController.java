@@ -2,8 +2,6 @@ package com.kodality.termserver.ts.association;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.association.AssociationType;
-import com.kodality.termserver.association.AssociationTypeQueryParams;
 import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.auth.auth.ResourceId;
 import com.kodality.termserver.auth.auth.UserPermissionService;

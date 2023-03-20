@@ -1,6 +1,5 @@
 package com.kodality.termserver.ts.codesystem;
 
-import com.kodality.termserver.codesystem.CodeSystemVersion;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;

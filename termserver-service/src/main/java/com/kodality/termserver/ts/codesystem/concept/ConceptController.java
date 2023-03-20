@@ -2,8 +2,8 @@ package com.kodality.termserver.ts.codesystem.concept;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.ConceptQueryParams;
+import com.kodality.termserver.ts.codesystem.Concept;
+import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;

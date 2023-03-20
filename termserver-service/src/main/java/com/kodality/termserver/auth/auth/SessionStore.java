@@ -15,6 +15,11 @@ public class SessionStore {
     }
     return ServerRequestContext.currentRequest().flatMap(req -> req.getAttribute(KEY, SessionInfo.class));
   }
+
+  public static Optional<SessionInfo> get(HttpRequest httpRequest) {
+    return httpRequest.getAttribute(KEY, SessionInfo.class);
+  }
+
   public static SessionInfo require() {
     return get().orElseThrow(() -> new IllegalStateException("No session found in request context"));
   }

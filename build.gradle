@@ -11,11 +11,20 @@ allprojects {
   repositories {
     mavenCentral()
     maven { url "https://kexus.kodality.com/repository/maven-public/" }
+    maven {
+      url = "https://kexus.kodality.com/repository/maven-private/"
+      credentials {
+        username = project.hasProperty('kodalityNexusUser') ? project.property('kodalityNexusUser') : System.getenv('KODALITY_NEXUS_USER')
+        password = project.hasProperty('kodalityNexusPassword') ? project.property('kodalityNexusPassword') : System.getenv('KODALITY_NEXUS_PASSWORD')
+      }
+    }
   }
 
   dependencies {
     compileOnly "org.projectlombok:lombok:1.18.24"
     annotationProcessor "org.projectlombok:lombok:1.18.24"
+
+    implementation('com.kodality.termsupp:observation-definition:1.0-SNAPSHOT') { changing = true }
   }
 
   java {

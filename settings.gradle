@@ -1,5 +1,18 @@
+//includeBuild '../terminology-supplement'
+
 rootProject.name="terminology-server"
+
+include 'edition-int'
+include 'edition-est'
+include 'edition-uzb'
+
 include 'termserver-api'
 include 'termserver-client'
 include 'termserver-service'
+include 'termserver-common'
+
 include 'gatling'
+
+include 'thesaurus'
+include 'snomed'
+include 'ucum'

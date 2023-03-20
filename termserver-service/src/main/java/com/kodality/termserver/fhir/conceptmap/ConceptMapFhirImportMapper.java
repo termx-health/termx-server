@@ -1,15 +1,15 @@
 package com.kodality.termserver.fhir.conceptmap;
 
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.termserver.Language;
-import com.kodality.termserver.PublicationStatus;
-import com.kodality.termserver.association.AssociationKind;
-import com.kodality.termserver.association.AssociationType;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
-import com.kodality.termserver.mapset.MapSet;
-import com.kodality.termserver.mapset.MapSetAssociation;
-import com.kodality.termserver.mapset.MapSetEntityVersion;
-import com.kodality.termserver.mapset.MapSetVersion;
+import com.kodality.termserver.ts.Language;
+import com.kodality.termserver.ts.PublicationStatus;
+import com.kodality.termserver.ts.association.AssociationKind;
+import com.kodality.termserver.ts.association.AssociationType;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.ts.mapset.MapSet;
+import com.kodality.termserver.ts.mapset.MapSetAssociation;
+import com.kodality.termserver.ts.mapset.MapSetEntityVersion;
+import com.kodality.termserver.ts.mapset.MapSetVersion;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;

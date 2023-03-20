@@ -1,0 +1,15 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "observation-definition",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><p>This code system <code>http://unitsofmeasure.org</code> defines many codes, but they are not represented here</p></div>"
+  },
+  "url": "http://tx.hl7.ee/CodeSystem/observation-definition",
+  "version": "1.0.0",
+  "name": "Observation definition",
+  "status": "draft",
+  "experimental": false,
+  "date": "2023-03-01T00:00:00-04:00",
+  "content": "not-present"
+}

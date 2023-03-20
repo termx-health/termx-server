@@ -1,11 +1,11 @@
 package com.kodality.termserver.fhir.conceptmap;
 
-import com.kodality.termserver.Language;
-import com.kodality.termserver.codesystem.CodeSystem;
-import com.kodality.termserver.codesystem.CodeSystemQueryParams;
-import com.kodality.termserver.mapset.MapSet;
-import com.kodality.termserver.mapset.MapSetAssociation;
-import com.kodality.termserver.mapset.MapSetVersion;
+import com.kodality.termserver.ts.Language;
+import com.kodality.termserver.ts.codesystem.CodeSystem;
+import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
+import com.kodality.termserver.ts.mapset.MapSet;
+import com.kodality.termserver.ts.mapset.MapSetAssociation;
+import com.kodality.termserver.ts.mapset.MapSetVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemService;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.ContactDetail;

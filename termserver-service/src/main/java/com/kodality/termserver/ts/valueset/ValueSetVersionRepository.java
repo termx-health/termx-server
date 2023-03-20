@@ -6,9 +6,7 @@ import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.PublicationStatus;
-import com.kodality.termserver.valueset.ValueSetVersion;
-import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
+import com.kodality.termserver.ts.PublicationStatus;
 import io.micronaut.core.util.CollectionUtils;
 import javax.inject.Singleton;
 

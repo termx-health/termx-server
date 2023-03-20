@@ -1,9 +1,9 @@
 package com.kodality.termserver.integration
 
 import com.kodality.commons.model.LocalizedName
-import com.kodality.termserver.Language
+import com.kodality.termserver.ts.Language
 import com.kodality.termserver.integration.atc.utils.AtcMapper
-import com.kodality.termserver.common.ImportConfiguration
+
 import spock.lang.Specification
 
 import java.time.LocalDate

@@ -1,16 +1,16 @@
 package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.Designation;
 import com.kodality.termserver.ts.valueset.ValueSetService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionService;
 import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
-import com.kodality.termserver.valueset.ValueSet;
-import com.kodality.termserver.valueset.ValueSetQueryParams;
-import com.kodality.termserver.valueset.ValueSetVersion;
-import com.kodality.termserver.valueset.ValueSetVersionConcept;
-import com.kodality.termserver.valueset.ValueSetVersionConceptQueryParams;
-import com.kodality.termserver.valueset.ValueSetVersionQueryParams;
+import com.kodality.termserver.ts.valueset.ValueSet;
+import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
+import com.kodality.termserver.ts.valueset.ValueSetVersion;
+import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
+import com.kodality.termserver.ts.valueset.ValueSetVersionConceptQueryParams;
+import com.kodality.termserver.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;

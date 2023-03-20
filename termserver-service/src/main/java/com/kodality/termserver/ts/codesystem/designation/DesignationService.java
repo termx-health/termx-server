@@ -2,8 +2,8 @@ package com.kodality.termserver.ts.codesystem.designation;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.codesystem.Designation;
-import com.kodality.termserver.codesystem.DesignationQueryParams;
+import com.kodality.termserver.ts.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.DesignationQueryParams;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;

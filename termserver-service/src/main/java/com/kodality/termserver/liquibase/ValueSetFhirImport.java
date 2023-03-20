@@ -2,7 +2,8 @@ package com.kodality.termserver.liquibase;
 
 import com.kodality.commons.micronaut.BeanContext;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termserver.common.AuthorizedFileReaderCustomChange;
+import com.kodality.termserver.AuthorizedFileReaderCustomChange;
+import com.kodality.termserver.auth.CommonSessionProvider;
 import com.kodality.termserver.fhir.valueset.ValueSetFhirImportService;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ public class ValueSetFhirImport extends AuthorizedFileReaderCustomChange {
   private final ValueSetFhirImportService valueSetFhirImportService;
 
   public ValueSetFhirImport() {
+    super(BeanContext.getBean(CommonSessionProvider.class));
     valueSetFhirImportService = BeanContext.getBean(ValueSetFhirImportService.class);
   }
 

@@ -2,9 +2,8 @@ package com.kodality.termserver.ts.codesystem.entitypropertyvalue;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.codesystem.Designation;
-import com.kodality.termserver.codesystem.EntityPropertyValue;
-import com.kodality.termserver.codesystem.EntityPropertyValueQueryParams;
+import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
+import com.kodality.termserver.ts.codesystem.EntityPropertyValueQueryParams;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;

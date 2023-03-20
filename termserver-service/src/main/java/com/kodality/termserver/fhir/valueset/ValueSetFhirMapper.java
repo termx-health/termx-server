@@ -1,14 +1,14 @@
 package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termserver.Language;
-import com.kodality.termserver.valueset.ValueSet;
-import com.kodality.termserver.valueset.ValueSetVersion;
-import com.kodality.termserver.valueset.ValueSetVersionConcept;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
-import com.kodality.termserver.valueset.ValueSetVersionRuleType;
+import com.kodality.termserver.ts.Language;
+import com.kodality.termserver.ts.valueset.ValueSet;
+import com.kodality.termserver.ts.valueset.ValueSetVersion;
+import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleType;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.ContactDetail;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;

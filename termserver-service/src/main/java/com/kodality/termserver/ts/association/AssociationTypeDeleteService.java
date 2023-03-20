@@ -1,10 +1,10 @@
 package com.kodality.termserver.ts.association;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.codesystem.CodeSystemAssociation;
-import com.kodality.termserver.codesystem.CodeSystemAssociationQueryParams;
-import com.kodality.termserver.mapset.MapSetAssociation;
-import com.kodality.termserver.mapset.MapSetAssociationQueryParams;
+import com.kodality.termserver.ts.codesystem.CodeSystemAssociation;
+import com.kodality.termserver.ts.codesystem.CodeSystemAssociationQueryParams;
+import com.kodality.termserver.ts.mapset.MapSetAssociation;
+import com.kodality.termserver.ts.mapset.MapSetAssociationQueryParams;
 import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.ts.mapset.association.MapSetAssociationService;
 import java.util.List;

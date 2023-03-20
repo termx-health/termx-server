@@ -1,17 +1,8 @@
 package com.kodality.termserver.ts.codesystem;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.codesystem.CodeSystem;
-import com.kodality.termserver.codesystem.CodeSystemAssociation;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
-import com.kodality.termserver.codesystem.CodeSystemVersion;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.codesystem.ConceptQueryParams;
-import com.kodality.termserver.codesystem.EntityProperty;
-import com.kodality.termserver.codesystem.EntityPropertyQueryParams;
 import com.kodality.termserver.ts.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.ts.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;

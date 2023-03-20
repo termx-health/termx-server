@@ -1,6 +1,6 @@
 package com.kodality.termserver.ts.mapset.entity;
 
-import com.kodality.termserver.mapset.MapSetEntity;
+import com.kodality.termserver.ts.mapset.MapSetEntity;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;

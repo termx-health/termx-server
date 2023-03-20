@@ -42,7 +42,7 @@ liquibase:
   datasources:
     liquibase:
       enabled: true
-      change-log: 'classpath:/db/changelog/changelog-master.xml'
+      change-log: 'classpath:changelog.xml'
       default-schema: 'public'
       parameters:
         app-username: ${datasources.default.username}
@@ -70,3 +70,6 @@ github:
   app-id: ${GITHUB_APP_ID}
   app-name: ${GITHUB_APP_NAME}
   private-key-path: '/path/to/private-key.pem'
+
+supplement:
+  observation-definition: true

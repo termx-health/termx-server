@@ -1,9 +1,9 @@
 package com.kodality.termserver.fhir;
 
 import com.kodality.commons.exception.ApiException;
-import com.kodality.termserver.measurementunit.MeasurementUnit;
-import com.kodality.termserver.ts.measurementunit.MeasurementUnitService;
-import com.kodality.termserver.ts.measurementunit.converter.MeasurementUnitConverter;
+import com.kodality.termserver.measurementunit.MeasurementUnitService;
+import com.kodality.termserver.measurementunit.converter.MeasurementUnitConverter;
+import com.kodality.termserver.ucum.MeasurementUnit;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import jakarta.inject.Singleton;

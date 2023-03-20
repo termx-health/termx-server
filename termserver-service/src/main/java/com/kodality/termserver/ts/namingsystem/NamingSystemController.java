@@ -5,8 +5,6 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.Authorized;
 import com.kodality.termserver.auth.auth.ResourceId;
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.namingsystem.NamingSystem;
-import com.kodality.termserver.namingsystem.NamingSystemQueryParams;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;

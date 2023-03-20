@@ -2,9 +2,9 @@ package com.kodality.termserver.ts.codesystem.association;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.codesystem.CodeSystemAssociation;
-import com.kodality.termserver.codesystem.CodeSystemAssociationQueryParams;
-import com.kodality.termserver.codesystem.CodeSystemEntityType;
+import com.kodality.termserver.ts.codesystem.CodeSystemAssociation;
+import com.kodality.termserver.ts.codesystem.CodeSystemAssociationQueryParams;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityType;
 import com.kodality.termserver.ts.codesystem.concept.ConceptRefreshViewJob;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityService;
 import java.util.List;

@@ -1,11 +1,11 @@
 package com.kodality.termserver.ts.codesystem.supplement;
 
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.codesystem.Designation;
-import com.kodality.termserver.codesystem.EntityProperty;
-import com.kodality.termserver.codesystem.EntityPropertyValue;
-import com.kodality.termserver.codesystem.CodeSystemSupplement;
-import com.kodality.termserver.codesystem.CodeSystemSupplementType;
+import com.kodality.termserver.ts.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.EntityProperty;
+import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
+import com.kodality.termserver.ts.codesystem.CodeSystemSupplement;
+import com.kodality.termserver.ts.codesystem.CodeSystemSupplementType;
 import com.kodality.termserver.ts.codesystem.designation.DesignationService;
 import com.kodality.termserver.ts.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termserver.ts.codesystem.entitypropertyvalue.EntityPropertyValueService;

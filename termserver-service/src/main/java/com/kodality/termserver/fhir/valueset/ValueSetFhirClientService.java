@@ -2,7 +2,7 @@ package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.SessionStore;
-import com.kodality.termserver.valueset.ValueSetQueryParams;
+import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
 import com.kodality.zmei.fhir.client.FhirClient;
 import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet;
@@ -19,13 +19,13 @@ public class ValueSetFhirClientService {
     return new FhirClient<>(fhirUrl + "/ValueSet", ValueSet.class, b -> b.header("Authorization", "Bearer " + SessionStore.require().getToken()));
   }
 
-  public com.kodality.termserver.valueset.ValueSet load(String ValueSet) {
+  public com.kodality.termserver.ts.valueset.ValueSet load(String ValueSet) {
     return ValueSetFhirImportMapper.mapValueSet(getClient().read(ValueSet).join());
   }
 
-  public QueryResult<com.kodality.termserver.valueset.ValueSet> search(ValueSetQueryParams tsParams) {
+  public QueryResult<com.kodality.termserver.ts.valueset.ValueSet> search(ValueSetQueryParams tsParams) {
     Bundle fResult = getClient().search(mapFhirParams(tsParams)).join();
-    QueryResult<com.kodality.termserver.valueset.ValueSet> tsResult = new QueryResult<>(fResult.getTotal(), tsParams);
+    QueryResult<com.kodality.termserver.ts.valueset.ValueSet> tsResult = new QueryResult<>(fResult.getTotal(), tsParams);
     if (fResult.getEntry() != null) {
       tsResult.setData(fResult.getEntry().stream().map(entry -> ValueSetFhirImportMapper.mapValueSet(entry.getResource())).collect(Collectors.toList()));
     }

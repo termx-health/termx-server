@@ -4,8 +4,8 @@ import com.kodality.commons.client.BaseHttpClient;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termserver.namingsystem.NamingSystem;
-import com.kodality.termserver.namingsystem.NamingSystemQueryParams;
+import com.kodality.termserver.ts.namingsystem.NamingSystem;
+import com.kodality.termserver.ts.namingsystem.NamingSystemQueryParams;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 

@@ -1,19 +1,19 @@
 package com.kodality.termserver.integration.fileimporter.mapset;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.association.AssociationType;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
-import com.kodality.termserver.codesystem.Concept;
-import com.kodality.termserver.common.MapSetImportService;
+import com.kodality.termserver.ts.association.AssociationType;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termserver.ts.codesystem.Concept;
+import com.kodality.termserver.ts.mapset.MapSetImportService;
 import com.kodality.termserver.integration.fileimporter.mapset.utils.MapSetFileImportRequest;
 import com.kodality.termserver.integration.fileimporter.mapset.utils.MapSetFileImportRow;
 import com.kodality.termserver.integration.fileimporter.mapset.utils.MapSetFileProcessingMapper;
-import com.kodality.termserver.mapset.MapSet;
+import com.kodality.termserver.ts.mapset.MapSet;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.mapset.MapSetService;
 import com.kodality.termserver.ts.valueset.concept.ValueSetVersionConceptService;
-import com.kodality.termserver.valueset.ValueSetVersionConcept;
+import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;

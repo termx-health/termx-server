@@ -1,8 +1,6 @@
 package com.kodality.termserver.ts.association;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.association.AssociationType;
-import com.kodality.termserver.association.AssociationTypeQueryParams;
 import com.kodality.termserver.auth.auth.UserPermissionService;
 import java.util.Optional;
 import javax.inject.Singleton;

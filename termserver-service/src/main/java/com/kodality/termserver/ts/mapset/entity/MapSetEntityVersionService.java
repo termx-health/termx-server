@@ -2,10 +2,10 @@ package com.kodality.termserver.ts.mapset.entity;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.mapset.MapSetEntityVersion;
-import com.kodality.termserver.mapset.MapSetEntityVersionQueryParams;
+import com.kodality.termserver.ts.mapset.MapSetEntityVersion;
+import com.kodality.termserver.ts.mapset.MapSetEntityVersionQueryParams;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;

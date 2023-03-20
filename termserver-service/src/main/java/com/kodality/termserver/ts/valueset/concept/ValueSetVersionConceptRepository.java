@@ -6,10 +6,10 @@ import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termserver.codesystem.Designation;
-import com.kodality.termserver.valueset.ValueSetVersionConcept;
-import com.kodality.termserver.valueset.ValueSetVersionConceptQueryParams;
-import com.kodality.termserver.valueset.ValueSetVersionRuleSet;
+import com.kodality.termserver.ts.codesystem.Designation;
+import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
+import com.kodality.termserver.ts.valueset.ValueSetVersionConceptQueryParams;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
 import java.util.List;
 import javax.inject.Singleton;
 

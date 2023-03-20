@@ -1,6 +1,6 @@
 package com.kodality.termserver.ts.codesystem.entity;
 
-import com.kodality.termserver.codesystem.CodeSystemEntity;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntity;
 import java.util.List;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;

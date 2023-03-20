@@ -2,11 +2,8 @@ package com.kodality.termserver.ts.codesystem;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.PublicationStatus;
+import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.auth.auth.UserPermissionService;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
-import com.kodality.termserver.codesystem.CodeSystemVersion;
-import com.kodality.termserver.codesystem.CodeSystemVersionQueryParams;
 import jakarta.inject.Singleton;
 import java.time.OffsetDateTime;
 import java.util.List;

@@ -1,11 +1,11 @@
 package com.kodality.termserver.integration.fileimporter.codesystem;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.PublicationStatus;
-import com.kodality.termserver.association.AssociationType;
-import com.kodality.termserver.codesystem.CodeSystem;
-import com.kodality.termserver.common.BinaryHttpClient;
-import com.kodality.termserver.common.CodeSystemImportService;
+import com.kodality.termserver.BinaryHttpClient;
+import com.kodality.termserver.ts.PublicationStatus;
+import com.kodality.termserver.ts.association.AssociationType;
+import com.kodality.termserver.ts.codesystem.CodeSystem;
+import com.kodality.termserver.ts.codesystem.CodeSystemImportService;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisRequest;
 import com.kodality.termserver.integration.fileimporter.codesystem.utils.FileAnalysisResponse;
@@ -20,8 +20,8 @@ import com.kodality.termserver.ts.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.ts.valueset.ValueSetService;
 import com.kodality.termserver.ts.valueset.ValueSetVersionService;
 import com.kodality.termserver.ts.valueset.ruleset.ValueSetVersionRuleService;
-import com.kodality.termserver.valueset.ValueSet;
-import com.kodality.termserver.valueset.ValueSetVersion;
+import com.kodality.termserver.ts.valueset.ValueSet;
+import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;

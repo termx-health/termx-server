@@ -2,7 +2,7 @@ package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.auth.SessionStore;
-import com.kodality.termserver.codesystem.CodeSystemQueryParams;
+import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.zmei.fhir.client.FhirClient;
 import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
@@ -19,13 +19,13 @@ public class CodeSystemFhirClientService {
     return new FhirClient<>(fhirUrl + "/CodeSystem", CodeSystem.class, b -> b.header("Authorization", "Bearer " + SessionStore.require().getToken()));
   }
 
-  public com.kodality.termserver.codesystem.CodeSystem load(String codeSystem) {
+  public com.kodality.termserver.ts.codesystem.CodeSystem load(String codeSystem) {
     return CodeSystemFhirImportMapper.mapCodeSystem(getClient().read(codeSystem).join());
   }
 
-  public QueryResult<com.kodality.termserver.codesystem.CodeSystem> search(CodeSystemQueryParams tsParams) {
+  public QueryResult<com.kodality.termserver.ts.codesystem.CodeSystem> search(CodeSystemQueryParams tsParams) {
     Bundle fResult = getClient().search(mapFhirParams(tsParams)).join();
-    QueryResult<com.kodality.termserver.codesystem.CodeSystem> tsResult = new QueryResult<>(fResult.getTotal(), tsParams);
+    QueryResult<com.kodality.termserver.ts.codesystem.CodeSystem> tsResult = new QueryResult<>(fResult.getTotal(), tsParams);
     if (fResult.getEntry() != null) {
       tsResult.setData(fResult.getEntry().stream().map(entry -> CodeSystemFhirImportMapper.mapCodeSystem(entry.getResource())).collect(Collectors.toList()));
     }

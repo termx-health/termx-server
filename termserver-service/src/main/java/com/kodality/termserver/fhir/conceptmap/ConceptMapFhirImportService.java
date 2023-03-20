@@ -1,17 +1,17 @@
 package com.kodality.termserver.fhir.conceptmap;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.association.AssociationType;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersion;
-import com.kodality.termserver.codesystem.CodeSystemEntityVersionQueryParams;
-import com.kodality.termserver.common.BinaryHttpClient;
-import com.kodality.termserver.common.MapSetImportService;
-import com.kodality.termserver.mapset.MapSet;
-import com.kodality.termserver.mapset.MapSetAssociation;
+import com.kodality.termserver.BinaryHttpClient;
+import com.kodality.termserver.ts.association.AssociationType;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termserver.ts.mapset.MapSetImportService;
+import com.kodality.termserver.ts.mapset.MapSet;
+import com.kodality.termserver.ts.mapset.MapSetAssociation;
 import com.kodality.termserver.ts.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.valueset.ValueSetService;
-import com.kodality.termserver.valueset.ValueSet;
-import com.kodality.termserver.valueset.ValueSetQueryParams;
+import com.kodality.termserver.ts.valueset.ValueSet;
+import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.ResourceType;
 import com.kodality.zmei.fhir.resource.other.Parameters;

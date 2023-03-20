@@ -1,11 +1,11 @@
 package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.termserver.ApiError;
-import com.kodality.termserver.PublicationStatus;
-import com.kodality.termserver.association.AssociationKind;
-import com.kodality.termserver.association.AssociationType;
-import com.kodality.termserver.common.BinaryHttpClient;
-import com.kodality.termserver.common.CodeSystemImportService;
+import com.kodality.termserver.BinaryHttpClient;
+import com.kodality.termserver.ts.PublicationStatus;
+import com.kodality.termserver.ts.association.AssociationKind;
+import com.kodality.termserver.ts.association.AssociationType;
+import com.kodality.termserver.ts.codesystem.CodeSystemImportService;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.Resource;
 import com.kodality.zmei.fhir.resource.ResourceType;

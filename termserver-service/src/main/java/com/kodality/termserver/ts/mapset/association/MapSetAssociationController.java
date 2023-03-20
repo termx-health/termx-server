@@ -1,7 +1,7 @@
 package com.kodality.termserver.ts.mapset.association;
 
 import com.kodality.commons.exception.NotFoundException;
-import com.kodality.termserver.mapset.MapSetAssociation;
+import com.kodality.termserver.ts.mapset.MapSetAssociation;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
