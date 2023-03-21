@@ -8,7 +8,7 @@
   "url": "http://snomed.info/sct",
   "version": "2021-07-31",
   "name": "SNOMED CT",
-  "status": "draft",
+  "status": "active",
   "experimental": false,
   "date": "2021-07-31T00:00:00-04:00",
   "publisher": "SNOMED International",

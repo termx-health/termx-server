@@ -85,7 +85,6 @@ public class CodeSystemImportService {
     }
     existingVersion.ifPresent(v -> codeSystemVersionService.cancel(v.getId(), v.getCodeSystem()));
     log.info("Saving code system version {}", codeSystemVersion.getVersion());
-    codeSystemVersion.setId(existingVersion.map(CodeSystemVersion::getId).orElse(null));
     codeSystemVersionService.save(codeSystemVersion);
   }
 
