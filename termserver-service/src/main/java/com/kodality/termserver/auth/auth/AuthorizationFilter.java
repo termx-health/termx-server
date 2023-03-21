@@ -28,7 +28,6 @@ import org.reactivestreams.Publisher;
 @RequiredArgsConstructor
 public class AuthorizationFilter implements HttpServerFilter {
 
-  public static final String ADMIN = "admin";
 
   @Override
   public int getOrder() {

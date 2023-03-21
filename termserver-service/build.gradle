@@ -11,6 +11,7 @@ dependencies {
 
   implementation project(':termserver-api')
   implementation project(':termserver-common')
+  implementation project(':terminology')
   implementation project(':snomed')
   implementation project(':ucum')
   implementation project(':observation-definition')

@@ -1,6 +1,5 @@
 package com.kodality.termserver.auth;
 
-import com.kodality.termserver.auth.SessionInfo;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.context.ServerRequestContext;
 import java.util.Optional;

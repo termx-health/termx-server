@@ -27,4 +27,7 @@ dependencies {
     implementation("io.reactivex.rxjava2:rxjava:2.2.21")
 
     implementation("com.univocity:univocity-parsers:2.9.1")
+    implementation("com.kodality.zmei:zmei-fhir:${rootProject.zmeiVersion}") { changing = true }
+    implementation("com.kodality.zmei:zmei-fhir-client:${rootProject.zmeiVersion}") { changing = true }
+    implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}") { changing = true }
 }

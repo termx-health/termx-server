@@ -15,4 +15,5 @@ include 'thesaurus'
 include 'snomed'
 include 'ucum'
 include 'observation-definition'
+include 'terminology'
 
