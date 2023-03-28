@@ -19,11 +19,6 @@ with rule_set as (
              inner join terminology.value_set_version vsv on vsv.id = vsvrs.value_set_version_id and vsv.sys_status = 'A'
     where vsv.id = p_value_set_version_id and vsvrs.sys_status = 'A'
     limit 1
-),
-    concepts as (
-        select vsvc.id, vsvc.concept, null::bigint concept_version_id, vsvc.display, vsvc.additional_designations
-        from terminology.value_set_version_concept vsvc
-        where vsvc.value_set_version_id = p_value_set_version_id and vsvc.sys_status = 'A'
     ),
     include_rules as (
         select *
@@ -71,7 +66,7 @@ with rule_set as (
                                or exists (select 1 from terminology.entity_property_value epv
                                    where  csev.id = epv.code_system_entity_version_id and exists(select 1 from include_rule_filters irf
                                         where irf.id = ir.id and ((irf.f -> 'property' ->> 'id') is null or (irf.f -> 'property' ->> 'id')::bigint = epv.entity_property_id) and
-                                              (coalesce(irf.f ->> 'value', '') = '' or to_jsonb((irf.f ->> 'value')::text) = epv.value)))
+                                              (coalesce(irf.f ->> 'value', '') = '' or to_jsonb((irf.f ->> 'value')::text) = epv.value or (irf.f ->> 'value')::text = (epv.value ->> 'code')::text)))
                                or exists (select 1 from terminology.designation d
                                    where csev.id = d.code_system_entity_version_id and exists(select 1 from include_rule_filters irf
                                         where irf.id = ir.id and ((irf.f -> 'property' ->> 'id') is null or (irf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
@@ -96,13 +91,19 @@ with rule_set as (
                                    or exists (select 1 from terminology.entity_property_value epv
                                        where csev.id = epv.code_system_entity_version_id and exists(select 1 from exclude_rule_filters erf
                                              where erf.id = er.id and ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = epv.entity_property_id) and
-                                                   (coalesce(erf.f ->> 'value', '') = '' or to_jsonb((erf.f ->> 'value')::text) = epv.value)))
+                                                   (coalesce(erf.f ->> 'value', '') = '' or to_jsonb((erf.f ->> 'value')::text) = epv.value or (erf.f ->> 'value')::text = (epv.value ->> 'code')::text)))
                                    or exists (select 1 from terminology.designation d
                                        where csev.id = d.code_system_entity_version_id and exists(select 1 from exclude_rule_filters erf
                                               where erf.id = er.id and ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
                                                     (coalesce(erf.f ->> 'value', '') = '' or (erf.f ->> 'value')::text = d.name)))
                                )
                 )
+    ),
+    concepts as (
+        select vsvc.id, vsvc.concept, null::bigint concept_version_id, vsvc.display, vsvc.additional_designations
+        from terminology.value_set_version_concept vsvc
+        where vsvc.value_set_version_id = p_value_set_version_id and vsvc.sys_status = 'A' and
+            exists (select 1 from include_rule_concepts irc where (irc.c -> 'concept' ->> 'code')::text = (vsvc.concept ->> 'code')::text)
     ),
     value_set_concepts as (
         select s.* from include_rules ir, lateral terminology.value_set_expand(ir.value_set_version_id) s

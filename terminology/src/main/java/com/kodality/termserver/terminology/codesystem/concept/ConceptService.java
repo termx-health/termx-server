@@ -21,6 +21,7 @@ import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -165,7 +166,9 @@ public class ConceptService {
     }
     if (params.getValueSetVersionId() != null) {
       params.setValueSetExpandResultIds(valueSetVersionConceptRepository.expand(params.getValueSetVersionId()).stream()
-          .map(c -> String.valueOf(c.getConcept().getId())).collect(Collectors.joining(",")));
+          .map(c -> c.getConcept().getId())
+          .filter(Objects::nonNull)
+          .map(String::valueOf).collect(Collectors.joining(",")));
     }
   }
 

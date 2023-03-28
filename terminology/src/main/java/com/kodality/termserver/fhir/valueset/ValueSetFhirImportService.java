@@ -39,6 +39,7 @@ import io.micronaut.core.util.StringUtils;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -66,11 +67,15 @@ public class ValueSetFhirImportService {
   private final BinaryHttpClient client = new BinaryHttpClient();
 
   public void importValueSets(Parameters parameters, List<String> successes, List<String> warnings) {
-    List<String> urls = CollectionUtils.isNotEmpty(parameters.getParameter()) ? parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(
-        ParametersParameter::getValueString).toList() : Collections.emptyList();
+    if (CollectionUtils.isEmpty(parameters.getParameter())) {
+      throw ApiError.TE106.toApiException();
+    }
+
+    List<String> urls = parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(ParametersParameter::getValueString).toList();
     if (urls.isEmpty()) {
       throw ApiError.TE106.toApiException();
     }
+
     urls.forEach(url -> {
       try {
         importValueSet(url);
@@ -85,12 +90,11 @@ public class ValueSetFhirImportService {
 
   public void importValueSet(String url) {
     String resource = getResource(url);
-    com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet =
-        FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
-    if (!ResourceType.valueSet.equals(fhirValueSet.getResourceType())) {
+    com.kodality.zmei.fhir.resource.terminology.ValueSet fhir = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
+    if (!ResourceType.valueSet.equals(fhir.getResourceType())) {
       throw ApiError.TE107.toApiException();
     }
-    importValueSet(fhirValueSet, false);
+    importValueSet(fhir, false);
   }
 
   @Transactional
@@ -109,21 +113,26 @@ public class ValueSetFhirImportService {
 
   private ValueSet prepare(ValueSet valueSet) {
     if (CollectionUtils.isNotEmpty(valueSet.getVersions()) && valueSet.getVersions().get(0) != null && valueSet.getVersions().get(0).getRuleSet() != null) {
-      prepareRules(valueSet.getVersions().get(0).getRuleSet().getRules(), valueSet.getVersions().get(0).getRuleSet().getLockedDate());
+      prepareRules(valueSet);
     }
     return valueSet;
   }
 
-  private void prepareRules(List<ValueSetVersionRule> rules, OffsetDateTime lockedDate) {
+  private void prepareRules(ValueSet valueSet) {
+    List<ValueSetVersionRule> rules = valueSet.getVersions().get(0).getRuleSet().getRules();
+    OffsetDateTime lockedDate = valueSet.getVersions().get(0).getRuleSet().getLockedDate();
+
+    if (valueSet.getVersions().get(0).getConcepts() == null) {
+      valueSet.getVersions().get(0).setConcepts(new ArrayList<>());
+    }
+
     if (CollectionUtils.isEmpty(rules)) {
       return;
     }
     rules.forEach(r -> {
       prepareRuleValueSet(r);
       prepareRuleCodeSystem(r, lockedDate);
-      if (!CodeSystemContent.notPresent.equals(codeSystemService.load(r.getCodeSystem()).map(CodeSystem::getContent).orElse(null))) {
-        prepareConcepts(r.getConcepts(), r.getCodeSystem(), r.getCodeSystemVersionId());
-      }
+      valueSet.getVersions().get(0).getConcepts().addAll(prepareConcepts(r.getConcepts(), r.getCodeSystem(), r.getCodeSystemVersionId()));
     });
   }
 
@@ -152,27 +161,41 @@ public class ValueSetFhirImportService {
     }
   }
 
-  private void prepareConcepts(List<ValueSetVersionConcept> concepts, String codeSystem, Long codeSystemVersionId) {
+  private List<ValueSetVersionConcept> prepareConcepts(List<ValueSetVersionConcept> concepts, String codeSystem, Long codeSystemVersionId) {
+    List<ValueSetVersionConcept> conceptsToAdd = new ArrayList<>();
     if (CollectionUtils.isEmpty(concepts)) {
-      return;
+      return conceptsToAdd;
     }
+
+    boolean contentNotPresent = CodeSystemContent.notPresent.equals(codeSystemService.load(codeSystem).map(CodeSystem::getContent).orElse(null));
+
     concepts.stream().filter(c -> c.getConcept() != null && c.getConcept().getCode() != null).forEach(concept -> {
-      prepareConcept(concept, codeSystem, codeSystemVersionId);
-      CodeSystemEntityVersion codeSystemEntityVersion = prepareCodeSystemVersion(concept, codeSystem, codeSystemVersionId);
-      prepareDesignations(concept, codeSystemEntityVersion.getId());
+      if (!conceptExists(concept, codeSystem, codeSystemVersionId)) {
+        if (contentNotPresent) {
+          conceptsToAdd.add(concept);
+        } else {
+          prepareConcept(concept, codeSystem);
+          CodeSystemEntityVersion codeSystemEntityVersion = prepareCodeSystemVersion(concept, codeSystem, codeSystemVersionId);
+          prepareDesignations(concept, codeSystemEntityVersion.getId());
+        }
+      }
     });
+
+    return conceptsToAdd;
   }
 
-  private void prepareConcept(ValueSetVersionConcept c, String codeSystem, Long codeSystemVersionId) {
+  private boolean conceptExists(ValueSetVersionConcept c, String codeSystem, Long codeSystemVersionId) {
     ConceptQueryParams params = new ConceptQueryParams();
     params.setCodeSystem(codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
     params.setCodeSystemVersionId(codeSystemVersionId);
     params.setCode(c.getConcept().getCode());
     params.setLimit(1);
-    conceptService.query(params).findFirst().ifPresentOrElse(c::setConcept, () -> {
-      Concept concept = conceptService.save(new Concept().setCode(c.getConcept().getCode()), codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
-      c.setConcept(concept);
-    });
+    return conceptService.query(params).findFirst().isPresent();
+  }
+
+  private void prepareConcept(ValueSetVersionConcept c, String codeSystem) {
+    Concept concept = conceptService.save(new Concept().setCode(c.getConcept().getCode()), codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
+    c.setConcept(concept);
   }
 
   private CodeSystemEntityVersion prepareCodeSystemVersion(ValueSetVersionConcept c, String codeSystem, Long codeSystemVersionId) {
@@ -209,7 +232,8 @@ public class ValueSetFhirImportService {
 
     if (c.getDisplay() != null) {
       designationService
-          .query(new DesignationQueryParams().setConceptCode(c.getConcept().getCode()).setName(c.getDisplay().getName()).setDesignationKind(c.getDisplay().getDesignationKind()))
+          .query(new DesignationQueryParams().setConceptCode(c.getConcept().getCode()).setName(c.getDisplay().getName())
+              .setDesignationKind(c.getDisplay().getDesignationKind()))
           .findFirst().ifPresentOrElse(c::setDisplay, () -> {
             c.getDisplay().setDesignationTypeId(propertyId);
             designationService.save(c.getDisplay(), codeSystemEntityVersionId, c.getConcept().getCodeSystem());

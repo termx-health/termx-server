@@ -1,7 +1,6 @@
-package com.kodality.termserver.fileimporter.codesystem;
+package com.kodality.termserver.terminology.codesystem;
 
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
-import com.kodality.termserver.terminology.codesystem.CodeSystemImportService;
 import com.kodality.termserver.ts.CodeSystemImportProvider;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.association.AssociationType;

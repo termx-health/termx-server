@@ -61,8 +61,8 @@ public class ValueSetVersionConceptRepository extends BaseRepository {
     return getBeans(sb.getSql(), bp, sb.getParams());
   }
 
-  public List<ValueSetVersionConcept> expand(ValueSetVersionRuleSet ruleSet) {
-    SqlBuilder sb = new SqlBuilder("select * from terminology.rule_set_expand(?::jsonb)", JsonUtil.toJson(ruleSet));
+  public List<ValueSetVersionConcept> expand(Long valueSetVersionId, ValueSetVersionRuleSet ruleSet) {
+    SqlBuilder sb = new SqlBuilder("select * from terminology.rule_set_expand(?::bigint, ?::jsonb)", valueSetVersionId, JsonUtil.toJson(ruleSet));
     return getBeans(sb.getSql(), bp, sb.getParams());
   }
 

@@ -45,6 +45,7 @@
 
         <rollback>
             drop function if exists terminology.value_set_expand(bigint);
+            drop function if exists terminology.rule_set_expand(bigint,jsonb);
             drop function if exists terminology.rule_set_expand(jsonb);
             drop function if exists terminology.code_system_closure(text);
             drop function if exists terminology.refresh_concept_closure();

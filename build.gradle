@@ -11,13 +11,6 @@ allprojects {
   repositories {
     mavenCentral()
     maven { url "https://kexus.kodality.com/repository/maven-public/" }
-    maven {
-      url = "https://kexus.kodality.com/repository/maven-private/"
-      credentials {
-        username = project.hasProperty('kodalityNexusUser') ? project.property('kodalityNexusUser') : System.getenv('KODALITY_NEXUS_USER')
-        password = project.hasProperty('kodalityNexusPassword') ? project.property('kodalityNexusPassword') : System.getenv('KODALITY_NEXUS_PASSWORD')
-      }
-    }
   }
 
   dependencies {

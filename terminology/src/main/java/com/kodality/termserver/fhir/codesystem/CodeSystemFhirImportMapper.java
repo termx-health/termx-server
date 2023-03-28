@@ -172,7 +172,7 @@ public class CodeSystemFhirImportMapper {
       definition.setDesignationKind("text");
       definition.setStatus("active");
       if (designations.stream().noneMatch(d -> isSameDesignation(d, definition))) {
-        designations.add(display);
+        designations.add(definition);
       }
     }
     return designations;

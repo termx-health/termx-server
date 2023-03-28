@@ -52,8 +52,7 @@ public class UcumValueSetExpandProvider extends ValueSetExternalExpandProvider {
       ValueSetVersionConcept concept = new ValueSetVersionConcept();
       concept.setConcept(ucumMapper.toConcept(unit));
       concept.setActive(true);
-      concept.setAdditionalDesignations(
-          concept.getConcept().getVersions().stream().findFirst().map(CodeSystemEntityVersion::getDesignations).orElse(new ArrayList<>()));
+      concept.setAdditionalDesignations(concept.getConcept().getVersions().stream().findFirst().map(CodeSystemEntityVersion::getDesignations).orElse(new ArrayList<>()));
       return concept;
     }).collect(Collectors.toList());
   }
@@ -61,8 +60,10 @@ public class UcumValueSetExpandProvider extends ValueSetExternalExpandProvider {
   private void decorate(ValueSetVersionConcept c) {
     MeasurementUnit unit = measurementUnitService.load(c.getConcept().getCode());
     Concept concept = ucumMapper.toConcept(unit);
-    c.setAdditionalDesignations(c.getAdditionalDesignations() == null ? new ArrayList<>() : c.getAdditionalDesignations());
-    c.getAdditionalDesignations().addAll(concept.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getDesignations).orElse(new ArrayList<>()));
+    if (CollectionUtils.isEmpty(c.getAdditionalDesignations())) {
+      c.setAdditionalDesignations(new ArrayList<>());
+      c.getAdditionalDesignations().addAll(concept.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getDesignations).orElse(new ArrayList<>()));
+    }
     c.setActive(true);
   }
 
