@@ -45,7 +45,7 @@ public class OAuthSessionProvider extends SessionProvider {
 
   @Override
   public int getOrder() {
-    return 50;
+    return 30;
   }
 
   @Override
