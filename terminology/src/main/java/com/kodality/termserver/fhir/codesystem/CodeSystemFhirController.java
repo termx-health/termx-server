@@ -7,6 +7,7 @@ import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.termserver.job.logger.ImportLogger;
+import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.other.OperationOutcome;
 import com.kodality.zmei.fhir.resource.other.Parameters;
@@ -67,20 +68,28 @@ public class CodeSystemFhirController {
 
   @Get("/$lookup{?params*}")
   public HttpResponse<?> lookup(Map<String, List<String>> params) {
-    Parameters parameters = service.lookup(params);
-    if (CollectionUtils.isEmpty(parameters.getParameter())) {
-      return HttpResponse.badRequest(service.error(params));
-    }
-    return HttpResponse.ok(parameters);
+    Parameters resp = service.lookup(params);
+    return HttpResponse.ok(FhirMapper.toJson(resp));
   }
 
   @Get("/$validate-code{?params*}")
   public HttpResponse<?> validateCode(Map<String, List<String>> params) {
-    Parameters parameters = service.validateCode(params);
-    if (CollectionUtils.isEmpty(parameters.getParameter())) {
-      return HttpResponse.badRequest(service.error(params));
-    }
-    return HttpResponse.ok(parameters);
+    Parameters resp = service.validateCode(getFirst(params, "code"), getFirst(params, "url"), getFirst(params, "version"), getFirst(params, "display"));
+    return HttpResponse.ok(FhirMapper.toJson(resp));
+  }
+
+  public String getFirst(Map<String, List<String>> params, String key) {
+    return params.containsKey(key) ? params.get(key).stream().findFirst().orElse(null) : null;
+  }
+
+  @Post("/$validate-code")
+  public HttpResponse<?> validateCode(Parameters parameters) {
+    String url = parameters.findParameter("url").map(ParametersParameter::getValueString).orElse(null);
+    String version = parameters.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
+    String code = parameters.findParameter("code").map(ParametersParameter::getValueString).orElse(null);
+    String display = parameters.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
+    Parameters resp = service.validateCode(code, url, version, display);
+    return HttpResponse.ok(FhirMapper.toJson(resp));
   }
 
   @Get("/$subsumes{?params*}")

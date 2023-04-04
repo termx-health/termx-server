@@ -1,5 +1,7 @@
 package com.kodality.termserver.fhir.codesystem;
 
+import com.kodality.commons.exception.ApiClientException;
+import com.kodality.commons.exception.NotFoundException;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
 import com.kodality.termserver.terminology.codesystem.CodeSystemVersionService;
@@ -10,6 +12,7 @@ import com.kodality.termserver.ts.codesystem.CodeSystem;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
+import com.kodality.termserver.ts.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
@@ -49,7 +52,7 @@ public class CodeSystemFhirService {
   public Parameters lookup(Map<String, List<String>> params) {
     FhirQueryParams fhirParams = new FhirQueryParams(params);
     if (fhirParams.getFirst("code").isEmpty() || fhirParams.getFirst("system").isEmpty()) {
-      return new Parameters();
+      throw new ApiClientException("code and system parameters required");
     }
 
     CodeSystemQueryParams csParams = new CodeSystemQueryParams()
@@ -60,22 +63,73 @@ public class CodeSystemFhirService {
         .setVersionReleaseDateGe(fhirParams.getFirst("date").map(d -> LocalDateTime.parse(d).toLocalDate()).orElse(null))
         .setVersionExpirationDateLe(fhirParams.getFirst("date").map(d -> LocalDateTime.parse(d).toLocalDate()).orElse(null))
         .setVersionsDecorated(true).setConceptsDecorated(true).setPropertiesDecorated(true);
-    Optional<CodeSystem> codeSystem = codeSystemService.query(csParams).findFirst();
-    return mapper.toFhirParameters(codeSystem.orElse(null), fhirParams);
-  }
-
-  public Parameters validateCode(Map<String, List<String>> params) {
-    FhirQueryParams fhirParams = new FhirQueryParams(params);
-    if (fhirParams.getFirst("code").isEmpty() || fhirParams.getFirst("url").isEmpty()) {
-      return new Parameters();
+    csParams.setLimit(1);
+    CodeSystem cs = codeSystemService.query(csParams).findFirst().orElse(null);
+    if (cs == null) {
+      throw new NotFoundException("CodeSystem not found");
     }
 
-    ConceptQueryParams cParams = new ConceptQueryParams()
-        .setCode(fhirParams.getFirst("code").orElse(null))
-        .setCodeSystemVersion(fhirParams.getFirst("version").orElse(null))
-        .setCodeSystemUri(fhirParams.getFirst("url").orElse(null));
-    Optional<Concept> concept = conceptService.query(cParams).findFirst();
-    return mapper.toFhirParameters(concept.orElse(null), fhirParams);
+    Parameters parameters = new Parameters();
+    parameters.setParameter(new ArrayList<>());
+    parameters.addParameter(new ParametersParameter().setName("name").setValueString(cs.getId()));
+    parameters.addParameter(new ParametersParameter().setName("version").setValueString(CodeSystemFhirMapper.extractVersion(cs)));
+    parameters.addParameter(new ParametersParameter().setName("display").setValueString(CodeSystemFhirMapper.extractDisplay(cs)));
+    parameters.getParameter().addAll(CodeSystemFhirMapper.extractDesignations(cs));
+    parameters.getParameter().addAll(CodeSystemFhirMapper.extractProperties(cs, fhirParams.get("property")));
+    return parameters;
+  }
+
+  public Parameters validateCode(String code, String url, String version, String display) {
+    if (code == null) {
+      throw new ApiClientException("'code' parameter required");
+    }
+    ConceptQueryParams cp = new ConceptQueryParams();
+    cp.setCode(code);
+
+    if (url != null) {
+      CodeSystemQueryParams csp = new CodeSystemQueryParams();
+      csp.setUri(url);
+      csp.setLimit(1);
+      CodeSystem cs = codeSystemService.query(csp).findFirst().orElse(null);
+      if (cs == null) {
+        throw new NotFoundException("CodeSystem not found by url " + url);
+      }
+      cp.setCodeSystem(cs.getId());
+    }
+
+    if (version != null) {
+      CodeSystemVersionQueryParams csvp = new CodeSystemVersionQueryParams();
+      csvp.setCodeSystem(cp.getCodeSystem());
+      csvp.setVersion(version);
+      csvp.setStatus(PublicationStatus.active);
+      csvp.setLimit(1);
+      CodeSystemVersion csv = codeSystemVersionService.query(csvp).findFirst().orElse(null);
+      if (csv == null) {
+        throw new NotFoundException("CodeSystem active version not found");
+      }
+      cp.setCodeSystemVersionId(csv.getId());
+    }
+
+    Concept concept = conceptService.query(cp).findFirst().orElse(null);
+    if (concept == null) {
+      Parameters parameters = new Parameters();
+      parameters.addParameter(new ParametersParameter().setName("result").setValueBoolean(false));
+      parameters.addParameter(new ParametersParameter().setName("message").setValueString("Code '" + code + "' is invalid"));
+      return parameters;
+    }
+
+    String conceptDisplay = CodeSystemFhirMapper.extractDisplay(concept);
+    if (display != null && !display.equals(conceptDisplay)) {
+      Parameters parameters = new Parameters();
+      parameters.addParameter(new ParametersParameter().setName("result").setValueBoolean(false));
+      parameters.addParameter(new ParametersParameter().setName("display").setValueString(conceptDisplay));
+      parameters.addParameter(new ParametersParameter().setName("message").setValueString("The display '" + display + "' is incorrect"));
+      return parameters;
+    }
+
+    Parameters parameters = new Parameters();
+    parameters.addParameter(new ParametersParameter().setName("result").setValueBoolean(true));
+    return parameters;
   }
 
   public Parameters subsumes(Map<String, List<String>> params, OperationOutcome outcome) {
@@ -236,22 +290,6 @@ public class CodeSystemFhirService {
     conceptParams.setCodeSystemVersion(version);
     conceptParams.setLimit(1);
     return conceptService.query(conceptParams).findFirst();
-  }
-
-  public OperationOutcome error(Map<String, List<String>> params) {
-    FhirQueryParams fhirParams = new FhirQueryParams(params);
-    OperationOutcomeIssue issue = new OperationOutcomeIssue().setSeverity("error");
-    if (fhirParams.getFirst("code").isEmpty()) {
-      issue.setCode("required");
-      issue.setDetails(new CodeableConcept().setText("No code parameter provided in request"));
-    } else if (fhirParams.getFirst("system").isEmpty()) {
-      issue.setCode("required");
-      issue.setDetails(new CodeableConcept().setText("No system parameter provided in request"));
-    } else {
-      issue.setCode("not-found");
-      issue.setDetails(new CodeableConcept().setText("Code '" + fhirParams.getFirst("code").get() + "' not found"));
-    }
-    return new OperationOutcome(issue);
   }
 
   public com.kodality.zmei.fhir.resource.terminology.CodeSystem get(String codeSystemId, Map<String, List<String>> params) {
