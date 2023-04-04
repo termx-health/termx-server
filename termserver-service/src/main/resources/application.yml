@@ -55,6 +55,7 @@ auth:
       - '/fhir/CodeSystem'
       - '/fhir/ValueSet'
       - '/fhir/ConceptMap'
+      - '/fhir/metadata'
       - '/swagger'
       - '/github/cb'
 
