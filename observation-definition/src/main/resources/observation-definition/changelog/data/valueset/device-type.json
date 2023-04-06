@@ -1,0 +1,178 @@
+{
+  "resourceType" : "ValueSet",
+  "id" : "device-type",
+  "meta" : {
+    "lastUpdated" : "2023-03-23T07:50:32.585+00:00",
+    "profile" : ["http://hl7.org/fhir/StructureDefinition/shareablevalueset"]
+  },
+  "text" : {
+    "status" : "generated",
+    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>This value set includes codes based on the following rules:</p><ul><li>Include these codes as defined in <a href=\"http://terminology.hl7.org/5.1.0/CodeSystem-v3-mdc.html\"><code>urn:iso:std:iso:11073:10101</code></a><table class=\"none\"><tr><td style=\"white-space:nowrap\"><b>Code</b></td><td><b>Display</b></td></tr><tr><td>528391</td><td>Blood Pressure Cuff</td></tr><tr><td>528404</td><td>Body Composition Analyzer</td></tr><tr><td>528425</td><td>Cardiovascular Device</td></tr><tr><td>528402</td><td>Coagulation meter</td></tr><tr><td>528409</td><td>Continuous Glucose Monitor</td></tr><tr><td>528390</td><td>Electro cardiograph</td></tr><tr><td>528457</td><td>Generic 20601 Device</td></tr><tr><td>528401</td><td>Glucose Monitor</td></tr><tr><td>528455</td><td>Independent Activity/Living Hub</td></tr><tr><td>528403</td><td>Insulin Pump</td></tr><tr><td>528405</td><td>Peak Flow meter</td></tr><tr><td>528388</td><td>Pulse Oximeter</td></tr><tr><td>528397</td><td>Respiration rate</td></tr><tr><td>528408</td><td>Sleep Apnea Breathing Equipment</td></tr><tr><td>528426</td><td>Strength Equipment</td></tr><tr><td>528392</td><td>Thermometer</td></tr><tr><td>528399</td><td>Weight Scale</td></tr></table></li><li>Include these codes as defined in <code>urn:oid:2.16.840.1.113883.6.276</code><table class=\"none\"><tr><td style=\"white-space:nowrap\"><b>Code</b></td><td><b>Display</b></td></tr><tr><td>38017</td><td>Dry salt inhalation therapy device</td></tr><tr><td>38663</td><td>Flexible video nephroscope</td></tr><tr><td>42347</td><td>Dental implant, endosseous, partially-embedded</td></tr><tr><td>46352</td><td>Bare-metal intracranial vascular stent</td></tr><tr><td>47264</td><td>Dual-chamber implantable pacemaker, demand</td></tr><tr><td>62163</td><td>Intrauterine cannula, reusable</td></tr><tr><td>62260</td><td>Air-conduction hearing aid acoustic tube</td></tr><tr><td>62423</td><td>Spinal cord/peripheral nerve implantable analgesic electrical stimulation system lead, wired connection</td></tr><tr><td>62414</td><td>Blue-light phototherapy lamp, home-use</td></tr><tr><td>64587</td><td>Uncoated knee femur prosthesis, ceramic</td></tr><tr><td>64992</td><td>ADAMTS13 activity IVD, kit, chemiluminescent immunoassay</td></tr></table></li><li>Include codes from <a href=\"http://www.snomed.org/\"><code>http://snomed.info/sct</code></a> where concept  is-a  49062001 (Device)</li></ul></div>"
+  },
+  "extension" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+    "valueCode" : "oo"
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+    "valueCode" : "draft"
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+    "valueInteger" : 1
+  }],
+  "url" : "http://hl7.org/fhir/ValueSet/device-type",
+  "identifier" : [{
+    "system" : "urn:ietf:rfc:3986",
+    "value" : "urn:oid:2.16.840.1.113883.4.642.3.1376"
+  }],
+  "version" : "5.0.0-cibuild",
+  "name" : "DeviceType",
+  "title" : "Device Type",
+  "status" : "draft",
+  "experimental" : true,
+  "publisher" : "HL7 Orders and Observations Workgroup",
+  "contact" : [{
+    "telecom" : [{
+      "system" : "url",
+      "value" : "http://hl7.org/fhir"
+    }]
+  }],
+  "description" : "Codes used to identify medical devices. Includes concepts from SNOMED CT (http://www.snomed.org/) where concept is-a 49062001 (Device)  and is provided as a suggestive example.",
+  "jurisdiction" : [{
+    "coding" : [{
+      "system" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
+      "code" : "001",
+      "display" : "World"
+    }]
+  }],
+  "copyright" : "This resource includes content from SNOMED Clinical Terms® (SNOMED CT®) which is copyright of the International Health Terminology Standards Development Organisation (IHTSDO). Implementers of these specifications must have the appropriate SNOMED CT Affiliate license - for more information contact http://www.snomed.org/snomed-ct/get-snomed-ct or info@snomed.org",
+  "compose" : {
+    "include" : [{
+      "system" : "v3-mdc",
+      "concept" : [{
+        "code" : "528391",
+        "display" : "Blood Pressure Cuff"
+      },
+      {
+        "code" : "528404",
+        "display" : "Body Composition Analyzer"
+      },
+      {
+        "code" : "528425",
+        "display" : "Cardiovascular Device"
+      },
+      {
+        "code" : "528402",
+        "display" : "Coagulation meter"
+      },
+      {
+        "code" : "528409",
+        "display" : "Continuous Glucose Monitor"
+      },
+      {
+        "code" : "528390",
+        "display" : "Electro cardiograph"
+      },
+      {
+        "code" : "528457",
+        "display" : "Generic 20601 Device"
+      },
+      {
+        "code" : "528401",
+        "display" : "Glucose Monitor"
+      },
+      {
+        "code" : "528455",
+        "display" : "Independent Activity/Living Hub"
+      },
+      {
+        "code" : "528403",
+        "display" : "Insulin Pump"
+      },
+      {
+        "code" : "528405",
+        "display" : "Peak Flow meter"
+      },
+      {
+        "code" : "528388",
+        "display" : "Pulse Oximeter"
+      },
+      {
+        "code" : "528397",
+        "display" : "Respiration rate"
+      },
+      {
+        "code" : "528408",
+        "display" : "Sleep Apnea Breathing Equipment"
+      },
+      {
+        "code" : "528426",
+        "display" : "Strength Equipment"
+      },
+      {
+        "code" : "528392",
+        "display" : "Thermometer"
+      },
+      {
+        "code" : "528399",
+        "display" : "Weight Scale"
+      }]
+    },
+    {
+      "system" : "GMDN",
+      "concept" : [{
+        "code" : "38017",
+        "display" : "Dry salt inhalation therapy device"
+      },
+      {
+        "code" : "38663",
+        "display" : "Flexible video nephroscope"
+      },
+      {
+        "code" : "42347",
+        "display" : "Dental implant, endosseous, partially-embedded"
+      },
+      {
+        "code" : "46352",
+        "display" : "Bare-metal intracranial vascular stent"
+      },
+      {
+        "code" : "47264",
+        "display" : "Dual-chamber implantable pacemaker, demand"
+      },
+      {
+        "code" : "62163",
+        "display" : "Intrauterine cannula, reusable"
+      },
+      {
+        "code" : "62260",
+        "display" : "Air-conduction hearing aid acoustic tube"
+      },
+      {
+        "code" : "62423",
+        "display" : "Spinal cord/peripheral nerve implantable analgesic electrical stimulation system lead, wired connection"
+      },
+      {
+        "code" : "62414",
+        "display" : "Blue-light phototherapy lamp, home-use"
+      },
+      {
+        "code" : "64587",
+        "display" : "Uncoated knee femur prosthesis, ceramic"
+      },
+      {
+        "code" : "64992",
+        "display" : "ADAMTS13 activity IVD, kit, chemiluminescent immunoassay"
+      }]
+    },
+    {
+      "system" : "http://snomed.info/sct",
+      "filter" : [{
+        "property" : "concept",
+        "op" : "is-a",
+        "value" : "49062001"
+      }]
+    }]
+  }
+}

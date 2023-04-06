@@ -1,8 +1,8 @@
 package com.kodality.termserver.terminology.namingsystem;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.UserPermissionService;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.namingsystem.NamingSystem;
 import com.kodality.termserver.ts.namingsystem.NamingSystemQueryParams;

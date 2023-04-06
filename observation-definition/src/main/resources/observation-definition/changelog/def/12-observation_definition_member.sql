@@ -6,7 +6,7 @@ create table def.observation_definition_member (
   id                        bigint default nextval('core.s_entity') primary key,
   observation_definition_id bigint not null,
   item_id                   bigint not null,
-  order                     smallint,
+  order_number              smallint,
   cardinality               jsonb,
   sys_status                char(1) default 'A' not null,
   sys_version               integer not null,

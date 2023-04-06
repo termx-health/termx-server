@@ -1,8 +1,8 @@
 package com.kodality.termserver.terminology.project.server;
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.SessionStore;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.ts.project.projectpackage.PackageResourceType;
 import com.kodality.termserver.ts.project.server.TerminologyServer;
 import com.kodality.termserver.ts.project.server.TerminologyServerResourceRequest;

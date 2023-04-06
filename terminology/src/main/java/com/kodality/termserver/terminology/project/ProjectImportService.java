@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.termserver.ApiError;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.ts.Language;
 import com.kodality.termserver.ts.codesystem.CodeSystem;
 import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;

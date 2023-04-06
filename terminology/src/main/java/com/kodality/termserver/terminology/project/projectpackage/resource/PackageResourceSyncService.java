@@ -1,7 +1,7 @@
 package com.kodality.termserver.terminology.project.projectpackage.resource;
 
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.SessionStore;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService;
 import com.kodality.termserver.fhir.conceptmap.ConceptMapFhirImportService;
 import com.kodality.termserver.fhir.valueset.ValueSetFhirImportService;

@@ -1,6 +1,6 @@
 package com.kodality.termserver.terminology.association;
 
-import com.kodality.termserver.ApiError;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termserver.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.ts.codesystem.CodeSystemAssociationQueryParams;

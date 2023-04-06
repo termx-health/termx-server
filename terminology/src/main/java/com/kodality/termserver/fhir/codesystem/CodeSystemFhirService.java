@@ -2,7 +2,7 @@ package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.NotFoundException;
-import com.kodality.termserver.ApiError;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
 import com.kodality.termserver.terminology.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;

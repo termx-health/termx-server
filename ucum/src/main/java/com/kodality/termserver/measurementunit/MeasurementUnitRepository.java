@@ -49,7 +49,9 @@ public class MeasurementUnitRepository extends BaseRepository {
 
   private SqlBuilder filter(MeasurementUnitQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and mu.code = ?", params.getCode());
+    if (StringUtils.isNotEmpty(params.getCode())) {
+      sb.and().in("mu.code", params.getCode());
+    }
     if (StringUtils.isNotEmpty(params.getKind())) {
       sb.and().in("mu.kind", params.getKind());
     }

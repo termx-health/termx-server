@@ -1,5 +1,6 @@
 package com.kodality.termserver.observationdefintion;
 
+import com.kodality.commons.model.CodeName;
 import com.kodality.commons.model.LocalizedName;
 import java.util.List;
 import lombok.Getter;
@@ -9,7 +10,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class ObservationDefinition {
+public class ObservationDefinition extends CodeName {
   private Long id;
   private String code;
   private String version;
@@ -19,9 +20,17 @@ public class ObservationDefinition {
   private LocalizedName names;
   private LocalizedName alias;
   private LocalizedName definition;
-  private List<ObservationDefinitionKeyWord> keywords;
+  private LocalizedName keywords;
   private String category;
   private String timePrecision;
+  private List<String> structure;
+  private ObservationDefinitionValue value;
+  private List<ObservationDefinitionMember> members;
+  private List<ObservationDefinitionComponent> components;
+  private ObservationDefinitionProtocol protocol;
+  private List<ObservationDefinitionComponent> state;
+  private List<ObservationDefinitionInterpretation> interpretations;
+  private List<ObservationDefinitionMapping> mappings;
 
   @Getter
   @Setter

@@ -2,7 +2,7 @@ package com.kodality.termserver.thesaurus.pagecontent;
 
 import com.github.slugify.Slugify;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.ApiError;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.thesaurus.page.PageRepository;
 import com.kodality.termserver.thesaurus.pagerelation.PageRelationService;
 import com.kodality.termserver.thesaurus.template.TemplateContentService;

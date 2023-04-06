@@ -1,7 +1,7 @@
 package com.kodality.termserver.fhir.valueset;
 
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.BinaryHttpClient;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
 import com.kodality.termserver.terminology.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;
@@ -40,7 +40,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

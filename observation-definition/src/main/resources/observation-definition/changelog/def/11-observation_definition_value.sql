@@ -5,9 +5,11 @@ drop table if exists def.observation_definition_value;
 create table def.observation_definition_value (
   id                        bigint default nextval('core.s_entity') primary key,
   observation_definition_id bigint not null,
-  type                      text not null,
   behaviour                 text not null,
   expression                text,
+  type                      text not null,
+  unit                      jsonb,
+  value_set                 text,
   multiple_results_allowed  boolean not null default false,
   sys_status                char(1) default 'A' not null,
   sys_version               integer not null,

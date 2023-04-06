@@ -1,7 +1,7 @@
 package com.kodality.termserver.fileimporter.codesystem;
 
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.BinaryHttpClient;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService;
 import com.kodality.termserver.fileimporter.codesystem.utils.FileAnalysisRequest;
 import com.kodality.termserver.fileimporter.codesystem.utils.FileAnalysisResponse;

@@ -1,8 +1,8 @@
 package com.kodality.termserver.terminology.codesystem.entity;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.UserPermissionService;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptRefreshViewJob;
 import com.kodality.termserver.terminology.codesystem.designation.DesignationService;

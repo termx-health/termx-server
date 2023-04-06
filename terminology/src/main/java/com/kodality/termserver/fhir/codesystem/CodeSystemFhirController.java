@@ -2,9 +2,9 @@ package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.NotFoundException;
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.termserver.job.logger.ImportLogger;
 import com.kodality.zmei.fhir.FhirMapper;

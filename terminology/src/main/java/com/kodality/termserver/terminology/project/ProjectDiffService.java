@@ -1,6 +1,6 @@
 package com.kodality.termserver.terminology.project;
 
-import com.kodality.termserver.ApiError;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.ts.project.diff.ProjectDiff;
 import com.kodality.termserver.ts.project.diff.ProjectDiff.ProjectDiffItem;
 import com.kodality.termserver.ts.project.diff.ProjectDiffRequest;

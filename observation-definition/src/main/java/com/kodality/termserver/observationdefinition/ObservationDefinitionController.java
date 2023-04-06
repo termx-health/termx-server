@@ -5,6 +5,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.observationdefintion.ObservationDefinition;
+import com.kodality.termserver.observationdefintion.ObservationDefinitionSearchParams;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;

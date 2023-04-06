@@ -1,7 +1,7 @@
 package com.kodality.termserver.terminology.codesystem;
 
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.UserPermissionService;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.terminology.association.AssociationTypeService;
 import com.kodality.termserver.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;

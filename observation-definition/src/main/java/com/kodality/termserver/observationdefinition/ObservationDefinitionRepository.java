@@ -6,6 +6,8 @@ import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.observationdefintion.ObservationDefinition;
+import com.kodality.termserver.observationdefintion.ObservationDefinitionSearchParams;
+import io.micronaut.core.util.StringUtils;
 import java.util.Map;
 import javax.inject.Singleton;
 
@@ -16,7 +18,8 @@ public class ObservationDefinitionRepository extends BaseRepository {
     p.addColumnProcessor("alias", PgBeanProcessor.fromJson());
     p.addColumnProcessor("definition", PgBeanProcessor.fromJson());
     p.addColumnProcessor("keywords", PgBeanProcessor.fromJson());
-    });
+    p.addColumnProcessor("structure", PgBeanProcessor.fromJson());
+  });
 
   private final Map<String, String> orderMapping = Map.of("code", "od.code");
 
@@ -34,6 +37,7 @@ public class ObservationDefinitionRepository extends BaseRepository {
     ssb.jsonProperty("keywords", def.getKeywords());
     ssb.property("category", def.getCategory());
     ssb.property("time_precision", def.getTimePrecision());
+    ssb.jsonProperty("structure", def.getStructure());
     SqlBuilder sb = ssb.buildSave("def.observation_definition", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     def.setId(id);
@@ -50,12 +54,13 @@ public class ObservationDefinitionRepository extends BaseRepository {
   }
 
   public QueryResult<ObservationDefinition> search(ObservationDefinitionSearchParams params) {
+    String join = "left join def.observation_definition_value odv on odv.observation_definition_id = od.id and odv.sys_status = 'A'";
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from def.observation_definition od");
+      SqlBuilder sb = new SqlBuilder("select count(1) from def.observation_definition od " + join);
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from def.observation_definition od");
+      SqlBuilder sb = new SqlBuilder("select od.* from def.observation_definition od " +  join);
       sb.append(filter(params));
       sb.append(order(params, orderMapping));
       sb.append(limit(params));
@@ -66,6 +71,23 @@ public class ObservationDefinitionRepository extends BaseRepository {
   private SqlBuilder filter(ObservationDefinitionSearchParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.append("where od.sys_status = 'A'");
+    if (StringUtils.isNotEmpty(params.getCodes())) {
+      sb.and().in("od.code", params.getCodes());
+    }
+    if (StringUtils.isNotEmpty(params.getIdsNe())) {
+      sb.and().notIn("od.id", params.getIdsNe(), Long::valueOf);
+    }
+    if (StringUtils.isNotEmpty(params.getTypes())) {
+      sb.and().in("odv.type", params.getTypes());
+    }
+    if (StringUtils.isNotEmpty(params.getTextContains())) {
+      sb.append("and (od.code ~* ?" +
+              "or exists (select 1 from jsonb_each_text(od.names) where value ~* ?)" +
+              "or exists (select 1 from jsonb_each_text(od.alias) where value ~* ?)" +
+              "or exists (select 1 from jsonb_each_text(od.definition) where value ~* ?)" +
+              "or exists (select 1 from jsonb_each_text(od.keywords) where value ~* ?)" +
+              ")", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
+    }
     return sb;
   }
 

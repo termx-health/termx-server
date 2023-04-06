@@ -1,7 +1,7 @@
 package com.kodality.termserver.terminology.mapset;
 
 
-import com.kodality.termserver.ApiError;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termserver.terminology.mapset.entity.MapSetEntityVersionService;
 import com.kodality.termserver.ts.PublicationStatus;

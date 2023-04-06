@@ -20,5 +20,7 @@ public class SnomedConceptSearchParams extends QueryParams {
   private Boolean active;
   private Boolean conceptActive;
 
+  private String searchAfter;
+
   private boolean all;
 }

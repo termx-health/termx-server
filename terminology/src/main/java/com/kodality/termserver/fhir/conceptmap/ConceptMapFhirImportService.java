@@ -1,7 +1,7 @@
 package com.kodality.termserver.fhir.conceptmap;
 
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.BinaryHttpClient;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.terminology.mapset.MapSetImportService;
 import com.kodality.termserver.terminology.valueset.ValueSetService;

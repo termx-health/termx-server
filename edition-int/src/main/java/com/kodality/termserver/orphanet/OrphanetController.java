@@ -1,9 +1,9 @@
 package com.kodality.termserver.orphanet;
 
 import com.kodality.commons.exception.ApiClientException;
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.termserver.job.logger.ImportLogger;

@@ -1,6 +1,6 @@
 package com.kodality.termserver.fhir.valueset;
 
-import com.kodality.termserver.ApiError;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.terminology.valueset.ValueSetService;
 import com.kodality.termserver.terminology.valueset.ValueSetVersionService;
 import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;

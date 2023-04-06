@@ -1,8 +1,8 @@
 package com.kodality.termserver.terminology.codesystem.entityproperty;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.UserPermissionService;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.terminology.codesystem.designation.DesignationService;
 import com.kodality.termserver.terminology.codesystem.entitypropertyvalue.EntityPropertyValueService;
 import com.kodality.termserver.ts.codesystem.DesignationQueryParams;

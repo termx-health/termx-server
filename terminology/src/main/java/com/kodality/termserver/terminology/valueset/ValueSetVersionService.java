@@ -1,8 +1,8 @@
 package com.kodality.termserver.terminology.valueset;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.UserPermissionService;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleSetService;
 import com.kodality.termserver.ts.PublicationStatus;

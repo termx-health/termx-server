@@ -2,9 +2,9 @@ package com.kodality.termserver.fileimporter.codesystem;
 
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.fileimporter.codesystem.utils.FileAnalysisRequest;
 import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest;
 import com.kodality.termserver.job.JobLogResponse;

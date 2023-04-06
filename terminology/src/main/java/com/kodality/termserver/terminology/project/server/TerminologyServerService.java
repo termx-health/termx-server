@@ -1,8 +1,8 @@
 package com.kodality.termserver.terminology.project.server;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.UserPermissionService;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.ts.project.server.TerminologyServer;
 import com.kodality.termserver.ts.project.server.TerminologyServerQueryParams;
 import javax.inject.Singleton;
