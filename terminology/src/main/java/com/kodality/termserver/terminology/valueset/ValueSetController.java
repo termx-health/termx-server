@@ -11,6 +11,7 @@ import com.kodality.termserver.fhir.valueset.ValueSetFhirClientService;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;
 import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleService;
+import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleSetService;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSet;
@@ -19,6 +20,7 @@ import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.ts.valueset.ValueSetVersionQueryParams;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -39,6 +41,7 @@ public class ValueSetController {
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
+  private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
 
   private final UserPermissionService userPermissionService;
@@ -182,6 +185,12 @@ public class ValueSetController {
   }
 
   //----------------ValueSet Version Rule----------------
+  @Authorized("*.ValueSet.view")
+  @Get(uri = "/{valueSet}/rule-set")
+  public ValueSetVersionRuleSet getRuleSet(@PathVariable @ResourceId String valueSet) {
+    return valueSetVersionRuleSetService.load(valueSet).orElseThrow(() -> new NotFoundException("ValueSet version rule not found"));
+  }
+
 
   @Authorized("*.ValueSet.view")
   @Get(uri = "/{valueSet}/rules/{id}")
