@@ -60,6 +60,10 @@ public class SnomedController {
   @Authorized("*.Snomed.view")
   @Get("/concept-descriptions{?params*}")
   public SnomedDescriptionItemResponse findConceptDescriptions(SnomedDescriptionItemSearchParams params) {
+    params.setActive(true);
+    params.setConceptActive(true);
+    params.setGroupByConcept(true);
+
     SnomedDescriptionItemResponse response = snowstormClient.findConceptDescriptions(params).join();
 
     AsyncHelper futures = new AsyncHelper();

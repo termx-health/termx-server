@@ -27,3 +27,8 @@ create index observation_definition_mapping_observation_definition_idx on def.ob
 select core.create_table_metadata('def.observation_definition_mapping');
 select audit.add_log('def.observation_definition_mapping');
 --
+
+
+--changeset kodality:observation_definition_mapping-target_id-drop_not_null
+alter table def.observation_definition_mapping alter column target_id drop not null;
+--
