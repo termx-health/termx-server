@@ -36,7 +36,7 @@ public class ConceptMapFhirController {
   private static final String JOB_TYPE = "FHIR-MS";
 
   @Get("/{mapSetId}{?params*}")
-  public HttpResponse<?> getCodeSystem(String mapSetId, Map<String, List<String>> params) {
+  public HttpResponse<?> getConcepMap(String mapSetId, Map<String, List<String>> params) {
     ConceptMap conceptMap = service.get(mapSetId, params);
     if (conceptMap == null) {
       throw new NotFoundException("ConceptMap not found");

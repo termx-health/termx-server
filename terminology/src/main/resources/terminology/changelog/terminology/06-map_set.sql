@@ -115,3 +115,9 @@ create index entity_version_ms_version_membership_ms_version_idx on terminology.
 
 select core.create_table_metadata('terminology.entity_version_map_set_version_membership');
 --rollback drop table if exists terminology.entity_version_map_set_version_membership;
+
+
+--changeset kodality:map_set-source_code_system|target_code_system
+alter table terminology.map_set add column source_code_systems jsonb;
+alter table terminology.map_set add column target_code_systems jsonb;
+--

@@ -54,14 +54,15 @@ public class MapSetVersionService {
     return versions;
   }
 
-  private void decorate(MapSetVersion mapSetVersion) {
+  private MapSetVersion decorate(MapSetVersion mapSetVersion) {
     MapSetAssociationQueryParams params = new MapSetAssociationQueryParams().setMapSet(mapSetVersion.getMapSet()).setMapSetVersion(mapSetVersion.getVersion());
     params.all();
     mapSetVersion.setAssociations(associationService.query(params).getData());
+    return mapSetVersion;
   }
 
   public Optional<MapSetVersion> load(String mapSet, String versionCode) {
-    return Optional.ofNullable(repository.load(mapSet, versionCode));
+    return Optional.ofNullable(repository.load(mapSet, versionCode)).map(this::decorate);
   }
 
   @Transactional
@@ -134,7 +135,7 @@ public class MapSetVersionService {
   }
 
   public MapSetVersion loadLastVersion(String mapSet) {
-    return repository.loadLastVersion(mapSet);
+    return decorate(repository.loadLastVersion(mapSet));
   }
 
   @Transactional

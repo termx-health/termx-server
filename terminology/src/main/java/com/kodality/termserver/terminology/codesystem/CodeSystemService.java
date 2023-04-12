@@ -68,7 +68,6 @@ public class CodeSystemService {
   }
 
   public Optional<CodeSystem> load(String codeSystem, boolean decorate) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "view");
     return Optional.ofNullable(repository.load(codeSystem)).map(cs -> decorate ? decorate(cs) : cs);
   }
 

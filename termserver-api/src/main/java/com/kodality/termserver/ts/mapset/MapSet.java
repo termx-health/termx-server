@@ -21,6 +21,8 @@ public class MapSet {
   private String description;
   private String sourceValueSet;
   private String targetValueSet;
+  private List<String> sourceCodeSystems;
+  private List<String> targetCodeSystems;
 
   private List<MapSetVersion> versions;
   private List<MapSetAssociation> associations;

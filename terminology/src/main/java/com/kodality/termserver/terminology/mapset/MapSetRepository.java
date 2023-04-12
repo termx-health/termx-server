@@ -20,6 +20,8 @@ import javax.inject.Singleton;
 public class MapSetRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(MapSet.class, bp -> {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("source_code_systems", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("target_code_systems", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
   });
 
@@ -33,6 +35,8 @@ public class MapSetRepository extends BaseRepository {
     ssb.property("description", mapSet.getDescription());
     ssb.property("source_value_set", mapSet.getSourceValueSet());
     ssb.property("target_value_set", mapSet.getTargetValueSet());
+    ssb.jsonProperty("source_code_systems", mapSet.getSourceCodeSystems());
+    ssb.jsonProperty("target_code_systems", mapSet.getTargetCodeSystems());
     ssb.property("sys_status", "A");
 
     SqlBuilder sb = ssb.buildUpsert("terminology.map_set", "id");

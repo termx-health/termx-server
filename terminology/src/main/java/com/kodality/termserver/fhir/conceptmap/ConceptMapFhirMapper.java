@@ -1,6 +1,7 @@
 package com.kodality.termserver.fhir.conceptmap;
 
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
+import com.kodality.termserver.terminology.valueset.ValueSetService;
 import com.kodality.termserver.ts.Language;
 import com.kodality.termserver.ts.codesystem.CodeSystem;
 import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
@@ -21,6 +22,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ConceptMapFhirMapper {
   private final CodeSystemService codeSystemService;
+  private final ValueSetService valueSetService;
 
   public com.kodality.zmei.fhir.resource.terminology.ConceptMap toFhir(MapSet mapSet, MapSetVersion version) {
     com.kodality.zmei.fhir.resource.terminology.ConceptMap fhirConceptMap = new com.kodality.zmei.fhir.resource.terminology.ConceptMap();
@@ -46,8 +50,8 @@ public class ConceptMapFhirMapper {
     fhirConceptMap.setStatus(version.getStatus());
     fhirConceptMap.setPublisher(version.getSource());
     fhirConceptMap.setGroup(toFhirGroup(version.getAssociations()));
-    fhirConceptMap.setSourceCanonical(mapSet.getSourceValueSet());
-    fhirConceptMap.setTargetCanonical(mapSet.getTargetValueSet());
+    fhirConceptMap.setSourceUri(Optional.ofNullable(mapSet.getSourceValueSet()).map(vs -> valueSetService.load(vs).get().getUri()).orElse(null));
+    fhirConceptMap.setTargetUri(Optional.ofNullable(mapSet.getTargetValueSet()).map(vs -> valueSetService.load(vs).get().getUri()).orElse(null));
 
     return fhirConceptMap;
   }
@@ -56,15 +60,17 @@ public class ConceptMapFhirMapper {
     if (associations == null) {
       return new ArrayList<>();
     }
-    return associations.stream().map(association -> {
+    Map<String, List<MapSetAssociation>> grouped = associations.stream().collect(Collectors.groupingBy(a -> a.getSource().getCodeSystem() + a.getTarget().getCodeSystem()));
+    return grouped.values().stream().map(elements -> {
       ConceptMapGroup group = new ConceptMapGroup();
-      group.setSource(association.getSource().getCodeSystem());
-      group.setTarget(association.getTarget().getCodeSystem());
-      group.setElement(new ArrayList<>(List.of(
-          new ConceptMapGroupElement().setCode(association.getSource().getCode()).setTarget(new ArrayList<>(List.of(
-              new ConceptMapGroupElementTarget().setCode(association.getTarget().getCode()).setEquivalence(association.getAssociationType())
-          )))
-      )));
+      group.setSource(codeSystemService.load(elements.get(0).getSource().getCodeSystem()).map(CodeSystem::getUri).orElse(null));
+      group.setTarget(codeSystemService.load(elements.get(0).getTarget().getCodeSystem()).map(CodeSystem::getUri).orElse(null));
+      group.setElement(elements.stream().map(el -> new ConceptMapGroupElement()
+          .setCode(el.getSource().getCode())
+          .setTarget(List.of(new ConceptMapGroupElementTarget()
+              .setCode(el.getTarget().getCode())
+              .setEquivalence(el.getAssociationType()))))
+          .collect(Collectors.toList()));
       return group;
     }).collect(Collectors.toList());
   }
