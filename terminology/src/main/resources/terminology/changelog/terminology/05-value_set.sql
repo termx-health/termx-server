@@ -123,3 +123,8 @@ create index value_set_version_concept_value_set_version_idx on terminology.valu
 
 select core.create_table_metadata('terminology.value_set_version_concept');
 --rollback drop table if exists terminology.value_set_version_concept;
+
+
+--changeset kodality:value_set_version_concept-order_number
+alter table terminology.value_set_version_concept add column order_number smallint;
+--

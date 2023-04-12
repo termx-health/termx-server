@@ -10,7 +10,8 @@ create or replace function terminology.rule_set_expand(
         concept                 jsonb,
         concept_version_id      bigint,
         display                 jsonb,
-        additional_designations jsonb
+        additional_designations jsonb,
+        order_number            smallint
     )
     language sql
 as
@@ -52,7 +53,7 @@ with rule_set as (
         from exclude_rules er
     ),
     rule_concepts as (
-        select jsonb_build_object('id', c.id, 'code', c.code) concept, csev.id concept_version_id, (irc.c -> 'display') display, (irc.c -> 'additionalDesignations') additional_designations
+        select jsonb_build_object('id', c.id, 'code', c.code) concept, csev.id concept_version_id, (irc.c -> 'display') display, (irc.c -> 'additionalDesignations') additional_designations, (irc.c -> 'orderNumber')::smallint order_number
         from terminology.concept c
                  left join include_rule_concepts irc on (irc.c -> 'concept' ->> 'id')::bigint = c.id
                  left join terminology.code_system_entity_version csev on  csev.code_system_entity_id = c.id and csev.sys_status = 'A'
@@ -109,7 +110,7 @@ with rule_set as (
                 )
     ),
     concepts as (
-        select vsvc.id, vsvc.concept, null::bigint concept_version_id, vsvc.display, vsvc.additional_designations
+        select vsvc.id, vsvc.concept, null::bigint concept_version_id, vsvc.display, vsvc.additional_designations, vsvc.order_number
         from terminology.value_set_version_concept vsvc
         where vsvc.value_set_version_id = p_value_set_version_id and vsvc.sys_status = 'A' and
             exists (select 1 from include_rule_concepts irc where (irc.c -> 'concept' ->> 'code')::text = (vsvc.concept ->> 'code')::text)
@@ -119,9 +120,9 @@ with rule_set as (
     )
 select *
 from (select *
-      from (select * from concepts union all select null, rc.concept, rc.concept_version_id, rc.display, rc.additional_designations from rule_concepts rc) u1
+      from (select * from concepts union all select null, rc.concept, rc.concept_version_id, rc.display, rc.additional_designations, rc.order_number from rule_concepts rc) u1
       union all
       select *
-      from value_set_concepts) u2;
+      from value_set_concepts) u2 order by order_number;
 $function$
 ;

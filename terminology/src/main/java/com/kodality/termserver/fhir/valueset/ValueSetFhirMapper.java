@@ -9,6 +9,7 @@ import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleType;
+import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.ContactDetail;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
@@ -31,6 +32,7 @@ import javax.inject.Singleton;
 
 @Singleton
 public class ValueSetFhirMapper {
+  private static final String concept_order = "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder";
 
   public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
@@ -95,6 +97,9 @@ public class ValueSetFhirMapper {
             designation.setLanguage(d.getLanguage());
             return designation;
           }).collect(Collectors.toList()));
+      if (valueSetConcept.getOrderNumber() != null) {
+        concept.setExtension(List.of(new Extension().setValueInteger(valueSetConcept.getOrderNumber()).setUrl(concept_order)));
+      }
       return concept;
     }).collect(Collectors.toList());
   }

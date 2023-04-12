@@ -18,6 +18,7 @@ public class ValueSetVersionConcept {
   private Long conceptVersionId;
   private Designation display;
   private List<Designation> additionalDesignations;
+  private Integer orderNumber;
 
   private boolean active;
 }

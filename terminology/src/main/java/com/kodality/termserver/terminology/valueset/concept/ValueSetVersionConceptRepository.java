@@ -28,6 +28,7 @@ public class ValueSetVersionConceptRepository extends BaseRepository {
     ssb.jsonProperty("concept", concept.getConcept());
     ssb.jsonProperty("display", concept.getDisplay());
     ssb.jsonProperty("additional_designations", concept.getAdditionalDesignations());
+    ssb.property("order_number", concept.getOrderNumber());
     ssb.property("value_set_version_id", valueSetVersionId);
     SqlBuilder sb = ssb.buildSave("terminology.value_set_version_concept", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
