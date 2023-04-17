@@ -26,6 +26,7 @@ dependencies {
     implementation("io.micronaut:micronaut-http-server")
     implementation("io.reactivex.rxjava2:rxjava:2.2.21")
 
+    implementation("com.univocity:univocity-parsers:2.9.1")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${rootProject.jacksonVersion}")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${rootProject.jacksonVersion}")
     implementation("com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${rootProject.jacksonVersion}")

@@ -7,6 +7,7 @@ import com.kodality.termserver.terminology.codesystem.entity.CodeSystemEntitySer
 import com.kodality.termserver.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.ts.codesystem.CodeSystemAssociationQueryParams;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityType;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -60,7 +61,8 @@ public class CodeSystemAssociationService {
 
     List<Entry<Long, List<CodeSystemAssociation>>> entries = associations.entrySet().stream().toList();
     repository.retain(entries);
-    repository.save(entries.stream().flatMap(e -> e.getValue().stream().map(v -> Pair.of(e.getKey(), v))).toList());
+    codeSystemEntityService.batchSave(associations.values().stream().flatMap(Collection::stream).map(a -> a.setType(CodeSystemEntityType.association)).toList(), codeSystem);
+    repository.save(entries.stream().flatMap(e -> e.getValue().stream().map(v -> Pair.of(e.getKey(), v))).toList(), codeSystem);
   }
 
 

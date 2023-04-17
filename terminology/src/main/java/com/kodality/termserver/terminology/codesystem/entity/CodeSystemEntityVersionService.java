@@ -141,15 +141,8 @@ public class CodeSystemEntityVersionService {
   }
 
   @Transactional
-  public void activate(List<Long> versionIds) {
-    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
-    params.setIds(versionIds.stream().map(String::valueOf).collect(Collectors.joining(",")));
-    params.setLimit(versionIds.size());
-    List<CodeSystemEntityVersion> currentVersions = repository.query(params).getData();
-    if (currentVersions.size() != versionIds.size()) {
-      throw ApiError.TE109.toApiException();
-    }
-    currentVersions.forEach(currentVersion -> userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "publish"));
+  public void activate(List<Long> versionIds, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
     repository.activate(versionIds);
     conceptRefreshViewJob.refreshView();
   }

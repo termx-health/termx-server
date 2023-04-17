@@ -10,6 +10,7 @@ import jakarta.inject.Singleton;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 @Singleton
@@ -41,7 +42,7 @@ public class CodeSystemEntityRepository extends BaseRepository {
       @Override
       public void setValues(PreparedStatement ps, int i) throws SQLException {
         ps.setString(1, newEntities.get(i).getType());
-        ps.setString(2, newEntities.get(i).getCodeSystem());
+        ps.setString(2, codeSystem);
       }
       @Override
       public int getBatchSize() {
@@ -49,12 +50,8 @@ public class CodeSystemEntityRepository extends BaseRepository {
       }
     });
 
-    SqlBuilder sb = new SqlBuilder("select id from terminology.code_system_entity where sys_status = 'A'");
-    sb.and("code_system = ?", codeSystem);
-    if (CollectionUtils.isNotEmpty(existingIds)) {
-      sb.and().notIn("id", existingIds);
-    }
-    List<Long> newIds = jdbcTemplate.queryForList(sb.getSql(), Long.class, sb.getParams());
+    List<Long> currentIds = jdbcTemplate.queryForList("select id from terminology.code_system_entity where sys_status = 'A' and code_system = ?", Long.class, codeSystem);
+    List<Long> newIds = currentIds.stream().filter(id -> !existingIds.contains(id)).collect(Collectors.toList());
 
     entities.forEach(e -> {
       if (e.getId() == null && CollectionUtils.isNotEmpty(newIds)) {

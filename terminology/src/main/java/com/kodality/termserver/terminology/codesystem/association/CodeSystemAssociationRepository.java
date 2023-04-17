@@ -103,33 +103,36 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     });
   }
 
-  public void save(List<Pair<Long, CodeSystemAssociation>> associations) {
-    List<Pair<Long, CodeSystemAssociation>> associationsToInsert = associations.stream().filter(p -> p.getValue().getId() == null).toList();
-    String query = "insert into terminology.code_system_association (source_code_system_entity_version_id, target_code_system_entity_version_id, code_system, association_type, status) values (?,?,?,?,?)";
+  public void save(List<Pair<Long, CodeSystemAssociation>> associations, String codeSystem) {
+    List<Long> existingIds = jdbcTemplate.queryForList("select id from terminology.code_system_association where sys_status = 'A' and code_system = ?", Long.class, codeSystem);
+
+    List<Pair<Long, CodeSystemAssociation>> associationsToInsert = associations.stream().filter(p -> !existingIds.contains(p.getValue().getId())).toList();
+    String query = "insert into terminology.code_system_association (source_code_system_entity_version_id, target_code_system_entity_version_id, code_system, association_type, status, id) values (?,?,?,?,?,?)";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
-        CodeSystemAssociationRepository.this.setValues(ps, i, associationsToInsert);
+        CodeSystemAssociationRepository.this.setValues(ps, i, associationsToInsert, codeSystem);
       }
       @Override public int getBatchSize() {return associationsToInsert.size();}
     });
 
-    List<Pair<Long, CodeSystemAssociation>> associationsToUpdate = associations.stream().filter(p -> p.getValue().getId() != null).toList();
+    List<Pair<Long, CodeSystemAssociation>> associationsToUpdate = associations.stream().filter(p -> existingIds.contains(p.getValue().getId())).toList();
     query = "update terminology.code_system_association SET source_code_system_entity_version_id = ?, target_code_system_entity_version_id = ? , code_system = ?, association_type = ?, status = ? where id = ?";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
-        CodeSystemAssociationRepository.this.setValues(ps, i, associationsToUpdate);
-        ps.setLong(6, associationsToUpdate.get(i).getValue().getId());
+        CodeSystemAssociationRepository.this.setValues(ps, i, associationsToUpdate, codeSystem);
       }
       @Override public int getBatchSize() {return associationsToUpdate.size();}
     });
   }
 
-  private void setValues(PreparedStatement ps, int i, List<Pair<Long, CodeSystemAssociation>> associations) throws SQLException {
+  private void setValues(PreparedStatement ps, int i, List<Pair<Long, CodeSystemAssociation>> associations, String codeSystem) throws SQLException {
     ps.setLong(1, associations.get(i).getKey());
     ps.setLong(2, associations.get(i).getValue().getTargetId());
-    ps.setString(3, associations.get(i).getValue().getCodeSystem());
+    ps.setString(3, codeSystem);
     ps.setString(4, associations.get(i).getValue().getAssociationType());
     ps.setString(5, associations.get(i).getValue().getStatus());
+    ps.setLong(6, associations.get(i).getValue().getId());
+
   }
 
 }

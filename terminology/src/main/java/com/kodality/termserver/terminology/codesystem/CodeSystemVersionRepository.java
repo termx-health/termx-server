@@ -12,7 +12,10 @@ import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 @Singleton
 public class CodeSystemVersionRepository extends BaseRepository {
@@ -115,14 +118,19 @@ public class CodeSystemVersionRepository extends BaseRepository {
     if (entityVersionIds == null) {
       return;
     }
-    entityVersionIds.forEach(id -> {
-      SaveSqlBuilder ssb = new SaveSqlBuilder();
-      ssb.property("code_system_entity_version_id", id);
-      ssb.property("code_system_version_id", codeSystemVersionId);
-      ssb.property("sys_status", "A");
-
-      SqlBuilder sb = ssb.buildUpsert("terminology.entity_version_code_system_version_membership", "code_system_entity_version_id", "code_system_version_id");
-      jdbcTemplate.update(sb.getSql(), sb.getParams());
+    String query = "insert into terminology.entity_version_code_system_version_membership (code_system_entity_version_id, code_system_version_id) select ?,? " +
+        "where not exists (select 1 from terminology.entity_version_code_system_version_membership where " +
+        "code_system_entity_version_id = ? and " +
+        "code_system_version_id = ? and " +
+        "sys_status = 'A')";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
+        ps.setLong(1, entityVersionIds.get(i));
+        ps.setLong(2, codeSystemVersionId);
+        ps.setLong(3, entityVersionIds.get(i));
+        ps.setLong(4, codeSystemVersionId);
+      }
+      @Override public int getBatchSize() {return entityVersionIds.size();}
     });
   }
 

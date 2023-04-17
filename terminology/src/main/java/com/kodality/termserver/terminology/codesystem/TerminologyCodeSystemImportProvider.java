@@ -24,7 +24,7 @@ public class TerminologyCodeSystemImportProvider extends CodeSystemImportProvide
   public void importCodeSystem(CodeSystemImportRequest request) {
     CodeSystem codeSystem = toCodeSystem(request);
     List<AssociationType> associationTypes = toAssociationTypes(request);
-    codeSystemImportService.importCodeSystem(codeSystem, associationTypes, true);
+    codeSystemImportService.importCodeSystem(codeSystem, associationTypes, request.isActivate());
   }
 
   private CodeSystem toCodeSystem(CodeSystemImportRequest request) {

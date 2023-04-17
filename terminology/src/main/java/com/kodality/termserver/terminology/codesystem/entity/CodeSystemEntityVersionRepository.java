@@ -109,8 +109,19 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
   }
 
   public void activate(List<Long> versionIds) {
-    String sql = "update terminology.code_system_entity_version set status = ? where id = any(?::bigint[]) and sys_status = 'A' and status <> ?";
-    jdbcTemplate.update(sql, PublicationStatus.active, PgUtil.array(versionIds), PublicationStatus.active);
+    String query = "update terminology.code_system_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override
+      public void setValues(PreparedStatement ps, int i) throws SQLException {
+        ps.setString(1, PublicationStatus.active);
+        ps.setLong(2, versionIds.get(i));
+        ps.setString(3, PublicationStatus.active);
+      }
+      @Override
+      public int getBatchSize() {
+        return versionIds.size();
+      }
+    });
   }
 
   public void retire(Long versionId) {
@@ -120,7 +131,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
 
   public void saveAsDraft(Long versionId) {
     String sql = "update terminology.code_system_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
-    jdbcTemplate.update(sql, PublicationStatus.retired, versionId, PublicationStatus.retired);
+    jdbcTemplate.update(sql, PublicationStatus.draft, versionId, PublicationStatus.draft);
   }
 
   public void cancel(Long id) {

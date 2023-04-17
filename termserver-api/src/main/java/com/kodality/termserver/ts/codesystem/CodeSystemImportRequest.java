@@ -22,6 +22,8 @@ public class CodeSystemImportRequest {
   private List<Pair<String, String>> properties; //code and type
   private List<Pair<String, String>> associations; //code and kind
 
+  private boolean activate = true;
+
   public CodeSystemImportRequest(CodeSystemImportConfiguration configuration) {
     this.codeSystem = new CodeSystemImportRequestCodeSystem().setId(configuration.getCodeSystem())
         .setUri(configuration.getUri())
