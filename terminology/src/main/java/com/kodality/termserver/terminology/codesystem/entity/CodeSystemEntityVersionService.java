@@ -19,6 +19,7 @@ import com.kodality.termserver.ts.codesystem.EntityPropertyValueQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -66,14 +67,22 @@ public class CodeSystemEntityVersionService {
       v.setCreated(v.getCreated() == null ? OffsetDateTime.now() : v.getCreated());
     });
 
+    long start = System.currentTimeMillis();
     repository.batchUpsert(versions);
+    log.info("Versions saved ({} sec)", (System.currentTimeMillis() - start) / 1000);
+    start = System.currentTimeMillis();
 
     Map<Long, List<Designation>> designations = versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getDesignations));
     Map<Long, List<EntityPropertyValue>> propertyValues = versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getPropertyValues));
     Map<Long, List<CodeSystemAssociation>> associations = versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, ev -> prepareAssociations(ev.getAssociations())));
     designationService.batchUpsert(designations, codeSystem);
+    log.info("Designations saved '{}' ({} sec)", designations.values().stream().flatMap(Collection::stream).toList().size(), (System.currentTimeMillis() - start) / 1000);
+    start = System.currentTimeMillis();
     entityPropertyValueService.batchUpsert(propertyValues, codeSystem);
+    log.info("Properties saved '{}' ({} sec)", propertyValues.values().stream().flatMap(Collection::stream).toList().size(), (System.currentTimeMillis() - start) / 1000);
+    start = System.currentTimeMillis();
     codeSystemAssociationService.batchUpsert(associations, codeSystem);
+    log.info("Associations saved '{}' ({} sec)", associations.values().stream().flatMap(Collection::stream).toList().size(), (System.currentTimeMillis() - start) / 1000);
     conceptRefreshViewJob.refreshView();
   }
 
@@ -142,9 +151,11 @@ public class CodeSystemEntityVersionService {
 
   @Transactional
   public void activate(List<Long> versionIds, String codeSystem) {
+    long start = System.currentTimeMillis();
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
     repository.activate(versionIds);
     conceptRefreshViewJob.refreshView();
+    log.info("Activated (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }
 
   @Transactional

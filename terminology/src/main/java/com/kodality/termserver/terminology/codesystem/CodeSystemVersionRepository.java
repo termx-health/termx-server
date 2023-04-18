@@ -118,19 +118,17 @@ public class CodeSystemVersionRepository extends BaseRepository {
     if (entityVersionIds == null) {
       return;
     }
-    String query = "insert into terminology.entity_version_code_system_version_membership (code_system_entity_version_id, code_system_version_id) select ?,? " +
-        "where not exists (select 1 from terminology.entity_version_code_system_version_membership where " +
-        "code_system_entity_version_id = ? and " +
-        "code_system_version_id = ? and " +
-        "sys_status = 'A')";
+    List<Long> existingEntityVersionIds = jdbcTemplate.queryForList("select code_system_entity_version_id from terminology.entity_version_code_system_version_membership " +
+        "where code_system_version_id = ? and sys_status = 'A'", Long.class, codeSystemVersionId);
+
+    List<Long> newEntityVersionIds = entityVersionIds.stream().filter(id -> !existingEntityVersionIds.contains(id)).toList();
+    String query = "insert into terminology.entity_version_code_system_version_membership (code_system_entity_version_id, code_system_version_id) select ?,? ";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
-        ps.setLong(1, entityVersionIds.get(i));
+        ps.setLong(1, newEntityVersionIds.get(i));
         ps.setLong(2, codeSystemVersionId);
-        ps.setLong(3, entityVersionIds.get(i));
-        ps.setLong(4, codeSystemVersionId);
       }
-      @Override public int getBatchSize() {return entityVersionIds.size();}
+      @Override public int getBatchSize() {return newEntityVersionIds.size();}
     });
   }
 

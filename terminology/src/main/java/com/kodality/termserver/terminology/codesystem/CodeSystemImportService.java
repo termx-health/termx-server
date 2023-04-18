@@ -57,7 +57,8 @@ public class CodeSystemImportService {
   public void importCodeSystem(CodeSystem codeSystem, List<AssociationType> associationTypes, boolean activateVersion) {
     userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
 
-    log.info("Code system {} import started", codeSystem.getId());
+    long start = System.currentTimeMillis();
+    log.info("IMPORT STARTED : code system - {}", codeSystem.getId());
 
     associationTypes.forEach(associationTypeService::save);
 
@@ -71,6 +72,8 @@ public class CodeSystemImportService {
     if (activateVersion) {
       codeSystemVersionService.activate(codeSystem.getId(), codeSystemVersion.getVersion());
     }
+
+    log.info("IMPORT FINISHED (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }
 
   private void saveCodeSystem(CodeSystem codeSystem) {
@@ -106,23 +109,28 @@ public class CodeSystemImportService {
 
     concepts = concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new)); //removes duplicate codes
     log.info("Creating '{}' concepts", concepts.size());
+    long start = System.currentTimeMillis();
     conceptService.batchSave(concepts, version.getCodeSystem());
-    log.info("Concepts created");
+    log.info("Concepts created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
+
 
     log.info("Creating '{}' concept versions", concepts.size());
+    start = System.currentTimeMillis();
     Map<Long, CodeSystemEntityVersion> entityVersionMap = concepts.stream()
         .map(concept -> Pair.of(concept.getId(), prepareEntityVersion(concept.getVersions().get(0), entityProperties)))
         .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
     codeSystemEntityVersionService.batchSave(entityVersionMap, version.getCodeSystem());
-    log.info("Concept versions created");
+    log.info("Concept versions created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
 
     log.info("Activating entity versions and linking them with code system version");
+    start = System.currentTimeMillis();
     List<Long> entityVersionIds = concepts.stream().map(concept -> concept.getVersions().get(0).getId()).toList();
     codeSystemEntityVersionService.activate(entityVersionIds, version.getCodeSystem());
     codeSystemVersionService.linkEntityVersions(version.getId(), entityVersionIds);
-    log.info("Linkage created");
+    log.info("Linkage created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
 
     log.info("Creating associations between code system entity versions");
+    start = System.currentTimeMillis();
     Map<Long, List<CodeSystemAssociation>> associations = concepts.stream().peek(c -> {
       if (c.getVersions().get(0).getAssociations() == null) {
         c.getVersions().get(0).setAssociations(new ArrayList<>());
@@ -130,9 +138,7 @@ public class CodeSystemImportService {
     }).collect(Collectors.toMap(c -> c.getVersions().get(0).getId(), c -> c.getVersions().get(0).getAssociations()));
     prepareCodeSystemAssociations(associations, version.getId());
     codeSystemAssociationService.batchUpsert(associations, version.getCodeSystem());
-    log.info("Associations created");
-
-    log.info("Import finished.");
+    log.info("Associations created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }
 
   private CodeSystemEntityVersion prepareEntityVersion(CodeSystemEntityVersion entityVersion, List<EntityProperty> properties) {

@@ -25,7 +25,6 @@ import org.apache.commons.lang3.tuple.Pair;
 public class LoincMapper {
   private static final String SUBSUMES = "subsumes";
   private static final String DISPLAY = "display";
-  private static final String DEFINITION = "definition";
 
   public static CodeSystemImportRequest toRequest(LoincImportRequest configuration, List<LoincConcept> concepts) {
     CodeSystemImportRequest request = new CodeSystemImportRequest();
@@ -62,7 +61,6 @@ public class LoincMapper {
         .map(property -> Pair.of(property.getName(), property.getType()))
         .collect(Collectors.toList());
     properties.add(Pair.of(DISPLAY, EntityPropertyType.string));
-    properties.add(Pair.of(DEFINITION, EntityPropertyType.string));
     return properties;
   }
 

@@ -16,7 +16,9 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 @Singleton
@@ -52,19 +54,7 @@ public class ConceptRepository extends BaseRepository {
   }
 
   public QueryResult<Concept> query(ConceptQueryParams params) {
-    String join = "left join terminology.code_system cs on cs.id = c.code_system and cs.sys_status = 'A' " +
-        "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A' " +
-        "left join terminology.designation d on d.code_system_entity_version_id = csev.id and d.sys_status = 'A' " +
-        "left join terminology.entity_property_value epv on epv.code_system_entity_version_id = csev.id and epv.sys_status = 'A' " +
-        "left join terminology.entity_property ep on ep.id = epv.entity_property_id and ep.sys_status = 'A' " +
-        "left join terminology.entity_property dp on dp.id = d.designation_type_id and dp.sys_status = 'A' " +
-        "left join terminology.code_system_association csa_s on csa_s.source_code_system_entity_version_id = csev.id and csa_s.sys_status = 'A' " +
-        "left join terminology.code_system_association csa_t on csa_t.target_code_system_entity_version_id = csev.id and csa_t.sys_status = 'A' " +
-        "left join terminology.code_system_entity_version c_t on c_t.id = csa_s.target_code_system_entity_version_id and c_t.sys_status = 'A' " +
-        "left join terminology.code_system_entity_version c_s on c_s.id = csa_t.source_code_system_entity_version_id and c_s.sys_status = 'A' " +
-        "left join terminology.association_type at on (at.code = csa_s.association_type or at.code = csa_t.association_type) and at.sys_status = 'A' " +
-        "left join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_entity_version_id = csev.id  and evcsvm.sys_status = 'A' " +
-        "left join terminology.code_system_version csv on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A' ";
+    String join = getJoin(params);
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(distinct(c.code)) from terminology.concept c " + join);
       sb.append(filter(params));
@@ -257,4 +247,35 @@ public class ConceptRepository extends BaseRepository {
     String sql = "select terminology.refresh_concept_closure()";
     jdbcTemplate.queryForObject(sql, String.class);
   }
+
+  private String getJoin(ConceptQueryParams params) {
+    String join = "";
+    if (params.getCodeSystemUri() != null) {
+      join += "left join terminology.code_system cs on cs.id = c.code_system and cs.sys_status = 'A' ";
+    }
+    if (CollectionUtils.isNotEmpty(Stream.of(
+            StringUtils.isEmpty(params.getTextContains()) ? null : params.getTextContains(),
+            params.getCodeSystemVersionId(), params.getCodeSystemVersion(),
+            params.getCodeSystemVersionReleaseDateGe(), params.getCodeSystemVersionReleaseDateLe(), params.getCodeSystemVersionExpirationDateGe(), params.getCodeSystemVersionExpirationDateLe(),
+            params.getCodeSystemEntityStatus(), params.getCodeSystemEntityVersionId(),
+            params.getPropertyValues(), params.getPropertyValuesPartial(),
+            params.getPropertyRoot(), params.getAssociationRoot(), params.getAssociationLeaf(),
+            params.getPropertySource(), params.getAssociationSource(), params.getAssociationTarget(), params.getAssociationType(), params.getAssociationSourceRecursive(), params.getAssociationTargetRecursive())
+        .filter(Objects::nonNull).toList())) {
+      join += "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A' " +
+          "left join terminology.designation d on d.code_system_entity_version_id = csev.id and d.sys_status = 'A' " +
+          "left join terminology.entity_property_value epv on epv.code_system_entity_version_id = csev.id and epv.sys_status = 'A' " +
+          "left join terminology.entity_property ep on ep.id = epv.entity_property_id and ep.sys_status = 'A' " +
+          "left join terminology.entity_property dp on dp.id = d.designation_type_id and dp.sys_status = 'A' " +
+          "left join terminology.code_system_association csa_s on csa_s.source_code_system_entity_version_id = csev.id and csa_s.sys_status = 'A' " +
+          "left join terminology.code_system_association csa_t on csa_t.target_code_system_entity_version_id = csev.id and csa_t.sys_status = 'A' " +
+          "left join terminology.code_system_entity_version c_t on c_t.id = csa_s.target_code_system_entity_version_id and c_t.sys_status = 'A' " +
+          "left join terminology.code_system_entity_version c_s on c_s.id = csa_t.source_code_system_entity_version_id and c_s.sys_status = 'A' " +
+          "left join terminology.association_type at on (at.code = csa_s.association_type or at.code = csa_t.association_type) and at.sys_status = 'A' " +
+          "left join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_entity_version_id = csev.id  and evcsvm.sys_status = 'A' " +
+          "left join terminology.code_system_version csv on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A' ";
+    }
+    return join;
+  }
+
 }
