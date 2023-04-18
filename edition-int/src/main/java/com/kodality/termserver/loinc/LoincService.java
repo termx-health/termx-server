@@ -96,23 +96,25 @@ public class LoincService {
 
   private void processAnswerListLink(List<Pair<String, byte[]>> files, Map<String, LoincConcept> concepts) {
     byte[] answerListLink = files.stream().filter(f -> f.getKey().equals("answer-list-link")).findFirst().map(Pair::getValue).orElse(null);
-    if (answerListLink != null) {
-      RowListProcessor parser = csvProcessor(answerListLink);
-      List<String> headers = Arrays.asList(parser.getHeaders());
-      List<String[]> rows = parser.getRows();
-
-      rows.forEach(r -> Optional.ofNullable(concepts.get(r[headers.indexOf("LoincNumber")])).ifPresent(c -> {
-        c.setProperties(c.getProperties() == null ? new ArrayList<>() : c.getProperties());
-        c.getProperties().add(new LoincConceptProperty()
-            .setName("answer-list")
-            .setValue(new Concept().setCode(r[headers.indexOf("AnswerListId")]).setCodeSystem("answer-list"))
-            .setType(EntityPropertyType.coding));
-        c.getProperties().add(new LoincConceptProperty()
-                .setName("answer-list-binding")
-                .setValue(r[headers.indexOf("AnswerListLinkType")])
-                .setType(EntityPropertyType.string));
-      }));
+    if (answerListLink == null) {
+      return;
     }
+
+    RowListProcessor parser = csvProcessor(answerListLink);
+    List<String> headers = Arrays.asList(parser.getHeaders());
+    List<String[]> rows = parser.getRows();
+
+    rows.forEach(r -> Optional.ofNullable(concepts.get(r[headers.indexOf("LoincNumber")])).ifPresent(c -> {
+      c.setProperties(c.getProperties() == null ? new ArrayList<>() : c.getProperties());
+      c.getProperties().add(new LoincConceptProperty()
+          .setName("answer-list")
+          .setValue(new Concept().setCode(r[headers.indexOf("AnswerListId")]).setCodeSystem("answer-list"))
+          .setType(EntityPropertyType.coding));
+      c.getProperties().add(new LoincConceptProperty()
+              .setName("answer-list-binding")
+              .setValue(r[headers.indexOf("AnswerListLinkType")])
+              .setType(EntityPropertyType.string));
+    }));
   }
 
   private void processLinguisticVariants(List<Pair<String,byte[]>> files, LoincImportRequest request, Map<String, LoincPart> parts, Map<String, LoincConcept> concepts) {
@@ -177,6 +179,9 @@ public class LoincService {
 
   private void processAnswerList(List<Pair<String, byte[]>> files, LoincImportRequest request) {
     byte[] answerList = files.stream().filter(f -> f.getKey().equals("answer-list")).findFirst().map(Pair::getValue).orElse(null);
+    if (answerList == null) {
+      return;
+    }
 
     RowListProcessor parser = csvProcessor(answerList);
     List<String> headers = Arrays.asList(parser.getHeaders());

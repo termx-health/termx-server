@@ -29,7 +29,10 @@ public class LoincPartMapper {
   private static final String TYPE = "type";
 
   public static CodeSystemImportRequest toRequest(LoincImportRequest configuration, List<LoincPart> parts) {
-    List<String> langs = new ArrayList<>(Set.of(Language.en, configuration.getLanguage())).stream().filter(Objects::nonNull).toList();
+    List<String> langs = new ArrayList<>(List.of(Language.en));
+    if (configuration.getLanguage() != null && !configuration.getLanguage().equals(Language.en)) {
+      langs.add(configuration.getLanguage());
+    }
     CodeSystemImportRequest request = new CodeSystemImportRequest();
     request.setActivate(false);
     request.setCodeSystem(toCodeSystem(langs));
