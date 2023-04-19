@@ -41,6 +41,7 @@ public class LoincController {
       @Nullable Publisher<CompletedFileUpload> answerListFile,
       @Nullable Publisher<CompletedFileUpload> answerListLinkFile,
       @Nullable Publisher<CompletedFileUpload> translationsFile,
+      @Nullable Publisher<CompletedFileUpload> orderObservationFile,
       @Part("request") MemoryAttribute request) {
     LoincImportRequest req = JsonUtil.fromJson(request.getValue(), LoincImportRequest.class);
     List<Pair<String, byte[]>> files = List.of(
@@ -51,8 +52,8 @@ public class LoincController {
         Pair.of("panels", panelsFile != null ? readBytes(Flowable.fromPublisher(panelsFile).firstOrError().blockingGet()) : null),
         Pair.of("answer-list", answerListFile != null ? readBytes(Flowable.fromPublisher(answerListFile).firstOrError().blockingGet()) : null),
         Pair.of("answer-list-link", answerListLinkFile != null ? readBytes(Flowable.fromPublisher(answerListLinkFile).firstOrError().blockingGet()) : null),
-        Pair.of("translations", translationsFile != null ? readBytes(Flowable.fromPublisher(translationsFile).firstOrError().blockingGet()) : null));
-
+        Pair.of("translations", translationsFile != null ? readBytes(Flowable.fromPublisher(translationsFile).firstOrError().blockingGet()) : null),
+        Pair.of("order-observation", orderObservationFile != null ? readBytes(Flowable.fromPublisher(orderObservationFile).firstOrError().blockingGet()) : null));
 
     JobLogResponse jobLogResponse = importLogger.createJob("LOINC-IMPORT");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {

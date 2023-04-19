@@ -60,7 +60,10 @@ public class ConceptRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select distinct on (c.code) c.*, " + isLeaf(params) + "as leaf from terminology.concept c " + join);
+      SqlBuilder sb = new SqlBuilder("select distinct on (c.code) c.*, " +
+          isLeaf(params) + "as leaf, " +
+          childCount(params) + "as child_count " +
+          "from terminology.concept c " + join);
       sb.append(filter(params));
       sb.append(order(params, orderMapping));
       sb.append(limit(params));
@@ -81,6 +84,21 @@ public class ConceptRepository extends BaseRepository {
           "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?)) ", association).toPrettyString();
     }
     return " false ";
+  }
+
+  private String childCount(ConceptQueryParams params) {
+    if (params.getPropertyRoot() != null || params.getPropertySource() != null) {
+      Long propertyId = params.getPropertyRoot() != null ? params.getPropertyRoot() : Long.valueOf(PipeUtil.parsePipe(params.getPropertySource())[0]);
+      return new SqlBuilder(" (select count(1) from terminology.entity_property_value epv " +
+          "where epv.sys_status = 'A' and epv.entity_property_id = ? and epv.value = to_jsonb(c.code::text)) ", propertyId).toPrettyString();
+    }
+    if (params.getAssociationRoot() != null || params.getAssociationSource() != null) {
+      String association = params.getAssociationRoot() != null ? params.getAssociationRoot() : PipeUtil.parsePipe(params.getAssociationSource())[0];
+      return new SqlBuilder(" (select count(1) from terminology.code_system_association csa " +
+          "inner join terminology.code_system_entity_version csev on csev.id = csa.target_code_system_entity_version_id and csev.sys_status = 'A' " +
+          "where csa.sys_status = 'A' and csev.code_system_entity_id = c.id and csa.association_type = ?) ", association).toPrettyString();
+    }
+    return " 0 ";
   }
 
   private SqlBuilder filter(ConceptQueryParams params) {
@@ -178,10 +196,10 @@ public class ConceptRepository extends BaseRepository {
   private String checkProperty(String propertyValues, String propertyValuesPartial) {
     SqlBuilder sb = new SqlBuilder();
     if (StringUtils.isNotEmpty(propertyValues)) {
-      sb.append(checkPropertyValue(propertyValues, "ep.name = ?", "epv.value @> to_jsonb(?::text)", true));
+      sb.append(checkPropertyValue(propertyValues, "ep.name = ?", "coalesce(to_jsonb((epv.value ->> 'code')::text), epv.value) @> to_jsonb(?::text)", true));
     }
     if (StringUtils.isNotEmpty(propertyValuesPartial)) {
-      sb.append(checkPropertyValue(propertyValuesPartial, "ep.name = ?", "epv.value @> to_jsonb(?::text)", false));
+      sb.append(checkPropertyValue(propertyValuesPartial, "ep.name = ?", "coalesce(to_jsonb((epv.value ->> 'code')::text), epv.value) @> to_jsonb(?::text)", false));
     }
     return sb.toPrettyString();
   }

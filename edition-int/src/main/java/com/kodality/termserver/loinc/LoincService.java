@@ -46,7 +46,6 @@ public class LoincService {
     Map<String, LoincPart> parts = processParts(files);
     Map<String, LoincConcept> concepts = processTerminology(files);
     processLinguisticVariants(files, request, parts, concepts);
-
     importProvider.importCodeSystem(LoincPartMapper.toRequest(request, parts.values().stream().toList()));
     importProvider.importCodeSystem(LoincMapper.toRequest(request, concepts.values().stream().toList()));
   }
@@ -68,6 +67,7 @@ public class LoincService {
     Map<String, LoincConcept> concepts = processConcepts(files);
     processAssociations(files, concepts);
     processAnswerListLink(files, concepts);
+    processOrderObservation(files, concepts);
     return concepts;
   }
 
@@ -117,6 +117,25 @@ public class LoincService {
     }));
   }
 
+  private void processOrderObservation(List<Pair<String, byte[]>> files, Map<String, LoincConcept> concepts) {
+    byte[] orderObservation = files.stream().filter(f -> f.getKey().equals("order-observation")).findFirst().map(Pair::getValue).orElse(null);
+    if (orderObservation == null) {
+      return;
+    }
+
+    RowListProcessor parser = csvProcessor(orderObservation);
+    List<String> headers = Arrays.asList(parser.getHeaders());
+    List<String[]> rows = parser.getRows();
+
+    rows.forEach(r -> Optional.ofNullable(concepts.get(r[headers.indexOf("LOINC_NUM")])).ifPresent(c -> {
+      c.setProperties(c.getProperties() == null ? new ArrayList<>() : c.getProperties());
+      c.getProperties().add(new LoincConceptProperty()
+          .setName("ORDER_OBS")
+          .setValue(r[headers.indexOf("ORDER_OBS")])
+          .setType(EntityPropertyType.string));
+    }));
+  }
+
   private void processLinguisticVariants(List<Pair<String,byte[]>> files, LoincImportRequest request, Map<String, LoincPart> parts, Map<String, LoincConcept> concepts) {
     byte[] translations = files.stream().filter(f -> f.getKey().equals("translations")).findFirst().map(Pair::getValue).orElse(null);
     String lang = request.getLanguage();
@@ -130,10 +149,10 @@ public class LoincService {
     rows.forEach(r -> Optional.ofNullable(concepts.get(r[headers.indexOf("LOINC_NUM")])).ifPresent(c -> {
       updatePartDisplay(parts, c.getProperties(), "COMPONENT", Pair.of(lang, r[headers.indexOf("COMPONENT")]));
       updatePartDisplay(parts, c.getProperties(), "PROPERTY", Pair.of(lang, r[headers.indexOf("PROPERTY")]));
-      updatePartDisplay(parts, c.getProperties(), "TIME_ASPCT", Pair.of(lang, r[headers.indexOf("TIME_ASPCT")]));
+      updatePartDisplay(parts, c.getProperties(), "TIME", Pair.of(lang, r[headers.indexOf("TIME_ASPCT")]));
       updatePartDisplay(parts, c.getProperties(), "SYSTEM", Pair.of(lang, r[headers.indexOf("SYSTEM")]));
-      updatePartDisplay(parts, c.getProperties(), "SCALE_TYP", Pair.of(lang, r[headers.indexOf("SCALE_TYP")]));
-      updatePartDisplay(parts, c.getProperties(), "METHOD_TYP", Pair.of(lang, r[headers.indexOf("METHOD_TYP")]));
+      updatePartDisplay(parts, c.getProperties(), "SCALE", Pair.of(lang, r[headers.indexOf("SCALE_TYP")]));
+      updatePartDisplay(parts, c.getProperties(), "METHOD", Pair.of(lang, r[headers.indexOf("METHOD_TYP")]));
       updatePartDisplay(parts, c.getProperties(), "CLASS", Pair.of(lang, r[headers.indexOf("CLASS")]));
       updatePartDisplay(parts, c.getProperties(), "RELATEDNAMES2", Pair.of(lang, r[headers.indexOf("RELATEDNAMES2")]));
     }));

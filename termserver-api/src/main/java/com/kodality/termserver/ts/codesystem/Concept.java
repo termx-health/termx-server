@@ -14,4 +14,5 @@ public class Concept extends CodeSystemEntity {
   private String description;
 
   private Boolean leaf;
+  private Long childCount;
 }
