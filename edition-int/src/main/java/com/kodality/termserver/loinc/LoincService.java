@@ -215,7 +215,7 @@ public class LoincService {
               .setCode(r[headers.indexOf("AnswerStringId")])
               .setDisplay(r[headers.indexOf("DisplayText")])
               .setAnswerCode(r[headers.indexOf("LocalAnswerCode")])
-              .setAnswerLists(values.stream().map(v -> v[headers.indexOf("AnswerListId")]).toList());
+              .setAnswerLists(values.stream().map(v -> Pair.of(v[headers.indexOf("AnswerListId")], Integer.valueOf(v[headers.indexOf("SequenceNumber")]))).toList());
         }).toList();
     List<LoincAnswerList> answerLists = rows.stream().collect(Collectors.groupingBy(r -> r[headers.indexOf("AnswerListId")])).values().stream().map(values -> {
       String[] r = values.get(0);

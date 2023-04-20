@@ -48,6 +48,9 @@ create index cs_association_association_type_idx on terminology.code_system_asso
 select core.create_table_metadata('terminology.code_system_association');
 --rollback drop table if exists terminology.code_system_association;
 
+--changeset kodality:code_system_association-order_number
+alter table terminology.code_system_association add column order_number smallint;
+--
 
 --changeset kodality:map_set_association
 drop table if exists terminology.map_set_association;

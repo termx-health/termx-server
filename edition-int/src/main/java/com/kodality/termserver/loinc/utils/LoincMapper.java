@@ -119,6 +119,7 @@ public class LoincMapper {
     return c.getAssociations().stream().map(a -> new CodeSystemAssociation()
         .setAssociationType(SUBSUMES)
         .setStatus(PublicationStatus.active)
+        .setOrderNumber(a.getOrder())
         .setTargetCode(a.getTargetCode())).toList();
   }
 

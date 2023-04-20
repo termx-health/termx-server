@@ -110,6 +110,7 @@ public class LoincAnswerListMapper {
     return answerList.getAnswerLists().stream().map(a -> new CodeSystemAssociation()
         .setAssociationType(IS_A)
         .setStatus(PublicationStatus.active)
-        .setTargetCode(a)).toList();
+        .setOrderNumber(a.getValue())
+        .setTargetCode(a.getKey())).toList();
   }
 }

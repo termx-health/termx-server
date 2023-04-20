@@ -4,6 +4,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Getter
 @Setter
@@ -13,5 +14,5 @@ public class LoincAnswerList {
   private String display;
   private String oid;
   private String answerCode;
-  private List<String> answerLists;
+  private List<Pair<String, Integer>> answerLists;
 }
