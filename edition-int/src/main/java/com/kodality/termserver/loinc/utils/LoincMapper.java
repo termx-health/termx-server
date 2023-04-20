@@ -25,6 +25,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class LoincMapper {
   private static final String SUBSUMES = "subsumes";
   private static final String DISPLAY = "display";
+  private static final String KEY_WORDS = "key-words";
 
   public static CodeSystemImportRequest toRequest(LoincImportRequest configuration, List<LoincConcept> concepts) {
     CodeSystemImportRequest request = new CodeSystemImportRequest();
@@ -61,6 +62,7 @@ public class LoincMapper {
         .map(property -> Pair.of(property.getName(), property.getType()))
         .collect(Collectors.toList());
     properties.add(Pair.of(DISPLAY, EntityPropertyType.string));
+    properties.add(Pair.of(KEY_WORDS, EntityPropertyType.string));
     return properties;
   }
 
@@ -80,15 +82,18 @@ public class LoincMapper {
   private static List<Designation> mapDesignations(LoincConcept c) {
     List<Designation> designations = new ArrayList<>();
     if (c.getDisplay() != null) {
-      designations.add(mapDesignation(c.getDisplay(), DISPLAY));
+      designations.add(mapDesignation(c.getDisplay(), DISPLAY, Language.en));
+    }
+    if (c.getRelatedNames() != null) {
+      designations.addAll(c.getRelatedNames().stream().map(rn -> mapDesignation(rn.getValue(), KEY_WORDS, rn.getKey())).toList());
     }
     return designations;
   }
 
-  private static Designation mapDesignation(String name, String type) {
+  private static Designation mapDesignation(String name, String type, String lang) {
     return new Designation()
         .setName(name)
-        .setLanguage(Language.en)
+        .setLanguage(lang)
         .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)
         .setDesignationKind("text")
         .setStatus(PublicationStatus.active)

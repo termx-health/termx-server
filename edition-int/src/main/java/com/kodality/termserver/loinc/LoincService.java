@@ -154,7 +154,9 @@ public class LoincService {
       updatePartDisplay(parts, c.getProperties(), "SCALE", Pair.of(lang, r[headers.indexOf("SCALE_TYP")]));
       updatePartDisplay(parts, c.getProperties(), "METHOD", Pair.of(lang, r[headers.indexOf("METHOD_TYP")]));
       updatePartDisplay(parts, c.getProperties(), "CLASS", Pair.of(lang, r[headers.indexOf("CLASS")]));
-      updatePartDisplay(parts, c.getProperties(), "RELATEDNAMES2", Pair.of(lang, r[headers.indexOf("RELATEDNAMES2")]));
+
+      c.setRelatedNames(c.getRelatedNames() == null ? new ArrayList<>() : c.getRelatedNames());
+      c.getRelatedNames().add(Pair.of(lang, r[headers.indexOf("RELATEDNAMES2")]));
     }));
   }
 
