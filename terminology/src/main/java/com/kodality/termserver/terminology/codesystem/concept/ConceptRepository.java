@@ -136,7 +136,7 @@ public class ConceptRepository extends BaseRepository {
       sb.append("and (1<>1");
       sb.append("or").append(checkProperty(params.getPropertyValues(), params.getPropertyValuesPartial()));
       sb.append("or").append(checkDesignation(params.getPropertyValues(), params.getPropertyValuesPartial()));
-      sb.append("or").append(checkAssociation(params.getPropertyValues(), params.getPropertyValuesPartial()));
+//      sb.append("or").append(checkAssociation(params.getPropertyValues(), params.getPropertyValuesPartial()));
       sb.append("or").append(checkCode(params.getPropertyValues(), params.getPropertyValuesPartial()));
       sb.append(")");
     }
@@ -196,10 +196,10 @@ public class ConceptRepository extends BaseRepository {
   private String checkProperty(String propertyValues, String propertyValuesPartial) {
     SqlBuilder sb = new SqlBuilder();
     if (StringUtils.isNotEmpty(propertyValues)) {
-      sb.append(checkPropertyValue(propertyValues, "ep.name = ?", "coalesce(to_jsonb((epv.value ->> 'code')::text), epv.value) @> to_jsonb(?::text)", true));
+      sb.append(checkPropertyValue(propertyValues, "ep.name = ?", "coalesce((epv.value ->> 'code')::text, epv.value #>> '{}') = ?::text", true));
     }
     if (StringUtils.isNotEmpty(propertyValuesPartial)) {
-      sb.append(checkPropertyValue(propertyValuesPartial, "ep.name = ?", "coalesce(to_jsonb((epv.value ->> 'code')::text), epv.value) @> to_jsonb(?::text)", false));
+      sb.append(checkPropertyValue(propertyValuesPartial, "ep.name = ?", "coalesce((epv.value ->> 'code')::text, epv.value #>> '{}') = ?::text", false));
     }
     return sb.toPrettyString();
   }
