@@ -195,43 +195,53 @@ public class ConceptRepository extends BaseRepository {
 
   private String checkProperty(String propertyValues, String propertyValuesPartial) {
     SqlBuilder sb = new SqlBuilder();
+    String select = "select 1 from terminology.entity_property_value epv_1 " +
+        "left join terminology.entity_property ep_1 on ep_1.id = epv_1.entity_property_id and ep_1.sys_status = 'A' " +
+        "where epv_1.code_system_entity_version_id = csev.id and epv_1.sys_status = 'A'";
     if (StringUtils.isNotEmpty(propertyValues)) {
-      sb.append(checkPropertyValue(propertyValues, "ep.name = ?", "coalesce((epv.value ->> 'code')::text, epv.value #>> '{}') = ?::text", true));
+      sb.append(checkPropertyValue(propertyValues, "ep_1.name = ?", "coalesce((epv_1.value ->> 'code')::text, epv_1.value #>> '{}')", select, true));
     }
     if (StringUtils.isNotEmpty(propertyValuesPartial)) {
-      sb.append(checkPropertyValue(propertyValuesPartial, "ep.name = ?", "coalesce((epv.value ->> 'code')::text, epv.value #>> '{}') = ?::text", false));
+      sb.append(checkPropertyValue(propertyValuesPartial, "ep_1.name = ?", "coalesce((epv_1.value ->> 'code')::text, epv_1.value #>> '{}')", select, false));
     }
     return sb.toPrettyString();
   }
 
   private String checkDesignation(String propertyValues, String propertyValuesPartial) {
     SqlBuilder sb = new SqlBuilder();
+    String select = "select 1 from terminology.designation d_1 " +
+        "left join terminology.entity_property dp_1 on dp_1.id = d_1.designation_type_id and dp_1.sys_status = 'A' " +
+        "where d_1.code_system_entity_version_id = csev.id and d_1.sys_status = 'A'";
     if (StringUtils.isNotEmpty(propertyValues)) {
-      sb.append(checkPropertyValue(propertyValues, "dp.name = ?", "d.name = ?", true));
+      sb.append(checkPropertyValue(propertyValues, "dp_1.name = ?", "d_1.name", select, true));
     }
     if (StringUtils.isNotEmpty(propertyValuesPartial)) {
-      sb.append(checkPropertyValue(propertyValuesPartial, "dp.name = ?", "d.name ~* ?", false));
+      sb.append(checkPropertyValue(propertyValuesPartial, "dp_1.name = ?", "d_1.name", select, false));
     }
     return sb.toPrettyString();
   }
 
-  private String checkAssociation(String propertyValues, String propertyValuesPartial) {
-    SqlBuilder sb = new SqlBuilder();
-    if (StringUtils.isNotEmpty(propertyValues)) {
-      sb.append(checkPropertyValue(propertyValues, "at.code = ?", "c_t.code = ?", true));
-    }
-    if (StringUtils.isNotEmpty(propertyValuesPartial)) {
-      sb.append(checkPropertyValue(propertyValuesPartial, "at.code = ?", "c_t.code = ?", false));
-    }
-    return sb.toPrettyString();
-  }
+//  private String checkAssociation(String propertyValues, String propertyValuesPartial) {
+//    SqlBuilder sb = new SqlBuilder();
+//    if (StringUtils.isNotEmpty(propertyValues)) {
+//      sb.append(checkPropertyValue(propertyValues, "at.code = ?", "c_t.code", true));
+//    }
+//    if (StringUtils.isNotEmpty(propertyValuesPartial)) {
+//      sb.append(checkPropertyValue(propertyValuesPartial, "at.code = ?", "c_t.code", false));
+//    }
+//    return sb.toPrettyString();
+//  }
 
-  private String checkPropertyValue(String values, String nameField, String valueField, boolean exact) {
+  private String checkPropertyValue(String values, String nameField, String valueField, String select, boolean exact) {
     SqlBuilder sb = new SqlBuilder();
-    String[] propertyValues = values.split(",");
+    String[] propertyValues = values.split(";");
     sb.append("(").append(Arrays.stream(propertyValues).map(pv -> {
       String[] pipe = PipeUtil.parsePipe(pv);
-      return new SqlBuilder().append(nameField, pipe[0]).appendIfTrue(pipe.length == 2, "and " + valueField, pipe[1]).toPrettyString();
+      return new SqlBuilder()
+          .append("exists (" + select)
+          .and(nameField, pipe[0])
+          .and().in(valueField, pipe[1])
+          .append(")").toPrettyString();
     }).collect(Collectors.joining(exact ? " and " : " or "))).append(")");
     return sb.toPrettyString();
   }

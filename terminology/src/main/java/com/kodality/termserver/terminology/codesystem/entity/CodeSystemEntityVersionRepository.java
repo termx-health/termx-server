@@ -4,7 +4,6 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
-import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
@@ -97,7 +96,9 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
       sb.append("and exists (select 1 from terminology.code_system_version csv " +
           "inner join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A' " +
           "where evcsvm.code_system_entity_version_id = csev.id and csv.version = ? and csv.sys_status = 'A'", params.getCodeSystemVersion());
-      sb.appendIfNotNull("and csv.code_system = ?", params.getCodeSystem());
+      if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
+        sb.and().in("csv.code_system", params.getPermittedCodeSystems());
+      }
       sb.append(")");
     }
     return sb;

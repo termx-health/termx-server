@@ -256,7 +256,7 @@ public class CodeSystemFhirService {
         return null;
       }
       return property.get() + (propertyValue.isEmpty() ? "" : "|" + propertyValue.get());
-    }).filter(Objects::nonNull).collect(Collectors.joining(","));
+    }).filter(Objects::nonNull).collect(Collectors.joining(";"));
 
     ConceptQueryParams conceptParams = new ConceptQueryParams();
     conceptParams.setCodeSystemUri(system.get());
