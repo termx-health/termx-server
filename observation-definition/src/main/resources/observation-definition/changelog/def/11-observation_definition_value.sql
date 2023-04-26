@@ -25,3 +25,10 @@ create unique index observation_definition_value_observation_definition ON def.o
 select core.create_table_metadata('def.observation_definition_value');
 select audit.add_log('def.observation_definition_value');
 --
+
+
+--changeset kodality:observation_definition_value|usage-values
+alter table def.observation_definition_value add column usage text;
+alter table def.observation_definition_value add column values jsonb;
+--
+

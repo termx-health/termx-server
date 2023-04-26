@@ -12,6 +12,7 @@ public class ObservationDefinitionValueRepository extends BaseRepository {
 
   private final PgBeanProcessor bp = new PgBeanProcessor(ObservationDefinitionValue.class, p -> {
     p.addColumnProcessor("unit", PgBeanProcessor.fromJson());
+    p.addColumnProcessor("values", PgBeanProcessor.fromJson());
   });
 
 
@@ -23,6 +24,8 @@ public class ObservationDefinitionValueRepository extends BaseRepository {
     ssb.property("expression", value.getExpression());
     ssb.property("type", value.getType());
     ssb.jsonProperty("unit", value.getUnit());
+    ssb.property("usage", value.getUsage());
+    ssb.jsonProperty("values", value.getValues());
     ssb.property("value_set", value.getValueSet());
     ssb.property("multiple_results_allowed", value.isMultipleResultsAllowed());
     SqlBuilder sb = ssb.buildSave("def.observation_definition_value", "id");

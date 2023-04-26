@@ -1,5 +1,6 @@
 package com.kodality.termserver.observationdefintion;
 
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -13,6 +14,9 @@ public class ObservationDefinitionValue {
   private String expression;
   private String type;
   private ObservationDefinitionUnit unit;
-  private String valueSet;
   private boolean multipleResultsAllowed;
+
+  private String usage;
+  private List<String> values;
+  private String valueSet;
 }
