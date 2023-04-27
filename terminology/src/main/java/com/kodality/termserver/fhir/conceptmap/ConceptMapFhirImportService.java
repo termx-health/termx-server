@@ -30,9 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class ConceptMapFhirImportService {
-  private final ValueSetService valueSetService;
+  private final ConceptMapFhirImportMapper mapper;
   private final MapSetImportService mapSetImportService;
-  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final BinaryHttpClient client = new BinaryHttpClient();
 
   public void importMapSets(Parameters parameters, List<String> successes, List<String> warnings) {
@@ -58,53 +57,18 @@ public class ConceptMapFhirImportService {
     if (!ResourceType.conceptMap.equals(conceptMap.getResourceType())) {
       throw ApiError.TE107.toApiException();
     }
-    importMapSet(conceptMap, false);
+    importMapSet(conceptMap);
   }
 
   @Transactional
-  public void importMapSet(com.kodality.zmei.fhir.resource.terminology.ConceptMap fhirConceptMap, boolean activateVersion) {
-    MapSet mapSet = prepareMapSet(ConceptMapFhirImportMapper.mapMapSet(fhirConceptMap));
+  public void importMapSet(com.kodality.zmei.fhir.resource.terminology.ConceptMap fhirConceptMap) {
+    MapSet mapSet = mapper.mapMapSet(fhirConceptMap);
     List<AssociationType> associationTypes = ConceptMapFhirImportMapper.mapAssociationTypes(fhirConceptMap);
-    mapSetImportService.importMapSet(mapSet, associationTypes, activateVersion);
+    mapSetImportService.importMapSet(mapSet, associationTypes);
   }
 
   private String getResource(String url) {
     log.info("Loading fhir map set from {}", url);
     return new String(client.GET(url).body(), StandardCharsets.UTF_8);
-  }
-
-  private MapSet prepareMapSet(MapSet mapSet) {
-    mapSet.setSourceValueSet(findValueSet(mapSet.getSourceValueSet()));
-    mapSet.setTargetValueSet(findValueSet(mapSet.getTargetValueSet()));
-    prepareAssociations(mapSet.getAssociations());
-    return mapSet;
-  }
-
-  private void prepareAssociations(List<MapSetAssociation> associations) {
-    associations.forEach(association -> {
-      association.setSource(
-          findEntityVersion(association.getSource().getCodeSystem(), association.getSource().getCodeSystemVersion(), association.getSource().getCode()));
-      association.setTarget(
-          findEntityVersion(association.getTarget().getCodeSystem(), association.getTarget().getCodeSystemVersion(), association.getTarget().getCode()));
-    });
-  }
-
-  private String findValueSet(String uri) {
-    if (uri == null) {
-      return null;
-    }
-    ValueSetQueryParams params = new ValueSetQueryParams();
-    params.setUri(uri);
-    params.setLimit(1);
-    return valueSetService.query(params).findFirst().map(ValueSet::getId).orElse(null);
-  }
-
-  private CodeSystemEntityVersion findEntityVersion(String uri, String version, String code) {
-    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
-    params.setCodeSystemUri(uri);
-    params.setCodeSystemVersion(version);
-    params.setCode(code);
-    params.setLimit(1);
-    return codeSystemEntityVersionService.query(params).findFirst().orElse(null);
   }
 }

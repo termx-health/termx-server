@@ -1,22 +1,23 @@
 package com.kodality.termserver.terminology.mapset;
 
 
-import com.kodality.termserver.exception.ApiError;
-import com.kodality.termserver.terminology.mapset.association.MapSetAssociationService;
-import com.kodality.termserver.terminology.mapset.entity.MapSetEntityVersionService;
-import com.kodality.termserver.ts.PublicationStatus;
+import com.kodality.termserver.terminology.association.AssociationTypeService;
+import com.kodality.termserver.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.association.AssociationType;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.ts.mapset.MapSet;
 import com.kodality.termserver.ts.mapset.MapSetAssociation;
-import com.kodality.termserver.ts.mapset.MapSetVersion;
-import com.kodality.termserver.terminology.association.AssociationTypeService;
+import com.kodality.termserver.ts.mapset.MapSetTransactionRequest;
+import io.micronaut.core.util.CollectionUtils;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -24,56 +25,52 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MapSetImportService {
   private final MapSetService mapSetService;
-  private final MapSetVersionService mapSetVersionService;
   private final AssociationTypeService associationTypeService;
-  private final MapSetAssociationService mapSetAssociationService;
-  private final MapSetEntityVersionService mapSetEntityVersionService;
+  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   @Transactional
-  public void importMapSet(MapSet mapSet, List<AssociationType> associationTypes, boolean activateVersion) {
+  public void importMapSet(MapSet mapSet, List<AssociationType> associationTypes) {
     associationTypes.forEach(associationTypeService::save);
 
-    saveMapSet(mapSet);
-    MapSetVersion mapSetVersion = mapSet.getVersions().get(0);
-    saveMapSetVersion(mapSetVersion);
-
-    saveAssociations(mapSet.getAssociations(), mapSetVersion);
-
-    if (activateVersion) {
-      mapSetVersionService.activate(mapSet.getId(), mapSetVersion.getVersion());
-    }
+    MapSetTransactionRequest request = new MapSetTransactionRequest();
+    request.setMapSet(mapSet);
+    request.setVersion(mapSet.getVersions().get(0));
+    request.setAssociations(mapSet.getAssociations());
+    importMapSet(request);
   }
 
-  private void saveMapSet(MapSet mapSet) {
-    log.info("Saving map set");
-    Optional<MapSet> existingMapSet = mapSetService.load(mapSet.getId());
-    if (existingMapSet.isEmpty()) {
-      log.info("Map set {} does not exist, creating new", mapSet.getId());
-      mapSetService.save(mapSet);
-    }
+  @Transactional
+  public void importMapSet(MapSetTransactionRequest request) {
+    prepareAssociations(request);
+    mapSetService.save(request);
   }
 
-  private void saveMapSetVersion(MapSetVersion mapSetVersion) {
-    Optional<MapSetVersion> existingVersion = mapSetVersionService.load(mapSetVersion.getMapSet(), mapSetVersion.getVersion());
-    if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
-      throw ApiError.TE104.toApiException(Map.of("version", mapSetVersion.getVersion()));
+  private void prepareAssociations(MapSetTransactionRequest request) {
+    List<MapSetAssociation> associations = request.getAssociations();
+    List<String> sourceCodeSystems = request.getMapSet().getSourceCodeSystems();
+    List<String> targetCodeSystems = request.getMapSet().getTargetCodeSystems();
+
+    if (CollectionUtils.isEmpty(associations)) {
+      return;
     }
-    log.info("Saving map set version {}", mapSetVersion.getVersion());
-    mapSetVersion.setId(existingVersion.map(MapSetVersion::getId).orElse(null));
-    mapSetVersionService.save(mapSetVersion);
+
+    IntStream.range(0, (associations.size() + 1000 - 1) / 1000)
+        .mapToObj(i -> associations.subList(i * 1000, Math.min(associations.size(), (i + 1) * 1000))).forEach(batch -> {
+          List<CodeSystemEntityVersion> sources = getEntityVersions(batch.stream().map(MapSetAssociation::getSource).toList(), sourceCodeSystems, batch.size());
+          List<CodeSystemEntityVersion> targets = getEntityVersions(batch.stream().map(MapSetAssociation::getTarget).toList(), targetCodeSystems, batch.size());
+          batch.forEach(a -> a.getSource().setId(sources.stream().filter(s -> s.getCode().equals(a.getSource().getCode())).findFirst().map(CodeSystemEntityVersion::getId).orElse(null)));
+          batch.forEach(a -> a.getTarget().setId(targets.stream().filter(t -> t.getCode().equals(a.getTarget().getCode())).findFirst().map(CodeSystemEntityVersion::getId).orElse(null)));
+        });
   }
 
-  private void saveAssociations(List<MapSetAssociation> associations, MapSetVersion version) {
-    log.info("Creating '{}' associations", associations.size());
-    associations.forEach(association -> {
-      mapSetAssociationService.save(association, version.getMapSet());
-
-      mapSetEntityVersionService.save(association.getVersions().get(0), association.getId());
-      mapSetEntityVersionService.activate(association.getVersions().get(0).getId());
-    });
-    log.info("Associations created");
-
-    log.info("Linking map set version and association versions");
-    mapSetVersionService.saveEntityVersions(version.getId(), associations.stream().map(c -> c.getVersions().get(0)).collect(Collectors.toList()));
+  private List<CodeSystemEntityVersion> getEntityVersions(List<CodeSystemEntityVersion> versions, List<String> codeSystems, int limit) {
+    if (CollectionUtils.isEmpty(codeSystems)) {
+      return new ArrayList<>();
+    }
+    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams()
+        .setCode(versions.stream().map(CodeSystemEntityVersion::getCode).filter(StringUtils::isNotEmpty).collect(Collectors.joining(",")))
+        .setCodeSystem(String.join(",", codeSystems));
+    params.setLimit(limit);
+    return codeSystemEntityVersionService.query(params).getData();
   }
 }

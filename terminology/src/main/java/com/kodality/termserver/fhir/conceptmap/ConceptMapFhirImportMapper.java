@@ -1,25 +1,41 @@
 package com.kodality.termserver.fhir.conceptmap;
 
 import com.kodality.commons.model.LocalizedName;
+import com.kodality.termserver.terminology.codesystem.CodeSystemService;
+import com.kodality.termserver.terminology.valueset.ValueSetService;
 import com.kodality.termserver.ts.Language;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.association.AssociationKind;
 import com.kodality.termserver.ts.association.AssociationType;
+import com.kodality.termserver.ts.codesystem.CodeSystem;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.ts.mapset.MapSet;
 import com.kodality.termserver.ts.mapset.MapSetAssociation;
 import com.kodality.termserver.ts.mapset.MapSetEntityVersion;
 import com.kodality.termserver.ts.mapset.MapSetVersion;
+import com.kodality.termserver.ts.valueset.ValueSet;
+import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroup;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.inject.Singleton;
+import lombok.RequiredArgsConstructor;
 
+@Singleton
+@RequiredArgsConstructor
 public class ConceptMapFhirImportMapper {
+  private final ValueSetService valueSetService;
+  private final CodeSystemService codeSystemService;
 
-  public static MapSet mapMapSet(ConceptMap conceptMap) {
+  public MapSet mapMapSet(ConceptMap conceptMap) {
     MapSet ms = new MapSet();
     ms.setId(conceptMap.getId());
     ms.setUri(conceptMap.getUrl());
@@ -27,8 +43,8 @@ public class ConceptMapFhirImportMapper {
     ms.setDescription(conceptMap.getDescription());
     ms.setVersions(List.of(mapVersion(conceptMap)));
     ms.setAssociations(mapAssociations(conceptMap));
-    ms.setSourceValueSet(conceptMap.getSourceUri() == null ? conceptMap.getSourceCanonical() : conceptMap.getSourceUri());
-    ms.setTargetValueSet(conceptMap.getTargetUri() == null ? conceptMap.getTargetCanonical() : conceptMap.getTargetUri());
+    ms.setSourceValueSet(getValueSet(conceptMap.getSourceUri() == null ? conceptMap.getSourceCanonical() : conceptMap.getSourceUri()));
+    ms.setTargetValueSet(getValueSet(conceptMap.getTargetUri() == null ? conceptMap.getTargetCanonical() : conceptMap.getTargetUri()));
     return ms;
   }
 
@@ -43,27 +59,32 @@ public class ConceptMapFhirImportMapper {
     return version;
   }
 
-  private static List<MapSetAssociation> mapAssociations(ConceptMap conceptMap) {
+  private List<MapSetAssociation> mapAssociations(ConceptMap conceptMap) {
     List<MapSetAssociation> associations = new ArrayList<>();
     if (CollectionUtils.isEmpty(conceptMap.getGroup())) {
       return associations;
     }
-    conceptMap.getGroup().forEach(g -> {
-      g.getElement().forEach(element -> {
-        element.getTarget().forEach(target -> {
-          MapSetAssociation association = new MapSetAssociation();
-          association.setMapSet(conceptMap.getId());
-          association.setStatus(PublicationStatus.active);
-          association.setSource(new CodeSystemEntityVersion().setCodeSystem(g.getSource()).setCodeSystemVersion(g.getSourceVersion()).setCode(element.getCode()));
-          association.setTarget(new CodeSystemEntityVersion().setCodeSystem(g.getTarget()).setCodeSystemVersion(g.getTargetVersion()).setCode(target.getCode()));
-          association.setAssociationType(target.getEquivalence());
-          association.setVersions(List.of(new MapSetEntityVersion().setStatus(PublicationStatus.draft)));
-          if (association.getSource() != null && association.getTarget() != null) {
-            associations.add(association);
-          }
-        });
-      });
-    });
+
+    List<String> codeSystemUris = new ArrayList<>();
+    codeSystemUris.addAll(conceptMap.getGroup().stream().map(ConceptMapGroup::getSource).collect(Collectors.toSet()));
+    codeSystemUris.addAll(conceptMap.getGroup().stream().map(ConceptMapGroup::getTarget).collect(Collectors.toSet()));
+    CodeSystemQueryParams params = new CodeSystemQueryParams();
+    params.setUri(String.join(",", codeSystemUris));
+    params.setLimit(codeSystemUris.size());
+    Map<String, CodeSystem> codeSystems = codeSystemService.query(params).getData().stream().collect(Collectors.toMap(CodeSystem::getUri, codeSystem -> codeSystem));
+
+    conceptMap.getGroup().forEach(g -> g.getElement().forEach(element -> element.getTarget().forEach(target -> {
+      MapSetAssociation association = new MapSetAssociation();
+      association.setMapSet(conceptMap.getId());
+      association.setStatus(PublicationStatus.active);
+      association.setSource(new CodeSystemEntityVersion().setCodeSystem(Optional.ofNullable(codeSystems.get(g.getSource())).map(CodeSystem::getId).orElse(null)).setCodeSystemVersion(g.getSourceVersion()).setCode(element.getCode()));
+      association.setTarget(new CodeSystemEntityVersion().setCodeSystem(Optional.ofNullable(codeSystems.get(g.getTarget())).map(CodeSystem::getId).orElse(null)).setCodeSystemVersion(g.getTargetVersion()).setCode(target.getCode()));
+      association.setAssociationType(target.getEquivalence());
+      association.setVersions(List.of(new MapSetEntityVersion().setStatus(PublicationStatus.draft)));
+      if (association.getSource() != null && association.getTarget() != null) {
+        associations.add(association);
+      }
+    })));
     return associations;
   }
 
@@ -81,4 +102,13 @@ public class ConceptMapFhirImportMapper {
     return associationTypes;
   }
 
+  private String getValueSet(String uri) {
+    if (StringUtils.isEmpty(uri)) {
+      return null;
+    }
+    ValueSetQueryParams params = new ValueSetQueryParams();
+    params.setUri(uri);
+    params.setLimit(1);
+    return valueSetService.query(params).findFirst().map(ValueSet::getId).orElse(null);
+  }
 }

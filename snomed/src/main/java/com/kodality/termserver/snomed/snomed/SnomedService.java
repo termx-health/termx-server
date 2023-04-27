@@ -30,7 +30,7 @@ public class SnomedService {
       int bound = (total + MAX_COUNT - 1) / MAX_COUNT;
       for (int i = 0; i < bound; i++) {
         params.setLimit(MAX_COUNT);
-        params.setSearchAfter(result.getSearchAfter());
+        params.setSearchAfter(i == 0 ? null : result.getSearchAfter());
         result = snowstormClient.queryConcepts(params).join();
         snomedConcepts.addAll(result.getItems());
       }

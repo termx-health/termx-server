@@ -15,17 +15,25 @@ import javax.inject.Singleton;
 @Singleton
 public class MapSetAssociationRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(MapSetAssociation.class, bp -> {
-    bp.addColumnProcessor("target_code_system_entity_version_id", "target",
-        (rs, index, propType) -> new CodeSystemEntityVersion().setId(rs.getLong("target_code_system_entity_version_id")));
-    bp.addColumnProcessor("source_code_system_entity_version_id", "source",
-        (rs, index, propType) -> new CodeSystemEntityVersion().setId(rs.getLong("source_code_system_entity_version_id")));
+    bp.addRowProcessor("target", (rs) -> new CodeSystemEntityVersion()
+        .setCodeSystem(rs.getString("target_code_system"))
+        .setCode(rs.getString("target_concept_code"))
+        .setId((Long) rs.getObject("target_code_system_entity_version_id")));
+    bp.addRowProcessor("source", (rs) -> new CodeSystemEntityVersion()
+        .setCodeSystem(rs.getString("source_code_system"))
+        .setCode(rs.getString("source_concept_code"))
+        .setId((Long) rs.getObject("source_code_system_entity_version_id")));
   });
 
   public void save(MapSetAssociation association) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", association.getId());
     ssb.property("map_set", association.getMapSet());
+    ssb.property("target_code_system", association.getTarget().getCodeSystem());
+    ssb.property("target_concept_code", association.getTarget().getCode());
     ssb.property("target_code_system_entity_version_id", association.getTarget().getId());
+    ssb.property("source_code_system", association.getSource().getCodeSystem());
+    ssb.property("source_concept_code", association.getSource().getCode());
     ssb.property("source_code_system_entity_version_id", association.getSource().getId());
     ssb.property("association_type", association.getAssociationType());
     ssb.property("status", association.getStatus());

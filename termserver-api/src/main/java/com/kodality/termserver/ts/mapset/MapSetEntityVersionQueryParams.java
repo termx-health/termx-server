@@ -11,6 +11,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class MapSetEntityVersionQueryParams extends QueryParams {
   private Long mapSetEntityId;
+  private String mapSetEntityIds;
   private Long mapSetVersionId;
   private String mapSetVersion;
   private String mapSet;

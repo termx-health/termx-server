@@ -44,7 +44,7 @@ public class PackageResourceSyncService {
       vsFhirImportService.importValueSet(valueSet, false);
     } else if (resourceType.equals(PackageResourceType.map_set)) {
       ConceptMap conceptMap = getClient(server.getRootUrl() + "/fhir/MapSet", ConceptMap.class).read(resourceId).join();
-      cmFhirImportService.importMapSet(conceptMap, false);
+      cmFhirImportService.importMapSet(conceptMap);
     } else {
       throw ApiError.TE902.toApiException();
     }

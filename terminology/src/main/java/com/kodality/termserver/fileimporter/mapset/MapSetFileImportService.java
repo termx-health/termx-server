@@ -53,7 +53,7 @@ public class MapSetFileImportService {
     MapSet existingMapSet = mapSetService.load(req.getMap().getId()).orElse(null);
     MapSet mapSet = prepareMapSet(mapper.mapMapSet(req, rows, existingMapSet));
     List<AssociationType> associationTypes = mapper.mapAssociationTypes(rows);
-    importService.importMapSet(mapSet, associationTypes, false);
+    importService.importMapSet(mapSet, associationTypes);
   }
 
   private List<MapSetFileImportRow> parseRows(byte[] csvFile) {

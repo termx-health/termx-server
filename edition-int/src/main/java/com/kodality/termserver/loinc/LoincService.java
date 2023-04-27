@@ -11,6 +11,7 @@ import com.kodality.termserver.loinc.utils.part.LoincPart;
 import com.kodality.termserver.loinc.utils.part.LoincPartMapper;
 import com.kodality.termserver.ts.CodeSystemImportProvider;
 import com.kodality.termserver.ts.Language;
+import com.kodality.termserver.ts.MapSetImportProvider;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.EntityPropertyType;
 import com.univocity.parsers.common.processor.RowListProcessor;
@@ -22,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -37,7 +39,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class LoincService {
   @Inject
-  private CodeSystemImportProvider importProvider;
+  private CodeSystemImportProvider csImportProvider;
+  @Inject
+  private MapSetImportProvider msImportProvider;
 
   @Transactional
   public void importLoinc(LoincImportRequest request, List<Pair<String, byte[]>> files) {
@@ -46,8 +50,8 @@ public class LoincService {
     Map<String, LoincPart> parts = processParts(files);
     Map<String, LoincConcept> concepts = processTerminology(files);
     processLinguisticVariants(files, request, parts, concepts);
-    importProvider.importCodeSystem(LoincPartMapper.toRequest(request, parts.values().stream().toList()));
-    importProvider.importCodeSystem(LoincMapper.toRequest(request, concepts.values().stream().toList()));
+    csImportProvider.importCodeSystem(LoincPartMapper.toRequest(request, parts.values().stream().toList()));
+    csImportProvider.importCodeSystem(LoincMapper.toRequest(request, concepts.values().stream().toList()));
   }
 
   private Map<String, LoincPart> processParts(List<Pair<String, byte[]>> files) {
@@ -224,7 +228,14 @@ public class LoincService {
           .setDisplay(r[headers.indexOf("AnswerListName")])
           .setOid(r[headers.indexOf("AnswerListOID")]);
     }).toList();
-    importProvider.importCodeSystem(LoincAnswerListMapper.toRequest(request, answers, answerLists));
+
+    List<Pair<String, String>> mappings = rows.stream()
+        .filter(r -> Optional.ofNullable(r[headers.indexOf("ExtCodeSystemVersion")]).orElse("").startsWith("http://snomed.info/sct/900000000000207008"))
+        .map(r -> Pair.of(r[headers.indexOf("AnswerStringId")], r[headers.indexOf("ExtCodeId")]))
+        .collect(Collectors.groupingBy(p -> p.getKey() + p.getValue()))
+        .values().stream().map(v -> v.stream().findFirst().orElse(null)).filter(Objects::nonNull).toList();
+    csImportProvider.importCodeSystem(LoincAnswerListMapper.toRequest(request, answers, answerLists));
+    msImportProvider.importMapSet(LoincAnswerListMapper.toRequest(request, mappings));
   }
 
 

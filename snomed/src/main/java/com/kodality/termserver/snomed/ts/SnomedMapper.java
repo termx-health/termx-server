@@ -1,5 +1,6 @@
 package com.kodality.termserver.snomed.ts;
 
+import com.kodality.termserver.snomed.concept.SnomedConcept.SnomedConceptName;
 import com.kodality.termserver.ts.CaseSignificance;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
@@ -9,6 +10,7 @@ import com.kodality.termserver.ts.codesystem.EntityProperty;
 import com.kodality.termserver.ts.codesystem.EntityPropertyType;
 import com.kodality.termserver.snomed.concept.SnomedConcept;
 import com.kodality.termserver.snomed.description.SnomedDescription;
+import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,14 +28,31 @@ public class SnomedMapper {
     return concept;
   }
 
-  private CodeSystemEntityVersion toConceptVersion(SnomedConcept snomedConcept) {
+  public CodeSystemEntityVersion toConceptVersion(SnomedConcept snomedConcept) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(snomedConcept.getConceptId());
     version.setCodeSystem(SNOMED);
 //    version.setAssociations(snomedConcept.getRelationships() == null ? new ArrayList<>() : snomedConcept.getRelationships().stream().map(this::toConceptAssociation).collect(Collectors.toList()));
-    version.setDesignations(snomedConcept.getDescriptions() == null ? new ArrayList<>() : snomedConcept.getDescriptions().stream().map(this::toConceptDesignation).collect(Collectors.toList()));
+    if (CollectionUtils.isNotEmpty(snomedConcept.getDescriptions())) {
+      version.setDesignations(snomedConcept.getDescriptions().stream().map(this::toConceptDesignation).collect(Collectors.toList()));
+    } else  {
+      version.setDesignations(toConceptDesignations(snomedConcept.getPt(), snomedConcept.getFsn()));
+    }
     version.setStatus(PublicationStatus.draft);
     return version;
+  }
+
+  private List<Designation> toConceptDesignations(SnomedConceptName pt, SnomedConceptName fsn) {
+    Designation designationPt = new Designation();
+    designationPt.setName(pt.getTerm());
+    designationPt.setLanguage(pt.getLang());
+    designationPt.setDesignationType("display");
+
+    Designation designationFsn = new Designation();
+    designationFsn.setName(fsn.getTerm());
+    designationFsn.setLanguage(fsn.getLang());
+    designationFsn.setDesignationType("description");
+    return List.of(designationPt, designationFsn);
   }
 
   private Designation toConceptDesignation(SnomedDescription d) {

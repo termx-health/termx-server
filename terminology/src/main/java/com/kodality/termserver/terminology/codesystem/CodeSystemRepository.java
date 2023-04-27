@@ -87,7 +87,9 @@ public class CodeSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and cs.id = ?", params.getId());
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("cs.id", p));
     sb.appendIfNotNull("and cs.id ~* ?", params.getIdContains());
-    sb.appendIfNotNull("and cs.uri = ?", params.getUri());
+    if (StringUtils.isNotEmpty(params.getUri())) {
+      sb.and().in("cs.uri", params.getUri());
+    }
     sb.appendIfNotNull("and cs.uri ~* ?", params.getUriContains());
     sb.appendIfNotNull("and cs.content = ?", params.getContent());
     sb.appendIfNotNull("and cs.description = ?", params.getDescription());

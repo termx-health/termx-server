@@ -11,6 +11,7 @@ import com.kodality.termserver.ts.codesystem.CodeSystemAssociationQueryParams;
 import io.micronaut.core.util.StringUtils;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -132,7 +133,11 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     ps.setString(3, codeSystem);
     ps.setString(4, associations.get(i).getValue().getAssociationType());
     ps.setString(5, associations.get(i).getValue().getStatus());
-    ps.setInt(6, associations.get(i).getValue().getOrderNumber());
+    if (associations.get(i).getValue().getOrderNumber() == null) {
+      ps.setNull(6, Types.SMALLINT);
+    } else {
+      ps.setInt(6, associations.get(i).getValue().getOrderNumber());
+    }
     ps.setLong(7, associations.get(i).getValue().getId());
   }
 

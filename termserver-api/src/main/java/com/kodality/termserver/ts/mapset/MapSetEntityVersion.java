@@ -16,4 +16,6 @@ public class MapSetEntityVersion {
   private String description;
   private String status;
   private OffsetDateTime created;
+
+  private Long mapSetEntityId;
 }

@@ -10,7 +10,6 @@ import com.kodality.termserver.ts.mapset.MapSetQueryParams;
 import com.kodality.termserver.ts.mapset.MapSetTransactionRequest;
 import com.kodality.termserver.ts.mapset.MapSetVersion;
 import com.kodality.termserver.ts.mapset.MapSetVersionQueryParams;
-import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +33,7 @@ public class MapSetService {
 
   public Optional<MapSet> load(String id, boolean decorate) {
     return Optional.ofNullable(repository.load(id))
-        .map(ms -> decorate ? decorate(ms, new MapSetQueryParams().setAssociationsDecorated(true).setVersionsDecorated(true)) : ms);
+        .map(ms -> decorate ? decorate(ms, new MapSetQueryParams().setVersionsDecorated(true)) : ms);
   }
 
   @Transactional
@@ -55,7 +54,7 @@ public class MapSetService {
     mapSetVersionService.save(version);
 
     List<MapSetAssociation> associations = request.getAssociations();
-    if (CollectionUtils.isNotEmpty(request.getAssociations())) {
+    if (request.getAssociations() != null) {
       associations.forEach(association -> mapSetAssociationService.save(association, version.getMapSet()));
       mapSetVersionService.saveEntityVersions(version.getId(), associations.stream().map(a -> a.getVersions().get(0)).collect(Collectors.toList()));
     }

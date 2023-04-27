@@ -57,8 +57,12 @@ drop table if exists terminology.map_set_association;
 create table terminology.map_set_association (
     id                                          bigint              not null primary key,
     map_set                                     text                not null,
-    source_code_system_entity_version_id        bigint              not null,
-    target_code_system_entity_version_id        bigint              not null,
+    source_code_system                          text                not null,
+    source_concept_code                         text                not null,
+    source_code_system_entity_version_id        bigint,
+    target_code_system                          text                not null,
+    target_concept_code                         text                not null,
+    target_code_system_entity_version_id        bigint,
     association_type                            text                not null,
     status                                      text                not null,
     sys_created_at      timestamp           not null,
@@ -69,12 +73,18 @@ create table terminology.map_set_association (
     sys_version         int                 not null,
     constraint ms_association_id_fk foreign key (id) references terminology.map_set_entity(id),
     constraint ms_association_map_set_fk foreign key (map_set) references terminology.map_set(id),
+    constraint ms_association_source_cs_id_fk foreign key (source_code_system) references terminology.code_system(id),
     constraint ms_association_source_cs_entity_version_fk foreign key (source_code_system_entity_version_id) references terminology.code_system_entity_version(id),
+    constraint ms_association_target_cs_id_fk foreign key (target_code_system) references terminology.code_system(id),
     constraint ms_association_target_cs_entity_version_fk foreign key (target_code_system_entity_version_id) references terminology.code_system_entity_version(id),
     constraint ms_association_association_type_fk foreign key (association_type) references terminology.association_type(code)
 );
 create index ms_association_map_set_idx on terminology.map_set_association(map_set);
+create index ms_association_source_cs_id_idx on terminology.map_set_association(source_code_system);
+create index ms_association_source_concept_code_idx on terminology.map_set_association(source_concept_code);
 create index ms_association_source_cs_entity_version_idx on terminology.map_set_association(source_code_system_entity_version_id);
+create index ms_association_target_cs_id_idx on terminology.map_set_association(target_code_system);
+create index ms_association_target_concept_code_idx on terminology.map_set_association(target_concept_code);
 create index ms_association_target_cs_entity_version_idx on terminology.map_set_association(target_code_system_entity_version_id);
 create index ms_association_association_type_idx on terminology.map_set_association(association_type);
 

@@ -7,6 +7,7 @@ import com.kodality.termserver.ts.Language;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.ts.codesystem.CodeSystemContent;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestCodeSystem;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestConcept;
@@ -14,6 +15,11 @@ import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemI
 import com.kodality.termserver.ts.codesystem.Designation;
 import com.kodality.termserver.ts.codesystem.EntityPropertyType;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
+import com.kodality.termserver.ts.mapset.MapSet;
+import com.kodality.termserver.ts.mapset.MapSetAssociation;
+import com.kodality.termserver.ts.mapset.MapSetEntityVersion;
+import com.kodality.termserver.ts.mapset.MapSetTransactionRequest;
+import com.kodality.termserver.ts.mapset.MapSetVersion;
 import io.micronaut.core.util.StringUtils;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -112,5 +118,32 @@ public class LoincAnswerListMapper {
         .setStatus(PublicationStatus.active)
         .setOrderNumber(a.getValue())
         .setTargetCode(a.getKey())).toList();
+  }
+
+  public static MapSetTransactionRequest toRequest(LoincImportRequest request, List<Pair<String, String>> mappings) {
+    MapSet mapSet = new MapSet();
+    mapSet.setId("loinc-answer-to-snomed");
+    mapSet.setUri("loinc-answer-to-snomed");
+    mapSet.setNames(new LocalizedName(Map.of("en", "LOINC answer to SNOMED CT")));
+    mapSet.setSourceCodeSystems(List.of("loinc-answer-list"));
+    mapSet.setTargetCodeSystems(List.of("snomed-ct"));
+
+    MapSetVersion version = new MapSetVersion();
+    version.setVersion(request.getVersion());
+    version.setMapSet("loinc-answer-to-snomed");
+    version.setSource("Regenstrief Institute, Inc.");
+    version.setSupportedLanguages(List.of(Language.en));
+    version.setStatus(PublicationStatus.draft);
+
+    List<MapSetAssociation> associations = mappings.stream().map(p -> {
+      MapSetAssociation association = new MapSetAssociation()
+          .setSource(new CodeSystemEntityVersion().setCode(p.getKey()).setCodeSystem("loinc-answer-list"))
+          .setTarget(new CodeSystemEntityVersion().setCode(p.getValue()).setCodeSystem("snomed-ct"))
+          .setAssociationType(IS_A)
+          .setStatus(PublicationStatus.active);
+      association.setVersions(List.of(new MapSetEntityVersion().setMapSet("loinc-answer-to-snomed").setStatus(PublicationStatus.draft)));
+      return association;
+    }).toList();
+    return new MapSetTransactionRequest().setMapSet(mapSet).setVersion(version).setAssociations(associations);
   }
 }
