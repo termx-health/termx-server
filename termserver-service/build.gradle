@@ -54,7 +54,7 @@ dependencies {
   implementation('org.liquibase:liquibase-core:4.16.1')
   implementation("io.reactivex.rxjava2:rxjava:2.2.21")
   implementation("io.swagger.core.v3:swagger-annotations")
-  implementation("io.micronaut.openapi:micronaut-openapi:4.8.7")
+  implementation("io.micronaut.openapi:micronaut-openapi:3.2.0")
   implementation("com.univocity:univocity-parsers:2.9.1")
   implementation("com.auth0:java-jwt:4.0.0")
   implementation('com.auth0:jwks-rsa:0.21.2')
