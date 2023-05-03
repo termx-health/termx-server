@@ -55,6 +55,7 @@ public enum ApiError {
   TE903("TE903", "Project not specified."),
   TE904("TE904", "Package or package version not specified."),
   TE905("TE905", "Terminology server for current installation is not defined."),
+  TE906("TE906", "Mode not specified."),
 
 
   OD000("OD000","Observation definition with panel structure should contain at least one member."),
@@ -69,7 +70,6 @@ public enum ApiError {
   EE000("EE000","Import failed"),
 
   EI000("EI000","Import failed"),
-
 
   EU000("EU000","Import failed");
 
