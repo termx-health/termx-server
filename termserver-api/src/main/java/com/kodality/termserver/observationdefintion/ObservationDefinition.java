@@ -21,7 +21,7 @@ public class ObservationDefinition extends CodeName {
   private LocalizedName alias;
   private LocalizedName definition;
   private LocalizedName keywords;
-  private String category;
+  private List<ObservationDefinitionCategory> category;
   private String timePrecision;
   private List<String> structure;
   private ObservationDefinitionValue value;
@@ -38,6 +38,14 @@ public class ObservationDefinition extends CodeName {
   public static class ObservationDefinitionKeyWord {
     private String lang;
     private String word;
+  }
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class ObservationDefinitionCategory {
+    private String codeSystem;
+    private String code;
   }
 
 }

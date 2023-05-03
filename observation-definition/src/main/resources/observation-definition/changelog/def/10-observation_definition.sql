@@ -31,3 +31,7 @@ create unique index observation_definition_unique_url ON def.observation_definit
 select core.create_table_metadata('def.observation_definition');
 select audit.add_log('def.observation_definition');
 --
+
+--changeset kodality:observation_definition-category-jsonb
+alter table def.observation_definition alter column category type jsonb using jsonb_build_array(jsonb_build_object('code', category, 'codeSystem', 'observation-category'));
+--

@@ -19,6 +19,7 @@ public class ObservationDefinitionRepository extends BaseRepository {
     p.addColumnProcessor("definition", PgBeanProcessor.fromJson());
     p.addColumnProcessor("keywords", PgBeanProcessor.fromJson());
     p.addColumnProcessor("structure", PgBeanProcessor.fromJson());
+    p.addColumnProcessor("category", PgBeanProcessor.fromJson());
   });
 
   private final Map<String, String> orderMapping = Map.of("code", "od.code");
@@ -35,7 +36,7 @@ public class ObservationDefinitionRepository extends BaseRepository {
     ssb.jsonProperty("alias", def.getAlias());
     ssb.jsonProperty("definition", def.getDefinition());
     ssb.jsonProperty("keywords", def.getKeywords());
-    ssb.property("category", def.getCategory());
+    ssb.jsonProperty("category", def.getCategory());
     ssb.property("time_precision", def.getTimePrecision());
     ssb.jsonProperty("structure", def.getStructure());
     SqlBuilder sb = ssb.buildSave("def.observation_definition", "id");
