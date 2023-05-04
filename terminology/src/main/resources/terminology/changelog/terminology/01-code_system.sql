@@ -58,3 +58,4 @@ select core.create_table_metadata('terminology.code_system_version');
 --changeset kodality:code_system-supported_languages
 alter table terminology.code_system add column supported_languages text[];
 --
+

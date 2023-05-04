@@ -80,12 +80,14 @@ public class ValueSetRepository extends BaseRepository {
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(vs.names) where value = ?)", params.getName());
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(vs.names) where value ~* ?)", params.getNameContains());
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and (vs.id = ? or vs.uri = ? or vs.description = ? or exists (select 1 from jsonb_each_text(vs.names) where value = ?))",
-          params.getText(), params.getText(), params.getText(), params.getText());
+      sb.append("and ( terminology.text_search(vs.id, vs.uri, vs.description) like '%`' || terminology.search_translate(?) || '`%'" +
+              "     or terminology.jsonb_search(vs.names) like '%`' || terminology.search_translate(?) || '`%' )",
+          params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (vs.id ~* ? or vs.uri ~* ? or vs.description ~* ? or exists (select 1 from jsonb_each_text(vs.names) where value ~* ?))",
-          params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
+      sb.append("and ( terminology.text_search(vs.id, vs.uri, vs.description) like '%' || terminology.search_translate(?) || '%'" +
+              "     or terminology.jsonb_search(vs.names) like '%' || terminology.search_translate(?) || '%' )",
+          params.getTextContains(), params.getTextContains());
     }
     sb.appendIfNotNull("and vsv.id = ?", params.getVersionId());
     sb.appendIfNotNull("and vsv.version = ?", params.getVersionVersion());

@@ -98,12 +98,14 @@ public class CodeSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and cs.exists (select 1 from jsonb_each_text(cs.names) where value = ?)", params.getName());
     sb.appendIfNotNull("and cs.exists (select 1 from jsonb_each_text(cs.names) where value ~* ?)", params.getNameContains());
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and (cs.id = ? or cs.uri = ? or cs.description = ? or exists (select 1 from jsonb_each_text(cs.names) where value = ?))",
-          params.getText(), params.getText(), params.getText(), params.getText());
+      sb.append("and ( terminology.text_search(cs.id, cs.uri, cs.description) like '%`' || terminology.search_translate(?) || '`%'" +
+              "     or terminology.jsonb_search(cs.names) like '%`' || terminology.search_translate(?) || '`%' )",
+          params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (cs.id ~* ? or cs.uri ~* ? or cs.description ~* ? or exists (select 1 from jsonb_each_text(cs.names) where value ~* ?))",
-          params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
+      sb.append("and ( terminology.text_search(cs.id, cs.uri, cs.description) like '%' || terminology.search_translate(?) || '%'" +
+              "     or terminology.jsonb_search(cs.names) like '%' || terminology.search_translate(?) || '%' )",
+          params.getTextContains(), params.getTextContains());
     }
     sb.appendIfNotNull("and c.code = ?", params.getConceptCode());
     sb.appendIfNotNull("and csv.id = ?", params.getVersionId());
