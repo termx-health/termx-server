@@ -95,7 +95,10 @@ public class ValueSetRepository extends BaseRepository {
     sb.appendIfNotNull("and vsv.status = ?", params.getVersionStatus());
     sb.appendIfNotNull("and vsvr.type = 'include' and vsvr.code_system = ?", params.getCodeSystem());
     sb.appendIfNotNull("and vsvr.type = 'include' and cs.uri = ?", params.getCodeSystemUri());
-    sb.appendIfNotNull("and vsv.id is not null and exists (select 1 from terminology.value_set_expand(vsv.id) vse where (vse.concept ->> 'code') = ?)", params.getConceptCode());
+    if (params.getConceptCode() != null) {
+      sb.append("and (vsv.id is not null and exists (select 1 from terminology.value_set_expand(vsv.id) vse where (vse.concept ->> 'code') = ?)", params.getConceptCode());
+      sb.append("or vsvr.type = 'include' and exists (select 1 from jsonb_array_elements(vsvr.concepts) c where (c -> 'concept' ->> 'code') = ?))", params.getConceptCode());
+    }
     sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
     sb.appendIfNotNull("and p.id = ?", params.getPackageId());
     sb.appendIfNotNull("and pr.id = ?", params.getProjectId());

@@ -57,8 +57,8 @@ public class MapSetRepository extends BaseRepository {
         "left join terminology.code_system_entity cse_t on cse_t.id = csev_t.code_system_entity_id and cse_t.sys_status = 'A' " +
         "left join terminology.code_system_version csv_s on csv_s.code_system = cse_s.code_system and csv_s.sys_status = 'A' " +
         "left join terminology.code_system_version csv_t on csv_t.code_system = cse_t.code_system and csv_t.sys_status = 'A' " +
-        "left join terminology.code_system cs_s on cs_s.id = csv_s.code_system and cs_s.sys_status = 'A' " +
-        "left join terminology.code_system cs_t on cs_t.id = csv_t.code_system and cs_t.sys_status = 'A' " +
+        "left join terminology.code_system cs_s on (cs_s.id = csv_s.code_system or msa.source_code_system = cs_s.id) and cs_s.sys_status = 'A' " +
+        "left join terminology.code_system cs_t on (cs_t.id = csv_t.code_system or msa.target_code_system = cs_t.id) and cs_t.sys_status = 'A' " +
         "left join terminology.package_version_resource pvr on pvr.resource_type = 'map-set' and pvr.resource_id = ms.id and pvr.sys_status = 'A' " +
         "left join terminology.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
         "left join terminology.package p on p.id = pv.package_id and p.sys_status = 'A' " +
@@ -102,11 +102,11 @@ public class MapSetRepository extends BaseRepository {
           params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
     sb.appendIfNotNull("and msv.version = ?", params.getVersionVersion());
-    sb.appendIfNotNull("and csev_s.code = ?", params.getAssociationSourceCode());
+    sb.appendIfNotNull("and msa.source_concept_code = ?", params.getAssociationSourceCode());
     sb.appendIfNotNull("and cs_s.id = ?", params.getAssociationSourceSystem());
     sb.appendIfNotNull("and cs_s.uri = ?", params.getAssociationSourceSystemUri());
     sb.appendIfNotNull("and csv_s.version = ?", params.getAssociationSourceSystemVersion());
-    sb.appendIfNotNull("and csev_t.code = ?", params.getAssociationTargetCode());
+    sb.appendIfNotNull("and msa.target_concept_code = ?", params.getAssociationTargetCode());
     sb.appendIfNotNull("and cs_t.id = ?", params.getAssociationTargetSystem());
     sb.appendIfNotNull("and cs_t.uri = ?", params.getAssociationTargetSystemUri());
     sb.appendIfNotNull("and csv_t.version = ?", params.getAssociationTargetSystemVersion());
