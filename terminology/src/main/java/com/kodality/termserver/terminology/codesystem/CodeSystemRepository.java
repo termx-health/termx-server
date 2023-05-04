@@ -60,7 +60,6 @@ public class CodeSystemRepository extends BaseRepository {
         "left join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A' " +
         "left join terminology.code_system_entity cse on cse.code_system = cs.id and cse.sys_status = 'A' " +
         "left join terminology.concept c on c.id = cse.id and c.sys_status = 'A' " +
-        "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = cse.id and csev.sys_status = 'A' " +
         "left join terminology.package_version_resource pvr on pvr.resource_type = 'code-system' and pvr.resource_id = cs.id and pvr.sys_status = 'A' " +
         "left join terminology.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
         "left join terminology.package p on p.id = pv.package_id and p.sys_status = 'A' " +
@@ -95,8 +94,8 @@ public class CodeSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and cs.description = ?", params.getDescription());
     sb.appendIfNotNull("and cs.description ~* ?", params.getDescriptionContains());
     sb.appendIfNotNull("and cs.base_code_system = ?", params.getBaseCodeSystem());
-    sb.appendIfNotNull("and cs.exists (select 1 from jsonb_each_text(cs.names) where value = ?)", params.getName());
-    sb.appendIfNotNull("and cs.exists (select 1 from jsonb_each_text(cs.names) where value ~* ?)", params.getNameContains());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.names) like '%`' || terminology.search_translate(?) || '`%'", params.getName());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.names) like '%' || terminology.search_translate(?) || '%'", params.getNameContains());
     if (StringUtils.isNotEmpty(params.getText())) {
       sb.append("and ( terminology.text_search(cs.id, cs.uri, cs.description) like '%`' || terminology.search_translate(?) || '`%'" +
               "     or terminology.jsonb_search(cs.names) like '%`' || terminology.search_translate(?) || '`%' )",
@@ -113,11 +112,12 @@ public class CodeSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and csv.status = ?", params.getVersionStatus());
     sb.appendIfNotNull("and csv.source = ?", params.getVersionSource());
     sb.appendIfNotNull("and csv.release_date >= ?", params.getVersionReleaseDateGe());
-    sb.appendIfNotNull("and (csv.expiration_date <= ? or expiration_date is null)", params.getVersionExpirationDateLe());
-    sb.appendIfNotNull("and csev.id = ?", params.getCodeSystemEntityVersionId());
+    sb.appendIfNotNull("and (csv.expiration_date <= ? or csv.expiration_date is null)", params.getVersionExpirationDateLe());
     sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
     sb.appendIfNotNull("and p.id = ?", params.getPackageId());
     sb.appendIfNotNull("and pr.id = ?", params.getProjectId());
+    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev" +
+        " where csev.code_system_entity_id = cse.id and csev.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
     return sb;
   }
 

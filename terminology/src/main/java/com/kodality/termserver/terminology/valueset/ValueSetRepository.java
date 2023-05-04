@@ -77,8 +77,8 @@ public class ValueSetRepository extends BaseRepository {
     sb.appendIfNotNull("and vs.uri ~* ?", params.getUriContains());
     sb.appendIfNotNull("and vs.description = ?", params.getDescription());
     sb.appendIfNotNull("and vs.description ~* ?", params.getDescriptionContains());
-    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(vs.names) where value = ?)", params.getName());
-    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(vs.names) where value ~* ?)", params.getNameContains());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.names) like '%`' || terminology.search_translate(?) || '`%'", params.getName());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.names) like '%' || terminology.search_translate(?) || '%'", params.getNameContains());
     if (StringUtils.isNotEmpty(params.getText())) {
       sb.append("and ( terminology.text_search(vs.id, vs.uri, vs.description) like '%`' || terminology.search_translate(?) || '`%'" +
               "     or terminology.jsonb_search(vs.names) like '%`' || terminology.search_translate(?) || '`%' )",
