@@ -23,4 +23,10 @@
         </sql>
     </changeSet>
 
+    <changeSet id="terminology-schema-extensions" author="kodality">
+        <sql>
+        CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA public;
+      </sql>
+    </changeSet>
+
 </databaseChangeLog>

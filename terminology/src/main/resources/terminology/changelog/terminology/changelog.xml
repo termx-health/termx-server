@@ -47,12 +47,16 @@
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/31-cancel_value_set_version.sql"/>
     </changeSet>
 
-    <changeSet id="terminology_function_indexes_1" author="kodality">
+    <changeSet id="terminology_function_indexes_2" author="kodality">
       <sql>
-        create index code_system_text_search_idx on terminology.code_system(terminology.text_search(id, uri, description));
-        create index code_system_names_search_idx on terminology.code_system(terminology.jsonb_search(names));
-        create index value_set_text_search_idx on terminology.value_set(terminology.text_search(id, uri, description));
-        create index value_set_names_search_idx on terminology.value_set(terminology.jsonb_search(names));
+        drop index if exists terminology.code_system_text_search_idx;
+        drop index if exists terminology.code_system_names_search_idx;
+        drop index if exists terminology.value_set_text_search_idx;
+        drop index if exists terminology.value_set_names_search_idx;
+        create index code_system_text_search_idx on terminology.code_system USING gin (terminology.text_search(id, uri, description) gin_trgm_ops);
+        create index code_system_names_search_idx on terminology.code_system USING gin (terminology.jsonb_search(names) gin_trgm_ops);
+        create index value_set_text_search_idx on terminology.value_set USING gin (terminology.text_search(id, uri, description) gin_trgm_ops);
+        create index value_set_names_search_idx on terminology.value_set USING gin (terminology.jsonb_search(names) gin_trgm_ops);
       </sql>
     </changeSet>
 </databaseChangeLog>
