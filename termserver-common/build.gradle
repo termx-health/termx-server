@@ -13,7 +13,7 @@ dependencies {
     implementation("com.kodality.commons:commons-cache:${rootProject.commonsVersion}")
     api("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}")
     implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.commonsMicronautVersion}")
-    implementation("com.kodality.commons:commons-tenant:${rootProject.commonsMicronautVersion}")
+    implementation("com.kodality.commons:commons-sequence:${rootProject.commonsMicronautVersion}")
 
     implementation "org.apache.commons:commons-io:1.3.2"
 

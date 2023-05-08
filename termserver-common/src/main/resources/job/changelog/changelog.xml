@@ -6,6 +6,7 @@
 
     <include file="core-db/changelog/core/changelog.xml" relativeToChangelogFile="false"/>
     <include file="core-db/changelog/audit/changelog.xml" relativeToChangelogFile="false"/>
+    <include file="sys_sequence/changelog/changelog.xml" relativeToChangelogFile="false"/>
 
     <changeSet id="create_deprecated_sequences" author="kodality">
         <sql>

@@ -5,8 +5,6 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.thesaurus.template.Template;
-import com.kodality.termserver.thesaurus.template.TemplateQueryParams;
 import javax.inject.Singleton;
 
 @Singleton
@@ -47,7 +45,7 @@ public class TemplateRepository extends BaseRepository {
   private SqlBuilder filter(TemplateQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and t.code = ?", params.getCode());
-    sb.appendIfNotNull("and (t.code ~* ? or exists (select 1 from jsonb_each_text(t.names) where value ~* ?))", params.getTextContains());
+    sb.appendIfNotNull(params.getTextContains(), (sql, p) -> sql.append("and (t.code ~* ? or exists (select 1 from jsonb_each_text(t.names) where value ~* ?))", p, p));
     return sb;
   }
 

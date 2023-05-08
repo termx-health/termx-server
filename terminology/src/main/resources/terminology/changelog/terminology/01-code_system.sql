@@ -59,3 +59,7 @@ select core.create_table_metadata('terminology.code_system_version');
 alter table terminology.code_system add column supported_languages text[];
 --
 
+--changeset kodality:code_system-sequence
+alter table terminology.code_system add column sequence text;
+--
+
