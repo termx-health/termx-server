@@ -30,7 +30,7 @@ public class SysSequenceService {
   }
 
   public Long save(SysSequence sequence) {
-    validateDuplicate(sequence);
+    validateCode(sequence);
     validatePattern(sequence.getPattern());
     return sysSequenceRepository.save(sequence);
   }
@@ -40,9 +40,15 @@ public class SysSequenceService {
   }
 
 
-  private void validateDuplicate(SysSequence sequence) {
-    boolean codeExists = sysSequenceRepository.exists(sequence);
-    if (codeExists) {
+  private void validateCode(SysSequence sequence) {
+    if (sequence.getId() != null) {
+      SysSequence persisted = load(sequence.getId());
+      if (!sequence.getCode().equals(persisted.getCode())) {
+        throw new ApiClientException("SEQ103", "Cannot change code");
+      }
+    }
+
+    if (sysSequenceRepository.hasDuplicate(sequence)) {
       throw new ApiClientException("SEQ101", "Code must be unique");
     }
   }
