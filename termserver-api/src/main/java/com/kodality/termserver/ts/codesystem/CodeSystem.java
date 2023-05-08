@@ -22,6 +22,7 @@ public class CodeSystem {
   private String narrative;
   private String description;
   private List<String> supportedLanguages;
+  private String sequence;
 
   private String baseCodeSystem;
 
