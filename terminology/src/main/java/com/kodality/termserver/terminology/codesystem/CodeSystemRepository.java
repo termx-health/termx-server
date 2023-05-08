@@ -38,6 +38,7 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.property("narrative", codeSystem.getNarrative());
     ssb.property("description", codeSystem.getDescription());
     ssb.property("supported_languages", "?::text[]", PgUtil.array(codeSystem.getSupportedLanguages()));
+    ssb.property("sequence", codeSystem.getSequence());
     ssb.property("base_code_system", codeSystem.getBaseCodeSystem());
     ssb.property("sys_status", "A");
 
