@@ -94,6 +94,10 @@ alter table terminology.entity_property add column preferred boolean;
 alter table terminology.entity_property add column required boolean;
 --
 
+--changeset kodality:entity_property-rule
+alter table terminology.entity_property add column rule jsonb;
+--
+
 --changeset kodality:terminology.entity_property_value
 drop table if exists terminology.entity_property_value;
 create table terminology.entity_property_value (

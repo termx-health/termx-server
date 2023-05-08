@@ -14,7 +14,9 @@ import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 public class EntityPropertyRepository extends BaseRepository {
-  private final PgBeanProcessor bp = new PgBeanProcessor(EntityProperty.class);
+  private final PgBeanProcessor bp = new PgBeanProcessor(EntityProperty.class, p -> {
+    p.addColumnProcessor("rule", PgBeanProcessor.fromJson());
+  });
 
   String from = " from terminology.entity_property ep left join terminology.code_system_supplement css on css.target_id = ep.id and css.target_type = 'EntityProperty' ";
 
@@ -30,6 +32,7 @@ public class EntityPropertyRepository extends BaseRepository {
     ssb.property("preferred", entityProperty.isPreferred());
     ssb.property("required", entityProperty.isRequired());
     ssb.property("created", entityProperty.getCreated());
+    ssb.jsonProperty("rule", entityProperty.getRule());
 
     SqlBuilder sb = ssb.buildSave("terminology.entity_property", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
