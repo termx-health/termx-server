@@ -32,7 +32,7 @@ with rule_set as (
         where vsvr.rule_set_id in (select id from rule_set) and vsvr."type" = 'exclude' and vsvr.sys_status = 'A' and (vsvr.code_system is null or not (vsvr.code_system = 'snomed-ct'))
     ),
     include_rule_concepts as (
-        select jsonb_array_elements(ir.concepts) c
+        select ir.code_system, jsonb_array_elements(ir.concepts) c
         from include_rules ir
     ),
     include_rule_filters as (
@@ -101,10 +101,10 @@ with rule_set as (
                 )
     ),
     concepts as (
-        select vsvc.id, vsvc.concept, null::bigint concept_version_id, vsvc.display, vsvc.additional_designations, vsvc.order_number
+        select vsvc.id, jsonb_build_object('id', vsvc.concept ->> 'id', 'code', vsvc.concept ->> 'code', 'codeSystem', irc.code_system) concept, null::bigint concept_version_id, vsvc.display, vsvc.additional_designations, vsvc.order_number
         from terminology.value_set_version_concept vsvc
-        where vsvc.value_set_version_id = p_value_set_version_id and vsvc.sys_status = 'A' and
-            exists (select 1 from include_rule_concepts irc where (irc.c -> 'concept' ->> 'code')::text = (vsvc.concept ->> 'code')::text)
+        inner join include_rule_concepts irc on (irc.c -> 'concept' ->> 'code')::text = (vsvc.concept ->> 'code')::text
+        where vsvc.value_set_version_id = p_value_set_version_id and vsvc.sys_status = 'A'
     ),
     value_set_concepts as (
         select s.* from include_rules ir, lateral terminology.value_set_expand(ir.value_set_version_id) s
