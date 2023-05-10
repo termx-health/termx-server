@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -76,17 +77,23 @@ public class CodeSystemEntityVersionService {
     log.info("Versions saved ({} sec)", (System.currentTimeMillis() - start) / 1000);
     start = System.currentTimeMillis();
 
-    Map<Long, List<Designation>> designations = versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getDesignations));
-    Map<Long, List<EntityPropertyValue>> propertyValues = versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getPropertyValues));
-    Map<Long, List<CodeSystemAssociation>> associations = versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, ev -> prepareAssociations(ev.getAssociations())));
+    Map<Long, List<Designation>> designations =
+        versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getDesignations));
+    Map<Long, List<EntityPropertyValue>> propertyValues =
+        versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getPropertyValues));
+    Map<Long, List<CodeSystemAssociation>> associations =
+        versions.values().stream().collect(Collectors.toMap(CodeSystemEntityVersion::getId, ev -> prepareAssociations(ev.getAssociations())));
     designationService.batchUpsert(designations, codeSystem);
-    log.info("Designations saved '{}' ({} sec)", designations.values().stream().flatMap(Collection::stream).toList().size(), (System.currentTimeMillis() - start) / 1000);
+    log.info("Designations saved '{}' ({} sec)", designations.values().stream().flatMap(Collection::stream).toList().size(),
+        (System.currentTimeMillis() - start) / 1000);
     start = System.currentTimeMillis();
     entityPropertyValueService.batchUpsert(propertyValues, codeSystem);
-    log.info("Properties saved '{}' ({} sec)", propertyValues.values().stream().flatMap(Collection::stream).toList().size(), (System.currentTimeMillis() - start) / 1000);
+    log.info("Properties saved '{}' ({} sec)", propertyValues.values().stream().flatMap(Collection::stream).toList().size(),
+        (System.currentTimeMillis() - start) / 1000);
     start = System.currentTimeMillis();
     codeSystemAssociationService.batchUpsert(associations, codeSystem);
-    log.info("Associations saved '{}' ({} sec)", associations.values().stream().flatMap(Collection::stream).toList().size(), (System.currentTimeMillis() - start) / 1000);
+    log.info("Associations saved '{}' ({} sec)", associations.values().stream().flatMap(Collection::stream).toList().size(),
+        (System.currentTimeMillis() - start) / 1000);
     conceptRefreshViewJob.refreshView();
   }
 
@@ -118,23 +125,26 @@ public class CodeSystemEntityVersionService {
     if (CollectionUtils.isEmpty(versions)) {
       return versions;
     }
-    String versionIds = versions.stream().map(CodeSystemEntityVersion::getId).map(String::valueOf).collect(Collectors.joining(","));
+    IntStream.range(0, (versions.size() + 10000 - 1) / 10000)
+        .mapToObj(i -> versions.subList(i * 10000, Math.min(versions.size(), (i + 1) * 10000))).forEach(batch -> {
+          String versionIds = batch.stream().map(CodeSystemEntityVersion::getId).map(String::valueOf).collect(Collectors.joining(","));
 
-    DesignationQueryParams designationParams = new DesignationQueryParams().setCodeSystemEntityVersionId(versionIds);
-    designationParams.setLimit(-1);
-    List<Designation> designations = designationService.query(designationParams).getData();
-    EntityPropertyValueQueryParams entityPropertyValueParams = new EntityPropertyValueQueryParams().setCodeSystemEntityVersionId(versionIds);
-    entityPropertyValueParams.setLimit(-1);
-    List<EntityPropertyValue> propertyValues = entityPropertyValueService.query(entityPropertyValueParams).getData();
-    CodeSystemAssociationQueryParams codeSystemAssociationParams = new CodeSystemAssociationQueryParams().setCodeSystemEntityVersionId(versionIds);
-    codeSystemAssociationParams.setLimit(-1);
-    List<CodeSystemAssociation> associations = codeSystemAssociationService.query(codeSystemAssociationParams).getData();
+          DesignationQueryParams designationParams = new DesignationQueryParams().setCodeSystemEntityVersionId(versionIds);
+          designationParams.setLimit(-1);
+          Map<Long, List<Designation>> designations = designationService.query(designationParams).getData().stream().collect(Collectors.groupingBy(Designation::getCodeSystemEntityVersionId));
+          EntityPropertyValueQueryParams entityPropertyValueParams = new EntityPropertyValueQueryParams().setCodeSystemEntityVersionId(versionIds);
+          entityPropertyValueParams.setLimit(-1);
+          Map<Long, List<EntityPropertyValue>> propertyValues = entityPropertyValueService.query(entityPropertyValueParams).getData().stream().collect(Collectors.groupingBy(EntityPropertyValue::getCodeSystemEntityVersionId));
+          CodeSystemAssociationQueryParams codeSystemAssociationParams = new CodeSystemAssociationQueryParams().setCodeSystemEntityVersionId(versionIds);
+          codeSystemAssociationParams.setLimit(-1);
+          Map<Long, List<CodeSystemAssociation>> associations = codeSystemAssociationService.query(codeSystemAssociationParams).getData().stream().collect(Collectors.groupingBy(CodeSystemAssociation::getSourceId));
 
-    versions.forEach(v -> {
-      v.setDesignations(designations.stream().filter(d -> d.getCodeSystemEntityVersionId().equals(v.getId())).collect(Collectors.toList()));
-      v.setPropertyValues(propertyValues.stream().filter(pv -> pv.getCodeSystemEntityVersionId().equals(v.getId())).collect(Collectors.toList()));
-      v.setAssociations(associations.stream().filter(a -> a.getSourceId().equals(v.getId())).collect(Collectors.toList()));
-    });
+          batch.forEach(v -> {
+            v.setDesignations(designations.get(v.getId()));
+            v.setPropertyValues(propertyValues.get(v.getId()));
+            v.setAssociations(associations.get(v.getId()));
+          });
+        });
     return versions;
   }
 

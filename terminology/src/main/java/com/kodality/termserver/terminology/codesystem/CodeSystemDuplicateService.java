@@ -99,18 +99,16 @@ public class CodeSystemDuplicateService {
       EntityPropertyQueryParams propertyParams = new EntityPropertyQueryParams().setCodeSystem(sourceCodeSystem);
       propertyParams.all();
       List<EntityProperty> properties = entityPropertyService.query(propertyParams).getData();
-      properties.forEach(p -> {
-        Long sourceId = p.getId();
-        p.setId(null);
-        entityPropertyService.save(p, targetCodeSystem);
-        propertyMap.put(sourceId, p.getId());
-      });
+      Map<Long, EntityProperty> propertiesToSave = properties.stream().collect(Collectors.toMap(EntityProperty::getId, p -> p.setId(null)));
+      entityPropertyService.save(propertiesToSave.values().stream().toList(), targetCodeSystem);
+      propertyMap = propertiesToSave.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> e.getValue().getId()));
     }
 
     duplicateConcepts(List.of(version), sourceCodeSystem, sourceVersionVersion, targetCodeSystem, propertyMap);
   }
 
-  private void duplicateConcepts(List<CodeSystemVersion> versions, String sourceCodeSystem, String sourceVersionVersion, String targetCodeSystem, Map<Long, Long> propertyMap) {
+  private void duplicateConcepts(List<CodeSystemVersion> versions, String sourceCodeSystem, String sourceVersionVersion, String targetCodeSystem,
+                                 Map<Long, Long> propertyMap) {
     if (sourceCodeSystem.equals(targetCodeSystem)) {
       duplicateEntityVersionMembership(versions, sourceCodeSystem, sourceVersionVersion, null);
     } else {
@@ -133,11 +131,8 @@ public class CodeSystemDuplicateService {
       codeSystemEntityVersionParams.setCodeSystemVersion(sourceVersionVersion == null ? v.getVersion() : sourceVersionVersion);
       codeSystemEntityVersionParams.all();
       List<CodeSystemEntityVersion> entityVersions = codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData();
-      codeSystemVersionService.saveEntityVersions(
-          v.getId(),
-          CollectionUtils.isNotEmpty(entityVersionsMap) ?
-              entityVersions.stream().peek(ev -> ev.setId(entityVersionsMap.get(ev.getId()))).collect(Collectors.toList()) : entityVersions
-      );
+      List<CodeSystemEntityVersion> versionToSave = CollectionUtils.isNotEmpty(entityVersionsMap) ? entityVersions.stream().peek(ev -> ev.setId(entityVersionsMap.get(ev.getId()))).toList() : entityVersions;
+      codeSystemVersionService.linkEntityVersions(v.getId(), versionToSave.stream().map(CodeSystemEntityVersion::getId).toList());
     });
   }
 

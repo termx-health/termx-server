@@ -160,12 +160,6 @@ public class CodeSystemVersionService {
   }
 
   @Transactional
-  public void saveEntityVersions(Long codeSystemVersionId, List<CodeSystemEntityVersion> entityVersions) {
-    repository.unlinkEntityVersions(entityVersions, codeSystemVersionId);
-    repository.linkEntityVersions(entityVersions.stream().map(CodeSystemEntityVersion::getId).collect(Collectors.toList()), codeSystemVersionId);
-  }
-
-  @Transactional
   public void linkEntityVersions(Long codeSystemVersionId, List<Long> entityVersionIds) {
     long start = System.currentTimeMillis();
     repository.linkEntityVersions(entityVersionIds, codeSystemVersionId);
