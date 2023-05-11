@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
@@ -93,7 +94,6 @@ public class CodeSystemDuplicateService {
     version.setCreated(null);
     codeSystemVersionService.save(version);
 
-
     Map<Long, Long> propertyMap = new HashMap<>();
     if (!sourceCodeSystem.equals(targetCodeSystem)) {
       EntityPropertyQueryParams propertyParams = new EntityPropertyQueryParams().setCodeSystem(sourceCodeSystem);
@@ -107,7 +107,9 @@ public class CodeSystemDuplicateService {
     duplicateConcepts(List.of(version), sourceCodeSystem, sourceVersionVersion, targetCodeSystem, propertyMap);
   }
 
-  private void duplicateConcepts(List<CodeSystemVersion> versions, String sourceCodeSystem, String sourceVersionVersion, String targetCodeSystem,
+  private void duplicateConcepts(List<CodeSystemVersion> versions,
+                                 String sourceCodeSystem, String sourceVersionVersion,
+                                 String targetCodeSystem,
                                  Map<Long, Long> propertyMap) {
     if (sourceCodeSystem.equals(targetCodeSystem)) {
       duplicateEntityVersionMembership(versions, sourceCodeSystem, sourceVersionVersion, null);
@@ -137,23 +139,24 @@ public class CodeSystemDuplicateService {
   }
 
   private Map<Long, Long> duplicateConcepts(List<Concept> concepts, String targetCodeSystem, Map<Long, Long> propertyMap) {
-    Map<Long, Long> entityVersionsMap = new HashMap<>();
-    concepts.forEach(c -> {
-      c.setId(null);
-      conceptService.save(c, targetCodeSystem);
-      c.getVersions().forEach(v -> {
-        Long sourceId = v.getId();
-        v.setId(null);
-        v.setCodeSystem(targetCodeSystem);
-        v.getDesignations().forEach(d -> d.setId(null).setDesignationTypeId(propertyMap.getOrDefault(d.getDesignationTypeId(), d.getDesignationTypeId())));
-        v.getPropertyValues().forEach(pv -> pv.setId(null).setEntityPropertyId(propertyMap.getOrDefault(pv.getEntityPropertyId(), pv.getEntityPropertyId())));
-        v.setAssociations(new ArrayList<>());
-        v.setStatus(PublicationStatus.draft);
-        codeSystemEntityVersionService.save(v, c.getId());
-        entityVersionsMap.put(sourceId, v.getId());
-      });
-    });
-    return entityVersionsMap;
+    concepts.forEach(c -> c.setId(null));
+    conceptService.batchSave(concepts, targetCodeSystem);
+    concepts.forEach(c -> c.getVersions().forEach(v -> {
+      v.setCodeSystemEntityId(c.getId());
+      v.setCodeSystem(targetCodeSystem);
+      v.setCreated(null);
+      v.setDesignations(CollectionUtils.isEmpty(v.getDesignations()) ? new ArrayList<>() : v.getDesignations());
+      v.setPropertyValues(CollectionUtils.isEmpty(v.getPropertyValues()) ? new ArrayList<>() : v.getPropertyValues());
+      v.setAssociations(CollectionUtils.isEmpty(v.getAssociations()) ? new ArrayList<>() : v.getAssociations());
+      v.getDesignations().forEach(d -> d.setId(null).setDesignationTypeId(propertyMap.getOrDefault(d.getDesignationTypeId(), d.getDesignationTypeId())));
+      v.getPropertyValues().forEach(pv -> pv.setId(null).setEntityPropertyId(propertyMap.getOrDefault(pv.getEntityPropertyId(), pv.getEntityPropertyId())));
+      v.setAssociations(new ArrayList<>());
+      v.setStatus(PublicationStatus.draft);
+    }));
+    Map<Long, Pair<Long, CodeSystemEntityVersion>> versions = concepts.stream().flatMap(c -> c.getVersions().stream()).collect(Collectors.toMap(CodeSystemEntityVersion::getId, v -> Pair.of(v.getCodeSystemEntityId(), v)));
+    Map<Long, CodeSystemEntityVersion> batch = versions.values().stream().peek(v -> v.getValue().setId(null)).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+    codeSystemEntityVersionService.batchSave(batch, targetCodeSystem);
+    return versions.entrySet().stream().collect(Collectors.toMap(Entry::getKey, es -> es.getValue().getValue().getId()));
   }
 
 

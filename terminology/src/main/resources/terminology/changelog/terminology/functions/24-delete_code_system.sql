@@ -18,16 +18,13 @@ where code_system_entity_version_id in (select id from terminology.code_system_e
         or code_system_version_id in (select id from terminology.code_system_version where code_system = p_code_system);
 
 delete from terminology.entity_property_value
-where code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system));
+where code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system) or code_system = p_code_system);
 
 delete from terminology.designation
-where code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system));
+where code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system) or code_system = p_code_system);
 
 delete from terminology.code_system_entity_version
-where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system);
-
-delete from terminology.code_system_entity_version
-where code_system = p_code_system;
+where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system) or code_system = p_code_system;
 
 delete from terminology.code_system_association
 where id in (select id from terminology.code_system_entity where code_system = p_code_system);
