@@ -10,6 +10,7 @@ import com.kodality.termserver.ts.codesystem.EntityPropertyQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
 @Singleton
@@ -17,6 +18,9 @@ public class EntityPropertyRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(EntityProperty.class, p -> {
     p.addColumnProcessor("rule", PgBeanProcessor.fromJson());
   });
+
+  private final Map<String, String> orderMapping = Map.of("order-number", "ep.order_number");
+
 
   String from = " from terminology.entity_property ep left join terminology.code_system_supplement css on css.target_id = ep.id and css.target_type = 'EntityProperty' ";
 
@@ -57,6 +61,7 @@ public class EntityPropertyRepository extends BaseRepository {
     }, p -> {
       SqlBuilder sb = new SqlBuilder("select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A'");
       sb.append(filter(params));
+      sb.append(order(params, orderMapping));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
