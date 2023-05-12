@@ -18,8 +18,8 @@ public class CodeSystemCompareRepository extends BaseRepository {
         inner join terminology.concept c on c.id = csev.code_system_entity_id
         where c.sys_status = 'A' and cse.sys_status = 'A' and csev.sys_status = 'A' and m.sys_status = 'A'
         """;
-    String p = "select jsonb_agg(ep.name || '|' || epv.value::text) from terminology.entity_property_value epv, terminology.entity_property ep" +
-        " where epv.entity_property_id = ep.id and epv.code_system_entity_version_id ";
+    String p = "select jsonb_agg(ep.name || '|' || epv.value::text order by ep.name) from terminology.entity_property_value epv, terminology.entity_property ep" +
+        " where epv.entity_property_id = ep.id and epv.code_system_entity_version_id";
     String sql = "with" +
         "  c1 as ( " + s + " and csv.id = ? )" +
         ", c2 as (" + s + " and csv.id = ? )" +
