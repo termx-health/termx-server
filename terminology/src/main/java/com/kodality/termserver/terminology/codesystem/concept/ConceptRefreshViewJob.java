@@ -1,6 +1,5 @@
 package com.kodality.termserver.terminology.codesystem.concept;
 
-import io.micronaut.scheduling.annotation.Scheduled;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +12,7 @@ public class ConceptRefreshViewJob {
 
   private boolean refresh;
 
-  @Scheduled(fixedDelay = "5m")
+//  @Scheduled(fixedDelay = "5m") //FIXME: view refresh eating too much resources
   protected void execute() {
     if (this.refresh) {
       log.info("Concept closure view refresh started");
