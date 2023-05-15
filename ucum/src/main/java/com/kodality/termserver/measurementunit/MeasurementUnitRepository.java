@@ -52,6 +52,9 @@ public class MeasurementUnitRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("mu.code", params.getCode());
     }
+    if (StringUtils.isNotEmpty(params.getCodeCisEq())) {
+      sb.and().in("lower(mu.code)", params.getCodeCisEq().toLowerCase());
+    }
     if (StringUtils.isNotEmpty(params.getKind())) {
       sb.and().in("mu.kind", params.getKind());
     }

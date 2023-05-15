@@ -118,6 +118,9 @@ public class ConceptRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getTextContains())) {
       sb.append("and (c.code ~* ? or d.name ~* ? or c.description ~* ?)", params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
+    if (StringUtils.isNotEmpty(params.getDesignationCiEq())) {
+      sb.and().in("lower(d.name)", params.getDesignationCiEq().toLowerCase());
+    }
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("c.code ", params.getCode());
     }
@@ -289,8 +292,7 @@ public class ConceptRepository extends BaseRepository {
       join += "left join terminology.code_system cs on cs.id = c.code_system and cs.sys_status = 'A' ";
     }
     if (CollectionUtils.isNotEmpty(Stream.of(
-            params.getCodeSystemEntityStatus(), params.getCodeSystemEntityVersionId(), params.getTextContains(),
-            params.getTextContains(),
+            params.getCodeSystemEntityStatus(), params.getCodeSystemEntityVersionId(), params.getTextContains(), params.getDesignationCiEq(),
             params.getPropertySource(), params.getPropertyRoot(),
             params.getAssociationRoot(), params.getAssociationSource(), params.getAssociationType(),
             params.getAssociationLeaf(), params.getAssociationTarget(),
@@ -302,7 +304,7 @@ public class ConceptRepository extends BaseRepository {
       join += "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A'";
     }
 
-    if (CollectionUtils.isNotEmpty(Stream.of(params.getTextContains()).filter(Objects::nonNull).toList())) {
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getTextContains(), params.getDesignationCiEq()).filter(Objects::nonNull).toList())) {
       join += "left join terminology.designation d on d.code_system_entity_version_id = csev.id and d.sys_status = 'A' ";
     }
 
@@ -310,7 +312,8 @@ public class ConceptRepository extends BaseRepository {
       join += "left join terminology.entity_property_value epv on epv.code_system_entity_version_id = csev.id and epv.sys_status = 'A' ";
     }
 
-    if (CollectionUtils.isNotEmpty(Stream.of(params.getAssociationRoot(), params.getAssociationSource(), params.getAssociationType()).filter(Objects::nonNull).toList())) {
+    if (CollectionUtils.isNotEmpty(
+        Stream.of(params.getAssociationRoot(), params.getAssociationSource(), params.getAssociationType()).filter(Objects::nonNull).toList())) {
       join += "left join terminology.code_system_association csa_s on csa_s.source_code_system_entity_version_id = csev.id and csa_s.sys_status = 'A' ";
     }
 
@@ -331,7 +334,7 @@ public class ConceptRepository extends BaseRepository {
         params.getCodeSystemVersionExpirationDateLe(), params.getCodeSystemVersionExpirationDateLe()).filter(Objects::nonNull).toList())) {
       join +=
           "left join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_entity_version_id = csev.id  and evcsvm.sys_status = 'A' " +
-          "left join terminology.code_system_version csv on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A' ";
+              "left join terminology.code_system_version csv on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A' ";
     }
     return join;
   }

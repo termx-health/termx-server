@@ -42,4 +42,5 @@ public class ConceptQueryParams extends QueryParams {
   private String associationSourceRecursive; //association|sourceCode
   private String associationTargetRecursive; //association|sourceCode
   private String associationType;
+  private String designationCiEq;
 }

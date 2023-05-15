@@ -1,6 +1,9 @@
 package com.kodality.termserver.fileimporter.codesystem.utils;
 
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystem;
+import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystemVersion;
 import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingResponse.FileProcessingEntityPropertyValue;
 import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingResponse.FileProcessingResponseProperty;
 import com.kodality.termserver.ts.CaseSignificance;
@@ -16,8 +19,6 @@ import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.Designation;
 import com.kodality.termserver.ts.codesystem.EntityProperty;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystem;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystemVersion;
 import com.kodality.termserver.ts.valueset.ValueSet;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
@@ -34,8 +35,9 @@ public class FileProcessingMapper {
   public static final String CONCEPT_DEFINITION = "definition";
   public static final String CONCEPT_PARENT = "parent";
 
-  public CodeSystem toCodeSystem(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, FileProcessingResponse result, CodeSystem existingCodeSystem) {
-    CodeSystem codeSystem = existingCodeSystem == null ? new CodeSystem() : existingCodeSystem;
+  public static CodeSystem toCodeSystem(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, FileProcessingResponse result,
+                                        CodeSystem existingCodeSystem) {
+    CodeSystem codeSystem = existingCodeSystem == null ? new CodeSystem() : JsonUtil.fromJson(JsonUtil.toJson(existingCodeSystem), CodeSystem.class);
     codeSystem.setId(fpCodeSystem.getId());
     codeSystem.setUri(fpCodeSystem.getUri() == null ? codeSystem.getUri() : fpCodeSystem.getUri());
     codeSystem.setNames(fpCodeSystem.getNames() == null ? codeSystem.getNames() : fpCodeSystem.getNames());
@@ -47,7 +49,7 @@ public class FileProcessingMapper {
     return codeSystem;
   }
 
-  private CodeSystemVersion toCodeSystemVersion(FileProcessingCodeSystemVersion fpVersion, String codeSystem) {
+  private static CodeSystemVersion toCodeSystemVersion(FileProcessingCodeSystemVersion fpVersion, String codeSystem) {
     CodeSystemVersion version = new CodeSystemVersion();
     version.setCodeSystem(codeSystem);
     version.setVersion(fpVersion.getVersion());
@@ -56,7 +58,7 @@ public class FileProcessingMapper {
     return version;
   }
 
-  private List<EntityProperty> toProperties(List<FileProcessingResponseProperty> fpProperties) {
+  private static List<EntityProperty> toProperties(List<FileProcessingResponseProperty> fpProperties) {
     return fpProperties.stream()
         .filter(fpProperty -> fpProperty.getPropertyType() != null && !List.of(CONCEPT_CODE, CONCEPT_PARENT).contains(fpProperty.getPropertyName()))
         .map(fpProperty -> {
@@ -68,7 +70,7 @@ public class FileProcessingMapper {
         }).collect(Collectors.toList());
   }
 
-  private List<Concept> toConcepts(String codeSystem, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities) {
+  private static List<Concept> toConcepts(String codeSystem, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities) {
     return entities.stream().map(entity -> {
       Concept concept = new Concept();
       concept.setCodeSystem(codeSystem);
@@ -79,15 +81,15 @@ public class FileProcessingMapper {
     }).collect(Collectors.toList());
   }
 
-  private String toConceptCode(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
-    return entity.get(CONCEPT_CODE).stream().findFirst().map(pv -> (String) pv.getValue()).orElseThrow(ApiError.TE702::toApiException);
+  private static String toConceptCode(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
+    return entity.getOrDefault(CONCEPT_CODE, List.of()).stream().findFirst().map(pv -> (String) pv.getValue()).orElseThrow(ApiError.TE702::toApiException);
   }
 
-  private String toConceptDescription(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
+  private static String toConceptDescription(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
     return entity.containsKey(CONCEPT_DESCRIPTION) ? entity.get(CONCEPT_DESCRIPTION).stream().findFirst().map(pv -> (String) pv.getValue()).orElse(null) : null;
   }
 
-  private CodeSystemEntityVersion toConceptVersion(String codeSystem, Map<String, List<FileProcessingEntityPropertyValue>> entity) {
+  private static CodeSystemEntityVersion toConceptVersion(String codeSystem, Map<String, List<FileProcessingEntityPropertyValue>> entity) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCodeSystem(codeSystem);
     version.setStatus(PublicationStatus.draft);
@@ -98,7 +100,7 @@ public class FileProcessingMapper {
     return version;
   }
 
-  private List<EntityPropertyValue> toConceptPropertyValues(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
+  private static List<EntityPropertyValue> toConceptPropertyValues(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
     return entity.keySet().stream()
         .filter(key -> !List.of(CONCEPT_CODE, CONCEPT_DESCRIPTION, CONCEPT_DISPLAY, CONCEPT_DEFINITION, CONCEPT_PARENT).contains(key))
         .filter(key -> entity.get(key).stream().noneMatch(e -> e.getLang() != null))
@@ -113,7 +115,7 @@ public class FileProcessingMapper {
         }).collect(Collectors.toList());
   }
 
-  private List<Designation> toConceptDesignations(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
+  private static List<Designation> toConceptDesignations(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
     return entity.keySet().stream()
         .filter(key -> List.of(CONCEPT_DISPLAY, CONCEPT_DEFINITION).contains(key) || entity.get(key).stream().anyMatch(e -> e.getLang() != null))
         .flatMap(key -> {
@@ -131,7 +133,7 @@ public class FileProcessingMapper {
         }).collect(Collectors.toList());
   }
 
-  private List<CodeSystemAssociation> toConceptAssociations(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
+  private static List<CodeSystemAssociation> toConceptAssociations(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
     return entity.keySet().stream().filter(CONCEPT_PARENT::equals)
         .flatMap(key -> {
           List<FileProcessingEntityPropertyValue> fpPropertyValues = entity.get(key);
@@ -145,7 +147,7 @@ public class FileProcessingMapper {
         }).collect(Collectors.toList());
   }
 
-  public ValueSet toValueSet(CodeSystem codeSystem, ValueSet existingValueSet) {
+  public static ValueSet toValueSet(CodeSystem codeSystem, ValueSet existingValueSet) {
     ValueSet valueSet = existingValueSet == null ? new ValueSet() : existingValueSet;
     valueSet.setId(codeSystem.getId());
     valueSet.setUri(codeSystem.getUri() == null ? valueSet.getUri() : codeSystem.getUri());
@@ -153,7 +155,7 @@ public class FileProcessingMapper {
     return valueSet;
   }
 
-  public ValueSetVersion toValueSetVersion(FileProcessingCodeSystemVersion fpVersion, String valueSet, CodeSystemVersion codeSystemVersion) {
+  public static ValueSetVersion toValueSetVersion(FileProcessingCodeSystemVersion fpVersion, String valueSet, CodeSystemVersion codeSystemVersion) {
     ValueSetVersion version = new ValueSetVersion();
     version.setValueSet(valueSet);
     version.setVersion(fpVersion.getVersion());
@@ -168,7 +170,7 @@ public class FileProcessingMapper {
     return version;
   }
 
-  public List<AssociationType> toAssociationTypes(List<FileProcessingResponseProperty> properties) {
+  public static List<AssociationType> toAssociationTypes(List<FileProcessingResponseProperty> properties) {
     return properties.stream().anyMatch(p -> CONCEPT_PARENT.equals(p.getPropertyName())) ?
         List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true)) :
         List.of();

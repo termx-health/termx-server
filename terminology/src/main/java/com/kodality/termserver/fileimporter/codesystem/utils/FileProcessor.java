@@ -32,20 +32,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
+import static com.kodality.termserver.ts.codesystem.EntityPropertyType.bool;
+import static com.kodality.termserver.ts.codesystem.EntityPropertyType.coding;
+import static com.kodality.termserver.ts.codesystem.EntityPropertyType.dateTime;
+import static com.kodality.termserver.ts.codesystem.EntityPropertyType.decimal;
+import static com.kodality.termserver.ts.codesystem.EntityPropertyType.integer;
+import static com.kodality.termserver.ts.codesystem.EntityPropertyType.string;
 import static java.util.stream.IntStream.range;
 
 public class FileProcessor {
-  public static final String DATE = "dateTime";
-  public static final String INTEGER = "integer";
-  public static final String TEXT = "string";
-  public static final String BOOLEAN = "boolean";
-  public static final String DECIMAL = "decimal";
-
   public static final String IDENTIFIER_PROPERTY = "concept-code";
   private static final List<String> DATE_FORMATS = List.of("dd.MM.yyyy", "MM/dd/yyyy", "yyyy-MM-dd", "dd.MM.yy");
 
 
-  public FileAnalysisResponse analyze(String type, byte[] file) {
+  public static FileAnalysisResponse analyze(String type, byte[] file) {
     if (!isUTF8File(file)) {
       throw ApiError.TE701.toApiException();
     }
@@ -67,7 +67,7 @@ public class FileProcessor {
     return new FileAnalysisResponse().setProperties(properties);
   }
 
-  public FileProcessingResponse process(String type, byte[] file, List<FileProcessingProperty> importProperties) {
+  public static FileProcessingResponse process(String type, byte[] file, List<FileProcessingProperty> importProperties) {
     if (!isUTF8File(file)) {
       throw ApiError.TE701.toApiException();
     }
@@ -130,7 +130,7 @@ public class FileProcessor {
   }
 
 
-  private FileAnalysisProperty createHeaderProp(String col, Map<String, List<String>> columnValues) {
+  private static FileAnalysisProperty createHeaderProp(String col, Map<String, List<String>> columnValues) {
     String firstColValue = columnValues.get(col).isEmpty() ? null : columnValues.get(col).get(0);
     FileAnalysisProperty prop = new FileAnalysisProperty();
     prop.setColumnName(col);
@@ -141,7 +141,7 @@ public class FileProcessor {
   }
 
 
-  private FileProcessingEntityPropertyValue mapPropValue(FileProcessingProperty prop, String rawValue) {
+  private static FileProcessingEntityPropertyValue mapPropValue(FileProcessingProperty prop, String rawValue) {
     Object transformedValue = transformPropertyValue(rawValue, prop.getPropertyType(), prop.getPropertyTypeFormat());
 
     FileProcessingEntityPropertyValue ep = new FileProcessingEntityPropertyValue();
@@ -155,20 +155,21 @@ public class FileProcessor {
   }
 
 
-  private Object transformPropertyValue(String val, String type, String dateFormat) {
+  private static Object transformPropertyValue(String val, String type, String dateFormat) {
     if (val == null || type == null) {
       return null;
     }
     return switch (type) {
-      case BOOLEAN -> Stream.of("1", "true").anyMatch(v -> v.equalsIgnoreCase(val));
-      case INTEGER -> Integer.valueOf(val);
-      case DECIMAL -> Double.valueOf(val);
-      case DATE -> transformDate(val, dateFormat);
+      case bool -> Stream.of("1", "true").anyMatch(v -> v.equalsIgnoreCase(val));
+      case integer -> Integer.valueOf(val);
+      case decimal -> Double.valueOf(val);
+      case dateTime -> transformDate(val, dateFormat);
+      case coding -> Map.of("code", val);
       default -> val;
     };
   }
 
-  public Date transformDate(String date, String format) {
+  public static Date transformDate(String date, String format) {
     SimpleDateFormat dateFormat = new SimpleDateFormat(format);
     dateFormat.setLenient(false);
     try {
@@ -179,30 +180,30 @@ public class FileProcessor {
   }
 
 
-  private String getPropertyType(String val) {
+  private static String getPropertyType(String val) {
     if (val == null) {
       return null;
     }
-    if (Stream.of("0", "1", "false", "true").anyMatch(v -> v.equalsIgnoreCase(val))) {
-      return BOOLEAN;
+    if (Stream.of("0", "1", "false", "true", "F", "T").anyMatch(v -> v.equalsIgnoreCase(val))) {
+      return bool;
     } else if (StringUtils.isNumeric(val)) {
       try {
         Integer.parseInt(val);
-        return INTEGER;
+        return integer;
       } catch (NumberFormatException ignored) {
       }
       try {
         Double.parseDouble(val);
-        return DECIMAL;
+        return decimal;
       } catch (NumberFormatException ignored) {
       }
     } else if (getDateFormat(val) != null) {
-      return DATE;
+      return dateTime;
     }
-    return TEXT;
+    return string;
   }
 
-  public String getDateFormat(String date) {
+  public static String getDateFormat(String date) {
     if (date == null) {
       return null;
     }
@@ -219,7 +220,7 @@ public class FileProcessor {
   }
 
 
-  private boolean isUTF8File(byte[] file) {
+  private static boolean isUTF8File(byte[] file) {
     CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
     ByteBuffer buf = ByteBuffer.wrap(file);
     try {
@@ -236,11 +237,11 @@ public class FileProcessor {
   }
 
 
-  private RowListProcessor getParser(String type, byte[] file) {
+  private static RowListProcessor getParser(String type, byte[] file) {
     return "tsv".equals(type) ? tsvProcessor(file) : csvProcessor(file);
   }
 
-  private RowListProcessor csvProcessor(byte[] csv) {
+  private static RowListProcessor csvProcessor(byte[] csv) {
     RowListProcessor processor = new RowListProcessor();
     CsvParserSettings settings = new CsvParserSettings();
     settings.setDelimiterDetectionEnabled(true);
@@ -251,7 +252,7 @@ public class FileProcessor {
     return processor;
   }
 
-  private RowListProcessor tsvProcessor(byte[] tsv) {
+  private static RowListProcessor tsvProcessor(byte[] tsv) {
     RowListProcessor processor = new RowListProcessor();
     TsvParserSettings settings = new TsvParserSettings();
     settings.setLineSeparatorDetectionEnabled(true);

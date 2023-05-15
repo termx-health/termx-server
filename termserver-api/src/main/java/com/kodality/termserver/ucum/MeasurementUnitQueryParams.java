@@ -11,6 +11,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class MeasurementUnitQueryParams extends QueryParams {
   private String code;
+  private String codeCisEq;
   private String kind;
   private String textContains;
   private LocalDate date;
