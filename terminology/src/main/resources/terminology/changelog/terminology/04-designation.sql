@@ -28,3 +28,7 @@ create index designation_cs_entity_version_idx on terminology.designation(code_s
 
 select core.create_table_metadata('terminology.designation');
 --rollback drop table if exists terminology.designation;
+
+--changeset kodality:designation-name-idx
+create index designation_name_idx on terminology.designation (lower(name));
+--

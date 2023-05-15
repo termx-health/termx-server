@@ -46,7 +46,7 @@ public class ImportLogger {
     if (e != null && CollectionUtils.isNotEmpty(e.getIssues())) {
       e.getIssues().forEach(issue -> issue.setMessage(StringSubstitutor.replace(issue.getMessage(), issue.getParams(), "{{", "}}")));
     }
-    List<String> errors = e == null ? null : List.of(ExceptionUtils.getMessage(new ApiException(e.getHttpStatus(), e.getIssues())));
+    List<String> errors = e == null ? null : e.getIssues().stream().map(i -> ExceptionUtils.getMessage(new ApiException(e.getHttpStatus(), i))).toList();
     jobLogService.finish(jobId, successes, warnings, errors);
   }
 

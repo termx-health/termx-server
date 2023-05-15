@@ -1,6 +1,6 @@
 package com.kodality.termserver.fileimporter.codesystem;
 
-import com.kodality.commons.exception.ApiClientException;
+import com.kodality.commons.exception.ApiException;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
@@ -49,7 +49,7 @@ public class CodeSystemFileImportController {
     FileProcessingRequest req = JsonUtil.fromJson(request.getValue(), FileProcessingRequest.class);
     byte[] importFile = file != null ? readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
-    JobLogResponse jobLogResponse = importLogger.createJob("CS-FILE-IMPORT");
+    JobLogResponse jobLogResponse = importLogger.createJob("CS-IFLE-IMPORT");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Code system file import started");
@@ -61,7 +61,7 @@ public class CodeSystemFileImportController {
         }
         log.info("Code system file import took {} seconds", (System.currentTimeMillis() - start) / 1000);
         importLogger.logImport(jobLogResponse.getJobId());
-      } catch (ApiClientException e) {
+      } catch (ApiException e) {
         log.error("Error while importing code system file", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);
       } catch (Exception e) {

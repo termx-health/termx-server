@@ -13,11 +13,14 @@ import lombok.Setter;
 public class FileProcessingRequest {
   private String link;
   private String type; // csv; tsv
-  private boolean generateValueSet;
-  private List<FileProcessingProperty> properties;
 
   private FileProcessingCodeSystem codeSystem;
   private FileProcessingCodeSystemVersion version;
+
+  private List<FileProcessingProperty> properties;
+  private boolean generateValueSet;
+  private boolean dryRun;
+  private boolean cleanRun;
 
 
   @Getter
@@ -47,9 +50,9 @@ public class FileProcessingRequest {
   @Getter
   @Setter
   public static class FileProcessingCodeSystemVersion {
+    private Long id;
     private String version;
     private String status;
     private LocalDate releaseDate;
-
   }
 }

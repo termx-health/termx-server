@@ -32,4 +32,8 @@ dependencies {
     implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}") { changing = true }
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${rootProject.jacksonVersion}")
 
+    testImplementation "io.micronaut.test:micronaut-test-spock"
+    testImplementation("org.spockframework:spock-core") {
+        exclude group: "org.codehaus.groovy", module: "groovy-all"
+    }
 }
