@@ -7,6 +7,7 @@ import com.kodality.termserver.terminology.codesystem.entity.CodeSystemEntitySer
 import com.kodality.termserver.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.terminology.valueset.ValueSetVersionRepository;
 import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptRepository;
+import com.kodality.termserver.ts.CodeSystemExternalProvider;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntity;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityType;
@@ -39,6 +40,7 @@ public class ConceptService {
   private final ValueSetVersionRepository valueSetVersionRepository;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final ValueSetVersionConceptRepository valueSetVersionConceptRepository;
+  private final List<CodeSystemExternalProvider> codeSystemProviders;
 
   private final UserPermissionService userPermissionService;
 
@@ -104,6 +106,13 @@ public class ConceptService {
   }
 
   public QueryResult<Concept> query(ConceptQueryParams params) {
+    for (CodeSystemExternalProvider provider: codeSystemProviders) {
+      QueryResult<Concept> result = provider.searchConcepts(params.getCodeSystem(), params);
+      if (CollectionUtils.isNotEmpty(result.getData())) {
+        return result;
+      }
+    }
+
     prepareParams(params);
     QueryResult<Concept> concepts = repository.query(params);
     concepts.setData(decorate(concepts.getData(), params.getCodeSystem(), params.getCodeSystemVersion()));

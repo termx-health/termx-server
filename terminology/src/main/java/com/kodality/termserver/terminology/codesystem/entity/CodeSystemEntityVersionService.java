@@ -41,7 +41,7 @@ public class CodeSystemEntityVersionService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionRepository repository;
   private final ConceptRefreshViewJob conceptRefreshViewJob;
-  private final List<CodeSystemExternalProvider> codeSystemExternalProviders;
+  private final List<CodeSystemExternalProvider> codeSystemProviders;
 
   private final UserPermissionService userPermissionService;
 
@@ -238,7 +238,7 @@ public class CodeSystemEntityVersionService {
 
     versions.stream().collect(Collectors.groupingBy(Pair::getKey)).forEach((key, value) -> {
       List<String> codes = value.stream().map(Pair::getValue).collect(Collectors.toSet()).stream().toList();
-      for (CodeSystemExternalProvider provider : codeSystemExternalProviders) {
+      for (CodeSystemExternalProvider provider : codeSystemProviders) {
         List<CodeSystemEntityVersion> csVersions = provider.loadLastVersions(key, codes);
         codeSystemEntityVersions.addAll(csVersions);
       }

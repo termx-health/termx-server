@@ -1,6 +1,9 @@
 package com.kodality.termserver.ts;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.ts.codesystem.Concept;
+import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -11,6 +14,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public abstract class CodeSystemExternalProvider {
   private static final int BATCH_SIZE = 100;
+
+  public QueryResult<Concept> searchConcepts(String codeSystem, ConceptQueryParams params) {
+    if (!codeSystem.equals(getCodeSystemId())) {
+      return QueryResult.empty();
+    }
+    return searchConcepts(params);
+  }
+
+  public abstract QueryResult<Concept> searchConcepts(ConceptQueryParams params);
+
+
   public List<CodeSystemEntityVersion> loadLastVersions(String codeSystem, List<String> codes) {
     if (!codeSystem.equals(getCodeSystemId())) {
       return new ArrayList<>();

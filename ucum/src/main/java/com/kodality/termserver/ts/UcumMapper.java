@@ -22,7 +22,7 @@ public class UcumMapper {
     return concept;
   }
 
-  private CodeSystemEntityVersion toConceptVersion(MeasurementUnit unit) {
+  public CodeSystemEntityVersion toConceptVersion(MeasurementUnit unit) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(unit.getCode());
     version.setCodeSystem(UCUM);
