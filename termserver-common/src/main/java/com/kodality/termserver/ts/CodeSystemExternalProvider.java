@@ -16,7 +16,7 @@ public abstract class CodeSystemExternalProvider {
   private static final int BATCH_SIZE = 100;
 
   public QueryResult<Concept> searchConcepts(String codeSystem, ConceptQueryParams params) {
-    if (!codeSystem.equals(getCodeSystemId())) {
+    if (codeSystem == null || !codeSystem.equals(getCodeSystemId())) {
       return QueryResult.empty();
     }
     return searchConcepts(params);
