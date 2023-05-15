@@ -1,3 +1,5 @@
+//includeBuild '../taskflow-service'
+
 rootProject.name="terminology-server"
 
 include 'edition-int'

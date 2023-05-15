@@ -7,6 +7,8 @@ dependencies {
     implementation project(':termserver-api')
     implementation project(':termserver-common')
 
+    implementation('com.kodality.taskflow:taskflow-service:1.0-SNAPSHOT') { changing = true }
+
     implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
@@ -25,4 +27,6 @@ dependencies {
     implementation("io.micronaut:micronaut-management")
     implementation("io.micronaut:micronaut-http-server")
     implementation("io.reactivex.rxjava2:rxjava:2.2.21")
+
+    implementation ("commons-validator:commons-validator:1.7")
 }
