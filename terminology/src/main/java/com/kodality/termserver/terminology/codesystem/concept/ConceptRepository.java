@@ -289,26 +289,47 @@ public class ConceptRepository extends BaseRepository {
       join += "left join terminology.code_system cs on cs.id = c.code_system and cs.sys_status = 'A' ";
     }
     if (CollectionUtils.isNotEmpty(Stream.of(
-            StringUtils.isEmpty(params.getTextContains()) ? null : params.getTextContains(),
-            params.getCodeSystemVersionId(), params.getCodeSystemVersion(),
-            params.getCodeSystemVersionReleaseDateGe(), params.getCodeSystemVersionReleaseDateLe(), params.getCodeSystemVersionExpirationDateGe(),
-            params.getCodeSystemVersionExpirationDateLe(),
-            params.getCodeSystemEntityStatus(), params.getCodeSystemEntityVersionId(),
-            params.getPropertyValues(), params.getPropertyValuesPartial(),
-            params.getPropertyRoot(), params.getAssociationRoot(), params.getAssociationLeaf(),
-            params.getPropertySource(), params.getAssociationSource(), params.getAssociationTarget(), params.getAssociationType(),
-            params.getAssociationSourceRecursive(), params.getAssociationTargetRecursive())
+            params.getCodeSystemEntityStatus(), params.getCodeSystemEntityVersionId(), params.getTextContains(),
+            params.getTextContains(),
+            params.getPropertySource(), params.getPropertyRoot(),
+            params.getAssociationRoot(), params.getAssociationSource(), params.getAssociationType(),
+            params.getAssociationLeaf(), params.getAssociationTarget(),
+            params.getCodeSystemVersion(), params.getCodeSystemVersionId(),
+            params.getCodeSystemVersionReleaseDateLe(), params.getCodeSystemVersionReleaseDateGe(),
+            params.getCodeSystemVersionExpirationDateLe(), params.getCodeSystemVersionExpirationDateLe(),
+            params.getPropertyValues(), params.getPropertyValuesPartial())
         .filter(Objects::nonNull).toList())) {
-      join += "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A' " +
-          "left join terminology.designation d on d.code_system_entity_version_id = csev.id and d.sys_status = 'A' " +
-          "left join terminology.entity_property_value epv on epv.code_system_entity_version_id = csev.id and epv.sys_status = 'A' " +
-          "left join terminology.entity_property ep on ep.id = epv.entity_property_id and ep.sys_status = 'A' " +
-          "left join terminology.entity_property dp on dp.id = d.designation_type_id and dp.sys_status = 'A' " +
-          "left join terminology.code_system_association csa_s on csa_s.source_code_system_entity_version_id = csev.id and csa_s.sys_status = 'A' " +
-          "left join terminology.code_system_association csa_t on csa_t.target_code_system_entity_version_id = csev.id and csa_t.sys_status = 'A' " +
-          "left join terminology.code_system_entity_version c_t on c_t.id = csa_s.target_code_system_entity_version_id and c_t.sys_status = 'A' " +
-          "left join terminology.code_system_entity_version c_s on c_s.id = csa_t.source_code_system_entity_version_id and c_s.sys_status = 'A' " +
-          "left join terminology.association_type at on (at.code = csa_s.association_type or at.code = csa_t.association_type) and at.sys_status = 'A' " +
+      join += "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A'";
+    }
+
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getTextContains()).filter(Objects::nonNull).toList())) {
+      join += "left join terminology.designation d on d.code_system_entity_version_id = csev.id and d.sys_status = 'A' ";
+    }
+
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getPropertyRoot(), params.getPropertySource()).filter(Objects::nonNull).toList())) {
+      join += "left join terminology.entity_property_value epv on epv.code_system_entity_version_id = csev.id and epv.sys_status = 'A' ";
+    }
+
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getAssociationRoot(), params.getAssociationSource(), params.getAssociationType()).filter(Objects::nonNull).toList())) {
+      join += "left join terminology.code_system_association csa_s on csa_s.source_code_system_entity_version_id = csev.id and csa_s.sys_status = 'A' ";
+    }
+
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getAssociationLeaf(), params.getAssociationTarget()).filter(Objects::nonNull).toList())) {
+      join += "left join terminology.code_system_association csa_t on csa_t.target_code_system_entity_version_id = csev.id and csa_t.sys_status = 'A' ";
+    }
+
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getAssociationSource()).filter(Objects::nonNull).toList())) {
+      join += "left join terminology.code_system_entity_version c_t on c_t.id = csa_s.target_code_system_entity_version_id and c_t.sys_status = 'A' ";
+    }
+
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getAssociationTarget()).filter(Objects::nonNull).toList())) {
+      join += "left join terminology.code_system_entity_version c_s on c_s.id = csa_t.source_code_system_entity_version_id and c_s.sys_status = 'A' ";
+    }
+
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getCodeSystemVersion(), params.getCodeSystemVersionId(),
+        params.getCodeSystemVersionReleaseDateLe(), params.getCodeSystemVersionReleaseDateGe(),
+        params.getCodeSystemVersionExpirationDateLe(), params.getCodeSystemVersionExpirationDateLe()).filter(Objects::nonNull).toList())) {
+      join +=
           "left join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_entity_version_id = csev.id  and evcsvm.sys_status = 'A' " +
           "left join terminology.code_system_version csv on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A' ";
     }
