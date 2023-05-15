@@ -1,0 +1,19 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+  <changeSet id="snomed-module" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.CodeSystemFhirImport">
+      <param name="files" value="snomed/changelog/data/codesystem/snomed-module.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="concept-status" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.CodeSystemFhirImport">
+      <param name="files" value="snomed/changelog/data/codesystem/concept-status.json"/>
+    </customChange>
+  </changeSet>
+
+</databaseChangeLog>

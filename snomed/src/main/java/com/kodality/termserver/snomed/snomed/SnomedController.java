@@ -27,13 +27,13 @@ public class SnomedController {
 
   //----------------Concepts----------------
 
-  @Authorized("*.CodeSystem.view")
+  @Authorized("snomed-ct.CodeSystem.view")
   @Get("/concepts/{conceptId}")
   public SnomedConcept loadConcept(@Parameter String conceptId) {
     return snowstormClient.loadConcept(conceptId).join();
   }
 
-  @Authorized("*.CodeSystem.view")
+  @Authorized("snomed-ct.CodeSystem.view")
   @Get("/concepts/{conceptId}/children")
   public List<SnomedConcept> findConceptChildren(@Parameter String conceptId) {
     List<SnomedConcept> concepts = snowstormClient.findConceptChildren(conceptId).join();
@@ -43,7 +43,7 @@ public class SnomedController {
     return concepts;
   }
 
-  @Authorized("*.CodeSystem.view")
+  @Authorized("snomed-ct.CodeSystem.view")
   @Get("/concepts{?params*}")
   public SnomedSearchResult<SnomedConcept> findConcepts(SnomedConceptSearchParams params) {
     SnomedSearchResult<SnomedConcept> concepts = snowstormClient.queryConcepts(params).join();
@@ -57,7 +57,7 @@ public class SnomedController {
 
   //----------------Descriptions----------------
 
-  @Authorized("*.CodeSystem.view")
+  @Authorized("snomed-ct.CodeSystem.view")
   @Get("/concept-descriptions{?params*}")
   public SnomedDescriptionItemResponse findConceptDescriptions(SnomedDescriptionItemSearchParams params) {
     params.setActive(true);
@@ -75,13 +75,13 @@ public class SnomedController {
 
   //----------------RefSets----------------
 
-  @Authorized("*.CodeSystem.view")
+  @Authorized("snomed-ct.CodeSystem.view")
   @Get("/refsets{?params*}")
   public SnomedRefsetResponse findRefsets(SnomedRefsetSearchParams params) {
     return snowstormClient.findRefsets(params).join();
   }
 
-  @Authorized("*.CodeSystem.view")
+  @Authorized("snomed-ct.CodeSystem.view")
   @Get("/refset-members{?params*}")
   public SnomedRefsetMemberResponse findRefsetMembers(SnomedRefsetSearchParams params) {
     return snowstormClient.findRefsetMembers(params).join();
