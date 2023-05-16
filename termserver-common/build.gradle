@@ -6,7 +6,7 @@ dependencies {
 
     implementation project(':termserver-api')
 
-    //implementation('com.kodality.taskflow:taskflow-service:1.0-SNAPSHOT') { changing = true }
+    implementation('com.kodality.taskflow:taskflow-service:1.0-SNAPSHOT') { changing = true }
 
     implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}")
