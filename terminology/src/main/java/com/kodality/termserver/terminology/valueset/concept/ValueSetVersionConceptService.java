@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -109,7 +110,8 @@ public class ValueSetVersionConceptService {
           .collect(Collectors.toList()) : null);
 
       if (c.getDisplay() == null || c.getDisplay().getName() == null || CollectionUtils.isEmpty(c.getAdditionalDesignations())) {
-        List<Designation> csDesignations = conceptVersions.stream().flatMap(v -> v.getDesignations().stream()).sorted(Comparator.comparing(d -> !d.isPreferred())).toList();
+        List<Designation> csDesignations = conceptVersions.stream().flatMap(v -> v.getDesignations() == null ?
+            Stream.empty() : v.getDesignations().stream()).sorted(Comparator.comparing(d -> !d.isPreferred())).toList();
         c.setDisplay(c.getDisplay() == null || c.getDisplay().getName() == null ? csDesignations.stream().findFirst().orElse(c.getDisplay()) : c.getDisplay());
         c.setAdditionalDesignations(CollectionUtils.isEmpty(c.getAdditionalDesignations()) ? csDesignations : c.getAdditionalDesignations());
       }

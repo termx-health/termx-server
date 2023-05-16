@@ -116,7 +116,9 @@ public class ConceptRepository extends BaseRepository {
     sb.appendIfNotNull("and cs.uri = ?", params.getCodeSystemUri());
     sb.appendIfNotNull("and c.code ~* ?", params.getCodeContains());
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (c.code ~* ? or d.name ~* ? or c.description ~* ?)", params.getTextContains(), params.getTextContains(), params.getTextContains());
+      sb.append("and (terminology.text_search(c.code, c.description) like '%' || terminology.search_translate(?) || '%'" +
+                "or terminology.text_search(d.name) like '%' || terminology.search_translate(?) || '%')",
+          params.getTextContains(), params.getTextContains());
     }
     if (StringUtils.isNotEmpty(params.getDesignationCiEq())) {
       sb.and().in("lower(d.name)", params.getDesignationCiEq().toLowerCase());
