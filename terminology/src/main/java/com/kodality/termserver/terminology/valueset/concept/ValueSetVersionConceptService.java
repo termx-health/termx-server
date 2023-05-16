@@ -146,9 +146,9 @@ public class ValueSetVersionConceptService {
     if (ruleSet == null) {
       ruleSet = valueSetVersionRuleSetService.load(versionId).orElse(null);
     }
-//    for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
-//      internalExpand.addAll(provider.expand(ruleSet));
-//    }
+    for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
+      internalExpand.addAll(provider.expand(ruleSet));
+    }
     return internalExpand;
   }
 
