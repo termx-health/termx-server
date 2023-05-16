@@ -1,8 +1,8 @@
 package com.kodality.termserver.snomed.snomed.translation;
 
 import com.kodality.commons.model.CodeName;
-import com.kodality.taskflow.task.Task;
-import com.kodality.taskflow.task.Task.TaskContextItem;
+//import com.kodality.taskflow.task.Task;
+//import com.kodality.taskflow.task.Task.TaskContextItem;
 import com.kodality.termserver.snomed.concept.SnomedTranslation;
 import com.kodality.termserver.snomed.concept.SnomedTranslationStatus;
 import com.kodality.termserver.taskflow.CommonTaskService;
@@ -47,12 +47,12 @@ public class SnomedTranslationService {
   }
 
   private void createTask(String conceptId, SnomedTranslation t) {
-    Task task = new Task();
-    task.setType(TASK_TYPE);
-    task.setBusinessStatus(t.getStatus());
-    task.setTitle(String.format("%s concept translation validation", conceptId));
-    task.setContext(List.of(new TaskContextItem().setId(t.getId()).setType(TASK_CTX_TYPE)));
-    taskService.createTask(task);
+//    Task task = new Task();
+//    task.setType(TASK_TYPE);
+//    task.setBusinessStatus(t.getStatus());
+//    task.setTitle(String.format("%s concept translation validation", conceptId));
+//    task.setContext(List.of(new TaskContextItem().setId(t.getId()).setType(TASK_CTX_TYPE)));
+//    taskService.createTask(task);
   }
 
   private void prepare(SnomedTranslation t) {
@@ -78,13 +78,13 @@ public class SnomedTranslationService {
       return translations;
     }
     String ctx = translations.stream().map(t -> TASK_CTX_TYPE + "|" + t.getId()).collect(Collectors.joining(","));
-    Map<String, List<CodeName>> tasks = taskService.findTasks(ctx);
-    translations.forEach(t -> {
-      List<CodeName> taskRef = tasks.get(TASK_CTX_TYPE + "|" + t.getId());
-      if (taskRef != null) {
-        t.setTask(taskRef.stream().findFirst().orElse(null));
-      }
-    });
+//    Map<String, List<CodeName>> tasks = taskService.findTasks(ctx);
+//    translations.forEach(t -> {
+//      List<CodeName> taskRef = tasks.get(TASK_CTX_TYPE + "|" + t.getId());
+//      if (taskRef != null) {
+//        t.setTask(taskRef.stream().findFirst().orElse(null));
+//      }
+//    });
     return translations;
   }
 
