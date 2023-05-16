@@ -179,7 +179,7 @@ public class ValueSetController {
 
   @Authorized("*.ValueSet.view")
   @Post(uri = "/expand")
-  public List<ValueSetVersionConcept> expand(@Body ValueSetExpandRequest request) {
+  public List<ValueSetVersionConcept> expand(@Body @Valid ValueSetExpandRequest request) {
     userPermissionService.checkPermitted(request.getValueSet(), "ValueSet", "view");
     return valueSetVersionConceptService.expand(request.getValueSet(), request.getValueSetVersion(), request.getRuleSet());
   }
