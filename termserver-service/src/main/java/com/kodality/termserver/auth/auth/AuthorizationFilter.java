@@ -40,7 +40,7 @@ public class AuthorizationFilter implements HttpServerFilter {
       if (allowed) {
         return chain.proceed(request);
       }
-      return Flowable.just(new NettyHttpResponseFactory().status(HttpStatus.FORBIDDEN));
+      return Flowable.just(new NettyHttpResponseFactory().status(HttpStatus.FORBIDDEN).body("authorization"));
     }).subscribeOn(Schedulers.io());
   }
 
