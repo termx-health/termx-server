@@ -8,9 +8,11 @@ import com.kodality.termserver.ts.CodeSystemExternalProvider;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
+import com.kodality.termserver.ts.codesystem.Designation;
 import io.micronaut.core.util.StringUtils;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
@@ -37,13 +39,26 @@ public class SnomedCodeSystemProvider extends CodeSystemExternalProvider {
     if (!SNOMED.equals(params.getCodeSystem())) {
       return QueryResult.empty();
     }
-    SnomedConceptSearchParams snomedParams = new SnomedConceptSearchParams();
-    snomedParams.setConceptIds(StringUtils.isNotEmpty(params.getCode()) ? Arrays.stream(params.getCode().split(",")).toList() : List.of());
-    snomedParams.setTerm(params.getTextContains());
-    snomedParams.setActive(true);
-    snomedParams.setLimit(params.getLimit());
-    List<SnomedConcept> result = snomedService.searchConcepts(snomedParams);
-    return new QueryResult<>(result.stream().map(snomedMapper::toConcept).toList());
+
+    if (StringUtils.isNotEmpty(params.getDesignationCiEq())) {
+      List<Concept> concepts = Arrays.stream(params.getDesignationCiEq().split(",")).collect(Collectors.toSet()).stream().flatMap(term -> {
+        SnomedConceptSearchParams p = snomedMapper.toSnomedParams(params).setTerm(term);
+        p.setLimit(1);
+        return searchConcepts(p).stream().filter(c -> {
+          List<Designation> designations = c.getVersions().get(0).getDesignations();
+          return designations != null && designations.stream().anyMatch(d -> d.getName() != null && params.getDesignationCiEq().equalsIgnoreCase(d.getName()));
+        });
+      }).toList();
+      return new QueryResult<>(concepts);
+    }
+
+    SnomedConceptSearchParams snomedParams = snomedMapper.toSnomedParams(params);
+    return new QueryResult<>(searchConcepts(snomedParams));
+  }
+
+  private List<Concept> searchConcepts(SnomedConceptSearchParams params) {
+    List<SnomedConcept> result = snomedService.searchConcepts(params);
+    return result.stream().map(snomedMapper::toConcept).toList();
   }
 
   @Override

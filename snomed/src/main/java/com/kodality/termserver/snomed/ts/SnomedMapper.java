@@ -1,17 +1,20 @@
 package com.kodality.termserver.snomed.ts;
 
 import com.kodality.termserver.snomed.concept.SnomedConcept.SnomedConceptName;
+import com.kodality.termserver.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termserver.ts.CaseSignificance;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.Concept;
+import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
 import com.kodality.termserver.ts.codesystem.Designation;
 import com.kodality.termserver.ts.codesystem.EntityProperty;
 import com.kodality.termserver.ts.codesystem.EntityPropertyType;
 import com.kodality.termserver.snomed.concept.SnomedConcept;
 import com.kodality.termserver.snomed.description.SnomedDescription;
 import io.micronaut.core.util.CollectionUtils;
-import java.util.ArrayList;
+import io.micronaut.core.util.StringUtils;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
@@ -26,6 +29,15 @@ public class SnomedMapper {
     concept.setVersions(List.of(toConceptVersion(snomedConcept)));
     concept.setCodeSystem(SNOMED);
     return concept;
+  }
+
+  public SnomedConceptSearchParams toSnomedParams(ConceptQueryParams params) {
+   SnomedConceptSearchParams snomedParams = new SnomedConceptSearchParams();
+    snomedParams.setConceptIds(StringUtils.isNotEmpty(params.getCode()) ? Arrays.stream(params.getCode().split(",")).toList() : List.of());
+    snomedParams.setTerm(params.getTextContains());
+    snomedParams.setActive(true);
+    snomedParams.setLimit(params.getLimit());
+   return snomedParams;
   }
 
   public CodeSystemEntityVersion toConceptVersion(SnomedConcept snomedConcept) {
