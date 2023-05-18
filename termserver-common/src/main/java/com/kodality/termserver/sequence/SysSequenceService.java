@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -41,6 +42,10 @@ public class SysSequenceService {
 
 
   private void validateCode(SysSequence sequence) {
+    if (hasInvalidCharacters(sequence.getCode())) {
+      throw new ApiClientException("SEQ104", "Sequence code contains invalid characters");
+    }
+
     if (sequence.getId() != null) {
       SysSequence persisted = load(sequence.getId());
       if (!sequence.getCode().equals(persisted.getCode())) {
@@ -51,6 +56,10 @@ public class SysSequenceService {
     if (sysSequenceRepository.hasDuplicate(sequence)) {
       throw new ApiClientException("SEQ101", "Code must be unique");
     }
+  }
+
+  private boolean hasInvalidCharacters(String code) {
+    return Pattern.compile("[^\\w-]").matcher(code).find();
   }
 
   private void validatePattern(String pattern) {
