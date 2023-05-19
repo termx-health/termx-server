@@ -9,6 +9,8 @@ import com.kodality.taskflow.task.Task.TaskPriority;
 import com.kodality.taskflow.task.Task.TaskStatus;
 import com.kodality.taskflow.task.TaskSearchParams;
 import com.kodality.taskflow.task.TaskService;
+import com.kodality.taskflow.workflow.Workflow;
+import com.kodality.taskflow.workflow.Workflow.WorkflowTransition;
 import com.kodality.termserver.ts.Language;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
@@ -74,14 +76,16 @@ public class CommonTaskService {
     space.setNames(new LocalizedName(Map.of(Language.en, "Kodality Terminology Service")));
     space.setInstitution(INSTITUTION);
     // fixme: marina
-    // space.setTransitions(List.of(
-    //     new SpaceTaskTransition().setFrom(null).setTo(TaskStatus.draft),
-    //     new SpaceTaskTransition().setFrom(null).setTo(TaskStatus.requested),
-    //     new SpaceTaskTransition().setFrom(TaskStatus.draft).setTo(TaskStatus.requested),
-    //     new SpaceTaskTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.received),
-    //     new SpaceTaskTransition().setFrom(TaskStatus.received).setTo(TaskStatus.accepted),
-    //     new SpaceTaskTransition().setFrom(TaskStatus.received).setTo(TaskStatus.rejected)
-    // ));
+    space.setWorkflows(List.of(new Workflow()
+        .setTransitions(List.of(
+            new WorkflowTransition().setFrom(null).setTo(TaskStatus.draft),
+            new WorkflowTransition().setFrom(null).setTo(TaskStatus.requested),
+            new WorkflowTransition().setFrom(TaskStatus.draft).setTo(TaskStatus.requested),
+            new WorkflowTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.received),
+            new WorkflowTransition().setFrom(TaskStatus.received).setTo(TaskStatus.accepted),
+            new WorkflowTransition().setFrom(TaskStatus.received).setTo(TaskStatus.rejected)
+        ))
+    ));
     return spaceService.save(space).getId();
   }
 }

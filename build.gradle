@@ -1,5 +1,8 @@
+plugins {
+  id 'maven-publish'
+}
+
 group "com.kodality.termserver"
-version "0.1.0-SNAPSHOT"
 
 allprojects {
   apply plugin: "java-library"
@@ -34,5 +37,30 @@ allprojects {
   configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
   }
+
 }
 
+subprojects { Project project ->
+  apply plugin: "maven-publish"
+
+  publishing {
+    publications {
+      mavenJava(MavenPublication) {
+        artifactId = project.name
+        from components.java
+      }
+    }
+    repositories {
+      maven {
+        def releasesRepoUrl = "https://kexus.kodality.com/repository/maven-releases/"
+        def snapshotsRepoUrl = "https://kexus.kodality.com/repository/maven-snapshots/"
+        url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+        credentials {
+          username = project.hasProperty('kodalityNexusUser') ? project.property('kodalityNexusUser') : System.getenv('KODALITY_NEXUS_USER')
+          password = project.hasProperty('kodalityNexusPassword') ? project.property('kodalityNexusPassword') : System.getenv('KODALITY_NEXUS_PASSWORD')
+        }
+      }
+    }
+  }
+
+}
