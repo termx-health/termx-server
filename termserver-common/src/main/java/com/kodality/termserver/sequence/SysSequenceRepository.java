@@ -67,7 +67,11 @@ public class SysSequenceRepository extends BaseRepository {
   }
 
   public boolean hasDuplicate(SysSequence sequence) {
-    String sql = "select exists(select 1 from core.sys_sequence where code = ? and id <> ?)";
-    return jdbcTemplate.queryForObject(sql, Boolean.class, sequence.getCode(), sequence.getId());
+    SqlBuilder sb = new SqlBuilder("select 1 from core.sys_sequence where sys_status = 'A'");
+    sb.append("and code = ?", sequence.getCode());
+    sb.appendIfNotNull("and id <> ?", sequence.getId());
+
+    SqlBuilder sql = new SqlBuilder("select exists(").append(sb).append(")");
+    return jdbcTemplate.queryForObject(sql.getSql(), Boolean.class, sql.getParams());
   }
 }

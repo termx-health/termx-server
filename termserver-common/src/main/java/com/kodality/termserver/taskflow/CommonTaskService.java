@@ -3,7 +3,6 @@ package com.kodality.termserver.taskflow;
 import com.kodality.commons.model.CodeName;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.taskflow.space.Space;
-import com.kodality.taskflow.space.Space.SpaceTaskTransition;
 import com.kodality.taskflow.space.SpaceService;
 import com.kodality.taskflow.task.Task;
 import com.kodality.taskflow.task.Task.TaskPriority;
@@ -42,7 +41,8 @@ public class CommonTaskService {
         .filter(t -> t.getContext() != null)
         .collect(Collectors.groupingBy(t -> t.getContext().stream().map(c -> c.getType() + "|" + c.getId()).collect(Collectors.joining(","))))
         .entrySet().stream()
-        .map(es -> Pair.of(es.getKey(), es.getValue().stream().map(t -> new CodeName().setId(t.getId()).setCode(t.getNumber()).setNames(new LocalizedName(Map.of(Language.en, t.getTitle())))).toList()))
+        .map(es -> Pair.of(es.getKey(), es.getValue().stream()
+            .map(t -> new CodeName().setId(t.getId()).setCode(t.getNumber()).setNames(new LocalizedName(Map.of(Language.en, t.getTitle())))).toList()))
         .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
   }
 
@@ -53,7 +53,7 @@ public class CommonTaskService {
       return;
     }
     task.setSpaceId(getSpaceId());
-    task.setStatus(task.getStatus() == null ? TaskStatus.requested: task.getStatus());
+    task.setStatus(task.getStatus() == null ? TaskStatus.requested : task.getStatus());
     task.setPriority(task.getPriority() == null ? TaskPriority.routine : task.getPriority());
     taskService.save(task, null);
   }
@@ -73,14 +73,15 @@ public class CommonTaskService {
     space.setCode(SPACE_CODE);
     space.setNames(new LocalizedName(Map.of(Language.en, "Kodality Terminology Service")));
     space.setInstitution(INSTITUTION);
-    space.setTransitions(List.of(
-        new SpaceTaskTransition().setFrom(null).setTo(TaskStatus.draft),
-        new SpaceTaskTransition().setFrom(null).setTo(TaskStatus.requested),
-        new SpaceTaskTransition().setFrom(TaskStatus.draft).setTo(TaskStatus.requested),
-        new SpaceTaskTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.received),
-        new SpaceTaskTransition().setFrom(TaskStatus.received).setTo(TaskStatus.accepted),
-        new SpaceTaskTransition().setFrom(TaskStatus.received).setTo(TaskStatus.rejected)
-    ));
+    // fixme: marina
+    // space.setTransitions(List.of(
+    //     new SpaceTaskTransition().setFrom(null).setTo(TaskStatus.draft),
+    //     new SpaceTaskTransition().setFrom(null).setTo(TaskStatus.requested),
+    //     new SpaceTaskTransition().setFrom(TaskStatus.draft).setTo(TaskStatus.requested),
+    //     new SpaceTaskTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.received),
+    //     new SpaceTaskTransition().setFrom(TaskStatus.received).setTo(TaskStatus.accepted),
+    //     new SpaceTaskTransition().setFrom(TaskStatus.received).setTo(TaskStatus.rejected)
+    // ));
     return spaceService.save(space).getId();
   }
 }

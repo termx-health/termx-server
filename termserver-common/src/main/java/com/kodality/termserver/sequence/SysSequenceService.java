@@ -65,7 +65,7 @@ public class SysSequenceService {
   private void validatePattern(String pattern) {
     String[] tokens = StringUtils.substringsBetween(pattern, "[", "]");
     if (tokens == null) {
-      return;
+      throw new ApiException(400, Issue.error("SEQ105", "Pattern must contain pattern values"));
     }
 
     List<String> tokenList = Arrays.asList(tokens);
