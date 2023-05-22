@@ -16,5 +16,6 @@
 
     <include file="01-init-user.sql" relativeToChangelogFile="true"/>
     <include file="auth/changelog-auth-master.xml" relativeToChangelogFile="true"/>
+    <include file="taskflow/changelog-taskflow-master.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

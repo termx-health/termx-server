@@ -24,7 +24,7 @@ public class SnomedTranslationService {
   public static final String DESCRIPTION_PARTITION_IDENTIFIER = "11";
   public static final String NAMESPACE_IDENTIFIER = "1000265";
   public static final String TASK_CTX_TYPE = "snomed-translation";
-  public static final String TASK_TYPE = "snomed-translation-validation";
+  public static final String WORKFLOW = "snomed-translation-validation";
 
   public List<SnomedTranslation> load(String conceptId) {
     return decorate(repository.load(conceptId));
@@ -48,11 +48,10 @@ public class SnomedTranslationService {
 
   private void createTask(String conceptId, SnomedTranslation t) {
     Task task = new Task();
-    task.setType(TASK_TYPE);
     task.setBusinessStatus(t.getStatus());
     task.setTitle(String.format("%s concept translation validation", conceptId));
     task.setContext(List.of(new TaskContextItem().setId(t.getId()).setType(TASK_CTX_TYPE)));
-    taskService.createTask(task);
+    taskService.createTask(task, WORKFLOW);
   }
 
   private void prepare(SnomedTranslation t) {

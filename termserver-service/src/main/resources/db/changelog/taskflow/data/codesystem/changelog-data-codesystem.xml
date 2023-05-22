@@ -1,0 +1,19 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+  <changeSet id="task-status" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.CodeSystemFhirImport">
+      <param name="files" value="db/changelog/taskflow/data/codesystem/task-status.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="request-priority" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.CodeSystemFhirImport">
+      <param name="files" value="db/changelog/taskflow/data/codesystem/request-priority.json"/>
+    </customChange>
+  </changeSet>
+
+</databaseChangeLog>
