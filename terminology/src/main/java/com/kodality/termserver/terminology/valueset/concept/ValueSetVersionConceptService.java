@@ -103,7 +103,8 @@ public class ValueSetVersionConceptService {
     concepts.forEach(c -> {
       List<CodeSystemEntityVersion> conceptVersions = versions.stream().filter(v -> v.getId().equals(c.getConceptVersionId())).toList();
       c.getConcept().setVersions(conceptVersions);
-      c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? c.getDisplay() : designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
+      c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? c.getDisplay() :
+          designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
       c.setActive(c.isActive() || conceptVersions.stream().anyMatch(v -> PublicationStatus.active.equals(v.getStatus())));
       c.setAdditionalDesignations(CollectionUtils.isNotEmpty(c.getAdditionalDesignations()) ? c.getAdditionalDesignations().stream()
           .map(ad -> ad.getId() == null ? ad : designations.stream().filter(d -> d.getId().equals(ad.getId())).findFirst().orElse(ad))
@@ -133,7 +134,8 @@ public class ValueSetVersionConceptService {
   public List<ValueSetVersionConcept> expand(String valueSet, String valueSetVersion, ValueSetVersionRuleSet ruleSet) {
     Long versionId = null;
     if (valueSet != null) {
-      ValueSetVersion version = valueSetVersion == null ? valueSetVersionRepository.loadLastVersion(valueSet) : valueSetVersionRepository.load(valueSet, valueSetVersion);
+      ValueSetVersion version =
+          valueSetVersion == null ? valueSetVersionRepository.loadLastVersion(valueSet) : valueSetVersionRepository.load(valueSet, valueSetVersion);
       versionId = version == null ? null : version.getId();
     }
 
@@ -148,6 +150,9 @@ public class ValueSetVersionConceptService {
     }
     for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
       internalExpand.addAll(provider.expand(ruleSet));
+      if (ruleSet != null) {
+        ruleSet.getRules().stream().filter(r -> r.getValueSetVersionId() != null).forEach(r -> internalExpand.addAll(provider.expand(valueSetVersionRuleSetService.load(r.getValueSetVersionId()).orElse(null))));
+      }
     }
     return internalExpand;
   }
