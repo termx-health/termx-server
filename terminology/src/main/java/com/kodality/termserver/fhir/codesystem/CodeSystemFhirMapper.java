@@ -155,6 +155,9 @@ public class CodeSystemFhirMapper {
   }
 
   private List<CodeSystemConceptDesignation> getDesignations(List<Designation> designations) {
+    if (designations == null) {
+      return List.of();
+    }
     List<CodeSystemConceptDesignation> result = designations.stream().map(d -> {
           CodeSystemConceptDesignation fhirDesignation = new CodeSystemConceptDesignation();
           fhirDesignation.setLanguage(d.getLanguage());
@@ -177,6 +180,9 @@ public class CodeSystemFhirMapper {
   private List<CodeSystemConceptProperty> getProperties(List<EntityPropertyValue> propertyValues, List<EntityProperty> properties,
                                                         com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     List<CodeSystemConceptProperty> fhirProperties = new ArrayList<>();
+    if (propertyValues == null) {
+      return fhirProperties;
+    }
     propertyValues.forEach(pv -> {
       EntityProperty entityProperty = properties.stream().filter(p -> p.getId().equals(pv.getEntityPropertyId())).findFirst().orElse(null);
       if (entityProperty != null) {
@@ -232,7 +238,8 @@ public class CodeSystemFhirMapper {
                                                    Long targetId, CodeSystem codeSystem,
                                                    com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     List<CodeSystemConcept> result =
-        entities.stream().filter(e -> e.getAssociations().stream().anyMatch(a -> a.getTargetId().equals(targetId)))
+        entities.stream().filter(e -> e.getAssociations() != null)
+            .filter(e -> e.getAssociations().stream().anyMatch(a -> a.getTargetId().equals(targetId)))
             .map(e -> toFhir(e, codeSystem, entities, fhirCodeSystem)).collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
   }
