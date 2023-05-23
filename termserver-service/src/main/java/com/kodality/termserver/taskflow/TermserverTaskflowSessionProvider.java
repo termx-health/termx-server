@@ -7,7 +7,7 @@ import java.util.Optional;
 import javax.inject.Singleton;
 
 @Singleton
-public class CommonTaskflowSessionProvider implements TaskflowSessionProvider {
+public class TermserverTaskflowSessionProvider implements TaskflowSessionProvider {
 
   @Override
   public Optional<TaskflowSessionInfo> get() {
