@@ -143,10 +143,8 @@ public class CodeSystemFileImportService {
 
     if (request.isDryRun()) {
       // Validation
-      List<Issue> validationErrors =
-          validate(request, mappedCodeSystem, existingCodeSystem).stream().filter(distinctByKey(Issue::formattedMessage)).toList();
-      resp.setErrors(validationErrors);
-
+      List<Issue> validationErrors = validate(request, mappedCodeSystem, existingCodeSystem).stream().filter(distinctByKey(Issue::formattedMessage)).toList();
+      resp.getErrors().addAll(validationErrors);
 
       // Version comparison
       log.info("Calculating the diff");

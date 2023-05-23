@@ -12,7 +12,6 @@ import com.kodality.termserver.ts.codesystem.Designation;
 import io.micronaut.core.util.StringUtils;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
@@ -41,9 +40,8 @@ public class SnomedCodeSystemProvider extends CodeSystemExternalProvider {
     }
 
     if (StringUtils.isNotEmpty(params.getDesignationCiEq())) {
-      List<Concept> concepts = Arrays.stream(params.getDesignationCiEq().split(",")).collect(Collectors.toSet()).stream().flatMap(term -> {
-        SnomedConceptSearchParams p = snomedMapper.toSnomedParams(params).setTerm(term);
-        p.setLimit(1);
+      List<Concept> concepts = Arrays.stream(params.getDesignationCiEq().split(",")).filter(term -> term.length() >= 3).distinct().flatMap(term -> {
+        SnomedConceptSearchParams p = snomedMapper.toSnomedParams(params).setTerm(term).limit(1);
         return searchConcepts(p).stream().filter(c -> {
           List<Designation> designations = c.getVersions().get(0).getDesignations();
           return designations != null && designations.stream().anyMatch(d -> d.getName() != null && params.getDesignationCiEq().equalsIgnoreCase(d.getName()));

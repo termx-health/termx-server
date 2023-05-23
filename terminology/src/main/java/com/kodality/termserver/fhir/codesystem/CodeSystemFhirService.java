@@ -62,8 +62,8 @@ public class CodeSystemFhirService {
         .setVersionVersion(fhirParams.getFirst("version").orElse(null))
         .setVersionReleaseDateGe(fhirParams.getFirst("date").map(d -> LocalDateTime.parse(d).toLocalDate()).orElse(null))
         .setVersionExpirationDateLe(fhirParams.getFirst("date").map(d -> LocalDateTime.parse(d).toLocalDate()).orElse(null))
-        .setVersionsDecorated(true).setConceptsDecorated(true).setPropertiesDecorated(true);
-    csParams.setLimit(1);
+        .setVersionsDecorated(true).setConceptsDecorated(true).setPropertiesDecorated(true)
+        .limit(1);
     CodeSystem cs = codeSystemService.query(csParams).findFirst().orElse(null);
     if (cs == null) {
       throw new NotFoundException("CodeSystem not found");

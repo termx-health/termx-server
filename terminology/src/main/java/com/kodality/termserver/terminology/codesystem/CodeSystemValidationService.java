@@ -96,7 +96,7 @@ public class CodeSystemValidationService {
     }
 
     if (conceptVersion.getCode() == null) {
-      errs.add(error("Concept version's code is NULL",Map.of()));
+      errs.add(error("Concept version's code is NULL", Map.of()));
     }
 
     for (EntityPropertyValue propertyValue : conceptVersion.getPropertyValues()) {

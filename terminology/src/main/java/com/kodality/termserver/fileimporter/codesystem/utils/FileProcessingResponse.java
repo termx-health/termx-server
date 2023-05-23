@@ -1,6 +1,7 @@
 package com.kodality.termserver.fileimporter.codesystem.utils;
 
 import com.kodality.commons.model.Issue;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,5 +13,5 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class FileProcessingResponse {
   private String diff;
-  private List<Issue> errors;
+  private List<Issue> errors = new ArrayList<>();
 }
