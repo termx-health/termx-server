@@ -1,8 +1,6 @@
 package com.kodality.termserver.terminology.codesystem
 
-
 import com.kodality.commons.model.QueryResult
-import com.kodality.termserver.AuthUtil
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService
 import com.kodality.termserver.ts.codesystem.*
 import spock.lang.Specification
@@ -18,7 +16,7 @@ class CodeSystemValidationServiceTest extends Specification {
   CodeSystemValidationService service = new CodeSystemValidationService(conceptService)
 
 
-  def 'should create provider\'s names translation'() {
+  def 'should validate CS version entity properties'() {
     given:
     """
     two concept versions where:
@@ -69,15 +67,15 @@ class CodeSystemValidationServiceTest extends Specification {
     def expectedIssues = [
         'Unknown entity property: non-existent',
         'Value "42.0" does not match data type "integer"',
-        'Required property "required-prop" is missing value(s)'
+        'Required entity property "required-prop" is missing value(s)'
     ]
 
-    issues.collect { AuthUtil.message(it) }.containsAll(expectedIssues)
+    issues.collect { it.formattedMessage() }.containsAll(expectedIssues)
     issues.size() == expectedIssues.size()
   }
 
 
-  def 'should validate external coding'() {
+  def 'should validate CS version Coding entity properties'() {
     given:
     """
     1) an entity property with the type "Coding" and a rule that only allows concepts from the code system "cs-1" to be included; and
@@ -106,11 +104,9 @@ class CodeSystemValidationServiceTest extends Specification {
 
     conceptService.query(_) >> { args ->
       def params = args[0] as ConceptQueryParams
-      println(params.code)
       if (params.codeSystem == 'cs-1') {
         return new QueryResult([new Concept(codeSystem: 'cs-1', code: 'code-1')])
       }
-
       return QueryResult.empty()
     }
 
@@ -124,7 +120,7 @@ class CodeSystemValidationServiceTest extends Specification {
         'Unknown reference "code-3" to "cs-3"'
     ]
 
-    issues.collect { AuthUtil.message(it) }.containsAll(expectedIssues)
+    issues.collect { it.formattedMessage() }.containsAll(expectedIssues)
     issues.size() == expectedIssues.size()
   }
 

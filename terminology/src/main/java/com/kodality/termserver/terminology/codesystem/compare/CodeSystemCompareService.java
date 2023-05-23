@@ -1,6 +1,7 @@
 package com.kodality.termserver.terminology.codesystem.compare;
 
 import jakarta.inject.Singleton;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 
 @Singleton
@@ -9,7 +10,7 @@ public class CodeSystemCompareService {
   private final CodeSystemCompareRepository repository;
 
   public CodeSystemCompareResult compare(Long sourceCsVersionId, Long targetCsVersionId) {
-    if (sourceCsVersionId.equals(targetCsVersionId)) {
+    if (Objects.equals(sourceCsVersionId, targetCsVersionId)) {
       return new CodeSystemCompareResult();
     }
     return repository.compare(sourceCsVersionId, targetCsVersionId);

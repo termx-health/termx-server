@@ -29,4 +29,7 @@ create index designation_cs_entity_version_idx on terminology.designation(code_s
 select core.create_table_metadata('terminology.designation');
 --rollback drop table if exists terminology.designation;
 
-
+--changeset kodality:designation_name-hash_idx
+-- used in file import with IN operator to optimize searches
+create index designation_name_hash_idx on terminology.designation using hash(lower(name));
+--

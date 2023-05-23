@@ -50,7 +50,7 @@ public class FileProcessingRequest {
   @Getter
   @Setter
   public static class FileProcessingCodeSystemVersion {
-    private Long id;
+//    private Long id;
     private String version;
     private String status;
     private LocalDate releaseDate;
