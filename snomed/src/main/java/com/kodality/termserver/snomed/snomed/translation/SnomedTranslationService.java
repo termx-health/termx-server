@@ -30,8 +30,13 @@ public class SnomedTranslationService {
     return decorate(repository.load(conceptId));
   }
 
+  public SnomedTranslation load(Long id) {
+    return repository.load(id);
+  }
+
   public void save(String conceptId, List<SnomedTranslation> translations) {
-    repository.retain(conceptId, translations);
+    List<Long> cancelledTranslations = repository.retain(conceptId, translations);
+    taskService.cancelTasks(cancelledTranslations, TASK_CTX_TYPE);
     if (CollectionUtils.isNotEmpty(translations)) {
       translations.forEach(t -> save(conceptId, t));
     }
@@ -50,6 +55,8 @@ public class SnomedTranslationService {
     Task task = new Task();
     task.setBusinessStatus(t.getStatus());
     task.setTitle(String.format("%s concept translation validation", conceptId));
+    task.setContent(String.format("Module: %s \nLanguage: %s \nTerm: %s \nType: %s \nAcceptability: %s",
+        t.getModule(), t.getLanguage(), t.getTerm(), t.getType(), t.getAcceptability()));
     task.setContext(List.of(new TaskContextItem().setId(t.getId()).setType(TASK_CTX_TYPE)));
     taskService.createTask(task, WORKFLOW);
   }
@@ -77,7 +84,7 @@ public class SnomedTranslationService {
       return translations;
     }
     String ctx = translations.stream().map(t -> TASK_CTX_TYPE + "|" + t.getId()).collect(Collectors.joining(","));
-    Map<String, List<CodeName>> tasks = taskService.findTasks(ctx);
+    Map<String, List<CodeName>> tasks = taskService.findTaskCtxGroup(ctx);
     translations.forEach(t -> {
       List<CodeName> taskRef = tasks.get(TASK_CTX_TYPE + "|" + t.getId());
       if (taskRef != null) {

@@ -28,16 +28,28 @@ public class SnomedTranslationRepository extends BaseRepository {
     translation.setId(id);
   }
 
-  public void retain(String conceptId, List<SnomedTranslation> translations) {
-    SqlBuilder sb = new SqlBuilder("update snomed.snomed_translation set sys_status = 'C'");
+  public List<Long> retain(String conceptId, List<SnomedTranslation> translations) {
+    SqlBuilder sb = new SqlBuilder("select id from snomed.snomed_translation");
+    sb.append("where concept_id = ? and sys_status = 'A'", conceptId);
+    sb.andNotIn("id", translations, SnomedTranslation::getId);
+    List<Long> ids = jdbcTemplate.queryForList(sb.getSql(), Long.class, sb.getParams());
+
+    sb = new SqlBuilder("update snomed.snomed_translation set sys_status = 'C'");
     sb.append(" where concept_id = ? and sys_status = 'A'", conceptId);
     sb.andNotIn("id", translations, SnomedTranslation::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
+
+    return ids;
   }
 
   public List<SnomedTranslation> load(String conceptId) {
     String sql = "select * from snomed.snomed_translation where sys_status = 'A' and concept_id = ?";
     return getBeans(sql, bp, conceptId);
+  }
+
+  public SnomedTranslation load(Long id) {
+    String sql = "select * from snomed.snomed_translation where sys_status = 'A' and id = ?";
+    return getBean(sql, bp, id);
   }
 
   public void saveDescriptionId(Long id, String descriptionId) {

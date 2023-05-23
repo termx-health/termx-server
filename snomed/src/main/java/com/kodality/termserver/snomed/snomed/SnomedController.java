@@ -6,15 +6,20 @@ import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.snomed.client.SnowstormClient;
 import com.kodality.termserver.snomed.concept.SnomedConcept;
 import com.kodality.termserver.snomed.concept.SnomedConceptSearchParams;
+import com.kodality.termserver.snomed.concept.SnomedTranslation;
 import com.kodality.termserver.snomed.decriptionitem.SnomedDescriptionItemResponse;
 import com.kodality.termserver.snomed.decriptionitem.SnomedDescriptionItemSearchParams;
 import com.kodality.termserver.snomed.refset.SnomedRefsetMemberResponse;
 import com.kodality.termserver.snomed.refset.SnomedRefsetResponse;
 import com.kodality.termserver.snomed.refset.SnomedRefsetSearchParams;
 import com.kodality.termserver.snomed.search.SnomedSearchResult;
+import com.kodality.termserver.snomed.snomed.translation.SnomedTranslationService;
 import io.micronaut.context.annotation.Parameter;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Post;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SnomedController {
   private final SnowstormClient snowstormClient;
+  private final SnomedTranslationService translationService;
 
   //----------------Concepts----------------
 
@@ -87,4 +93,25 @@ public class SnomedController {
     return snowstormClient.findRefsetMembers(params).join();
   }
 
+
+//----------------Translations----------------
+
+  @Authorized("snomed-ct.CodeSystem.view")
+  @Get("/translations/{id}")
+  public SnomedTranslation load(@Parameter Long id) {
+    return translationService.load(id);
+  }
+
+  @Authorized("snomed-ct.CodeSystem.view")
+  @Get("/concepts/{conceptId}/translations")
+  public List<SnomedTranslation> loadTranslations(@Parameter String conceptId) {
+    return translationService.load(conceptId);
+  }
+
+  @Authorized({"snomed-ct.CodeSystem.edit"})
+  @Post("/concepts/{conceptId}/translations")
+  public HttpResponse<?> saveTranslations(@Parameter String conceptId, @Body List<SnomedTranslation> translations) {
+    translationService.save(conceptId, translations);
+    return HttpResponse.ok();
+  }
 }

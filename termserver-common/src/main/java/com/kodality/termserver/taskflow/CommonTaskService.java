@@ -16,9 +16,9 @@ import com.kodality.taskflow.workflow.WorkflowService;
 import com.kodality.termserver.ts.Language;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -36,14 +36,8 @@ public class CommonTaskService {
   private final static String INSTITUTION = "1";
   private final static String TASK_TYPE = "task";
 
-  public Map<String, List<CodeName>> findTasks(String context) {
-    if (StringUtils.isEmpty(context)) {
-      return Map.of();
-    }
-    TaskSearchParams params = new TaskSearchParams();
-    params.setContext(context);
-    params.all();
-    List<Task> tasks = taskService.search(params).getData();
+  public Map<String, List<CodeName>> findTaskCtxGroup(String context) {
+    List<Task> tasks = findTasks(context);
     return tasks.stream()
         .filter(t -> t.getContext() != null)
         .collect(Collectors.groupingBy(t -> t.getContext().stream().map(c -> c.getType() + "|" + c.getId()).collect(Collectors.joining(","))))
@@ -53,18 +47,33 @@ public class CommonTaskService {
         .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
   }
 
+  public List<Task> findTasks(String context) {
+    if (StringUtils.isEmpty(context)) {
+      return List.of();
+    }
+    TaskSearchParams params = new TaskSearchParams();
+    params.setContext(context);
+    params.all();
+    return taskService.search(params).getData();
+  }
+
   @Transactional
   public void createTask(Task task, String workflow) {
     String context = task.getContext().stream().map(ctx -> ctx.getType() + "|" + ctx.getId()).collect(Collectors.joining(","));
-    List<CodeName> tasks = findTasks(context).values().stream().flatMap(Collection::stream).toList();
-    if (CollectionUtils.isNotEmpty(tasks)) {
-      return;
-    }
+    Optional<Task> exitingTask = findTasks(context).stream().findFirst();
+    task.setId(exitingTask.map(Task::getId).orElse(null));
     task.setSpaceId(getSpaceId());
-    task.setStatus(task.getStatus() == null ? TaskStatus.requested : task.getStatus());
     task.setWorkflowId(getWorkflowId(workflow, task.getSpaceId()));
+    task.setParentId(exitingTask.map(Task::getParentId).orElse(null));
+    task.setNumber(exitingTask.map(Task::getNumber).orElse(null));
     task.setType(task.getType() == null ? TASK_TYPE : task.getType());
-    task.setPriority(task.getPriority() == null ? TaskPriority.routine : task.getPriority());
+    task.setStatus(task.getStatus() == null ? exitingTask.map(Task::getStatus).orElse(TaskStatus.requested) : task.getStatus());
+    task.setPriority(task.getPriority() == null ? exitingTask.map(Task::getPriority).orElse(TaskPriority.routine) : task.getPriority());
+    task.setCreatedBy(exitingTask.map(Task::getCreatedBy).orElse(null));
+    task.setCreatedAt(exitingTask.map(Task::getCreatedAt).orElse(null));
+    task.setAssignee(exitingTask.map(Task::getAssignee).orElse(null));
+    task.setUpdatedBy(exitingTask.map(Task::getUpdatedBy).orElse(null));
+    task.setUpdatedAt(exitingTask.map(Task::getUpdatedAt).orElse(null));
     taskService.save(task, null);
   }
 
@@ -104,12 +113,49 @@ public class CommonTaskService {
     workflow.setTransitions(List.of(
         new WorkflowTransition().setFrom(null).setTo(TaskStatus.draft),
         new WorkflowTransition().setFrom(null).setTo(TaskStatus.requested),
+
         new WorkflowTransition().setFrom(TaskStatus.draft).setTo(TaskStatus.requested),
+        new WorkflowTransition().setFrom(TaskStatus.draft).setTo(TaskStatus.cancelled),
+
         new WorkflowTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.received),
+        new WorkflowTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.accepted),
+        new WorkflowTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.rejected),
+        new WorkflowTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.failed),
+        new WorkflowTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.cancelled),
+
         new WorkflowTransition().setFrom(TaskStatus.received).setTo(TaskStatus.accepted),
-        new WorkflowTransition().setFrom(TaskStatus.received).setTo(TaskStatus.rejected)
+        new WorkflowTransition().setFrom(TaskStatus.received).setTo(TaskStatus.rejected),
+        new WorkflowTransition().setFrom(TaskStatus.received).setTo(TaskStatus.failed),
+        new WorkflowTransition().setFrom(TaskStatus.received).setTo(TaskStatus.cancelled),
+
+        new WorkflowTransition().setFrom(TaskStatus.rejected).setTo(TaskStatus.draft),
+        new WorkflowTransition().setFrom(TaskStatus.rejected).setTo(TaskStatus.received),
+        new WorkflowTransition().setFrom(TaskStatus.rejected).setTo(TaskStatus.cancelled),
+
+        new WorkflowTransition().setFrom(TaskStatus.failed).setTo(TaskStatus.draft),
+        new WorkflowTransition().setFrom(TaskStatus.failed).setTo(TaskStatus.in_progress),
+        new WorkflowTransition().setFrom(TaskStatus.failed).setTo(TaskStatus.cancelled),
+
+        new WorkflowTransition().setFrom(TaskStatus.accepted).setTo(TaskStatus.failed),
+        new WorkflowTransition().setFrom(TaskStatus.accepted).setTo(TaskStatus.cancelled),
+
+        new WorkflowTransition().setFrom(TaskStatus.in_progress).setTo(TaskStatus.requested),
+        new WorkflowTransition().setFrom(TaskStatus.in_progress).setTo(TaskStatus.cancelled),
+
+        new WorkflowTransition().setFrom(TaskStatus.cancelled).setTo(TaskStatus.draft)
     ));
     workflowService.save(spaceId, List.of(workflow));
     return workflow.getId();
+  }
+
+  public void cancelTasks(List<Long> ids, String taskCtxType) {
+    if (CollectionUtils.isEmpty(ids)) {
+      return;
+    }
+    List<Task> tasks = findTasks(ids.stream().map(id -> taskCtxType + "|" + id).collect(Collectors.joining(",")));
+    tasks.forEach(t -> {
+      t.setStatus(TaskStatus.cancelled);
+      taskService.save(t, null);
+    });
   }
 }
