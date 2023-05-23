@@ -51,6 +51,10 @@ public class SnomedTranslationService {
     }
   }
 
+  public void updateStatus(Long id, String status) {
+    repository.updateStatus(id, status);
+  }
+
   private void createTask(String conceptId, SnomedTranslation t) {
     Task task = new Task();
     task.setBusinessStatus(t.getStatus());

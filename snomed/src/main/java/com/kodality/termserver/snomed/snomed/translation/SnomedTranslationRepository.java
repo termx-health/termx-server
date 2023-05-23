@@ -56,4 +56,9 @@ public class SnomedTranslationRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder("update snomed.snomed_translation set description_id = ? where id = ?", descriptionId, id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
+
+  public void updateStatus(Long id, String status) {
+    SqlBuilder sb = new SqlBuilder("update snomed.snomed_translation set status = ? where sys_status = 'A' and id = ?", status, id);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }
