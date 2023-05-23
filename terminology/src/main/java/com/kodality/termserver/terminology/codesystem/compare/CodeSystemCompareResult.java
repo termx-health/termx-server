@@ -34,6 +34,8 @@ public class CodeSystemCompareResult {
   @Accessors(chain = true)
   public static class CodeSystemCompareResultDiffItem {
     private String status;
+    private String description;
+    private List<String> designations;
     private List<String> properties;
   }
 }

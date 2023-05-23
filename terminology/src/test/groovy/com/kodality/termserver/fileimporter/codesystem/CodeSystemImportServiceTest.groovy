@@ -1,12 +1,13 @@
 package com.kodality.termserver.fileimporter.codesystem
 
 import com.kodality.commons.model.QueryResult
-import com.kodality.termserver.AuthUtil
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService
+import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest
 import com.kodality.termserver.terminology.codesystem.CodeSystemImportService
 import com.kodality.termserver.terminology.codesystem.CodeSystemService
 import com.kodality.termserver.terminology.codesystem.CodeSystemValidationService
 import com.kodality.termserver.terminology.codesystem.CodeSystemVersionService
+import com.kodality.termserver.terminology.codesystem.compare.CodeSystemCompareService
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService
 import com.kodality.termserver.terminology.valueset.ValueSetService
 import com.kodality.termserver.terminology.valueset.ValueSetVersionService
@@ -15,6 +16,7 @@ import com.kodality.termserver.ts.PublicationStatus
 import com.kodality.termserver.ts.codesystem.*
 import spock.lang.Specification
 
+import static com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingProperty
 import static com.kodality.termserver.ts.codesystem.EntityProperty.EntityPropertyRule
 import static com.kodality.termserver.ts.codesystem.EntityPropertyType.coding
 import static com.kodality.termserver.ts.codesystem.EntityPropertyType.string
@@ -22,6 +24,7 @@ import static com.kodality.termserver.ts.codesystem.EntityPropertyValue.EntityPr
 import static org.apache.commons.lang3.builder.EqualsBuilder.reflectionEquals
 
 class CodeSystemImportServiceTest extends Specification {
+  CodeSystemCompareService codeSystemCompareService = Mock(CodeSystemCompareService)
   CodeSystemFhirImportService codeSystemFhirImportService = Mock(CodeSystemFhirImportService)
   CodeSystemImportService codeSystemImportService = Mock(CodeSystemImportService)
   CodeSystemService codeSystemService = Mock(CodeSystemService)
@@ -33,6 +36,7 @@ class CodeSystemImportServiceTest extends Specification {
   ValueSetVersionService valueSetVersionService = Mock(ValueSetVersionService)
 
   CodeSystemFileImportService service = new CodeSystemFileImportService(
+      codeSystemCompareService,
       codeSystemFhirImportService,
       codeSystemImportService,
       codeSystemService,
@@ -69,8 +73,7 @@ class CodeSystemImportServiceTest extends Specification {
     ])
 
     when:
-    service.validateEntityPropertyValues(cs, [ep])
-
+    service.prepareEntityProperties(cs, [ep])
 
     then:
     conceptService.query(_) >> { args -> QueryResult.empty() }
@@ -82,7 +85,7 @@ class CodeSystemImportServiceTest extends Specification {
     property.required == ep.required
   }
 
-  def 'should prepare CS concept version external coding property values'() {
+  def 'should validate CS concepts'() {
     given:
     def ep = new EntityProperty(
         id: 42,
@@ -91,6 +94,10 @@ class CodeSystemImportServiceTest extends Specification {
         rule: new EntityPropertyRule(codeSystems: ['cs-1']),
         status: PublicationStatus.active,
         required: true,
+    )
+
+    def req = new FileProcessingRequest(
+        properties: [new FileProcessingProperty(columnName: 'xxx', propertyName: ep.name, propertyType: 'Coding')]
     )
 
     def cs = new CodeSystem(id: 'overlord', properties: [entityProperty(ep.type, ep.name)], concepts: [
@@ -105,9 +112,10 @@ class CodeSystemImportServiceTest extends Specification {
     ])
 
     when:
-    def issues = service.validateEntityPropertyValues(cs, [ep])
+    def issues = service.validate(req, cs, new CodeSystem(properties: [ep]))
 
     then:
+    codeSystemValidationService.validateConcepts(_, _) >> []
     conceptService.query(_) >> { args ->
       def version = (designationName) -> {
         return new CodeSystemEntityVersion(designations: [new Designation(designationType: 'display', name: designationName)])
@@ -131,18 +139,19 @@ class CodeSystemImportServiceTest extends Specification {
       return new QueryResult(body())
     }
 
+    def expectedIssues = [
+        'Several concepts match the "Concept 4" value',
+        'Unknown reference "code-3" to "cs-1"',
+    ]
+
+    expectedIssues.containsAll(issues.collect { it.formattedMessage() })
+    expectedIssues.size() == issues.size()
+
 
     def values = cs.concepts[0].versions[0].propertyValues
     reflectionEquals(values[0].value, new EntityPropertyValueCodingValue('code': 'code-1', 'codeSystem': 'cs-1')) // (1)
     reflectionEquals(values[1].value, new EntityPropertyValueCodingValue('code': 'code-2', 'codeSystem': 'cs-1')) // (2)
     values[2].value == ['code': 'code-3'] // (3)
     values[3].value == ['code': 'Concept 4'] // (4)
-
-    def expectedIssues = [
-        'Several concepts match the "Concept 4" value',
-        'Unknown reference to "code-3"',
-    ]
-    expectedIssues.containsAll(issues.collect { AuthUtil.message(it) })
-    expectedIssues.size() == issues.size()
   }
 }

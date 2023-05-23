@@ -9,7 +9,6 @@ import jakarta.inject.Singleton;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.text.StringSubstitutor;
 
 @Singleton
 @RequiredArgsConstructor
@@ -32,8 +31,19 @@ public class ImportLogger {
     jobLogService.finish(jobId);
   }
 
+  public void logImport(Long jobId, ImportLog log) {
+    logImport(jobId, log.getSuccesses(), log.getWarnings(), log.getErrors());
+  }
+
   public void logImport(Long jobId, List<String> successes, List<String> warnings) {
-    logImport(jobId, successes, warnings, null);
+    logImport(jobId, successes, warnings, List.of());
+  }
+
+  public void logImport(Long jobId, List<String> successes, List<String> warnings, List<String> errors) {
+    successes = CollectionUtils.isEmpty(successes) ? null : successes;
+    warnings = CollectionUtils.isEmpty(warnings) ? null : warnings;
+    errors = CollectionUtils.isEmpty(errors) ? null : errors;
+    jobLogService.finish(jobId, successes, warnings, errors);
   }
 
   public void logImport(Long jobId, ApiException e) {
@@ -41,13 +51,12 @@ public class ImportLogger {
   }
 
   public void logImport(Long jobId, List<String> successes, List<String> warnings, ApiException e) {
-    successes = CollectionUtils.isEmpty(successes) ? null : successes;
-    warnings = CollectionUtils.isEmpty(warnings) ? null : warnings;
     if (e != null && CollectionUtils.isNotEmpty(e.getIssues())) {
-      e.getIssues().forEach(issue -> issue.setMessage(StringSubstitutor.replace(issue.getMessage(), issue.getParams(), "{{", "}}")));
+      e.getIssues().forEach(issue -> issue.setMessage(issue.formattedMessage()));
     }
     List<String> errors = e == null ? null : e.getIssues().stream().map(i -> ExceptionUtils.getMessage(new ApiException(e.getHttpStatus(), i))).toList();
-    jobLogService.finish(jobId, successes, warnings, errors);
+
+    logImport(jobId, successes, warnings, errors);
   }
 
 }
