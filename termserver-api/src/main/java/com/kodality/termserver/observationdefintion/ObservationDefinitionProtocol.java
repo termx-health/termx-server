@@ -23,7 +23,15 @@ public class ObservationDefinitionProtocol {
   @Accessors(chain = true)
   public static class ObservationDefinitionProtocolValue {
     private String usage;
-    private List<String> values;
+    private List<ObservationDefinitionProtocolValueConcept> values;
     private String valueSet;
+  }
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class ObservationDefinitionProtocolValueConcept {
+    private String codeSystem;
+    private String code;
   }
 }

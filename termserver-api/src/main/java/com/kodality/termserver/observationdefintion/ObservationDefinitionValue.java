@@ -17,6 +17,14 @@ public class ObservationDefinitionValue {
   private boolean multipleResultsAllowed;
 
   private String usage;
-  private List<String> values;
+  private List<ObservationDefinitionValueItem> values;
   private String valueSet;
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class ObservationDefinitionValueItem {
+    private String codeSystem;
+    private String code;
+  }
 }
