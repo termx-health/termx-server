@@ -196,7 +196,9 @@ public class LoincService {
         value.forEach(v -> {
           String code = v[headers.indexOf("Loinc")];
           String order = v[headers.indexOf("SEQUENCE")];
-          parent.get().getAssociations().add(new LoincConceptAssociation().setTargetCode(code).setOrder(Integer.valueOf(order)));
+          if (!parent.get().getCode().equals(code)) {
+            parent.get().getAssociations().add(new LoincConceptAssociation().setTargetCode(code).setOrder(Integer.valueOf(order)));
+          }
         });
       }
     });
