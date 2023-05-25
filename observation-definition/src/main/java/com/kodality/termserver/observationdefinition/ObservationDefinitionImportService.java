@@ -6,6 +6,8 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.observationdefintion.ObservationDefinition;
 import com.kodality.termserver.observationdefintion.ObservationDefinition.ObservationDefinitionCategory;
 import com.kodality.termserver.observationdefintion.ObservationDefinitionImportRequest;
+import com.kodality.termserver.observationdefintion.ObservationDefinitionMapping;
+import com.kodality.termserver.observationdefintion.ObservationDefinitionMapping.ObservationDefinitionMappingTarget;
 import com.kodality.termserver.observationdefintion.ObservationDefinitionMember;
 import com.kodality.termserver.observationdefintion.ObservationDefinitionProtocol;
 import com.kodality.termserver.observationdefintion.ObservationDefinitionProtocol.ObservationDefinitionProtocolValue;
@@ -95,6 +97,8 @@ public class ObservationDefinitionImportService {
     }
 
     log.info("Saving " + observationDefinitions.size() + " observation definition(s)");
+    observationDefinitions.forEach(observationDefinitionService::save);
+    observationDefinitions.forEach(obs -> obs.setMappings(getMappings(obs)));
     observationDefinitions.forEach(observationDefinitionService::save);
     observationDefinitions.addAll(existingDefinitions);
     return observationDefinitions;
@@ -234,5 +238,15 @@ public class ObservationDefinitionImportService {
             .setUsage(ObservationDefinitionProtocolUsage.values)
             .setValues(List.of(new ObservationDefinitionProtocolValueConcept().setCode(method).setCodeSystem(LOINC_PART)))
         )).orElse(new ObservationDefinitionProtocol());
+  }
+
+  private List<ObservationDefinitionMapping> getMappings(ObservationDefinition obs) {
+    ObservationDefinitionMapping mapping = new ObservationDefinitionMapping();
+    mapping.setConcept(obs.getCode());
+    mapping.setCodeSystem(LOINC);
+    mapping.setTarget(new ObservationDefinitionMappingTarget().setId(obs.getId()).setType("observation-definition"));
+    mapping.setRelation("equivalent");
+    mapping.setOrderNumber(1);
+    return List.of(mapping);
   }
 }
