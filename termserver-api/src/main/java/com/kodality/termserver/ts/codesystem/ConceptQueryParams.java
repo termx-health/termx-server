@@ -25,7 +25,7 @@ public class ConceptQueryParams extends QueryParams {
   private LocalDate codeSystemVersionExpirationDateLe;
   private LocalDate codeSystemVersionExpirationDateGe;
   private String codeSystemEntityStatus;
-  private Long codeSystemEntityVersionId;
+  private String codeSystemEntityVersionId;
   private String valueSet;
   private String valueSetUri;
   private String valueSetVersion;
