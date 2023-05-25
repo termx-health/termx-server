@@ -76,7 +76,10 @@ public class ObservationDefinitionRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.append("where od.sys_status = 'A'");
     if (StringUtils.isNotEmpty(params.getCodes())) {
-      sb.and().in("od.code", params.getCodes());
+      sb.and("(")
+          .in("od.code", params.getCodes())
+          .or("exists (select 1 from def.observation_definition_mapping odm where odm.sys_status = 'A' and odm.observation_definition_id = od.id").and().in("odm.concept", params.getCodes()).append(")")
+          .append(")");
     }
     if (StringUtils.isNotEmpty(params.getIdsNe())) {
       sb.and().notIn("od.id", params.getIdsNe(), Long::valueOf);
@@ -107,7 +110,8 @@ public class ObservationDefinitionRepository extends BaseRepository {
               "or exists (select 1 from jsonb_each_text(od.alias) where value ~* ?)" +
               "or exists (select 1 from jsonb_each_text(od.definition) where value ~* ?)" +
               "or exists (select 1 from jsonb_each_text(od.keywords) where value ~* ?)" +
-              ")", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
+              "or exists (select 1 from def.observation_definition_mapping odm where odm.sys_status = 'A' and odm.observation_definition_id = od.id and odm.concept ~* ?)" +
+              ")", params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
     return sb;
   }
