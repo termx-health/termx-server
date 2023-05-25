@@ -51,6 +51,7 @@ dependencies {
   implementation("io.micronaut:micronaut-http-server-netty")
   implementation("io.micronaut.spring:micronaut-spring")
   implementation("io.micronaut.liquibase:micronaut-liquibase")
+  implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
   implementation("com.github.slugify:slugify:3.0.2")
 
   implementation('org.liquibase:liquibase-core:4.16.1')

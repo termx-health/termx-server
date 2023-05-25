@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PublicEndpointSessionProvider extends SessionProvider {
   @Value("${auth.public.endpoints:[]}")
   private List<String> publicEndpoints;
-  private static final List<String> DEFAULT_PUBLIC = Arrays.asList("/health", "/info", "/public");
+  private static final List<String> DEFAULT_PUBLIC = Arrays.asList("/health", "/info", "/public", "/metrics", "/prometheus");
 
   @Override
   public int getOrder() {

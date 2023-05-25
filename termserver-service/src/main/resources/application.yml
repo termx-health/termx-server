@@ -22,6 +22,10 @@ endpoints:
   info:
     enabled: true
     sensitive: false
+  prometheus:
+    enabled: true
+    sensitive: false
+
 info:
   version: ${APP_VERSION:dev}
 
