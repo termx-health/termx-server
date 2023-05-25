@@ -5,7 +5,10 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termserver.observationdefintion.ObservationDefinition;
+import com.kodality.termserver.observationdefintion.ObservationDefinition.ObservationDefinitionCategory;
 import com.kodality.termserver.observationdefintion.ObservationDefinitionSearchParams;
 import io.micronaut.core.util.StringUtils;
 import java.util.Map;
@@ -19,7 +22,7 @@ public class ObservationDefinitionRepository extends BaseRepository {
     p.addColumnProcessor("definition", PgBeanProcessor.fromJson());
     p.addColumnProcessor("keywords", PgBeanProcessor.fromJson());
     p.addColumnProcessor("structure", PgBeanProcessor.fromJson());
-    p.addColumnProcessor("category", PgBeanProcessor.fromJson());
+    p.addColumnProcessor("category",  PgBeanProcessor.fromJson(JsonUtil.getListType(ObservationDefinitionCategory.class)));
   });
 
   private final Map<String, String> orderMapping = Map.of("code", "od.code");
@@ -80,6 +83,23 @@ public class ObservationDefinitionRepository extends BaseRepository {
     }
     if (StringUtils.isNotEmpty(params.getTypes())) {
       sb.and().in("odv.type", params.getTypes());
+    }
+    if (StringUtils.isNotEmpty(params.getStructures())) {
+      String[] structures = params.getStructures().split(",");
+      sb.and("( 1=1");
+      for (String structure: structures) {
+        sb.and("exists (select 1 from jsonb_array_elements_text(od.structure) s where s = ?)", structure);
+      }
+      sb.append(")");
+    }
+    if (StringUtils.isNotEmpty(params.getCategories())) {
+      String[] categories = params.getCategories().split(",");
+      sb.and("( 1=1");
+      for (String category: categories) {
+        String[] c = PipeUtil.parsePipe(category);
+        sb.and("exists (select 1 from jsonb_array_elements(od.category) cat where (cat ->> 'codeSystem') = ? and (cat ->> 'code') = ?)", c[0], c[1]);
+      }
+      sb.append(")");
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
       sb.append("and (od.code ~* ?" +

@@ -12,6 +12,8 @@ public class ObservationDefinitionSearchParams extends QueryParams {
   private String codes;
   private String idsNe;
   private String textContains;
+  private String categories; //codeSystem|code,codeSystem|code
+  private String structures;
   private String types;
 
   private boolean decorated;
