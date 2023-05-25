@@ -37,6 +37,7 @@ public class CodeSystemService {
   public void save(CodeSystem codeSystem) {
     userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
     repository.save(codeSystem);
+    entityPropertyService.save(codeSystem.getProperties(), codeSystem.getId());
   }
 
   @Transactional
