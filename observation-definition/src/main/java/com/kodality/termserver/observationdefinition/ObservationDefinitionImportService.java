@@ -208,10 +208,10 @@ public class ObservationDefinitionImportService {
     if (!subsumes) {
       return List.of();
     }
-    Map<String, Integer> associations = version.getAssociations().stream().collect(Collectors.toMap(CodeSystemAssociation::getTargetCode, CodeSystemAssociation::getOrderNumber));
+    Map<String, List<CodeSystemAssociation>> associations = version.getAssociations().stream().collect(Collectors.groupingBy(CodeSystemAssociation::getTargetCode));
     ObservationDefinitionImportRequest request = new ObservationDefinitionImportRequest().setLoincCodes(associations.keySet().stream().toList());
     List<ObservationDefinition> definitions = importDefinitions(request);
-    return definitions.stream().map(d -> getMember(d, associations.get(d.getCode()))).toList();
+    return definitions.stream().flatMap(d -> associations.get(d.getCode()).stream().map(a -> getMember(d, a.getOrderNumber()))).toList();
   }
 
   private ObservationDefinitionMember getMember(ObservationDefinition definition, int order) {
