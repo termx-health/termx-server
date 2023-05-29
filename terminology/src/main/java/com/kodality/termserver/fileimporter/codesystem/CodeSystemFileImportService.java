@@ -35,6 +35,7 @@ import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
+import com.kodality.termserver.ts.codesystem.Designation;
 import com.kodality.termserver.ts.codesystem.EntityProperty;
 import com.kodality.termserver.ts.codesystem.EntityProperty.EntityPropertyRule;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
@@ -57,7 +58,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Singleton;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
@@ -303,7 +306,8 @@ public class CodeSystemFileImportService {
     return issues;
   }
 
-  private List<Issue> validateExternalCodingPropertyValue(EntityPropertyValue propertyValue, EntityProperty ep, Map<String, List<Concept>> epExternalConcepts) {
+  private List<Issue> validateExternalCodingPropertyValue(EntityPropertyValue propertyValue, EntityProperty ep,
+                                                          Map<String, List<MiniConcept>> epExternalConcepts) {
     List<Issue> errs = new ArrayList<>();
 
     // parse object value
@@ -312,7 +316,7 @@ public class CodeSystemFileImportService {
     log.debug("Searching \"{}\"", codingCode);
 
 
-    List<Concept> exactConcepts = findConceptByCode(epExternalConcepts.get(ep.getName()), codingCode);
+    List<MiniConcept> exactConcepts = findConceptByCode(epExternalConcepts.get(ep.getName()), codingCode);
     int matchedConcepts = exactConcepts.size();
     if (matchedConcepts == 1) {
       log.debug("\tfound exact concept!");
@@ -323,11 +327,11 @@ public class CodeSystemFileImportService {
     }
 
 
-    List<Concept> designationConcepts = findConceptByDesignation(epExternalConcepts.get(ep.getName()), codingCode);
+    List<MiniConcept> designationConcepts = findConceptByDesignation(epExternalConcepts.get(ep.getName()), codingCode);
     int matchedDesignations = designationConcepts.size();
     if (matchedDesignations == 1) {
       log.debug("\tfound exact designation concept!");
-      Concept desginationConcept = designationConcepts.get(0);
+      MiniConcept desginationConcept = designationConcepts.get(0);
       propertyValue.setValue(new EntityPropertyValueCodingValue(desginationConcept.getCode(), desginationConcept.getCodeSystem()));
     } else if (matchedDesignations > 1) {
       log.debug("\ttoo many designation candidates.");
@@ -341,16 +345,6 @@ public class CodeSystemFileImportService {
   }
 
   // validation helpers
-
-  private List<Concept> findConceptByCode(List<Concept> concepts, String codingCode) {
-    return concepts.stream().filter(c -> c.getCode().equalsIgnoreCase(codingCode)).toList();
-  }
-
-  private List<Concept> findConceptByDesignation(List<Concept> designationConcepts, String codingText) {
-    return designationConcepts.stream().filter(c -> {
-      return c.getVersions().stream().flatMap(v -> v.getDesignations().stream()).anyMatch(d -> d.getName().equalsIgnoreCase(codingText));
-    }).toList();
-  }
 
   private void prepareEntityProperties(CodeSystem codeSystem, List<EntityProperty> existingEntityProperties) {
     // entity property names
@@ -389,7 +383,7 @@ public class CodeSystemFileImportService {
 
 
     // entity prop name -> concepts[]
-    Map<String, List<Concept>> concepts = csPropMap.values().stream()
+    Map<String, List<MiniConcept>> concepts = csPropMap.values().stream()
         .filter(ep -> coding.equals(ep.getType()))
         .collect(toMap(EntityProperty::getName, ep -> {
           EntityPropertyRule rule = ep.getRule();
@@ -401,7 +395,7 @@ public class CodeSystemFileImportService {
           if (StringUtils.isNotBlank(rule.getValueSet())) {
             List<ValueSetVersionConcept> expand = valueSetVersionConceptService.expand(rule.getValueSet(), null, null);
             log.info("\texpand took {} millis", System.currentTimeMillis() - start);
-            return expand.stream().map(ValueSetVersionConcept::getConcept).toList();
+            return expand.stream().map(MiniConcept::fromConcept).toList();
           }
 
           if (CollectionUtils.isNotEmpty(rule.getCodeSystems())) {
@@ -414,7 +408,7 @@ public class CodeSystemFileImportService {
             ).stream().filter(distinctByKey(Concept::getCode)).toList();
 
             log.info("\tquery took {} millis", System.currentTimeMillis() - start);
-            return resp;
+            return resp.stream().map(MiniConcept::fromConcept).toList();
           }
 
           return List.of();
@@ -424,6 +418,16 @@ public class CodeSystemFileImportService {
     return conceptCodingPropertyValues.stream().flatMap(pv -> {
       EntityProperty ep = csPropMap.get(pv.getEntityProperty());
       return validateExternalCodingPropertyValue(pv, ep, concepts).stream();
+    }).toList();
+  }
+
+  private List<MiniConcept> findConceptByCode(List<MiniConcept> concepts, String codingCode) {
+    return concepts.stream().filter(c -> c.getCode().equalsIgnoreCase(codingCode)).toList();
+  }
+
+  private List<MiniConcept> findConceptByDesignation(List<MiniConcept> designationConcepts, String codingText) {
+    return designationConcepts.stream().filter(c -> {
+      return c.getDesignations().stream().anyMatch(v -> v.equalsIgnoreCase(codingText));
     }).toList();
   }
 
@@ -509,5 +513,28 @@ public class CodeSystemFileImportService {
       }
     });
     return els;
+  }
+
+  @Data
+  @Accessors(chain = true)
+  public static class MiniConcept {
+    private String code;
+    private String codeSystem;
+    private List<String> designations;
+
+    public static MiniConcept fromConcept(ValueSetVersionConcept vc) {
+      MiniConcept c = MiniConcept.fromConcept(vc.getConcept());
+      if (vc.getAdditionalDesignations() != null) {
+        c.getDesignations().addAll(vc.getAdditionalDesignations().stream().map(Designation::getName).toList());
+      }
+      return c;
+    }
+
+    public static MiniConcept fromConcept(Concept c) {
+      return new MiniConcept()
+          .setCode(c.getCode())
+          .setCodeSystem(c.getCodeSystem())
+          .setDesignations(c.getVersions().stream().flatMap(v -> v.getDesignations().stream()).map(Designation::getName).toList());
+    }
   }
 }
