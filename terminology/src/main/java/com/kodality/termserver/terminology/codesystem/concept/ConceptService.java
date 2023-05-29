@@ -6,7 +6,7 @@ import com.kodality.termserver.terminology.codesystem.CodeSystemRepository;
 import com.kodality.termserver.terminology.codesystem.entity.CodeSystemEntityService;
 import com.kodality.termserver.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.terminology.valueset.ValueSetVersionRepository;
-import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptRepository;
+import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.ts.CodeSystemExternalProvider;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntity;
@@ -38,8 +38,8 @@ public class ConceptService {
   private final CodeSystemRepository codeSystemRepository;
   private final CodeSystemEntityService codeSystemEntityService;
   private final ValueSetVersionRepository valueSetVersionRepository;
+  private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
-  private final ValueSetVersionConceptRepository valueSetVersionConceptRepository;
   private final List<CodeSystemExternalProvider> codeSystemProviders;
 
   private final UserPermissionService userPermissionService;
@@ -174,7 +174,7 @@ public class ConceptService {
       params.setValueSetVersionId(valueSetVersionRepository.load(params.getValueSet(), params.getValueSetVersion()).getId());
     }
     if (params.getValueSetVersionId() != null) {
-      params.setValueSetExpandResultIds(valueSetVersionConceptRepository.expand(params.getValueSetVersionId()).stream()
+      params.setValueSetExpandResultIds(valueSetVersionConceptService.expand(params.getValueSetVersionId(), null).stream()
           .map(c -> c.getConcept().getId())
           .filter(Objects::nonNull)
           .map(String::valueOf).collect(Collectors.joining(",")));
