@@ -2,6 +2,7 @@ package com.kodality.termserver.terminology.codesystem
 
 import com.kodality.commons.model.QueryResult
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService
+import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService
 import com.kodality.termserver.ts.codesystem.*
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -12,8 +13,9 @@ import java.time.LocalDateTime
 import static com.kodality.termserver.ts.codesystem.EntityProperty.EntityPropertyRule
 
 class CodeSystemValidationServiceTest extends Specification {
-  ConceptService conceptService = Mock(ConceptService)
-  CodeSystemValidationService service = new CodeSystemValidationService(conceptService)
+  def conceptService = Mock(ConceptService)
+  def valueSetVersionConceptService = Mock(ValueSetVersionConceptService)
+  def service = new CodeSystemValidationService(conceptService, valueSetVersionConceptService)
 
 
   def 'should validate CS version entity properties'() {

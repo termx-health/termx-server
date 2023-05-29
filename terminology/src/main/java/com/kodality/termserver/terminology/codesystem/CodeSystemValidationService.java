@@ -1,10 +1,10 @@
 package com.kodality.termserver.terminology.codesystem;
 
 import com.kodality.commons.model.Issue;
-import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.MapUtil;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;
+import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
@@ -12,6 +12,7 @@ import com.kodality.termserver.ts.codesystem.EntityProperty;
 import com.kodality.termserver.ts.codesystem.EntityProperty.EntityPropertyRule;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue.EntityPropertyValueCodingValue;
+import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import io.micronaut.core.util.CollectionUtils;
 import java.security.InvalidParameterException;
 import java.text.ParseException;
@@ -26,7 +27,9 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
 import org.apache.commons.lang3.StringUtils;
 
 import static com.kodality.termserver.ts.codesystem.EntityPropertyType.bool;
@@ -46,6 +49,7 @@ public class CodeSystemValidationService {
   private final List<String> VALID_DATE_FORMATS = List.of("yyyy-MM-dd", "dd.MM.yy", "dd.MM.yyyy", "dd/yyyy");
 
   private final ConceptService conceptService;
+  private final ValueSetVersionConceptService valueSetVersionConceptService;
 
 
   public List<Issue> validateConcepts(List<Concept> csConcepts, List<EntityProperty> csProperties) {
@@ -62,22 +66,25 @@ public class CodeSystemValidationService {
         .toList();
 
     // entity property name -> concepts[]
-    Map<String, List<Concept>> externalConcepts = csProperties.stream()
+    Map<String, List<MiniConcept>> externalConcepts = csProperties.stream()
         .filter(ep -> coding.equals(ep.getType()))
         .collect(toMap(EntityProperty::getName, ep -> {
           EntityPropertyRule rule = ep.getRule();
 
-          var params = new ConceptQueryParams();
-          params.setCode(StringUtils.join(externalCodings, ","));
-          params.setLimit(10_000);
           if (StringUtils.isNotBlank(rule.getValueSet())) {
-            params.setValueSet(rule.getValueSet());
-          } else if (CollectionUtils.isNotEmpty(rule.getCodeSystems())) {
-            params.setCodeSystem(StringUtils.join(rule.getCodeSystems(), ","));
+            List<ValueSetVersionConcept> expand = valueSetVersionConceptService.expand(rule.getValueSet(), null, null);
+            return expand.stream().map(MiniConcept::fromConcept).toList();
           }
 
-          QueryResult<Concept> query = conceptService.query(params);
-          return query.getData();
+          if (CollectionUtils.isNotEmpty(rule.getCodeSystems())) {
+            var params = new ConceptQueryParams();
+            params.setCode(StringUtils.join(externalCodings, ","));
+            params.setLimit(10_000);
+            params.setCodeSystem(StringUtils.join(rule.getCodeSystems(), ","));
+            return conceptService.query(params).map(MiniConcept::fromConcept).getData();
+          }
+
+          return List.of();
         }));
 
 
@@ -87,7 +94,7 @@ public class CodeSystemValidationService {
         .collect(Collectors.toList());
   }
 
-  private List<Issue> validateConceptVersion(CodeSystemEntityVersion conceptVersion, List<EntityProperty> csProperties, Map<String, List<Concept>> epExternalConcepts) {
+  private List<Issue> validateConceptVersion(CodeSystemEntityVersion conceptVersion, List<EntityProperty> csProperties, Map<String, List<MiniConcept>> epExternalConcepts) {
     List<Issue> errs = new ArrayList<>();
     Map<String, EntityProperty> entityPropertyMap = csProperties.stream().collect(toMap(EntityProperty::getName, Function.identity()));
 
@@ -118,7 +125,7 @@ public class CodeSystemValidationService {
     return errs;
   }
 
-  private List<Issue> validateEntityPropertyValue(EntityPropertyValue epv, String epvCodeSystem, EntityProperty ep, Map<String, List<Concept>> epExternalConcepts) {
+  private List<Issue> validateEntityPropertyValue(EntityPropertyValue epv, String epvCodeSystem, EntityProperty ep, Map<String, List<MiniConcept>> epExternalConcepts) {
     List<Issue> errs = new ArrayList<>();
 
     // validate entity property existence
@@ -147,9 +154,10 @@ public class CodeSystemValidationService {
       }
 
 
-      List<Concept> concept = epExternalConcepts.get(ep.getName()).stream().filter(c -> c.getCode().equals(external.getCode())).toList();
-      if (concept.size() != 1 || !concept.get(0).getCodeSystem().equals(external.getCodeSystem())) {
-        errs.add(error("Unknown reference \"{{code}}\" to \"{{codeSystem}}\"", MapUtil.toMap("codeSystem", external.getCodeSystem(), "code", external.getCode())));
+      List<MiniConcept> concepts = epExternalConcepts.get(ep.getName()).stream().filter(c -> c.getCode().equals(external.getCode())).toList();
+      if (concepts.size() != 1 || !concepts.get(0).getCodeSystem().equals(external.getCodeSystem())) {
+        errs.add(
+            error("Unknown reference \"{{code}}\" to \"{{codeSystem}}\"", MapUtil.toMap("codeSystem", external.getCodeSystem(), "code", external.getCode())));
       }
     }
     return errs;
@@ -196,5 +204,21 @@ public class CodeSystemValidationService {
 
   private Issue error(String message, Map<String, Object> params) {
     return Issue.error(message, params).setCode("CSVS");
+  }
+
+
+  @Data
+  @Accessors(chain = true)
+  private static class MiniConcept {
+    private String code;
+    private String codeSystem;
+
+    public static MiniConcept fromConcept(ValueSetVersionConcept vc) {
+      return MiniConcept.fromConcept(vc.getConcept());
+    }
+
+    public static MiniConcept fromConcept(Concept c) {
+      return new MiniConcept().setCode(c.getCode()).setCodeSystem(c.getCodeSystem());
+    }
   }
 }

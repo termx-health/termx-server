@@ -57,6 +57,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -306,8 +307,7 @@ public class CodeSystemFileImportService {
     return issues;
   }
 
-  private List<Issue> validateExternalCodingPropertyValue(EntityPropertyValue propertyValue, EntityProperty ep,
-                                                          Map<String, List<MiniConcept>> epExternalConcepts) {
+  private List<Issue> validateExternalCodingPropertyValue(EntityPropertyValue propertyValue, EntityProperty ep, Map<String, List<MiniConcept>> epExternalConcepts) {
     List<Issue> errs = new ArrayList<>();
 
     // parse object value
@@ -427,7 +427,7 @@ public class CodeSystemFileImportService {
 
   private List<MiniConcept> findConceptByDesignation(List<MiniConcept> designationConcepts, String codingText) {
     return designationConcepts.stream().filter(c -> {
-      return c.getDesignations().stream().anyMatch(v -> v.equalsIgnoreCase(codingText));
+      return c.getDesignations().stream().anyMatch(d -> d.getName().equalsIgnoreCase(codingText));
     }).toList();
   }
 
@@ -517,24 +517,27 @@ public class CodeSystemFileImportService {
 
   @Data
   @Accessors(chain = true)
-  public static class MiniConcept {
+  private static class MiniConcept {
     private String code;
     private String codeSystem;
-    private List<String> designations;
+    private List<Designation> designations;
 
     public static MiniConcept fromConcept(ValueSetVersionConcept vc) {
       MiniConcept c = MiniConcept.fromConcept(vc.getConcept());
       if (vc.getAdditionalDesignations() != null) {
-        c.setDesignations(ListUtils.union(c.getDesignations(), vc.getAdditionalDesignations().stream().map(Designation::getName).toList()));
+        c.setDesignations(ListUtils.union(c.getDesignations(), vc.getAdditionalDesignations().stream().toList()));
       }
       return c;
     }
 
     public static MiniConcept fromConcept(Concept c) {
-      return new MiniConcept()
-          .setCode(c.getCode())
-          .setCodeSystem(c.getCodeSystem())
-          .setDesignations(c.getVersions().stream().flatMap(v -> v.getDesignations().stream()).map(Designation::getName).toList());
+      MiniConcept mc = new MiniConcept();
+      mc.setCode(c.getCode());
+      mc.setCodeSystem(c.getCodeSystem());
+      if (c.getVersions() != null) {
+        mc.setDesignations(c.getVersions().stream().flatMap(v -> v.getDesignations() == null ? Stream.empty() : v.getDesignations().stream()).toList());
+      }
+      return mc;
     }
   }
 }

@@ -26,19 +26,19 @@ import static com.kodality.termserver.ts.codesystem.EntityPropertyValue.EntityPr
 import static org.apache.commons.lang3.builder.EqualsBuilder.reflectionEquals
 
 class CodeSystemImportServiceTest extends Specification {
-  CodeSystemCompareService codeSystemCompareService = Mock(CodeSystemCompareService)
-  CodeSystemFhirImportService codeSystemFhirImportService = Mock(CodeSystemFhirImportService)
-  CodeSystemImportService codeSystemImportService = Mock(CodeSystemImportService)
-  CodeSystemService codeSystemService = Mock(CodeSystemService)
-  CodeSystemValidationService codeSystemValidationService = Mock(CodeSystemValidationService)
-  CodeSystemVersionService codeSystemVersionService = Mock(CodeSystemVersionService)
-  ConceptService conceptService = Mock(ConceptService)
-  ValueSetService valueSetService = Mock(ValueSetService)
-  ValueSetVersionConceptService valueSetVersionConceptService = Mock(ValueSetVersionConceptService)
-  ValueSetVersionRuleService valueSetVersionRuleService = Mock(ValueSetVersionRuleService)
-  ValueSetVersionService valueSetVersionService = Mock(ValueSetVersionService)
+  def codeSystemCompareService = Mock(CodeSystemCompareService)
+  def codeSystemFhirImportService = Mock(CodeSystemFhirImportService)
+  def codeSystemImportService = Mock(CodeSystemImportService)
+  def codeSystemService = Mock(CodeSystemService)
+  def codeSystemValidationService = Mock(CodeSystemValidationService)
+  def codeSystemVersionService = Mock(CodeSystemVersionService)
+  def conceptService = Mock(ConceptService)
+  def valueSetService = Mock(ValueSetService)
+  def valueSetVersionConceptService = Mock(ValueSetVersionConceptService)
+  def valueSetVersionRuleService = Mock(ValueSetVersionRuleService)
+  def valueSetVersionService = Mock(ValueSetVersionService)
 
-  CodeSystemFileImportService service = new CodeSystemFileImportService(
+  def service = new CodeSystemFileImportService(
       codeSystemCompareService,
       codeSystemFhirImportService,
       codeSystemImportService,
@@ -128,7 +128,7 @@ class CodeSystemImportServiceTest extends Specification {
             additionalDesignations: [new Designation(designationType: 'display', name: 'Concept 3')]),
     ]
 
-    issues.size() ==0
+    issues.size() == 0
     def values = cs.concepts[0].versions[0].propertyValues
     reflectionEquals(values[0].value, new EntityPropertyValueCodingValue('code': 'code-1', 'codeSystem': 'cs-1'))
     reflectionEquals(values[1].value, new EntityPropertyValueCodingValue('code': 'code-2', 'codeSystem': 'cs-1'))
