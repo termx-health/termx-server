@@ -115,13 +115,20 @@ public class ConceptRepository extends BaseRepository {
     }
     sb.appendIfNotNull("and cs.uri = ?", params.getCodeSystemUri());
     sb.appendIfNotNull("and c.code ~* ?", params.getCodeContains());
-    if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (terminology.text_search(c.code, c.description) like '%' || terminology.search_translate(?) || '%'" +
-                "or terminology.text_search(d.name) like '%' || terminology.search_translate(?) || '%')",
-          params.getTextContains(), params.getTextContains());
-    }
-    if (StringUtils.isNotEmpty(params.getDesignationCiEq())) {
-      sb.and().in("lower(d.name)", params.getDesignationCiEq().toLowerCase());
+    if (StringUtils.isNotEmpty(params.getTextContains()) || StringUtils.isNotEmpty(params.getDesignationCiEq())) {
+      sb.append("and (");
+      if (StringUtils.isNotEmpty(params.getTextContains())) {
+        sb.append("terminology.text_search(c.code, c.description) like '%' || terminology.search_translate(?) || '%'");
+        sb.append("or");
+      }
+      sb.append("exists (select 1 from terminology.designation d where d.code_system_entity_version_id = csev.id and d.sys_status = 'A'");
+      if (StringUtils.isNotEmpty(params.getTextContains())) {
+        sb.append("and (terminology.text_search(d.name) like '%' || terminology.search_translate(?) || '%')", params.getTextContains(), params.getTextContains());
+      }
+      if (StringUtils.isNotEmpty(params.getDesignationCiEq())) {
+        sb.and().in("lower(d.name)", params.getDesignationCiEq().toLowerCase());
+      }
+      sb.append("))");
     }
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("c.code ", params.getCode());
@@ -304,10 +311,6 @@ public class ConceptRepository extends BaseRepository {
             params.getPropertyValues(), params.getPropertyValuesPartial())
         .filter(Objects::nonNull).toList())) {
       join += "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A'";
-    }
-
-    if (CollectionUtils.isNotEmpty(Stream.of(params.getTextContains(), params.getDesignationCiEq()).filter(Objects::nonNull).toList())) {
-      join += "left join terminology.designation d on d.code_system_entity_version_id = csev.id and d.sys_status = 'A' ";
     }
 
     if (CollectionUtils.isNotEmpty(Stream.of(params.getPropertyRoot(), params.getPropertySource()).filter(Objects::nonNull).toList())) {
