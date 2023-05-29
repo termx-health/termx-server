@@ -15,9 +15,6 @@ import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.mapset.MapSet;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import com.univocity.parsers.common.processor.RowListProcessor;
-import com.univocity.parsers.csv.CsvParser;
-import com.univocity.parsers.csv.CsvParserSettings;
-import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +22,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+
+import static com.kodality.termserver.fileimporter.FileParser.csvParser;
 
 
 @Singleton
@@ -57,7 +56,7 @@ public class MapSetFileImportService {
   }
 
   private List<MapSetFileImportRow> parseRows(byte[] csvFile) {
-    RowListProcessor parser = csvProcessor(csvFile);
+    RowListProcessor parser = csvParser(csvFile);
     List<String> headers = Arrays.asList(parser.getHeaders());
     List<String[]> rows = parser.getRows();
 
@@ -86,17 +85,6 @@ public class MapSetFileImportService {
     }).toList();
   }
 
-
-  private RowListProcessor csvProcessor(byte[] csv) {
-    RowListProcessor processor = new RowListProcessor();
-    CsvParserSettings settings = new CsvParserSettings();
-    settings.setDelimiterDetectionEnabled(true);
-    settings.setLineSeparatorDetectionEnabled(true);
-    settings.setProcessor(processor);
-    settings.setHeaderExtractionEnabled(true);
-    new CsvParser(settings).parse(new ByteArrayInputStream(csv));
-    return processor;
-  }
 
   private MapSet prepareMapSet(MapSet mapSet) {
     List<Concept> sourceVSConcepts = valueSetVersionConceptService.expand(mapSet.getSourceValueSet(), null, null).stream().map(ValueSetVersionConcept::getConcept).toList();

@@ -306,8 +306,9 @@ public class CodeSystemFhirService {
     }
     CodeSystemVersion version = StringUtils.isEmpty(versionCode) ? codeSystemVersionService.loadLastVersion(codeSystemId) : codeSystemVersionService.load(codeSystemId, versionCode).orElse(null);
     if (version != null) {
-      CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(version.getId());
-      codeSystemEntityVersionParams.all();
+      CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
+          .setCodeSystemVersionId(version.getId())
+          .all();
       version.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
     }
     return mapper.toFhir(codeSystem, version);
@@ -332,8 +333,8 @@ public class CodeSystemFhirService {
         .flatMap(cs -> cs.getVersions().stream().map(csv -> {
           CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
               .setCodeSystemVersionId(csv.getId())
-              .setCode(fhirParams.getFirst("code").orElse(null));
-          codeSystemEntityVersionParams.all();
+              .setCode(fhirParams.getFirst("code").orElse(null))
+              .all();
           csv.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
           return mapper.toFhir(cs, csv);
         })).collect(Collectors.toList()));

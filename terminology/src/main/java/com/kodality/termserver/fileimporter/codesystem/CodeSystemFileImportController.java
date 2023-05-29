@@ -6,14 +6,12 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileAnalysisRequest;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingResponse;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportResponse;
 import com.kodality.termserver.job.JobLogResponse;
 import com.kodality.termserver.job.logger.ImportLog;
 import com.kodality.termserver.job.logger.ImportLogger;
 import io.micronaut.core.annotation.Nullable;
-import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Part;
@@ -37,30 +35,19 @@ public class CodeSystemFileImportController {
   private final CodeSystemFileImportService fileImporterService;
   private final ImportLogger importLogger;
 
-  @Authorized("*.CodeSystem.view")
-  @Post(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA)
-  public HttpResponse<?> analyze(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
-    FileAnalysisRequest req = JsonUtil.fromJson(request.getValue(), FileAnalysisRequest.class);
-    byte[] importFile = file != null ? readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
-
-    if (file != null) {
-      return HttpResponse.ok(fileImporterService.analyze(req, importFile));
-    }
-    return HttpResponse.ok(fileImporterService.analyze(req));
-  }
 
   @Authorized("*.CodeSystem.edit")
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
-    FileProcessingRequest req = JsonUtil.fromJson(request.getValue(), FileProcessingRequest.class);
+    CodeSystemFileImportRequest req = JsonUtil.fromJson(request.getValue(), CodeSystemFileImportRequest.class);
     byte[] importFile = file != null ? readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
-    JobLogResponse jobLogResponse = importLogger.createJob("CS-IFLE-IMPORT");
+    JobLogResponse jobLogResponse = importLogger.createJob("CS-FILE-IMPORT");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Code system file import started");
         long start = System.currentTimeMillis();
-        FileProcessingResponse resp = file != null
+        CodeSystemFileImportResponse resp = file != null
             ? fileImporterService.process(req, importFile)
             : fileImporterService.process(req);
 

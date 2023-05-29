@@ -10,7 +10,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class FileProcessingResult {
+public class CodeSystemFileImportResult {
   private List<FileProcessingResponseProperty> properties;
   private List<Map<String, List<FileProcessingEntityPropertyValue>>> entities;
 

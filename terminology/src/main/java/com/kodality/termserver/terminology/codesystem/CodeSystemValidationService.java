@@ -3,6 +3,7 @@ package com.kodality.termserver.terminology.codesystem;
 import com.kodality.commons.model.Issue;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.MapUtil;
+import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;
 import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
@@ -99,11 +100,11 @@ public class CodeSystemValidationService {
     Map<String, EntityProperty> entityPropertyMap = csProperties.stream().collect(toMap(EntityProperty::getName, Function.identity()));
 
     if (conceptVersion.getCodeSystem() == null) {
-      return List.of(error("Concept version \"{{code}}\" must reference the codeSystem", MapUtil.toMap("code", conceptVersion.getCode())));
+      return List.of(ApiError.TE210.toIssue(MapUtil.toMap("code", conceptVersion.getCode())));
     }
 
     if (conceptVersion.getCode() == null) {
-      errs.add(error("Concept version's code is NULL", Map.of()));
+      errs.add(ApiError.TE211.toIssue());
     }
 
     for (EntityPropertyValue propertyValue : conceptVersion.getPropertyValues()) {
@@ -118,7 +119,7 @@ public class CodeSystemValidationService {
           conceptVersion.getPropertyValues().stream().anyMatch(pv -> ep.getName().equals(pv.getEntityProperty()));
 
       if (!designationExists && !propertyValueExists) {
-        errs.add(error("Required entity property \"{{prop}}\" is missing value(s)", MapUtil.toMap("prop", ep.getName())));
+        errs.add(ApiError.TE212.toIssue(MapUtil.toMap("prop", ep.getName())));
       }
     });
 
@@ -130,14 +131,14 @@ public class CodeSystemValidationService {
 
     // validate entity property existence
     if (ep == null) {
-      errs.add(error("Unknown entity property: {{prop}}", MapUtil.toMap("prop", epv.getEntityProperty())));
+      errs.add(ApiError.TE213.toIssue(MapUtil.toMap("prop", epv.getEntityProperty())));
       return errs;
     }
 
     // validate value type
     boolean matchesType = isValidEntityPropertyType(epv.getValue(), ep.getType());
     if (!matchesType) {
-      errs.add(error("Value \"{{value}}\" does not match data type \"{{types}}\"", MapUtil.toMap("value", epv.getValue(), "types", ep.getType())));
+      errs.add(ApiError.TE214.toIssue(MapUtil.toMap("value", epv.getValue(), "types", ep.getType())));
     }
 
     // validate Coding type
@@ -145,19 +146,18 @@ public class CodeSystemValidationService {
       EntityPropertyValueCodingValue external = epv.asCodingValue();
 
       if (external.getCodeSystem() == null) {
-        errs.add(error("Coding \"{{code}}\" is missing the \"codeSystem\" field", MapUtil.toMap("code", external.getCode())));
+        errs.add(ApiError.TE215.toIssue(MapUtil.toMap("code", external.getCode())));
         return errs;
       }
       if (epvCodeSystem.equals(external.getCodeSystem())) {
-        errs.add(error("Coding \"{{codeSystem}}\" must not reference itself", MapUtil.toMap("codeSystem", external.getCodeSystem())));
+        errs.add(ApiError.TE216.toIssue(MapUtil.toMap("codeSystem", external.getCodeSystem())));
         return errs;
       }
 
 
       List<MiniConcept> concepts = epExternalConcepts.get(ep.getName()).stream().filter(c -> c.getCode().equals(external.getCode())).toList();
       if (concepts.size() != 1 || !concepts.get(0).getCodeSystem().equals(external.getCodeSystem())) {
-        errs.add(
-            error("Unknown reference \"{{code}}\" to \"{{codeSystem}}\"", MapUtil.toMap("codeSystem", external.getCodeSystem(), "code", external.getCode())));
+        errs.add(ApiError.TE217.toIssue(MapUtil.toMap("codeSystem", external.getCodeSystem(), "code", external.getCode())));
       }
     }
     return errs;
