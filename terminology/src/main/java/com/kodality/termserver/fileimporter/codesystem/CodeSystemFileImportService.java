@@ -27,6 +27,7 @@ import com.kodality.termserver.terminology.codesystem.compare.CodeSystemCompareS
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;
 import com.kodality.termserver.terminology.valueset.ValueSetService;
 import com.kodality.termserver.terminology.valueset.ValueSetVersionService;
+import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.codesystem.CodeSystem;
@@ -40,6 +41,7 @@ import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue.EntityPropertyValueCodingValue;
 import com.kodality.termserver.ts.valueset.ValueSet;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
+import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,6 +59,7 @@ import java.util.stream.IntStream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -70,7 +73,6 @@ import static com.kodality.termserver.fileimporter.codesystem.utils.FileProcessi
 import static com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingMapper.toValueSet;
 import static com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingMapper.toValueSetVersion;
 import static com.kodality.termserver.ts.codesystem.EntityPropertyType.coding;
-import static io.micronaut.core.util.CollectionUtils.isNotEmpty;
 import static io.micronaut.core.util.CollectionUtils.last;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
@@ -87,6 +89,7 @@ public class CodeSystemFileImportService {
   private final CodeSystemVersionService codeSystemVersionService;
   private final ConceptService conceptService;
   private final ValueSetService valueSetService;
+  private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
   private final ValueSetVersionService valueSetVersionService;
 
@@ -392,22 +395,29 @@ public class CodeSystemFileImportService {
           EntityPropertyRule rule = ep.getRule();
           String codes = StringUtils.join(externalConceptCodes, ",");
 
-          var base = new ConceptQueryParams();
-          base.setLimit(10_000);
+          log.info("Searching concept(s) for property \"{}\"", ep.getName());
+          long start = System.currentTimeMillis();
+
           if (StringUtils.isNotBlank(rule.getValueSet())) {
-            base.setValueSet(rule.getValueSet());
-          } else if (isNotEmpty(rule.getCodeSystems())) {
-            base.setCodeSystem(StringUtils.join(rule.getCodeSystems(), ","));
+            List<ValueSetVersionConcept> expand = valueSetVersionConceptService.expand(rule.getValueSet(), null, null);
+            log.info("\texpand took {} millis", System.currentTimeMillis() - start);
+            return expand.stream().map(ValueSetVersionConcept::getConcept).toList();
           }
 
-          long start = System.currentTimeMillis();
-          log.info("Searching concept(s) for property \"{}\"", ep.getName());
-          List<Concept> resp = ListUtils.union(
-              conceptService.query(base.setCode(codes)).getData(),
-              conceptService.query(base.setDesignationCiEq(codes).setCode(null)).getData()
-          ).stream().filter(distinctByKey(Concept::getCode)).toList();
-          log.info("\ttook {} millis", System.currentTimeMillis() - start);
-          return resp;
+          if (CollectionUtils.isNotEmpty(rule.getCodeSystems())) {
+            var base = new ConceptQueryParams();
+            base.setLimit(10_000);
+            base.setCodeSystem(StringUtils.join(rule.getCodeSystems(), ","));
+            List<Concept> resp = ListUtils.union(
+                conceptService.query(base.setCode(codes)).getData(),
+                conceptService.query(base.setDesignationCiEq(codes).setCode(null)).getData()
+            ).stream().filter(distinctByKey(Concept::getCode)).toList();
+
+            log.info("\tquery took {} millis", System.currentTimeMillis() - start);
+            return resp;
+          }
+
+          return List.of();
         }));
 
 
