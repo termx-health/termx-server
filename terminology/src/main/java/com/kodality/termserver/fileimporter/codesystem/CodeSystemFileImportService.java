@@ -525,7 +525,7 @@ public class CodeSystemFileImportService {
     public static MiniConcept fromConcept(ValueSetVersionConcept vc) {
       MiniConcept c = MiniConcept.fromConcept(vc.getConcept());
       if (vc.getAdditionalDesignations() != null) {
-        c.getDesignations().addAll(vc.getAdditionalDesignations().stream().map(Designation::getName).toList());
+        c.setDesignations(ListUtils.union(c.getDesignations(), vc.getAdditionalDesignations().stream().map(Designation::getName).toList()));
       }
       return c;
     }
