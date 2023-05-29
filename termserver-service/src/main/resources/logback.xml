@@ -10,8 +10,7 @@
     </appender>
 
 <!--    <logger name="com.zaxxer.hikari" level="DEBUG"/>-->
-
-    <root level="info">
+    <root level="${LOGBACK_LOG_LEVEL:-INFO}">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>
