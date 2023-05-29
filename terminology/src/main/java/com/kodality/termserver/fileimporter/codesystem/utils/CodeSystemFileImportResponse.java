@@ -11,7 +11,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class FileProcessingResponse {
+public class CodeSystemFileImportResponse {
   private String diff;
   private List<Issue> errors = new ArrayList<>();
 }

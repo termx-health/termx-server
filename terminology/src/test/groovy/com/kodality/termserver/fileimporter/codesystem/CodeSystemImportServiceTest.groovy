@@ -2,7 +2,7 @@ package com.kodality.termserver.fileimporter.codesystem
 
 import com.kodality.commons.model.QueryResult
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest
 import com.kodality.termserver.terminology.codesystem.CodeSystemImportService
 import com.kodality.termserver.terminology.codesystem.CodeSystemService
 import com.kodality.termserver.terminology.codesystem.CodeSystemValidationService
@@ -18,7 +18,7 @@ import com.kodality.termserver.ts.codesystem.*
 import com.kodality.termserver.ts.valueset.ValueSetVersionConcept
 import spock.lang.Specification
 
-import static com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingProperty
+import static com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingProperty
 import static com.kodality.termserver.ts.codesystem.EntityProperty.EntityPropertyRule
 import static com.kodality.termserver.ts.codesystem.EntityPropertyType.coding
 import static com.kodality.termserver.ts.codesystem.EntityPropertyType.string
@@ -99,7 +99,7 @@ class CodeSystemImportServiceTest extends Specification {
         required: true,
     )
 
-    def req = new FileProcessingRequest(
+    def req = new CodeSystemFileImportRequest(
         properties: [new FileProcessingProperty(columnName: 'xxx', propertyName: ep.name, propertyType: ep.type)]
     )
 
@@ -147,8 +147,8 @@ class CodeSystemImportServiceTest extends Specification {
         required: true,
     )
 
-    def req = new FileProcessingRequest(
-        properties: [new FileProcessingProperty(columnName: 'xxx', propertyName: ep.name, propertyType: ep.type)]
+    def req = new CodeSystemFileImportRequest(
+        properties: [new FileProcessingProperty(columnName: 'xxx', propertyName: ep.name, propertyType: 'Coding')]
     )
 
     def cs = new CodeSystem(id: 'overlord', properties: [entityProperty(ep.type, ep.name)], concepts: [

@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Introspected
-public class FileProcessingRequest {
+public class CodeSystemFileImportRequest {
   private String link;
   private String type; // csv; tsv
 

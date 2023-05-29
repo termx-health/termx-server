@@ -8,15 +8,13 @@ import com.kodality.commons.util.PipeUtil;
 import com.kodality.termserver.BinaryHttpClient;
 import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileAnalysisRequest;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileAnalysisResponse;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystem;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystemVersion;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingProperty;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingResponse;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingResult;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessor;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportProcessor;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingCodeSystem;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingCodeSystemVersion;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingProperty;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportResponse;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportResult;
 import com.kodality.termserver.terminology.codesystem.CodeSystemImportService;
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
 import com.kodality.termserver.terminology.codesystem.CodeSystemValidationService;
@@ -70,12 +68,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.transaction.annotation.Transactional;
 
-import static com.kodality.commons.model.Issue.error;
-import static com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingMapper.CONCEPT_CODE;
-import static com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingMapper.toAssociationTypes;
-import static com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingMapper.toCodeSystem;
-import static com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingMapper.toValueSet;
-import static com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingMapper.toValueSetVersion;
+import static com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportMapper.CONCEPT_CODE;
+import static com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportMapper.toAssociationTypes;
+import static com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportMapper.toCodeSystem;
+import static com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportMapper.toValueSet;
+import static com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportMapper.toValueSetVersion;
 import static com.kodality.termserver.ts.codesystem.EntityPropertyType.coding;
 import static io.micronaut.core.util.CollectionUtils.last;
 import static java.util.stream.Collectors.groupingBy;
@@ -99,35 +96,26 @@ public class CodeSystemFileImportService {
 
   private final BinaryHttpClient client = new BinaryHttpClient();
 
-  public FileAnalysisResponse analyze(FileAnalysisRequest request) {
-    byte[] file = loadFile(request.getLink());
-    return analyze(request, file);
-  }
 
-  public FileAnalysisResponse analyze(FileAnalysisRequest request, byte[] file) {
-    return FileProcessor.analyze(request.getType(), file);
-  }
-
-
-  public FileProcessingResponse process(FileProcessingRequest request) {
+  public CodeSystemFileImportResponse process(CodeSystemFileImportRequest request) {
     byte[] file = loadFile(request.getLink());
     return process(request, file);
   }
 
-  public FileProcessingResponse process(FileProcessingRequest request, byte[] file) {
+  public CodeSystemFileImportResponse process(CodeSystemFileImportRequest request, byte[] file) {
     if ("json".equals(request.getType())) {
       codeSystemFhirImportService.importCodeSystem(new String(file, StandardCharsets.UTF_8));
-      return new FileProcessingResponse();
+      return new CodeSystemFileImportResponse();
     }
 
-    FileProcessingResult result = FileProcessor.process(request.getType(), file, request.getProperties());
+    CodeSystemFileImportResult result = CodeSystemFileImportProcessor.process(request.getType(), file, request.getProperties());
     return save(request, result);
   }
 
 
   @Transactional
-  public FileProcessingResponse save(FileProcessingRequest request, FileProcessingResult result) {
-    FileProcessingResponse resp = new FileProcessingResponse();
+  public CodeSystemFileImportResponse save(CodeSystemFileImportRequest request, CodeSystemFileImportResult result) {
+    CodeSystemFileImportResponse resp = new CodeSystemFileImportResponse();
     FileProcessingCodeSystem reqCodeSystem = request.getCodeSystem();
     FileProcessingCodeSystemVersion reqVersion = request.getVersion();
 
@@ -165,7 +153,7 @@ public class CodeSystemFileImportService {
         codeSystemImportService.importCodeSystem(copy, associationTypes, PublicationStatus.active.equals(mappedCsVersionStatus));
       } catch (Exception e) {
         TransactionManager.rollback();
-        resp.getErrors().add(error(ExceptionUtils.getMessage(e)));
+        resp.getErrors().add(ApiError.TE716.toIssue(Map.of("exception", ExceptionUtils.getMessage(e))));
         return resp;
       }
 
@@ -251,7 +239,7 @@ public class CodeSystemFileImportService {
 
   // validation
 
-  private List<Issue> validate(FileProcessingRequest request, CodeSystem mappedCodeSystem, CodeSystem existingCodeSystem) {
+  private List<Issue> validate(CodeSystemFileImportRequest request, CodeSystem mappedCodeSystem, CodeSystem existingCodeSystem) {
     List<Issue> issues = new ArrayList<>();
     if (existingCodeSystem != null) {
       prepareEntityProperties(mappedCodeSystem, existingCodeSystem.getProperties());
@@ -301,7 +289,7 @@ public class CodeSystemFileImportService {
         return min.equals(max) ? min.toString() : "%s-%s".formatted(min, max);
       }).collect(Collectors.joining(", "));
 
-      issues.add(error("Property \"{{prop}}\" is missing value on row(s): {{ranges}}", Map.of("prop", k, "ranges", ranges)));
+      issues.add(ApiError.TE713.toIssue(Map.of("prop", k, "ranges", ranges)));
     });
 
     return issues;
@@ -335,10 +323,10 @@ public class CodeSystemFileImportService {
       propertyValue.setValue(new EntityPropertyValueCodingValue(desginationConcept.getCode(), desginationConcept.getCodeSystem()));
     } else if (matchedDesignations > 1) {
       log.debug("\ttoo many designation candidates.");
-      errs.add(error("Several concepts match the \"{{value}}\" value", Map.of("value", codingCode)));
+      errs.add(ApiError.TE714.toIssue(Map.of("value", codingCode)));
     } else {
       log.debug("\tdesignation search failed");
-      errs.add(error("Unknown reference \"{{code}}\" to \"{{codeSystem}}\"", Map.of("code", codingCode, "codeSystem", ruleString(ep.getRule()))));
+      errs.add(ApiError.TE715.toIssue(Map.of("code", codingCode, "codeSystem", ruleString(ep.getRule()))));
     }
 
     return errs;

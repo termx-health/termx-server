@@ -1,10 +1,10 @@
 package com.kodality.termserver.fileimporter.codesystem.utils;
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystem;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingRequest.FileProcessingCodeSystemVersion;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingResult.FileProcessingEntityPropertyValue;
-import com.kodality.termserver.fileimporter.codesystem.utils.FileProcessingResult.FileProcessingResponseProperty;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingCodeSystem;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingCodeSystemVersion;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingEntityPropertyValue;
+import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingResponseProperty;
 import com.kodality.termserver.ts.CaseSignificance;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.association.AssociationKind;
@@ -27,14 +27,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class FileProcessingMapper {
+public class CodeSystemFileImportMapper {
   public static final String CONCEPT_CODE = "concept-code";
   public static final String CONCEPT_DESCRIPTION = "description";
   public static final String CONCEPT_DISPLAY = "display";
   public static final String CONCEPT_DEFINITION = "definition";
   public static final String CONCEPT_PARENT = "parent";
 
-  public static CodeSystem toCodeSystem(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, FileProcessingResult result,
+  public static CodeSystem toCodeSystem(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, CodeSystemFileImportResult result,
                                         CodeSystem existingCodeSystem, CodeSystemVersion existingCodeSystemVersion) {
     CodeSystem codeSystem = existingCodeSystem != null ? JsonUtil.fromJson(JsonUtil.toJson(existingCodeSystem), CodeSystem.class) : new CodeSystem();
     codeSystem.setId(fpCodeSystem.getId());

@@ -1,4 +1,4 @@
-package com.kodality.termserver.fileimporter.codesystem.utils;
+package com.kodality.termserver.fileimporter.analyze;
 
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
@@ -11,11 +11,11 @@ import lombok.experimental.Accessors;
 @Introspected
 @Accessors(chain = true)
 public class FileAnalysisResponse {
-  private List<FileAnalysisProperty> properties;
+  private List<FileAnalysisColumn> columns;
 
   @Getter
   @Setter
-  public static class FileAnalysisProperty {
+  public static class FileAnalysisColumn {
     private String columnName;
     private String columnType;
     private String columnTypeFormat;

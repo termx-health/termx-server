@@ -1,4 +1,4 @@
-package com.kodality.termserver.fileimporter.codesystem.utils;
+package com.kodality.termserver.fileimporter.analyze;
 
 import io.micronaut.core.annotation.Introspected;
 import lombok.Getter;
@@ -9,5 +9,5 @@ import lombok.Setter;
 @Introspected
 public class FileAnalysisRequest {
   private String link;
-  private String type; // csv; tsv; json;
+  private String type; // csv; tsv
 }
