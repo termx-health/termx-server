@@ -11,6 +11,7 @@ import com.kodality.termserver.terminology.codesystem.compare.CodeSystemCompareS
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService
 import com.kodality.termserver.terminology.valueset.ValueSetService
 import com.kodality.termserver.terminology.valueset.ValueSetVersionService
+import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService
 import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleService
 import com.kodality.termserver.ts.PublicationStatus
 import com.kodality.termserver.ts.codesystem.*
@@ -32,6 +33,7 @@ class CodeSystemImportServiceTest extends Specification {
   CodeSystemVersionService codeSystemVersionService = Mock(CodeSystemVersionService)
   ConceptService conceptService = Mock(ConceptService)
   ValueSetService valueSetService = Mock(ValueSetService)
+  ValueSetVersionConceptService valueSetVersionConceptService = Mock(ValueSetVersionConceptService)
   ValueSetVersionRuleService valueSetVersionRuleService = Mock(ValueSetVersionRuleService)
   ValueSetVersionService valueSetVersionService = Mock(ValueSetVersionService)
 
@@ -44,6 +46,7 @@ class CodeSystemImportServiceTest extends Specification {
       codeSystemVersionService,
       conceptService,
       valueSetService,
+      valueSetVersionConceptService,
       valueSetVersionRuleService,
       valueSetVersionService,
   )
