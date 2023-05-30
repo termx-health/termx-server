@@ -69,6 +69,9 @@ public class EntityPropertyRepository extends BaseRepository {
 
   private SqlBuilder filter(EntityPropertyQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    if (StringUtils.isNotEmpty(params.getIds())) {
+      sb.and().in("ep.id", params.getIds(), Long::valueOf);
+    }
     if (StringUtils.isNotEmpty(params.getNames())) {
       sb.and().in("ep.name", params.getNames());
     }

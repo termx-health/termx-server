@@ -10,6 +10,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class EntityPropertyQueryParams extends QueryParams {
+  private String ids;
   private String names;
   private String codeSystem;
   private List<String> permittedCodeSystems;
