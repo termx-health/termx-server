@@ -32,7 +32,7 @@ public class CodeSystemFileImportMapper {
   public static final String CONCEPT_DESCRIPTION = "description";
   public static final String CONCEPT_DISPLAY = "display";
   public static final String CONCEPT_DEFINITION = "definition";
-  public static final String CONCEPT_PARENT = "parent";
+  public static final String CONCEPT_PARENT = "is-a";
 
   public static CodeSystem toCodeSystem(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, CodeSystemFileImportResult result,
                                         CodeSystem existingCodeSystem, CodeSystemVersion existingCodeSystemVersion) {
