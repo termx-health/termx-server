@@ -60,6 +60,7 @@ public enum ApiError {
   TE716("TE716", "Exception during CodeSystem import: {{exception}}"),
   TE717("TE717", "Source concept with code \"{{code}}\" is missing in CS version \"{{version}}\""),
   TE718("TE718", "Target concept with code \"{{code}}\" is missing in CS version \"{{version}}\""),
+  TE719("TE719", "Constraint validation: {{error}}"),
   TE801("TE801", "Association type is required, can't be deleted."),
   TE802("TE802", "Association type is used in code system '{{codeSystem}}' association, can't be deleted."),
   TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted."),

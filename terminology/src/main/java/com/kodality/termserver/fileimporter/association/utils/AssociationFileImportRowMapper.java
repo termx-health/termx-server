@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
-public class AssociationImportRowMapper {
+public class AssociationFileImportRowMapper {
 
   public static List<AssociationFileImportRow> getAssociationFileImportRows(AssociationFileImportRequest req, List<String> headers, List<String[]> rows) {
     return rows.stream().flatMap(r -> {

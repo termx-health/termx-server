@@ -6,7 +6,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.fileimporter.association.utils.AssociationFileImportRequest;
 import com.kodality.termserver.fileimporter.association.utils.AssociationFileImportRow;
-import com.kodality.termserver.fileimporter.association.utils.AssociationImportRowMapper;
+import com.kodality.termserver.fileimporter.association.utils.AssociationFileImportRowMapper;
 import com.kodality.termserver.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.ts.PublicationStatus;
@@ -22,19 +22,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.validation.annotation.Validated;
 
 import static com.kodality.termserver.fileimporter.FileParser.csvParser;
 
+@Validated
 @Singleton
 @RequiredArgsConstructor
 public class AssociationFileImportService {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final CodeSystemAssociationService codeSystemAssociationService;
 
-  public void process(AssociationFileImportRequest req, byte[] file) {
+  public void process(@Valid AssociationFileImportRequest req, byte[] file) {
     Long codeSystemVersionId = req.getCodeSystemVersionId();
 
     RowListProcessor parser = csvParser(file);
@@ -42,7 +45,7 @@ public class AssociationFileImportService {
     List<String[]> rows = parser.getRows();
     validateRequestColumns(req, headers);
 
-    List<AssociationFileImportRow> importRows = AssociationImportRowMapper.getAssociationFileImportRows(req, headers, rows);
+    List<AssociationFileImportRow> importRows = AssociationFileImportRowMapper.getAssociationFileImportRows(req, headers, rows);
     populateRows(codeSystemVersionId, importRows);
     validateRows(codeSystemVersionId, importRows);
 
@@ -72,7 +75,6 @@ public class AssociationFileImportService {
         .collect(Collectors.groupingBy(CodeSystemAssociation::getSourceId))
         .forEach((sId, asses) -> codeSystemAssociationService.save(asses, sId, req.getCodeSystemId()));
   }
-
 
   private void validateRequestColumns(AssociationFileImportRequest req, List<String> headers) {
     List<String> requiredHeaders = Arrays.asList(req.getTargetColumn(), req.getSourceColumn(), req.getOrderColumn());
