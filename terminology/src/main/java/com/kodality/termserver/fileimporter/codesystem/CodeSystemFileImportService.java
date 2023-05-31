@@ -136,11 +136,11 @@ public class CodeSystemFileImportService {
       cleanRun(existingCodeSystem, reqVersion.getVersion());
     }
 
-    if (request.isDryRun()) {
-      // Validation
-      List<Issue> validationErrors = validate(request, mappedCodeSystem, existingCodeSystem).stream().filter(distinctByKey(Issue::formattedMessage)).toList();
-      resp.getErrors().addAll(validationErrors);
+    // Validation
+    List<Issue> validationErrors = validate(request, mappedCodeSystem, existingCodeSystem).stream().filter(distinctByKey(Issue::formattedMessage)).toList();
+    resp.getErrors().addAll(validationErrors);
 
+    if (request.isDryRun()) {
       // Version comparison
       log.info("Calculating the diff");
       log.info("\tCreating CS copy");
