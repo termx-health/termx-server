@@ -1,5 +1,6 @@
 package com.kodality.termserver.ts.codesystem;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.kodality.termserver.ts.PublicationStatus;
 import io.micronaut.core.annotation.Introspected;
 import java.util.Comparator;
@@ -19,6 +20,7 @@ public class Concept extends CodeSystemEntity {
   private Boolean leaf;
   private Long childCount;
 
+  @JsonIgnore
   public Optional<CodeSystemEntityVersion> getLastActiveVersion() {
     return this.getVersions().stream()
         .filter(v -> !PublicationStatus.retired.equals(v.getStatus()))

@@ -1,5 +1,6 @@
 package com.kodality.termserver.ts.codesystem;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.micronaut.core.annotation.Introspected;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -28,6 +29,7 @@ public class CodeSystemEntityVersion {
 
   private Long codeSystemEntityId;
 
+  @JsonIgnore
   public Optional<Object> getPropertyValue(String propertyName){
     return this.getPropertyValues().stream()
         .filter(p -> p.getEntityProperty().equals(propertyName))
