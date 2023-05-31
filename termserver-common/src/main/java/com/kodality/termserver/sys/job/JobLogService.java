@@ -1,9 +1,10 @@
-package com.kodality.termserver.job;
+package com.kodality.termserver.sys.job;
 
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.job.JobLog.JobDefinition;
+import com.kodality.termserver.sys.ExecutionStatus;
+import com.kodality.termserver.sys.job.JobLog.JobDefinition;
 import java.util.List;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -48,11 +49,11 @@ public class JobLogService {
 
   private String resolveStatus(JobLog jobLog) {
     if (jobLog.getErrors() != null && !jobLog.getErrors().isEmpty()) {
-      return JobExecutionStatus.FAILED;
+      return ExecutionStatus.FAILED;
     }
     if (jobLog.getWarnings() != null && !jobLog.getWarnings().isEmpty()) {
-      return JobExecutionStatus.WARNINGS;
+      return ExecutionStatus.WARNINGS;
     }
-    return JobExecutionStatus.COMPLETED;
+    return ExecutionStatus.COMPLETED;
   }
 }

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+	<changeSet id="create_schema_sys" author="kodality">
+		<sql>
+			drop schema if exists job cascade;
+			create schema if not exists sys;
+		</sql>
+	</changeSet>
+
+	<changeSet id="default_privileges_for_schema_sys" author="kodality">
+		<sql>
+			GRANT USAGE ON SCHEMA sys TO ${app-username};
+			ALTER DEFAULT PRIVILEGES IN SCHEMA sys GRANT USAGE ON SEQUENCES TO ${app-username};
+			ALTER DEFAULT PRIVILEGES IN SCHEMA sys GRANT EXECUTE ON FUNCTIONS TO ${app-username};
+			ALTER DEFAULT PRIVILEGES IN SCHEMA sys GRANT SELECT,INSERT,UPDATE ON TABLES TO ${app-username};
+		</sql>
+	</changeSet>
+
+	<changeSet id="default_privileges__sys__viewer" author="">
+	  <validCheckSum>ANY</validCheckSum>
+	  <preConditions onFail="CONTINUE">
+        <changeLogPropertyDefined property="viewer-username"/>
+	  </preConditions>
+	  <sql>
+      GRANT USAGE ON SCHEMA sys TO ${viewer-username};
+      GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA sys TO ${viewer-username};
+      GRANT SELECT ON ALL TABLES IN SCHEMA sys TO ${viewer-username};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA sys GRANT EXECUTE ON FUNCTIONS TO ${viewer-username};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA sys GRANT SELECT ON TABLES TO ${viewer-username};
+      </sql>
+	</changeSet>
+
+</databaseChangeLog>

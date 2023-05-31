@@ -34,6 +34,10 @@ public class SnomedTranslationService {
     return repository.load(id);
   }
 
+  public List<SnomedTranslation> loadActive() {
+    return repository.loadActive();
+  }
+
   public void save(String conceptId, List<SnomedTranslation> translations) {
     List<Long> cancelledTranslations = repository.retain(conceptId, translations);
     taskService.cancelTasks(cancelledTranslations, TASK_CTX_TYPE);

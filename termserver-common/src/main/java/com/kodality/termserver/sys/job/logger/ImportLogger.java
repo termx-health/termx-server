@@ -1,9 +1,9 @@
-package com.kodality.termserver.job.logger;
+package com.kodality.termserver.sys.job.logger;
 
 import com.kodality.commons.exception.ApiException;
-import com.kodality.termserver.job.JobLog.JobDefinition;
-import com.kodality.termserver.job.JobLogResponse;
-import com.kodality.termserver.job.JobLogService;
+import com.kodality.termserver.sys.job.JobLog.JobDefinition;
+import com.kodality.termserver.sys.job.JobLogResponse;
+import com.kodality.termserver.sys.job.JobLogService;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.util.List;

@@ -5,6 +5,7 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.termserver.snomed.concept.SnomedTranslation;
+import com.kodality.termserver.snomed.concept.SnomedTranslationStatus;
 import java.util.List;
 import javax.inject.Singleton;
 
@@ -60,5 +61,10 @@ public class SnomedTranslationRepository extends BaseRepository {
   public void updateStatus(Long id, String status) {
     SqlBuilder sb = new SqlBuilder("update snomed.snomed_translation set status = ? where sys_status = 'A' and id = ?", status, id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
+  public List<SnomedTranslation> loadActive() {
+    String sql = "select * from snomed.snomed_translation where sys_status = 'A' and status = ?";
+    return getBeans(sql, bp, SnomedTranslationStatus.active);
   }
 }

@@ -139,21 +139,6 @@ public class ValueSetController {
 
   //----------------ValueSet Version Concept----------------
 
-  @Authorized("*.ValueSet.view")
-  @Get(uri = "/{valueSet}/concepts{?params*}")
-  public QueryResult<Concept> queryConcepts(@PathVariable @ResourceId String valueSet, ConceptQueryParams params) {
-    params.setValueSet(valueSet);
-    return conceptService.query(params);
-  }
-
-  //----------------ValueSet Version Concept----------------
-
-  @Authorized("*.ValueSet.view")
-  @Get(uri = "/{valueSet}/versions/{version}/concepts/{id}")
-  public ValueSetVersionConcept getValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version, @PathVariable Long id) {
-    return valueSetVersionConceptService.load(id).orElseThrow(() -> new NotFoundException("ValueSet version concept not found: " + id));
-  }
-
   @Authorized("*.ValueSet.edit")
   @Post(uri = "/{valueSet}/versions/{version}/concepts")
   public HttpResponse<?> createValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version, @Body @Valid ValueSetVersionConcept concept) {

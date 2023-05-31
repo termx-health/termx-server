@@ -1,6 +1,6 @@
-package com.kodality.termserver.job;
+package com.kodality.termserver.sys;
 
-public interface JobExecutionStatus {
+public interface ExecutionStatus {
   String RUNNING = "running";
   String COMPLETED = "completed";
   String WARNINGS = "warnings";

@@ -1,8 +1,8 @@
 --liquibase formatted sql
 
 --changeset kodality:job_log
-drop table if exists job.job_log;
-create table job.job_log (
+drop table if exists sys.job_log;
+create table sys.job_log (
     id                  bigint default nextval('core.s_entity') primary key,
     started             timestamptz,
     finished            timestamptz,
@@ -20,5 +20,5 @@ create table job.job_log (
     sys_version 		int  not null
 );
 
-select core.create_table_metadata('job.job_log');
---rollback drop table if exists job.job_log;
+select core.create_table_metadata('sys.job_log');
+--rollback drop table if exists sys.job_log;

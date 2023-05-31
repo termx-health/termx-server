@@ -4,8 +4,9 @@
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
 
-  <include file="job-schema.xml" relativeToChangelogFile="true" />
+  <include file="sys-schema.xml" relativeToChangelogFile="true" />
 
   <include file="10-job_log.sql" relativeToChangelogFile="true" />
+  <include file="20-lorque_process.sql" relativeToChangelogFile="true" />
 
 </databaseChangeLog>

@@ -1,4 +1,4 @@
-package com.kodality.termserver.job;
+package com.kodality.termserver.sys.job;
 
 import io.micronaut.core.annotation.Introspected;
 import java.time.OffsetDateTime;

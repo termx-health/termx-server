@@ -3,6 +3,8 @@ package com.kodality.termserver.snomed.snomed;
 
 import com.kodality.commons.util.AsyncHelper;
 import com.kodality.termserver.auth.Authorized;
+import com.kodality.termserver.sys.lorque.LorqueProcess;
+import com.kodality.termserver.sys.lorque.LorqueProcessService;
 import com.kodality.termserver.snomed.client.SnowstormClient;
 import com.kodality.termserver.snomed.concept.SnomedConcept;
 import com.kodality.termserver.snomed.concept.SnomedConceptSearchParams;
@@ -13,9 +15,13 @@ import com.kodality.termserver.snomed.refset.SnomedRefsetMemberResponse;
 import com.kodality.termserver.snomed.refset.SnomedRefsetResponse;
 import com.kodality.termserver.snomed.refset.SnomedRefsetSearchParams;
 import com.kodality.termserver.snomed.search.SnomedSearchResult;
+import com.kodality.termserver.snomed.snomed.translation.SnomedRF2Service;
 import com.kodality.termserver.snomed.snomed.translation.SnomedTranslationService;
 import io.micronaut.context.annotation.Parameter;
+import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MediaType;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
@@ -29,6 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SnomedController {
   private final SnowstormClient snowstormClient;
+  private final SnomedRF2Service snomedRF2Service;
+  private final LorqueProcessService lorqueProcessService;
   private final SnomedTranslationService translationService;
 
   //----------------Concepts----------------
@@ -113,5 +121,19 @@ public class SnomedController {
   public HttpResponse<?> saveTranslations(@Parameter String conceptId, @Body List<SnomedTranslation> translations) {
     translationService.save(conceptId, translations);
     return HttpResponse.ok();
+  }
+  @Authorized("snomed-ct.CodeSystem.view")
+  @Post(value = "/translations/export-rf2")
+  public HttpResponse<?> startRF2Export() {
+    LorqueProcess lorqueProcess = snomedRF2Service.startRF2Export();
+    return HttpResponse.accepted().body(lorqueProcess);
+  }
+
+  @Get(value = "/translations/export-rf2/result/{lorqueProcessId}", produces = "application/zip")
+  public HttpResponse<?> getRF2(Long lorqueProcessId) {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=snomed_translations.zip")
+        .contentType(MediaType.of("application/zip"));
   }
 }

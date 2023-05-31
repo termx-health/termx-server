@@ -1,4 +1,4 @@
-package com.kodality.termserver.job;
+package com.kodality.termserver.sys.job;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,4 +1,4 @@
-package com.kodality.termserver.job;
+package com.kodality.termserver.sys.job;
 
 import com.kodality.commons.model.QueryResult;
 import io.micronaut.http.annotation.Controller;

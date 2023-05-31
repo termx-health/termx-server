@@ -3,6 +3,7 @@ package com.kodality.termserver.ts.codesystem;
 import io.micronaut.core.annotation.Introspected;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -26,4 +27,10 @@ public class CodeSystemEntityVersion {
   private String codeSystemVersion;
 
   private Long codeSystemEntityId;
+
+  public Optional<Object> getPropertyValue(String propertyName){
+    return this.getPropertyValues().stream()
+        .filter(p -> p.getEntityProperty().equals(propertyName))
+        .findFirst().map(EntityPropertyValue::getValue);
+  }
 }

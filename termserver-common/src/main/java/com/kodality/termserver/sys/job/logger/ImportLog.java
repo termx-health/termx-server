@@ -1,4 +1,4 @@
-package com.kodality.termserver.job.logger;
+package com.kodality.termserver.sys.job.logger;
 
 import java.util.List;
 import lombok.Getter;

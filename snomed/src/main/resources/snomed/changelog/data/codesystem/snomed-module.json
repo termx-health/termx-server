@@ -18,6 +18,20 @@
   "caseSensitive" : true,
   "valueSet" : "http://hl7.org/fhir/ValueSet/permitted-data-type",
   "content" : "complete",
+  "property": [
+    {
+      "code": "language",
+      "type": "Coding"
+    },
+    {
+      "code": "moduleId",
+      "type": "string"
+    },
+    {
+      "code": "refsetId",
+      "type": "string"
+    }
+  ],
   "concept": [
     {
       "code": "est",
@@ -38,6 +52,14 @@
             "system": "v3-ietf3066",
             "code": "et"
           }
+        },
+        {
+          "code": "moduleId",
+          "valueString": "11000181102"
+        },
+        {
+          "code": "refsetId",
+          "valueString": "71000181105"
         }
       ]
     }

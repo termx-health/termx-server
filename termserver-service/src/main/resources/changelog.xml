@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
 
-  <include file="job/changelog/changelog.xml" relativeToChangelogFile="false"/>
+  <include file="sys/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="terminology/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="thesaurus/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="ucum/changelog/changelog.xml" relativeToChangelogFile="false"/>
