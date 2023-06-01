@@ -118,11 +118,7 @@ public class CodeSystemService {
   }
 
   private void decorateProperties(CodeSystem codeSystem) {
-    EntityPropertyQueryParams propertyParams = new EntityPropertyQueryParams();
-    propertyParams.setCodeSystem(codeSystem.getId());
-    propertyParams.setSort(List.of("order-number"));
-    propertyParams.all();
-    codeSystem.setProperties(entityPropertyService.query(propertyParams).getData());
+    codeSystem.setProperties(entityPropertyService.load(codeSystem.getId()));
   }
 
   @Transactional

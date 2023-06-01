@@ -358,9 +358,9 @@ public class CodeSystemController {
   }
 
   @Authorized("*.CodeSystem.edit")
-  @Delete(uri = "/{codeSystem}/entity-property-values/{id}")
-  public HttpResponse<?> deleteEntityPropertyValue(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
-    entityPropertyValueService.delete(id, codeSystem);
+  @Delete(uri = "/{codeSystem}/entity-property-values/{propertyId}")
+  public HttpResponse<?> deleteEntityPropertyValue(@PathVariable @ResourceId String codeSystem, @PathVariable Long propertyId) {
+    entityPropertyValueService.delete(propertyId, codeSystem);
     return HttpResponse.ok();
   }
 
