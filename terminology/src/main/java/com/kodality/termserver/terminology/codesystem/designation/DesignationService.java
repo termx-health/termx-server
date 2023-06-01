@@ -58,9 +58,9 @@ public class DesignationService {
   }
 
   @Transactional
-  public void delete(Long id, String codeSystem) {
+  public void delete(Long propertyId, String codeSystem) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-    repository.delete(id);
+    repository.delete(propertyId);
   }
 
 }

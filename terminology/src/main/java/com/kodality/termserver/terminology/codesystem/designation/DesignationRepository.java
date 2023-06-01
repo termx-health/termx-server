@@ -100,8 +100,8 @@ public class DesignationRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public void delete(Long id) {
-    SqlBuilder sb = new SqlBuilder("update terminology.designation set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+  public void delete(Long propertyId) {
+    SqlBuilder sb = new SqlBuilder("update terminology.designation set sys_status = 'C' where designation_type_id = ? and sys_status = 'A'", propertyId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 

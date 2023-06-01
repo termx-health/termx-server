@@ -333,6 +333,13 @@ public class CodeSystemController {
     return HttpResponse.ok();
   }
 
+  @Authorized("*.CodeSystem.edit")
+  @Delete(uri = "/{codeSystem}/entity-property-usages/{propertyId}")
+  public HttpResponse<?> deleteEntityPropertyUsages(@PathVariable @ResourceId String codeSystem, @PathVariable Long propertyId) {
+    entityPropertyService.deleteUsages(propertyId, codeSystem);
+    return HttpResponse.ok();
+  }
+
   //----------------CodeSystem PropertyValue----------------
 
   @Authorized("*.CodeSystem.view")
@@ -357,13 +364,6 @@ public class CodeSystemController {
     return HttpResponse.created(propertyValue);
   }
 
-  @Authorized("*.CodeSystem.edit")
-  @Delete(uri = "/{codeSystem}/entity-property-values/{propertyId}")
-  public HttpResponse<?> deleteEntityPropertyValue(@PathVariable @ResourceId String codeSystem, @PathVariable Long propertyId) {
-    entityPropertyValueService.delete(propertyId, codeSystem);
-    return HttpResponse.ok();
-  }
-
   //----------------CodeSystem Designation---------------
 
   @Authorized("*.CodeSystem.view")
@@ -386,13 +386,6 @@ public class CodeSystemController {
     designation.setId(id);
     designationService.save(designation, entityVersionId, codeSystem);
     return HttpResponse.created(designation);
-  }
-
-  @Authorized("*.CodeSystem.edit")
-  @Delete(uri = "/{codeSystem}/designations/{id}")
-  public HttpResponse<?> deleteDesignation(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
-    designationService.delete(id, codeSystem);
-    return HttpResponse.ok();
   }
 
   //----------------CodeSystem Association---------------

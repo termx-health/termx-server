@@ -106,4 +106,10 @@ public class EntityPropertyService {
     return entityPropertyValueService.query(propertyValueParams).getMeta().getTotal() > 0 ||
         designationService.query(designationParams).getMeta().getTotal() > 0;
   }
+
+  @Transactional
+  public void deleteUsages(Long id, String codeSystem) {
+    entityPropertyValueService.delete(id, codeSystem);
+    designationService.delete(id, codeSystem);
+  }
 }
