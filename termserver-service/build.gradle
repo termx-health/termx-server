@@ -93,6 +93,6 @@ run {
     jvmArgs += ['-Xdebug', "-Xrunjdwp:transport=dt_socket,address=" + project.getProperty('debug') + ",server=y,suspend=n"]
   }
   if (project.hasProperty('dev')) {
-    jvmArgs += ['-Dauth.dev.allowed=true', '-Dmicronaut.environments=dev']
+    jvmArgs += ['-Dauth.dev.allowed=true', '-Dmicronaut.environments=dev,local']
   }
 }
