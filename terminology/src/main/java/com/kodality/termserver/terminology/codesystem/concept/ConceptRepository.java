@@ -115,15 +115,23 @@ public class ConceptRepository extends BaseRepository {
     }
     sb.appendIfNotNull("and cs.uri = ?", params.getCodeSystemUri());
     sb.appendIfNotNull("and c.code ~* ?", params.getCodeContains());
-    if (StringUtils.isNotEmpty(params.getTextContains()) || StringUtils.isNotEmpty(params.getDesignationCiEq())) {
+    if (StringUtils.isNotEmpty(params.getTextContains()) || StringUtils.isNotEmpty(params.getTextEq()) || StringUtils.isNotEmpty(params.getDesignationCiEq())) {
       sb.append("and (");
       if (StringUtils.isNotEmpty(params.getTextContains())) {
-        sb.append("terminology.text_search(c.code, c.description) like '%' || terminology.search_translate(?) || '%'");
+        sb.append("terminology.text_search(c.code, c.description) like '%' || terminology.search_translate(?) || '%'", params.getTextContains());
+        sb.append("or");
+      }
+      if (StringUtils.isNotEmpty(params.getTextEq())) {
+        sb.append("terminology.search_translate(c.code) = terminology.search_translate(?)", params.getTextEq());
+        sb.append("or terminology.search_translate(c.code) = terminology.search_translate(?)", params.getTextEq());
         sb.append("or");
       }
       sb.append("exists (select 1 from terminology.designation d where d.code_system_entity_version_id = csev.id and d.sys_status = 'A'");
       if (StringUtils.isNotEmpty(params.getTextContains())) {
-        sb.append("and (terminology.text_search(d.name) like '%' || terminology.search_translate(?) || '%')", params.getTextContains(), params.getTextContains());
+        sb.append("and (terminology.text_search(d.name) like '%' || terminology.search_translate(?) || '%')", params.getTextContains());
+      }
+      if (StringUtils.isNotEmpty(params.getTextEq())) {
+        sb.append("and (terminology.search_translate(d.name) = terminology.search_translate(?))", params.getTextEq());
       }
       if (StringUtils.isNotEmpty(params.getDesignationCiEq())) {
         sb.and().in("lower(d.name)", params.getDesignationCiEq().toLowerCase());
@@ -301,7 +309,8 @@ public class ConceptRepository extends BaseRepository {
       join += "left join terminology.code_system cs on cs.id = c.code_system and cs.sys_status = 'A' ";
     }
     if (CollectionUtils.isNotEmpty(Stream.of(
-            params.getCodeSystemEntityStatus(), params.getCodeSystemEntityVersionId(), params.getTextContains(), params.getDesignationCiEq(),
+            params.getCodeSystemEntityStatus(), params.getCodeSystemEntityVersionId(),
+            params.getTextContains(), params.getTextEq(), params.getDesignationCiEq(),
             params.getPropertySource(), params.getPropertyRoot(),
             params.getAssociationRoot(), params.getAssociationSource(), params.getAssociationType(),
             params.getAssociationLeaf(), params.getAssociationTarget(),

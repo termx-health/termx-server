@@ -15,6 +15,7 @@ public class ConceptQueryParams extends QueryParams {
   private String code;
   private String codeContains;
   private String textContains;
+  private String textEq;
   private String codeSystem;
   private List<String> permittedCodeSystems;
   private String codeSystemUri;
