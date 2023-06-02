@@ -47,17 +47,19 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
   }
 
   public QueryResult<CodeSystemEntityVersion> query(CodeSystemEntityVersionQueryParams params) {
-    return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_entity_version csev where csev.sys_status = 'A'");
-      sb.append(filter(params));
-      return queryForObject(sb.getSql(), Integer.class, sb.getParams());
-    }, p -> {
+    return query(params, p -> count(params), p -> {
       SqlBuilder sb = new SqlBuilder("select * from terminology.code_system_entity_version csev where csev.sys_status = 'A'");
       sb.append(filter(params));
       sb.append("order by created");
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
+  }
+
+  public Integer count(CodeSystemEntityVersionQueryParams params) {
+    SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_entity_version csev where csev.sys_status = 'A'");
+    sb.append(filter(params));
+    return queryForObject(sb.getSql(), Integer.class, sb.getParams());
   }
 
   private SqlBuilder filter(CodeSystemEntityVersionQueryParams params) {
@@ -118,6 +120,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
         ps.setLong(2, versionIds.get(i));
         ps.setString(3, PublicationStatus.active);
       }
+
       @Override
       public int getBatchSize() {
         return versionIds.size();

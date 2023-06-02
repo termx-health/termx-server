@@ -107,6 +107,10 @@ public class CodeSystemEntityVersionService {
     return versions;
   }
 
+  public Integer count(CodeSystemEntityVersionQueryParams params) {
+    return repository.count(params);
+  }
+
   private List<CodeSystemAssociation> prepareAssociations(List<CodeSystemAssociation> associations) {
     if (associations == null) {
       return new ArrayList<>();

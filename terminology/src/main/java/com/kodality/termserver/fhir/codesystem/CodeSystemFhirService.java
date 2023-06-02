@@ -309,7 +309,12 @@ public class CodeSystemFhirService {
       CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
           .setCodeSystemVersionId(version.getId())
           .all();
-      version.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
+      Integer count = codeSystemEntityVersionService.count(codeSystemEntityVersionParams);
+      if (count < 1000) {
+        version.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
+      } else {
+        version.setEntities(List.of());
+      }
     }
     return mapper.toFhir(codeSystem, version);
   }
@@ -335,7 +340,12 @@ public class CodeSystemFhirService {
               .setCodeSystemVersionId(csv.getId())
               .setCode(fhirParams.getFirst("code").orElse(null))
               .all();
-          csv.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
+          Integer count = codeSystemEntityVersionService.count(codeSystemEntityVersionParams);
+          if (count < 1000) {
+            csv.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
+          } else {
+            csv.setEntities(List.of());
+          }
           return mapper.toFhir(cs, csv);
         })).collect(Collectors.toList()));
   }
