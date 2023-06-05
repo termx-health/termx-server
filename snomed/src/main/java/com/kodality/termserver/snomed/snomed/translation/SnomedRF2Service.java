@@ -149,12 +149,13 @@ public class SnomedRF2Service {
 
   private byte[] composeRefsetLanguageContent(List<SnomedTranslation> translations, Map<String, Concept> modules) {
     StringBuilder sb = new StringBuilder();
-    sb.append("id\teffectiveTime\tactive\tmoduleId\treferencedComponentId\tacceptabilityId\t\n");
+    sb.append("id\teffectiveTime\tactive\tmoduleId\trefsetId\treferencedComponentId\tacceptabilityId\t\n");
     translations.forEach(translation -> {
       sb.append(UUID.randomUUID()).append("\t");
       sb.append("\t");
       sb.append("1").append("\t");
       sb.append(getPropertyValue(modules.get(translation.getModule()), "moduleId")).append("\t");
+      sb.append(getPropertyValue(modules.get(translation.getModule()), "refsetId")).append("\t");
       sb.append(translation.getDescriptionId()).append("\t");
       sb.append("preferred".equals(translation.getAcceptability()) ? PREFERRED : ACCEPTABLE).append("\t").append("\n");
     });
