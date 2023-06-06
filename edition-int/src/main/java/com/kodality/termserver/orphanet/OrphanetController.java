@@ -1,6 +1,7 @@
 package com.kodality.termserver.orphanet;
 
 import com.kodality.commons.exception.ApiClientException;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
@@ -27,7 +28,7 @@ public class OrphanetController {
 
   private static final String JOB_TYPE = "Orphanet";
 
-  @Authorized("*.CodeSystem.edit")
+  @Authorized(Privilege.CS_EDIT)
   @Post("/import")
   public JobLogResponse importIcd10(@NonNull @QueryValue String url, @Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);

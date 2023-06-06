@@ -2,6 +2,7 @@ package com.kodality.termserver.measurementunit;
 
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.measurementunit.converter.MeasurementUnitConverter;
 import com.kodality.termserver.ucum.MeasurementUnit;
@@ -27,25 +28,25 @@ public class MeasurementUnitController {
   private final MeasurementUnitService measurementUnitService;
   private final MeasurementUnitConverter measurementUnitConverter;
 
-  @Authorized("*.MeasurementUnit.view")
+  @Authorized(Privilege.UCUM_VIEW)
   @Get("{?params*}")
   public QueryResult<MeasurementUnit> query(MeasurementUnitQueryParams params) {
     return measurementUnitService.query(params);
   }
 
-  @Authorized("*.MeasurementUnit.view")
+  @Authorized(Privilege.UCUM_VIEW)
   @Get("/kinds")
   public List<String> loadKinds() {
     return measurementUnitService.loadKinds();
   }
 
-  @Authorized("*.MeasurementUnit.view")
+  @Authorized(Privilege.UCUM_VIEW)
   @Get("/{id}")
   public MeasurementUnit load(@Parameter Long id) {
     return measurementUnitService.load(id);
   }
 
-  @Authorized("*.MeasurementUnit.edit")
+  @Authorized(Privilege.UCUM_EDIT)
   @Post
   public MeasurementUnit save(@Valid @Body MeasurementUnit unit) {
     unit.setId(null);
@@ -53,7 +54,7 @@ public class MeasurementUnitController {
     return unit;
   }
 
-  @Authorized("*.MeasurementUnit.edit")
+  @Authorized(Privilege.UCUM_EDIT)
   @Put("/{id}")
   public MeasurementUnit update(@Parameter Long id, @Valid @Body MeasurementUnit unit) {
     unit.setId(id);
@@ -61,7 +62,7 @@ public class MeasurementUnitController {
     return unit;
   }
 
-  @Authorized("*.MeasurementUnit.view")
+  @Authorized(Privilege.UCUM_VIEW)
   @Get("convert")
   public Map<String, Object> convert(@QueryValue BigDecimal value, @QueryValue String from, @QueryValue String to) {
     BigDecimal converted = measurementUnitConverter.convert(value, from, to);

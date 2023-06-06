@@ -2,6 +2,7 @@ package com.kodality.termserver.terminology.mapset;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.ResourceId;
 import com.kodality.termserver.auth.UserPermissionService;
@@ -40,34 +41,34 @@ public class MapSetController {
 
   //----------------MapSet----------------
 
-  @Authorized("*.MapSet.view")
+  @Authorized(Privilege.MS_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<MapSet> queryMapSets(MapSetQueryParams params) {
     params.setPermittedIds(userPermissionService.getPermittedResourceIds("MapSet", "view"));
     return mapSetService.query(params);
   }
 
-  @Authorized("*.MapSet.view")
+  @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}{?decorate}")
   public MapSet getMapSet(@PathVariable @ResourceId String mapSet, Optional<Boolean> decorate) {
     return mapSetService.load(mapSet, decorate.orElse(false)).orElseThrow(() -> new NotFoundException("MapSet not found: " + mapSet));
   }
 
-  @Authorized("*.MapSet.edit")
+  @Authorized(Privilege.MS_EDIT)
   @Post
   public HttpResponse<?> saveMapSet(@Body @Valid MapSet mapSet) {
     mapSetService.save(mapSet);
     return HttpResponse.created(mapSet);
   }
 
-  @Authorized("*.CodeSystem.edit")
+  @Authorized(Privilege.MS_EDIT)
   @Post("/transaction")
   public HttpResponse<?> saveMapSetTransaction(@Body @Valid MapSetTransactionRequest mapSet) {
     mapSetService.save(mapSet);
     return HttpResponse.created(mapSet);
   }
 
-  @Authorized("*.MapSet.publish")
+  @Authorized(Privilege.MS_PUBLISH)
   @Delete(uri = "/{mapSet}")
   public HttpResponse<?> deleteMapSet(@PathVariable @ResourceId String mapSet) {
     mapSetService.cancel(mapSet);
@@ -76,7 +77,7 @@ public class MapSetController {
 
   //----------------MapSet Version----------------
 
-  @Authorized("*.MapSet.view")
+  @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}/versions{?params*}")
   public QueryResult<MapSetVersion> queryMapSetVersions(@PathVariable @ResourceId String mapSet, MapSetVersionQueryParams params) {
     params.setPermittedMapSets(userPermissionService.getPermittedResourceIds("MapSet", "view"));
@@ -84,13 +85,13 @@ public class MapSetController {
     return mapSetVersionService.query(params);
   }
 
-  @Authorized("*.MapSet.view")
+  @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}/versions/{version}")
   public MapSetVersion getMapSetVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
     return mapSetVersionService.load(mapSet, version).orElseThrow(() -> new NotFoundException("Map set version not found: " + version));
   }
 
-  @Authorized("*.MapSet.edit")
+  @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/versions")
   public HttpResponse<?> createVersion(@PathVariable @ResourceId String mapSet, @Body @Valid MapSetVersion version) {
     version.setId(null);
@@ -99,7 +100,7 @@ public class MapSetController {
     return HttpResponse.created(version);
   }
 
-  @Authorized("*.MapSet.edit")
+  @Authorized(Privilege.MS_EDIT)
   @Put(uri = "/{mapSet}/versions/{id}")
   public HttpResponse<?> updateVersion(@PathVariable @ResourceId String mapSet, @PathVariable Long id, @Body @Valid MapSetVersion version) {
     version.setId(id);
@@ -108,14 +109,14 @@ public class MapSetController {
     return HttpResponse.created(version);
   }
 
-  @Authorized("*.MapSet.publish")
+  @Authorized(Privilege.MS_PUBLISH)
   @Post(uri = "/{mapSet}/versions/{version}/activate")
   public HttpResponse<?> activateVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
     mapSetVersionService.activate(mapSet, version);
     return HttpResponse.noContent();
   }
 
-  @Authorized("*.MapSet.publish")
+  @Authorized(Privilege.MS_PUBLISH)
   @Post(uri = "/{mapSet}/versions/{version}/retire")
   public HttpResponse<?> retireVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
     mapSetVersionService.retire(mapSet, version);
@@ -124,7 +125,7 @@ public class MapSetController {
 
   //----------------MapSet Association----------------
 
-  @Authorized("*.MapSet.view")
+  @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}/associations{?params*}")
   public QueryResult<MapSetAssociation> queryAssociations(@PathVariable @ResourceId String mapSet, MapSetAssociationQueryParams params) {
     params.setPermittedMapSets(userPermissionService.getPermittedResourceIds("MapSet", "view"));
@@ -132,19 +133,19 @@ public class MapSetController {
     return mapSetAssociationService.query(params);
   }
 
-  @Authorized("*.MapSet.view")
+  @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}/associations/{id}")
   public MapSetAssociation getAssociation(@PathVariable @ResourceId String mapSet, @PathVariable Long id) {
     return mapSetAssociationService.load(mapSet, id).orElseThrow(() -> new NotFoundException("Association not found: " + id));
   }
 
-  @Authorized("*.MapSet.view")
+  @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}/versions/{version}/associations/{id}")
   public MapSetAssociation getAssociation(@PathVariable @ResourceId String mapSet, @PathVariable String version, @PathVariable Long id) {
     return mapSetAssociationService.load(mapSet, version, id).orElseThrow(() -> new NotFoundException("Association not found: " + id));
   }
 
-  @Authorized("*.MapSet.edit")
+  @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/associations")
   public HttpResponse<?> createAssociation(@PathVariable @ResourceId String mapSet, @Body @Valid MapSetAssociation association) {
     association.setId(null);
@@ -152,7 +153,7 @@ public class MapSetController {
     return HttpResponse.created(association);
   }
 
-  @Authorized("*.MapSet.edit")
+  @Authorized(Privilege.MS_EDIT)
   @Put(uri = "/{mapSet}/associations/{id}")
   public HttpResponse<?> updateAssociation(@PathVariable @ResourceId String mapSet, @PathVariable Long id, @Body @Valid MapSetAssociation association) {
     association.setId(id);
@@ -162,7 +163,7 @@ public class MapSetController {
 
   //----------------MapSet EntityVersion----------------
 
-  @Authorized("*.MapSet.view")
+  @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}/entity-versions{?params*}")
   public QueryResult<MapSetEntityVersion> queryEntityVersions(@PathVariable @ResourceId String mapSet, MapSetEntityVersionQueryParams params) {
     params.setPermittedMapSets(userPermissionService.getPermittedResourceIds("MapSet", "view"));
@@ -170,7 +171,7 @@ public class MapSetController {
     return mapSetEntityVersionService.query(params);
   }
 
-  @Authorized("*.MapSet.edit")
+  @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/entities/{entityId}/versions")
   public HttpResponse<?> createEntityVersion(@PathVariable @ResourceId String mapSet, @PathVariable Long entityId, @Body @Valid MapSetEntityVersion version) {
     version.setId(null);
@@ -179,7 +180,7 @@ public class MapSetController {
     return HttpResponse.created(version);
   }
 
-  @Authorized("*.MapSet.edit")
+  @Authorized(Privilege.MS_EDIT)
   @Put(uri = "/{mapSet}/entities/{entityId}/versions/{id}")
   public HttpResponse<?> updateVersion(@PathVariable @ResourceId String mapSet, @PathVariable Long entityId, @PathVariable Long id,  @Body @Valid MapSetEntityVersion version) {
     version.setId(id);
@@ -188,28 +189,28 @@ public class MapSetController {
     return HttpResponse.created(version);
   }
 
-  @Authorized("*.MapSet.publish")
+  @Authorized(Privilege.MS_PUBLISH)
   @Post(uri = "/{mapSet}/entities/versions/{id}/activate")
   public HttpResponse<?> activateVersion(@PathVariable @ResourceId String mapSet, @PathVariable Long id) {
     mapSetEntityVersionService.activate(id);
     return HttpResponse.noContent();
   }
 
-  @Authorized("*.MapSet.publish")
+  @Authorized(Privilege.MS_PUBLISH)
   @Post(uri = "/{mapSet}/entities/versions/{id}/retire")
   public HttpResponse<?> retireVersion(@PathVariable @ResourceId String mapSet, @PathVariable Long id) {
     mapSetEntityVersionService.retire(id);
     return HttpResponse.noContent();
   }
 
-  @Authorized("*.MapSet.edit")
+  @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/versions/{version}/entity-versions/{entityVersionId}/membership")
   public HttpResponse<?> linkEntityVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version, @PathVariable Long entityVersionId) {
     mapSetVersionService.linkEntityVersion(mapSet, version, entityVersionId);
     return HttpResponse.ok();
   }
 
-  @Authorized("*.MapSet.edit")
+  @Authorized(Privilege.MS_EDIT)
   @Delete(uri = "/{mapSet}/versions/{version}/entity-versions/{entityVersionId}/membership")
   public HttpResponse<?> unlinkEntityVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version, @PathVariable Long entityVersionId) {
     mapSetVersionService.unlinkEntityVersion(mapSet, version, entityVersionId);

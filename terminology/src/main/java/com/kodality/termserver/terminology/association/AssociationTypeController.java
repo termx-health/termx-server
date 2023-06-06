@@ -2,6 +2,7 @@ package com.kodality.termserver.terminology.association;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.ResourceId;
 import com.kodality.termserver.auth.UserPermissionService;
@@ -25,27 +26,27 @@ public class AssociationTypeController {
   private final UserPermissionService userPermissionService;
   private final AssociationTypeDeleteService associationTypeDeleteService;
 
-  @Authorized("*.AssociationType.view")
+  @Authorized(Privilege.AT_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<AssociationType> queryAssociationTypes(AssociationTypeQueryParams params) {
     params.setPermittedCodes(userPermissionService.getPermittedResourceIds("AssociationType", "view"));
     return associationTypeService.query(params);
   }
 
-  @Authorized("*.AssociationType.view")
+  @Authorized(Privilege.AT_VIEW)
   @Get(uri = "/{code}")
   public AssociationType getAssociationType(@PathVariable @ResourceId String code) {
     return associationTypeService.load(code).orElseThrow(() -> new NotFoundException("Association type not found: " + code));
   }
 
-  @Authorized("*.AssociationType.edit")
+  @Authorized(Privilege.AT_EDIT)
   @Post
   public HttpResponse<?> createAssociationType(@Body @Valid AssociationType associationType) {
     associationTypeService.save(associationType);
     return HttpResponse.created(associationType);
   }
 
-  @Authorized("*.AssociationType.edit")
+  @Authorized(Privilege.AT_EDIT)
   @Put("/{code}")
   public HttpResponse<?> updateAssociationType(@PathVariable @ResourceId String code, @Body @Valid AssociationType associationType) {
     associationType.setCode(code);
@@ -53,7 +54,7 @@ public class AssociationTypeController {
     return HttpResponse.ok();
   }
 
-  @Authorized("*.AssociationType.publish")
+  @Authorized(Privilege.AT_PUBLISH)
   @Delete(uri = "/{code}")
   public HttpResponse<?> deleteAssociationType(@PathVariable @ResourceId String code) {
     associationTypeDeleteService.delete(code);

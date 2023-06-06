@@ -231,7 +231,7 @@ public class ProjectImportService {
   private List<String> importValueSets(List<Pair<String, String>> urls) {
     return urls.stream().map(url -> {
       try {
-        vsFhirImportService.importValueSet(url.getValue());
+        vsFhirImportService.importValueSetFromUrl(url.getValue());
         return url.getKey();
       } catch (Exception e) {
         log.error(e.getMessage());

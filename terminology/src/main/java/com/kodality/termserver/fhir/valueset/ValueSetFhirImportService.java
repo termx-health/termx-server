@@ -77,7 +77,7 @@ public class ValueSetFhirImportService {
 
     urls.forEach(url -> {
       try {
-        importValueSet(url);
+        importValueSetFromUrl(url);
         successes.add(String.format("ValueSet from resource %s imported", url));
       } catch (Exception e) {
         String warning = String.format("ValueSet from resource %s was not imported due to error: %s", url, e.getMessage());
@@ -87,8 +87,12 @@ public class ValueSetFhirImportService {
     });
   }
 
-  public void importValueSet(String url) {
+  public void importValueSetFromUrl(String url) {
     String resource = getResource(url);
+    importValueSet(resource);
+  }
+
+  public void importValueSet(String resource) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhir = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
     if (!ResourceType.valueSet.equals(fhir.getResourceType())) {
       throw ApiError.TE107.toApiException();

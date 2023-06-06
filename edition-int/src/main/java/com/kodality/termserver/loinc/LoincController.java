@@ -2,6 +2,7 @@ package com.kodality.termserver.loinc;
 
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
@@ -31,7 +32,7 @@ public class LoincController {
   private final LoincService loincService;
   private final ImportLogger importLogger;
 
-  @Authorized("*.CodeSystem.edit")
+  @Authorized(Privilege.CS_EDIT)
   @Post(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(
       @Nullable Publisher<CompletedFileUpload> partsFile,

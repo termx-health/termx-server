@@ -1,5 +1,6 @@
 package com.kodality.termserver.terminology.codesystem.compare;
 
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
@@ -11,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 public class CodeSystemCompareController {
   private final CodeSystemCompareService service;
 
-  @Authorized("*.CodeSystem.view")
+  @Authorized(Privilege.CS_VIEW)
   @Get()
   public CodeSystemCompareResult compare(@QueryValue Long source, @QueryValue Long target) {
     return service.compare(source, target);

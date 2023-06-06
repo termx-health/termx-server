@@ -1,6 +1,7 @@
 package com.kodality.termserver.atcest;
 
 import com.kodality.commons.exception.ApiClientException;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
@@ -26,7 +27,7 @@ public class AtcEstController {
 
   private static final String JOB_TYPE = "ATC-est";
 
-  @Authorized("*.CodeSystem.edit")
+  @Authorized(Privilege.CS_EDIT)
   @Post("/import")
   public JobLogResponse importAtcEst(@NonNull @QueryValue String url, @Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);

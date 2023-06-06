@@ -1,6 +1,7 @@
 package com.kodality.termserver.icd10est;
 
 import com.kodality.commons.exception.ApiClientException;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
@@ -26,7 +27,7 @@ public class Icd10EstController {
 
   private static final String JOB_TYPE = "RHK-10";
 
-  @Authorized("*.CodeSystem.edit")
+  @Authorized(Privilege.CS_EDIT)
   @Post("/import")
   public JobLogResponse importIcd10Est(@NonNull @QueryValue String url, @Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);

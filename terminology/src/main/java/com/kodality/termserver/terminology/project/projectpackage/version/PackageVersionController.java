@@ -1,5 +1,6 @@
 package com.kodality.termserver.terminology.project.projectpackage.version;
 
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.ts.project.projectpackage.PackageVersion;
 import io.micronaut.context.annotation.Parameter;
@@ -15,13 +16,13 @@ import lombok.RequiredArgsConstructor;
 public class PackageVersionController {
   private final PackageVersionService packageVersionService;
 
-  @Authorized("*.Project.view")
+  @Authorized(Privilege.P_VIEW)
   @Get("{id}")
   public PackageVersion load(@Parameter Long id) {
     return packageVersionService.load(id);
   }
 
-  @Authorized("*.Project.edit")
+  @Authorized(Privilege.P_EDIT)
   @Delete("/{id}")
   public HttpResponse<?> delete(@PathVariable Long id) {
     packageVersionService.delete(id);

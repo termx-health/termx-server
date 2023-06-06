@@ -2,6 +2,7 @@ package com.kodality.termserver.terminology.project;
 
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
@@ -46,57 +47,57 @@ public class ProjectController {
   private final ImportLogger importLogger;
   private static final String JOB_TYPE = "project-import";
 
-  @Authorized("*.Project.edit")
+  @Authorized(Privilege.P_EDIT)
   @Post()
   public Project create(@Valid @Body Project p) {
     p.setId(null);
     return projectService.save(p);
   }
 
-  @Authorized("*.Project.edit")
+  @Authorized(Privilege.P_EDIT)
   @Put("{id}")
   public Project update(@Parameter Long id, @Valid @Body Project p) {
     p.setId(id);
     return projectService.save(p);
   }
 
-  @Authorized("*.Project.view")
+  @Authorized(Privilege.P_VIEW)
   @Get("{id}")
   public Project load(@Parameter Long id) {
     return projectService.load(id);
   }
 
-  @Authorized("*.Project.view")
+  @Authorized(Privilege.P_VIEW)
   @Get("/{?params*}")
   public QueryResult<Project> search(ProjectQueryParams params) {
     return projectService.query(params);
   }
 
-  @Authorized("*.Project.view")
+  @Authorized(Privilege.P_VIEW)
   @Get("/{id}/packages")
   public List<Package> loadPackages(@Parameter Long id) {
     return packageService.loadAll(id);
   }
 
-  @Authorized("*.Project.edit")
+  @Authorized(Privilege.P_EDIT)
   @Post("/{id}/packages")
   public Package savePackage(@Parameter Long id, @Body PackageTransactionRequest request) {
     return packageService.save(request, id);
   }
 
-  @Authorized("*.Project.view")
+  @Authorized(Privilege.P_VIEW)
   @Post("/overview")
   public ProjectOverviewResponse overview(@Valid @Body ProjectOverviewRequest request) {
     return overviewService.compose(request);
   }
 
-  @Authorized("*.Project.view")
+  @Authorized(Privilege.P_VIEW)
   @Post("/diff")
   public ProjectDiff diff(@Valid @Body ProjectDiffRequest request) {
     return diffService.findDiff(request);
   }
 
-  @Authorized("*.Project.edit")
+  @Authorized(Privilege.P_EDIT)
   @Post(value = "/sync", consumes = MediaType.MULTIPART_FORM_DATA)
   public HttpResponse<?> importProject(@Nullable Publisher<CompletedFileUpload> file) {
     JobLogResponse job = importLogger.createJob(JOB_TYPE);

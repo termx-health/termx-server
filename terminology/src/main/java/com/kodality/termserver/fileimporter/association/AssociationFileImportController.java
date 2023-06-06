@@ -2,6 +2,7 @@ package com.kodality.termserver.fileimporter.association;
 
 import com.kodality.commons.exception.ApiException;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
@@ -30,7 +31,7 @@ public class AssociationFileImportController {
   private final AssociationFileImportService fileImporterService;
   private final ImportLogger importLogger;
 
-  @Authorized("*.CodeSystem.edit")
+  @Authorized(Privilege.CS_EDIT)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
     AssociationFileImportRequest req = JsonUtil.fromJson(request.getValue(), AssociationFileImportRequest.class);

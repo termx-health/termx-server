@@ -1,6 +1,7 @@
 package com.kodality.termserver.atc;
 
 import com.kodality.commons.exception.ApiClientException;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
@@ -26,7 +27,7 @@ public class AtcController {
 
   private static final String JOB_TYPE = "ATC";
 
-  @Authorized("*.CodeSystem.edit")
+  @Authorized(Privilege.CS_EDIT)
   @Post("/import")
   public JobLogResponse importAtc(@Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);

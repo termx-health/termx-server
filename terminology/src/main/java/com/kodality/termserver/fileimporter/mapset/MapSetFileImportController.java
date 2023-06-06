@@ -2,6 +2,7 @@ package com.kodality.termserver.fileimporter.mapset;
 
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
@@ -27,7 +28,7 @@ public class MapSetFileImportController {
   private final ImportLogger importLogger;
   private final MapSetFileImportService importService;
 
-  @Authorized("*.MapSet.edit")
+  @Authorized(Privilege.MS_VIEW)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
     JobLogResponse jobLogResponse = importLogger.createJob( "MS-FILE-IMPORT");

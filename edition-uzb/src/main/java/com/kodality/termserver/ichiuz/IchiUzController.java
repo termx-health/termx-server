@@ -3,6 +3,7 @@ package com.kodality.termserver.ichiuz;
 
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.termserver.ApiError;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
@@ -27,7 +28,7 @@ public class IchiUzController {
 
   private static final String JOB_TYPE = "ICHI";
 
-  @Authorized("*.CodeSystem.edit")
+  @Authorized(Privilege.CS_EDIT)
   @Post("/import")
   public JobLogResponse importIchiUz(@NonNull @QueryValue String url, @Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);

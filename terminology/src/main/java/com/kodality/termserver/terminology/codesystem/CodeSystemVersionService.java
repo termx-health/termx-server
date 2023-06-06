@@ -85,7 +85,7 @@ public class CodeSystemVersionService {
         .setReleaseDateLe(currentVersion.getExpirationDate())
         .setExpirationDateGe(currentVersion.getReleaseDate())).findFirst().orElse(null);
     if (overlappingVersion != null) {
-      throw ApiError.TE103.toApiException(Map.of("version", overlappingVersion.getVersion()));
+      //throw ApiError.TE103.toApiException(Map.of("version", overlappingVersion.getVersion()));
     }
     repository.activate(codeSystem, version);
   }

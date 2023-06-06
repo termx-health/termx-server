@@ -1,5 +1,6 @@
 package com.kodality.termserver.terminology.project.projectpackage;
 
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.ts.project.projectpackage.Package;
 import com.kodality.termserver.ts.project.projectpackage.PackageVersion;
@@ -19,19 +20,19 @@ public class PackageController {
   private final PackageService packageService;
   private final PackageVersionService packageVersionService;
 
-  @Authorized("*.Project.view")
+  @Authorized(Privilege.P_VIEW)
   @Get("{id}")
   public Package load(@Parameter Long id) {
     return packageService.load(id);
   }
 
-  @Authorized("*.Project.view")
+  @Authorized(Privilege.P_VIEW)
   @Get("{id}/versions")
   public List<PackageVersion> loadVersions(@Parameter Long id) {
     return packageVersionService.loadAll(id);
   }
 
-  @Authorized("*.Project.edit")
+  @Authorized(Privilege.P_EDIT)
   @Delete("/{id}")
   public HttpResponse<?> delete(@PathVariable Long id) {
     packageService.delete(id);

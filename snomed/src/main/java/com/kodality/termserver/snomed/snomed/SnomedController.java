@@ -3,6 +3,7 @@ package com.kodality.termserver.snomed.snomed;
 
 import com.kodality.commons.util.AsyncHelper;
 import com.kodality.termserver.auth.Authorized;
+import com.kodality.termserver.snomed.Privilege;
 import com.kodality.termserver.sys.lorque.LorqueProcess;
 import com.kodality.termserver.sys.lorque.LorqueProcessService;
 import com.kodality.termserver.snomed.client.SnowstormClient;
@@ -41,13 +42,13 @@ public class SnomedController {
 
   //----------------Concepts----------------
 
-  @Authorized("snomed-ct.CodeSystem.view")
+  @Authorized(Privilege.SNOMED_VIEW)
   @Get("/concepts/{conceptId}")
   public SnomedConcept loadConcept(@Parameter String conceptId) {
     return snowstormClient.loadConcept(conceptId).join();
   }
 
-  @Authorized("snomed-ct.CodeSystem.view")
+  @Authorized(Privilege.SNOMED_VIEW)
   @Get("/concepts/{conceptId}/children")
   public List<SnomedConcept> findConceptChildren(@Parameter String conceptId) {
     List<SnomedConcept> concepts = snowstormClient.findConceptChildren(conceptId).join();
@@ -57,7 +58,7 @@ public class SnomedController {
     return concepts;
   }
 
-  @Authorized("snomed-ct.CodeSystem.view")
+  @Authorized(Privilege.SNOMED_VIEW)
   @Get("/concepts{?params*}")
   public SnomedSearchResult<SnomedConcept> findConcepts(SnomedConceptSearchParams params) {
     SnomedSearchResult<SnomedConcept> concepts = snowstormClient.queryConcepts(params).join();
@@ -71,7 +72,7 @@ public class SnomedController {
 
   //----------------Descriptions----------------
 
-  @Authorized("snomed-ct.CodeSystem.view")
+  @Authorized(Privilege.SNOMED_VIEW)
   @Get("/concept-descriptions{?params*}")
   public SnomedDescriptionItemResponse findConceptDescriptions(SnomedDescriptionItemSearchParams params) {
     params.setActive(true);
@@ -89,13 +90,13 @@ public class SnomedController {
 
   //----------------RefSets----------------
 
-  @Authorized("snomed-ct.CodeSystem.view")
+  @Authorized(Privilege.SNOMED_VIEW)
   @Get("/refsets{?params*}")
   public SnomedRefsetResponse findRefsets(SnomedRefsetSearchParams params) {
     return snowstormClient.findRefsets(params).join();
   }
 
-  @Authorized("snomed-ct.CodeSystem.view")
+  @Authorized(Privilege.SNOMED_VIEW)
   @Get("/refset-members{?params*}")
   public SnomedRefsetMemberResponse findRefsetMembers(SnomedRefsetSearchParams params) {
     return snowstormClient.findRefsetMembers(params).join();
@@ -104,31 +105,32 @@ public class SnomedController {
 
 //----------------Translations----------------
 
-  @Authorized("snomed-ct.CodeSystem.view")
+  @Authorized(Privilege.SNOMED_VIEW)
   @Get("/translations/{id}")
   public SnomedTranslation load(@Parameter Long id) {
     return translationService.load(id);
   }
 
-  @Authorized("snomed-ct.CodeSystem.view")
+  @Authorized(Privilege.SNOMED_VIEW)
   @Get("/concepts/{conceptId}/translations")
   public List<SnomedTranslation> loadTranslations(@Parameter String conceptId) {
     return translationService.load(conceptId);
   }
 
-  @Authorized({"snomed-ct.CodeSystem.edit"})
+  @Authorized(Privilege.SNOMED_VIEW)
   @Post("/concepts/{conceptId}/translations")
   public HttpResponse<?> saveTranslations(@Parameter String conceptId, @Body List<SnomedTranslation> translations) {
     translationService.save(conceptId, translations);
     return HttpResponse.ok();
   }
-  @Authorized("snomed-ct.CodeSystem.view")
+  @Authorized(Privilege.SNOMED_VIEW)
   @Post(value = "/translations/export-rf2")
   public HttpResponse<?> startRF2Export() {
     LorqueProcess lorqueProcess = snomedRF2Service.startRF2Export();
     return HttpResponse.accepted().body(lorqueProcess);
   }
 
+  @Authorized(Privilege.SNOMED_VIEW)
   @Get(value = "/translations/export-rf2/result/{lorqueProcessId}", produces = "application/zip")
   public HttpResponse<?> getRF2(Long lorqueProcessId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());

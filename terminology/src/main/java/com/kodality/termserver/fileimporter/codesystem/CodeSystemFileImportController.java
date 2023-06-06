@@ -3,6 +3,7 @@ package com.kodality.termserver.fileimporter.codesystem;
 import com.kodality.commons.exception.ApiException;
 import com.kodality.commons.model.Issue;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
@@ -36,7 +37,7 @@ public class CodeSystemFileImportController {
   private final ImportLogger importLogger;
 
 
-  @Authorized("*.CodeSystem.edit")
+  @Authorized(Privilege.CS_EDIT)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
     CodeSystemFileImportRequest req = JsonUtil.fromJson(request.getValue(), CodeSystemFileImportRequest.class);

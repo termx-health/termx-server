@@ -1,6 +1,7 @@
 package com.kodality.termserver.terminology.project.projectpackage.resource;
 
 import com.kodality.commons.exception.ApiClientException;
+import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
@@ -35,20 +36,20 @@ public class PackageResourceController {
 
   private static final String JOB_TYPE = "package-resource-sync";
 
-  @Authorized("*.Project.view")
+  @Authorized(Privilege.P_VIEW)
   @Get("/{?params*}")
   public List<PackageResource> loadAll(Map<String, String> params) {
     return packageResourceService.loadAll(params.get("projectCode"), params.get("packageCode"), params.get("version"));
   }
 
-  @Authorized("*.Project.edit")
+  @Authorized(Privilege.P_EDIT)
   @Put("{id}")
   public PackageResource update(@Parameter Long id, @Valid @Body PackageResourceSaveRequest request) {
     request.getResource().setId(id);
     return packageResourceService.save(request.getVersionId(), request.getResource());
   }
 
-  @Authorized("*.Project.edit")
+  @Authorized(Privilege.P_EDIT)
   @Post(value = "{id}/sync")
   public HttpResponse<?> importResource(@Parameter Long id) {
     JobLogResponse job = importLogger.createJob(JOB_TYPE);

@@ -34,7 +34,7 @@ public class ValueSetFhirImportMapper {
     ValueSet vs = new ValueSet();
     vs.setId(valueSet.getId());
     vs.setUri(valueSet.getUrl());
-    vs.setNames(new LocalizedName(Map.of(Language.en, valueSet.getName())));
+    vs.setNames(new LocalizedName(Map.of(Language.en, valueSet.getName() == null ? valueSet.getTitle() : valueSet.getName())));
     vs.setContacts(valueSet.getContact() == null ? null :
         valueSet.getContact().stream().map(ValueSetFhirImportMapper::mapContact).collect(Collectors.toList()));
     vs.setNarrative(valueSet.getText() == null ? null : valueSet.getText().getDiv());
@@ -54,7 +54,7 @@ public class ValueSetFhirImportMapper {
   private static ValueSetVersion mapVersion(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     ValueSetVersion version = new ValueSetVersion();
     version.setValueSet(valueSet.getId());
-    version.setVersion(valueSet.getVersion());
+    version.setVersion(valueSet.getVersion() == null ? "1.0.0" : valueSet.getVersion());
     version.setSource(valueSet.getPublisher());
     version.setSupportedLanguages(List.of(Language.en));
     version.setStatus(PublicationStatus.draft);

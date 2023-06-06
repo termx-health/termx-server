@@ -36,7 +36,7 @@ public class CodeSystemFhirImportMapper {
     CodeSystem codeSystem = new CodeSystem();
     codeSystem.setId(fhirCodeSystem.getId());
     codeSystem.setUri(fhirCodeSystem.getUrl());
-    codeSystem.setNames(new LocalizedName(Map.of(Language.en, fhirCodeSystem.getName())));
+    codeSystem.setNames(new LocalizedName(Map.of(Language.en, fhirCodeSystem.getName() == null ? fhirCodeSystem.getTitle() : fhirCodeSystem.getName())));
     codeSystem.setContent(fhirCodeSystem.getContent());
     codeSystem.setContacts(fhirCodeSystem.getContact() == null ? null :
         fhirCodeSystem.getContact().stream().map(CodeSystemFhirImportMapper::mapCodeSystemContact).collect(Collectors.toList()));
@@ -63,7 +63,7 @@ public class CodeSystemFhirImportMapper {
   private static List<CodeSystemVersion> mapVersion(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     CodeSystemVersion version = new CodeSystemVersion();
     version.setCodeSystem(fhirCodeSystem.getId());
-    version.setVersion(fhirCodeSystem.getVersion());
+    version.setVersion(fhirCodeSystem.getVersion() == null ? "1.0.0" : fhirCodeSystem.getVersion());
     version.setSource(fhirCodeSystem.getPublisher());
     version.setPreferredLanguage(Language.en);
     version.setSupportedLanguages(List.of(Language.en));
