@@ -1,9 +1,0 @@
-micronaut:
-  server:
-    port: -1
-testcontainers:
-  reuse:
-    enable: true
-logger:
-  levels:
-    com.kodality.termserver: DEBUG

@@ -30,4 +30,13 @@ dependencies {
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${rootProject.jacksonVersion}")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${rootProject.jacksonVersion}")
     implementation("com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${rootProject.jacksonVersion}")
+
+    testImplementation "io.micronaut.test:micronaut-test-spock"
+    testImplementation("org.spockframework:spock-core") {
+        exclude group: "org.codehaus.groovy", module: "groovy-all"
+    }
+}
+
+test {
+    useJUnitPlatform()
 }

@@ -83,9 +83,7 @@ public class ValueSetVersionConceptRepository extends BaseRepository {
   private SqlBuilder filter(ValueSetVersionConceptQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and (vse.concept ->> 'code') = ?", params.getConceptCode());
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs where cs.id = vse.concept ->> 'code_system' and cs.uri = ?)", params.getCodeSystemUri());
-    sb.appendIfNotNull("and exists (select 1 from code_system cs where cs.sys_status = 'A' and cs.uri = ? and " +
-        "exists (select 1 from ))", params.getCodeSystemUri());
+    sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs where cs.id = vse.concept ->> 'codeSystem' and cs.uri = ?)", params.getCodeSystemUri());
     if (params.getCodeSystemVersion() != null) {
       sb.append("and exists (select 1 from terminology.code_system_version csv " +
           "inner join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A' " +

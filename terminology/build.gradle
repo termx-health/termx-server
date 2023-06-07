@@ -1,3 +1,9 @@
+plugins {
+    id("nebula.integtest") version "9.6.3"
+}
+
+apply plugin: "nebula.integtest"
+
 dependencies {
     annotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
     annotationProcessor "io.micronaut:micronaut-inject-java"
@@ -32,8 +38,21 @@ dependencies {
     implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}") { changing = true }
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${rootProject.jacksonVersion}")
 
+    testCompileOnly "org.projectlombok:lombok:1.18.24"
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.24"
+    testImplementation "org.testcontainers:postgresql:1.14.1"
+    testImplementation "com.github.mizosoft.methanol:methanol:1.7.0"
+    testImplementation "io.micronaut:micronaut-inject-groovy"
     testImplementation "io.micronaut.test:micronaut-test-spock"
     testImplementation("org.spockframework:spock-core") {
         exclude group: "org.codehaus.groovy", module: "groovy-all"
     }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+integrationTest {
+    useJUnitPlatform()
 }

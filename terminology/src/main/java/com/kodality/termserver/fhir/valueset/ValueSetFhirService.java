@@ -119,23 +119,24 @@ public class ValueSetFhirService {
   public Parameters validateCode(Map<String, List<String>> params, OperationOutcome outcome) {
     outcome.setIssue(new ArrayList<>());
     FhirQueryParams fhirParams = new FhirQueryParams(params);
-    if (fhirParams.getFirst("url").isEmpty() || fhirParams.getFirst("valueSetVersion").isEmpty() || fhirParams.getFirst("code").isEmpty()) {
-      outcome.getIssue().addAll(Stream.of("url", "valueSetVersion", "code").filter(key -> fhirParams.getFirst(key).isEmpty())
-          .map(key -> new OperationOutcomeIssue().setSeverity("error").setCode("required")
+    if (fhirParams.getFirst("url").isEmpty() || fhirParams.getFirst("code").isEmpty()) {
+      outcome.getIssue().addAll(Stream.of("url", "code").filter(key -> fhirParams.getFirst(key).isEmpty())
+          .map(key -> new OperationOutcomeIssue()
+              .setSeverity("error")
+              .setCode("required")
               .setDetails(new CodeableConcept().setText(String.format("Parameter '%s' not provided", key)))).toList());
       return null;
     }
 
-    Optional<ValueSetVersion> valueSetVersion = fhirParams.getFirst("valueSetVersion").isEmpty() ?
-        Optional.ofNullable(valueSetVersionService.loadLastVersionByUri(fhirParams.getFirst("url").get())) :
-        valueSetVersionService.query(new ValueSetVersionQueryParams()
-            .setValueSetUri(fhirParams.getFirst("url").get())
-            .setVersion(fhirParams.getFirst("valueSetVersion").get()))
-            .findFirst();
+    Optional<ValueSetVersion> valueSetVersion;
+    if (fhirParams.getFirst("valueSetVersion").isEmpty()) {
+      valueSetVersion = Optional.ofNullable(valueSetVersionService.loadLastVersionByUri(fhirParams.getFirst("url").get()));
+    } else {
+      valueSetVersion = valueSetVersionService.query(new ValueSetVersionQueryParams().setValueSetUri(fhirParams.getFirst("url").get()).setVersion(fhirParams.getFirst("valueSetVersion").get())).findFirst();
+    }
 
     if (valueSetVersion.isEmpty()) {
-      outcome.getIssue()
-          .add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("ValueSet version not found")));
+      outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("ValueSet version not found")));
       return null;
     }
 
@@ -147,8 +148,7 @@ public class ValueSetFhirService {
     Optional<ValueSetVersionConcept> concept = valueSetVersionConceptService.query(cParams).findFirst();
 
     if (concept.isEmpty()) {
-      outcome.getIssue()
-          .add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("Concept not found")));
+      outcome.getIssue().add(new OperationOutcomeIssue().setSeverity("error").setCode("not-found").setDetails(new CodeableConcept().setText("Concept not found")));
       return null;
     }
 
@@ -156,6 +156,7 @@ public class ValueSetFhirService {
     List<ParametersParameter> parameter = new ArrayList<>();
     String paramDisplay = fhirParams.getFirst("display").orElse(null);
     String conceptDisplay = findDisplay(concept.get(), paramDisplay);
+    parameter.add(new ParametersParameter().setName("code").setValueCode(concept.get().getConcept().getCode()));
     parameter.add(new ParametersParameter().setName("result").setValueBoolean(paramDisplay == null || paramDisplay.equals(conceptDisplay)));
     parameter.add(new ParametersParameter().setName("display").setValueString(conceptDisplay));
     if (!(paramDisplay == null || paramDisplay.equals(conceptDisplay))) {

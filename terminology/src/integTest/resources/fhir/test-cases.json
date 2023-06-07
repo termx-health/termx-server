@@ -1,0 +1,538 @@
+{
+  "introduction" : "see the readme!",
+  "suites" : [{
+    "name" : "simple-cases",
+    "description" : "basic tests, setting up the API tests to come",
+    "setup" : ["simple/codesystem-simple.json", "simple/valueset-all.json", "simple/valueset-enumerated.json", "simple/valueset-filter-isa.json", "simple/valueset-filter-property.json", "simple/valueset-filter-regex.json"],
+    "tests" :[
+      {
+        "name" : "simple-expand-all",
+        "operation" : "expand",
+        "request" : "simple/simple-expand-all-request-parameters.json",
+        "response" : "simple/simple-expand-all-response-valueSet.json"
+      },{
+        "name" : "simple-expand-enum",
+        "operation" : "expand",
+        "request" : "simple/simple-expand-enum-request-parameters.json",
+        "response" : "simple/simple-expand-enum-response-valueSet.json"
+      },{
+        "name" : "simple-expand-isa",
+        "operation" : "expand",
+        "request" : "simple/simple-expand-isa-request-parameters.json",
+        "response" : "simple/simple-expand-isa-response-valueSet.json"
+      },{
+        "name" : "simple-expand-prop",
+        "operation" : "expand",
+        "request" : "simple/simple-expand-prop-request-parameters.json",
+        "response" : "simple/simple-expand-prop-response-valueSet.json"
+      },{
+        "name" : "simple-expand-regex",
+        "operation" : "expand",
+        "request" : "simple/simple-expand-regex-request-parameters.json",
+        "response" : "simple/simple-expand-regex-response-valueSet.json"
+      }
+  ]
+  },{
+    "name" : "parameters",
+    "description" : "Testing out the various expansion parameters that the IG publisher makes use of",
+    "setup" : ["simple/codesystem-simple.json", "simple/valueset-all.json", "simple/valueset-enumerated.json", "simple/valueset-filter-isa.json", "simple/valueset-filter-property.json", "simple/valueset-filter-regex.json"],
+    "tests" :[
+      {
+        "name" : "parameters-expand-all-hierarchy",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-all-hierarchy-request-parameters.json",
+        "response" : "parameters/parameters-expand-all-hierarchy-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-enum-hierarchy",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-enum-hierarchy-request-parameters.json",
+        "response" : "parameters/parameters-expand-enum-hierarchy-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-isa-hierarchy",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-isa-hierarchy-request-parameters.json",
+        "response" : "parameters/parameters-expand-isa-hierarchy-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-all-active",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-all-active-request-parameters.json",
+        "response" : "parameters/parameters-expand-all-active-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-enum-active",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-enum-active-request-parameters.json",
+        "response" : "parameters/parameters-expand-enum-active-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-isa-active",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-isa-active-request-parameters.json",
+        "response" : "parameters/parameters-expand-isa-active-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-all-inactive",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-all-inactive-request-parameters.json",
+        "response" : "parameters/parameters-expand-all-inactive-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-enum-inactive",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-enum-inactive-request-parameters.json",
+        "response" : "parameters/parameters-expand-enum-inactive-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-isa-inactive",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-isa-inactive-request-parameters.json",
+        "response" : "parameters/parameters-expand-isa-inactive-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-all-designations",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-all-designations-request-parameters.json",
+        "response" : "parameters/parameters-expand-all-designations-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-enum-designations",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-enum-designations-request-parameters.json",
+        "response" : "parameters/parameters-expand-enum-designations-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-isa-designations",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-isa-designations-request-parameters.json",
+        "response" : "parameters/parameters-expand-isa-designations-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-all-definitions",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-all-definitions-request-parameters.json",
+        "response" : "parameters/parameters-expand-all-definitions-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-enum-definitions",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-enum-definitions-request-parameters.json",
+        "response" : "parameters/parameters-expand-enum-definitions-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-isa-definitions",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-isa-definitions-request-parameters.json",
+        "response" : "parameters/parameters-expand-isa-definitions-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-all-property",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-all-property-request-parameters.json",
+        "response" : "parameters/parameters-expand-all-property-response-valueSet.json"
+      },{
+        "name" : "parameters-expand-enum-property",
+        "operation" : "expand",
+        "request" : "parameters/parameters-expand-enum-property-request-parameters.json",
+        "response" : "parameters/parameters-expand-enum-property-response-valueSet.json"
+      },{
+      "name" : "parameters-expand-isa-property",
+      "operation" : "expand",
+      "request" : "parameters/parameters-expand-isa-property-request-parameters.json",
+      "response" : "parameters/parameters-expand-isa-property-response-valueSet.json"
+      }
+    ]
+  },{
+    "name" : "language",
+    "description" : "Testing returning language by request, getting the right designation",
+    "notes" : "In these test cases, the language of the parameters is used as a proxy for the Accept-Language header - test frameworks might want to remove this and put it in the header if that's appropriate",
+    "setup" : ["language/codesystem-de-multi.json", "language/codesystem-de-single.json", "language/codesystem-en-multi.json", "language/codesystem-en-single.json",
+              "language/valueset-de-multi.json", "language/valueset-de-single.json", "language/valueset-en-multi.json", "language/valueset-en-single.json"],
+    "tests" : [
+      {
+        "name" : "language-echo-en-none",
+        "operation" : "expand",
+        "request" : "language/expand-echo-en-none-request-parameters.json",
+        "response" : "language/expand-echo-en-none-response-valueSet.json"
+      },{
+        "name" : "language-echo-en-en",
+        "operation" : "expand",
+        "request" : "language/expand-echo-en-en-request-parameters.json",
+        "response" : "language/expand-echo-en-en-response-valueSet.json"
+      },{
+        "name" : "language-echo-de-none",
+        "operation" : "expand",
+        "request" : "language/expand-echo-de-none-request-parameters.json",
+        "response" : "language/expand-echo-de-none-response-valueSet.json"
+      },{
+        "name" : "language-echo-de-de",
+        "operation" : "expand",
+        "request" : "language/expand-echo-de-de-request-parameters.json",
+        "response" : "language/expand-echo-de-de-response-valueSet.json"
+      },{
+        "name" : "language-echo-en-multi-none",
+        "operation" : "expand",
+        "request" : "language/expand-echo-en-multi-none-request-parameters.json",
+        "response" : "language/expand-echo-en-multi-none-response-valueSet.json"
+      },{
+        "name" : "language-echo-en-multi-en",
+        "operation" : "expand",
+        "request" : "language/expand-echo-en-multi-en-request-parameters.json",
+        "response" : "language/expand-echo-en-multi-en-response-valueSet.json"
+      },{
+        "description" : "Time to get interesting - so far we've pretty much just echoed stuff. Now, we're going to start asking for transformation - we ask for de twice- one soft, and then hard",
+        "name" : "language-xform-en-multi-de-soft",
+        "operation" : "expand",
+        "request" : "language/expand-xform-en-multi-de-soft-request-parameters.json",
+        "response" : "language/expand-xform-en-multi-de-soft-response-valueSet.json"
+      },{
+        "description" : "The difference between this one and the last one is that this specifies the return language of the resource. If there are codes with no display, it won't fall back to some other language",
+        "name" : "language-xform-en-multi-de-hard",
+        "operation" : "expand",
+        "request" : "language/expand-xform-en-multi-de-hard-request-parameters.json",
+        "response" : "language/expand-xform-en-multi-de-hard-response-valueSet.json"
+      },{
+        "description" : "Do them all again, but the other way around",
+        "name" : "language-echo-de-multi-none",
+        "operation" : "expand",
+        "request" : "language/expand-echo-de-multi-none-request-parameters.json",
+        "response" : "language/expand-echo-de-multi-none-response-valueSet.json"
+      },{
+        "name" : "language-echo-en-multi-de",
+        "operation" : "expand",
+        "request" : "language/expand-echo-de-multi-de-request-parameters.json",
+        "response" : "language/expand-echo-de-multi-de-response-valueSet.json"
+      },{
+        "name" : "language-xform-de-multi-en-soft",
+        "operation" : "expand",
+        "request" : "language/expand-xform-de-multi-en-soft-request-parameters.json",
+        "response" : "language/expand-xform-de-multi-en-soft-response-valueSet.json"
+      },{
+        "name" : "language-xform-de-multi-en-hard",
+        "operation" : "expand",
+        "request" : "language/expand-xform-de-multi-en-hard-request-parameters.json",
+        "response" : "language/expand-xform-de-multi-en-hard-response-valueSet.json"
+      }
+    ]
+  },{
+    "name" : "extensions",
+    "description" : "Testing proper handling of extensions, which depends on the extension",
+    "setup" : ["extensions/codesystem-extensions.json", "extensions/codesystem-supplement.json", "extensions/valueset-extensions-all.json", "extensions/valueset-extensions-bad-supplement.json", "extensions/valueset-extensions-enumerated.json"],
+    "extensions-handled-doco": [
+      "http://hl7.org/fhir/StructureDefinition/valueset-supplement", "http://hl7.org/fhir/StructureDefinition/valueset-deprecated", "http://hl7.org/fhir/StructureDefinition/valueset-concept-definition",
+      "http://hl7.org/fhir/StructureDefinition/coding-sctdescid", "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder", "http://hl7.org/fhir/StructureDefinition/valueset-label",
+      "http://hl7.org/fhir/StructureDefinition/itemWeight", "http://hl7.org/fhir/StructureDefinition/rendering-style", "http://hl7.org/fhir/StructureDefinition/rendering-xhtml",
+      "http://hl7.org/fhir/StructureDefinition/codesystem-conceptOrder", "http://hl7.org/fhir/StructureDefinition/codesystem-label", "http://hl7.org/fhir/StructureDefinition/codesystem-alternate"],
+    "tests" : [
+      {
+        "name" : "extensions-echo-all",
+        "operation" : "expand",
+        "request" : "extensions/expand-echo-all-parameters.json",
+        "response" : "extensions/expand-echo-all-valueset.json"
+      },
+      {
+        "name" : "extensions-echo-enumerated",
+        "operation" : "expand",
+        "request" : "extensions/expand-echo-enumerated-parameters.json",
+        "response" : "extensions/expand-echo-enumerated-valueset.json"
+      },
+      {
+        "name" : "extensions-echo-bad-supplement",
+        "operation" : "expand",
+        "request" : "extensions/expand-echo-bad-supplement-parameters.json",
+        "response" : "extensions/expand-echo-bad-supplement-outcome.json"
+      }
+    ]
+  },{
+    "name" : "validation",
+    "description" : "Testing various validation parameter combinations",
+    "setup" : ["simple/codesystem-simple.json", "simple/valueset-all.json", "simple/valueset-enumerated.json", "simple/valueset-filter-isa.json", "simple/valueset-filter-property.json", "simple/valueset-filter-regex.json",
+        "language/codesystem-de-multi.json", "language/codesystem-de-single.json", "language/codesystem-en-multi.json", "language/codesystem-en-single.json",
+        "language/valueset-de-multi.json", "language/valueset-de-single.json", "language/valueset-en-multi.json", "language/valueset-en-single.json",
+        "version/codesystem-version-1.json", "version/codesystem-version-2.json", "version/valueset-all-version-1.json", "version/valueset-all-version-2.json", "version/valueset-all-version.json"
+      ],
+    "tests" : [
+      {
+        "name" : "validation-simple-code-good",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-good-request-parameters.json",
+        "response" :  "validation/simple-code-good-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-implied-good",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-implied-good-request-parameters.json",
+        "response" :  "validation/simple-code-implied-good-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-coding-good",
+        "operation" : "validate-code",
+        "request" : "validation/simple-coding-good-request-parameters.json",
+        "response" :  "validation/simple-coding-good-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-codeableconcept-good",
+        "operation" : "validate-code",
+        "request" : "validation/simple-codeableconcept-good-request-parameters.json",
+        "response" : "validation/simple-codeableconcept-good-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-bad-code",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-bad-code-request-parameters.json",
+        "response" :  "validation/simple-code-bad-code-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-implied-bad-code",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-implied-bad-code-request-parameters.json",
+        "response" :  "validation/simple-code-implied-bad-code-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-coding-bad-code",
+        "operation" : "validate-code",
+        "request" : "validation/simple-coding-bad-code-request-parameters.json",
+        "response" :  "validation/simple-coding-bad-code-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-codeableconcept-bad-code",
+        "operation" : "validate-code",
+        "request" : "validation/simple-codeableconcept-bad-code-request-parameters.json",
+        "response" : "validation/simple-codeableconcept-bad-code-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-bad-system",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-bad-system-request-parameters.json",
+        "response" :  "validation/simple-code-bad-system-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-coding-bad-system",
+        "operation" : "validate-code",
+        "request" : "validation/simple-coding-bad-system-request-parameters.json",
+        "response" :  "validation/simple-coding-bad-system-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-codeableconcept-bad-system",
+        "operation" : "validate-code",
+        "request" : "validation/simple-codeableconcept-bad-system-request-parameters.json",
+        "response" : "validation/simple-codeableconcept-bad-system-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-bad-version1",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-bad-version1-request-parameters.json",
+        "response" :  "validation/simple-code-bad-version1-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-coding-bad-version1",
+        "operation" : "validate-code",
+        "request" : "validation/simple-coding-bad-version1-request-parameters.json",
+        "response" :  "validation/simple-coding-bad-version1-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-codeableconcept-bad-version1",
+        "operation" : "validate-code",
+        "request" : "validation/simple-codeableconcept-bad-version1-request-parameters.json",
+        "response" : "validation/simple-codeableconcept-bad-version1-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-good-version",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-good-version-request-parameters.json",
+        "response" :  "validation/simple-code-good-version-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-coding-good-version",
+        "operation" : "validate-code",
+        "request" : "validation/simple-coding-good-version-request-parameters.json",
+        "response" :  "validation/simple-coding-good-version-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-codeableconcept-good-version",
+        "operation" : "validate-code",
+        "request" : "validation/simple-codeableconcept-good-version-request-parameters.json",
+        "response" : "validation/simple-codeableconcept-good-version-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-good-display",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-good-display-request-parameters.json",
+        "response" :  "validation/simple-code-good-display-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-coding-good-display",
+        "operation" : "validate-code",
+        "request" : "validation/simple-coding-good-display-request-parameters.json",
+        "response" :  "validation/simple-coding-good-display-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-codeableconcept-good-display",
+        "operation" : "validate-code",
+        "request" : "validation/simple-codeableconcept-good-display-request-parameters.json",
+        "response" : "validation/simple-codeableconcept-good-display-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-bad-display",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-bad-display-request-parameters.json",
+        "response" :  "validation/simple-code-bad-display-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-coding-bad-display",
+        "operation" : "validate-code",
+        "request" : "validation/simple-coding-bad-display-request-parameters.json",
+        "response" :  "validation/simple-coding-bad-display-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-codeableconcept-bad-display",
+        "operation" : "validate-code",
+        "request" : "validation/simple-codeableconcept-bad-display-request-parameters.json",
+        "response" : "validation/simple-codeableconcept-bad-display-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-bad-display-warning",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-bad-displayW-request-parameters.json",
+        "response" :  "validation/simple-code-bad-displayW-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-coding-bad-display-warning",
+        "operation" : "validate-code",
+        "request" : "validation/simple-coding-bad-displayW-request-parameters.json",
+        "response" :  "validation/simple-coding-bad-displayW-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-codeableconcept-bad-display-warning",
+        "operation" : "validate-code",
+        "request" : "validation/simple-codeableconcept-bad-displayW-request-parameters.json",
+        "response" : "validation/simple-codeableconcept-bad-displayW-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-good-language",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-good-language-request-parameters.json",
+        "response" :  "validation/simple-code-good-language-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-coding-good-language",
+        "operation" : "validate-code",
+        "request" : "validation/simple-coding-good-language-request-parameters.json",
+        "response" :  "validation/simple-coding-good-language-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-codeableconcept-good-language",
+        "operation" : "validate-code",
+        "request" : "validation/simple-codeableconcept-good-language-request-parameters.json",
+        "response" : "validation/simple-codeableconcept-good-language-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-bad-language",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-bad-language-request-parameters.json",
+        "response" :  "validation/simple-code-bad-language-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-good-regex",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-good-regex-request-parameters.json",
+        "response" : "validation/simple-code-good-regex-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-code-bad-regex",
+        "operation" : "validate-code",
+        "request" : "validation/simple-code-bad-regex-request-parameters.json",
+        "response" :  "validation/simple-code-bad-regex-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-coding-bad-language",
+        "operation" : "validate-code",
+        "request" : "validation/simple-coding-bad-language-request-parameters.json",
+        "response" :  "validation/simple-coding-bad-language-response-parameters.json"
+      },
+      {
+        "name" : "validation-simple-codeableconcept-bad-language",
+        "operation" : "validate-code",
+        "request" : "validation/simple-codeableconcept-bad-language-request-parameters.json",
+        "response" : "validation/simple-codeableconcept-bad-language-response-parameters.json"
+      },
+      {
+        "name" : "validation-complex-codeableconcept-full",
+        "operation" : "validate-code",
+        "request" : "validation/complex-codeableconcept-full-request-parameters.json",
+        "response" : "validation/complex-codeableconcept-full-response-parameters.json"
+      },
+      {
+        "name" : "validation-complex-codeableconcept-vsonly",
+        "operation" : "validate-code",
+        "request" : "validation/complex-codeableconcept-vsonly-request-parameters.json",
+        "response" : "validation/complex-codeableconcept-vsonly-response-parameters.json"
+      },
+      {
+        "name" : "validation-version-profile-none",
+        "operation" : "validate-code",
+        "request" : "validation/version-profile-none-request-parameters.json",
+        "response" : "validation/version-profile-none-response-parameters.json"
+      },
+      {
+        "name" : "validation-version-profile-default",
+        "operation" : "validate-code",
+        "profile" : "version/parameters-default-version.json",
+        "request" : "validation/version-profile-default-request-parameters.json",
+        "response" : "validation/version-profile-default-response-parameters.json"
+      },
+      {
+        "name" : "validation-version-profile-coding",
+        "operation" : "validate-code",
+        "profile" : "version/parameters-default-version.json",
+        "request" : "validation/version-profile-coding-request-parameters.json",
+        "response" : "validation/version-profile-coding-response-parameters.json"
+      }
+    ]
+  },{
+    "name" : "big",
+    "description" : "Testing handling a big code system",
+    "setup" : ["big/codesystem-big.json", "big/valueset-big.json"],
+    "tests" : [
+      {
+        "name" : "big-echo-no-limit",
+        "operation" : "expand",
+        "request" : "big/expand-no-limit-parameters.json",
+        "response" : "big/expand-no-limit-outcome.json"
+      },
+      {
+        "name" : "big-echo-zero-fifty-limit",
+        "operation" : "expand",
+        "request" : "big/expand-zero-fifty-limit-parameters.json",
+        "response" : "big/expand-zero-fifty-limit-valueset.json"
+      },
+      {
+        "name" : "big-echo-fifty-fifty-limit",
+        "operation" : "expand",
+        "request" : "big/expand-fifty-fifty-limit-parameters.json",
+        "response" : "big/expand-fifty-fifty-limit-valueset.json"
+      }       
+    ]
+  },{
+    "name" : "other",
+    "description" : "Misc tests based on issues submitted by users",
+    "setup" : ["other/codesystem-dual-filter.json", "other/valueset-dual-filter.json"],
+    "tests" : [
+      {
+        "name" : "dual-filter",
+        "operation" : "expand",
+        "request" : "other/expand-dual-filter-parameters.json",
+        "response" : "other/expand-dual-filter-valueset.json"
+      },
+      {
+        "name" : "validation-dual-filter-in",
+        "operation" : "validate-code",
+        "request" : "other/validation-dual-filter-in-request-parameters.json",
+        "response" : "other/validation-dual-filter-in-response-parameters.json"
+      },
+      {
+        "name" : "validation-dual-filter-out",
+        "operation" : "validate-code",
+        "request" : "other/validation-dual-filter-out-request-parameters.json",
+        "response" : "other/validation-dual-filter-out-response-parameters.json"
+      }     
+    ]
+  },{
+    "name" : "errors",
+    "description" : "Testing Various Error Conditions",
+    "setup" : ["errors/valueset-unknown-system.json"],
+    "tests" : []
+  }],
+  "todo" : "incomplete code systems, inactive/abstract, filter = notSelectable",
+  "not-done" : [
+    "At this point, the tests do not cover ConceptMap, nor do they test the http://hl7.org/fhir/tools/StructureDefinition-select-by-map.html extension"
+  ]
+}
+

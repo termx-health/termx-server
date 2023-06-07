@@ -1,0 +1,55 @@
+micronaut:
+  application:
+    name: termserver
+  server:
+    host: localhost
+    port: -1
+    max-request-size: 524288000 #500MB
+    multipart.max-file-size: 524288000 #500MB
+    thread-selection: auto
+endpoints:
+  health:
+    enabled: true
+    details-visible: anonymous
+    sensitive: false
+  info:
+    enabled: true
+    sensitive: false
+  prometheus:
+    enabled: true
+    sensitive: false
+
+info:
+  version: ${APP_VERSION:dev}
+
+datasources:
+  default:
+    url: ${DB_URL:`jdbc:postgresql://localhost:5432/termserver`}
+    username: termserver_app
+    password: ${DB_APP_PASSWORD:test}
+    driver-class-name: org.postgresql.Driver
+    maximum-pool-size: 1
+  liquibase:
+    url: ${DB_URL:`jdbc:postgresql://localhost:5432/termserver`}
+    username: termserver_admin
+    password: ${DB_ADMIN_PASSWORD:test}
+    driver-class-name: org.postgresql.Driver
+    maximum-pool-size: 1
+liquibase:
+  datasources:
+    liquibase:
+      enabled: true
+      change-log: 'classpath:changelog.xml'
+      default-schema: 'public'
+      parameters:
+        app-username: ${datasources.default.username}
+auth:
+  oauth:
+    jwks-url: ${OAUTH_JWKS_URL:fixme}
+  public:
+    endpoints:
+      - '/fhir/CapabilityStatement'
+      - '/fhir/CodeSystem'
+      - '/fhir/ValueSet'
+      - '/fhir/ConceptMap'
+      - '/fhir/metadata'
