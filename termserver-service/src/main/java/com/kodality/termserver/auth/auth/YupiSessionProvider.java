@@ -2,7 +2,6 @@ package com.kodality.termserver.auth.auth;
 
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.auth.SessionInfo;
-import com.kodality.termserver.auth.SessionInfo.AuthenticationProvider;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.http.HttpRequest;
@@ -35,7 +34,6 @@ public class YupiSessionProvider extends SessionProvider {
 
   private SessionInfo yupiDroopy() {
     SessionInfo s = new SessionInfo();
-    s.setProvider(AuthenticationProvider.sso);
     s.setUsername("yupi");
     s.setLang("en");
     s.setPrivileges(Set.of("*.*.edit", "*.*.view", "*.*.publish"));

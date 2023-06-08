@@ -23,47 +23,31 @@ dependencies {
 
   implementation('com.kodality.taskflow:taskflow-service:1.0-SNAPSHOT') { changing = true }
 
-  implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
-  implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}") { changing = true }
   implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
+  implementation("com.kodality.commons:commons-cache:${rootProject.commonsVersion}")
   implementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
-  implementation("com.kodality.commons:commons-cache:${rootProject.commonsVersion}") { changing = true }
-  implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}") { changing = true }
-  implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.commonsMicronautVersion}") { changing = true }
-  implementation("com.kodality.zmei:zmei-fhir:${rootProject.zmeiVersion}") { changing = true }
-  implementation("com.kodality.zmei:zmei-fhir-client:${rootProject.zmeiVersion}") { changing = true }
-  implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}") { changing = true }
 
-  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${rootProject.jacksonVersion}")
-  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${rootProject.jacksonVersion}")
-  implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${rootProject.jacksonVersion}")
-  implementation("com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${rootProject.jacksonVersion}")
-
-
-  implementation "org.apache.commons:commons-io:1.3.2"
-  implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
+  implementation("com.kodality.kefhir:fhir-rest:${kefhirVersion}") { changing = true }
+  implementation("com.kodality.kefhir:validation-profile:${kefhirVersion}") { changing = true }
+  implementation("com.kodality.kefhir:feature-conditional-reference:${kefhirVersion}") { changing = true }
 
   implementation platform("io.micronaut:micronaut-bom:$micronautVersion")
-  implementation("io.micronaut:micronaut-inject")
-  implementation("io.micronaut:micronaut-validation")
   implementation("io.micronaut:micronaut-runtime")
-  implementation("io.micronaut:micronaut-management")
   implementation("io.micronaut:micronaut-http-server-netty")
-  implementation("io.micronaut.spring:micronaut-spring")
   implementation("io.micronaut.liquibase:micronaut-liquibase")
+  implementation("io.micronaut.spring:micronaut-spring")
+  implementation("io.micronaut:micronaut-validation")
+  implementation("io.micronaut:micronaut-management")
   implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
-  implementation("com.github.slugify:slugify:3.0.2")
 
-  implementation('org.liquibase:liquibase-core:4.16.1')
   implementation("io.reactivex.rxjava2:rxjava:2.2.21")
   implementation("io.swagger.core.v3:swagger-annotations")
   implementation("io.micronaut.openapi:micronaut-openapi:3.2.0")
-  implementation("com.univocity:univocity-parsers:2.9.1")
   implementation("com.auth0:java-jwt:4.0.0")
   implementation('com.auth0:jwks-rsa:0.21.2')
-  implementation("io.github.furstenheim:copy_down:1.1")
-  implementation('org.commonmark:commonmark:0.19.0')
+  implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
 
+  runtimeOnly "ch.qos.logback:logback-classic:1.4.5"
 
   testCompileOnly("org.projectlombok:lombok:1.18.26")
   testAnnotationProcessor("org.projectlombok:lombok:1.18.22")

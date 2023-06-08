@@ -12,7 +12,6 @@ import com.kodality.commons.cache.CacheManager;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.auth.SessionInfo;
-import com.kodality.termserver.auth.SessionInfo.AuthenticationProvider;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.cookie.Cookie;
@@ -74,7 +73,6 @@ public class OAuthSessionProvider extends SessionProvider {
       String payload = new String(Base64.getUrlDecoder().decode(jwt.getPayload()));
       Map<String, Object> map = JsonUtil.toMap(payload);
       SessionInfo info = new SessionInfo();
-      info.setProvider(AuthenticationProvider.sso);
       info.setPrivileges(privilegeStore.getPrivileges( (List<String>) map.get("roles")));
       info.setUsername((String) map.get("preferred_username"));
       return info;

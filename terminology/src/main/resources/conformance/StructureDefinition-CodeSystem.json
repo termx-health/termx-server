@@ -1,0 +1,4898 @@
+{
+  "id": "CodeSystem",
+  "url": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+  "date": "2023-03-26T15:21:02+11:00",
+  "kind": "resource",
+  "name": "CodeSystem",
+  "type": "CodeSystem",
+  "status": "active",
+  "mapping": [
+    {
+      "uri": "http://hl7.org/fhir/fivews",
+      "name": "FiveWs Pattern Mapping",
+      "identity": "w5"
+    },
+    {
+      "uri": "http://hl7.org/v3",
+      "name": "RIM Mapping",
+      "identity": "rim"
+    },
+    {
+      "uri": "http://hl7.org/fhir/object-implementation",
+      "name": "Object Implementation Information",
+      "identity": "objimpl"
+    }
+  ],
+  "version": "5.0.0",
+  "abstract": false,
+  "snapshot": {
+    "element": [
+      {
+        "id": "CodeSystem",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem"
+        },
+        "path": "CodeSystem",
+        "short": "Declares the existence of and describes a code system or code system supplement",
+        "mapping": [
+          {
+            "map": "conformance.behavior,conformance.terminology",
+            "identity": "w5"
+          },
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "cnl-0",
+            "human": "Name should be usable as an identifier for the module by machine processing applications such as code generation",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "warning",
+            "expression": "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')"
+          },
+          {
+            "key": "csd-1",
+            "human": "Within a code system definition, all the codes SHALL be unique",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "error",
+            "expression": "concept.exists() implies concept.code.combine(%resource.concept.descendants().concept.code).isDistinct()"
+          },
+          {
+            "key": "csd-2",
+            "human": "If there is an explicit hierarchy, a hierarchyMeaning should be provided",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "warning",
+            "expression": "concept.concept.exists() implies hierarchyMeaning.exists()"
+          },
+          {
+            "key": "csd-3",
+            "human": "If there is an implicit hierarchy, a hierarchyMeaning should be provided",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "warning",
+            "expression": "concept.where(property.code = 'parent' or property.code = 'child').exists() implies hierarchyMeaning.exists()"
+          },
+          {
+            "key": "csd-4",
+            "human": "If the code system content = supplement, it must nominate what it's a supplement for",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "error",
+            "expression": "CodeSystem.content = 'supplement' implies CodeSystem.supplements.exists()"
+          }
+        ],
+        "definition": "The CodeSystem resource is used to declare the existence of and describe a code system or code system supplement and its key properties, and optionally define a part or all of its content.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.id",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Resource.id"
+        },
+        "path": "CodeSystem.id",
+        "type": [
+          {
+            "code": "http://hl7.org/fhirpath/System.String",
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fhir-type",
+                "valueUrl": "id"
+              }
+            ]
+          }
+        ],
+        "short": "Logical id of this artifact",
+        "comment": "Within the context of the FHIR RESTful interactions, the resource has an id except for cases like the create and conditional update. Otherwise, the use of the resouce id depends on the given use case.",
+        "isSummary": true,
+        "definition": "The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.meta",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Resource.meta"
+        },
+        "path": "CodeSystem.meta",
+        "type": [
+          {
+            "code": "Meta"
+          }
+        ],
+        "short": "Metadata about the resource",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.implicitRules",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Resource.implicitRules"
+        },
+        "path": "CodeSystem.implicitRules",
+        "type": [
+          {
+            "code": "uri"
+          }
+        ],
+        "short": "A set of rules under which this content was created",
+        "comment": "Asserting this rule set restricts the content to be only understood by a limited set of trading partners. This inherently limits the usefulness of the data in the long term. However, the existing health eco-system is highly fractured, and not yet ready to define, collect, and exchange data in a generally computable sense. Wherever possible, implementers and/or specification writers should avoid using this element. Often, when used, the URL is a reference to an implementation guide that defines these special rules as part of its narrative along with other profiles, value sets, etc.",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A reference to a set of rules that were followed when the resource was constructed, and which must be understood when processing the content. Often, this is a reference to an implementation guide that defines the special rules along with other profiles etc.",
+        "isModifier": true,
+        "mustSupport": false,
+        "isModifierReason": "This element is labeled as a modifier because the implicit rules may provide additional knowledge about the resource that modifies its meaning or interpretation"
+      },
+      {
+        "id": "CodeSystem.language",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Resource.language"
+        },
+        "path": "CodeSystem.language",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Language of the resource content",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/all-languages|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "Language"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-isCommonBinding",
+              "valueBoolean": true
+            }
+          ],
+          "description": "IETF language tag for a human language"
+        },
+        "comment": "Language is provided to support indexing and accessibility (typically, services such as text to speech use the language tag). The html language tag in the narrative applies  to the narrative. The language tag on the resource may be used to specify the language of other presentations generated from the data in the resource. Not all the content has to be in the base language. The Resource.language should not be assumed to apply to the narrative automatically. If a language is specified, it should it also be specified on the div element in the html (see rules in HTML5 for information about the relationship between xml:lang and the html lang attribute).",
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The base language in which the resource is written.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.text",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "DomainResource.text"
+        },
+        "path": "CodeSystem.text",
+        "type": [
+          {
+            "code": "Narrative"
+          }
+        ],
+        "alias": [
+          "narrative",
+          "html",
+          "xhtml",
+          "display"
+        ],
+        "short": "Text summary of the resource, for human interpretation",
+        "comment": "Contained resources do not have a narrative. Resources that are not contained SHOULD have a narrative. In some cases, a resource may only have text with little or no additional discrete data (as long as all minOccurs=1 elements are satisfied).  This may be necessary for data from legacy systems where information is captured as a \"text blob\" or where text is additionally entered raw or narrated and encoded information is added later.",
+        "mapping": [
+          {
+            "map": "Act.text?",
+            "identity": "rim"
+          }
+        ],
+        "condition": [
+          "dom-6"
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it \"clinically safe\" for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.contained",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "DomainResource.contained"
+        },
+        "path": "CodeSystem.contained",
+        "type": [
+          {
+            "code": "Resource"
+          }
+        ],
+        "alias": [
+          "inline resources",
+          "anonymous resources",
+          "contained resources"
+        ],
+        "short": "Contained, inline Resources",
+        "comment": "This should never be done when the content can be identified properly, as once identification is lost, it is extremely difficult (and context dependent) to restore it again. Contained resources may have profiles and tags in their meta elements, but SHALL NOT have security labels.",
+        "mapping": [
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "condition": [
+          "dom-2",
+          "dom-4",
+          "dom-3",
+          "dom-5"
+        ],
+        "isSummary": false,
+        "definition": "These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, nor can they have their own independent transaction scope. This is allowed to be a Parameters resource if and only if it is referenced by a resource that provides context/meaning.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.extension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "DomainResource.extension"
+        },
+        "path": "CodeSystem.extension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content"
+        ],
+        "short": "Additional content defined by implementations",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the resource. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.modifierExtension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "DomainResource.modifierExtension"
+        },
+        "path": "CodeSystem.modifierExtension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content"
+        ],
+        "short": "Extensions that cannot be ignored",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.\n\nModifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot change the meaning of modifierExtension itself).",
+        "isModifier": true,
+        "mustSupport": false,
+        "requirements": "Modifier extensions allow for extensions that *cannot* be safely ignored to be clearly distinguished from the vast majority of extensions which can be safely ignored.  This promotes interoperability by eliminating the need for implementers to prohibit the presence of extensions. For further information, see the [definition of modifier extensions](extensibility.html#modifierExtension).",
+        "isModifierReason": "Modifier extensions are expected to modify the meaning or interpretation of the resource that contains them"
+      },
+      {
+        "id": "CodeSystem.url",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.url"
+        },
+        "path": "CodeSystem.url",
+        "type": [
+          {
+            "code": "uri"
+          }
+        ],
+        "short": "Canonical identifier for this code system, represented as a URI (globally unique) (Coding.system)",
+        "comment": "Can be a urn:uuid: or a urn:oid: but real http: addresses are preferred.  Multiple instances may share the same URL if they have a distinct version.\n\nThe determination of when to create a new version of a resource (same url, new version) vs. defining a new artifact is up to the author.  Considerations for making this decision are found in [Technical and Business Versions](resource.html#versions). \n\nIn some cases, the resource can no longer be found at the stated url, but the url itself cannot change. Implementations can use the [meta.source](resource.html#meta) element to indicate where the current master source of the resource can be found.",
+        "mapping": [
+          {
+            "map": "FiveWs.identifier",
+            "identity": "w5"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "cnl-1",
+            "human": "URL should not contain | or # - these characters make processing canonical references problematic",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "warning",
+            "expression": "exists() implies matches('^[^|# ]+$')"
+          },
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "An absolute URI that is used to identify this code system when it is referenced in a specification, model, design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at which an authoritative instance of this code system is (or will be) published. This URL can be the target of a canonical reference. It SHALL remain the same when the code system is stored on different servers. This is used in [Coding](datatypes.html#Coding).system.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Allows the code system to be referenced by a single globally unique identifier."
+      },
+      {
+        "id": "CodeSystem.identifier",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.identifier"
+        },
+        "path": "CodeSystem.identifier",
+        "type": [
+          {
+            "code": "Identifier"
+          }
+        ],
+        "short": "Additional identifier for the code system (business identifier)",
+        "comment": "Typically, this is used for identifiers that can go in an HL7 V3 II (instance identifier) data type, and can then identify this code system outside of FHIR, where it is not possible to use the logical URI.  Note that HL7 defines at least three identifiers for many of its code systems - the FHIR canonical URL, the OID and the V2 Table 0396 mnemonic code.",
+        "mapping": [
+          {
+            "map": "FiveWs.identifier",
+            "identity": "w5"
+          },
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A formal identifier that is used to identify this code system when it is represented in other formats, or referenced in a specification, model, design or an instance.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Allows externally provided and/or usable business identifiers to be easily associated with the module."
+      },
+      {
+        "id": "CodeSystem.version",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.version"
+        },
+        "path": "CodeSystem.version",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Business version of the code system (Coding.version)",
+        "comment": "There may be different code system instances that have the same identifier but different versions.  The version can be appended to the url in a reference to allow a reference to a particular business version of the code system with the format [url]|[version]. The version SHOULD NOT contain a '#' - see [Business Version](resource.html#bv-format).",
+        "mapping": [
+          {
+            "map": "FiveWs.version",
+            "identity": "w5"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The identifier that is used to identify this version of the code system when it is referenced in a specification, model, design or instance. This is an arbitrary value managed by the code system author and is not expected to be globally unique. For example, it might be a timestamp (e.g. yyyymmdd) if a managed version is not available. There is also no expectation that versions can be placed in a lexicographical sequence. This is used in [Coding](datatypes.html#Coding).version.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.versionAlgorithm[x]",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.versionAlgorithm[x]"
+        },
+        "path": "CodeSystem.versionAlgorithm[x]",
+        "type": [
+          {
+            "code": "string"
+          },
+          {
+            "code": "Coding"
+          }
+        ],
+        "short": "How to compare versions",
+        "binding": {
+          "strength": "extensible",
+          "valueSet": "http://hl7.org/fhir/ValueSet/version-algorithm"
+        },
+        "comment": "If set as a string, this is a FHIRPath expression that has two additional context variables passed in - %version1 and %version2 and will return a negative number if version1 is newer, a positive number if version2 and a 0 if the version ordering can't be successfully be determined.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "Indicates the mechanism used to compare versions to determine which CodeSystem is more current.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.name",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.name"
+        },
+        "path": "CodeSystem.name",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Name for this code system (computer friendly)",
+        "comment": "The name is not expected to be globally unique. The name should be a simple alphanumeric type name to ensure that it is machine-processing friendly.",
+        "condition": [
+          "cnl-0"
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A natural language name identifying the code system. This name should be usable as an identifier for the module by machine processing applications such as code generation.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Support human navigation and code generation."
+      },
+      {
+        "id": "CodeSystem.title",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.title"
+        },
+        "path": "CodeSystem.title",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Name for this code system (human friendly)",
+        "comment": "This name does not need to be machine-processing friendly and may contain punctuation, white-space, etc.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A short, descriptive, user-friendly title for the code system.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.status",
+        "max": "1",
+        "min": 1,
+        "base": {
+          "max": "1",
+          "min": 1,
+          "path": "CodeSystem.status"
+        },
+        "path": "CodeSystem.status",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "draft | active | retired | unknown",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/publication-status|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "PublicationStatus"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-isCommonBinding",
+              "valueBoolean": true
+            }
+          ],
+          "description": "The lifecycle status of an artifact."
+        },
+        "comment": "Allows filtering of code systems that are appropriate for use versus not.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "mapping": [
+          {
+            "map": "FiveWs.status",
+            "identity": "w5"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The status of this code system. Enables tracking the life-cycle of the content.",
+        "isModifier": true,
+        "mustSupport": false,
+        "isModifierReason": "This is labeled as \"Is Modifier\" because applications should not use a retired CodeSystem without due consideration"
+      },
+      {
+        "id": "CodeSystem.experimental",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.experimental"
+        },
+        "path": "CodeSystem.experimental",
+        "type": [
+          {
+            "code": "boolean"
+          }
+        ],
+        "short": "For testing purposes, not real usage",
+        "comment": "Allows filtering of code systems that are appropriate for use versus not.",
+        "mapping": [
+          {
+            "map": "FiveWs.class",
+            "identity": "w5"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A Boolean value to indicate that this code system is authored for testing purposes (or education/evaluation/marketing) and is not intended to be used for genuine usage.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Enables experimental content to be developed following the same lifecycle that would be used for a production-level code system.",
+        "meaningWhenMissing": "If absent, this resource is treated as though it is not experimental."
+      },
+      {
+        "id": "CodeSystem.date",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.date"
+        },
+        "path": "CodeSystem.date",
+        "type": [
+          {
+            "code": "dateTime"
+          }
+        ],
+        "alias": [
+          "Revision Date"
+        ],
+        "short": "Date last changed",
+        "comment": "The date is often not tracked until the resource is published, but may be present on draft content. Note that this is not the same as the resource last-modified-date, since the resource may be a secondary representation of the code system. Additional specific dates may be added as extensions or be found by consulting Provenances associated with past versions of the resource.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "mapping": [
+          {
+            "map": "FiveWs.recorded",
+            "identity": "w5"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The date  (and optionally time) when the code system was last significantly changed. The date must change when the business version changes and it must change if the status code changes. In addition, it should change when the substantive content of the code system changes.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.publisher",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.publisher"
+        },
+        "path": "CodeSystem.publisher",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Name of the publisher/steward (organization or individual)",
+        "comment": "Usually an organization but may be an individual. The publisher (or steward) of the code system is the organization or individual primarily responsible for the maintenance and upkeep of the code system. This is not necessarily the same individual or organization that developed and initially authored the content. The publisher is the primary point of contact for questions or issues with the code system. This item SHOULD be populated unless the information is available from context.",
+        "mapping": [
+          {
+            "map": "FiveWs.witness",
+            "identity": "w5"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The name of the organization or individual responsible for the release and ongoing maintenance of the code system.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Helps establish the \"authority/credibility\" of the code system.  May also allow for contact."
+      },
+      {
+        "id": "CodeSystem.contact",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.contact"
+        },
+        "path": "CodeSystem.contact",
+        "type": [
+          {
+            "code": "ContactDetail"
+          }
+        ],
+        "short": "Contact details for the publisher",
+        "comment": "May be a web site, an email address, a telephone number, etc.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "Contact details to assist a user in finding and communicating with the publisher.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.description",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.description"
+        },
+        "path": "CodeSystem.description",
+        "type": [
+          {
+            "code": "markdown"
+          }
+        ],
+        "alias": [
+          "Scope",
+          "Purpose"
+        ],
+        "short": "Natural language description of the code system",
+        "comment": "This description can be used to capture details such as comments about misuse, instructions for clinical use and interpretation, literature references, examples from the paper world, etc. It is not a rendering of the code system as conveyed in the 'text' field of the resource itself. This item SHOULD be populated unless the information is available from context (e.g. the language of the code system is presumed to be the predominant language in the place the code system was created).",
+        "mapping": [
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A free text natural language description of the code system from a consumer's perspective.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.useContext",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.useContext"
+        },
+        "path": "CodeSystem.useContext",
+        "type": [
+          {
+            "code": "UsageContext"
+          }
+        ],
+        "short": "The context that the content is intended to support",
+        "comment": "When multiple useContexts are specified, there is no expectation that all or any of the contexts apply.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and may be used to assist with indexing and searching for appropriate code system instances.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Assist in searching for appropriate content."
+      },
+      {
+        "id": "CodeSystem.jurisdiction",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.jurisdiction"
+        },
+        "path": "CodeSystem.jurisdiction",
+        "type": [
+          {
+            "code": "CodeableConcept"
+          }
+        ],
+        "short": "Intended jurisdiction for code system (if applicable)",
+        "binding": {
+          "strength": "extensible",
+          "valueSet": "http://hl7.org/fhir/ValueSet/jurisdiction",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "Jurisdiction"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-isCommonBinding",
+              "valueBoolean": true
+            }
+          ],
+          "description": "Countries and regions within which this artifact is targeted for use."
+        },
+        "comment": "It may be possible for the code system to be used in jurisdictions other than those for which it was originally designed or intended.\n\nDEPRECATION NOTE: For consistency, implementations are encouraged to migrate to using the new 'jurisdiction' code in the useContext element.  (I.e. useContext.code indicating http://terminology.hl7.org/CodeSystem/usage-context-type#jurisdiction and useContext.valueCodeableConcept indicating the jurisdiction.)",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "deprecated"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A legal or geographic region in which the code system is intended to be used.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.purpose",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.purpose"
+        },
+        "path": "CodeSystem.purpose",
+        "type": [
+          {
+            "code": "markdown"
+          }
+        ],
+        "short": "Why this code system is defined",
+        "comment": "This element does not describe the usage of the code system. Instead, it provides traceability of ''why'' the resource is either needed or ''why'' it is defined as it is.  This may be used to point to source materials or specifications that drove the structure of this code system.",
+        "mapping": [
+          {
+            "map": "FiveWs.why[x]",
+            "identity": "w5"
+          },
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "Explanation of why this code system is needed and why it has been designed as it has.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.copyright",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.copyright"
+        },
+        "path": "CodeSystem.copyright",
+        "type": [
+          {
+            "code": "markdown"
+          }
+        ],
+        "alias": [
+          "License",
+          "Restrictions"
+        ],
+        "short": "Use and/or publishing restrictions",
+        "comment": "... Sometimes, the copyright differs between the code system and the codes that are included. The copyright statement should clearly differentiate between these when required.",
+        "mapping": [
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A copyright statement relating to the code system and/or its contents. Copyright statements are generally legal restrictions on the use and publishing of the code system.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Consumers must be able to determine any legal restrictions on the use of the code system and/or its content."
+      },
+      {
+        "id": "CodeSystem.copyrightLabel",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.copyrightLabel"
+        },
+        "path": "CodeSystem.copyrightLabel",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Copyright holder and year(s)",
+        "comment": "The (c) symbol should NOT be included in this string. It will be added by software when rendering the notation. Full details about licensing, restrictions, warrantees, etc. goes in the more general 'copyright' element.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A short string (<50 characters), suitable for inclusion in a page footer that identifies the copyright holder, effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Defines the content expected to be rendered in all representations of the artifact."
+      },
+      {
+        "id": "CodeSystem.approvalDate",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.approvalDate"
+        },
+        "path": "CodeSystem.approvalDate",
+        "type": [
+          {
+            "code": "date"
+          }
+        ],
+        "short": "When the CodeSystem was approved by publisher",
+        "comment": "The 'date' element may be more recent than the approval date because of minor changes or editorial corrections.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "mapping": [
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The date on which the resource content was approved by the publisher. Approval happens once when the content is officially approved for usage.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.lastReviewDate",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.lastReviewDate"
+        },
+        "path": "CodeSystem.lastReviewDate",
+        "type": [
+          {
+            "code": "date"
+          }
+        ],
+        "short": "When the CodeSystem was last reviewed by the publisher",
+        "comment": "If specified, this date follows the original approval date.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "mapping": [
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The date on which the resource content was last reviewed. Review happens periodically after approval but does not change the original approval date.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Gives a sense of how \"current\" the content is.  Resources that have not been reviewed in a long time may have a risk of being less appropriate/relevant."
+      },
+      {
+        "id": "CodeSystem.effectivePeriod",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.effectivePeriod"
+        },
+        "path": "CodeSystem.effectivePeriod",
+        "type": [
+          {
+            "code": "Period"
+          }
+        ],
+        "short": "When the CodeSystem is expected to be used",
+        "comment": "The effective period for a CodeSystem  determines when the content is applicable for usage and is independent of publication and review dates. For example, a system intended to be used for the year 2016 might be published in 2015.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "mapping": [
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The period during which the CodeSystem content was or is planned to be in active use.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Allows establishing a transition before a resource comes into effect and also allows for a sunsetting  process when new versions of the CodeSystem are or are expected to be used instead."
+      },
+      {
+        "id": "CodeSystem.topic",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.topic"
+        },
+        "path": "CodeSystem.topic",
+        "type": [
+          {
+            "code": "CodeableConcept"
+          }
+        ],
+        "short": "E.g. Education, Treatment, Assessment, etc",
+        "binding": {
+          "strength": "example",
+          "valueSet": "http://hl7.org/fhir/ValueSet/definition-topic",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "DefinitionTopic"
+            }
+          ]
+        },
+        "comment": "DEPRECATION NOTE: For consistency, implementations are encouraged to migrate to using the new 'topic' code in the useContext element.  (I.e. useContext.code indicating http://terminology.hl7.org/CodeSystem/usage-context-type#topic and useContext.valueCodeableConcept indicating the topic)",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "deprecated"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "Descriptions related to the content of the CodeSystem. Topics provide a high-level categorization as well as keywords for the CodeSystem that can be useful for filtering and searching.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Repositories must be able to determine how to categorize the CodeSystem so that it can be found by topical and keyword searches."
+      },
+      {
+        "id": "CodeSystem.author",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.author"
+        },
+        "path": "CodeSystem.author",
+        "type": [
+          {
+            "code": "ContactDetail"
+          }
+        ],
+        "short": "Who authored the CodeSystem",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "An individiual or organization primarily involved in the creation and maintenance of the CodeSystem.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.editor",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.editor"
+        },
+        "path": "CodeSystem.editor",
+        "type": [
+          {
+            "code": "ContactDetail"
+          }
+        ],
+        "short": "Who edited the CodeSystem",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "An individual or organization primarily responsible for internal coherence of the CodeSystem.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.reviewer",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.reviewer"
+        },
+        "path": "CodeSystem.reviewer",
+        "type": [
+          {
+            "code": "ContactDetail"
+          }
+        ],
+        "short": "Who reviewed the CodeSystem",
+        "comment": "See guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the CodeSystem.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.endorser",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.endorser"
+        },
+        "path": "CodeSystem.endorser",
+        "type": [
+          {
+            "code": "ContactDetail"
+          }
+        ],
+        "short": "Who endorsed the CodeSystem",
+        "comment": "See guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "An individual or organization asserted by the publisher to be responsible for officially endorsing the CodeSystem for use in some setting.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.relatedArtifact",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.relatedArtifact"
+        },
+        "path": "CodeSystem.relatedArtifact",
+        "type": [
+          {
+            "code": "RelatedArtifact"
+          }
+        ],
+        "short": "Additional documentation, citations, etc",
+        "comment": "Each related artifact is either an attachment, or a reference to another resource, but not both.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "Related artifacts such as additional documentation, justification, dependencies, bibliographic references, and predecessor and successor artifacts.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "A CodeSystem must be able to provide enough information for consumers of the content (and/or interventions or results produced by the content) to be able to determine and understand the justification for and evidence in support of the content."
+      },
+      {
+        "id": "CodeSystem.caseSensitive",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.caseSensitive"
+        },
+        "path": "CodeSystem.caseSensitive",
+        "type": [
+          {
+            "code": "boolean"
+          }
+        ],
+        "short": "If code comparison is case sensitive",
+        "comment": "If this value is missing, then it is not specified whether a code system is case sensitive or not. When the rule is not known, Postel's law should be followed: produce codes with the correct case, and accept codes in any case. This element is primarily provided to support validation software.",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "If code comparison is case sensitive when codes within this system are compared to each other.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.valueSet",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.valueSet"
+        },
+        "path": "CodeSystem.valueSet",
+        "type": [
+          {
+            "code": "canonical",
+            "targetProfile": [
+              "http://hl7.org/fhir/StructureDefinition/ValueSet"
+            ]
+          }
+        ],
+        "short": "Canonical reference to the value set with entire code system",
+        "comment": "The definition of the value set SHALL include all codes from this code system, independent of concept status, and only codes from this code system. It SHALL be immutable, and operations SHOULD support validation of any allowed code compositions.",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "Canonical reference to the value set that contains all codes in the code system independent of code status.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.hierarchyMeaning",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.hierarchyMeaning"
+        },
+        "path": "CodeSystem.hierarchyMeaning",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "grouped-by | is-a | part-of | classified-with",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/codesystem-hierarchy-meaning|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "CodeSystemHierarchyMeaning"
+            }
+          ],
+          "description": "The meaning of the hierarchy of concepts in a code system."
+        },
+        "comment": "Note that other representations might have a different hierarchy or none at all, and represent the information using properties.",
+        "condition": [
+          "csd-2",
+          "csd-3"
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The meaning of the hierarchy of concepts as represented in this resource.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.compositional",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.compositional"
+        },
+        "path": "CodeSystem.compositional",
+        "type": [
+          {
+            "code": "boolean"
+          }
+        ],
+        "alias": [
+          "grammar"
+        ],
+        "short": "If code system defines a compositional grammar",
+        "comment": "Note that the code system resource does not define what the compositional grammar is, only whether or not there is one.",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The code system defines a compositional (post-coordination) grammar.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.versionNeeded",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.versionNeeded"
+        },
+        "path": "CodeSystem.versionNeeded",
+        "type": [
+          {
+            "code": "boolean"
+          }
+        ],
+        "short": "If definitions are not stable",
+        "comment": "Best practice is that code systems do not redefine concepts, or that if concepts are redefined, a new code system definition is created. But this is not always possible, so some code systems may be defined as 'versionNeeded'.\n\nMost code systems occasionally refine the displays defined for concepts between versions. Contexts in which the concept display values are validated may require that the version be specified for some code systems irrespective of the value of this property.",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "This flag is used to signify that the code system does not commit to concept permanence across versions. If true, a version must be specified when referencing this code system.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.content",
+        "max": "1",
+        "min": 1,
+        "base": {
+          "max": "1",
+          "min": 1,
+          "path": "CodeSystem.content"
+        },
+        "path": "CodeSystem.content",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "not-present | example | fragment | complete | supplement",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/codesystem-content-mode|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "CodeSystemContentMode"
+            }
+          ],
+          "description": "The extent of the content of the code system (the concepts and codes it defines) are represented in a code system resource."
+        },
+        "condition": [
+          "csd-4"
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The extent of the content of the code system (the concepts and codes it defines) are represented in this resource instance.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.supplements",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.supplements"
+        },
+        "path": "CodeSystem.supplements",
+        "type": [
+          {
+            "code": "canonical",
+            "targetProfile": [
+              "http://hl7.org/fhir/StructureDefinition/CodeSystem"
+            ]
+          }
+        ],
+        "short": "Canonical URL of Code System this adds designations and properties to",
+        "comment": "The most common use of a code system supplement is to add additional language support.",
+        "condition": [
+          "csd-4"
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The canonical URL of the code system that this code system supplement is adding designations and properties to.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.count",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.count"
+        },
+        "path": "CodeSystem.count",
+        "type": [
+          {
+            "code": "unsignedInt"
+          }
+        ],
+        "short": "Total concepts in the code system",
+        "comment": "The count of concepts defined in this resource cannot be more than this value but may be less for several reasons - see the content element.",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The total number of concepts defined by the code system. Where the code system has a compositional grammar, the basis of this count is defined by the system steward.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.filter",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.filter"
+        },
+        "path": "CodeSystem.filter",
+        "type": [
+          {
+            "code": "BackboneElement"
+          }
+        ],
+        "short": "Filter that can be used in a value set",
+        "comment": "Note that filters defined in code systems usually require custom code on the part of any terminology engine that will make them available for use in value set filters. For this reason, they are generally only seen in high value published terminologies.",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A filter that can be used in a value set compose statement when selecting concepts using a filter.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.filter.id",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Element.id"
+        },
+        "path": "CodeSystem.filter.id",
+        "type": [
+          {
+            "code": "http://hl7.org/fhirpath/System.String",
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fhir-type",
+                "valueUrl": "string"
+              }
+            ]
+          }
+        ],
+        "short": "Unique id for inter-element referencing",
+        "mapping": [
+          {
+            "map": "n/a",
+            "identity": "rim"
+          }
+        ],
+        "condition": [
+          "ele-1"
+        ],
+        "isSummary": false,
+        "definition": "Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
+        "isModifier": false,
+        "representation": [
+          "xmlAttr"
+        ]
+      },
+      {
+        "id": "CodeSystem.filter.extension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "Element.extension"
+        },
+        "path": "CodeSystem.filter.extension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content"
+        ],
+        "short": "Additional content defined by implementations",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "n/a",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+        "isModifier": false
+      },
+      {
+        "id": "CodeSystem.filter.modifierExtension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "BackboneElement.modifierExtension"
+        },
+        "path": "CodeSystem.filter.modifierExtension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content",
+          "modifiers"
+        ],
+        "short": "Extensions that cannot be ignored even if unrecognized",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.\n\nModifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot change the meaning of modifierExtension itself).",
+        "isModifier": true,
+        "requirements": "Modifier extensions allow for extensions that *cannot* be safely ignored to be clearly distinguished from the vast majority of extensions which can be safely ignored.  This promotes interoperability by eliminating the need for implementers to prohibit the presence of extensions. For further information, see the [definition of modifier extensions](extensibility.html#modifierExtension).",
+        "isModifierReason": "Modifier extensions are expected to modify the meaning or interpretation of the element that contains them"
+      },
+      {
+        "id": "CodeSystem.filter.code",
+        "max": "1",
+        "min": 1,
+        "base": {
+          "max": "1",
+          "min": 1,
+          "path": "CodeSystem.filter.code"
+        },
+        "path": "CodeSystem.filter.code",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Code that identifies the filter",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/tools/StructureDefinition/no-binding",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The code that identifies this filter when it is used as a filter in [ValueSet](valueset.html#).compose.include.filter.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.filter.description",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.filter.description"
+        },
+        "path": "CodeSystem.filter.description",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "How or why the filter is used",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A description of how or why the filter is used.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.filter.operator",
+        "max": "*",
+        "min": 1,
+        "base": {
+          "max": "*",
+          "min": 1,
+          "path": "CodeSystem.filter.operator"
+        },
+        "path": "CodeSystem.filter.operator",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "= | is-a | descendent-of | is-not-a | regex | in | not-in | generalizes | child-of | descendent-leaf | exists",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/filter-operator|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "FilterOperator"
+            }
+          ],
+          "description": "The kind of operation to perform as a part of a property based filter."
+        },
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A list of operators that can be used with the filter.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.filter.value",
+        "max": "1",
+        "min": 1,
+        "base": {
+          "max": "1",
+          "min": 1,
+          "path": "CodeSystem.filter.value"
+        },
+        "path": "CodeSystem.filter.value",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "What to use for the value",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A description of what the value for the filter should be.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.property",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.property"
+        },
+        "path": "CodeSystem.property",
+        "type": [
+          {
+            "code": "BackboneElement"
+          }
+        ],
+        "short": "Additional information supplied about each concept",
+        "comment": "Multiple occurrences of CodeSystem.concept.property may occur for a CodeSystem.property where     CodeSystem.concept.property.code is the same and CodeSystem.concept.property.value differs. For example: multiple designations for a single concept.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-explicit-type-name",
+            "valueString": "Property"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A property defines an additional slot through which additional information can be provided about a concept.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.property.id",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Element.id"
+        },
+        "path": "CodeSystem.property.id",
+        "type": [
+          {
+            "code": "http://hl7.org/fhirpath/System.String",
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fhir-type",
+                "valueUrl": "string"
+              }
+            ]
+          }
+        ],
+        "short": "Unique id for inter-element referencing",
+        "mapping": [
+          {
+            "map": "n/a",
+            "identity": "rim"
+          }
+        ],
+        "condition": [
+          "ele-1"
+        ],
+        "isSummary": false,
+        "definition": "Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
+        "isModifier": false,
+        "representation": [
+          "xmlAttr"
+        ]
+      },
+      {
+        "id": "CodeSystem.property.extension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "Element.extension"
+        },
+        "path": "CodeSystem.property.extension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content"
+        ],
+        "short": "Additional content defined by implementations",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "n/a",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+        "isModifier": false
+      },
+      {
+        "id": "CodeSystem.property.modifierExtension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "BackboneElement.modifierExtension"
+        },
+        "path": "CodeSystem.property.modifierExtension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content",
+          "modifiers"
+        ],
+        "short": "Extensions that cannot be ignored even if unrecognized",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.\n\nModifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot change the meaning of modifierExtension itself).",
+        "isModifier": true,
+        "requirements": "Modifier extensions allow for extensions that *cannot* be safely ignored to be clearly distinguished from the vast majority of extensions which can be safely ignored.  This promotes interoperability by eliminating the need for implementers to prohibit the presence of extensions. For further information, see the [definition of modifier extensions](extensibility.html#modifierExtension).",
+        "isModifierReason": "Modifier extensions are expected to modify the meaning or interpretation of the element that contains them"
+      },
+      {
+        "id": "CodeSystem.property.code",
+        "max": "1",
+        "min": 1,
+        "base": {
+          "max": "1",
+          "min": 1,
+          "path": "CodeSystem.property.code"
+        },
+        "path": "CodeSystem.property.code",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Identifies the property on the concepts, and when referred to in operations",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/tools/StructureDefinition/no-binding",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A code that is used to identify the property. The code is used internally (in CodeSystem.concept.property.code) and also externally, such as in property filters.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.property.uri",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.property.uri"
+        },
+        "path": "CodeSystem.property.uri",
+        "type": [
+          {
+            "code": "uri"
+          }
+        ],
+        "short": "Formal identifier for the property",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "Reference to the formal meaning of the property. One possible source of meaning is the [Concept Properties](codesystem-concept-properties.html) code system.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.property.description",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.property.description"
+        },
+        "path": "CodeSystem.property.description",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Why the property is defined, and/or what it conveys",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A description of the property- why it is defined, and how its value might be used.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.property.type",
+        "max": "1",
+        "min": 1,
+        "base": {
+          "max": "1",
+          "min": 1,
+          "path": "CodeSystem.property.type"
+        },
+        "path": "CodeSystem.property.type",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "code | Coding | string | integer | boolean | dateTime | decimal",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/concept-property-type|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "PropertyType"
+            }
+          ],
+          "description": "The type of a property value."
+        },
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The type of the property value. Properties of type \"code\" contain a code defined by the code system (e.g. a reference to another defined concept).",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.concept"
+        },
+        "path": "CodeSystem.concept",
+        "type": [
+          {
+            "code": "BackboneElement"
+          }
+        ],
+        "short": "Concepts in the code system",
+        "comment": "If this is empty, it means that the code system resource does not represent the content of the code system.",
+        "condition": [
+          "csd-1"
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-explicit-type-name",
+            "valueString": "ConceptDefinition"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "Concepts that are in the code system. The concept definitions are inherently hierarchical, but the definitions must be consulted to determine what the meanings of the hierarchical relationships are.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.id",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Element.id"
+        },
+        "path": "CodeSystem.concept.id",
+        "type": [
+          {
+            "code": "http://hl7.org/fhirpath/System.String",
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fhir-type",
+                "valueUrl": "string"
+              }
+            ]
+          }
+        ],
+        "short": "Unique id for inter-element referencing",
+        "mapping": [
+          {
+            "map": "n/a",
+            "identity": "rim"
+          }
+        ],
+        "condition": [
+          "ele-1"
+        ],
+        "isSummary": false,
+        "definition": "Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
+        "isModifier": false,
+        "representation": [
+          "xmlAttr"
+        ]
+      },
+      {
+        "id": "CodeSystem.concept.extension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "Element.extension"
+        },
+        "path": "CodeSystem.concept.extension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content"
+        ],
+        "short": "Additional content defined by implementations",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "n/a",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+        "isModifier": false
+      },
+      {
+        "id": "CodeSystem.concept.modifierExtension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "BackboneElement.modifierExtension"
+        },
+        "path": "CodeSystem.concept.modifierExtension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content",
+          "modifiers"
+        ],
+        "short": "Extensions that cannot be ignored even if unrecognized",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.\n\nModifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot change the meaning of modifierExtension itself).",
+        "isModifier": true,
+        "requirements": "Modifier extensions allow for extensions that *cannot* be safely ignored to be clearly distinguished from the vast majority of extensions which can be safely ignored.  This promotes interoperability by eliminating the need for implementers to prohibit the presence of extensions. For further information, see the [definition of modifier extensions](extensibility.html#modifierExtension).",
+        "isModifierReason": "Modifier extensions are expected to modify the meaning or interpretation of the element that contains them"
+      },
+      {
+        "id": "CodeSystem.concept.code",
+        "max": "1",
+        "min": 1,
+        "base": {
+          "max": "1",
+          "min": 1,
+          "path": "CodeSystem.concept.code"
+        },
+        "path": "CodeSystem.concept.code",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Code that identifies concept",
+        "condition": [
+          "csd-1"
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/tools/StructureDefinition/no-binding",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A code - a text symbol - that uniquely identifies the concept within the code system.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.display",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.concept.display"
+        },
+        "path": "CodeSystem.concept.display",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Text to display to the user",
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A human readable string that is the recommended default way to present this concept to a user.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.definition",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.concept.definition"
+        },
+        "path": "CodeSystem.concept.definition",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Formal definition",
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The formal definition of the concept. The code system resource does not make formal definitions required, because of the prevalence of legacy systems. However, they are highly recommended, as without them there is no formal meaning associated with the concept.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.designation",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.concept.designation"
+        },
+        "path": "CodeSystem.concept.designation",
+        "type": [
+          {
+            "code": "BackboneElement"
+          }
+        ],
+        "short": "Additional representations for the concept",
+        "comment": "Concepts have both a ```display``` and an array of ```designation```. The display is equivalent to a special designation with an implied ```designation.use``` of \"primary code\" and a language equal to the [Resource Language](resource.html#language).",
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "csd-5",
+            "human": "Must have a value for concept.designation.use if concept.designation.additionalUse is present",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "error",
+            "expression": "additionalUse.exists() implies use.exists()"
+          },
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "Additional representations for the concept - other languages, aliases, specialized purposes, used for particular purposes, etc.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Many concept definition systems support multiple representations, in multiple languages, and for multiple purposes."
+      },
+      {
+        "id": "CodeSystem.concept.designation.id",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Element.id"
+        },
+        "path": "CodeSystem.concept.designation.id",
+        "type": [
+          {
+            "code": "http://hl7.org/fhirpath/System.String",
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fhir-type",
+                "valueUrl": "string"
+              }
+            ]
+          }
+        ],
+        "short": "Unique id for inter-element referencing",
+        "mapping": [
+          {
+            "map": "n/a",
+            "identity": "rim"
+          }
+        ],
+        "condition": [
+          "ele-1"
+        ],
+        "isSummary": false,
+        "definition": "Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
+        "isModifier": false,
+        "representation": [
+          "xmlAttr"
+        ]
+      },
+      {
+        "id": "CodeSystem.concept.designation.extension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "Element.extension"
+        },
+        "path": "CodeSystem.concept.designation.extension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content"
+        ],
+        "short": "Additional content defined by implementations",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "n/a",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+        "isModifier": false
+      },
+      {
+        "id": "CodeSystem.concept.designation.modifierExtension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "BackboneElement.modifierExtension"
+        },
+        "path": "CodeSystem.concept.designation.modifierExtension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content",
+          "modifiers"
+        ],
+        "short": "Extensions that cannot be ignored even if unrecognized",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.\n\nModifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot change the meaning of modifierExtension itself).",
+        "isModifier": true,
+        "requirements": "Modifier extensions allow for extensions that *cannot* be safely ignored to be clearly distinguished from the vast majority of extensions which can be safely ignored.  This promotes interoperability by eliminating the need for implementers to prohibit the presence of extensions. For further information, see the [definition of modifier extensions](extensibility.html#modifierExtension).",
+        "isModifierReason": "Modifier extensions are expected to modify the meaning or interpretation of the element that contains them"
+      },
+      {
+        "id": "CodeSystem.concept.designation.language",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.concept.designation.language"
+        },
+        "path": "CodeSystem.concept.designation.language",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Human language of the designation",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/all-languages|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "Language"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-isCommonBinding",
+              "valueBoolean": true
+            }
+          ],
+          "description": "IETF language tag for a human language"
+        },
+        "comment": "In the absence of a language, the resource language applies.",
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The language this designation is defined for.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.designation.use",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "CodeSystem.concept.designation.use"
+        },
+        "path": "CodeSystem.concept.designation.use",
+        "type": [
+          {
+            "code": "Coding"
+          }
+        ],
+        "short": "Details how this designation would be used",
+        "binding": {
+          "strength": "extensible",
+          "valueSet": "http://hl7.org/fhir/ValueSet/designation-use",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "ConceptDesignationUse"
+            }
+          ],
+          "description": "Details of how a designation would be used."
+        },
+        "comment": "If no use is provided, the designation can be assumed to be suitable for general display to a human user.",
+        "condition": [
+          "csd-5"
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A code that details how this designation would be used.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.designation.additionalUse",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.concept.designation.additionalUse"
+        },
+        "path": "CodeSystem.concept.designation.additionalUse",
+        "type": [
+          {
+            "code": "Coding"
+          }
+        ],
+        "short": "Additional ways how this designation would be used",
+        "binding": {
+          "strength": "extensible",
+          "valueSet": "http://hl7.org/fhir/ValueSet/designation-use",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "ConceptDesignationUse"
+            }
+          ],
+          "description": "Details of how a designation would be used."
+        },
+        "comment": "This was added rather than increasing the cardinality of .use to 0..* in order to maintain backward compatibility.",
+        "condition": [
+          "csd-5"
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "Additional codes that detail how this designation would be used, if there is more than one use.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.designation.value",
+        "max": "1",
+        "min": 1,
+        "base": {
+          "max": "1",
+          "min": 1,
+          "path": "CodeSystem.concept.designation.value"
+        },
+        "path": "CodeSystem.concept.designation.value",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "The text value for this designation",
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The text value for this designation.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.property",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.concept.property"
+        },
+        "path": "CodeSystem.concept.property",
+        "type": [
+          {
+            "code": "BackboneElement"
+          }
+        ],
+        "short": "Property value for the concept",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-explicit-type-name",
+            "valueString": "ConceptProperty"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A property value for this concept.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.property.id",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Element.id"
+        },
+        "path": "CodeSystem.concept.property.id",
+        "type": [
+          {
+            "code": "http://hl7.org/fhirpath/System.String",
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fhir-type",
+                "valueUrl": "string"
+              }
+            ]
+          }
+        ],
+        "short": "Unique id for inter-element referencing",
+        "mapping": [
+          {
+            "map": "n/a",
+            "identity": "rim"
+          }
+        ],
+        "condition": [
+          "ele-1"
+        ],
+        "isSummary": false,
+        "definition": "Unique id for the element within a resource (for internal references). This may be any string value that does not contain spaces.",
+        "isModifier": false,
+        "representation": [
+          "xmlAttr"
+        ]
+      },
+      {
+        "id": "CodeSystem.concept.property.extension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "Element.extension"
+        },
+        "path": "CodeSystem.concept.property.extension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content"
+        ],
+        "short": "Additional content defined by implementations",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "n/a",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.",
+        "isModifier": false
+      },
+      {
+        "id": "CodeSystem.concept.property.modifierExtension",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "BackboneElement.modifierExtension"
+        },
+        "path": "CodeSystem.concept.property.modifierExtension",
+        "type": [
+          {
+            "code": "Extension"
+          }
+        ],
+        "alias": [
+          "extensions",
+          "user content",
+          "modifiers"
+        ],
+        "short": "Extensions that cannot be ignored even if unrecognized",
+        "comment": "There can be no stigma associated with the use of extensions by any application, project, or standard - regardless of the institution or jurisdiction that uses or defines the extensions.  The use of extensions is what allows the FHIR specification to retain a core level of simplicity for everyone.",
+        "mapping": [
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          },
+          {
+            "key": "ext-1",
+            "human": "Must have either extensions or value[x], not both",
+            "source": "http://hl7.org/fhir/StructureDefinition/Extension",
+            "severity": "error",
+            "expression": "extension.exists() != value.exists()"
+          }
+        ],
+        "definition": "May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and managable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.\n\nModifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot change the meaning of modifierExtension itself).",
+        "isModifier": true,
+        "requirements": "Modifier extensions allow for extensions that *cannot* be safely ignored to be clearly distinguished from the vast majority of extensions which can be safely ignored.  This promotes interoperability by eliminating the need for implementers to prohibit the presence of extensions. For further information, see the [definition of modifier extensions](extensibility.html#modifierExtension).",
+        "isModifierReason": "Modifier extensions are expected to modify the meaning or interpretation of the element that contains them"
+      },
+      {
+        "id": "CodeSystem.concept.property.code",
+        "max": "1",
+        "min": 1,
+        "base": {
+          "max": "1",
+          "min": 1,
+          "path": "CodeSystem.concept.property.code"
+        },
+        "path": "CodeSystem.concept.property.code",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Reference to CodeSystem.property.code",
+        "condition": [
+          "csd-3"
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/tools/StructureDefinition/no-binding",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A code that is a reference to CodeSystem.property.code.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.property.value[x]",
+        "max": "1",
+        "min": 1,
+        "base": {
+          "max": "1",
+          "min": 1,
+          "path": "CodeSystem.concept.property.value[x]"
+        },
+        "path": "CodeSystem.concept.property.value[x]",
+        "type": [
+          {
+            "code": "code"
+          },
+          {
+            "code": "Coding"
+          },
+          {
+            "code": "string"
+          },
+          {
+            "code": "integer"
+          },
+          {
+            "code": "boolean"
+          },
+          {
+            "code": "dateTime"
+          },
+          {
+            "code": "decimal"
+          }
+        ],
+        "short": "Value of the property for this concept",
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The value of this property.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.concept",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "CodeSystem.concept.concept"
+        },
+        "path": "CodeSystem.concept.concept",
+        "short": "Child Concepts (is-a/contains/categorizes)",
+        "condition": [
+          "csd-1",
+          "csd-2"
+        ],
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "Defines children of a concept to produce a hierarchy of concepts. The nature of the relationships is variable (is-a/contains/categorizes) - see hierarchyMeaning.",
+        "isModifier": false,
+        "mustSupport": false,
+        "contentReference": "#CodeSystem.concept"
+      }
+    ]
+  },
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-category",
+      "valueString": "Foundation.Terminology"
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-implements",
+      "valueUri": "http://hl7.org/fhir/StructureDefinition/MetadataResource"
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+      "valueCode": "normative"
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-normative-version",
+      "valueCode": "4.0.0"
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+      "valueInteger": 5
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-security-category",
+      "valueCode": "anonymous"
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+      "valueCode": "vocab"
+    }
+  ],
+  "publisher": "Health Level Seven International (Terminology Infrastructure)",
+  "derivation": "specialization",
+  "description": "The CodeSystem resource is used to declare the existence of and describe a code system or code system supplement and its key properties, and optionally define a part or all of its content.",
+  "fhirVersion": "5.0.0",
+  "differential": {
+    "element": [
+      {
+        "id": "CodeSystem",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem",
+        "short": "Declares the existence of and describes a code system or code system supplement",
+        "mapping": [
+          {
+            "map": "conformance.terminology",
+            "identity": "w5"
+          },
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "constraint": [
+          {
+            "key": "csd-1",
+            "human": "Within a code system definition, all the codes SHALL be unique",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "error",
+            "expression": "concept.exists() implies concept.code.combine(%resource.concept.descendants().concept.code).isDistinct()"
+          },
+          {
+            "key": "csd-2",
+            "human": "If there is an explicit hierarchy, a hierarchyMeaning should be provided",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "warning",
+            "expression": "concept.concept.exists() implies hierarchyMeaning.exists()"
+          },
+          {
+            "key": "csd-3",
+            "human": "If there is an implicit hierarchy, a hierarchyMeaning should be provided",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "warning",
+            "expression": "concept.where(property.code = 'parent' or property.code = 'child').exists() implies hierarchyMeaning.exists()"
+          },
+          {
+            "key": "cnl-0",
+            "human": "Name should be usable as an identifier for the module by machine processing applications such as code generation",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "warning",
+            "expression": "name.exists() implies name.matches('^[A-Z]([A-Za-z0-9_]){1,254}$')"
+          },
+          {
+            "key": "csd-4",
+            "human": "If the code system content = supplement, it must nominate what it's a supplement for",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "error",
+            "expression": "CodeSystem.content = 'supplement' implies CodeSystem.supplements.exists()"
+          }
+        ],
+        "definition": "The CodeSystem resource is used to declare the existence of and describe a code system or code system supplement and its key properties, and optionally define a part or all of its content.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.url",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.url",
+        "type": [
+          {
+            "code": "uri"
+          }
+        ],
+        "short": "Canonical identifier for this code system, represented as a URI (globally unique) (Coding.system)",
+        "comment": "Can be a urn:uuid: or a urn:oid: but real http: addresses are preferred.  Multiple instances may share the same URL if they have a distinct version.\n\nThe determination of when to create a new version of a resource (same url, new version) vs. defining a new artifact is up to the author.  Considerations for making this decision are found in [Technical and Business Versions](resource.html#versions). \n\nIn some cases, the resource can no longer be found at the stated url, but the url itself cannot change. Implementations can use the [meta.source](resource.html#meta) element to indicate where the current master source of the resource can be found.",
+        "mapping": [
+          {
+            "map": "FiveWs.identifier",
+            "identity": "w5"
+          }
+        ],
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "cnl-1",
+            "human": "URL should not contain | or # - these characters make processing canonical references problematic",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "warning",
+            "expression": "exists() implies matches('^[^|# ]+$')"
+          }
+        ],
+        "definition": "An absolute URI that is used to identify this code system when it is referenced in a specification, model, design or an instance; also called its canonical identifier. This SHOULD be globally unique and SHOULD be a literal address at which an authoritative instance of this code system is (or will be) published. This URL can be the target of a canonical reference. It SHALL remain the same when the code system is stored on different servers. This is used in [Coding](datatypes.html#Coding).system.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Allows the code system to be referenced by a single globally unique identifier."
+      },
+      {
+        "id": "CodeSystem.identifier",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.identifier",
+        "type": [
+          {
+            "code": "Identifier"
+          }
+        ],
+        "short": "Additional identifier for the code system (business identifier)",
+        "comment": "Typically, this is used for identifiers that can go in an HL7 V3 II (instance identifier) data type, and can then identify this code system outside of FHIR, where it is not possible to use the logical URI.  Note that HL7 defines at least three identifiers for many of its code systems - the FHIR canonical URL, the OID and the V2 Table 0396 mnemonic code.",
+        "mapping": [
+          {
+            "map": "FiveWs.identifier",
+            "identity": "w5"
+          },
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "isSummary": true,
+        "definition": "A formal identifier that is used to identify this code system when it is represented in other formats, or referenced in a specification, model, design or an instance.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Allows externally provided and/or usable business identifiers to be easily associated with the module."
+      },
+      {
+        "id": "CodeSystem.version",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.version",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Business version of the code system (Coding.version)",
+        "comment": "There may be different code system instances that have the same identifier but different versions.  The version can be appended to the url in a reference to allow a reference to a particular business version of the code system with the format [url]|[version]. The version SHOULD NOT contain a '#' - see [Business Version](resource.html#bv-format).",
+        "mapping": [
+          {
+            "map": "FiveWs.version",
+            "identity": "w5"
+          }
+        ],
+        "isSummary": true,
+        "definition": "The identifier that is used to identify this version of the code system when it is referenced in a specification, model, design or instance. This is an arbitrary value managed by the code system author and is not expected to be globally unique. For example, it might be a timestamp (e.g. yyyymmdd) if a managed version is not available. There is also no expectation that versions can be placed in a lexicographical sequence. This is used in [Coding](datatypes.html#Coding).version.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.versionAlgorithm[x]",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.versionAlgorithm[x]",
+        "type": [
+          {
+            "code": "string"
+          },
+          {
+            "code": "Coding"
+          }
+        ],
+        "short": "How to compare versions",
+        "binding": {
+          "strength": "extensible",
+          "valueSet": "http://hl7.org/fhir/ValueSet/version-algorithm"
+        },
+        "comment": "If set as a string, this is a FHIRPath expression that has two additional context variables passed in - %version1 and %version2 and will return a negative number if version1 is newer, a positive number if version2 and a 0 if the version ordering can't be successfully be determined.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": true,
+        "definition": "Indicates the mechanism used to compare versions to determine which CodeSystem is more current.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.name",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.name",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Name for this code system (computer friendly)",
+        "comment": "The name is not expected to be globally unique. The name should be a simple alphanumeric type name to ensure that it is machine-processing friendly.",
+        "condition": [
+          "cnl-0"
+        ],
+        "isSummary": true,
+        "definition": "A natural language name identifying the code system. This name should be usable as an identifier for the module by machine processing applications such as code generation.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Support human navigation and code generation."
+      },
+      {
+        "id": "CodeSystem.title",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.title",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Name for this code system (human friendly)",
+        "comment": "This name does not need to be machine-processing friendly and may contain punctuation, white-space, etc.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": true,
+        "definition": "A short, descriptive, user-friendly title for the code system.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.status",
+        "max": "1",
+        "min": 1,
+        "path": "CodeSystem.status",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "draft | active | retired | unknown",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/publication-status|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "PublicationStatus"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-isCommonBinding",
+              "valueBoolean": true
+            }
+          ],
+          "description": "The lifecycle status of an artifact."
+        },
+        "comment": "Allows filtering of code systems that are appropriate for use versus not.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "mapping": [
+          {
+            "map": "FiveWs.status",
+            "identity": "w5"
+          }
+        ],
+        "isSummary": true,
+        "definition": "The status of this code system. Enables tracking the life-cycle of the content.",
+        "isModifier": true,
+        "mustSupport": false,
+        "isModifierReason": "This is labeled as \"Is Modifier\" because applications should not use a retired CodeSystem without due consideration"
+      },
+      {
+        "id": "CodeSystem.experimental",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.experimental",
+        "type": [
+          {
+            "code": "boolean"
+          }
+        ],
+        "short": "For testing purposes, not real usage",
+        "comment": "Allows filtering of code systems that are appropriate for use versus not.",
+        "mapping": [
+          {
+            "map": "FiveWs.class",
+            "identity": "w5"
+          }
+        ],
+        "isSummary": true,
+        "definition": "A Boolean value to indicate that this code system is authored for testing purposes (or education/evaluation/marketing) and is not intended to be used for genuine usage.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Enables experimental content to be developed following the same lifecycle that would be used for a production-level code system.",
+        "meaningWhenMissing": "If absent, this resource is treated as though it is not experimental."
+      },
+      {
+        "id": "CodeSystem.date",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.date",
+        "type": [
+          {
+            "code": "dateTime"
+          }
+        ],
+        "alias": [
+          "Revision Date"
+        ],
+        "short": "Date last changed",
+        "comment": "The date is often not tracked until the resource is published, but may be present on draft content. Note that this is not the same as the resource last-modified-date, since the resource may be a secondary representation of the code system. Additional specific dates may be added as extensions or be found by consulting Provenances associated with past versions of the resource.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "mapping": [
+          {
+            "map": "FiveWs.recorded",
+            "identity": "w5"
+          }
+        ],
+        "isSummary": true,
+        "definition": "The date  (and optionally time) when the code system was last significantly changed. The date must change when the business version changes and it must change if the status code changes. In addition, it should change when the substantive content of the code system changes.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.publisher",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.publisher",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Name of the publisher/steward (organization or individual)",
+        "comment": "Usually an organization but may be an individual. The publisher (or steward) of the code system is the organization or individual primarily responsible for the maintenance and upkeep of the code system. This is not necessarily the same individual or organization that developed and initially authored the content. The publisher is the primary point of contact for questions or issues with the code system. This item SHOULD be populated unless the information is available from context.",
+        "mapping": [
+          {
+            "map": "FiveWs.witness",
+            "identity": "w5"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": true,
+        "definition": "The name of the organization or individual responsible for the release and ongoing maintenance of the code system.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Helps establish the \"authority/credibility\" of the code system.  May also allow for contact."
+      },
+      {
+        "id": "CodeSystem.contact",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.contact",
+        "type": [
+          {
+            "code": "ContactDetail"
+          }
+        ],
+        "short": "Contact details for the publisher",
+        "comment": "May be a web site, an email address, a telephone number, etc.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "isSummary": true,
+        "definition": "Contact details to assist a user in finding and communicating with the publisher.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.description",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.description",
+        "type": [
+          {
+            "code": "markdown"
+          }
+        ],
+        "alias": [
+          "Scope",
+          "Purpose"
+        ],
+        "short": "Natural language description of the code system",
+        "comment": "This description can be used to capture details such as comments about misuse, instructions for clinical use and interpretation, literature references, examples from the paper world, etc. It is not a rendering of the code system as conveyed in the 'text' field of the resource itself. This item SHOULD be populated unless the information is available from context (e.g. the language of the code system is presumed to be the predominant language in the place the code system was created).",
+        "mapping": [
+          {
+            "map": "N/A",
+            "identity": "rim"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "definition": "A free text natural language description of the code system from a consumer's perspective.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.useContext",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.useContext",
+        "type": [
+          {
+            "code": "UsageContext"
+          }
+        ],
+        "short": "The context that the content is intended to support",
+        "comment": "When multiple useContexts are specified, there is no expectation that all or any of the contexts apply.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": true,
+        "definition": "The content was developed with a focus and intent of supporting the contexts that are listed. These contexts may be general categories (gender, age, ...) or may be references to specific programs (insurance plans, studies, ...) and may be used to assist with indexing and searching for appropriate code system instances.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Assist in searching for appropriate content."
+      },
+      {
+        "id": "CodeSystem.jurisdiction",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.jurisdiction",
+        "type": [
+          {
+            "code": "CodeableConcept"
+          }
+        ],
+        "short": "Intended jurisdiction for code system (if applicable)",
+        "binding": {
+          "strength": "extensible",
+          "valueSet": "http://hl7.org/fhir/ValueSet/jurisdiction",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "Jurisdiction"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-isCommonBinding",
+              "valueBoolean": true
+            }
+          ],
+          "description": "Countries and regions within which this artifact is targeted for use."
+        },
+        "comment": "It may be possible for the code system to be used in jurisdictions other than those for which it was originally designed or intended.\n\nDEPRECATION NOTE: For consistency, implementations are encouraged to migrate to using the new 'jurisdiction' code in the useContext element.  (I.e. useContext.code indicating http://terminology.hl7.org/CodeSystem/usage-context-type#jurisdiction and useContext.valueCodeableConcept indicating the jurisdiction.)",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "deprecated"
+          }
+        ],
+        "isSummary": true,
+        "definition": "A legal or geographic region in which the code system is intended to be used.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.purpose",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.purpose",
+        "type": [
+          {
+            "code": "markdown"
+          }
+        ],
+        "short": "Why this code system is defined",
+        "comment": "This element does not describe the usage of the code system. Instead, it provides traceability of ''why'' the resource is either needed or ''why'' it is defined as it is.  This may be used to point to source materials or specifications that drove the structure of this code system.",
+        "mapping": [
+          {
+            "map": "FiveWs.why[x]",
+            "identity": "w5"
+          },
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "definition": "Explanation of why this code system is needed and why it has been designed as it has.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.copyright",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.copyright",
+        "type": [
+          {
+            "code": "markdown"
+          }
+        ],
+        "alias": [
+          "License",
+          "Restrictions"
+        ],
+        "short": "Use and/or publishing restrictions",
+        "comment": "... Sometimes, the copyright differs between the code system and the codes that are included. The copyright statement should clearly differentiate between these when required.",
+        "mapping": [
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "definition": "A copyright statement relating to the code system and/or its contents. Copyright statements are generally legal restrictions on the use and publishing of the code system.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Consumers must be able to determine any legal restrictions on the use of the code system and/or its content."
+      },
+      {
+        "id": "CodeSystem.copyrightLabel",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.copyrightLabel",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Copyright holder and year(s)",
+        "comment": "The (c) symbol should NOT be included in this string. It will be added by software when rendering the notation. Full details about licensing, restrictions, warrantees, etc. goes in the more general 'copyright' element.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-translatable",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "definition": "A short string (<50 characters), suitable for inclusion in a page footer that identifies the copyright holder, effective period, and optionally whether rights are resctricted. (e.g. 'All rights reserved', 'Some rights reserved').",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Defines the content expected to be rendered in all representations of the artifact."
+      },
+      {
+        "id": "CodeSystem.approvalDate",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.approvalDate",
+        "type": [
+          {
+            "code": "date"
+          }
+        ],
+        "short": "When the CodeSystem was approved by publisher",
+        "comment": "The 'date' element may be more recent than the approval date because of minor changes or editorial corrections.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "mapping": [
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "definition": "The date on which the resource content was approved by the publisher. Approval happens once when the content is officially approved for usage.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.lastReviewDate",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.lastReviewDate",
+        "type": [
+          {
+            "code": "date"
+          }
+        ],
+        "short": "When the CodeSystem was last reviewed by the publisher",
+        "comment": "If specified, this date follows the original approval date.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "mapping": [
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "definition": "The date on which the resource content was last reviewed. Review happens periodically after approval but does not change the original approval date.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Gives a sense of how \"current\" the content is.  Resources that have not been reviewed in a long time may have a risk of being less appropriate/relevant."
+      },
+      {
+        "id": "CodeSystem.effectivePeriod",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.effectivePeriod",
+        "type": [
+          {
+            "code": "Period"
+          }
+        ],
+        "short": "When the CodeSystem is expected to be used",
+        "comment": "The effective period for a CodeSystem  determines when the content is applicable for usage and is independent of publication and review dates. For example, a system intended to be used for the year 2016 might be published in 2015.\n\nSee guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "mapping": [
+          {
+            "map": "no-gen-base",
+            "identity": "objimpl"
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": true,
+        "definition": "The period during which the CodeSystem content was or is planned to be in active use.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Allows establishing a transition before a resource comes into effect and also allows for a sunsetting  process when new versions of the CodeSystem are or are expected to be used instead."
+      },
+      {
+        "id": "CodeSystem.topic",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.topic",
+        "type": [
+          {
+            "code": "CodeableConcept"
+          }
+        ],
+        "short": "E.g. Education, Treatment, Assessment, etc",
+        "binding": {
+          "strength": "example",
+          "valueSet": "http://hl7.org/fhir/ValueSet/definition-topic",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "DefinitionTopic"
+            }
+          ]
+        },
+        "comment": "DEPRECATION NOTE: For consistency, implementations are encouraged to migrate to using the new 'topic' code in the useContext element.  (I.e. useContext.code indicating http://terminology.hl7.org/CodeSystem/usage-context-type#topic and useContext.valueCodeableConcept indicating the topic)",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "deprecated"
+          }
+        ],
+        "isSummary": false,
+        "definition": "Descriptions related to the content of the CodeSystem. Topics provide a high-level categorization as well as keywords for the CodeSystem that can be useful for filtering and searching.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Repositories must be able to determine how to categorize the CodeSystem so that it can be found by topical and keyword searches."
+      },
+      {
+        "id": "CodeSystem.author",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.author",
+        "type": [
+          {
+            "code": "ContactDetail"
+          }
+        ],
+        "short": "Who authored the CodeSystem",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "definition": "An individiual or organization primarily involved in the creation and maintenance of the CodeSystem.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.editor",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.editor",
+        "type": [
+          {
+            "code": "ContactDetail"
+          }
+        ],
+        "short": "Who edited the CodeSystem",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "definition": "An individual or organization primarily responsible for internal coherence of the CodeSystem.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.reviewer",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.reviewer",
+        "type": [
+          {
+            "code": "ContactDetail"
+          }
+        ],
+        "short": "Who reviewed the CodeSystem",
+        "comment": "See guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "definition": "An individual or organization asserted by the publisher to be primarily responsible for review of some aspect of the CodeSystem.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.endorser",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.endorser",
+        "type": [
+          {
+            "code": "ContactDetail"
+          }
+        ],
+        "short": "Who endorsed the CodeSystem",
+        "comment": "See guidance around (not) making local changes to elements [here](canonicalresource.html#localization).",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "definition": "An individual or organization asserted by the publisher to be responsible for officially endorsing the CodeSystem for use in some setting.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.relatedArtifact",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.relatedArtifact",
+        "type": [
+          {
+            "code": "RelatedArtifact"
+          }
+        ],
+        "short": "Additional documentation, citations, etc",
+        "comment": "Each related artifact is either an attachment, or a reference to another resource, but not both.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "definition": "Related artifacts such as additional documentation, justification, dependencies, bibliographic references, and predecessor and successor artifacts.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "A CodeSystem must be able to provide enough information for consumers of the content (and/or interventions or results produced by the content) to be able to determine and understand the justification for and evidence in support of the content."
+      },
+      {
+        "id": "CodeSystem.caseSensitive",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.caseSensitive",
+        "type": [
+          {
+            "code": "boolean"
+          }
+        ],
+        "short": "If code comparison is case sensitive",
+        "comment": "If this value is missing, then it is not specified whether a code system is case sensitive or not. When the rule is not known, Postel's law should be followed: produce codes with the correct case, and accept codes in any case. This element is primarily provided to support validation software.",
+        "isSummary": true,
+        "definition": "If code comparison is case sensitive when codes within this system are compared to each other.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.valueSet",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.valueSet",
+        "type": [
+          {
+            "code": "canonical",
+            "targetProfile": [
+              "http://hl7.org/fhir/StructureDefinition/ValueSet"
+            ]
+          }
+        ],
+        "short": "Canonical reference to the value set with entire code system",
+        "comment": "The definition of the value set SHALL include all codes from this code system, independent of concept status, and only codes from this code system. It SHALL be immutable, and operations SHOULD support validation of any allowed code compositions.",
+        "isSummary": true,
+        "definition": "Canonical reference to the value set that contains all codes in the code system independent of code status.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.hierarchyMeaning",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.hierarchyMeaning",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "grouped-by | is-a | part-of | classified-with",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/codesystem-hierarchy-meaning|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "CodeSystemHierarchyMeaning"
+            }
+          ],
+          "description": "The meaning of the hierarchy of concepts in a code system."
+        },
+        "comment": "Note that other representations might have a different hierarchy or none at all, and represent the information using properties.",
+        "condition": [
+          "csd-2",
+          "csd-3"
+        ],
+        "isSummary": true,
+        "definition": "The meaning of the hierarchy of concepts as represented in this resource.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.compositional",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.compositional",
+        "type": [
+          {
+            "code": "boolean"
+          }
+        ],
+        "alias": [
+          "grammar"
+        ],
+        "short": "If code system defines a compositional grammar",
+        "comment": "Note that the code system resource does not define what the compositional grammar is, only whether or not there is one.",
+        "isSummary": true,
+        "definition": "The code system defines a compositional (post-coordination) grammar.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.versionNeeded",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.versionNeeded",
+        "type": [
+          {
+            "code": "boolean"
+          }
+        ],
+        "short": "If definitions are not stable",
+        "comment": "Best practice is that code systems do not redefine concepts, or that if concepts are redefined, a new code system definition is created. But this is not always possible, so some code systems may be defined as 'versionNeeded'.\n\nMost code systems occasionally refine the displays defined for concepts between versions. Contexts in which the concept display values are validated may require that the version be specified for some code systems irrespective of the value of this property.",
+        "isSummary": true,
+        "definition": "This flag is used to signify that the code system does not commit to concept permanence across versions. If true, a version must be specified when referencing this code system.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.content",
+        "max": "1",
+        "min": 1,
+        "path": "CodeSystem.content",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "not-present | example | fragment | complete | supplement",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/codesystem-content-mode|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "CodeSystemContentMode"
+            }
+          ],
+          "description": "The extent of the content of the code system (the concepts and codes it defines) are represented in a code system resource."
+        },
+        "condition": [
+          "csd-4"
+        ],
+        "isSummary": true,
+        "definition": "The extent of the content of the code system (the concepts and codes it defines) are represented in this resource instance.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.supplements",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.supplements",
+        "type": [
+          {
+            "code": "canonical",
+            "targetProfile": [
+              "http://hl7.org/fhir/StructureDefinition/CodeSystem"
+            ]
+          }
+        ],
+        "short": "Canonical URL of Code System this adds designations and properties to",
+        "comment": "The most common use of a code system supplement is to add additional language support.",
+        "condition": [
+          "csd-4"
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": true,
+        "definition": "The canonical URL of the code system that this code system supplement is adding designations and properties to.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.count",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.count",
+        "type": [
+          {
+            "code": "unsignedInt"
+          }
+        ],
+        "short": "Total concepts in the code system",
+        "comment": "The count of concepts defined in this resource cannot be more than this value but may be less for several reasons - see the content element.",
+        "isSummary": true,
+        "definition": "The total number of concepts defined by the code system. Where the code system has a compositional grammar, the basis of this count is defined by the system steward.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.filter",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.filter",
+        "type": [
+          {
+            "code": "BackboneElement"
+          }
+        ],
+        "short": "Filter that can be used in a value set",
+        "comment": "Note that filters defined in code systems usually require custom code on the part of any terminology engine that will make them available for use in value set filters. For this reason, they are generally only seen in high value published terminologies.",
+        "isSummary": true,
+        "definition": "A filter that can be used in a value set compose statement when selecting concepts using a filter.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.filter.code",
+        "max": "1",
+        "min": 1,
+        "path": "CodeSystem.filter.code",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Code that identifies the filter",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/tools/StructureDefinition/no-binding",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": true,
+        "definition": "The code that identifies this filter when it is used as a filter in [ValueSet](valueset.html#).compose.include.filter.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.filter.description",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.filter.description",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "How or why the filter is used",
+        "isSummary": true,
+        "definition": "A description of how or why the filter is used.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.filter.operator",
+        "max": "*",
+        "min": 1,
+        "path": "CodeSystem.filter.operator",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "= | is-a | descendent-of | is-not-a | regex | in | not-in | generalizes | child-of | descendent-leaf | exists",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/filter-operator|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "FilterOperator"
+            }
+          ],
+          "description": "The kind of operation to perform as a part of a property based filter."
+        },
+        "isSummary": true,
+        "definition": "A list of operators that can be used with the filter.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.filter.value",
+        "max": "1",
+        "min": 1,
+        "path": "CodeSystem.filter.value",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "What to use for the value",
+        "isSummary": true,
+        "definition": "A description of what the value for the filter should be.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.property",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.property",
+        "type": [
+          {
+            "code": "BackboneElement"
+          }
+        ],
+        "short": "Additional information supplied about each concept",
+        "comment": "Multiple occurrences of CodeSystem.concept.property may occur for a CodeSystem.property where     CodeSystem.concept.property.code is the same and CodeSystem.concept.property.value differs. For example: multiple designations for a single concept.",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-explicit-type-name",
+            "valueString": "Property"
+          }
+        ],
+        "isSummary": true,
+        "definition": "A property defines an additional slot through which additional information can be provided about a concept.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.property.code",
+        "max": "1",
+        "min": 1,
+        "path": "CodeSystem.property.code",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Identifies the property on the concepts, and when referred to in operations",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/tools/StructureDefinition/no-binding",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": true,
+        "definition": "A code that is used to identify the property. The code is used internally (in CodeSystem.concept.property.code) and also externally, such as in property filters.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.property.uri",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.property.uri",
+        "type": [
+          {
+            "code": "uri"
+          }
+        ],
+        "short": "Formal identifier for the property",
+        "isSummary": true,
+        "definition": "Reference to the formal meaning of the property. One possible source of meaning is the [Concept Properties](codesystem-concept-properties.html) code system.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.property.description",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.property.description",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Why the property is defined, and/or what it conveys",
+        "isSummary": true,
+        "definition": "A description of the property- why it is defined, and how its value might be used.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.property.type",
+        "max": "1",
+        "min": 1,
+        "path": "CodeSystem.property.type",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "code | Coding | string | integer | boolean | dateTime | decimal",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/concept-property-type|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "PropertyType"
+            }
+          ],
+          "description": "The type of a property value."
+        },
+        "isSummary": true,
+        "definition": "The type of the property value. Properties of type \"code\" contain a code defined by the code system (e.g. a reference to another defined concept).",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.concept",
+        "type": [
+          {
+            "code": "BackboneElement"
+          }
+        ],
+        "short": "Concepts in the code system",
+        "comment": "If this is empty, it means that the code system resource does not represent the content of the code system.",
+        "condition": [
+          "csd-1"
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-explicit-type-name",
+            "valueString": "ConceptDefinition"
+          }
+        ],
+        "isSummary": false,
+        "definition": "Concepts that are in the code system. The concept definitions are inherently hierarchical, but the definitions must be consulted to determine what the meanings of the hierarchical relationships are.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.code",
+        "max": "1",
+        "min": 1,
+        "path": "CodeSystem.concept.code",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Code that identifies concept",
+        "condition": [
+          "csd-1"
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/tools/StructureDefinition/no-binding",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "definition": "A code - a text symbol - that uniquely identifies the concept within the code system.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.display",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.concept.display",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Text to display to the user",
+        "isSummary": false,
+        "definition": "A human readable string that is the recommended default way to present this concept to a user.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.definition",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.concept.definition",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "Formal definition",
+        "isSummary": false,
+        "definition": "The formal definition of the concept. The code system resource does not make formal definitions required, because of the prevalence of legacy systems. However, they are highly recommended, as without them there is no formal meaning associated with the concept.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.designation",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.concept.designation",
+        "type": [
+          {
+            "code": "BackboneElement"
+          }
+        ],
+        "short": "Additional representations for the concept",
+        "comment": "Concepts have both a ```display``` and an array of ```designation```. The display is equivalent to a special designation with an implied ```designation.use``` of \"primary code\" and a language equal to the [Resource Language](resource.html#language).",
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "csd-5",
+            "human": "Must have a value for concept.designation.use if concept.designation.additionalUse is present",
+            "source": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
+            "severity": "error",
+            "expression": "additionalUse.exists() implies use.exists()"
+          }
+        ],
+        "definition": "Additional representations for the concept - other languages, aliases, specialized purposes, used for particular purposes, etc.",
+        "isModifier": false,
+        "mustSupport": false,
+        "requirements": "Many concept definition systems support multiple representations, in multiple languages, and for multiple purposes."
+      },
+      {
+        "id": "CodeSystem.concept.designation.language",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.concept.designation.language",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Human language of the designation",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/all-languages|5.0.0",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "Language"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-isCommonBinding",
+              "valueBoolean": true
+            }
+          ],
+          "description": "IETF language tag for a human language"
+        },
+        "comment": "In the absence of a language, the resource language applies.",
+        "isSummary": false,
+        "definition": "The language this designation is defined for.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.designation.use",
+        "max": "1",
+        "min": 0,
+        "path": "CodeSystem.concept.designation.use",
+        "type": [
+          {
+            "code": "Coding"
+          }
+        ],
+        "short": "Details how this designation would be used",
+        "binding": {
+          "strength": "extensible",
+          "valueSet": "http://hl7.org/fhir/ValueSet/designation-use",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "ConceptDesignationUse"
+            }
+          ],
+          "description": "Details of how a designation would be used."
+        },
+        "comment": "If no use is provided, the designation can be assumed to be suitable for general display to a human user.",
+        "condition": [
+          "csd-5"
+        ],
+        "isSummary": false,
+        "definition": "A code that details how this designation would be used.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.designation.additionalUse",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.concept.designation.additionalUse",
+        "type": [
+          {
+            "code": "Coding"
+          }
+        ],
+        "short": "Additional ways how this designation would be used",
+        "binding": {
+          "strength": "extensible",
+          "valueSet": "http://hl7.org/fhir/ValueSet/designation-use",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "ConceptDesignationUse"
+            }
+          ],
+          "description": "Details of how a designation would be used."
+        },
+        "comment": "This was added rather than increasing the cardinality of .use to 0..* in order to maintain backward compatibility.",
+        "condition": [
+          "csd-5"
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+            "valueCode": "trial-use"
+          }
+        ],
+        "isSummary": false,
+        "definition": "Additional codes that detail how this designation would be used, if there is more than one use.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.designation.value",
+        "max": "1",
+        "min": 1,
+        "path": "CodeSystem.concept.designation.value",
+        "type": [
+          {
+            "code": "string"
+          }
+        ],
+        "short": "The text value for this designation",
+        "isSummary": false,
+        "definition": "The text value for this designation.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.property",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.concept.property",
+        "type": [
+          {
+            "code": "BackboneElement"
+          }
+        ],
+        "short": "Property value for the concept",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-explicit-type-name",
+            "valueString": "ConceptProperty"
+          }
+        ],
+        "isSummary": false,
+        "definition": "A property value for this concept.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.property.code",
+        "max": "1",
+        "min": 1,
+        "path": "CodeSystem.concept.property.code",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Reference to CodeSystem.property.code",
+        "condition": [
+          "csd-3"
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/tools/StructureDefinition/no-binding",
+            "valueBoolean": true
+          }
+        ],
+        "isSummary": false,
+        "definition": "A code that is a reference to CodeSystem.property.code.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.property.value[x]",
+        "max": "1",
+        "min": 1,
+        "path": "CodeSystem.concept.property.value[x]",
+        "type": [
+          {
+            "code": "code"
+          },
+          {
+            "code": "Coding"
+          },
+          {
+            "code": "string"
+          },
+          {
+            "code": "integer"
+          },
+          {
+            "code": "boolean"
+          },
+          {
+            "code": "dateTime"
+          },
+          {
+            "code": "decimal"
+          }
+        ],
+        "short": "Value of the property for this concept",
+        "isSummary": false,
+        "definition": "The value of this property.",
+        "isModifier": false,
+        "mustSupport": false
+      },
+      {
+        "id": "CodeSystem.concept.concept",
+        "max": "*",
+        "min": 0,
+        "path": "CodeSystem.concept.concept",
+        "short": "Child Concepts (is-a/contains/categorizes)",
+        "condition": [
+          "csd-1",
+          "csd-2"
+        ],
+        "isSummary": false,
+        "definition": "Defines children of a concept to produce a hierarchy of concepts. The nature of the relationships is variable (is-a/contains/categorizes) - see hierarchyMeaning.",
+        "isModifier": false,
+        "mustSupport": false,
+        "contentReference": "#CodeSystem.concept"
+      }
+    ]
+  },
+  "experimental": false,
+  "jurisdiction": [
+    {
+      "coding": [
+        {
+          "code": "001",
+          "system": "http://unstats.un.org/unsd/methods/m49/m49.htm",
+          "display": "World"
+        }
+      ]
+    }
+  ],
+  "resourceType": "StructureDefinition",
+  "baseDefinition": "http://hl7.org/fhir/StructureDefinition/DomainResource"
+}

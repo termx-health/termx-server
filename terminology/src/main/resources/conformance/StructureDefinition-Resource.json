@@ -1,0 +1,307 @@
+{
+  "id": "Resource",
+  "url": "http://hl7.org/fhir/StructureDefinition/Resource",
+  "date": "2019-11-01T09:29:23+11:00",
+  "kind": "resource",
+  "name": "Resource",
+  "type": "Resource",
+  "status": "active",
+  "mapping": [
+    {
+      "uri": "http://hl7.org/v3",
+      "name": "RIM Mapping",
+      "identity": "rim"
+    }
+  ],
+  "version": "4.0.1",
+  "abstract": true,
+  "snapshot": {
+    "element": [
+      {
+        "id": "Resource",
+        "max": "*",
+        "min": 0,
+        "base": {
+          "max": "*",
+          "min": 0,
+          "path": "Resource"
+        },
+        "path": "Resource",
+        "short": "Base Resource",
+        "mapping": [
+          {
+            "map": "Entity. Role, or Act",
+            "identity": "rim"
+          }
+        ],
+        "isSummary": false,
+        "definition": "This is the base resource type for everything.",
+        "isModifier": false
+      },
+      {
+        "id": "Resource.id",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Resource.id"
+        },
+        "path": "Resource.id",
+        "type": [
+          {
+            "code": "http://hl7.org/fhirpath/System.String",
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fhir-type",
+                "valueUrl": "string"
+              }
+            ]
+          }
+        ],
+        "short": "Logical id of this artifact",
+        "comment": "The only time that a resource does not have an id is when it is being submitted to the server using a create operation.",
+        "isSummary": true,
+        "definition": "The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.",
+        "isModifier": false
+      },
+      {
+        "id": "Resource.meta",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Resource.meta"
+        },
+        "path": "Resource.meta",
+        "type": [
+          {
+            "code": "Meta"
+          }
+        ],
+        "short": "Metadata about the resource",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "xpath": "@value|f:*|h:div",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.",
+        "isModifier": false
+      },
+      {
+        "id": "Resource.implicitRules",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Resource.implicitRules"
+        },
+        "path": "Resource.implicitRules",
+        "type": [
+          {
+            "code": "uri"
+          }
+        ],
+        "short": "A set of rules under which this content was created",
+        "comment": "Asserting this rule set restricts the content to be only understood by a limited set of trading partners. This inherently limits the usefulness of the data in the long term. However, the existing health eco-system is highly fractured, and not yet ready to define, collect, and exchange data in a generally computable sense. Wherever possible, implementers and/or specification writers should avoid using this element. Often, when used, the URL is a reference to an implementation guide that defines these special rules as part of it's narrative along with other profiles, value sets, etc.",
+        "isSummary": true,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "xpath": "@value|f:*|h:div",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "A reference to a set of rules that were followed when the resource was constructed, and which must be understood when processing the content. Often, this is a reference to an implementation guide that defines the special rules along with other profiles etc.",
+        "isModifier": true,
+        "isModifierReason": "This element is labeled as a modifier because the implicit rules may provide additional knowledge about the resource that modifies it's meaning or interpretation"
+      },
+      {
+        "id": "Resource.language",
+        "max": "1",
+        "min": 0,
+        "base": {
+          "max": "1",
+          "min": 0,
+          "path": "Resource.language"
+        },
+        "path": "Resource.language",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Language of the resource content",
+        "binding": {
+          "strength": "preferred",
+          "valueSet": "http://hl7.org/fhir/ValueSet/languages",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-maxValueSet",
+              "valueCanonical": "http://hl7.org/fhir/ValueSet/all-languages"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "Language"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-isCommonBinding",
+              "valueBoolean": true
+            }
+          ],
+          "description": "A human language."
+        },
+        "comment": "Language is provided to support indexing and accessibility (typically, services such as text to speech use the language tag). The html language tag in the narrative applies  to the narrative. The language tag on the resource may be used to specify the language of other presentations generated from the data in the resource. Not all the content has to be in the base language. The Resource.language should not be assumed to apply to the narrative automatically. If a language is specified, it should it also be specified on the div element in the html (see rules in HTML5 for information about the relationship between xml:lang and the html lang attribute).",
+        "isSummary": false,
+        "constraint": [
+          {
+            "key": "ele-1",
+            "human": "All FHIR elements must have a @value or children",
+            "xpath": "@value|f:*|h:div",
+            "source": "http://hl7.org/fhir/StructureDefinition/Element",
+            "severity": "error",
+            "expression": "hasValue() or (children().count() > id.count())"
+          }
+        ],
+        "definition": "The base language in which the resource is written.",
+        "isModifier": false
+      }
+    ]
+  },
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+      "valueCode": "normative"
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-normative-version",
+      "valueCode": "4.0.0"
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+      "valueInteger": 5
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+      "valueCode": "fhir"
+    }
+  ],
+  "publisher": "Health Level Seven International (FHIR Infrastructure)",
+  "description": "This is the base resource type for everything.",
+  "fhirVersion": "4.0.1",
+  "differential": {
+    "element": [
+      {
+        "id": "Resource",
+        "max": "*",
+        "min": 0,
+        "path": "Resource",
+        "short": "Base Resource",
+        "mapping": [
+          {
+            "map": "Entity. Role, or Act",
+            "identity": "rim"
+          }
+        ],
+        "definition": "This is the base resource type for everything."
+      },
+      {
+        "id": "Resource.id",
+        "max": "1",
+        "min": 0,
+        "path": "Resource.id",
+        "type": [
+          {
+            "code": "http://hl7.org/fhirpath/System.String",
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fhir-type",
+                "valueUrl": "string"
+              }
+            ]
+          }
+        ],
+        "short": "Logical id of this artifact",
+        "comment": "The only time that a resource does not have an id is when it is being submitted to the server using a create operation.",
+        "isSummary": true,
+        "definition": "The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes."
+      },
+      {
+        "id": "Resource.meta",
+        "max": "1",
+        "min": 0,
+        "path": "Resource.meta",
+        "type": [
+          {
+            "code": "Meta"
+          }
+        ],
+        "short": "Metadata about the resource",
+        "isSummary": true,
+        "definition": "The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource."
+      },
+      {
+        "id": "Resource.implicitRules",
+        "max": "1",
+        "min": 0,
+        "path": "Resource.implicitRules",
+        "type": [
+          {
+            "code": "uri"
+          }
+        ],
+        "short": "A set of rules under which this content was created",
+        "comment": "Asserting this rule set restricts the content to be only understood by a limited set of trading partners. This inherently limits the usefulness of the data in the long term. However, the existing health eco-system is highly fractured, and not yet ready to define, collect, and exchange data in a generally computable sense. Wherever possible, implementers and/or specification writers should avoid using this element. Often, when used, the URL is a reference to an implementation guide that defines these special rules as part of it's narrative along with other profiles, value sets, etc.",
+        "isSummary": true,
+        "definition": "A reference to a set of rules that were followed when the resource was constructed, and which must be understood when processing the content. Often, this is a reference to an implementation guide that defines the special rules along with other profiles etc.",
+        "isModifier": true,
+        "isModifierReason": "This element is labeled as a modifier because the implicit rules may provide additional knowledge about the resource that modifies it's meaning or interpretation"
+      },
+      {
+        "id": "Resource.language",
+        "max": "1",
+        "min": 0,
+        "path": "Resource.language",
+        "type": [
+          {
+            "code": "code"
+          }
+        ],
+        "short": "Language of the resource content",
+        "binding": {
+          "strength": "preferred",
+          "valueSet": "http://hl7.org/fhir/ValueSet/languages",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-maxValueSet",
+              "valueCanonical": "http://hl7.org/fhir/ValueSet/all-languages"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-bindingName",
+              "valueString": "Language"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/elementdefinition-isCommonBinding",
+              "valueBoolean": true
+            }
+          ],
+          "description": "A human language."
+        },
+        "comment": "Language is provided to support indexing and accessibility (typically, services such as text to speech use the language tag). The html language tag in the narrative applies  to the narrative. The language tag on the resource may be used to specify the language of other presentations generated from the data in the resource. Not all the content has to be in the base language. The Resource.language should not be assumed to apply to the narrative automatically. If a language is specified, it should it also be specified on the div element in the html (see rules in HTML5 for information about the relationship between xml:lang and the html lang attribute).",
+        "definition": "The base language in which the resource is written."
+      }
+    ]
+  },
+  "resourceType": "StructureDefinition"
+}

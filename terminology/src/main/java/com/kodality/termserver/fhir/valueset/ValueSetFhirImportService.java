@@ -10,7 +10,6 @@ import com.kodality.termserver.terminology.codesystem.entity.CodeSystemEntityVer
 import com.kodality.termserver.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termserver.terminology.valueset.ValueSetService;
 import com.kodality.termserver.terminology.valueset.ValueSetVersionService;
-import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.codesystem.CodeSystem;
@@ -32,8 +31,6 @@ import com.kodality.termserver.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.ResourceType;
-import com.kodality.zmei.fhir.resource.other.Parameters;
-import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +49,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class ValueSetFhirImportService {
-
   private final ConceptService conceptService;
   private final ValueSetService valueSetService;
   private final CodeSystemService codeSystemService;
@@ -61,30 +57,17 @@ public class ValueSetFhirImportService {
   private final ValueSetVersionService valueSetVersionService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
-  private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+
   private final BinaryHttpClient client = new BinaryHttpClient();
 
-  public void importValueSets(Parameters parameters, List<String> successes, List<String> warnings) {
-    if (CollectionUtils.isEmpty(parameters.getParameter())) {
-      throw ApiError.TE106.toApiException();
+  @Transactional
+  public void importValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet, boolean activateVersion) {
+    ValueSet valueSet = prepare(ValueSetFhirImportMapper.mapValueSet(fhirValueSet));
+    ValueSetVersion valueSetVersion = prepareValueSetAndVersion(valueSet);
+    if (activateVersion) {
+      valueSetVersionService.activate(valueSet.getId(), valueSetVersion.getVersion());
     }
-
-    List<String> urls = parameters.getParameter().stream().filter(p -> "url".equals(p.getName())).map(ParametersParameter::getValueString).toList();
-    if (urls.isEmpty()) {
-      throw ApiError.TE106.toApiException();
-    }
-
-    urls.forEach(url -> {
-      try {
-        importValueSetFromUrl(url);
-        successes.add(String.format("ValueSet from resource %s imported", url));
-      } catch (Exception e) {
-        String warning = String.format("ValueSet from resource %s was not imported due to error: %s", url, e.getMessage());
-        log.error(warning, e);
-        warnings.add(warning);
-      }
-    });
   }
 
   public void importValueSetFromUrl(String url) {
@@ -98,15 +81,6 @@ public class ValueSetFhirImportService {
       throw ApiError.TE107.toApiException();
     }
     importValueSet(fhir, false);
-  }
-
-  @Transactional
-  public void importValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet, boolean activateVersion) {
-    ValueSet valueSet = prepare(ValueSetFhirImportMapper.mapValueSet(fhirValueSet));
-    ValueSetVersion valueSetVersion = prepareValueSetAndVersion(valueSet);
-    if (activateVersion) {
-      valueSetVersionService.activate(valueSet.getId(), valueSetVersion.getVersion());
-    }
   }
 
   private String getResource(String url) {
@@ -252,8 +226,8 @@ public class ValueSetFhirImportService {
 
   private ValueSetVersion prepareValueSetAndVersion(ValueSet valueSet) {
     log.info("Checking, the value set and version exists");
-    Optional<ValueSet> existingValueSet = valueSetService.load(valueSet.getId());
-    if (existingValueSet.isEmpty()) {
+    ValueSet existingValueSet = valueSetService.load(valueSet.getId());
+    if (existingValueSet == null) {
       log.info("Value set {} does not exist, creating new", valueSet.getId());
       valueSetService.save(valueSet);
     }

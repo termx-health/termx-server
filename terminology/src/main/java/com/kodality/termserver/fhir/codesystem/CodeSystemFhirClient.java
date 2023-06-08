@@ -1,20 +1,18 @@
 package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.zmei.fhir.FhirMapper;
-import com.kodality.zmei.fhir.client.FhirClient;
+import com.kodality.zmei.fhir.client.FhirResourceClient;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.Builder;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
-public class CodeSystemFhirClient extends FhirClient<CodeSystem> {
+public class CodeSystemFhirClient extends FhirResourceClient<CodeSystem> {
 
-  public CodeSystemFhirClient(String url, Consumer<Builder> enhancer) {
-    super(url + "/fhir/CodeSystem", CodeSystem.class, enhancer);
+  public CodeSystemFhirClient(String url) {
+    super(url + "/fhir/CodeSystem", CodeSystem.class);
   }
 
   public CompletableFuture<Parameters> lookup(FhirQueryParams params) {

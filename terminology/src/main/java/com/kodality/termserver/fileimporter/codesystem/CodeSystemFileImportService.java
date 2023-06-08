@@ -222,7 +222,7 @@ public class CodeSystemFileImportService {
   }
 
   private void generateValueSet(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, CodeSystem codeSystem) {
-    ValueSet existingValueSet = valueSetService.load(fpCodeSystem.getId()).orElse(null);
+    ValueSet existingValueSet = valueSetService.load(fpCodeSystem.getId());
     ValueSet valueSet = toValueSet(codeSystem, existingValueSet);
     valueSetService.save(valueSet);
 

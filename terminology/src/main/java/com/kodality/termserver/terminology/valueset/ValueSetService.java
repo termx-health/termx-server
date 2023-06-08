@@ -11,7 +11,6 @@ import com.kodality.termserver.ts.valueset.ValueSetVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,8 +24,8 @@ public class ValueSetService {
 
   private final UserPermissionService userPermissionService;
 
-  public Optional<ValueSet> load(String id) {
-    return Optional.ofNullable(repository.load(id));
+  public ValueSet load(String id) {
+    return repository.load(id);
   }
 
   @Transactional

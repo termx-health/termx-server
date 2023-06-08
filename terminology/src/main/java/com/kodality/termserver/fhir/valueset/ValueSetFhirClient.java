@@ -1,19 +1,17 @@
 package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.zmei.fhir.FhirMapper;
-import com.kodality.zmei.fhir.client.FhirClient;
+import com.kodality.zmei.fhir.client.FhirResourceClient;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet;
 import com.kodality.zmei.fhir.search.FhirQueryParams;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Builder;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
-public class ValueSetFhirClient extends FhirClient<ValueSet> {
+public class ValueSetFhirClient extends FhirResourceClient<ValueSet> {
 
-  public ValueSetFhirClient(String url, Consumer<Builder> enhancer) {
-    super(url + "/fhir/ValueSet", ValueSet.class, enhancer);
+  public ValueSetFhirClient(String url) {
+    super(url + "/fhir/ValueSet", ValueSet.class);
   }
 
   public CompletableFuture<ValueSet> expand(String code, FhirQueryParams params) {

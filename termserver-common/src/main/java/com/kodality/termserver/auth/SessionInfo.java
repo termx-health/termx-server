@@ -21,11 +21,6 @@ public class SessionInfo {
   private String provider;
   private Map<String, String> providerProperties;
 
-  public interface AuthenticationProvider {
-    String sso = "sso";
-    String smart = "smart-on-fhir";
-  }
-
   public static final String ADMIN = "admin";
 
   public boolean hasAnyPrivilege(List<String> authPrivileges) {

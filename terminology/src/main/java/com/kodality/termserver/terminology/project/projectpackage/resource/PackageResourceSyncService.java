@@ -1,6 +1,5 @@
 package com.kodality.termserver.terminology.project.projectpackage.resource;
 
-import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService;
 import com.kodality.termserver.fhir.conceptmap.ConceptMapFhirImportService;
@@ -10,7 +9,6 @@ import com.kodality.termserver.ts.project.projectpackage.PackageResourceType;
 import com.kodality.termserver.ts.project.projectpackage.PackageVersion.PackageResource;
 import com.kodality.termserver.ts.project.server.TerminologyServer;
 import com.kodality.zmei.fhir.client.FhirClient;
-import com.kodality.zmei.fhir.resource.DomainResource;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet;
@@ -36,22 +34,18 @@ public class PackageResourceSyncService {
     String resourceType = resource.getResourceType();
     String resourceId = resource.getResourceId();
     TerminologyServer server = terminologyServerService.load(resource.getTerminologyServer());
+    FhirClient client = new FhirClient(server.getRootUrl() + "/fhir");
     if (resourceType.equals(PackageResourceType.code_system)) {
-      CodeSystem codeSystem = getClient(server.getRootUrl() + "/fhir/CodeSystem", CodeSystem.class).read(resourceId).join();
+      CodeSystem codeSystem = client.<CodeSystem>read("CodeSystem", resourceId).join();
       csFhirImportService.importCodeSystem(codeSystem);
     } else if (resourceType.equals(PackageResourceType.value_set)) {
-      ValueSet valueSet = getClient(server.getRootUrl() + "/fhir/ValueSet", ValueSet.class).read(resourceId).join();
+      ValueSet valueSet = client.<ValueSet>read("ValueSet", resourceId).join();
       vsFhirImportService.importValueSet(valueSet, false);
     } else if (resourceType.equals(PackageResourceType.map_set)) {
-      ConceptMap conceptMap = getClient(server.getRootUrl() + "/fhir/MapSet", ConceptMap.class).read(resourceId).join();
+      ConceptMap conceptMap = client.<ConceptMap>read("ConceptMap", resourceId).join();
       cmFhirImportService.importMapSet(conceptMap);
     } else {
       throw ApiError.TE902.toApiException();
     }
-  }
-
-
-  public static <T extends DomainResource> FhirClient<T> getClient(String url, Class<T> cls) {
-    return new FhirClient<>(url, cls, b -> b.header("Authorization", "Bearer " + SessionStore.require().getToken()));
   }
 }
