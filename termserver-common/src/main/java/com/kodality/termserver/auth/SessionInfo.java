@@ -28,7 +28,8 @@ public class SessionInfo {
   }
 
   public boolean hasAnyPrivilege(List<String> authPrivileges, Optional<String> resourceId) {
-    return privileges.contains(ADMIN) || authPrivileges.stream().anyMatch(ap -> privileges.stream().anyMatch(up -> privilegesMatch(ap, up, resourceId)));
+    return privileges != null &&
+           (privileges.contains(ADMIN) || authPrivileges.stream().anyMatch(ap -> privileges.stream().anyMatch(up -> privilegesMatch(ap, up, resourceId))));
   }
 
   private boolean privilegesMatch(String authPrivilege, String userPrivilege, Optional<String> resourceId) {
