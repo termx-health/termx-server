@@ -1,23 +1,20 @@
 package com.kodality.termserver.fhir.conceptmap;
 
+import com.kodality.termserver.fhir.BaseFhirMapper;
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
 import com.kodality.termserver.terminology.valueset.ValueSetService;
 import com.kodality.termserver.ts.Language;
 import com.kodality.termserver.ts.codesystem.CodeSystem;
-import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.ts.mapset.MapSet;
 import com.kodality.termserver.ts.mapset.MapSetAssociation;
 import com.kodality.termserver.ts.mapset.MapSetVersion;
-import com.kodality.zmei.fhir.datatypes.Coding;
+import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.ContactDetail;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Narrative;
-import com.kodality.zmei.fhir.resource.other.Parameters;
-import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroup;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElement;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElementTarget;
-import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -30,9 +27,13 @@ import lombok.RequiredArgsConstructor;
 
 @Singleton
 @RequiredArgsConstructor
-public class ConceptMapFhirMapper {
+public class ConceptMapFhirMapper extends BaseFhirMapper {
   private final CodeSystemService codeSystemService;
   private final ValueSetService valueSetService;
+
+  public String toFhirJson(MapSet mapSet, MapSetVersion version) {
+    return FhirMapper.toJson(toFhir(mapSet, version));
+  }
 
   public com.kodality.zmei.fhir.resource.terminology.ConceptMap toFhir(MapSet mapSet, MapSetVersion version) {
     com.kodality.zmei.fhir.resource.terminology.ConceptMap fhirConceptMap = new com.kodality.zmei.fhir.resource.terminology.ConceptMap();
@@ -50,8 +51,8 @@ public class ConceptMapFhirMapper {
     fhirConceptMap.setStatus(version.getStatus());
     fhirConceptMap.setPublisher(version.getSource());
     fhirConceptMap.setGroup(toFhirGroup(version.getAssociations()));
-    fhirConceptMap.setSourceUri(Optional.ofNullable(mapSet.getSourceValueSet()).map(vs -> valueSetService.load(vs).get().getUri()).orElse(null));
-    fhirConceptMap.setTargetUri(Optional.ofNullable(mapSet.getTargetValueSet()).map(vs -> valueSetService.load(vs).get().getUri()).orElse(null));
+    fhirConceptMap.setSourceScopeUri(Optional.ofNullable(mapSet.getSourceValueSet()).map(vs -> valueSetService.load(vs).getUri()).orElse(null));
+    fhirConceptMap.setTargetScopeUri(Optional.ofNullable(mapSet.getTargetValueSet()).map(vs -> valueSetService.load(vs).getUri()).orElse(null));
 
     return fhirConceptMap;
   }
@@ -69,39 +70,12 @@ public class ConceptMapFhirMapper {
           .setCode(el.getSource().getCode())
           .setTarget(List.of(new ConceptMapGroupElementTarget()
               .setCode(el.getTarget().getCode())
-              .setEquivalence(el.getAssociationType()))))
+              .setRelationship(el.getAssociationType()))))
           .collect(Collectors.toList()));
       return group;
     }).collect(Collectors.toList());
   }
 
 
-  public Parameters toFhirParameters(MapSet ms) {
-    Parameters parameters = new Parameters();
-    if (ms != null) {
-      List<ParametersParameter> parameter = new ArrayList<>();
-      List<ParametersParameter> matches = extractMatches(ms);
-      parameter.add(new ParametersParameter().setName("result").setValueBoolean(CollectionUtils.isNotEmpty(matches)));
-      parameter.addAll(matches);
-      parameters.setParameter(parameter);
-    } else {
-      List<ParametersParameter> parameter = new ArrayList<>();
-      parameter.add(new ParametersParameter().setName("result").setValueBoolean(false));
-      parameters.setParameter(parameter);
-    }
-    return parameters;
-  }
 
-  private List<ParametersParameter> extractMatches(MapSet ms) {
-    if (ms.getAssociations() == null) {
-      return new ArrayList<>();
-    }
-    return ms.getAssociations().stream().map(association -> {
-      List<ParametersParameter> parts = new ArrayList<>();
-      String csUri = codeSystemService.query(new CodeSystemQueryParams().setCodeSystemEntityVersionId(association.getTarget().getId())).findFirst().map(CodeSystem::getUri).orElse(null);
-      parts.add(new ParametersParameter().setName("equivalence").setValueCode(association.getAssociationType()));
-      parts.add(new ParametersParameter().setName("concept").setValueCoding(new Coding().setCode(association.getTarget().getCode()).setSystem(csUri)));
-      return new ParametersParameter().setName("match").setPart(parts);
-    }).collect(Collectors.toList());
-  }
 }

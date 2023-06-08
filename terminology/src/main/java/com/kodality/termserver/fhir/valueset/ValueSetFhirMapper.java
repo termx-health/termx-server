@@ -1,8 +1,12 @@
 package com.kodality.termserver.fhir.valueset;
 
+import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.kefhir.core.model.search.SearchCriterion;
+import com.kodality.termserver.fhir.BaseFhirMapper;
 import com.kodality.termserver.ts.Language;
 import com.kodality.termserver.ts.valueset.ValueSet;
+import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
@@ -10,6 +14,7 @@ import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersio
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleType;
 import com.kodality.zmei.fhir.Extension;
+import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.ContactDetail;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
@@ -31,8 +36,12 @@ import java.util.stream.Collectors;
 import javax.inject.Singleton;
 
 @Singleton
-public class ValueSetFhirMapper {
+public class ValueSetFhirMapper extends BaseFhirMapper {
   private static final String concept_order = "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder";
+
+  public String toFhirJson(ValueSet valueSet, ValueSetVersion version) {
+    return FhirMapper.toJson(toFhir(valueSet, version));
+  }
 
   public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
@@ -62,7 +71,7 @@ public class ValueSetFhirMapper {
     }
     ValueSetCompose compose = new ValueSetCompose();
     compose.setInactive(ruleSet.getInactive());
-    compose.setLockedDate(ruleSet.getLockedDate());
+    compose.setLockedDate(ruleSet.getLockedDate().toLocalDate());
     compose.setInclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.include));
     compose.setExclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.exclude));
     return compose;
@@ -169,6 +178,28 @@ public class ValueSetFhirMapper {
       return contains;
     }).collect(Collectors.toList()));
     return expansion;
+  }
+
+  public ValueSetQueryParams fromFhir(SearchCriterion fhir) {
+    ValueSetQueryParams params = new ValueSetQueryParams();
+    getSimpleParams(fhir).forEach((k, v) -> {
+      switch (k) {
+        case SearchCriterion._COUNT -> params.setLimit(fhir.getCount());
+        case SearchCriterion._PAGE -> params.setOffset(getOffset(fhir));
+        case "_id" -> params.setIds(v);
+        case "version" -> params.setVersionVersion(v);
+        case "url" -> params.setUri(v);
+        case "name", "title" -> params.setNameContains(v);
+        case "status" -> params.setVersionStatus(v);
+        case "reference" -> params.setCodeSystemUri(v);
+        case "publisher" -> params.setVersionSource(v);
+        case "description" -> params.setDescriptionContains(v);
+        case "code" -> params.setConceptCode(v);
+        default -> throw new ApiClientException("Search by '" + k + "' not supported");
+      }
+    });
+    params.setDecorated(true);
+    return params;
   }
 
 }

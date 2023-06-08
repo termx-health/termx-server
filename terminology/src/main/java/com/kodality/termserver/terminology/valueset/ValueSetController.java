@@ -5,10 +5,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.ResourceId;
-import com.kodality.termserver.auth.SessionInfo.AuthenticationProvider;
-import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.auth.UserPermissionService;
-import com.kodality.termserver.fhir.valueset.ValueSetFhirClientService;
 import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleSetService;
@@ -42,16 +39,12 @@ public class ValueSetController {
   private final ValueSetVersionConceptService valueSetVersionConceptService;
 
   private final UserPermissionService userPermissionService;
-  private final ValueSetFhirClientService fhirClient;
 
   //----------------ValueSet----------------
 
   @Authorized(Privilege.VS_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<ValueSet> queryValueSets(ValueSetQueryParams params) {
-    if (SessionStore.require().getProvider().equals(AuthenticationProvider.smart)) {
-      return fhirClient.search(params);
-    }
     params.setPermittedIds(userPermissionService.getPermittedResourceIds("ValueSet", "view"));
     return valueSetService.query(params);
   }
@@ -59,10 +52,11 @@ public class ValueSetController {
   @Authorized(Privilege.VS_VIEW)
   @Get(uri = "/{valueSet}")
   public ValueSet getValueSet(@PathVariable @ResourceId String valueSet) {
-    if (SessionStore.require().getProvider().equals(AuthenticationProvider.smart)) {
-      return fhirClient.load(valueSet);
+    ValueSet vs = valueSetService.load(valueSet);
+    if (vs == null) {
+      throw new NotFoundException("ValueSet not found: " + valueSet);
     }
-    return valueSetService.load(valueSet).orElseThrow(() -> new NotFoundException("ValueSet not found: " + valueSet));
+    return vs;
   }
 
   @Authorized(Privilege.VS_EDIT)
@@ -138,7 +132,8 @@ public class ValueSetController {
 
   @Authorized(Privilege.VS_EDIT)
   @Post(uri = "/{valueSet}/versions/{version}/concepts")
-  public HttpResponse<?> createValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version, @Body @Valid ValueSetVersionConcept concept) {
+  public HttpResponse<?> createValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version,
+                                               @Body @Valid ValueSetVersionConcept concept) {
     concept.setId(null);
     valueSetVersionConceptService.save(concept, valueSet, version);
     return HttpResponse.created(concept);
@@ -146,7 +141,8 @@ public class ValueSetController {
 
   @Authorized(Privilege.VS_EDIT)
   @Put(uri = "/{valueSet}/versions/{version}/concepts/{id}")
-  public HttpResponse<?> updateValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version, @PathVariable Long id, @Body @Valid ValueSetVersionConcept concept) {
+  public HttpResponse<?> updateValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version, @PathVariable Long id,
+                                               @Body @Valid ValueSetVersionConcept concept) {
     concept.setId(id);
     valueSetVersionConceptService.save(concept, valueSet, version);
     return HttpResponse.created(concept);
@@ -190,7 +186,8 @@ public class ValueSetController {
 
   @Authorized(Privilege.VS_EDIT)
   @Put(uri = "/{valueSet}/rule-sets/{ruleSetId}/rules/{id}")
-  public HttpResponse<?> updateRule(@PathVariable @ResourceId String valueSet, @PathVariable Long ruleSetId, @PathVariable Long id, @Body @Valid ValueSetVersionRule rule) {
+  public HttpResponse<?> updateRule(@PathVariable @ResourceId String valueSet, @PathVariable Long ruleSetId, @PathVariable Long id,
+                                    @Body @Valid ValueSetVersionRule rule) {
     rule.setId(id);
     valueSetVersionRuleService.save(rule, ruleSetId, valueSet);
     return HttpResponse.created(rule);

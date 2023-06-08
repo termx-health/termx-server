@@ -7,9 +7,9 @@ import com.kodality.termserver.ts.ContactDetail;
 import com.kodality.termserver.ts.ContactDetail.Telecom;
 import com.kodality.termserver.ts.Language;
 import com.kodality.termserver.ts.PublicationStatus;
+import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.Designation;
 import com.kodality.termserver.ts.codesystem.EntityProperty;
-import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.valueset.ValueSet;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
@@ -23,6 +23,7 @@ import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclu
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeFilter;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,7 @@ public class ValueSetFhirImportMapper {
     }
     ValueSetVersionRuleSet ruleSet = new ValueSetVersionRuleSet();
     ruleSet.setInactive(valueSet.getCompose().getInactive());
-    ruleSet.setLockedDate(valueSet.getCompose().getLockedDate());
+    ruleSet.setLockedDate(valueSet.getCompose().getLockedDate().atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime());
     ruleSet.setRules(mapRules(valueSet.getCompose().getInclude(), valueSet.getCompose().getExclude()));
     return ruleSet;
   }

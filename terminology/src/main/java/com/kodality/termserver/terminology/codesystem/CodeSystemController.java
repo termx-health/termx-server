@@ -5,10 +5,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.ResourceId;
-import com.kodality.termserver.auth.SessionInfo.AuthenticationProvider;
-import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.auth.UserPermissionService;
-import com.kodality.termserver.fhir.codesystem.CodeSystemFhirClientService;
 import com.kodality.termserver.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;
 import com.kodality.termserver.terminology.codesystem.designation.DesignationService;
@@ -63,16 +60,12 @@ public class CodeSystemController {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   private final UserPermissionService userPermissionService;
-  private final CodeSystemFhirClientService fhirClient;
 
   //----------------CodeSystem----------------
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<CodeSystem> queryCodeSystems(CodeSystemQueryParams params) {
-    if (SessionStore.require().getProvider().equals(AuthenticationProvider.smart)) {
-      return fhirClient.search(params);
-    }
     params.setPermittedIds(userPermissionService.getPermittedResourceIds("CodeSystem", "view"));
     return codeSystemService.query(params);
   }
@@ -80,9 +73,6 @@ public class CodeSystemController {
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}{?decorate}")
   public CodeSystem getCodeSystem(@PathVariable @ResourceId String codeSystem, Optional<Boolean> decorate) {
-    if (SessionStore.require().getProvider().equals(AuthenticationProvider.smart)) {
-      return fhirClient.load(codeSystem);
-    }
     return codeSystemService.load(codeSystem, decorate.orElse(false)).orElseThrow(() -> new NotFoundException("CodeSystem not found: " + codeSystem));
   }
 

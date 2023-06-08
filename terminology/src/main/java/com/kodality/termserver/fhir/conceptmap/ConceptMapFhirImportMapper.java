@@ -43,8 +43,8 @@ public class ConceptMapFhirImportMapper {
     ms.setDescription(conceptMap.getDescription());
     ms.setVersions(List.of(mapVersion(conceptMap)));
     ms.setAssociations(mapAssociations(conceptMap));
-    ms.setSourceValueSet(getValueSet(conceptMap.getSourceUri() == null ? conceptMap.getSourceCanonical() : conceptMap.getSourceUri()));
-    ms.setTargetValueSet(getValueSet(conceptMap.getTargetUri() == null ? conceptMap.getTargetCanonical() : conceptMap.getTargetUri()));
+    ms.setSourceValueSet(getValueSet(conceptMap.getSourceScopeUri() == null ? conceptMap.getSourceScopeCanonical() : conceptMap.getSourceScopeUri()));
+    ms.setTargetValueSet(getValueSet(conceptMap.getTargetScopeUri() == null ? conceptMap.getTargetScopeCanonical() : conceptMap.getTargetScopeUri()));
     return ms;
   }
 
@@ -77,9 +77,11 @@ public class ConceptMapFhirImportMapper {
       MapSetAssociation association = new MapSetAssociation();
       association.setMapSet(conceptMap.getId());
       association.setStatus(PublicationStatus.active);
-      association.setSource(new CodeSystemEntityVersion().setCodeSystem(Optional.ofNullable(codeSystems.get(g.getSource())).map(CodeSystem::getId).orElse(null)).setCodeSystemVersion(g.getSourceVersion()).setCode(element.getCode()));
-      association.setTarget(new CodeSystemEntityVersion().setCodeSystem(Optional.ofNullable(codeSystems.get(g.getTarget())).map(CodeSystem::getId).orElse(null)).setCodeSystemVersion(g.getTargetVersion()).setCode(target.getCode()));
-      association.setAssociationType(target.getEquivalence());
+      association.setSource(new CodeSystemEntityVersion().setCodeSystem(Optional.ofNullable(codeSystems.get(g.getSource())).map(CodeSystem::getId).orElse(null))
+          /*.setCodeSystemVersion(g.getSourceVersion())*/.setCode(element.getCode())); //FIXME
+      association.setTarget(new CodeSystemEntityVersion().setCodeSystem(Optional.ofNullable(codeSystems.get(g.getTarget())).map(CodeSystem::getId).orElse(null))
+          /*.setCodeSystemVersion(g.getTargetVersion())*/.setCode(target.getCode())); //FIXME
+      association.setAssociationType(target.getRelationship());
       association.setVersions(List.of(new MapSetEntityVersion().setStatus(PublicationStatus.draft)));
       if (association.getSource() != null && association.getTarget() != null) {
         associations.add(association);
@@ -97,7 +99,7 @@ public class ConceptMapFhirImportMapper {
       if (target.getCode() == null) {
         return;
       }
-      associationTypes.add(new AssociationType(target.getEquivalence(), AssociationKind.conceptMapEquivalence, true));
+      associationTypes.add(new AssociationType(target.getRelationship(), AssociationKind.conceptMapEquivalence, true));
     })));
     return associationTypes;
   }

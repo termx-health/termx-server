@@ -1,22 +1,26 @@
 package com.kodality.termserver.fhir.codesystem;
 
+import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.kefhir.core.model.search.SearchCriterion;
+import com.kodality.termserver.fhir.BaseFhirMapper;
 import com.kodality.termserver.ts.CaseSignificance;
 import com.kodality.termserver.ts.Language;
 import com.kodality.termserver.ts.codesystem.CodeSystem;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.Designation;
 import com.kodality.termserver.ts.codesystem.EntityProperty;
 import com.kodality.termserver.ts.codesystem.EntityPropertyType;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
+import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.ContactDetail;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Narrative;
-import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptDesignation;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
@@ -27,88 +31,15 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.inject.Singleton;
 import org.apache.commons.collections4.CollectionUtils;
 
 @Singleton
-public class CodeSystemFhirMapper {
+public class CodeSystemFhirMapper extends BaseFhirMapper {
 
-  public static String extractVersion(CodeSystem cs) {
-    if (cs.getVersions() == null || cs.getVersions().size() == 0) {
-      return null;
-    }
-    return cs.getVersions().get(0).getVersion();
-  }
-
-  public static String extractDisplay(CodeSystem cs) {
-    return getDesignations(cs).filter(Designation::isPreferred).findFirst().map(Designation::getName).orElse(null);
-  }
-
-  public static List<ParametersParameter> extractDesignations(CodeSystem cs) {
-    return getDesignations(cs)
-        .filter(d -> !d.isPreferred())
-        .map(d -> {
-          List<ParametersParameter> part = new ArrayList<>();
-          part.add(new ParametersParameter().setName("value").setValueString(d.getName()));
-          part.add(new ParametersParameter().setName("language").setValueCode(d.getLanguage()));
-          return new ParametersParameter().setName("designation").setPart(part);
-        }).collect(Collectors.toList());
-  }
-
-  public static List<ParametersParameter> extractProperties(CodeSystem cs, List<String> properties) {
-    if (!hasProperties(cs)) {
-      return new ArrayList<>();
-    }
-    return cs.getConcepts().get(0).getVersions().get(0).getPropertyValues().stream()
-        .map(p -> {
-          List<ParametersParameter> part = new ArrayList<>();
-          Optional<EntityProperty> property = cs.getProperties().stream()
-              .filter(pr -> (CollectionUtils.isEmpty(properties) || properties.contains(pr.getName())) && pr.getId().equals(p.getEntityPropertyId()))
-              .findFirst();
-          if (property.isPresent()) {
-            part.add(new ParametersParameter().setName("code").setValueCode(property.get().getName()));
-            part.add(new ParametersParameter().setName("description").setValueCode(property.get().getDescription()));
-            if (property.get().getType().equals("code")) {
-              part.add(new ParametersParameter().setName("value").setValueCode((String) p.getValue()));
-            }
-            if (property.get().getType().equals("string")) {
-              part.add(new ParametersParameter().setName("value").setValueString((String) p.getValue()));
-            }
-            if (property.get().getType().equals("boolean")) {
-              part.add(new ParametersParameter().setName("value").setValueBoolean((Boolean) p.getValue()));
-            }
-            if (property.get().getType().equals("dateTime")) {
-              part.add(new ParametersParameter().setName("value").setValueDateTime((OffsetDateTime) p.getValue()));
-            }
-            if (property.get().getType().equals("decimal")) {
-              part.add(new ParametersParameter().setName("value").setValueDecimal((BigDecimal) p.getValue()));
-            }
-            //TODO value type coding
-          }
-          return new ParametersParameter().setName("property").setPart(part);
-        }).collect(Collectors.toList());
-  }
-
-  public static String extractDisplay(Concept c) {
-    return getDesignations(c).filter(Designation::isPreferred).findFirst().map(Designation::getName).orElse(null);
-  }
-
-  private static boolean hasProperties(CodeSystem cs) {
-    return !(cs.getConcepts() == null || cs.getConcepts().size() == 0 ||
-        cs.getConcepts().get(0).getVersions() == null || cs.getConcepts().get(0).getVersions().size() == 0 ||
-        cs.getConcepts().get(0).getVersions().get(0).getPropertyValues() == null);
-  }
-
-  private static Stream<Designation> getDesignations(CodeSystem cs) {
-    return CollectionUtils.isEmpty(cs.getConcepts()) ? Stream.of() : getDesignations(cs.getConcepts().get(0));
-  }
-
-  private static Stream<Designation> getDesignations(Concept c) {
-    return CollectionUtils.isEmpty(c.getVersions()) || c.getVersions().get(0).getDesignations() == null ? Stream.of() :
-        c.getVersions().get(0).getDesignations().stream();
+  public String toFhirJson(CodeSystem cs, CodeSystemVersion csv) {
+    return FhirMapper.toJson(toFhir(cs, csv));
   }
 
   public com.kodality.zmei.fhir.resource.terminology.CodeSystem toFhir(CodeSystem codeSystem, CodeSystemVersion version) {
@@ -174,7 +105,8 @@ public class CodeSystemFhirMapper {
     if (property == null) {
       return null;
     }
-    return designations.stream().filter(d -> d.getDesignationTypeId().equals(property.getId())).min(Comparator.comparing(Designation::getLanguage)).map(Designation::getName).orElse(null);
+    return designations.stream().filter(d -> d.getDesignationTypeId().equals(property.getId())).min(Comparator.comparing(Designation::getLanguage))
+        .map(Designation::getName).orElse(null);
   }
 
   private List<CodeSystemConceptProperty> getProperties(List<EntityPropertyValue> propertyValues, List<EntityProperty> properties,
@@ -194,21 +126,18 @@ public class CodeSystemFhirMapper {
           Concept concept = JsonUtil.fromJson(JsonUtil.toJson(value), Concept.class);
           fhirProperty.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
         }
-        if (entityProperty.getType().equals(EntityPropertyType.code)) {
-          fhirProperty.setValueCode((String) value);
-        } else if (entityProperty.getType().equals(EntityPropertyType.string)) {
-          fhirProperty.setValueString((String) value);
-        } else if (entityProperty.getType().equals(EntityPropertyType.bool)) {
-          fhirProperty.setValueBoolean((Boolean) value);
-        } else if (entityProperty.getType().equals(EntityPropertyType.decimal)) {
-          fhirProperty.setValueDecimal(new BigDecimal(String.valueOf(value)));
-        } else if (entityProperty.getType().equals(EntityPropertyType.integer)) {
-          fhirProperty.setValueInteger(Integer.valueOf(String.valueOf(value)));
-        } else if (entityProperty.getType().equals(EntityPropertyType.dateTime)) {
-          if (value instanceof OffsetDateTime) {
-            fhirProperty.setValueDateTime((OffsetDateTime) value);
-          } else {
-            fhirProperty.setValueDateTime(DateUtil.parseOffsetDateTime((String) value));
+        switch (entityProperty.getType()) {
+          case EntityPropertyType.code -> fhirProperty.setValueCode((String) value);
+          case EntityPropertyType.string -> fhirProperty.setValueString((String) value);
+          case EntityPropertyType.bool -> fhirProperty.setValueBoolean((Boolean) value);
+          case EntityPropertyType.decimal -> fhirProperty.setValueDecimal(new BigDecimal(String.valueOf(value)));
+          case EntityPropertyType.integer -> fhirProperty.setValueInteger(Integer.valueOf(String.valueOf(value)));
+          case EntityPropertyType.dateTime -> {
+            if (value instanceof OffsetDateTime) {
+              fhirProperty.setValueDateTime((OffsetDateTime) value);
+            } else {
+              fhirProperty.setValueDateTime(DateUtil.parseOffsetDateTime((String) value));
+            }
           }
         }
         fhirProperties.add(fhirProperty);
@@ -242,5 +171,31 @@ public class CodeSystemFhirMapper {
             .filter(e -> e.getAssociations().stream().anyMatch(a -> a.getTargetId().equals(targetId)))
             .map(e -> toFhir(e, codeSystem, entities, fhirCodeSystem)).collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
+  }
+
+
+  public CodeSystemQueryParams fromFhir(SearchCriterion fhir) {
+    CodeSystemQueryParams params = new CodeSystemQueryParams();
+    getSimpleParams(fhir).forEach((k, v) -> {
+      switch (k) {
+        case SearchCriterion._COUNT -> params.setLimit(fhir.getCount());
+        case SearchCriterion._PAGE -> params.setOffset(getOffset(fhir));
+        case "_id" -> params.setIds(v);
+        case "system" -> params.setUri(v);
+        case "url" -> params.setUri(v);
+        case "version" -> params.setVersionVersion(v);
+        case "title" -> params.setNameContains(v);
+        case "name" -> params.setNameContains(v);
+        case "status" -> params.setVersionStatus(v);
+        case "publisher" -> params.setVersionSource(v);
+        case "description" -> params.setDescriptionContains(v);
+        case "content-mode" -> params.setContent(v);
+        case "code" -> params.setConceptCode(v);
+        default -> throw new ApiClientException("Search by '" + k + "' not supported");
+      }
+    });
+    params.setVersionsDecorated(true);
+    params.setPropertiesDecorated(true);
+    return params;
   }
 }

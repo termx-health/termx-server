@@ -1,9 +1,9 @@
 {
   "resourceType": "CapabilityStatement",
   "id": "terminology-server",
-  "url": "https://terminology.kodality.dev/api/fhir/r4/metadata",
-  "version": "4.3.0",
-  "name": "TEHIK TIS Test FHIR Terminology Server Conformance Statement",
+  "url": "https://terminology.kodality.dev/api/fhir/metadata",
+  "version": "5.0.0",
+  "name": "TermX Conformance Statement",
   "status": "active",
   "date": "2022-08-04T06:17:47.723Z",
   "contact": [
@@ -27,8 +27,8 @@
     "releaseDate": "2022-07-30T19:50:55.040Z"
   },
   "implementation": {
-    "description": "FHIR TS server running at http://terminology.kodality.dev/api/fhir/r4",
-    "url": "http://terminology.kodality.dev/api/fhir/r4"
+    "description": "FHIR TS server running at http://terminology.kodality.dev/api/fhir",
+    "url": "http://terminology.kodality.dev/api/fhir"
   },
   "fhirVersion": "4.3.0",
   "format": [

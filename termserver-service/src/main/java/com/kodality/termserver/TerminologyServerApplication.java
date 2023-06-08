@@ -23,15 +23,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
     externalDocs = @ExternalDocumentation(description = "Read more about KTS", url = "https://wiki.kodality.dev/en/terminology-server")
 )
 @OpenAPIInclude(
-    tags = @Tag(name = "FHIR"),
-    classes = {
-        com.kodality.termserver.fhir.capabilitystatement.CapabilityStatementFhirController.class,
-        com.kodality.termserver.fhir.codesystem.CodeSystemFhirController.class,
-        com.kodality.termserver.fhir.valueset.ValueSetFhirController.class,
-        com.kodality.termserver.fhir.conceptmap.ConceptMapFhirController.class
-    }
-)
-@OpenAPIInclude(
     tags = @Tag(name = "Terminology"),
     classes = {
         com.kodality.termserver.terminology.codesystem.CodeSystemController.class,
