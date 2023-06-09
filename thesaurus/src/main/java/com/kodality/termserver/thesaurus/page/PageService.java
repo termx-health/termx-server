@@ -33,7 +33,7 @@ public class PageService {
   public Page save(Page page, PageContent content) {
     repository.save(page);
     pageContentService.save(content, page.getId());
-    pageLinkService.save(page.getLinks(), page.getId());
+    pageLinkService.saveSources(page.getLinks(), page.getId());
     pageTagService.save(page.getTags(), page.getId());
     return load(page.getId()).orElse(null);
   }
@@ -45,7 +45,7 @@ public class PageService {
 
   private Page decorate(Page page) {
     page.setContents(pageContentService.loadAll(page.getId()));
-    page.setLinks(pageLinkService.loadAll(page.getId()));
+    page.setLinks(pageLinkService.loadSources(page.getId()));
     page.setTags(pageTagService.loadAll(page.getId()));
     page.setRelations(pageRelationService.loadAll(page.getId()));
     return page;

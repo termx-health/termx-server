@@ -18,4 +18,6 @@
     <include file="thesaurus/changelog.xml" relativeToChangelogFile="true"/>
 
     <include file="functions/changelog.xml" relativeToChangelogFile="true"/>
+
+    <include file="migrations/changelog.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

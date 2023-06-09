@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset kodality:page_link_closure
+--changeset kodality:page_link_closure-2
 drop materialized view if exists thesaurus.page_link_closure;
 create materialized view thesaurus.page_link_closure
 as
@@ -14,11 +14,12 @@ with tree as (
         with recursive rec as (
             select p.id, p.parent_id, ('.'::text || p.id) || '.'::text as path, 0 as depth
             from tree p
-            where p.parent_id is null
+            where p.parent_id = p.id
             union all
             select ch.id, ch.parent_id, (p.path || ch.id) || '.'::text, p.depth + 1
             from tree ch
                      join rec p on ch.parent_id = p.id
+            where ch.parent_id != ch.id
         )
         select *
         from rec

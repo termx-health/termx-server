@@ -11,7 +11,7 @@ import javax.inject.Singleton;
 public class PageRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(Page.class);
 
-  private final static String select = "select p.*, (not exists(select 1 from thesaurus.page_link pl where pl.source_id = p.id and pl.sys_status = 'A')) as leaf ";
+  private final static String select = "select p.*, (not exists(select 1 from thesaurus.page_link pl where pl.source_id != pl.target_id and pl.source_id = p.id and pl.sys_status = 'A')) as leaf ";
 
   public void save(Page page) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -43,9 +43,10 @@ public class PageRepository extends BaseRepository {
 
   private SqlBuilder filter(PageQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("id", p, Long::valueOf));
     sb.appendIfNotNull("and id != ?", params.getIdNe());
-    sb.appendIfNotNull("and exists(select 1 from thesaurus.page_link pl where pl.source_id = ? and pl.target_id = p.id and pl.sys_status = 'A')", params.getRootId());
-    sb.appendIfTrue(params.isRoot(),"and not exists(select 1 from thesaurus.page_link pl where pl.target_id = p.id and pl.sys_status = 'A')");
+    sb.appendIfNotNull("and exists(select 1 from thesaurus.page_link pl where pl.source_id = ? and pl.target_id = p.id and pl.target_id != pl.source_id and pl.sys_status = 'A')", params.getRootId());
+    sb.appendIfTrue(params.isRoot(),"and exists(select 1 from thesaurus.page_link pl where  pl.source_id = p.id and pl.target_id = p.id and pl.sys_status = 'A')");
     sb.appendIfNotNull("and exists(select 1 from thesaurus.page_content pc where pc.page_id = p.id and pc.sys_status = 'A' and pc.name ~* ?)", params.getTextContains());
     sb.appendIfNotNull("and exists(select 1 from thesaurus.page_content pc where pc.page_id = p.id and pc.sys_status = 'A' and pc.slug = ?)", params.getSlug());
     return sb;
