@@ -8,11 +8,12 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class PageQueryParams extends QueryParams {
-  private boolean root;
-  private String ids;
-  private Long idNe;
-  private Long rootId;
-  private String textContains;
-  private String slug;
+public class PageLinkQueryParams extends QueryParams {
+  private Boolean root;
+  private String sourceIds;
+  private String targetIds;
+
+  public interface Ordering {
+    String orderNumber = "orderNumber";
+  }
 }

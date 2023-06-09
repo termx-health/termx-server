@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class PageLink {
   private Long id;
-  private Long targetId;
   private Long sourceId;
+  private Long targetId;
   private Integer orderNumber;
 }

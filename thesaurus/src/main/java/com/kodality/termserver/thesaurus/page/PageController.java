@@ -46,7 +46,7 @@ public class PageController {
 
   @Authorized(Privilege.T_EDIT)
   @Put(uri = "/{id}")
-  public HttpResponse<?> updatePage(@PathVariable Long id,@Body PageRequest request) {
+  public HttpResponse<?> updatePage(@PathVariable Long id, @Body PageRequest request) {
     request.getPage().setId(id);
     return HttpResponse.created(pageService.save(request.getPage(), request.getContent()));
   }
@@ -77,13 +77,6 @@ public class PageController {
   @Get(uri = "/{id}/path")
   public List<Long> getPath(@PathVariable Long id) {
     return linkService.getPath(id);
-  }
-
-  @Authorized(Privilege.T_EDIT)
-  @Post(uri = "/{id}/links")
-  public HttpResponse<?> savePageLinks(@PathVariable Long id, @Body List<PageLink> links) {
-    linkService.save(links, id);
-    return HttpResponse.ok();
   }
 
   @Getter
