@@ -62,12 +62,13 @@ public class ValueSetFhirImportService {
   private final BinaryHttpClient client = new BinaryHttpClient();
 
   @Transactional
-  public void importValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet, boolean activateVersion) {
+  public ValueSet importValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet, boolean activateVersion) {
     ValueSet valueSet = prepare(ValueSetFhirImportMapper.mapValueSet(fhirValueSet));
     ValueSetVersion valueSetVersion = prepareValueSetAndVersion(valueSet);
     if (activateVersion) {
       valueSetVersionService.activate(valueSet.getId(), valueSetVersion.getVersion());
     }
+    return valueSet;
   }
 
   public void importValueSetFromUrl(String url) {

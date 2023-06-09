@@ -2,6 +2,7 @@ package com.kodality.termserver.fhir.valueset;
 
 
 import com.kodality.commons.model.LocalizedName;
+import com.kodality.termserver.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termserver.ts.CaseSignificance;
 import com.kodality.termserver.ts.ContactDetail;
 import com.kodality.termserver.ts.ContactDetail.Telecom;
@@ -33,7 +34,7 @@ public class ValueSetFhirImportMapper {
 
   public static ValueSet mapValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     ValueSet vs = new ValueSet();
-    vs.setId(valueSet.getId());
+    vs.setId(CodeSystemFhirMapper.parseCompositeId(valueSet.getId())[0]);
     vs.setUri(valueSet.getUrl());
     vs.setNames(new LocalizedName(Map.of(Language.en, valueSet.getName() == null ? valueSet.getTitle() : valueSet.getName())));
     vs.setContacts(valueSet.getContact() == null ? null :

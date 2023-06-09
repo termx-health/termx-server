@@ -56,7 +56,7 @@ public class ValueSetValidateCodeOperation implements TypeOperationDefinition {
         valueSetVersionService.query(new ValueSetVersionQueryParams().setValueSetUri(url).setVersion(version)).findFirst().orElse(null);
 
     if (vsVersion == null) {
-      throw new FhirException(400, IssueType.NOTFOUND, "valueset version not found");
+      return error("valueset version not found");
     }
 
     ValueSetVersionConceptQueryParams cParams = new ValueSetVersionConceptQueryParams()
@@ -64,8 +64,10 @@ public class ValueSetValidateCodeOperation implements TypeOperationDefinition {
         .setValueSetVersionId(vsVersion.getId())
         .setCodeSystemUri(system)
         .setCodeSystemVersion(systemVersion);
-    ValueSetVersionConcept concept = valueSetVersionConceptService.query(cParams).findFirst()
-        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "concept not found"));
+    ValueSetVersionConcept concept = valueSetVersionConceptService.query(cParams).findFirst().orElse(null);
+    if (concept == null) {
+      return error("invalid code");
+    }
 
     Parameters parameters = new Parameters();
     String conceptDisplay = findDisplay(concept, display);
@@ -91,6 +93,12 @@ public class ValueSetValidateCodeOperation implements TypeOperationDefinition {
       }
     }
     return c.getDisplay() == null || c.getDisplay().getName() == null ? c.getConcept().getCode() : c.getDisplay().getName();
+  }
+
+  private static Parameters error(String message) {
+    return new Parameters()
+        .addParameter(new ParametersParameter("result").setValueBoolean(false))
+        .addParameter(new ParametersParameter("message").setValueString(message));
   }
 
 }

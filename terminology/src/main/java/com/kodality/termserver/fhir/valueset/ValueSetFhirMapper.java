@@ -16,8 +16,6 @@ import com.kodality.termserver.ts.valueset.ValueSetVersionRuleType;
 import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.Coding;
-import com.kodality.zmei.fhir.datatypes.ContactDetail;
-import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Narrative;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude;
@@ -33,51 +31,50 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Singleton;
 
-@Singleton
 public class ValueSetFhirMapper extends BaseFhirMapper {
   private static final String concept_order = "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder";
 
-  public String toFhirJson(ValueSet valueSet, ValueSetVersion version) {
-    return FhirMapper.toJson(toFhir(valueSet, version));
+  public static String toFhirId(ValueSet vs, ValueSetVersion vsv) {
+    return vs.getId() + "|" + vsv.getVersion();
   }
 
-  public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version) {
+  public static String toFhirJson(ValueSet vs, ValueSetVersion vsv) {
+    return FhirMapper.toJson(toFhir(vs, vsv));
+  }
+
+  public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
-    fhirValueSet.setId(valueSet.getId());
+    fhirValueSet.setId(toFhirId(valueSet, version));
     fhirValueSet.setUrl(valueSet.getUri());
     //TODO identifiers from naming-system
     fhirValueSet.setName(valueSet.getNames().getOrDefault(Language.en, valueSet.getNames().values().stream().findFirst().orElse(null)));
-    fhirValueSet.setContact(valueSet.getContacts() == null ? null : valueSet.getContacts().stream()
-        .map(c -> new ContactDetail().setName(c.getName()).setTelecom(c.getTelecoms() == null ? null : c.getTelecoms().stream().map(t ->
-            new ContactPoint().setSystem(t.getSystem()).setValue(t.getValue()).setUse(t.getUse())).collect(Collectors.toList())))
-        .collect(Collectors.toList()));
+    fhirValueSet.setContact(toFhir(valueSet.getContacts()));
     fhirValueSet.setText(valueSet.getNarrative() == null ? null : new Narrative().setDiv(valueSet.getNarrative()));
     fhirValueSet.setDescription(valueSet.getDescription());
-    if (version != null) {
-      fhirValueSet.setVersion(version.getVersion());
-      fhirValueSet.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
-      fhirValueSet.setStatus(version.getStatus());
-      fhirValueSet.setPublisher(version.getSource());
-      fhirValueSet.setCompose(toFhirCompose(version.getRuleSet()));
-    }
+
+    fhirValueSet.setVersion(version.getVersion());
+    fhirValueSet.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
+    fhirValueSet.setStatus(version.getStatus());
+    fhirValueSet.setPublisher(version.getSource());
+    fhirValueSet.setCompose(toFhirCompose(version.getRuleSet()));
+
     return fhirValueSet;
   }
 
-  private ValueSetCompose toFhirCompose(ValueSetVersionRuleSet ruleSet) {
+  private static ValueSetCompose toFhirCompose(ValueSetVersionRuleSet ruleSet) {
     if (ruleSet == null) {
       return null;
     }
     ValueSetCompose compose = new ValueSetCompose();
     compose.setInactive(ruleSet.getInactive());
-    compose.setLockedDate(ruleSet.getLockedDate().toLocalDate());
+    compose.setLockedDate(ruleSet.getLockedDate() == null ? null : ruleSet.getLockedDate().toLocalDate());
     compose.setInclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.include));
     compose.setExclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.exclude));
     return compose;
   }
 
-  private List<ValueSetComposeInclude> toFhirInclude(List<ValueSetVersionRule> rules, String type) {
+  private static List<ValueSetComposeInclude> toFhirInclude(List<ValueSetVersionRule> rules, String type) {
     if (CollectionUtils.isEmpty(rules)) {
       return null;
     }
@@ -91,7 +88,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }).collect(Collectors.toList());
   }
 
-  private List<ValueSetComposeIncludeConcept> toFhirConcept(List<ValueSetVersionConcept> concepts) {
+  private static List<ValueSetComposeIncludeConcept> toFhirConcept(List<ValueSetVersionConcept> concepts) {
     if (CollectionUtils.isEmpty(concepts)) {
       return null;
     }
@@ -113,7 +110,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }).collect(Collectors.toList());
   }
 
-  private List<ValueSetComposeIncludeFilter> toFhirFilter(List<ValueSetRuleFilter> filters) {
+  private static List<ValueSetComposeIncludeFilter> toFhirFilter(List<ValueSetRuleFilter> filters) {
     if (CollectionUtils.isEmpty(filters)) {
       return null;
     }
@@ -126,13 +123,13 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }).collect(Collectors.toList());
   }
 
-  public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<ValueSetVersionConcept> concepts) {
+  public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<ValueSetVersionConcept> concepts) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = toFhir(valueSet, version);
     fhirValueSet.setExpansion(toFhirExpansion(concepts));
     return fhirValueSet;
   }
 
-  private ValueSetExpansion toFhirExpansion(List<ValueSetVersionConcept> concepts) {
+  private static ValueSetExpansion toFhirExpansion(List<ValueSetVersionConcept> concepts) {
     ValueSetExpansion expansion = new ValueSetExpansion();
     if (concepts == null) {
       return expansion;
@@ -180,7 +177,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return expansion;
   }
 
-  public ValueSetQueryParams fromFhir(SearchCriterion fhir) {
+  public static ValueSetQueryParams fromFhir(SearchCriterion fhir) {
     ValueSetQueryParams params = new ValueSetQueryParams();
     getSimpleParams(fhir).forEach((k, v) -> {
       switch (k) {

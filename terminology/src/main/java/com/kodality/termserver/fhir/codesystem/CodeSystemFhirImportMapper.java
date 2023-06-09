@@ -26,15 +26,17 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Singleton;
+import lombok.RequiredArgsConstructor;
 
 @Singleton
+@RequiredArgsConstructor
 public class CodeSystemFhirImportMapper {
   private static final String DISPLAY = "display";
   private static final String DEFINITION = "definition";
 
   public static CodeSystem mapCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     CodeSystem codeSystem = new CodeSystem();
-    codeSystem.setId(fhirCodeSystem.getId());
+    codeSystem.setId(CodeSystemFhirMapper.parseCompositeId(fhirCodeSystem.getId())[0]);
     codeSystem.setUri(fhirCodeSystem.getUrl());
     codeSystem.setNames(new LocalizedName(Map.of(Language.en, fhirCodeSystem.getName() == null ? fhirCodeSystem.getTitle() : fhirCodeSystem.getName())));
     codeSystem.setContent(fhirCodeSystem.getContent());

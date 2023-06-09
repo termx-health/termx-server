@@ -54,7 +54,7 @@ public class CodeSystemImportService {
   private final UserPermissionService userPermissionService;
 
   @Transactional
-  public void importCodeSystem(CodeSystem codeSystem, List<AssociationType> associationTypes, boolean activateVersion) {
+  public CodeSystem importCodeSystem(CodeSystem codeSystem, List<AssociationType> associationTypes, boolean activateVersion) {
     userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
 
     long start = System.currentTimeMillis();
@@ -74,6 +74,7 @@ public class CodeSystemImportService {
     }
 
     log.info("IMPORT FINISHED (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
+    return codeSystem;
   }
 
   private void saveCodeSystem(CodeSystem codeSystem) {

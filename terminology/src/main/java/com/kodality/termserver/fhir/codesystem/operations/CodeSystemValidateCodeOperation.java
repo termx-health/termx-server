@@ -1,8 +1,7 @@
 package com.kodality.termserver.fhir.codesystem.operations;
 
-import com.kodality.commons.exception.ApiClientException;
-import com.kodality.commons.exception.NotFoundException;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
+import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
 import com.kodality.termserver.terminology.codesystem.CodeSystemVersionService;
@@ -23,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.hl7.fhir.r4.model.ResourceType;
+import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Slf4j
 @Factory
@@ -47,27 +47,24 @@ public class CodeSystemValidateCodeOperation implements TypeOperationDefinition 
   }
 
   private Parameters run(Parameters req) {
-    String code = req.findParameter("code").map(ParametersParameter::getValueString).orElse(null);
+    String url = req.findParameter("url").map(ParametersParameter::getValueString)
+        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
+    String code = req.findParameter("code").map(ParametersParameter::getValueString)
+        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
-    String url = req.findParameter("url").map(ParametersParameter::getValueString).orElse(null);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
 
-    if (code == null) {
-      throw new ApiClientException("'code' parameter required");
-    }
     ConceptQueryParams cp = new ConceptQueryParams();
     cp.setCode(code);
 
-    if (url != null) {
-      CodeSystemQueryParams csp = new CodeSystemQueryParams();
-      csp.setUri(url);
-      csp.setLimit(1);
-      CodeSystem cs = codeSystemService.query(csp).findFirst().orElse(null);
-      if (cs == null) {
-        throw new NotFoundException("CodeSystem not found by url " + url);
-      }
-      cp.setCodeSystem(cs.getId());
+    CodeSystemQueryParams csp = new CodeSystemQueryParams();
+    csp.setUri(url);
+    csp.setLimit(1);
+    CodeSystem cs = codeSystemService.query(csp).findFirst().orElse(null);
+    if (cs == null) {
+      return error("CodeSystem not found by url " + url);
     }
+    cp.setCodeSystem(cs.getId());
 
     if (version != null) {
       CodeSystemVersionQueryParams csvp = new CodeSystemVersionQueryParams();
@@ -77,31 +74,32 @@ public class CodeSystemValidateCodeOperation implements TypeOperationDefinition 
       csvp.setLimit(1);
       CodeSystemVersion csv = codeSystemVersionService.query(csvp).findFirst().orElse(null);
       if (csv == null) {
-        throw new NotFoundException("CodeSystem active version not found");
+        return error("CodeSystem active version not found");
       }
       cp.setCodeSystemVersionId(csv.getId());
     }
 
     Concept concept = conceptService.query(cp).findFirst().orElse(null);
     if (concept == null) {
-      Parameters parameters = new Parameters();
-      parameters.addParameter(new ParametersParameter().setName("result").setValueBoolean(false));
-      parameters.addParameter(new ParametersParameter().setName("message").setValueString("Code '" + code + "' is invalid"));
-      return parameters;
+      return error("Code '" + code + "' is invalid");
     }
 
     String conceptDisplay = extractDisplay(concept);
     if (display != null && !display.equals(conceptDisplay)) {
-      Parameters parameters = new Parameters();
-      parameters.addParameter(new ParametersParameter().setName("result").setValueBoolean(false));
-      parameters.addParameter(new ParametersParameter().setName("display").setValueString(conceptDisplay));
-      parameters.addParameter(new ParametersParameter().setName("message").setValueString("The display '" + display + "' is incorrect"));
-      return parameters;
+      return new Parameters()
+          .addParameter(new ParametersParameter("result").setValueBoolean(false))
+          .addParameter(new ParametersParameter("display").setValueString(conceptDisplay))
+          .addParameter(new ParametersParameter("message").setValueString("The display '" + display + "' is incorrect"));
     }
 
-    Parameters parameters = new Parameters();
-    parameters.addParameter(new ParametersParameter().setName("result").setValueBoolean(true));
-    return parameters;
+    return new Parameters()
+        .addParameter(new ParametersParameter("result").setValueBoolean(true));
+  }
+
+  private static Parameters error(String message) {
+    return new Parameters()
+        .addParameter(new ParametersParameter("result").setValueBoolean(false))
+        .addParameter(new ParametersParameter("message").setValueString(message));
   }
 
   public static String extractDisplay(Concept c) {

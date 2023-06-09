@@ -29,7 +29,6 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
-  private final ValueSetFhirMapper mapper;
 
   public String getResourceType() {
     return ResourceType.ValueSet.name();
@@ -87,7 +86,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
 
     List<ValueSetVersionConcept> expandedConcepts = valueSetVersionConceptService.expand(vs.getId(), version.getVersion(), null);
-    return mapper.toFhir(vs, version, expandedConcepts);
+    return ValueSetFhirMapper.toFhir(vs, version, expandedConcepts);
   }
 
 }

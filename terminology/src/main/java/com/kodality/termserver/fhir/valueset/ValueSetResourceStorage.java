@@ -1,6 +1,7 @@
 package com.kodality.termserver.fhir.valueset;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.core.model.ResourceVersion;
 import com.kodality.kefhir.core.model.VersionId;
@@ -16,13 +17,13 @@ import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.zmei.fhir.FhirMapper;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Singleton
 @RequiredArgsConstructor
 public class ValueSetResourceStorage extends BaseFhirResourceStorage {
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
-  private final ValueSetFhirMapper mapper;
   private final ValueSetFhirImportService importService;
 
   @Override
@@ -31,15 +32,24 @@ public class ValueSetResourceStorage extends BaseFhirResourceStorage {
   }
 
   @Override
-  public ResourceVersion load(String id) {
+  public ResourceVersion load(String fhirId) {
+    String[] idParts = ValueSetFhirMapper.parseCompositeId(fhirId);
+    String vsId = idParts[0];
+    String versionNumber = idParts[1];
+
+    return load(vsId, versionNumber);
+  }
+
+  private ResourceVersion load(String vsId, String versionNumber) {
     ValueSetQueryParams valueSetParams = new ValueSetQueryParams();
-    valueSetParams.setId(id);
+    valueSetParams.setId(vsId);
     valueSetParams.setLimit(1);
     ValueSet valueSet = valueSetService.query(valueSetParams).findFirst().orElse(null);
     if (valueSet == null) {
       return null;
     }
-    ValueSetVersion version = valueSetVersionService.loadLastVersion(id);
+    ValueSetVersion version = versionNumber == null ? valueSetVersionService.loadLastVersion(vsId) :
+        valueSetVersionService.load(vsId, versionNumber).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "resource not found"));
     return toFhir(valueSet, version);
   }
 
@@ -47,8 +57,8 @@ public class ValueSetResourceStorage extends BaseFhirResourceStorage {
   public ResourceVersion save(ResourceId id, ResourceContent content) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet =
         FhirMapper.fromJson(content.getValue(), com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
-    importService.importValueSet(valueSet, false);
-    return load(id.getResourceId());
+    ValueSet result = importService.importValueSet(valueSet, false);
+    return load(result.getId(), result.getVersions().get(0).getVersion());
   }
 
   @Override
@@ -58,14 +68,16 @@ public class ValueSetResourceStorage extends BaseFhirResourceStorage {
 
   @Override
   public SearchResult search(SearchCriterion criteria) {
-    QueryResult<ValueSet> result = valueSetService.query(mapper.fromFhir(criteria));
+    QueryResult<ValueSet> result = valueSetService.query(ValueSetFhirMapper.fromFhir(criteria));
     return new SearchResult(result.getMeta().getTotal(),
         result.getData().stream().flatMap(cs -> cs.getVersions().stream().map(csv -> toFhir(cs, csv))).toList());
   }
 
   private ResourceVersion toFhir(ValueSet valueSet, ValueSetVersion version) {
-    return valueSet == null ? null :
-        new ResourceVersion(new VersionId("ValueSet", valueSet.getId()), new ResourceContent(mapper.toFhirJson(valueSet, version), "json"));
+    return valueSet == null ? null : new ResourceVersion(
+        new VersionId("ValueSet", ValueSetFhirMapper.toFhirId(valueSet, version)),
+        new ResourceContent(ValueSetFhirMapper.toFhirJson(valueSet, version), "json")
+    );
   }
 
 }

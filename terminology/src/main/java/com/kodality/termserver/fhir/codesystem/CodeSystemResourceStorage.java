@@ -1,6 +1,7 @@
 package com.kodality.termserver.fhir.codesystem;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.core.model.ResourceVersion;
 import com.kodality.kefhir.core.model.VersionId;
@@ -16,6 +17,7 @@ import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.association.AssociationKind;
 import com.kodality.termserver.ts.association.AssociationType;
 import com.kodality.termserver.ts.codesystem.CodeSystem;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
@@ -23,6 +25,7 @@ import com.kodality.zmei.fhir.FhirMapper;
 import jakarta.inject.Singleton;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Singleton
 @RequiredArgsConstructor
@@ -30,7 +33,6 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
-  private final CodeSystemFhirMapper mapper;
   private final CodeSystemImportService importService;
 
   @Override
@@ -39,7 +41,12 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
   }
 
   @Override
-  public ResourceVersion load(String codeSystemId) {
+  public ResourceVersion load(String fhirId) {
+    String[] idParts = CodeSystemFhirMapper.parseCompositeId(fhirId);
+    return load(idParts[0], idParts[1]);
+  }
+
+  private ResourceVersion load(String codeSystemId, String versionNumber) {
     CodeSystemQueryParams codeSystemParams = new CodeSystemQueryParams();
     codeSystemParams.setId(codeSystemId);
     codeSystemParams.setPropertiesDecorated(true);
@@ -48,16 +55,9 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
     if (codeSystem == null) {
       return null;
     }
-    CodeSystemVersion version = codeSystemVersionService.loadLastVersion(codeSystemId);
-    CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
-        .setCodeSystemVersionId(version.getId())
-        .all();
-    Integer count = codeSystemEntityVersionService.count(codeSystemEntityVersionParams);
-    if (count < 1000) {
-      version.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
-    } else {
-      version.setEntities(List.of());
-    }
+    CodeSystemVersion version = versionNumber == null ? codeSystemVersionService.loadLastVersion(codeSystemId) :
+        codeSystemVersionService.load(codeSystemId, versionNumber).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "resource not found"));
+    version.setEntities(loadEntities(version.getId(), null));
     return toFhir(codeSystem, version);
   }
 
@@ -66,9 +66,9 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
     com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem =
         FhirMapper.fromJson(content.getValue(), com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
     List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
-    importService.importCodeSystem(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem), associationTypes,
+    CodeSystem cs = importService.importCodeSystem(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem), associationTypes,
         PublicationStatus.active.equals(codeSystem.getStatus()));
-    return load(id.getResourceId());
+    return load(cs.getId(), cs.getVersions().get(0).getVersion());
   }
 
   @Override
@@ -78,26 +78,28 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
 
   @Override
   public SearchResult search(SearchCriterion criteria) {
-    QueryResult<CodeSystem> result = codeSystemService.query(mapper.fromFhir(criteria));
+    QueryResult<CodeSystem> result = codeSystemService.query(CodeSystemFhirMapper.fromFhir(criteria));
     String code = criteria.getRawParams().containsKey("code") ? criteria.getRawParams().get("code").get(0) : null;
     return new SearchResult(result.getMeta().getTotal(), result.getData().stream().flatMap(cs -> cs.getVersions().stream().map(csv -> {
-      CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
-          .setCodeSystemVersionId(csv.getId())
-          .setCode(code)
-          .all();
-      Integer count = codeSystemEntityVersionService.count(codeSystemEntityVersionParams);
-      if (count < 1000) {
-        csv.setEntities(codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData());
-      } else {
-        csv.setEntities(List.of());
-      }
+      csv.setEntities(loadEntities(csv.getId(), code));
       return toFhir(cs, csv);
     })).toList());
   }
 
+  private List<CodeSystemEntityVersion> loadEntities(Long versionId, String code) {
+    CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
+        .setCodeSystemVersionId(versionId)
+        .setCode(code)
+        .all();
+    return codeSystemEntityVersionService.count(codeSystemEntityVersionParams) > 1000 ? List.of() :
+        codeSystemEntityVersionService.query(codeSystemEntityVersionParams).getData();
+  }
+
   private ResourceVersion toFhir(CodeSystem cs, CodeSystemVersion csv) {
-    return cs == null ? null :
-        new ResourceVersion(new VersionId("CodeSystem", cs.getId().toString()), new ResourceContent(mapper.toFhirJson(cs, csv), "json"));
+    return cs == null ? null : new ResourceVersion(
+        new VersionId("CodeSystem", CodeSystemFhirMapper.toFhirId(cs, csv)),
+        new ResourceContent(CodeSystemFhirMapper.toFhirJson(cs, csv), "json")
+    );
   }
 
 }

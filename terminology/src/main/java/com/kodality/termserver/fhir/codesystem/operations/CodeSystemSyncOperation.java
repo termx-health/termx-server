@@ -54,7 +54,7 @@ public class CodeSystemSyncOperation implements TypeOperationDefinition {
 
         urls.forEach(url -> {
           try {
-            importService.importCodeSystem(url);
+            importService.importCodeSystemFromUrl(url);
             successes.add(String.format("CodeSystem from resource %s imported", url));
           } catch (Exception e) {
             warnings.add(String.format("CodeSystem from resource %s was not imported due to error: %s", url, e.getMessage()));
