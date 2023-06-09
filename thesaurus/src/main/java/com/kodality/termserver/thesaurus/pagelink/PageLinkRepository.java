@@ -66,11 +66,11 @@ public class PageLinkRepository extends BaseRepository {
   }
 
   public List<PageLink> loadTargets(Long sourceId) {
-    return getBeans("select * from thesaurus.page_link pl where pl.sys_status = 'A' and pl.source_id = ? order by order_number", bp, sourceId);
+    return getBeans("select * from thesaurus.page_link pl where pl.sys_status = 'A' and pl.source_id != pl.target_id and pl.source_id = ? order by order_number", bp, sourceId);
   }
 
   public List<PageLink> loadSources(Long targetId) {
-    return getBeans("select * from thesaurus.page_link pl where pl.sys_status = 'A' and pl.target_id = ? order by order_number", bp, targetId);
+    return getBeans("select * from thesaurus.page_link pl where pl.sys_status = 'A' and pl.source_id != pl.target_id and pl.target_id = ? order by order_number", bp, targetId);
   }
 
 
@@ -94,14 +94,14 @@ public class PageLinkRepository extends BaseRepository {
 
   public void retainBySourceId(Long sourceId, List<PageLink> links) {
     SqlBuilder sb = new SqlBuilder("update thesaurus.page_link set sys_status = 'C'");
-    sb.append("where sys_status = 'A' and source_id = ?", sourceId);
+    sb.append("where sys_status = 'A' and source_id != target_id and source_id = ?", sourceId);
     sb.andNotIn("id", links, PageLink::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
   public void retainByTargetId(List<PageLink> links, Long targetId) {
     SqlBuilder sb = new SqlBuilder("update thesaurus.page_link set sys_status = 'C'");
-    sb.append("where  sys_status = 'A' and target_id = ?", targetId);
+    sb.append("where  sys_status = 'A' and source_id != target_id and target_id = ?", targetId);
     sb.andNotIn("id", links, PageLink::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
