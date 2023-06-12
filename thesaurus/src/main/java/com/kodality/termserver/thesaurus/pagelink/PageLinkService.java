@@ -63,8 +63,11 @@ public class PageLinkService {
 
   @Transactional
   public void saveSources(List<PageLink> sourceLinks, Long targetId) {
-    // NB: order number does NOT get set automatically
+    // NB: order number DOES NOT get set automatically
     sourceLinks.forEach(l -> l.setTargetId(targetId));
+    if (sourceLinks.isEmpty()) {
+      sourceLinks.add(new PageLink().setSourceId(targetId).setTargetId(targetId).setOrderNumber(0));
+    }
 
     repository.retainByTargetId(sourceLinks, targetId);
     if (CollectionUtils.isNotEmpty(sourceLinks)) {
