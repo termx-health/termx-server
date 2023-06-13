@@ -27,8 +27,8 @@
     "releaseDate": "2022-07-30T19:50:55.040Z"
   },
   "implementation": {
-    "description": "FHIR TS server running at http://terminology.kodality.dev/api/fhir",
-    "url": "http://terminology.kodality.dev/api/fhir"
+    "description": "FHIR TS server running at https://terminology.kodality.dev/api/fhir",
+    "url": "https://terminology.kodality.dev/api/fhir"
   },
   "fhirVersion": "5.0.0",
   "format": [
