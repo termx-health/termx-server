@@ -39,15 +39,17 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   }
 
   public ResourceContent run(ResourceId id, ResourceContent p) {
-    Parameters req = FhirMapper.fromJson(p.getValue(), Parameters.class);
+    String[] parts = ValueSetFhirMapper.parseCompositeId(id.getResourceId());
+    String vsId = parts[0];
+    String versionNumber = parts[1];
 
     ValueSetQueryParams vsParams = new ValueSetQueryParams();
-    vsParams.setId(id.getResourceId());
+    vsParams.setId(vsId);
     vsParams.setLimit(1);
     ValueSet valueSet = valueSetService.query(vsParams).findFirst()
         .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "value set not found: " + id.getResourceId()));
 
-    com.kodality.zmei.fhir.resource.terminology.ValueSet resp = run(req, valueSet);
+    com.kodality.zmei.fhir.resource.terminology.ValueSet resp = expand(valueSet, versionNumber);
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }
 
@@ -55,6 +57,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     Parameters req = FhirMapper.fromJson(p.getValue(), Parameters.class);
     String url = req.findParameter("url").map(ParametersParameter::getValueString)
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "parameter url required"));
+    String versionNr = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
 
     ValueSetQueryParams vsParams = new ValueSetQueryParams();
     vsParams.setUri(url);
@@ -63,13 +66,11 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "value set not found: " + url));
 
 
-    com.kodality.zmei.fhir.resource.terminology.ValueSet resp = run(req, valueSet);
+    com.kodality.zmei.fhir.resource.terminology.ValueSet resp = expand(valueSet, versionNr);
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }
 
-  public com.kodality.zmei.fhir.resource.terminology.ValueSet run(Parameters req, ValueSet vs) {
-    String versionNr = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
-
+  public com.kodality.zmei.fhir.resource.terminology.ValueSet expand(ValueSet vs, String versionNr) {
     ValueSetVersion version;
     if (versionNr != null) {
       ValueSetVersionQueryParams vsvParams = new ValueSetVersionQueryParams();
