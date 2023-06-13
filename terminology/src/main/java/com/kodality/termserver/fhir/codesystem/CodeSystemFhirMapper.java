@@ -95,7 +95,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   private static String findDesignation(List<Designation> designations, List<EntityProperty> properties, String propertyName) {
     EntityProperty property = properties.stream().filter(p -> p.getName().equals(propertyName)).findFirst().orElse(null);
-    if (property == null) {
+    if (property == null || designations == null) {
       return null;
     }
     return designations.stream()
