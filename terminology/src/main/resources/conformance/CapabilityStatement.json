@@ -30,7 +30,7 @@
     "description": "FHIR TS server running at http://terminology.kodality.dev/api/fhir",
     "url": "http://terminology.kodality.dev/api/fhir"
   },
-  "fhirVersion": "4.3.0",
+  "fhirVersion": "5.0.0",
   "format": [
     "application/fhir+xml",
     "application/fhir+json"
@@ -52,9 +52,6 @@
         ]
       },
       "interaction": [
-        {
-          "code": "transaction"
-        }
       ],
       "documentation": "RESTful Terminology Server",
       "resource": [
@@ -118,6 +115,20 @@
               "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-version",
               "type": "token"
             }
+          ],
+          "operation": [
+            {
+              "name": "expand",
+              "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-expand"
+            },
+            {
+              "name": "sync",
+              "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-sync"
+            },
+            {
+              "name": "validate-code",
+              "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-validate-code"
+            }
           ]
         },
         {
@@ -126,9 +137,6 @@
           "interaction": [
             {
               "code": "read"
-            },
-            {
-              "code": "vread"
             },
             {
               "code": "create",
@@ -213,25 +221,24 @@
           ],
           "operation": [
             {
-              "name": "validate-code",
-              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-validate-code"
-            },
-            {
-              "name": "subsumes",
-              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-subsumes"
+              "name": "find-matches",
+              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-find-matches"
             },
             {
               "name": "lookup",
               "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup"
             },
             {
-              "name": "find-matches",
-              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-find-matches"
+              "name": "subsumes",
+              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-subsumes"
             },
             {
-              "name": "list",
-              "definition": "http://terminology.kodality.dev/fhir/OperationDefinition/CodeSystem-list",
-              "documentation": "Return the list of CodeSystems without concepts."
+              "name": "sync",
+              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-sync"
+            },
+            {
+              "name": "validate-code",
+              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-validate-code"
             }
           ]
         },
@@ -296,171 +303,21 @@
               "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-version",
               "type": "token"
             }
-          ]
-        },
-        {
-          "type": "NamingSystem",
-          "profile": "http://hl7.org/fhir/StructureDefinition/NamingSystem",
-          "interaction": [
-            {
-              "code": "search-type"
-            },
-            {
-              "code": "read"
-            }
-          ],
-          "versioning": "versioned-update",
-          "readHistory": true,
-          "searchParam": [
-            {
-              "name": "_sort",
-              "type": "string"
-            },
-            {
-              "name": "_count",
-              "type": "number"
-            },
-            {
-              "name": "_id",
-              "type": "string",
-              "documentation": "The ID of the resource"
-            },
-            {
-              "name": "_lastUpdated",
-              "type": "date"
-            },
-            {
-              "name": "_security",
-              "type": "token"
-            },
-            {
-              "name": "_tag",
-              "type": "token"
-            },
-            {
-              "name": "description",
-              "type": "string",
-              "documentation": "The description of the naming system"
-            },
-            {
-              "name": "id-type",
-              "type": "token",
-              "documentation": "oid | uuid | uri | other"
-            },
-            {
-              "name": "kind",
-              "type": "token",
-              "documentation": "codesystem | identifier | root"
-            },
-            {
-              "name": "name",
-              "type": "string",
-              "documentation": "Computationally friendly name of the naming system"
-            },
-            {
-              "name": "publisher",
-              "type": "string",
-              "documentation": "Name of the publisher of the naming system"
-            },
-            {
-              "name": "status",
-              "type": "token",
-              "documentation": "The current status of the naming system"
-            },
-            {
-              "name": "value",
-              "type": "string",
-              "documentation": "The unique identifier"
-            }
           ],
           "operation": [
-            {
-              "name": "preferred-id",
-              "definition": "http://hl7.org/fhir/OperationDefinition/NamingSystem-preferred-id"
-            }
-          ]
-        }
-      ],
-      "operation": [
-        {
-          "extension": [
-            {
-              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
-              "valueCode": "SHALL"
-            }
-          ],
-          "name": "expand",
-          "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-expand"
-        },
-        {
-          "extension": [
-            {
-              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
-              "valueCode": "SHALL"
-            }
-          ],
-          "name": "validate-code",
-          "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-validate-code"
-        },
-        {
-          "extension": [
-            {
-              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
-              "valueCode": "SHALL"
-            }
-          ],
-          "name": "translate",
-          "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-translate"
-        },
-        {
-          "extension": [
-            {
-              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
-              "valueCode": "SHOULD"
-            }
-          ],
-          "name": "closure",
-          "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-closure"
-        },
-        {
-          "extension": [
-            {
-              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
-              "valueCode": "SHALL"
-            }
-          ],
-          "name": "lookup",
-          "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup"
-        },
-        {
-          "extension": [
-            {
-              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
-              "valueCode": "SHALL"
-            }
-          ],
-          "name": "validate-code",
-          "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-validate-code"
-        },
-        {
-          "extension": [
-            {
-              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
-              "valueCode": "SHOULD"
-            }
-          ],
-          "name": "subsumes",
-          "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-subsumes"
-        },
-        {
-          "extension": [
-            {
-              "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
-              "valueCode": "SHOULD"
-            }
-          ],
-          "name": "find-matches",
-          "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-find-matches"
+          {
+            "name": "closure",
+            "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-closure"
+          },
+          {
+            "name": "sync",
+            "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-sync"
+          },
+          {
+            "name": "translate",
+            "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-translate"
+          }
+        ]
         }
       ]
     }

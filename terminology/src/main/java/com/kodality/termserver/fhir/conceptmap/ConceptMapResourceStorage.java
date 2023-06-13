@@ -29,7 +29,6 @@ public class ConceptMapResourceStorage extends BaseFhirResourceStorage {
     return "ConceptMap";
   }
 
-
   @Override
   public ResourceVersion load(String fhirId) {
     String[] idParts = CodeSystemFhirMapper.parseCompositeId(fhirId);

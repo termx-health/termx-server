@@ -29,7 +29,7 @@ dependencies {
 
   implementation("com.kodality.kefhir:fhir-rest:${kefhirVersion}") { changing = true }
   implementation("com.kodality.kefhir:validation-profile:${kefhirVersion}") { changing = true }
-  implementation("com.kodality.kefhir:feature-conditional-reference:${kefhirVersion}") { changing = true }
+  implementation("com.kodality.kefhir:openapi:${kefhirVersion}") { changing = true }
 
   implementation platform("io.micronaut:micronaut-bom:$micronautVersion")
   implementation("io.micronaut:micronaut-runtime")

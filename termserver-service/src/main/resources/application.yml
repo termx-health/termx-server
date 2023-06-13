@@ -55,11 +55,8 @@ auth:
     jwks-url: ${OAUTH_JWKS_URL:fixme}
   public:
     endpoints:
-      - '/fhir/CapabilityStatement'
-      - '/fhir/CodeSystem'
-      - '/fhir/ValueSet'
-      - '/fhir/ConceptMap'
-      - '/fhir/metadata'
+      - '/fhir'
+      - '/fhir-swagger'
       - '/swagger'
       - '/github/cb'
 
