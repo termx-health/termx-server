@@ -16,13 +16,13 @@
       ]
     }
   ],
-  "description": "Standard Conformance Statement for the Terminology Server provided by Kodality",
+  "description": "Standard Conformance Statement for the Terminology Server TermX provided by Kodality",
   "kind": "instance",
   "instantiates": [
     "http://hl7.org/fhir/CapabilityStatement/terminology-server"
   ],
   "software": {
-    "name": "KTS Terminology Server",
+    "name": "TermX FHIR API",
     "version": "1.0.5",
     "releaseDate": "2022-07-30T19:50:55.040Z"
   },
