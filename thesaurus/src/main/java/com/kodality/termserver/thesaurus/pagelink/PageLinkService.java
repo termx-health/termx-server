@@ -31,8 +31,8 @@ public class PageLinkService {
     return repository.query(params);
   }
 
-  public List<PageLink> loadSources(Long targetOd) {
-    return repository.loadSources(targetOd);
+  public List<PageLink> loadSources(Long targetId) {
+    return repository.loadSources(targetId);
   }
 
 
@@ -65,7 +65,7 @@ public class PageLinkService {
   public void saveSources(List<PageLink> sourceLinks, Long targetId) {
     // NB: order number DOES NOT get set automatically
     sourceLinks.forEach(l -> l.setTargetId(targetId));
-    if (sourceLinks.isEmpty()) {
+    if (sourceLinks.isEmpty() && !hasRootLink(targetId)) {
       sourceLinks.add(new PageLink().setSourceId(targetId).setTargetId(targetId).setOrderNumber(0));
     }
 
@@ -161,5 +161,9 @@ public class PageLinkService {
 
   private boolean isRoot(PageLink link) {
     return Objects.equals(link.getSourceId(), link.getTargetId());
+  }
+
+  private boolean hasRootLink(Long pageId) {
+    return repository.loadRoots().stream().anyMatch(rl -> rl.getTargetId().equals(pageId));
   }
 }

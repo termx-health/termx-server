@@ -12,7 +12,10 @@ import javax.inject.Singleton;
 
 @Singleton
 public class PageContentRepository extends BaseRepository {
-  private final PgBeanProcessor bp = new PgBeanProcessor(PageContent.class);
+  private final PgBeanProcessor bp = new PgBeanProcessor(PageContent.class, p -> {
+    p.overrideColumnMapping("sys_modified_at", "modifiedAt");
+    p.overrideColumnMapping("sys_modified_by", "modifiedBy");
+  });
 
   public void save(PageContent content, Long pageId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
