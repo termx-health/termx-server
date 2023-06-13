@@ -35,7 +35,7 @@ import org.apache.commons.collections4.CollectionUtils;
 public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   public static String toFhirId(CodeSystem cs, CodeSystemVersion csv) {
-    return cs.getId() + "|" + csv.getVersion();
+    return cs.getId() + "@" + csv.getVersion();
   }
 
   public static String toFhirJson(CodeSystem cs, CodeSystemVersion csv) {

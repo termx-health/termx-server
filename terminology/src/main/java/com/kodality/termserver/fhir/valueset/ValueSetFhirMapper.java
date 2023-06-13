@@ -36,7 +36,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   private static final String concept_order = "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder";
 
   public static String toFhirId(ValueSet vs, ValueSetVersion vsv) {
-    return vs.getId() + "|" + vsv.getVersion();
+    return vs.getId() + "@" + vsv.getVersion();
   }
 
   public static String toFhirJson(ValueSet vs, ValueSetVersion vsv) {

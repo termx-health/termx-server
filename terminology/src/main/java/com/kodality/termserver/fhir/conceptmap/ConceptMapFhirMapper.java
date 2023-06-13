@@ -32,7 +32,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
   private final ValueSetService valueSetService;
 
   public static String toFhirId(MapSet mapSet, MapSetVersion version) {
-    return mapSet.getId() + "|" + version.getVersion();
+    return mapSet.getId() + "@" + version.getVersion();
   }
 
   public String toFhirJson(MapSet mapSet, MapSetVersion version) {
