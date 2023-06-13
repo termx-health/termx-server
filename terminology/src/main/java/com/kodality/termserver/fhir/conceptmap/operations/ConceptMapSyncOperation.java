@@ -3,10 +3,8 @@ package com.kodality.termserver.fhir.conceptmap.operations;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.structure.api.ResourceContent;
-import com.kodality.termserver.BinaryHttpClient;
 import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.exception.ApiError;
-import com.kodality.termserver.fhir.conceptmap.ConceptMapFhirImportMapper;
 import com.kodality.termserver.fhir.conceptmap.ConceptMapFhirImportService;
 import com.kodality.termserver.sys.job.JobLogResponse;
 import com.kodality.termserver.sys.job.logger.ImportLogger;
@@ -27,9 +25,7 @@ import org.hl7.fhir.r4.model.ResourceType;
 @RequiredArgsConstructor
 public class ConceptMapSyncOperation implements TypeOperationDefinition {
   private final ImportLogger importLogger;
-  private final ConceptMapFhirImportMapper mapper;
   private final ConceptMapFhirImportService importService;
-  private final BinaryHttpClient client = new BinaryHttpClient();
 
   public String getResourceType() {
     return ResourceType.ConceptMap.name();

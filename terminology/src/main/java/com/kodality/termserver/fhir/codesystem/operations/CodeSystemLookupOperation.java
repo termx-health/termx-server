@@ -1,9 +1,8 @@
 package com.kodality.termserver.fhir.codesystem.operations;
 
 import com.kodality.commons.exception.ApiClientException;
-import com.kodality.kefhir.core.api.resource.InstanceOperationDefinition;
+import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
-import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
 import com.kodality.termserver.ts.codesystem.CodeSystem;
@@ -28,7 +27,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Singleton
 @RequiredArgsConstructor
-public class CodeSystemLookupOperation implements InstanceOperationDefinition {
+public class CodeSystemLookupOperation implements TypeOperationDefinition {
   private final CodeSystemService codeSystemService;
 
   public String getResourceType() {
@@ -39,7 +38,7 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition {
     return "lookup";
   }
 
-  public ResourceContent run(ResourceId rid, ResourceContent c) {
+  public ResourceContent run(ResourceContent c) {
     Parameters req = FhirMapper.fromJson(c.getValue(), Parameters.class);
     String code = req.findParameter("code").map(ParametersParameter::getValueString).orElse(null);
     String system = req.findParameter("system").map(ParametersParameter::getValueString).orElse(null);
