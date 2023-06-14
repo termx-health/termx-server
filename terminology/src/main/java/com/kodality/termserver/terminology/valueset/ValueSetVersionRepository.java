@@ -17,37 +17,66 @@ public class ValueSetVersionRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(ValueSetVersion.class, bp -> {
     bp.addColumnProcessor("supported_languages", PgBeanProcessor.fromArray());
     bp.addColumnProcessor("rule_set", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("snapshot", PgBeanProcessor.fromJson());
   });
+
+  private final static String select = "select vsv.*, " +
+      "(select json_build_object(" +
+      "   'id', vss.id, " +
+      "   'valueSet', vss.value_set, " +
+      "   'valueSetVersion', (select json_build_object('id', vsv2.id, 'version', vsv2.version) from terminology.value_set_version vsv2 where vsv2.id = vss.value_set_version_id and vsv2.sys_status = 'A'), " +
+      "   'expansion', vss.expansion, " +
+      "   'createdAt', vss.created_at, " +
+      "   'createdBy', vss.created_by, " +
+      "   'conceptsTotal', vss.concepts_total " +
+      ") from terminology.value_set_snapshot vss where vsv.id = vss.value_set_version_id and vss.sys_status = 'A') as snapshot ," +
+      "(select json_build_object(" +
+      "   'id', vsvrs.id, " +
+      "   'lockedDate', vsvrs.locked_date, " +
+      "   'inactive', vsvrs.inactive, " +
+      "   'rules', (select jsonb_agg(json_build_object(" +
+      "      'id', vsvr.id, " +
+      "      'type', vsvr.type, " +
+      "      'concepts', vsvr.concepts, " +
+      "      'filters', vsvr.filters, " +
+      "      'codeSystem', vsvr.code_system, " +
+      "      'codeSystemVersion', (select json_build_object('id', csv.id, 'version', csv.version) from terminology.code_system_version csv where csv.id = vsvr.code_system_version_id and csv.sys_status = 'A'), " +
+      "      'valueSet', vsvr.value_set, " +
+      "      'valueSetVersion', (select json_build_object('id', vsv.id, 'version', vsv.version) from terminology.value_set_version vsv where vsv.id = vsvr.value_set_version_id and vsv.sys_status = 'A') " +
+      "   )) from terminology.value_set_version_rule vsvr where vsvrs.id = vsvr.rule_set_id and vsvr.sys_status = 'A') " +
+      ") from terminology.value_set_version_rule_set vsvrs where vsv.id = vsvrs.value_set_version_id and vsvrs.sys_status = 'A') as rule_set "
+      ;
 
   public void save(ValueSetVersion version) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", version.getId());
     ssb.property("value_set", version.getValueSet());
     ssb.property("version", version.getVersion());
-    ssb.property("source", version.getSource());
     ssb.property("supported_languages", "?::text[]", PgUtil.array(version.getSupportedLanguages()));
-    ssb.property("description", version.getDescription());
+    ssb.jsonProperty("description", version.getDescription());
     ssb.property("status", version.getStatus());
     ssb.property("release_date", version.getReleaseDate());
     ssb.property("expiration_date", version.getExpirationDate());
     ssb.property("created", version.getCreated());
+    ssb.property("algorithm", version.getAlgorithm());
     SqlBuilder sb = ssb.buildSave("terminology.value_set_version", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     version.setId(id);
   }
 
   public ValueSetVersion load(String valueSet, String version) {
-    String sql = "select * from terminology.value_set_version where sys_status = 'A' and value_set = ? and version = ?";
+    String sql = select + "from terminology.value_set_version vsv where vsv.sys_status = 'A' and vsv.value_set = ? and vsv.version = ?";
     return getBean(sql, bp, valueSet, version);
   }
 
   public ValueSetVersion load(Long id) {
-    String sql = "select * from terminology.value_set_version where sys_status = 'A' and id = ?";
+    String sql = select + "from terminology.value_set_version vsv where vsv.sys_status = 'A' and vsv.id = ?";
     return getBean(sql, bp, id);
   }
 
   public ValueSetVersion loadLastVersion(String valueSet) {
-    String sql = "select * from terminology.value_set_version where sys_status = 'A' and value_set = ? and (status = 'active' or status = 'draft') order by release_date desc";
+    String sql = select + "from terminology.value_set_version vsv where vsv.sys_status = 'A' and vsv.value_set = ? and (vsv.status = 'active' or vsv.status = 'draft') order by vsv.release_date desc";
     return getBean(sql, bp, valueSet);
   }
 
@@ -57,7 +86,7 @@ public class ValueSetVersionRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from terminology.value_set_version vsv where vsv.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder(select + "from terminology.value_set_version vsv where vsv.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -99,7 +128,7 @@ public class ValueSetVersionRepository extends BaseRepository {
   }
 
   public ValueSetVersion loadLastVersionByUri(String uri) {
-    String sql = "select * from terminology.value_set_version vsv where vsv.sys_status = 'A' and (vsv.status = 'active' or vsv.status = 'draft') and " +
+    String sql = select + "from terminology.value_set_version vsv where vsv.sys_status = 'A' and (vsv.status = 'active' or vsv.status = 'draft') and " +
         "exists (select 1 from terminology.value_set vs where vs.id = vsv.value_set and vs.uri = ? and vs.sys_status = 'A') " +
         "order by vsv.release_date desc";
     return getBean(sql, bp, uri);

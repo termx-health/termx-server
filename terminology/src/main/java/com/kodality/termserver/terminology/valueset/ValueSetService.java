@@ -7,6 +7,7 @@ import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleS
 import com.kodality.termserver.ts.valueset.ValueSet;
 import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSetTransactionRequest;
+import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
@@ -40,11 +41,15 @@ public class ValueSetService {
     userPermissionService.checkPermitted(valueSet.getId(), "ValueSet", "edit");
     repository.save(valueSet);
 
-    request.getVersion().setValueSet(valueSet.getId());
-    request.getVersion().setReleaseDate(request.getVersion().getReleaseDate() == null ? LocalDate.now() : request.getVersion().getReleaseDate());
-    valueSetVersionService.save(request.getVersion());
-    if (request.getVersion().getRuleSet() != null && CollectionUtils.isNotEmpty(request.getVersion().getRuleSet().getRules())) {
-      valueSetVersionRuleService.save(request.getVersion().getRuleSet().getRules(), request.getVersion().getRuleSet().getId(), valueSet.getId());
+    ValueSetVersion version = request.getVersion();
+    if (version != null) {
+      version.setValueSet(valueSet.getId());
+      version.setReleaseDate(version.getReleaseDate() == null ? LocalDate.now() : version.getReleaseDate());
+      valueSetVersionService.save(version);
+
+      if (CollectionUtils.isNotEmpty(version.getRuleSet().getRules())) {
+        valueSetVersionRuleService.save(version.getRuleSet().getRules(), version.getRuleSet().getId(), valueSet.getId());
+      }
     }
   }
 

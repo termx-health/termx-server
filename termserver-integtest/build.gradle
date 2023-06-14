@@ -1,0 +1,57 @@
+plugins {
+    id("groovy")
+    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("io.micronaut.application") version "3.7.10"
+}
+
+version = "0.1"
+group = "com.example"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    annotationProcessor("io.micronaut:micronaut-http-validation")
+    testAnnotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
+    testCompileOnly "io.micronaut:micronaut-inject-java"
+    testAnnotationProcessor "io.micronaut:micronaut-inject-java"
+    testAnnotationProcessor "io.micronaut.spring:micronaut-spring-annotation"
+
+    testCompileOnly "org.projectlombok:lombok:1.18.28"
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.28"
+
+    testImplementation project(':terminology')
+
+    testImplementation("org.testcontainers:spock")
+    testImplementation("org.testcontainers:testcontainers")
+    testImplementation("org.testcontainers:postgresql")
+    testImplementation("io.micronaut:micronaut-jackson-databind")
+    testImplementation("jakarta.annotation:jakarta.annotation-api")
+    testImplementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
+    testImplementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
+
+    testRuntimeOnly("ch.qos.logback:logback-classic:1.4.7")
+}
+
+application {
+    mainClass.set("com.kodality.termserver.TerminologyServerApplication")
+}
+
+java {
+    sourceCompatibility = JavaVersion.toVersion("17")
+    targetCompatibility = JavaVersion.toVersion("17")
+}
+
+graalvmNative.toolchainDetection = false
+micronaut {
+    runtime("netty")
+    testRuntime("spock2")
+    processing {
+        incremental(true)
+        annotations("com.kodality.termserver.*")
+    }
+}
+
+
+

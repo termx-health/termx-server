@@ -11,11 +11,14 @@ import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConceptQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.datatypes.CodeableConcept;
+import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -42,13 +45,16 @@ public class ValueSetValidateCodeOperation implements TypeOperationDefinition {
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }
 
-  private Parameters run(Parameters req) {
-    String url = req.findParameter("url").map(ParametersParameter::getValueString)
+  public Parameters run(Parameters req) {
+    String url = req.findParameter("url").map(ParametersParameter::getValueUri)
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
-    String code = req.findParameter("code").map(ParametersParameter::getValueString)
-        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
+    String code = req.findParameter("code").map(ParametersParameter::getValueCode)
+        .orElse(req.findParameter("coding").map(ParametersParameter::getValueCoding).map(Coding::getCode)
+        .orElse(req.findParameter("codeableConcept").map(ParametersParameter::getValueCodeableConcept).map(CodeableConcept::getCoding)
+            .map(c -> c.stream().map(Coding::getCode).collect(Collectors.joining("")))
+        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required"))));
     String version = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
-    String system = req.findParameter("system").map(ParametersParameter::getValueString).orElse(null);
+    String system = req.findParameter("system").map(ParametersParameter::getValueUri).orElse(null);
     String systemVersion = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
 

@@ -144,12 +144,11 @@ public class CodeSystemFileImportMapper {
 
 
   // Value Set
-
   public static ValueSet toValueSet(CodeSystem codeSystem, ValueSet existingValueSet) {
     ValueSet valueSet = existingValueSet == null ? new ValueSet() : existingValueSet;
     valueSet.setId(codeSystem.getId());
     valueSet.setUri(codeSystem.getUri() == null ? valueSet.getUri() : codeSystem.getUri());
-    valueSet.setNames(codeSystem.getNames() == null ? valueSet.getNames() : codeSystem.getNames());
+    valueSet.setTitle(codeSystem.getNames() == null ? valueSet.getTitle() : codeSystem.getNames());
     return valueSet;
   }
 
@@ -163,7 +162,7 @@ public class CodeSystemFileImportMapper {
         new ValueSetVersionRule()
             .setType(ValueSetVersionRuleType.include)
             .setCodeSystem(codeSystemVersion.getCodeSystem())
-            .setCodeSystemVersionId(codeSystemVersion.getId())
+            .setCodeSystemVersion(codeSystemVersion)
     )));
     return version;
   }

@@ -64,7 +64,7 @@
       "property": [
         {
           "code": "uri",
-          "valueString": "http://tx.hl7.ee"
+          "valueString": "https://kodality.org/fhir"
         }
       ]
     }

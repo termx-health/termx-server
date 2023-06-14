@@ -46,21 +46,23 @@ public class CodeSystemService {
     userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
     repository.save(codeSystem);
 
-    CodeSystemVersion version = request.getVersion();
-    version.setCodeSystem(codeSystem.getId());
-    version.setReleaseDate(version.getReleaseDate() == null ? LocalDate.now() : version.getReleaseDate());
-    codeSystemVersionService.save(version);
-
     entityPropertyService.save(request.getProperties(), codeSystem.getId());
 
-    if (request.getValueSet() != null) {
-      request.getValueSet().getValueSet().setNames(request.getValueSet().getValueSet().getNames() == null ? codeSystem.getNames() : request.getValueSet().getValueSet().getNames());
-      request.getValueSet().getVersion().setRuleSet(new ValueSetVersionRuleSet().setRules(List.of(new ValueSetVersionRule()
-          .setCodeSystem(codeSystem.getId())
-          .setCodeSystemVersionId(version.getId())
-          .setType(ValueSetVersionRuleType.include)
-      )));
-      valueSetService.save(request.getValueSet());
+    CodeSystemVersion version = request.getVersion();
+    if (version != null) {
+      version.setCodeSystem(codeSystem.getId());
+      version.setReleaseDate(version.getReleaseDate() == null ? LocalDate.now() : version.getReleaseDate());
+      codeSystemVersionService.save(version);
+
+      if (request.getValueSet() != null) {
+        request.getValueSet().getValueSet().setTitle(request.getValueSet().getValueSet().getTitle() == null ? codeSystem.getNames() : request.getValueSet().getValueSet().getTitle());
+        request.getValueSet().getVersion().setRuleSet(new ValueSetVersionRuleSet().setRules(List.of(new ValueSetVersionRule()
+            .setCodeSystem(codeSystem.getId())
+            .setCodeSystemVersion(version)
+            .setType(ValueSetVersionRuleType.include)
+        )));
+        valueSetService.save(request.getValueSet());
+      }
     }
   }
 

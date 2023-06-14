@@ -9,7 +9,7 @@
         </encoder>
     </appender>
 
-<!--    <logger name="com.zaxxer.hikari" level="DEBUG"/>-->
+<!--    <logger name="io.micronaut" level="TRACE"/>-->
     <root level="${LOGBACK_LOG_LEVEL:-INFO}">
         <appender-ref ref="STDOUT" />
     </root>

@@ -23,3 +23,7 @@ liquibase:
       default-schema: 'public'
       parameters:
         app-username: ${datasources.default.username}
+netty:
+  default:
+    allocator:
+      max-order: 3

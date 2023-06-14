@@ -4,7 +4,6 @@ create or replace function terminology.value_set_expand(
     p_value_set_version_id bigint
 )
     returns table (
-        id                      bigint,
         concept                 jsonb,
         concept_version_id      bigint,
         display                 jsonb,
@@ -101,17 +100,16 @@ with rule_set as (
                 )
     ),
     concepts as (
-        select vsvc.id, jsonb_build_object('id', vsvc.concept ->> 'id', 'code', vsvc.concept ->> 'code', 'codeSystem', irc.code_system) concept, null::bigint concept_version_id, vsvc.display, vsvc.additional_designations, vsvc.order_number
-        from terminology.value_set_version_concept vsvc
-        inner join include_rule_concepts irc on (irc.c -> 'concept' ->> 'code')::text = (vsvc.concept ->> 'code')::text
-        where vsvc.value_set_version_id = p_value_set_version_id and vsvc.sys_status = 'A'
+        select jsonb_build_object('id', null, 'code', irc.c -> 'concept' ->> 'code', 'codeSystem', irc.code_system) concept, null::bigint concept_version_id,(irc.c -> 'display') display, (irc.c -> 'additionalDesignations') additional_designations, (irc.c -> 'orderNumber')::smallint order_number
+        from include_rule_concepts irc
+        where not exists (select 1 from rule_concepts rc where (rc.concept ->> 'code') = (irc.c -> 'concept' ->> 'code'))
     ),
     value_set_concepts as (
         select s.* from include_rules ir, lateral terminology.value_set_expand(ir.value_set_version_id) s
     )
 select *
 from (select *
-      from (select * from concepts union all select null, rc.concept, rc.concept_version_id, rc.display, rc.additional_designations, rc.order_number from rule_concepts rc) u1
+      from (select * from concepts union all select rc.concept, rc.concept_version_id, rc.display, rc.additional_designations, rc.order_number from rule_concepts rc) u1
       union all
       select *
       from value_set_concepts) u2 order by order_number;

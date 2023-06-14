@@ -17,7 +17,6 @@ import com.kodality.termserver.ts.codesystem.CodeSystemContent;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
-import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
@@ -100,17 +99,12 @@ public class ValueSetFhirImportService {
     List<ValueSetVersionRule> rules = valueSet.getVersions().get(0).getRuleSet().getRules();
     OffsetDateTime lockedDate = valueSet.getVersions().get(0).getRuleSet().getLockedDate();
 
-    if (valueSet.getVersions().get(0).getConcepts() == null) {
-      valueSet.getVersions().get(0).setConcepts(new ArrayList<>());
-    }
-
     if (CollectionUtils.isEmpty(rules)) {
       return;
     }
     rules.forEach(r -> {
       prepareRuleValueSet(r);
       prepareRuleCodeSystem(r, lockedDate);
-      valueSet.getVersions().get(0).getConcepts().addAll(prepareConcepts(r.getConcepts(), r.getCodeSystem(), r.getCodeSystemVersionId()));
     });
   }
 
@@ -122,7 +116,7 @@ public class ValueSetFhirImportService {
           .setExpirationDateGe(LocalDate.now())
       ).findFirst().ifPresent(version -> {
         r.setValueSet(version.getValueSet());
-        r.setValueSetVersionId(version.getId());
+        r.setValueSetVersion(version);
       });
     }
   }
@@ -131,10 +125,10 @@ public class ValueSetFhirImportService {
     if (StringUtils.isNotEmpty(r.getCodeSystem())) {
       codeSystemService.query(new CodeSystemQueryParams().setUri(r.getCodeSystem())).findFirst().ifPresent(cs -> r.setCodeSystem(cs.getId()));
       if (lockedDate == null) {
-        r.setCodeSystemVersionId(codeSystemVersionService.query(new CodeSystemVersionQueryParams()
+        r.setCodeSystemVersion(codeSystemVersionService.query(new CodeSystemVersionQueryParams()
             .setCodeSystem(r.getCodeSystem())
             .setReleaseDateLe(LocalDate.now())
-            .setExpirationDateGe(LocalDate.now())).findFirst().map(CodeSystemVersion::getId).orElse(null));
+            .setExpirationDateGe(LocalDate.now())).findFirst().orElse(null));
       }
     }
   }

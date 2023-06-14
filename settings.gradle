@@ -18,4 +18,5 @@ include 'snomed'
 include 'ucum'
 include 'observation-definition'
 include 'terminology'
+include 'termserver-integtest'
 

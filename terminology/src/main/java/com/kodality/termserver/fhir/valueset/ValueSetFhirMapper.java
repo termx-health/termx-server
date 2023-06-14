@@ -4,7 +4,6 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.termserver.fhir.BaseFhirMapper;
-import com.kodality.termserver.ts.Language;
 import com.kodality.termserver.ts.valueset.ValueSet;
 import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
@@ -47,18 +46,21 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
     fhirValueSet.setId(toFhirId(valueSet, version));
     fhirValueSet.setUrl(valueSet.getUri());
-    //TODO identifiers from naming-system
-    fhirValueSet.setName(valueSet.getNames().getOrDefault(Language.en, valueSet.getNames().values().stream().findFirst().orElse(null)));
-    fhirValueSet.setContact(toFhir(valueSet.getContacts()));
+    fhirValueSet.setName(toFhirName(valueSet.getName()));
+    fhirValueSet.setTitle(toFhirName(valueSet.getTitle()));
+    fhirValueSet.setDescription(toFhirName(valueSet.getDescription()));
+    fhirValueSet.setPurpose(toFhirName(valueSet.getPurpose()));
+    fhirValueSet.setContact(toFhirContacts(valueSet.getContacts()));
+    fhirValueSet.setIdentifier(toFhirIdentifiers(valueSet.getIdentifiers()));
     fhirValueSet.setText(valueSet.getNarrative() == null ? null : new Narrative().setDiv(valueSet.getNarrative()));
-    fhirValueSet.setDescription(valueSet.getDescription());
+    fhirValueSet.setPublisher(valueSet.getPublisher());
+    fhirValueSet.setExperimental(valueSet.getExperimental());
 
     fhirValueSet.setVersion(version.getVersion());
     fhirValueSet.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
     fhirValueSet.setStatus(version.getStatus());
-    fhirValueSet.setPublisher(version.getSource());
     fhirValueSet.setCompose(toFhirCompose(version.getRuleSet()));
-
+    //TODO copyright
     return fhirValueSet;
   }
 
@@ -68,7 +70,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }
     ValueSetCompose compose = new ValueSetCompose();
     compose.setInactive(ruleSet.getInactive());
-    compose.setLockedDate(ruleSet.getLockedDate() == null ? null : ruleSet.getLockedDate().toLocalDate());
+    if (ruleSet.getLockedDate() != null) {
+      compose.setLockedDate(ruleSet.getLockedDate().toLocalDate());
+    }
     compose.setInclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.include));
     compose.setExclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.exclude));
     return compose;

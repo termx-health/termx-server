@@ -47,13 +47,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setId(toFhirId(codeSystem, version));
     fhirCodeSystem.setUrl(codeSystem.getUri());
     //TODO identifiers from naming-system
-    fhirCodeSystem.setName(codeSystem.getNames().getOrDefault(Language.en, codeSystem.getNames().values().stream().findFirst().orElse(null)));
+    fhirCodeSystem.setName(toFhirName(codeSystem.getNames()));
     fhirCodeSystem.setContent(codeSystem.getContent());
-    fhirCodeSystem.setContact(toFhir(codeSystem.getContacts()));
+    fhirCodeSystem.setContact(toFhirContacts(codeSystem.getContacts()));
     fhirCodeSystem.setText(codeSystem.getNarrative() == null ? null : new Narrative().setDiv(codeSystem.getNarrative()));
     fhirCodeSystem.setDescription(codeSystem.getDescription());
-    fhirCodeSystem.setCaseSensitive(
-        codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
+    fhirCodeSystem.setCaseSensitive(codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
 
     fhirCodeSystem.setVersion(version.getVersion());
     fhirCodeSystem.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));

@@ -1,28 +1,29 @@
-package com.kodality.termserver.fhir.codesystem
+package com.kodality.termserver.terminology.fhir
 
 import com.kodality.commons.util.JsonUtil
-import com.kodality.termserver.TerminologyIntegTest
+import com.kodality.termserver.TermserverIntegTest
+import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService
 import com.kodality.termserver.fhir.valueset.ValueSetFhirImportService
-import com.kodality.termserver.fhir.valueset.ValueSetFhirService
+import com.kodality.termserver.fhir.valueset.operations.ValueSetExpandOperation
+import com.kodality.termserver.fhir.valueset.operations.ValueSetValidateCodeOperation
 import com.kodality.termserver.terminology.codesystem.CodeSystemService
 import com.kodality.termserver.terminology.valueset.ValueSetService
 import com.kodality.zmei.fhir.FhirMapper
 import com.kodality.zmei.fhir.resource.Resource
-import com.kodality.zmei.fhir.resource.other.OperationOutcome
 import com.kodality.zmei.fhir.resource.other.Parameters
 import com.kodality.zmei.fhir.resource.terminology.ValueSet
 import groovy.util.logging.Slf4j
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
+import jakarta.inject.Inject
 import org.apache.commons.lang3.tuple.Pair
 import spock.lang.Shared
 import spock.lang.Unroll
 
-import javax.inject.Inject
 import java.util.stream.Collectors
 
 @Slf4j
-@MicronautTest(transactional = false)
-class FhirTestCasesTest extends TerminologyIntegTest {
+@MicronautTest(transactional = true)
+class FhirTestCasesTest extends TermserverIntegTest {
   @Inject
   CodeSystemFhirImportService csImportService
   @Inject
@@ -33,7 +34,9 @@ class FhirTestCasesTest extends TerminologyIntegTest {
   @Inject
   ValueSetService vsService
   @Inject
-  ValueSetFhirService vsFhirService
+  ValueSetExpandOperation vsExpand
+  @Inject
+  ValueSetValidateCodeOperation vsValidateCode
 
   @Shared
   def tests = JsonUtil.fromJson(new String(getClass().getClassLoader().getResourceAsStream("fhir/test-cases.json").readAllBytes()), FhirTestCase.class)
@@ -58,10 +61,10 @@ class FhirTestCasesTest extends TerminologyIntegTest {
     def request = toFhir(test.request, Parameters.class)
     if (test.operation == "expand") {
       def response = toFhir(test.response, ValueSet.class)
-      checkExpandResult(vsFhirService.expand(toMap(request), new OperationOutcome()), response)
+      checkExpandResult(vsExpand.run(request), response)
     } else if (test.operation == "validate-code") {
       def response = toFhir(test.response, Parameters.class)
-      checkValidateCodeResult(vsFhirService.validateCode(toMap(request), new OperationOutcome()), response)
+      checkValidateCodeResult(vsValidateCode.run(request), response)
     } else {
       false
     }
@@ -113,7 +116,13 @@ class FhirTestCasesTest extends TerminologyIntegTest {
   }
 
   def checkExpandResult(ValueSet actualValueSet, ValueSet expectedValueSet) {
-    actualValueSet.id == expectedValueSet.id
+    actualValueSet.url == expectedValueSet.url
+    actualValueSet.version == expectedValueSet.version
+    actualValueSet.status == expectedValueSet.status
+    actualValueSet.name == expectedValueSet.name
+    actualValueSet.title == expectedValueSet.title
+    actualValueSet.publisher == expectedValueSet.publisher
+    actualValueSet.expansion.total == expectedValueSet.expansion.total
   }
 
   def checkValidateCodeResult(Parameters actualResult, Parameters expectedResult) {
@@ -123,7 +132,8 @@ class FhirTestCasesTest extends TerminologyIntegTest {
 
   def <T extends Resource> T toFhir(String path, Class<T> clazz) {
     def json = new String(getClass().getClassLoader().getResourceAsStream("fhir/" + path).readAllBytes())
-    json.replace("\uFEFF", "")
-    return FhirMapper.fromJson(new String(getClass().getClassLoader().getResourceAsStream("fhir/" + path).readAllBytes()), clazz)
+    json = json.replace("\uFEFF", "")
+    json = json.replace("\$" + "instant"  + "\$", "")
+    return FhirMapper.fromJson(json, clazz)
   }
 }

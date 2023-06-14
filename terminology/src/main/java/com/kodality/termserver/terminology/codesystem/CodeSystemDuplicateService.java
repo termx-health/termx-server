@@ -62,7 +62,10 @@ public class CodeSystemDuplicateService {
     }
 
     List<CodeSystemVersion> versions = sourceCs.getVersions();
-    versions.forEach(v -> v.setId(null).setCreated(null).setStatus(PublicationStatus.draft).setCodeSystem(targetCodeSystem.getId()));
+    versions.forEach(v -> {
+      v.setId(null);
+      v.setCreated(null).setStatus(PublicationStatus.draft).setCodeSystem(targetCodeSystem.getId());
+    });
     codeSystemVersionService.save(versions, targetCodeSystem.getId());
 
     Map<Long, Long> propertyMap = new HashMap<>();

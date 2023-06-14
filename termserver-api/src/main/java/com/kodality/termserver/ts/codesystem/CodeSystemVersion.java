@@ -12,10 +12,8 @@ import lombok.experimental.Accessors;
 @Setter
 @Introspected
 @Accessors(chain = true)
-public class CodeSystemVersion {
-  private Long id;
+public class CodeSystemVersion extends CodeSystemVersionReference {
   private String codeSystem;
-  private String version;
   private String source;
   private String preferredLanguage;
   private List<String> supportedLanguages;

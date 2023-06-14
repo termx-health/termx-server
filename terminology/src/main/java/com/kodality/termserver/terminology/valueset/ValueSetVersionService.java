@@ -8,6 +8,7 @@ import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleS
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionQueryParams;
+import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +38,7 @@ public class ValueSetVersionService {
       repository.saveExpirationDate(version);
       return;
     }
+    prepare(version);
     ValueSetVersion lastDraftVersion = repository.query(new ValueSetVersionQueryParams()
         .setValueSet(version.getValueSet())
         .setVersion(version.getVersion())
@@ -47,27 +49,28 @@ public class ValueSetVersionService {
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
     repository.save(version);
     valueSetVersionRuleSetService.save(version.getRuleSet(), version.getId(), version.getValueSet());
-    valueSetVersionConceptService.save(version.getConcepts(), version.getId());
+  }
+
+  private void prepare(ValueSetVersion version) {
+    if (version.getRuleSet() == null) {
+      version.setRuleSet(new ValueSetVersionRuleSet());
+    }
   }
 
   public ValueSetVersion load(Long id) {
-    return decorate(repository.load(id));
+    return repository.load(id);
   }
 
   public Optional<ValueSetVersion> load(String valueSet, String versionCode) {
-    return Optional.ofNullable(decorate(repository.load(valueSet, versionCode)));
+    return Optional.ofNullable(repository.load(valueSet, versionCode));
   }
 
   public ValueSetVersion loadLastVersion(String valueSet) {
-    return decorate(repository.loadLastVersion(valueSet));
+    return repository.loadLastVersion(valueSet);
   }
 
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
-    QueryResult<ValueSetVersion> versions = repository.query(params);
-    if (params.isDecorated()) {
-      versions.getData().forEach(this::decorate);
-    }
-    return versions;
+    return repository.query(params);
   }
 
   @Transactional
@@ -124,17 +127,8 @@ public class ValueSetVersionService {
     repository.saveAsDraft(valueSet, version);
   }
 
-  private ValueSetVersion decorate(ValueSetVersion version) {
-    if (version == null) {
-      return null;
-    }
-    version.setConcepts(valueSetVersionConceptService.loadAll(version.getId()));
-    version.setRuleSet(valueSetVersionRuleSetService.load(version.getId()).orElse(null));
-    return version;
-  }
-
   public ValueSetVersion loadLastVersionByUri(String uri) {
-    return decorate(repository.loadLastVersionByUri(uri));
+    return repository.loadLastVersionByUri(uri);
   }
 
   @Transactional

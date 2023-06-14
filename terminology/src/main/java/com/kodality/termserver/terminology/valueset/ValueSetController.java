@@ -1,17 +1,23 @@
 package com.kodality.termserver.terminology.valueset;
 
+import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.ResourceId;
+import com.kodality.termserver.auth.SessionStore;
 import com.kodality.termserver.auth.UserPermissionService;
+import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.sys.job.JobLogResponse;
+import com.kodality.termserver.sys.job.logger.ImportLogger;
 import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleSetService;
 import com.kodality.termserver.ts.valueset.ValueSet;
 import com.kodality.termserver.ts.valueset.ValueSetExpandRequest;
 import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
+import com.kodality.termserver.ts.valueset.ValueSetTransactionRequest;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.ts.valueset.ValueSetVersionQueryParams;
@@ -26,9 +32,12 @@ import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Controller("/ts/value-sets")
 @RequiredArgsConstructor
 public class ValueSetController {
@@ -37,6 +46,7 @@ public class ValueSetController {
   private final ValueSetVersionRuleService valueSetVersionRuleService;
   private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final ImportLogger importLogger;
 
   private final UserPermissionService userPermissionService;
 
@@ -64,6 +74,13 @@ public class ValueSetController {
   public HttpResponse<?> saveValueSet(@Body @Valid ValueSet valueSet) {
     valueSetService.save(valueSet);
     return HttpResponse.created(valueSet);
+  }
+
+  @Authorized(Privilege.CS_EDIT)
+  @Post("/transaction")
+  public HttpResponse<?> saveValueSetTransaction(@Body @Valid ValueSetTransactionRequest request) {
+    valueSetService.save(request);
+    return HttpResponse.created(request.getValueSet());
   }
 
   @Authorized(Privilege.VS_PUBLISH)
@@ -130,36 +147,34 @@ public class ValueSetController {
 
   //----------------ValueSet Version Concept----------------
 
-  @Authorized(Privilege.VS_EDIT)
-  @Post(uri = "/{valueSet}/versions/{version}/concepts")
-  public HttpResponse<?> createValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version,
-                                               @Body @Valid ValueSetVersionConcept concept) {
-    concept.setId(null);
-    valueSetVersionConceptService.save(concept, valueSet, version);
-    return HttpResponse.created(concept);
-  }
-
-  @Authorized(Privilege.VS_EDIT)
-  @Put(uri = "/{valueSet}/versions/{version}/concepts/{id}")
-  public HttpResponse<?> updateValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable String version, @PathVariable Long id,
-                                               @Body @Valid ValueSetVersionConcept concept) {
-    concept.setId(id);
-    valueSetVersionConceptService.save(concept, valueSet, version);
-    return HttpResponse.created(concept);
-  }
-
-  @Authorized(Privilege.VS_EDIT)
-  @Delete(uri = "/{valueSet}/concepts/{id}")
-  public HttpResponse<?> deleteValueSetConcept(@PathVariable @ResourceId String valueSet, @PathVariable Long id) {
-    valueSetVersionConceptService.delete(id, valueSet);
-    return HttpResponse.ok();
-  }
-
   @Authorized(Privilege.VS_VIEW)
   @Post(uri = "/expand")
   public List<ValueSetVersionConcept> expand(@Body @Valid ValueSetExpandRequest request) {
     userPermissionService.checkPermitted(request.getValueSet(), "ValueSet", "view");
     return valueSetVersionConceptService.expand(request.getValueSet(), request.getValueSetVersion(), request.getRuleSet());
+  }
+
+  @Authorized(Privilege.VS_VIEW)
+  @Post(uri = "/expand-async")
+  public JobLogResponse expandAsync(@Body @Valid ValueSetExpandRequest request) {
+    JobLogResponse jobLogResponse = importLogger.createJob(request.getValueSet(), "value-set-expand");
+    userPermissionService.checkPermitted(request.getValueSet(), "ValueSet", "view");
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
+      try {
+        log.info("ValueSet '{}' expand started", request.getValueSet());
+        long start = System.currentTimeMillis();
+        valueSetVersionConceptService.expand(request.getValueSet(), request.getValueSetVersion(), request.getRuleSet());
+        log.info("ValueSet '{}' expand  took {}", request.getValueSet(), (System.currentTimeMillis() - start) / 1000 + " seconds");
+        importLogger.logImport(jobLogResponse.getJobId());
+      } catch (ApiClientException e) {
+        log.error("Error while ValueSet '{}' expand", request.getValueSet(), e);
+        importLogger.logImport(jobLogResponse.getJobId(), e);
+      } catch (Exception e) {
+        log.error("Error while ValueSet '{}' expand", request.getValueSet(), e);
+        importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE307.toApiException());
+      }
+    }));
+    return jobLogResponse;
   }
 
   //----------------ValueSet Version Rule----------------

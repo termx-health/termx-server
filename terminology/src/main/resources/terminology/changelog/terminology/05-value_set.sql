@@ -124,7 +124,59 @@ create index value_set_version_concept_value_set_version_idx on terminology.valu
 select core.create_table_metadata('terminology.value_set_version_concept');
 --rollback drop table if exists terminology.value_set_version_concept;
 
+--changeset kodality:value_set_version_snapshot
+drop table if exists terminology.value_set_snapshot;
+create table terminology.value_set_snapshot (
+    id                      bigserial               not null primary key,
+    value_set               text                    not null,
+    value_set_version_id    bigint                  not null,
+    concepts_total          integer                 not null,
+    expansion               jsonb                   not null,
+    created_at              timestamptz             not null,
+    created_by              text,
+    sys_created_at          timestamp               not null,
+    sys_created_by          text                    not null,
+    sys_modified_at         timestamp               not null,
+    sys_modified_by         text                    not null,
+    sys_status              char(1) default 'A'     not null collate "C",
+    sys_version             int                     not null,
+    constraint value_set_snapshot_value_set_fk foreign key (value_set) references terminology.value_set(id),
+    constraint value_set_snapshot_value_set_version_fk foreign key (value_set_version_id) references terminology.value_set_version(id)
+);
+create index value_set_snapshot_value_set_idx on terminology.value_set_snapshot(value_set);
+create index value_set_snapshot_value_set_version_idx on terminology.value_set_snapshot(value_set_version_id);
+create unique index value_set_snapshot_value_set_version_id ON terminology.value_set_snapshot (value_set_version_id) WHERE sys_status = 'A';
+
+select core.create_table_metadata('terminology.value_set_snapshot');
+--rollback drop table if exists terminology.value_set_snapshot;
 
 --changeset kodality:value_set_version_concept-order_number
 alter table terminology.value_set_version_concept add column order_number smallint;
+--
+
+--changeset kodality:value_set-columns_refactor
+alter table terminology.value_set add column title jsonb;
+update terminology.value_set set title = names;
+alter table terminology.value_set drop column names;
+alter table terminology.value_set alter column title set not null;
+
+alter table terminology.value_set add column description_temp jsonb;
+update terminology.value_set set description_temp = jsonb_strip_nulls(jsonb_build_object('en', description));
+alter table terminology.value_set drop column description;
+alter table terminology.value_set rename column description_temp to description;
+
+alter table terminology.value_set add column publisher text;
+update terminology.value_set vs set publisher = vsv.source from terminology.value_set_version vsv WHERE vsv.value_set = vs.id and vs.sys_status = 'A' and vsv.sys_status = 'A';
+alter table terminology.value_set_version drop column source;
+
+alter table terminology.value_set add column name jsonb;
+alter table terminology.value_set add column purpose jsonb;
+alter table terminology.value_set add column experimental boolean;
+
+alter table terminology.value_set_version add column description_temp jsonb;
+update terminology.value_set_version set description_temp = jsonb_strip_nulls(jsonb_build_object('en', description));
+alter table terminology.value_set_version drop column description;
+alter table terminology.value_set_version rename column description_temp to description;
+
+alter table terminology.value_set_version add column algorithm text;
 --

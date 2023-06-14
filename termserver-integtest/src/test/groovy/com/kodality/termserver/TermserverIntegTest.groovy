@@ -3,12 +3,12 @@ package com.kodality.termserver
 import com.kodality.commons.client.HttpClient
 import io.micronaut.context.ApplicationContext
 import io.micronaut.runtime.server.EmbeddedServer
+import jakarta.inject.Inject
 import spock.lang.Shared
 import spock.lang.Specification
 
-import javax.inject.Inject
 
-abstract class TerminologyIntegTest extends Specification {
+abstract class TermserverIntegTest extends Specification {
   @Inject
   EmbeddedServer server
   @Inject

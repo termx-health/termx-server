@@ -1,6 +1,7 @@
 package com.kodality.termserver.fhir.valueset;
 
 
+import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termserver.ts.CaseSignificance;
@@ -36,33 +37,53 @@ public class ValueSetFhirImportMapper {
     ValueSet vs = new ValueSet();
     vs.setId(CodeSystemFhirMapper.parseCompositeId(valueSet.getId())[0]);
     vs.setUri(valueSet.getUrl());
-    vs.setNames(new LocalizedName(Map.of(Language.en, valueSet.getName() == null ? valueSet.getTitle() : valueSet.getName())));
-    vs.setContacts(valueSet.getContact() == null ? null :
-        valueSet.getContact().stream().map(ValueSetFhirImportMapper::mapContact).collect(Collectors.toList()));
+    vs.setPublisher(valueSet.getPublisher());
+    vs.setTitle(toLocalizedName(valueSet.getTitle()));
+    vs.setName(toLocalizedName(valueSet.getName()));
+    vs.setDescription(toLocalizedName(valueSet.getDescription()));
+    vs.setPurpose(toLocalizedName(valueSet.getPurpose()));
     vs.setNarrative(valueSet.getText() == null ? null : valueSet.getText().getDiv());
-    vs.setDescription(valueSet.getDescription());
+    vs.setIdentifiers(mapIdentifiers(valueSet.getIdentifier()));
+    vs.setContacts(mapContacts(valueSet.getContact()));
     vs.setVersions(List.of(mapVersion(valueSet)));
+    vs.setExperimental(valueSet.getExperimental());
+    //TODO copyright
     return vs;
   }
 
-  private static ContactDetail mapContact(com.kodality.zmei.fhir.datatypes.ContactDetail c) {
-    return new ContactDetail()
-        .setName(c.getName())
-        .setTelecoms(c.getTelecom() == null ? null : c.getTelecom().stream().map(t ->
-            new Telecom().setSystem(t.getSystem()).setUse(t.getUse()).setValue(t.getValue())
-        ).collect(Collectors.toList()));
+  private static LocalizedName toLocalizedName(String name) {
+    if (name == null) {
+      return null;
+    }
+    return new LocalizedName(Map.of(Language.en, name));
+  }
+
+  private static List<ContactDetail> mapContacts(List<com.kodality.zmei.fhir.datatypes.ContactDetail> details) {
+    if (details == null) {
+      return null;
+    }
+    return details.stream().map(d -> new ContactDetail()
+            .setName(d.getName())
+            .setTelecoms(d.getTelecom() == null ? null :
+                d.getTelecom().stream().map(t -> new Telecom().setSystem(t.getSystem()).setUse(t.getUse()).setValue(t.getValue())).collect(Collectors.toList())))
+        .collect(Collectors.toList());
+  }
+
+  private static List<Identifier> mapIdentifiers(List<com.kodality.zmei.fhir.datatypes.Identifier> identifiers) {
+    if (identifiers == null) {
+      return null;
+    }
+    return identifiers.stream().map(i -> new Identifier(i.getSystem(), i.getValue())).collect(Collectors.toList());
   }
 
   private static ValueSetVersion mapVersion(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     ValueSetVersion version = new ValueSetVersion();
     version.setValueSet(valueSet.getId());
     version.setVersion(valueSet.getVersion() == null ? "1.0.0" : valueSet.getVersion());
-    version.setSource(valueSet.getPublisher());
     version.setSupportedLanguages(List.of(Language.en));
     version.setStatus(PublicationStatus.draft);
     version.setReleaseDate(valueSet.getDate() == null ? LocalDate.now() : LocalDate.from(valueSet.getDate()));
     version.setRuleSet(mapRuleSet(valueSet));
-    version.setConcepts(mapConcepts(valueSet));
     return version;
   }
 
@@ -72,10 +93,13 @@ public class ValueSetFhirImportMapper {
     }
     ValueSetVersionRuleSet ruleSet = new ValueSetVersionRuleSet();
     ruleSet.setInactive(valueSet.getCompose().getInactive());
-    ruleSet.setLockedDate(valueSet.getCompose().getLockedDate().atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime());
+    if (valueSet.getCompose().getLockedDate() != null) {
+      ruleSet.setLockedDate(valueSet.getCompose().getLockedDate().atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime());
+    }
     ruleSet.setRules(mapRules(valueSet.getCompose().getInclude(), valueSet.getCompose().getExclude()));
     return ruleSet;
   }
+
   private static List<ValueSetVersionRule> mapRules(List<ValueSetComposeInclude> include, List<ValueSetComposeInclude> exclude) {
     List<ValueSetVersionRule> rules = new ArrayList<>();
     if (CollectionUtils.isNotEmpty(include)) {
@@ -132,25 +156,6 @@ public class ValueSetFhirImportMapper {
       filter.setOperator(f.getOp());
       filter.setValue(f.getValue());
       return filter;
-    }).collect(Collectors.toList());
-  }
-
-  private static List<ValueSetVersionConcept> mapConcepts(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
-    if (valueSet.getExpansion() == null || CollectionUtils.isEmpty(valueSet.getExpansion().getContains())) {
-      return new ArrayList<>();
-    }
-    return valueSet.getExpansion().getContains().stream().map(c -> {
-      ValueSetVersionConcept vsConcept = new ValueSetVersionConcept();
-      vsConcept.setDisplay(new Designation()
-          .setName(c.getDisplay())
-          .setDesignationKind("text")
-          .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)
-          .setStatus(PublicationStatus.active));
-      vsConcept.setAdditionalDesignations(mapDesignations(c.getDesignation()));
-      Concept concept = new Concept().setCode(c.getCode());
-      concept.setCodeSystem(c.getSystem());
-      vsConcept.setConcept(concept);
-      return vsConcept;
     }).collect(Collectors.toList());
   }
 }

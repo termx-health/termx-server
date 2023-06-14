@@ -39,6 +39,7 @@ public enum ApiError {
   TE304("TE304", "Value set is used in map set '{{mapSet}}', can't be deleted."),
   TE305("TE305", "Value set is used in other value set rule, can't be deleted."),
   TE306("TE306", "Value set version is used in other value set rule, can't be deleted."),
+  TE307("TE307", "Value set expansion failed."),
   TE401("TE401", "Version '{{version}}' of map set '{{mapSet}}' doesn't exist."),
   TE501("TE501", "Naming system '{{namingSystem}}' not found."),
   TE601("TE601", "Cannot convert units of different kinds."),

@@ -1,5 +1,6 @@
 package com.kodality.termserver.ts.valueset;
 
+import com.kodality.termserver.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termserver.ts.codesystem.EntityProperty;
 import io.micronaut.core.annotation.Introspected;
 import java.time.OffsetDateTime;
@@ -25,11 +26,11 @@ public class ValueSetVersionRuleSet {
     private Long id;
     private String type;
     private String codeSystem;
-    private Long codeSystemVersionId;
+    private CodeSystemVersionReference codeSystemVersion;
     private List<ValueSetVersionConcept> concepts;
     private List<ValueSetRuleFilter> filters;
     private String valueSet;
-    private Long valueSetVersionId;
+    private ValueSetVersionReference valueSetVersion;
 
     @Getter
     @Setter

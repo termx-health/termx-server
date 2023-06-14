@@ -4,6 +4,7 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.ts.ContactDetail;
@@ -19,18 +20,27 @@ import javax.inject.Singleton;
 @Singleton
 public class ValueSetRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(ValueSet.class, bp -> {
-    bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("title", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("name", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("purpose", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
+    bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
   });
 
   public void save(ValueSet valueSet) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", valueSet.getId());
     ssb.property("uri", valueSet.getUri());
-    ssb.jsonProperty("names", valueSet.getNames());
+    ssb.property("publisher", valueSet.getPublisher());
+    ssb.jsonProperty("title", valueSet.getTitle());
+    ssb.jsonProperty("name", valueSet.getName());
+    ssb.jsonProperty("description", valueSet.getDescription());
+    ssb.jsonProperty("purpose", valueSet.getPurpose());
+    ssb.jsonProperty("identifiers", valueSet.getIdentifiers());
     ssb.jsonProperty("contacts", valueSet.getContacts());
     ssb.property("narrative", valueSet.getNarrative());
-    ssb.property("description", valueSet.getDescription());
+    ssb.property("experimental", valueSet.getExperimental());
     ssb.property("sys_status", "A");
 
     SqlBuilder sb = ssb.buildUpsert("terminology.value_set", "id");
@@ -77,16 +87,16 @@ public class ValueSetRepository extends BaseRepository {
     sb.appendIfNotNull("and vs.uri ~* ?", params.getUriContains());
     sb.appendIfNotNull("and vs.description = ?", params.getDescription());
     sb.appendIfNotNull("and vs.description ~* ?", params.getDescriptionContains());
-    sb.appendIfNotNull("and terminology.jsonb_search(vs.names) like '%`' || terminology.search_translate(?) || '`%'", params.getName());
-    sb.appendIfNotNull("and terminology.jsonb_search(vs.names) like '%' || terminology.search_translate(?) || '%'", params.getNameContains());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getName());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%' || terminology.search_translate(?) || '%'", params.getNameContains());
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and ( terminology.text_search(vs.id, vs.uri, vs.description) like '%`' || terminology.search_translate(?) || '`%'" +
-              "     or terminology.jsonb_search(vs.names) like '%`' || terminology.search_translate(?) || '`%' )",
+      sb.append("and ( terminology.text_search(vs.id, vs.uri) like '%`' || terminology.search_translate(?) || '`%'" +
+              "     or terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%' )",
           params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and ( terminology.text_search(vs.id, vs.uri, vs.description) like '%' || terminology.search_translate(?) || '%'" +
-              "     or terminology.jsonb_search(vs.names) like '%' || terminology.search_translate(?) || '%' )",
+      sb.append("and ( terminology.text_search(vs.id, vs.uri) like '%' || terminology.search_translate(?) || '%'" +
+              "     or terminology.jsonb_search(vs.title) like '%' || terminology.search_translate(?) || '%' )",
           params.getTextContains(), params.getTextContains());
     }
     sb.appendIfNotNull("and vsv.id = ?", params.getVersionId());
@@ -112,7 +122,7 @@ public class ValueSetRepository extends BaseRepository {
         Ordering.description, "description"
     ));
     if (StringUtils.isNotEmpty(lang)) {
-      sortMap.put(Ordering.name, "vs.names ->> '" + lang + "'");
+      sortMap.put(Ordering.name, "vs.title ->> '" + lang + "'");
     }
     return sortMap;
   }

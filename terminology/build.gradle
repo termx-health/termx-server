@@ -1,17 +1,11 @@
-plugins {
-    id("nebula.integtest") version "9.6.3"
-}
-
-apply plugin: "nebula.integtest"
-
 dependencies {
     annotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
     annotationProcessor "io.micronaut:micronaut-inject-java"
     annotationProcessor "io.micronaut.openapi:micronaut-openapi"
     annotationProcessor "io.micronaut.spring:micronaut-spring-annotation"
 
-    implementation project(':termserver-api')
-    implementation project(':termserver-common')
+    api project(':termserver-api')
+    api project(':termserver-common')
 
     implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}")
@@ -34,19 +28,14 @@ dependencies {
     implementation("io.reactivex.rxjava2:rxjava:2.2.21")
 
     implementation("com.univocity:univocity-parsers:2.9.1")
-    implementation("com.kodality.zmei:zmei-fhir:${rootProject.zmeiVersion}") { changing = true }
-    implementation("com.kodality.zmei:zmei-fhir-client:${rootProject.zmeiVersion}") { changing = true }
-    implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}") { changing = true }
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${rootProject.jacksonVersion}")
+    api("com.kodality.zmei:zmei-fhir:${rootProject.zmeiVersion}") { changing = true }
+    api("com.kodality.zmei:zmei-fhir-client:${rootProject.zmeiVersion}") { changing = true }
+    api("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}") { changing = true }
+    api("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${rootProject.jacksonVersion}")
 
-    implementation("com.kodality.kefhir:kefhir-core:${kefhirVersion}") { changing = true }
-    implementation("com.kodality.kefhir:fhir-conformance:${kefhirVersion}") { changing = true }
+    api("com.kodality.kefhir:kefhir-core:${kefhirVersion}") { changing = true }
+    api("com.kodality.kefhir:fhir-conformance:${kefhirVersion}") { changing = true }
 
-    testCompileOnly "org.projectlombok:lombok:1.18.24"
-    testAnnotationProcessor "org.projectlombok:lombok:1.18.24"
-    testImplementation "org.testcontainers:postgresql:1.14.1"
-    testImplementation "com.github.mizosoft.methanol:methanol:1.7.0"
-    testImplementation "io.micronaut:micronaut-inject-groovy"
     testImplementation "io.micronaut.test:micronaut-test-spock"
     testImplementation("org.spockframework:spock-core") {
         exclude group: "org.codehaus.groovy", module: "groovy-all"
@@ -57,6 +46,3 @@ test {
     useJUnitPlatform()
 }
 
-integrationTest {
-    useJUnitPlatform()
-}

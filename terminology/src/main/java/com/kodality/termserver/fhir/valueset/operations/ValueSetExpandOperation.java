@@ -55,7 +55,12 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
   public ResourceContent run(ResourceContent p) {
     Parameters req = FhirMapper.fromJson(p.getValue(), Parameters.class);
-    String url = req.findParameter("url").map(ParametersParameter::getValueString)
+    com.kodality.zmei.fhir.resource.terminology.ValueSet resp = run(req);
+    return new ResourceContent(FhirMapper.toJson(resp), "json");
+  }
+
+  public com.kodality.zmei.fhir.resource.terminology.ValueSet run(Parameters req) {
+    String url = req.findParameter("url").map(ParametersParameter::getValueUrl)
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "parameter url required"));
     String versionNr = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
 
@@ -64,10 +69,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     vsParams.setLimit(1);
     ValueSet valueSet = valueSetService.query(vsParams).findFirst()
         .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "value set not found: " + url));
-
-
-    com.kodality.zmei.fhir.resource.terminology.ValueSet resp = expand(valueSet, versionNr);
-    return new ResourceContent(FhirMapper.toJson(resp), "json");
+    return expand(valueSet, versionNr);
   }
 
   public com.kodality.zmei.fhir.resource.terminology.ValueSet expand(ValueSet vs, String versionNr) {
@@ -76,7 +78,6 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       ValueSetVersionQueryParams vsvParams = new ValueSetVersionQueryParams();
       vsvParams.setValueSet(vs.getId());
       vsvParams.setVersion(versionNr);
-      vsvParams.setDecorated(true);
       vsvParams.setLimit(1);
       version = valueSetVersionService.query(vsvParams).findFirst().orElse(null);
     } else {

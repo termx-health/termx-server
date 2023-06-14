@@ -47,7 +47,7 @@
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/31-cancel_value_set_version.sql"/>
     </changeSet>
 
-    <changeSet id="terminology_function_indexes_3" author="kodality">
+    <changeSet id="terminology_function_indexes_4" author="kodality">
       <sql>
         drop index if exists terminology.code_system_text_search_idx;
         drop index if exists terminology.code_system_names_search_idx;
@@ -59,8 +59,8 @@
         create index code_system_names_search_idx on terminology.code_system USING gin (terminology.jsonb_search(names) gin_trgm_ops);
         create index concept_text_search_idx on terminology.concept USING gin (terminology.text_search(code, description) gin_trgm_ops);
         create index designation_text_search_idx on terminology.designation USING gin (terminology.text_search(name) gin_trgm_ops);
-        create index value_set_text_search_idx on terminology.value_set USING gin (terminology.text_search(id, uri, description) gin_trgm_ops);
-        create index value_set_names_search_idx on terminology.value_set USING gin (terminology.jsonb_search(names) gin_trgm_ops);
+        create index value_set_text_search_idx on terminology.value_set USING gin (terminology.text_search(id, uri) gin_trgm_ops);
+        create index value_set_names_search_idx on terminology.value_set USING gin (terminology.jsonb_search(title) gin_trgm_ops);
       </sql>
     </changeSet>
 </databaseChangeLog>
