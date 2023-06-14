@@ -4,13 +4,6 @@ plugins {
     id("io.micronaut.application") version "3.7.10"
 }
 
-version = "0.1"
-group = "com.example"
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     annotationProcessor("io.micronaut:micronaut-http-validation")
     testAnnotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
