@@ -131,8 +131,15 @@ public class CodeSystemFhirImportMapper {
     version.setDesignations(mapDesignations(c, codeSystem));
     version.setPropertyValues(mapPropertyValues(c.getProperty()));
     version.setAssociations(mapAssociations(parent, codeSystem));
-    version.setStatus(PublicationStatus.draft);
+    version.setStatus(mapStatus(c.getProperty()));
     return List.of(version);
+  }
+
+  private static String mapStatus(List<CodeSystemConceptProperty> propertyValues) {
+    if (propertyValues == null) {
+      return null;
+    }
+    return propertyValues.stream().filter(pv -> "status".equals(pv.getCode())).findFirst().map(CodeSystemConceptProperty::getValueCode).orElse(null);
   }
 
   private static List<Designation> mapDesignations(CodeSystemConcept c,

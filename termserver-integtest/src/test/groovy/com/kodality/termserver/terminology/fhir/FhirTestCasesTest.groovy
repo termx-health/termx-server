@@ -2,6 +2,8 @@ package com.kodality.termserver.terminology.fhir
 
 import com.kodality.commons.util.JsonUtil
 import com.kodality.termserver.TermserverIntegTest
+import com.kodality.termserver.auth.SessionInfo
+import com.kodality.termserver.auth.SessionStore
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService
 import com.kodality.termserver.fhir.valueset.ValueSetFhirImportService
 import com.kodality.termserver.fhir.valueset.operations.ValueSetExpandOperation
@@ -41,6 +43,13 @@ class FhirTestCasesTest extends TermserverIntegTest {
   @Shared
   def tests = JsonUtil.fromJson(new String(getClass().getClassLoader().getResourceAsStream("fhir/test-cases.json").readAllBytes()), FhirTestCase.class)
       .suites.stream().flatMap(s -> s.tests.stream().map(t -> Pair.of(s, t))).toList()
+
+
+  void setup() {
+    def sessionInfo = new SessionInfo();
+    sessionInfo.privileges = ['admin']
+    SessionStore.setLocal(sessionInfo)
+  }
 
   @Unroll
   def "SUIT #test.left.name TEST #test.right.name"() {
@@ -123,6 +132,7 @@ class FhirTestCasesTest extends TermserverIntegTest {
     actualValueSet.title == expectedValueSet.title
     actualValueSet.publisher == expectedValueSet.publisher
     actualValueSet.expansion.total == expectedValueSet.expansion.total
+    actualValueSet.expansion.contains.code.sort() == expectedValueSet.expansion.contains.code.sort()
   }
 
   def checkValidateCodeResult(Parameters actualResult, Parameters expectedResult) {

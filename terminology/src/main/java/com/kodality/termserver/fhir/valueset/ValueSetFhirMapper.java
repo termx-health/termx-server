@@ -127,58 +127,83 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }).collect(Collectors.toList());
   }
 
-  public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<ValueSetVersionConcept> concepts) {
+  public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<ValueSetVersionConcept> concepts,
+                                                                            boolean flat) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = toFhir(valueSet, version);
-    fhirValueSet.setExpansion(toFhirExpansion(concepts));
+    fhirValueSet.setExpansion(toFhirExpansion(concepts, flat));
     return fhirValueSet;
   }
 
-  private static ValueSetExpansion toFhirExpansion(List<ValueSetVersionConcept> concepts) {
+  private static ValueSetExpansion toFhirExpansion(List<ValueSetVersionConcept> concepts, boolean flat) {
     ValueSetExpansion expansion = new ValueSetExpansion();
     if (concepts == null) {
       return expansion;
     }
     expansion.setTotal(concepts.size());
-    expansion.setContains(concepts.stream().map(valueSetConcept -> {
-      ValueSetExpansionContains contains = new ValueSetExpansionContains();
-      contains.setCode(valueSetConcept.getConcept().getCode());
-      contains.setSystem(valueSetConcept.getConcept().getCodeSystem());
-      contains.setDisplay(valueSetConcept.getDisplay() == null ? null : valueSetConcept.getDisplay().getName());
-      contains.setDesignation(
-          valueSetConcept.getAdditionalDesignations() == null ? new ArrayList<>() : valueSetConcept.getAdditionalDesignations().stream()
-              .sorted(Comparator.comparing(d -> !d.isPreferred()))
-              .map(designation -> {
-                ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
-                d.setValue(designation.getName());
-                d.setLanguage(designation.getLanguage());
-                d.setUse(new Coding(designation.getDesignationType() == null ? "display" : designation.getDesignationType()));
-                return d;
-              }).collect(Collectors.toList()));
-      contains.getDesignation().addAll(
-          valueSetConcept.getConcept().getVersions() == null ? new ArrayList<>() :
-              valueSetConcept.getConcept().getVersions().stream().filter(v -> v.getPropertyValues() != null)
-                  .flatMap(v ->
-                      v.getPropertyValues().stream().map(pv -> {
-                        ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
-                        d.setValue(JsonUtil.toJson(pv.getValue()));
-                        d.setUse(new Coding(pv.getEntityProperty()));
-                        return d;
-                      })).toList()
-      );
-      contains.getDesignation().addAll(
-          valueSetConcept.getConcept().getVersions() == null ? new ArrayList<>() :
-              valueSetConcept.getConcept().getVersions().stream().filter(v -> v.getAssociations() != null)
-                  .flatMap(v ->
-                      v.getAssociations().stream().map(a -> {
-                        ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
-                        d.setValue(a.getTargetCode());
-                        d.setUse(new Coding(a.getAssociationType()));
-                        return d;
-                      })).toList()
-      );
-      return contains;
-    }).collect(Collectors.toList()));
+
+    if (flat) {
+      expansion.setContains(concepts.stream().map(ValueSetFhirMapper::toFhirExpansionContains).collect(Collectors.toList()));
+    } else {
+      expansion.setContains(getChildConcepts(concepts, null));
+    }
     return expansion;
+  }
+
+  private static ValueSetExpansionContains toFhirExpansionContains(ValueSetVersionConcept c) {
+    ValueSetExpansionContains contains = new ValueSetExpansionContains();
+    contains.setCode(c.getConcept().getCode());
+    contains.setSystem(c.getConcept().getCodeSystem());
+    contains.setDisplay(c.getDisplay() == null ? null : c.getDisplay().getName());
+    contains.setDesignation(c.getAdditionalDesignations() == null ? new ArrayList<>() : c.getAdditionalDesignations().stream()
+        .sorted(Comparator.comparing(d -> !d.isPreferred())).map(designation -> {
+          ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
+          d.setValue(designation.getName());
+          d.setLanguage(designation.getLanguage());
+          d.setUse(new Coding(designation.getDesignationType() == null ? "display" : designation.getDesignationType()));
+          return d;
+        }).collect(Collectors.toList()));
+    contains.getDesignation().addAll(c.getConcept().getVersions() == null ? new ArrayList<>() :
+        c.getConcept().getVersions().stream().filter(v -> v.getPropertyValues() != null)
+            .flatMap(v -> v.getPropertyValues().stream().map(pv -> {
+              ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
+              d.setValue(JsonUtil.toJson(pv.getValue()));
+              d.setUse(new Coding(pv.getEntityProperty()));
+              return d;
+            })).toList()
+    );
+    contains.getDesignation().addAll(c.getConcept().getVersions() == null ? new ArrayList<>() :
+        c.getConcept().getVersions().stream().filter(v -> v.getAssociations() != null).flatMap(v ->
+            v.getAssociations().stream().map(a -> {
+              ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
+              d.setValue(a.getTargetCode());
+              d.setUse(new Coding(a.getAssociationType()));
+              return d;
+            })).toList()
+    );
+    return contains;
+  }
+
+  private static List<ValueSetExpansionContains> getChildConcepts(List<ValueSetVersionConcept> concepts, String targetCode) {
+    if (targetCode == null) {
+      return concepts.stream()
+          .filter(c -> CollectionUtils.isEmpty(c.getConcept().getVersions().stream()
+              .filter(v -> CollectionUtils.isNotEmpty(v.getAssociations()))
+              .flatMap(v -> v.getAssociations().stream().filter(a -> concepts.stream().map(concept -> concept.getConcept().getCode()).anyMatch(code -> code.equals(a.getTargetCode())))).toList()))
+          .map(c -> {
+            ValueSetExpansionContains contains = toFhirExpansionContains(c);
+            contains.setContains(getChildConcepts(concepts, c.getConcept().getCode()));
+            return contains;
+          }).toList();
+    }
+
+    return concepts.stream()
+        .filter(c -> CollectionUtils.isNotEmpty(c.getConcept().getVersions().stream().filter(v -> CollectionUtils.isNotEmpty(v.getAssociations()))
+            .flatMap(v -> v.getAssociations().stream().filter(a -> targetCode.equals(a.getTargetCode()))).toList()))
+        .map(c -> {
+          ValueSetExpansionContains contains = toFhirExpansionContains(c);
+          contains.setContains(getChildConcepts(concepts, c.getConcept().getCode()));
+          return contains;
+        }).toList();
   }
 
   public static ValueSetQueryParams fromFhir(SearchCriterion fhir) {

@@ -133,6 +133,23 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     jdbcTemplate.update(sql, PublicationStatus.retired, versionId, PublicationStatus.retired);
   }
 
+  public void retire(List<Long> versionIds) {
+    String query = "update terminology.code_system_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
+    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
+      @Override
+      public void setValues(PreparedStatement ps, int i) throws SQLException {
+        ps.setString(1, PublicationStatus.retired);
+        ps.setLong(2, versionIds.get(i));
+        ps.setString(3, PublicationStatus.retired);
+      }
+
+      @Override
+      public int getBatchSize() {
+        return versionIds.size();
+      }
+    });
+  }
+
   public void saveAsDraft(Long versionId) {
     String sql = "update terminology.code_system_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.update(sql, PublicationStatus.draft, versionId, PublicationStatus.draft);

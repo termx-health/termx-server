@@ -25,7 +25,7 @@ public class ValueSetSnapshotRepository extends BaseRepository {
     ssb.property("value_set", snapshot.getValueSet());
     ssb.property("value_set_version_id", snapshot.getValueSetVersion().getId());
     ssb.property("concepts_total", snapshot.getConceptsTotal());
-    ssb.jsonProperty("expansion", snapshot.getExpansion());
+    ssb.jsonProperty("expansion", snapshot.getExpansion(), false);
     ssb.property("created_at", snapshot.getCreatedAt());
     ssb.property("created_by", snapshot.getCreatedBy());
     SqlBuilder sb = ssb.buildSave("terminology.value_set_snapshot", "id");

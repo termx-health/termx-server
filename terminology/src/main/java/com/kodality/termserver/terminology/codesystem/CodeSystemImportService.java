@@ -11,6 +11,7 @@ import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.association.AssociationType;
 import com.kodality.termserver.ts.codesystem.CodeSystem;
 import com.kodality.termserver.ts.codesystem.CodeSystemAssociation;
+import com.kodality.termserver.ts.codesystem.CodeSystemEntity;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
@@ -117,6 +118,8 @@ public class CodeSystemImportService {
 
     log.info("Creating '{}' concept versions", concepts.size());
     start = System.currentTimeMillis();
+    List<Long> activeConceptIds = concepts.stream().filter(c -> c.getVersions().get(0).getStatus() == null || PublicationStatus.draft.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
+    List<Long> retiredConceptIds = concepts.stream().filter(c -> PublicationStatus.retired.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
     Map<Long, CodeSystemEntityVersion> entityVersionMap = concepts.stream()
         .map(concept -> Pair.of(concept.getId(), prepareEntityVersion(concept.getVersions().get(0), entityProperties)))
         .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
@@ -126,7 +129,10 @@ public class CodeSystemImportService {
     log.info("Activating entity versions and linking them with code system version");
     start = System.currentTimeMillis();
     List<Long> entityVersionIds = concepts.stream().map(concept -> concept.getVersions().get(0).getId()).toList();
-    codeSystemEntityVersionService.activate(entityVersionIds, version.getCodeSystem());
+    List<Long> activeVersionIds = concepts.stream().filter(c -> activeConceptIds.contains(c.getId())).map(concept -> concept.getVersions().get(0).getId()).toList();
+    List<Long> retiredVersionIds = concepts.stream().filter(c -> retiredConceptIds.contains(c.getId())).map(concept -> concept.getVersions().get(0).getId()).toList();
+    codeSystemEntityVersionService.activate(activeVersionIds, version.getCodeSystem());
+    codeSystemEntityVersionService.retire(retiredVersionIds, version.getCodeSystem());
     codeSystemVersionService.linkEntityVersions(version.getId(), entityVersionIds);
     log.info("Linkage created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
 
@@ -143,6 +149,7 @@ public class CodeSystemImportService {
   }
 
   private CodeSystemEntityVersion prepareEntityVersion(CodeSystemEntityVersion entityVersion, List<EntityProperty> properties) {
+    entityVersion.setStatus(PublicationStatus.draft);
     if (CollectionUtils.isNotEmpty(entityVersion.getPropertyValues())) {
       entityVersion.getPropertyValues().forEach(pv -> {
         Optional<EntityProperty> property =

@@ -49,7 +49,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     ValueSet valueSet = valueSetService.query(vsParams).findFirst()
         .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "value set not found: " + id.getResourceId()));
 
-    com.kodality.zmei.fhir.resource.terminology.ValueSet resp = expand(valueSet, versionNumber);
+    com.kodality.zmei.fhir.resource.terminology.ValueSet resp = expand(valueSet, versionNumber, null);
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }
 
@@ -69,10 +69,11 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     vsParams.setLimit(1);
     ValueSet valueSet = valueSetService.query(vsParams).findFirst()
         .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "value set not found: " + url));
-    return expand(valueSet, versionNr);
+
+    return expand(valueSet, versionNr, req);
   }
 
-  public com.kodality.zmei.fhir.resource.terminology.ValueSet expand(ValueSet vs, String versionNr) {
+  public com.kodality.zmei.fhir.resource.terminology.ValueSet expand(ValueSet vs, String versionNr, Parameters req) {
     ValueSetVersion version;
     if (versionNr != null) {
       ValueSetVersionQueryParams vsvParams = new ValueSetVersionQueryParams();
@@ -88,7 +89,19 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
 
     List<ValueSetVersionConcept> expandedConcepts = valueSetVersionConceptService.expand(vs.getId(), version.getVersion(), null);
-    return ValueSetFhirMapper.toFhir(vs, version, expandedConcepts);
+
+    if (req == null) {
+      return ValueSetFhirMapper.toFhir(vs, version, expandedConcepts, false);
+    }
+
+
+    boolean flat = req.findParameter("excludeNested").map(ParametersParameter::getValueBoolean).orElse(false);
+    boolean active = req.findParameter("activeOnly").map(ParametersParameter::getValueBoolean).orElse(false);
+
+    if (active) {
+      expandedConcepts = expandedConcepts.stream().filter(ValueSetVersionConcept::isActive).toList();
+    }
+    return ValueSetFhirMapper.toFhir(vs, version, expandedConcepts, flat);
   }
 
 }

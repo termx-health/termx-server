@@ -192,6 +192,15 @@ public class CodeSystemEntityVersionService {
   }
 
   @Transactional
+  public void retire(List<Long> versionIds, String codeSystem) {
+    long start = System.currentTimeMillis();
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
+    repository.retire(versionIds);
+    conceptRefreshViewJob.refreshView();
+    log.info("Retired (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
+  }
+
+  @Transactional
   public void saveAsDraft(Long versionId) {
     CodeSystemEntityVersion currentVersion = repository.load(versionId);
     if (currentVersion == null) {
