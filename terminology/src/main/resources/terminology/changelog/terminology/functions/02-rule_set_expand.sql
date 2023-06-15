@@ -81,12 +81,12 @@ with rule_set as (
                                    where csev.id = d.code_system_entity_version_id and exists(select 1 from include_rule_filters irf
                                          where irf.id = ir.id and ((irf.f -> 'property' ->> 'id') is null or (irf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
                                                (coalesce(irf.f ->> 'value', '') = '' or (irf.f ->> 'value')::text = d.name)))
-                               or exists (with recursive associations as (
-                                    select csa.source_code_system_entity_version_id, csa.target_code_system_entity_version_id  from terminology.code_system_association csa where csa.sys_status = 'A' and exists(select 1 from include_rule_filters irf
-                                         where irf.id = ir.id and (irf.f -> 'property' ->> 'name')::text = 'concept' and (irf.f ->> 'operator')::text = csa.association_type and
-                                              (coalesce(irf.f ->> 'value', '') = '' or exists (select 1 from terminology.code_system_entity_version csev1 where csev1.sys_status = 'A' and csev1.id = csa.target_code_system_entity_version_id and csev1.code = (irf.f ->> 'value')::text)))
-                                    union select csa1.source_code_system_entity_version_id, csa1.target_code_system_entity_version_id from terminology.code_system_association csa1 inner join associations a on a.source_code_system_entity_version_id = csa1.target_code_system_entity_version_id)
-                                    select 1 from associations where (csev.id = source_code_system_entity_version_id or csev.id = target_code_system_entity_version_id))
+--                                or exists (with recursive associations as (
+--                                     select csa.source_code_system_entity_version_id, csa.target_code_system_entity_version_id  from terminology.code_system_association csa where csa.sys_status = 'A' and exists(select 1 from include_rule_filters irf
+--                                          where irf.id = ir.id and (irf.f -> 'property' ->> 'name')::text = 'concept' and (irf.f ->> 'operator')::text = csa.association_type and
+--                                               (coalesce(irf.f ->> 'value', '') = '' or exists (select 1 from terminology.code_system_entity_version csev1 where csev1.sys_status = 'A' and csev1.id = csa.target_code_system_entity_version_id and csev1.code = (irf.f ->> 'value')::text)))
+--                                     union select csa1.source_code_system_entity_version_id, csa1.target_code_system_entity_version_id from terminology.code_system_association csa1 inner join associations a on a.source_code_system_entity_version_id = csa1.target_code_system_entity_version_id)
+--                                     select 1 from associations where (csev.id = source_code_system_entity_version_id or csev.id = target_code_system_entity_version_id))
                            )
                 ) and
             not exists(select 1
@@ -113,12 +113,12 @@ with rule_set as (
                                        where csev.id = d.code_system_entity_version_id and exists(select 1 from exclude_rule_filters erf
                                              where erf.id = er.id and ((erf.f -> 'property' ->> 'id') is null or (erf.f -> 'property' ->> 'id')::bigint = d.designation_type_id) and
                                                    (coalesce(erf.f ->> 'value', '') = '' or (erf.f ->> 'value')::text = d.name)))
-                                   or exists (with recursive associations as (
-                                        select csa.source_code_system_entity_version_id, csa.target_code_system_entity_version_id  from terminology.code_system_association csa where csa.sys_status = 'A' and exists(select 1 from exclude_rule_filters erf
-                                                where erf.id = er.id and (erf.f -> 'property' ->> 'name')::text = 'concept' and (erf.f ->> 'operator')::text = csa.association_type and
-                                                    (coalesce(erf.f ->> 'value', '') = '' or exists (select 1 from terminology.code_system_entity_version csev1 where csev1.sys_status = 'A' and csev1.id = csa.target_code_system_entity_version_id and csev1.code = (erf.f ->> 'value')::text)))
-                                        union select csa1.source_code_system_entity_version_id, csa1.target_code_system_entity_version_id from terminology.code_system_association csa1 inner join associations a on a.source_code_system_entity_version_id = csa1.target_code_system_entity_version_id)
-                                        select 1 from associations where (csev.id = source_code_system_entity_version_id or csev.id = target_code_system_entity_version_id))
+--                                    or exists (with recursive associations as (
+--                                         select csa.source_code_system_entity_version_id, csa.target_code_system_entity_version_id  from terminology.code_system_association csa where csa.sys_status = 'A' and exists(select 1 from exclude_rule_filters erf
+--                                                 where erf.id = er.id and (erf.f -> 'property' ->> 'name')::text = 'concept' and (erf.f ->> 'operator')::text = csa.association_type and
+--                                                     (coalesce(erf.f ->> 'value', '') = '' or exists (select 1 from terminology.code_system_entity_version csev1 where csev1.sys_status = 'A' and csev1.id = csa.target_code_system_entity_version_id and csev1.code = (erf.f ->> 'value')::text)))
+--                                         union select csa1.source_code_system_entity_version_id, csa1.target_code_system_entity_version_id from terminology.code_system_association csa1 inner join associations a on a.source_code_system_entity_version_id = csa1.target_code_system_entity_version_id)
+--                                         select 1 from associations where (csev.id = source_code_system_entity_version_id or csev.id = target_code_system_entity_version_id))
                                )
                 )
     ),
