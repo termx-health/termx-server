@@ -2,15 +2,12 @@ package com.kodality.termserver.taskflow;
 
 import com.kodality.commons.model.CodeName;
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.taskflow.space.Space;
 import com.kodality.taskflow.space.SpaceService;
 import com.kodality.taskflow.task.Task;
 import com.kodality.taskflow.task.Task.TaskPriority;
 import com.kodality.taskflow.task.Task.TaskStatus;
 import com.kodality.taskflow.task.TaskSearchParams;
 import com.kodality.taskflow.task.TaskService;
-import com.kodality.taskflow.workflow.Workflow;
-import com.kodality.taskflow.workflow.Workflow.WorkflowTransition;
 import com.kodality.taskflow.workflow.WorkflowSearchParams;
 import com.kodality.taskflow.workflow.WorkflowService;
 import com.kodality.termserver.ts.Language;
@@ -77,22 +74,8 @@ public class CommonTaskService {
     taskService.save(task, null);
   }
 
-
   private Long getSpaceId() {
-    Space space = spaceService.load(SPACE_CODE, INSTITUTION);
-    if (space == null) {
-      return createSpace();
-    }
-    return space.getId();
-
-  }
-
-  private Long createSpace() {
-    Space space = new Space();
-    space.setCode(SPACE_CODE);
-    space.setNames(new LocalizedName(Map.of(Language.en, "Kodality Terminology Service")));
-    space.setInstitution(INSTITUTION);
-    return spaceService.save(space).getId();
+    return spaceService.load(SPACE_CODE, INSTITUTION).getId();
   }
 
   private Long getWorkflowId(String type, Long spaceId) {
@@ -100,52 +83,7 @@ public class CommonTaskService {
     params.setTypes(type);
     params.setSpaceIds(String.valueOf(spaceId));
     params.setLimit(1);
-    Workflow workflow = workflowService.search(params).findFirst().orElse(null);
-    if (workflow == null) {
-      return createWorkflow(type, spaceId);
-    }
-    return workflow.getId();
-  }
-
-  private Long createWorkflow(String type, Long spaceId) {
-    Workflow workflow = new Workflow();
-    workflow.setTaskType(type);
-    workflow.setTransitions(List.of(
-        new WorkflowTransition().setFrom(null).setTo(TaskStatus.draft),
-        new WorkflowTransition().setFrom(null).setTo(TaskStatus.requested),
-
-        new WorkflowTransition().setFrom(TaskStatus.draft).setTo(TaskStatus.requested),
-        new WorkflowTransition().setFrom(TaskStatus.draft).setTo(TaskStatus.cancelled),
-
-        new WorkflowTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.received),
-        new WorkflowTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.accepted),
-        new WorkflowTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.rejected),
-        new WorkflowTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.failed),
-        new WorkflowTransition().setFrom(TaskStatus.requested).setTo(TaskStatus.cancelled),
-
-        new WorkflowTransition().setFrom(TaskStatus.received).setTo(TaskStatus.accepted),
-        new WorkflowTransition().setFrom(TaskStatus.received).setTo(TaskStatus.rejected),
-        new WorkflowTransition().setFrom(TaskStatus.received).setTo(TaskStatus.failed),
-        new WorkflowTransition().setFrom(TaskStatus.received).setTo(TaskStatus.cancelled),
-
-        new WorkflowTransition().setFrom(TaskStatus.rejected).setTo(TaskStatus.draft),
-        new WorkflowTransition().setFrom(TaskStatus.rejected).setTo(TaskStatus.received),
-        new WorkflowTransition().setFrom(TaskStatus.rejected).setTo(TaskStatus.cancelled),
-
-        new WorkflowTransition().setFrom(TaskStatus.failed).setTo(TaskStatus.draft),
-        new WorkflowTransition().setFrom(TaskStatus.failed).setTo(TaskStatus.in_progress),
-        new WorkflowTransition().setFrom(TaskStatus.failed).setTo(TaskStatus.cancelled),
-
-        new WorkflowTransition().setFrom(TaskStatus.accepted).setTo(TaskStatus.failed),
-        new WorkflowTransition().setFrom(TaskStatus.accepted).setTo(TaskStatus.cancelled),
-
-        new WorkflowTransition().setFrom(TaskStatus.in_progress).setTo(TaskStatus.requested),
-        new WorkflowTransition().setFrom(TaskStatus.in_progress).setTo(TaskStatus.cancelled),
-
-        new WorkflowTransition().setFrom(TaskStatus.cancelled).setTo(TaskStatus.draft)
-    ));
-    workflowService.save(spaceId, List.of(workflow));
-    return workflow.getId();
+    return workflowService.search(params).findFirst().orElseThrow().getId();
   }
 
   public void cancelTasks(List<Long> ids, String taskCtxType) {
