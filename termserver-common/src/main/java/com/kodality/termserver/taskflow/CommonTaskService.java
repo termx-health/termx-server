@@ -2,7 +2,7 @@ package com.kodality.termserver.taskflow;
 
 import com.kodality.commons.model.CodeName;
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.taskflow.space.SpaceService;
+import com.kodality.taskflow.project.ProjectService;
 import com.kodality.taskflow.task.Task;
 import com.kodality.taskflow.task.Task.TaskPriority;
 import com.kodality.taskflow.task.Task.TaskStatus;
@@ -26,10 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CommonTaskService {
   private final TaskService taskService;
-  private final SpaceService spaceService;
+  private final ProjectService projectService;
   private final WorkflowService workflowService;
 
-  private final static String SPACE_CODE = "kts";
+  private final static String PROJECT_CODE = "kts";
   private final static String INSTITUTION = "1";
   private final static String TASK_TYPE = "task";
 
@@ -59,8 +59,8 @@ public class CommonTaskService {
     String context = task.getContext().stream().map(ctx -> ctx.getType() + "|" + ctx.getId()).collect(Collectors.joining(","));
     Optional<Task> exitingTask = findTasks(context).stream().findFirst();
     task.setId(exitingTask.map(Task::getId).orElse(null));
-    task.setSpaceId(getSpaceId());
-    task.setWorkflowId(getWorkflowId(workflow, task.getSpaceId()));
+    task.setProjectId(getProjectId());
+    task.setWorkflowId(getWorkflowId(workflow, task.getProjectId()));
     task.setParentId(exitingTask.map(Task::getParentId).orElse(null));
     task.setNumber(exitingTask.map(Task::getNumber).orElse(null));
     task.setType(task.getType() == null ? TASK_TYPE : task.getType());
@@ -74,14 +74,14 @@ public class CommonTaskService {
     taskService.save(task, null);
   }
 
-  private Long getSpaceId() {
-    return spaceService.load(SPACE_CODE, INSTITUTION).getId();
+  private Long getProjectId() {
+    return projectService.load(PROJECT_CODE, INSTITUTION).getId();
   }
 
-  private Long getWorkflowId(String type, Long spaceId) {
+  private Long getWorkflowId(String type, Long projectId) {
     WorkflowSearchParams params = new WorkflowSearchParams();
     params.setTypes(type);
-    params.setSpaceIds(String.valueOf(spaceId));
+    params.setProjectIds(String.valueOf(projectId));
     params.setLimit(1);
     return workflowService.search(params).findFirst().orElseThrow().getId();
   }
