@@ -1,13 +1,13 @@
 --liquibase formatted sql
 
---changeset kodality:package-1
+--changeset kodality:package-2
 drop table if exists terminology.package_version_resource;
 drop table if exists terminology.package_version;
 drop table if exists terminology.package;
 
 create table terminology.package (
     id                    bigint default nextval('core.s_entity') primary key,
-    project_id            bigint not null,
+    space_id              bigint not null,
     code                  text not null,
     status                text not null,
     git                   text,
@@ -17,9 +17,9 @@ create table terminology.package (
     sys_created_by        text not null,
     sys_modified_at       timestamptz not null,
     sys_modified_by       text not null,
-    constraint package_project_fkey foreign key (project_id) references terminology.project (id)
+    constraint package_space_fkey foreign key (space_id) references terminology.space (id)
 );
-create index package_project_idx on terminology.package (project_id);
+create index package_space_idx on terminology.package (space_id);
 create unique index package_ukey on terminology.package(code) where (sys_status = 'A');
 
 create table terminology.package_version (

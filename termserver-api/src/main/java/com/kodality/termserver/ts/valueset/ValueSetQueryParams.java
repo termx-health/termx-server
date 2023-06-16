@@ -37,7 +37,7 @@ public class ValueSetQueryParams extends QueryParams {
 
   private String lang;
 
-  private Long projectId;
+  private Long spaceId;
   private Long packageId;
   private Long packageVersionId;
 

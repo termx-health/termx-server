@@ -64,7 +64,7 @@ public class CodeSystemRepository extends BaseRepository {
         "left join terminology.package_version_resource pvr on pvr.resource_type = 'code-system' and pvr.resource_id = cs.id and pvr.sys_status = 'A' " +
         "left join terminology.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
         "left join terminology.package p on p.id = pv.package_id and p.sys_status = 'A' " +
-        "left join terminology.project pr on pr.id = p.project_id and pr.sys_status = 'A' ";
+        "left join terminology.space s on s.id = p.space_id and s.sys_status = 'A' ";
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(distinct(cs.id)) from terminology.code_system cs " + join);
       sb.append(filter(params));
@@ -116,7 +116,7 @@ public class CodeSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and (csv.expiration_date <= ? or csv.expiration_date is null)", params.getVersionExpirationDateLe());
     sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
     sb.appendIfNotNull("and p.id = ?", params.getPackageId());
-    sb.appendIfNotNull("and pr.id = ?", params.getProjectId());
+    sb.appendIfNotNull("and s.id = ?", params.getSpaceId());
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev" +
         " where csev.code_system_entity_id = cse.id and csev.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
     return sb;
