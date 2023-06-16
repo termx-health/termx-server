@@ -62,7 +62,7 @@ public class MapSetRepository extends BaseRepository {
         "left join terminology.package_version_resource pvr on pvr.resource_type = 'map-set' and pvr.resource_id = ms.id and pvr.sys_status = 'A' " +
         "left join terminology.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
         "left join terminology.package p on p.id = pv.package_id and p.sys_status = 'A' " +
-        "left join terminology.space s on pr.id = p.space_id and s.sys_status = 'A' ";
+        "left join terminology.space s on s.id = p.space_id and s.sys_status = 'A' ";
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(distinct(ms.id)) from terminology.map_set ms " + join);
       sb.append(filter(params));
