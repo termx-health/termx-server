@@ -17,7 +17,7 @@ import java.util.function.Function;
 
 public class SnowstormClient {
   protected HttpClient client;
-  private static final String branch = "MAIN/";
+  private static final String branch = "MAIN/SNOMEDCT-EE/";
 
   public SnowstormClient() {
   }
