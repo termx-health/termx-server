@@ -64,4 +64,10 @@
     </customChange>
   </changeSet>
 
+  <changeSet id="version-algorithm" author="kodality">
+    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+      <param name="files" value="terminology/changelog/data/valueset/version-algorithm.json"/>
+    </customChange>
+  </changeSet>
+
 </databaseChangeLog>

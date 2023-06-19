@@ -6,5 +6,6 @@
 
   <include file="codesystem/changelog-data-codesystem.xml" relativeToChangelogFile="true"/>
   <include file="valueset/changelog-data-valueset.xml" relativeToChangelogFile="true"/>
+  <include file="00-taskflow-data.sql" relativeToChangelogFile="true" />
 
 </databaseChangeLog>
