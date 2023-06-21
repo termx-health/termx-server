@@ -4,7 +4,6 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.UserPermissionService;
 import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.ts.PublicationStatus;
-import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionQueryParams;
 import jakarta.inject.Singleton;
@@ -12,7 +11,6 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CodeSystemVersionService {
   private final CodeSystemVersionRepository repository;
-
   private final UserPermissionService userPermissionService;
 
   @Transactional
@@ -79,14 +76,14 @@ public class CodeSystemVersionService {
       return;
     }
 
-    CodeSystemVersion overlappingVersion = repository.query(new CodeSystemVersionQueryParams()
-        .setCodeSystem(codeSystem)
-        .setStatus(PublicationStatus.active)
-        .setReleaseDateLe(currentVersion.getExpirationDate())
-        .setExpirationDateGe(currentVersion.getReleaseDate())).findFirst().orElse(null);
-    if (overlappingVersion != null) {
-      //throw ApiError.TE103.toApiException(Map.of("version", overlappingVersion.getVersion()));
-    }
+//    CodeSystemVersion overlappingVersion = repository.query(new CodeSystemVersionQueryParams()
+//        .setCodeSystem(codeSystem)
+//        .setStatus(PublicationStatus.active)
+//        .setReleaseDateLe(currentVersion.getExpirationDate())
+//        .setExpirationDateGe(currentVersion.getReleaseDate())).findFirst().orElse(null);
+//    if (overlappingVersion != null) {
+//      throw ApiError.TE103.toApiException(Map.of("version", overlappingVersion.getVersion()));
+//    }
     repository.activate(codeSystem, version);
   }
 
@@ -134,12 +131,9 @@ public class CodeSystemVersionService {
   public void linkEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
 
-    Optional<Long> versionId = load(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
-    if (versionId.isPresent()) {
-      repository.linkEntityVersion(versionId.get(), entityVersionId);
-    } else {
-      throw ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
-    }
+    Long versionId = load(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId)
+        .orElseThrow(() -> ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem)));
+    linkEntityVersion(versionId, entityVersionId);
   }
 
   @Transactional
@@ -151,17 +145,15 @@ public class CodeSystemVersionService {
   public void unlinkEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
 
-    Optional<Long> versionId = load(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId);
-    if (versionId.isPresent()) {
-      repository.unlinkEntityVersion(versionId.get(), entityVersionId);
-    } else {
-      throw ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem));
-    }
+    Long versionId = load(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId)
+        .orElseThrow(() -> ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem)));
+    repository.unlinkEntityVersion(versionId, entityVersionId);
   }
 
   @Transactional
   public void linkEntityVersions(Long codeSystemVersionId, List<Long> entityVersionIds) {
     long start = System.currentTimeMillis();
+    CodeSystemVersion codeSystemVersion = repository.load(codeSystemVersionId);
     repository.linkEntityVersions(entityVersionIds, codeSystemVersionId);
     log.info("Linked (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }

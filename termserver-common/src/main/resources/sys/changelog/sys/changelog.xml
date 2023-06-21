@@ -8,5 +8,6 @@
 
   <include file="10-job_log.sql" relativeToChangelogFile="true" />
   <include file="20-lorque_process.sql" relativeToChangelogFile="true" />
+  <include file="30-provenance.sql" relativeToChangelogFile="true" />
 
 </databaseChangeLog>

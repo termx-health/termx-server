@@ -6,6 +6,8 @@ import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.ResourceId;
 import com.kodality.termserver.auth.UserPermissionService;
+import com.kodality.termserver.sys.provenance.Provenance;
+import com.kodality.termserver.sys.provenance.ProvenanceService;
 import com.kodality.termserver.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;
 import com.kodality.termserver.terminology.codesystem.designation.DesignationService;
@@ -58,6 +60,7 @@ public class CodeSystemController {
   private final CodeSystemDuplicateService codeSystemDuplicateService;
   private final CodeSystemSupplementService codeSystemSupplementService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+  private final ProvenanceService provenanceService;
 
   private final UserPermissionService userPermissionService;
 
@@ -80,6 +83,7 @@ public class CodeSystemController {
   @Post
   public HttpResponse<?> saveCodeSystem(@Body @Valid CodeSystem codeSystem) {
     codeSystemService.save(codeSystem);
+    provenanceService.create(new Provenance("created", "CodeSystem", codeSystem.getId()));
     return HttpResponse.created(codeSystem);
   }
 
@@ -87,6 +91,7 @@ public class CodeSystemController {
   @Post("/transaction")
   public HttpResponse<?> saveCodeSystemTransaction(@Body @Valid CodeSystemTransactionRequest codeSystem) {
     codeSystemService.save(codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystem", codeSystem.getCodeSystem().getId()));
     return HttpResponse.created(codeSystem);
   }
 
@@ -95,6 +100,7 @@ public class CodeSystemController {
   public HttpResponse<?> duplicateCodeSystem(@PathVariable String codeSystem, @Body @Valid CodeSystemDuplicateRequest request) {
     CodeSystem targetCodeSystem = new CodeSystem().setId(request.getCodeSystem()).setUri(request.getCodeSystemUri());
     codeSystemDuplicateService.duplicateCodeSystem(targetCodeSystem, codeSystem);
+    provenanceService.create(new Provenance("created", "CodeSystem", targetCodeSystem.getId()));
     return HttpResponse.ok();
   }
 
@@ -102,6 +108,7 @@ public class CodeSystemController {
   @Delete(uri = "/{codeSystem}")
   public HttpResponse<?> deleteCodeSystem(@PathVariable @ResourceId String codeSystem) {
     codeSystemService.cancel(codeSystem);
+    provenanceService.create(new Provenance("deleted", "CodeSystem", codeSystem));
     return HttpResponse.ok();
   }
 
@@ -127,6 +134,8 @@ public class CodeSystemController {
     version.setId(null);
     version.setCodeSystem(codeSystem);
     codeSystemVersionService.save(version);
+    provenanceService.create(new Provenance("created", "CodeSystemVersion", version.getId().toString())
+        .addContext("part-of", "CodeSystem", version.getCodeSystem()));
     return HttpResponse.created(version);
   }
 
@@ -136,6 +145,8 @@ public class CodeSystemController {
     version.setId(id);
     version.setCodeSystem(codeSystem);
     codeSystemVersionService.save(version);
+    provenanceService.create(new Provenance("modified", "CodeSystemVersion", version.getId().toString())
+        .addContext("part-of", "CodeSystem", version.getCodeSystem()));
     return HttpResponse.created(version);
   }
 
@@ -143,6 +154,8 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/versions/{version}/activate")
   public HttpResponse<?> activateCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version) {
     codeSystemVersionService.activate(codeSystem, version);
+    provenanceService.create(new Provenance("modified", "CodeSystemVersion", codeSystemVersionService.load(codeSystem, version).orElseThrow().getId().toString())
+        .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.noContent();
   }
 
@@ -150,6 +163,8 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/versions/{version}/retire")
   public HttpResponse<?> retireCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version) {
     codeSystemVersionService.retire(codeSystem, version);
+    provenanceService.create(new Provenance("modified", "CodeSystemVersion", codeSystemVersionService.load(codeSystem, version).orElseThrow().getId().toString())
+        .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.noContent();
   }
 
@@ -157,13 +172,18 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/versions/{version}/draft")
   public HttpResponse<?> saveAsDraftCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version) {
     codeSystemVersionService.saveAsDraft(codeSystem, version);
+    provenanceService.create(new Provenance("modified", "CodeSystemVersion", codeSystemVersionService.load(codeSystem, version).orElseThrow().getId().toString())
+        .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.noContent();
   }
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/versions/{version}/duplicate")
   public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version, @Body @Valid CodeSystemVersionDuplicateRequest request) {
-    codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), request.getCodeSystem(), version, codeSystem);
+    CodeSystemVersion newVersion =
+        codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), request.getCodeSystem(), version, codeSystem);
+    provenanceService.create(new Provenance("created", "CodeSystemVersion", newVersion.getId().toString())
+        .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.ok();
   }
 
@@ -199,6 +219,8 @@ public class CodeSystemController {
     } else {
       conceptService.save(concept, codeSystem);
     }
+    provenanceService.create(new Provenance("created", "CodeSystemEntity", concept.getId().toString())
+        .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.created(concept);
   }
 
@@ -212,6 +234,8 @@ public class CodeSystemController {
     } else {
       conceptService.save(concept, codeSystem);
     }
+    provenanceService.create(new Provenance("modified", "CodeSystemEntity", concept.getId().toString())
+        .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.created(concept);
   }
 
@@ -231,6 +255,9 @@ public class CodeSystemController {
     version.setId(null);
     version.setCodeSystem(codeSystem);
     codeSystemEntityVersionService.save(version, entityId);
+    provenanceService.create(new Provenance("created", "CodeSystemEntityVersion", version.getId().toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", version.getCodeSystemEntityId().toString()));
     return HttpResponse.created(version);
   }
 
@@ -240,6 +267,9 @@ public class CodeSystemController {
     version.setId(id);
     version.setCodeSystem(codeSystem);
     codeSystemEntityVersionService.save(version, entityId);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", version.getId().toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", version.getCodeSystemEntityId().toString()));
     return HttpResponse.created(version);
   }
 
@@ -247,6 +277,9 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/entities/versions/{id}/activate")
   public HttpResponse<?> activateEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
     codeSystemEntityVersionService.activate(id);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", id.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", codeSystemEntityVersionService.load(id).getCodeSystemEntityId().toString()));
     return HttpResponse.noContent();
   }
 
@@ -254,6 +287,9 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/entities/versions/{id}/retire")
   public HttpResponse<?> retireEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
     codeSystemEntityVersionService.retire(id);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", id.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", codeSystemEntityVersionService.load(id).getCodeSystemEntityId().toString()));
     return HttpResponse.noContent();
   }
 
@@ -261,13 +297,19 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/entities/versions/{id}/draft")
   public HttpResponse<?> saveAsDraftEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
     codeSystemEntityVersionService.saveAsDraft(id);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", id.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", codeSystemEntityVersionService.load(id).getCodeSystemEntityId().toString()));
     return HttpResponse.noContent();
   }
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/entities/{entityId}/versions/{id}/duplicate")
   public HttpResponse<?> duplicateEntityVersion(@PathVariable String codeSystem,  @PathVariable Long entityId, @PathVariable Long id) {
-    codeSystemEntityVersionService.duplicate(codeSystem, entityId, id);
+    CodeSystemEntityVersion newVersion = codeSystemEntityVersionService.duplicate(codeSystem, entityId, id);
+    provenanceService.create(new Provenance("created", "CodeSystemEntityVersion", newVersion.getId().toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", newVersion.getCodeSystemEntityId().toString()));
     return HttpResponse.ok();
   }
 
@@ -275,6 +317,8 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/versions/{version}/entity-versions/{entityVersionId}/membership")
   public HttpResponse<?> linkEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version, @PathVariable Long entityVersionId) {
     codeSystemVersionService.linkEntityVersion(codeSystem, version, entityVersionId);
+    provenanceService.create(new Provenance("modified", "CodeSystemVersion", codeSystemVersionService.load(codeSystem, version).orElseThrow().getId().toString())
+        .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.ok();
   }
 
@@ -282,6 +326,8 @@ public class CodeSystemController {
   @Delete(uri = "/{codeSystem}/versions/{version}/entity-versions/{entityVersionId}/membership")
   public HttpResponse<?> unlinkEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version, @PathVariable Long entityVersionId) {
     codeSystemVersionService.unlinkEntityVersion(codeSystem, version, entityVersionId);
+    provenanceService.create(new Provenance("modified", "CodeSystemVersion", codeSystemVersionService.load(codeSystem, version).orElseThrow().getId().toString())
+        .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.ok();
   }
 
@@ -306,6 +352,7 @@ public class CodeSystemController {
   public HttpResponse<?> createEntityProperty(@PathVariable @ResourceId String codeSystem, @Body @Valid EntityProperty property) {
     property.setId(null);
     entityPropertyService.save(property, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystem", codeSystem));
     return HttpResponse.created(property);
   }
 
@@ -314,6 +361,7 @@ public class CodeSystemController {
   public HttpResponse<?> updateEntityProperty(@PathVariable @ResourceId String codeSystem, @PathVariable Long id, @Body @Valid EntityProperty property) {
     property.setId(id);
     entityPropertyService.save(property, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystem", codeSystem));
     return HttpResponse.created(property);
   }
 
@@ -321,6 +369,7 @@ public class CodeSystemController {
   @Delete(uri = "/{codeSystem}/entity-properties/{id}")
   public HttpResponse<?> deleteEntityProperty(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
     entityPropertyService.cancel(id, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystem", codeSystem));
     return HttpResponse.ok();
   }
 
@@ -328,6 +377,7 @@ public class CodeSystemController {
   @Delete(uri = "/{codeSystem}/entity-property-usages/{propertyId}")
   public HttpResponse<?> deleteEntityPropertyUsages(@PathVariable @ResourceId String codeSystem, @PathVariable Long propertyId) {
     entityPropertyService.deleteUsages(propertyId, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystem", codeSystem));
     return HttpResponse.ok();
   }
 
@@ -344,6 +394,9 @@ public class CodeSystemController {
   public HttpResponse<?> createEntityPropertyValue(@PathVariable @ResourceId String codeSystem, @PathVariable Long entityVersionId, @Body @Valid EntityPropertyValue propertyValue) {
     propertyValue.setId(null);
     entityPropertyValueService.save(propertyValue, entityVersionId, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", entityVersionId.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", codeSystemEntityVersionService.load(entityVersionId).getCodeSystemEntityId().toString()));
     return HttpResponse.created(propertyValue);
   }
 
@@ -352,6 +405,9 @@ public class CodeSystemController {
   public HttpResponse<?> updateEntityPropertyValue(@PathVariable @ResourceId String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid EntityPropertyValue propertyValue) {
     propertyValue.setId(id);
     entityPropertyValueService.save(propertyValue, entityVersionId, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", entityVersionId.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", codeSystemEntityVersionService.load(entityVersionId).getCodeSystemEntityId().toString()));
     return HttpResponse.created(propertyValue);
   }
 
@@ -368,6 +424,9 @@ public class CodeSystemController {
   public HttpResponse<?> createDesignation(@PathVariable @ResourceId String codeSystem, @PathVariable Long entityVersionId, @Body @Valid Designation designation) {
     designation.setId(null);
     designationService.save(designation, entityVersionId, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", entityVersionId.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", codeSystemEntityVersionService.load(entityVersionId).getCodeSystemEntityId().toString()));
     return HttpResponse.created(designation);
   }
 
@@ -376,6 +435,9 @@ public class CodeSystemController {
   public HttpResponse<?> updateDesignation(@PathVariable @ResourceId String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid Designation designation) {
     designation.setId(id);
     designationService.save(designation, entityVersionId, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", entityVersionId.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", codeSystemEntityVersionService.load(entityVersionId).getCodeSystemEntityId().toString()));
     return HttpResponse.created(designation);
   }
 
@@ -392,6 +454,9 @@ public class CodeSystemController {
   public HttpResponse<?> createAssociation(@PathVariable @ResourceId String codeSystem, @PathVariable Long entityVersionId, @Body @Valid CodeSystemAssociation association) {
     association.setId(null);
     associationService.save(association, entityVersionId, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", entityVersionId.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", codeSystemEntityVersionService.load(entityVersionId).getCodeSystemEntityId().toString()));
     return HttpResponse.created(association);
   }
 
@@ -400,6 +465,9 @@ public class CodeSystemController {
   public HttpResponse<?> updateAssociation(@PathVariable @ResourceId String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid CodeSystemAssociation association) {
     association.setId(id);
     associationService.save(association, entityVersionId, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", entityVersionId.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity", codeSystemEntityVersionService.load(entityVersionId).getCodeSystemEntityId().toString()));
     return HttpResponse.created(association);
   }
 
@@ -428,6 +496,7 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/supplements")
   public HttpResponse<?> createSupplement(@PathVariable @ResourceId String codeSystem, @Body @Valid CodeSystemSupplement supplement) {
     codeSystemSupplementService.save(supplement, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystem", codeSystem));
     return HttpResponse.created(supplement);
   }
 
@@ -436,6 +505,7 @@ public class CodeSystemController {
   public HttpResponse<?> updateSupplement(@PathVariable @ResourceId String codeSystem, @PathVariable Long id, @Body @Valid CodeSystemSupplement supplement) {
     supplement.setId(id);
     codeSystemSupplementService.save(supplement, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystem", codeSystem));
     return HttpResponse.created(supplement);
   }
 
@@ -443,6 +513,9 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/entities/versions/{entityVersionId}/supplements")
   public HttpResponse<?> createSupplement(@PathVariable @ResourceId String codeSystem, @PathVariable Long entityVersionId, @Body @Valid CodeSystemSupplement supplement) {
     codeSystemSupplementService.save(supplement, entityVersionId, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", entityVersionId.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity",  codeSystemEntityVersionService.load(entityVersionId).getCodeSystemEntityId().toString()));
     return HttpResponse.created(supplement);
   }
 
@@ -451,6 +524,9 @@ public class CodeSystemController {
   public HttpResponse<?> createSupplement(@PathVariable String codeSystem, @PathVariable Long entityVersionId, @PathVariable Long id, @Body @Valid CodeSystemSupplement supplement) {
     supplement.setId(id);
     codeSystemSupplementService.save(supplement, entityVersionId, codeSystem);
+    provenanceService.create(new Provenance("modified", "CodeSystemEntityVersion", entityVersionId.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)
+        .addContext("part-of", "CodeSystemEntity",  codeSystemEntityVersionService.load(entityVersionId).getCodeSystemEntityId().toString()));
     return HttpResponse.created(supplement);
   }
 
