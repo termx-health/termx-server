@@ -41,7 +41,8 @@ public class LoincMapper {
   private static CodeSystemImportRequestCodeSystem toCodeSystem() {
     return new CodeSystemImportRequestCodeSystem().setId("loinc")
         .setUri("http://loinc.org")
-        .setNames(new LocalizedName(Map.of("en", "LOINC")))
+        .setPublisher("Regenstrief Institute, Inc.")
+        .setTitle(new LocalizedName(Map.of("en", "LOINC")))
         .setContent(CodeSystemContent.complete)
         .setCaseSensitive(CaseSignificance.entire_term_case_insensitive)
         .setSupportedLanguages(List.of(Language.en));
@@ -50,7 +51,6 @@ public class LoincMapper {
   private static CodeSystemImportRequestVersion toVersion(String version) {
     return new CodeSystemImportRequestVersion()
         .setVersion(version)
-        .setSource("Regenstrief Institute, Inc.")
         .setSupportedLanguages(List.of(Language.en))
         .setReleaseDate(LocalDate.now());
   }

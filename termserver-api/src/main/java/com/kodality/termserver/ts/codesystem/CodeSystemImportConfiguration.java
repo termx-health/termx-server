@@ -13,7 +13,7 @@ import lombok.experimental.Accessors;
 public class CodeSystemImportConfiguration {
   @NonNull
   private String uri;
-  private String source;
+  private String publisher;
   @NonNull
   private String version;
   @NonNull
@@ -24,6 +24,6 @@ public class CodeSystemImportConfiguration {
   private String baseCodeSystem;
   @NonNull
   private LocalizedName codeSystemName;
-  private String codeSystemDescription;
-  private String codeSystemVersionDescription;
+  private LocalizedName codeSystemDescription;
+  private LocalizedName codeSystemVersionDescription;
 }

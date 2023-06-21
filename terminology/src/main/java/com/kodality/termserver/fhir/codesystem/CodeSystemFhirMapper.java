@@ -46,18 +46,22 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem = new com.kodality.zmei.fhir.resource.terminology.CodeSystem();
     fhirCodeSystem.setId(toFhirId(codeSystem, version));
     fhirCodeSystem.setUrl(codeSystem.getUri());
-    //TODO identifiers from naming-system
-    fhirCodeSystem.setName(toFhirName(codeSystem.getNames()));
-    fhirCodeSystem.setContent(codeSystem.getContent());
-    fhirCodeSystem.setContact(toFhirContacts(codeSystem.getContacts()));
+    fhirCodeSystem.setPublisher(codeSystem.getPublisher());
+    fhirCodeSystem.setTitle(toFhirName(codeSystem.getTitle()));
+    fhirCodeSystem.setName(toFhirName(codeSystem.getName()));
+    fhirCodeSystem.setDescription(toFhirName(codeSystem.getDescription()));
+    fhirCodeSystem.setPurpose(toFhirName(codeSystem.getPurpose()));
+    fhirCodeSystem.setHierarchyMeaning(codeSystem.getHierarchyMeaning());
     fhirCodeSystem.setText(codeSystem.getNarrative() == null ? null : new Narrative().setDiv(codeSystem.getNarrative()));
-    fhirCodeSystem.setDescription(codeSystem.getDescription());
+    fhirCodeSystem.setExperimental(codeSystem.getExperimental());
+    fhirCodeSystem.setIdentifier(toFhirIdentifiers(codeSystem.getIdentifiers()));
+    fhirCodeSystem.setContact(toFhirContacts(codeSystem.getContacts()));
+    fhirCodeSystem.setContent(codeSystem.getContent());
     fhirCodeSystem.setCaseSensitive(codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
 
     fhirCodeSystem.setVersion(version.getVersion());
     fhirCodeSystem.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
     fhirCodeSystem.setStatus(version.getStatus());
-    fhirCodeSystem.setPublisher(version.getSource());
     fhirCodeSystem.setProperty(toFhirCodeSystemProperty(codeSystem.getProperties()));
     fhirCodeSystem.setConcept(version.getEntities().stream()
         .filter(e -> CollectionUtils.isEmpty(e.getAssociations()))
@@ -162,7 +166,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         case "version" -> params.setVersionVersion(v);
         case "title", "name" -> params.setNameContains(v);
         case "status" -> params.setVersionStatus(v);
-        case "publisher" -> params.setVersionSource(v);
+        case "publisher" -> params.setPublisher(v);
         case "description" -> params.setDescriptionContains(v);
         case "content-mode" -> params.setContent(v);
         case "code" -> params.setConceptCode(v);

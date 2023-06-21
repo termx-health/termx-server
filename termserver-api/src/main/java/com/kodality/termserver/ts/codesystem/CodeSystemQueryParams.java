@@ -15,6 +15,7 @@ public class CodeSystemQueryParams extends QueryParams {
   private String ids;
   private String idContains;
   private List<String> permittedIds;
+  private String publisher;
   private String uri;
   private String uriContains;
   private String content;
@@ -34,7 +35,6 @@ public class CodeSystemQueryParams extends QueryParams {
   private Long versionId;
   private String versionVersion;
   private String versionStatus;
-  private String versionSource;
   private LocalDate versionReleaseDateGe;
   private LocalDate versionExpirationDateLe;
   private boolean versionsDecorated;

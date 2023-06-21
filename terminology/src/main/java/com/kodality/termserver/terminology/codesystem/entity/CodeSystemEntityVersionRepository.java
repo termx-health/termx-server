@@ -15,11 +15,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import javax.inject.Singleton;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 @Singleton
@@ -47,8 +47,12 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
   }
 
   public QueryResult<CodeSystemEntityVersion> query(CodeSystemEntityVersionQueryParams params) {
-    return query(params, p -> count(params), p -> {
-      SqlBuilder sb = new SqlBuilder("select * from terminology.code_system_entity_version csev where csev.sys_status = 'A'");
+    return query(params, p -> {
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_entity_version csev ");
+      sb.append(filter(params));
+      return queryForObject(sb.getSql(), Integer.class, sb.getParams());
+    }, p -> {
+      SqlBuilder sb = new SqlBuilder("select * from terminology.code_system_entity_version csev ");
       sb.append(filter(params));
       sb.append("order by created");
       sb.append(limit(params));
@@ -56,14 +60,9 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     });
   }
 
-  public Integer count(CodeSystemEntityVersionQueryParams params) {
-    SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_entity_version csev where csev.sys_status = 'A'");
-    sb.append(filter(params));
-    return queryForObject(sb.getSql(), Integer.class, sb.getParams());
-  }
-
   private SqlBuilder filter(CodeSystemEntityVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.append("where csev.sys_status = 'A'");
     sb.appendIfNotNull("and csev.code_system_entity_id = ?", params.getCodeSystemEntityId());
     if (StringUtils.isNotEmpty(params.getCodeSystemEntityIds())) {
       sb.and().in("csev.code_system_entity_id ", params.getCodeSystemEntityIds(), Long::valueOf);
@@ -80,15 +79,22 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
       sb.and().in("csev.code ", params.getCode());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (csev.code ~* ? or csev.description ~* ? or " +
-              "exists(select 1 from terminology.designation d where d.code_system_entity_version_id = csev.id and d.name ~* ? ))", params.getTextContains(),
-          params.getTextContains(), params.getTextContains());
+      sb.append("and (csev.code ~* ? or " +
+          "csev.description ~* ? or " +
+          "exists(select 1 from terminology.designation d where d.code_system_entity_version_id = csev.id and d.name ~* ? ))",
+          params.getTextContains(), params.getTextContains(), params.getTextContains());
     }
     if (StringUtils.isNotEmpty(params.getCodeSystem())) {
       sb.and().in("csev.code_system ", params.getCodeSystem());
     }
     if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
       sb.and().in("csev.code_system", params.getPermittedCodeSystems());
+    }
+    if (params.getUnlinked() != null) {
+      sb.append("and");
+      sb.appendIfTrue(params.getUnlinked(), "not");
+      sb.append("exists (select 1 from terminology.entity_version_code_system_version_membership evcsvm " +
+          "where evcsvm.code_system_entity_version_id = csev.id and evcsvm.sys_status = 'A')");
     }
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs " +
         "where csev.code_system = cs.id and cs.uri = ? and cs.sys_status = 'A')", params.getCodeSystemUri());
@@ -169,8 +175,8 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     return getBeans(sb.getSql(), bp, sb.getParams());
   }
 
-  public void batchUpsert(Map<Long, CodeSystemEntityVersion> versions) {
-    List<Entry<Long, CodeSystemEntityVersion>> versionsToInsert = versions.entrySet().stream().filter(e -> e.getValue().getId() == null).toList();
+  public void batchUpsert(Map<Long, List<CodeSystemEntityVersion>> versions) {
+    List<Pair<Long, CodeSystemEntityVersion>> versionsToInsert = versions.entrySet().stream().flatMap(es -> es.getValue().stream().map(v -> Pair.of(es.getKey(), v))).filter(e -> e.getValue().getId() == null).toList();
     String query = "insert into terminology.code_system_entity_version (code_system_entity_id, code_system, code, description, status, created) values (?,?,?,?,?,?::timestamp)";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -179,7 +185,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
       @Override public int getBatchSize() {return versionsToInsert.size();}
     });
 
-    List<Entry<Long, CodeSystemEntityVersion>> versionsToUpdate = versions.entrySet().stream().filter(e -> e.getValue().getId() != null).toList();
+    List<Pair<Long, CodeSystemEntityVersion>> versionsToUpdate = versions.entrySet().stream().flatMap(es -> es.getValue().stream().map(v -> Pair.of(es.getKey(), v))).filter(e -> e.getValue().getId() != null).toList();
     query = "update terminology.code_system_entity_version set code_system_entity_id = ?, code_system = ?, code = ?, description = ?, status = ?, created = ?::timestamp where id = ?";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -200,18 +206,18 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
       newVersions.addAll(beans.stream().filter(v -> !existingIds.contains(v.getId())).toList());
     });
 
-    versions.forEach((key, value) -> {
-      if (value.getId() == null && CollectionUtils.isNotEmpty(newVersions)) {
+    versions.forEach((key, value) -> value.forEach(val -> {
+      if (val.getId() == null && CollectionUtils.isNotEmpty(newVersions)) {
         Optional<CodeSystemEntityVersion> version = newVersions.stream().filter(ver -> ver.getCodeSystemEntityId().equals(key)).findFirst();
         version.ifPresent(v -> {
-          value.setId(version.get().getId());
+          val.setId(version.get().getId());
           newVersions.remove(version.get());
         });
       }
-    });
+    }));
   }
 
-  private void setValues(PreparedStatement ps, int i, List<Entry<Long, CodeSystemEntityVersion>> versionsToInsert) throws SQLException {
+  private void setValues(PreparedStatement ps, int i, List<Pair<Long, CodeSystemEntityVersion>> versionsToInsert) throws SQLException {
     ps.setLong(1, versionsToInsert.get(i).getKey());
     ps.setString(2, versionsToInsert.get(i).getValue().getCodeSystem());
     ps.setString(3, versionsToInsert.get(i).getValue().getCode());

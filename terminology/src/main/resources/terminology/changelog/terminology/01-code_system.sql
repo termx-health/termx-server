@@ -63,3 +63,29 @@ alter table terminology.code_system add column supported_languages text[];
 alter table terminology.code_system add column sequence text;
 --
 
+--changeset kodality:code_system-columns_refactor
+alter table terminology.code_system add column title jsonb;
+update terminology.code_system set title = names;
+alter table terminology.code_system drop column names;
+alter table terminology.code_system alter column title set not null;
+
+alter table terminology.code_system add column description_temp jsonb;
+update terminology.code_system set description_temp = jsonb_strip_nulls(jsonb_build_object('en', description));
+alter table terminology.code_system drop column description;
+alter table terminology.code_system rename column description_temp to description;
+
+alter table terminology.code_system add column publisher text;
+update terminology.code_system cs set publisher = csv.source from terminology.code_system_version csv WHERE csv.code_system = cs.id and cs.sys_status = 'A' and csv.sys_status = 'A';
+alter table terminology.code_system_version drop column source;
+
+alter table terminology.code_system add column name jsonb;
+alter table terminology.code_system add column purpose jsonb;
+alter table terminology.code_system add column hierarchy_meaning text;
+alter table terminology.code_system add column experimental boolean;
+
+alter table terminology.code_system_version add column description_temp jsonb;
+update terminology.code_system_version set description_temp = jsonb_strip_nulls(jsonb_build_object('en', description));
+alter table terminology.code_system_version drop column description;
+alter table terminology.code_system_version rename column description_temp to description;
+
+--

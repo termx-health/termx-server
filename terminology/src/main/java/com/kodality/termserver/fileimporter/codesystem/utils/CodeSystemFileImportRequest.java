@@ -14,7 +14,7 @@ import lombok.experimental.Accessors;
 @Introspected
 public class CodeSystemFileImportRequest {
   private String link;
-  private String type; // csv; tsv
+  private String type; // csv; tsv; json; fsh
 
   private FileProcessingCodeSystem codeSystem;
   private FileProcessingCodeSystemVersion version;
@@ -45,8 +45,8 @@ public class CodeSystemFileImportRequest {
   public static class FileProcessingCodeSystem {
     private String id;
     private String uri;
-    private LocalizedName names;
-    private String description;
+    private LocalizedName title;
+    private LocalizedName description;
   }
 
   @Getter

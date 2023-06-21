@@ -39,7 +39,7 @@ public class CodeSystemFileImportMapper {
     CodeSystem codeSystem = existingCodeSystem != null ? JsonUtil.fromJson(JsonUtil.toJson(existingCodeSystem), CodeSystem.class) : new CodeSystem();
     codeSystem.setId(fpCodeSystem.getId());
     codeSystem.setUri(fpCodeSystem.getUri() != null ? fpCodeSystem.getUri() : codeSystem.getUri());
-    codeSystem.setNames(fpCodeSystem.getNames() != null ? fpCodeSystem.getNames() : codeSystem.getNames());
+    codeSystem.setTitle(fpCodeSystem.getTitle() != null ? fpCodeSystem.getTitle() : codeSystem.getTitle());
     codeSystem.setDescription(fpCodeSystem.getDescription() != null ? fpCodeSystem.getDescription() : codeSystem.getDescription());
     codeSystem.setVersions(List.of(existingCodeSystemVersion != null ? existingCodeSystemVersion : toCsVersion(fpVersion, fpCodeSystem.getId())));
     codeSystem.setProperties(toCsProperties(result.getProperties()));
@@ -148,7 +148,7 @@ public class CodeSystemFileImportMapper {
     ValueSet valueSet = existingValueSet == null ? new ValueSet() : existingValueSet;
     valueSet.setId(codeSystem.getId());
     valueSet.setUri(codeSystem.getUri() == null ? valueSet.getUri() : codeSystem.getUri());
-    valueSet.setTitle(codeSystem.getNames() == null ? valueSet.getTitle() : codeSystem.getNames());
+    valueSet.setTitle(codeSystem.getTitle() == null ? valueSet.getTitle() : codeSystem.getTitle());
     return valueSet;
   }
 

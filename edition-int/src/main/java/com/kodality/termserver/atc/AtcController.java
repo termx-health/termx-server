@@ -30,7 +30,7 @@ public class AtcController {
   @Authorized(Privilege.CS_EDIT)
   @Post("/import")
   public JobLogResponse importAtc(@Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
-    JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);
+    JobLogResponse jobLogResponse = importLogger.createJob(configuration.getPublisher(), JOB_TYPE);
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("ATC import started");

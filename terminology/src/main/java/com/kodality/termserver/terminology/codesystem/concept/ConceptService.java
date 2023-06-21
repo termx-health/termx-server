@@ -3,6 +3,7 @@ package com.kodality.termserver.terminology.codesystem.concept;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.UserPermissionService;
 import com.kodality.termserver.terminology.codesystem.CodeSystemRepository;
+import com.kodality.termserver.terminology.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.terminology.codesystem.entity.CodeSystemEntityService;
 import com.kodality.termserver.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termserver.terminology.valueset.ValueSetVersionRepository;
@@ -15,6 +16,7 @@ import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
+import com.kodality.termserver.ts.codesystem.ConceptTransactionRequest;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
@@ -37,6 +39,7 @@ public class ConceptService {
   private final ConceptRepository repository;
   private final CodeSystemRepository codeSystemRepository;
   private final CodeSystemEntityService codeSystemEntityService;
+  private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetVersionRepository valueSetVersionRepository;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
@@ -94,13 +97,19 @@ public class ConceptService {
   }
 
   @Transactional
-  public Concept saveWithVersions(Concept concept, String codeSystem) {
-    save(concept, codeSystem);
-    if (CollectionUtils.isNotEmpty(concept.getVersions())) {
-      concept.getVersions().stream().filter(v -> PublicationStatus.draft.equals(v.getStatus())).forEach(version -> {
-        version.setCodeSystem(codeSystem);
-        codeSystemEntityVersionService.save(version, concept.getId());
-      });
+  public Concept save(ConceptTransactionRequest request) {
+    Concept concept = request.getConcept();
+    save(concept, request.getCodeSystem());
+
+    if (request.getEntityVersion() == null) {
+      return concept;
+    }
+
+    CodeSystemEntityVersion entityVersion = request.getEntityVersion();
+    entityVersion.setCodeSystem(request.getCodeSystem());
+    codeSystemEntityVersionService.save(entityVersion, concept.getId());
+    if (request.getCodeSystemVersion() != null) {
+      codeSystemVersionService.linkEntityVersions(request.getCodeSystem(), request.getCodeSystemVersion(), List.of(entityVersion.getId()));
     }
     return concept;
   }
@@ -113,9 +122,10 @@ public class ConceptService {
       }
     }
 
+    String codeSystem = params.getCodeSystem();
     prepareParams(params);
     QueryResult<Concept> concepts = repository.query(params);
-    concepts.setData(decorate(concepts.getData(), params.getCodeSystem(), params.getCodeSystemVersion()));
+    concepts.setData(decorate(concepts.getData(), codeSystem, params.getCodeSystemVersion()));
     return concepts;
   }
 

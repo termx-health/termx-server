@@ -46,7 +46,8 @@ public class LoincPartMapper {
   private static CodeSystemImportRequestCodeSystem toCodeSystem(List<String> langs) {
     return new CodeSystemImportRequestCodeSystem().setId("loinc-part")
         .setUri("http://loinc.org/part")
-        .setNames(new LocalizedName(Map.of("en", "LOINC part")))
+        .setPublisher("Regenstrief Institute, Inc.")
+        .setTitle(new LocalizedName(Map.of("en", "LOINC part")))
         .setContent(CodeSystemContent.complete)
         .setCaseSensitive(CaseSignificance.entire_term_case_insensitive)
         .setSupportedLanguages(langs);
@@ -55,7 +56,6 @@ public class LoincPartMapper {
   private static CodeSystemImportRequestVersion toVersion(String version, List<String> langs) {
     return new CodeSystemImportRequestVersion()
         .setVersion(version)
-        .setSource("Regenstrief Institute, Inc.")
         .setSupportedLanguages(langs)
         .setReleaseDate(LocalDate.now());
   }

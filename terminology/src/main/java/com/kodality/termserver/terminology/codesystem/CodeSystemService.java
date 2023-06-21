@@ -52,17 +52,20 @@ public class CodeSystemService {
       version.setCodeSystem(codeSystem.getId());
       version.setReleaseDate(version.getReleaseDate() == null ? LocalDate.now() : version.getReleaseDate());
       codeSystemVersionService.save(version);
-
-      if (request.getValueSet() != null) {
-        request.getValueSet().getValueSet().setTitle(request.getValueSet().getValueSet().getTitle() == null ? codeSystem.getNames() : request.getValueSet().getValueSet().getTitle());
-        request.getValueSet().getVersion().setRuleSet(new ValueSetVersionRuleSet().setRules(List.of(new ValueSetVersionRule()
-            .setCodeSystem(codeSystem.getId())
-            .setCodeSystemVersion(version)
-            .setType(ValueSetVersionRuleType.include)
-        )));
-        valueSetService.save(request.getValueSet());
-      }
     }
+
+
+    if (request.getValueSet() != null) {
+      CodeSystemVersion codeSystemVersion = version == null ? codeSystemVersionService.loadLastVersion(codeSystem.getId()) : version;
+      request.getValueSet().getValueSet().setTitle(codeSystem.getTitle());
+      request.getValueSet().getVersion().setRuleSet(new ValueSetVersionRuleSet().setRules(List.of(new ValueSetVersionRule()
+          .setCodeSystem(codeSystem.getId())
+          .setCodeSystemVersion(codeSystemVersion)
+          .setType(ValueSetVersionRuleType.include)
+      )));
+      valueSetService.save(request.getValueSet());
+    }
+
   }
 
   public Optional<CodeSystem> load(String codeSystem) {
@@ -81,7 +84,6 @@ public class CodeSystemService {
 
   private CodeSystem decorate(CodeSystem codeSystem) {
     decorateVersions(codeSystem, null, null, null);
-    decorateProperties(codeSystem);
     return codeSystem;
   }
 
@@ -92,9 +94,6 @@ public class CodeSystemService {
       }
       if (params.isVersionsDecorated()) {
         decorateVersions(codeSystem, params.getVersionVersion(), params.getVersionReleaseDateGe(), params.getVersionExpirationDateLe());
-      }
-      if (params.isPropertiesDecorated()) {
-        decorateProperties(codeSystem);
       }
     });
   }
@@ -116,10 +115,6 @@ public class CodeSystemService {
     versionParams.setExpirationDateLe(versionExpirationDateLe);
     versionParams.all();
     codeSystem.setVersions(codeSystemVersionService.query(versionParams).getData());
-  }
-
-  private void decorateProperties(CodeSystem codeSystem) {
-    codeSystem.setProperties(entityPropertyService.load(codeSystem.getId()));
   }
 
   @Transactional

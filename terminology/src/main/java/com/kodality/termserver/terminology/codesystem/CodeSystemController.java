@@ -26,6 +26,7 @@ import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
+import com.kodality.termserver.ts.codesystem.ConceptTransactionRequest;
 import com.kodality.termserver.ts.codesystem.Designation;
 import com.kodality.termserver.ts.codesystem.EntityProperty;
 import com.kodality.termserver.ts.codesystem.EntityPropertyQueryParams;
@@ -80,19 +81,11 @@ public class CodeSystemController {
   }
 
   @Authorized(Privilege.CS_EDIT)
-  @Post
-  public HttpResponse<?> saveCodeSystem(@Body @Valid CodeSystem codeSystem) {
-    codeSystemService.save(codeSystem);
-    provenanceService.create(new Provenance("created", "CodeSystem", codeSystem.getId()));
-    return HttpResponse.created(codeSystem);
-  }
-
-  @Authorized(Privilege.CS_EDIT)
   @Post("/transaction")
-  public HttpResponse<?> saveCodeSystemTransaction(@Body @Valid CodeSystemTransactionRequest codeSystem) {
-    codeSystemService.save(codeSystem);
-    provenanceService.create(new Provenance("modified", "CodeSystem", codeSystem.getCodeSystem().getId()));
-    return HttpResponse.created(codeSystem);
+  public HttpResponse<?> saveCodeSystemTransaction(@Body @Valid CodeSystemTransactionRequest request) {
+    codeSystemService.save(request);
+    provenanceService.create(new Provenance("modified", "CodeSystem", request.getCodeSystem().getId()));
+    return HttpResponse.created(request.getCodeSystem());
   }
 
   @Authorized(Privilege.CS_EDIT)
@@ -180,8 +173,7 @@ public class CodeSystemController {
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/versions/{version}/duplicate")
   public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version, @Body @Valid CodeSystemVersionDuplicateRequest request) {
-    CodeSystemVersion newVersion =
-        codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), request.getCodeSystem(), version, codeSystem);
+    CodeSystemVersion newVersion = codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), request.getCodeSystem(), version, codeSystem);
     provenanceService.create(new Provenance("created", "CodeSystemVersion", newVersion.getId().toString())
         .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.ok();
@@ -210,31 +202,22 @@ public class CodeSystemController {
   }
 
   @Authorized(Privilege.CS_EDIT)
-  @Post(uri = "/{codeSystem}/concepts")
-  public HttpResponse<?> createConcept(@PathVariable @ResourceId String codeSystem, @QueryValue Optional<Boolean> full, @Body @Valid Concept concept) {
-    concept.setId(null);
-    concept.setCodeSystem(codeSystem);
-    if (full.orElse(false)) {
-      conceptService.saveWithVersions(concept, codeSystem);
-    } else {
-      conceptService.save(concept, codeSystem);
-    }
+  @Post(uri = "/{codeSystem}/concepts/transaction")
+  public HttpResponse<?> saveConceptTransaction(@PathVariable @ResourceId String codeSystem, @Body @Valid ConceptTransactionRequest request) {
+    request.setCodeSystem(codeSystem);
+    Concept concept = conceptService.save(request);
     provenanceService.create(new Provenance("created", "CodeSystemEntity", concept.getId().toString())
         .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.created(concept);
   }
 
   @Authorized(Privilege.CS_EDIT)
-  @Put(uri = "/{codeSystem}/concepts/{id}")
-  public HttpResponse<?> updateConcept(@PathVariable @ResourceId String codeSystem, @PathVariable Long id, @QueryValue Optional<Boolean> full, @Body @Valid Concept concept) {
-    concept.setId(id);
-    concept.setCodeSystem(codeSystem);
-    if (full.orElse(false)) {
-      conceptService.saveWithVersions(concept, codeSystem);
-    } else {
-      conceptService.save(concept, codeSystem);
-    }
-    provenanceService.create(new Provenance("modified", "CodeSystemEntity", concept.getId().toString())
+  @Post(uri = "/{codeSystem}/versions/{version}/concepts/transaction")
+  public HttpResponse<?> saveConceptTransaction(@PathVariable @ResourceId String codeSystem, @PathVariable String version, @Body @Valid ConceptTransactionRequest request) {
+    request.setCodeSystem(codeSystem);
+    request.setCodeSystemVersion(version);
+    Concept concept = conceptService.save(request);
+    provenanceService.create(new Provenance("created", "CodeSystemEntity", concept.getId().toString())
         .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.created(concept);
   }
@@ -314,18 +297,18 @@ public class CodeSystemController {
   }
 
   @Authorized(Privilege.CS_EDIT)
-  @Post(uri = "/{codeSystem}/versions/{version}/entity-versions/{entityVersionId}/membership")
-  public HttpResponse<?> linkEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version, @PathVariable Long entityVersionId) {
-    codeSystemVersionService.linkEntityVersion(codeSystem, version, entityVersionId);
+  @Post(uri = "/{codeSystem}/versions/{version}/link")
+  public HttpResponse<?> linkEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version,  @Body CodeSystemEntityVersionLinkRequest request) {
+    codeSystemVersionService.linkEntityVersions(codeSystem, version, request.getEntityVersionIds());
     provenanceService.create(new Provenance("modified", "CodeSystemVersion", codeSystemVersionService.load(codeSystem, version).orElseThrow().getId().toString())
         .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.ok();
   }
 
   @Authorized(Privilege.CS_EDIT)
-  @Delete(uri = "/{codeSystem}/versions/{version}/entity-versions/{entityVersionId}/membership")
-  public HttpResponse<?> unlinkEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version, @PathVariable Long entityVersionId) {
-    codeSystemVersionService.unlinkEntityVersion(codeSystem, version, entityVersionId);
+  @Post(uri = "/{codeSystem}/versions/{version}/unlink")
+  public HttpResponse<?> unlinkEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version, @Body CodeSystemEntityVersionLinkRequest request) {
+    codeSystemVersionService.unlinkEntityVersions(codeSystem, version, request.getEntityVersionIds());
     provenanceService.create(new Provenance("modified", "CodeSystemVersion", codeSystemVersionService.load(codeSystem, version).orElseThrow().getId().toString())
         .addContext("part-of", "CodeSystem", codeSystem));
     return HttpResponse.ok();
@@ -544,5 +527,12 @@ public class CodeSystemController {
   public static class CodeSystemVersionDuplicateRequest {
     private String codeSystem;
     private String version;
+  }
+
+  @Getter
+  @Setter
+  @Introspected
+  public static class CodeSystemEntityVersionLinkRequest {
+    private List<Long> entityVersionIds;
   }
 }

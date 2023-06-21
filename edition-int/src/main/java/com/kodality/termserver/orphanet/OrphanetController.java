@@ -31,7 +31,7 @@ public class OrphanetController {
   @Authorized(Privilege.CS_EDIT)
   @Post("/import")
   public JobLogResponse importIcd10(@NonNull @QueryValue String url, @Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
-    JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);
+    JobLogResponse jobLogResponse = importLogger.createJob(configuration.getPublisher(), JOB_TYPE);
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Orphanet import started");

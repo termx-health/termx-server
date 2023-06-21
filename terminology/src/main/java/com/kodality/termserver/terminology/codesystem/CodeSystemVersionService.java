@@ -128,26 +128,21 @@ public class CodeSystemVersionService {
   }
 
   @Transactional
-  public void linkEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
+  public void linkEntityVersions(String codeSystem, String codeSystemVersion, List<Long> entityVersionIds) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
 
     Long versionId = load(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId)
         .orElseThrow(() -> ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem)));
-    linkEntityVersion(versionId, entityVersionId);
+    linkEntityVersions(versionId, entityVersionIds);
   }
 
   @Transactional
-  public void linkEntityVersion(Long codeSystemVersionId, Long entityVersionId) {
-    repository.linkEntityVersion(codeSystemVersionId, entityVersionId);
-  }
-
-  @Transactional
-  public void unlinkEntityVersion(String codeSystem, String codeSystemVersion, Long entityVersionId) {
+  public void unlinkEntityVersions(String codeSystem, String codeSystemVersion, List<Long> entityVersionIds) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
 
     Long versionId = load(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId)
         .orElseThrow(() -> ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem)));
-    repository.unlinkEntityVersion(versionId, entityVersionId);
+    unlinkEntityVersions(versionId, entityVersionIds);
   }
 
   @Transactional
@@ -155,6 +150,13 @@ public class CodeSystemVersionService {
     long start = System.currentTimeMillis();
     CodeSystemVersion codeSystemVersion = repository.load(codeSystemVersionId);
     repository.linkEntityVersions(entityVersionIds, codeSystemVersionId);
+    log.info("Linked (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
+  }
+
+  @Transactional
+  public void unlinkEntityVersions(Long codeSystemVersionId, List<Long> entityVersionIds) {
+    long start = System.currentTimeMillis();
+    repository.unlinkEntityVersions(entityVersionIds, codeSystemVersionId);
     log.info("Linked (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }
 

@@ -52,7 +52,8 @@ public class LoincAnswerListMapper {
   private static CodeSystemImportRequestCodeSystem toCodeSystem() {
     return new CodeSystemImportRequestCodeSystem().setId("loinc-answer-list")
         .setUri("http://loinc.org/answer-list")
-        .setNames(new LocalizedName(Map.of("en", "LOINC answer list")))
+        .setPublisher("Regenstrief Institute, Inc.")
+        .setTitle(new LocalizedName(Map.of("en", "LOINC answer list")))
         .setContent(CodeSystemContent.complete)
         .setCaseSensitive(CaseSignificance.entire_term_case_insensitive)
         .setSupportedLanguages(List.of(Language.en));
@@ -61,7 +62,6 @@ public class LoincAnswerListMapper {
   private static CodeSystemImportRequestVersion toVersion(String version) {
     return new CodeSystemImportRequestVersion()
         .setVersion(version)
-        .setSource("Regenstrief Institute, Inc.")
         .setSupportedLanguages(List.of(Language.en))
         .setReleaseDate(LocalDate.now());
   }

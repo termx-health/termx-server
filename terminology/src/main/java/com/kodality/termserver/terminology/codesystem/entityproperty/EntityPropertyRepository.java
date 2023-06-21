@@ -21,7 +21,6 @@ public class EntityPropertyRepository extends BaseRepository {
 
   private final Map<String, String> orderMapping = Map.of("order-number", "ep.order_number");
 
-
   String from = " from terminology.entity_property ep left join terminology.code_system_supplement css on css.target_id = ep.id and css.target_type = 'EntityProperty' ";
 
   public void save(EntityProperty entityProperty, String codeSystem) {

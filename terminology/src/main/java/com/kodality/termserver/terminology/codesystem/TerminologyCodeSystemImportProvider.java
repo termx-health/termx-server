@@ -31,7 +31,8 @@ public class TerminologyCodeSystemImportProvider extends CodeSystemImportProvide
     CodeSystem codeSystem = new CodeSystem();
     codeSystem.setId(request.getCodeSystem().getId());
     codeSystem.setUri(request.getCodeSystem().getUri());
-    codeSystem.setNames(request.getCodeSystem().getNames());
+    codeSystem.setPublisher(request.getCodeSystem().getPublisher());
+    codeSystem.setTitle(request.getCodeSystem().getTitle());
     codeSystem.setDescription(request.getCodeSystem().getDescription());
     codeSystem.setContent(Optional.ofNullable(request.getCodeSystem().getContent()).orElse(CodeSystemContent.complete));
     codeSystem.setBaseCodeSystem(request.getCodeSystem().getBaseCodeSystem());
@@ -62,7 +63,6 @@ public class TerminologyCodeSystemImportProvider extends CodeSystemImportProvide
     CodeSystemVersion version = new CodeSystemVersion();
     version.setCodeSystem(request.getCodeSystem().getId());
     version.setVersion(request.getVersion().getVersion());
-    version.setSource(request.getVersion().getSource());
     version.setSupportedLanguages(request.getVersion().getSupportedLanguages());
     version.setDescription(request.getVersion().getDescription());
     version.setStatus(PublicationStatus.draft);

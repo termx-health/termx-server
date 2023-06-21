@@ -1,5 +1,6 @@
 package com.kodality.termserver.fhir.codesystem;
 
+import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termserver.ts.CaseSignificance;
 import com.kodality.termserver.ts.ContactDetail;
@@ -38,14 +39,20 @@ public class CodeSystemFhirImportMapper {
     CodeSystem codeSystem = new CodeSystem();
     codeSystem.setId(CodeSystemFhirMapper.parseCompositeId(fhirCodeSystem.getId())[0]);
     codeSystem.setUri(fhirCodeSystem.getUrl());
-    codeSystem.setNames(new LocalizedName(Map.of(Language.en, fhirCodeSystem.getName() == null ? fhirCodeSystem.getTitle() : fhirCodeSystem.getName())));
+    codeSystem.setPublisher(fhirCodeSystem.getPublisher());
+    codeSystem.setTitle(toLocalizedName(fhirCodeSystem.getTitle()));
+    codeSystem.setName(toLocalizedName(fhirCodeSystem.getName()));
+    codeSystem.setDescription(toLocalizedName(fhirCodeSystem.getDescription()));
+    codeSystem.setPurpose(toLocalizedName(fhirCodeSystem.getPurpose()));
+    codeSystem.setHierarchyMeaning(fhirCodeSystem.getHierarchyMeaning());
+    codeSystem.setNarrative(fhirCodeSystem.getText() == null ? null : fhirCodeSystem.getText().getDiv());
+    codeSystem.setExperimental(fhirCodeSystem.getExperimental());
+    codeSystem.setIdentifiers(mapIdentifiers(fhirCodeSystem.getIdentifier()));
+    codeSystem.setContacts(mapContacts(fhirCodeSystem.getContact()));
     codeSystem.setContent(fhirCodeSystem.getContent());
-    codeSystem.setContacts(fhirCodeSystem.getContact() == null ? null :
-        fhirCodeSystem.getContact().stream().map(CodeSystemFhirImportMapper::mapCodeSystemContact).collect(Collectors.toList()));
-    codeSystem.setDescription(fhirCodeSystem.getDescription());
     codeSystem.setCaseSensitive(fhirCodeSystem.getCaseSensitive() != null && fhirCodeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
         CaseSignificance.entire_term_case_insensitive);
-    codeSystem.setNarrative(fhirCodeSystem.getText() == null ? null : fhirCodeSystem.getText().getDiv());
+    //TODO: copyright
 
     codeSystem.setVersions(mapVersion(fhirCodeSystem));
     codeSystem.setConcepts(mapConcepts(fhirCodeSystem.getConcept(), fhirCodeSystem, null));
@@ -53,20 +60,38 @@ public class CodeSystemFhirImportMapper {
     return codeSystem;
   }
 
-  private static ContactDetail mapCodeSystemContact(com.kodality.zmei.fhir.datatypes.ContactDetail c) {
-    ContactDetail contact = new ContactDetail();
-    contact.setName(c.getName());
-    contact.setTelecoms(c.getTelecom() == null ? null : c.getTelecom().stream().map(t ->
-        new Telecom().setSystem(t.getSystem()).setUse(t.getUse()).setValue(t.getValue())
-    ).collect(Collectors.toList()));
-    return contact;
+  private static LocalizedName toLocalizedName(String name) {
+    if (name == null) {
+      return null;
+    }
+    return new LocalizedName(Map.of(Language.en, name));
+  }
+
+  private static List<Identifier> mapIdentifiers(List<com.kodality.zmei.fhir.datatypes.Identifier> identifiers) {
+    if (identifiers == null) {
+      return null;
+    }
+    return identifiers.stream().map(i -> new Identifier(i.getSystem(), i.getValue())).collect(Collectors.toList());
+  }
+
+  private static List<ContactDetail> mapContacts(List<com.kodality.zmei.fhir.datatypes.ContactDetail> details) {
+    if (CollectionUtils.isEmpty(details)) {
+      return new ArrayList<>();
+    }
+    return details.stream().map(c -> {
+      ContactDetail contact = new ContactDetail();
+      contact.setName(c.getName());
+      contact.setTelecoms(c.getTelecom() == null ? null : c.getTelecom().stream().map(t ->
+          new Telecom().setSystem(t.getSystem()).setUse(t.getUse()).setValue(t.getValue())
+      ).collect(Collectors.toList()));
+      return contact;
+    }).toList();
   }
 
   private static List<CodeSystemVersion> mapVersion(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     CodeSystemVersion version = new CodeSystemVersion();
     version.setCodeSystem(fhirCodeSystem.getId());
     version.setVersion(fhirCodeSystem.getVersion() == null ? "1.0.0" : fhirCodeSystem.getVersion());
-    version.setSource(fhirCodeSystem.getPublisher());
     version.setPreferredLanguage(Language.en);
     version.setSupportedLanguages(List.of(Language.en));
     version.setStatus(PublicationStatus.draft);

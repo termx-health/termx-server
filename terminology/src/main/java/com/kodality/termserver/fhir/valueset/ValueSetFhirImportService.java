@@ -189,7 +189,7 @@ public class ValueSetFhirImportService {
     }
 
     if (codeSystem != null && codeSystemVersionId != null) {
-      codeSystemVersionService.linkEntityVersion(codeSystemVersionId, version.getId());
+      codeSystemVersionService.linkEntityVersions(codeSystemVersionId, List.of(version.getId()));
     }
     return version;
   }

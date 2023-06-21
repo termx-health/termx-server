@@ -51,17 +51,23 @@ public class CodeSystemDuplicateService {
     }
 
     if (codeSystemService.load(targetCodeSystem.getId()).isEmpty()) {
-      targetCodeSystem.setNames(sourceCs.getNames());
-      targetCodeSystem.setContent(sourceCs.getContent());
-      targetCodeSystem.setContacts(sourceCs.getContacts());
-      targetCodeSystem.setCaseSensitive(sourceCs.getCaseSensitive());
-      targetCodeSystem.setNarrative(sourceCs.getNarrative());
+      targetCodeSystem.setPublisher(sourceCs.getPublisher());
+      targetCodeSystem.setTitle(sourceCs.getTitle());
+      targetCodeSystem.setName(sourceCs.getName());
       targetCodeSystem.setDescription(sourceCs.getDescription());
+      targetCodeSystem.setPurpose(sourceCs.getPurpose());
+      targetCodeSystem.setHierarchyMeaning(sourceCs.getHierarchyMeaning());
+      targetCodeSystem.setNarrative(sourceCs.getNarrative());
+      targetCodeSystem.setExperimental(sourceCs.getExperimental());
+      targetCodeSystem.setIdentifiers(sourceCs.getIdentifiers());
+      targetCodeSystem.setContacts(sourceCs.getContacts());
+      targetCodeSystem.setContent(sourceCs.getContent());
+      targetCodeSystem.setCaseSensitive(sourceCs.getCaseSensitive());
       targetCodeSystem.setBaseCodeSystem(sourceCs.getId());
       codeSystemService.save(targetCodeSystem);
     }
 
-    List<CodeSystemVersion> versions = sourceCs.getVersions();
+    List<CodeSystemVersion> versions = sourceCs.getVersions(); //TODO load versions
     versions.forEach(v -> {
       v.setId(null);
       v.setCreated(null).setStatus(PublicationStatus.draft).setCodeSystem(targetCodeSystem.getId());
@@ -158,7 +164,7 @@ public class CodeSystemDuplicateService {
       v.setStatus(PublicationStatus.draft);
     }));
     Map<Long, Pair<Long, CodeSystemEntityVersion>> versions = concepts.stream().flatMap(c -> c.getVersions().stream()).collect(Collectors.toMap(CodeSystemEntityVersion::getId, v -> Pair.of(v.getCodeSystemEntityId(), v)));
-    Map<Long, CodeSystemEntityVersion> batch = versions.values().stream().peek(v -> v.getValue().setId(null)).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+    Map<Long, List<CodeSystemEntityVersion>> batch = concepts.stream().flatMap(c -> c.getVersions().stream().peek(v -> v.setId(null))).collect(Collectors.groupingBy(CodeSystemEntityVersion::getCodeSystemEntityId));
     codeSystemEntityVersionService.batchSave(batch, targetCodeSystem);
     return versions.entrySet().stream().collect(Collectors.toMap(Entry::getKey, es -> es.getValue().getValue().getId()));
   }

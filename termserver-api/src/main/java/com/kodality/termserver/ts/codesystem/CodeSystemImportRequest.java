@@ -27,14 +27,14 @@ public class CodeSystemImportRequest {
   public CodeSystemImportRequest(CodeSystemImportConfiguration configuration) {
     this.codeSystem = new CodeSystemImportRequestCodeSystem().setId(configuration.getCodeSystem())
         .setUri(configuration.getUri())
-        .setNames(configuration.getCodeSystemName())
+        .setPublisher(configuration.getPublisher())
+        .setTitle(configuration.getCodeSystemName())
         .setDescription(configuration.getCodeSystemDescription())
         .setBaseCodeSystem(configuration.getBaseCodeSystem());
 
     this.version = new CodeSystemImportRequestVersion().setVersion(configuration.getVersion())
         .setReleaseDate(configuration.getValidFrom())
         .setExpirationDate(configuration.getValidTo())
-        .setSource(configuration.getSource())
         .setDescription(configuration.getCodeSystemVersionDescription());
   }
 
@@ -44,11 +44,12 @@ public class CodeSystemImportRequest {
   public static class CodeSystemImportRequestCodeSystem {
     private String id;
     private String uri;
-    private LocalizedName names;
+    private String publisher;
+    private LocalizedName title;
     private String content;
     private String caseSensitive;
     private String narrative;
-    private String description;
+    private LocalizedName description;
     private List<String> supportedLanguages;
 
     private String baseCodeSystem;
@@ -59,9 +60,8 @@ public class CodeSystemImportRequest {
   @Accessors(chain = true)
   public static class CodeSystemImportRequestVersion {
     private String version;
-    private String source;
     private List<String> supportedLanguages;
-    private String description;
+    private LocalizedName description;
     private LocalDate releaseDate;
     private LocalDate expirationDate;
   }

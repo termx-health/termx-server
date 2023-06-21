@@ -1,5 +1,6 @@
 package com.kodality.termserver.ts.codesystem;
 
+import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termserver.ts.ContactDetail;
 import io.micronaut.core.annotation.Introspected;
@@ -15,14 +16,21 @@ import lombok.experimental.Accessors;
 public class CodeSystem {
   private String id;
   private String uri;
-  private LocalizedName names;
-  private String content;
-  private List<ContactDetail> contacts;
-  private String caseSensitive;
+  private String publisher;
+  private LocalizedName title;
+  private LocalizedName name;
+  private LocalizedName description;
+  private LocalizedName purpose;
+  private String hierarchyMeaning;
   private String narrative;
-  private String description;
-  private List<String> supportedLanguages;
+  private Boolean experimental;
+  private List<Identifier> identifiers;
+  private List<ContactDetail> contacts;
+  private String content;
+  private String caseSensitive;
   private String sequence;
+  private Object copyright;
+  private Object permissions;
 
   private String baseCodeSystem;
 

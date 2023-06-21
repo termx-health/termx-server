@@ -120,9 +120,9 @@ public class CodeSystemImportService {
     start = System.currentTimeMillis();
     List<Long> activeConceptIds = concepts.stream().filter(c -> c.getVersions().get(0).getStatus() == null || PublicationStatus.draft.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
     List<Long> retiredConceptIds = concepts.stream().filter(c -> PublicationStatus.retired.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
-    Map<Long, CodeSystemEntityVersion> entityVersionMap = concepts.stream()
+    Map<Long, List<CodeSystemEntityVersion>> entityVersionMap = concepts.stream()
         .map(concept -> Pair.of(concept.getId(), prepareEntityVersion(concept.getVersions().get(0), entityProperties)))
-        .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+        .collect(Collectors.toMap(Pair::getKey, p -> List.of(p.getValue())));
     codeSystemEntityVersionService.batchSave(entityVersionMap, version.getCodeSystem());
     log.info("Concept versions created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
 

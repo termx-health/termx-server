@@ -30,7 +30,7 @@ public class Icd10EstController {
   @Authorized(Privilege.CS_EDIT)
   @Post("/import")
   public JobLogResponse importIcd10Est(@NonNull @QueryValue String url, @Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
-    JobLogResponse jobLogResponse = importLogger.createJob(configuration.getSource(), JOB_TYPE);
+    JobLogResponse jobLogResponse = importLogger.createJob(configuration.getPublisher(), JOB_TYPE);
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("ICD-10 est import started");
