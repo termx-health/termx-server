@@ -42,7 +42,6 @@ public class CodeSystemEntityVersionService {
   private final CodeSystemEntityVersionRepository repository;
   private final ConceptRefreshViewJob conceptRefreshViewJob;
   private final List<CodeSystemExternalProvider> codeSystemProviders;
-
   private final UserPermissionService userPermissionService;
 
   @Transactional
@@ -135,13 +134,16 @@ public class CodeSystemEntityVersionService {
 
           DesignationQueryParams designationParams = new DesignationQueryParams().setCodeSystemEntityVersionId(versionIds);
           designationParams.setLimit(-1);
-          Map<Long, List<Designation>> designations = designationService.query(designationParams).getData().stream().collect(Collectors.groupingBy(Designation::getCodeSystemEntityVersionId));
+          Map<Long, List<Designation>> designations =
+              designationService.query(designationParams).getData().stream().collect(Collectors.groupingBy(Designation::getCodeSystemEntityVersionId));
           EntityPropertyValueQueryParams entityPropertyValueParams = new EntityPropertyValueQueryParams().setCodeSystemEntityVersionId(versionIds);
           entityPropertyValueParams.setLimit(-1);
-          Map<Long, List<EntityPropertyValue>> propertyValues = entityPropertyValueService.query(entityPropertyValueParams).getData().stream().collect(Collectors.groupingBy(EntityPropertyValue::getCodeSystemEntityVersionId));
+          Map<Long, List<EntityPropertyValue>> propertyValues = entityPropertyValueService.query(entityPropertyValueParams).getData().stream()
+              .collect(Collectors.groupingBy(EntityPropertyValue::getCodeSystemEntityVersionId));
           CodeSystemAssociationQueryParams codeSystemAssociationParams = new CodeSystemAssociationQueryParams().setCodeSystemEntityVersionId(versionIds);
           codeSystemAssociationParams.setLimit(-1);
-          Map<Long, List<CodeSystemAssociation>> associations = codeSystemAssociationService.query(codeSystemAssociationParams).getData().stream().collect(Collectors.groupingBy(CodeSystemAssociation::getSourceId));
+          Map<Long, List<CodeSystemAssociation>> associations =
+              codeSystemAssociationService.query(codeSystemAssociationParams).getData().stream().collect(Collectors.groupingBy(CodeSystemAssociation::getSourceId));
 
           batch.forEach(v -> {
             v.setDesignations(designations.get(v.getId()));
@@ -216,7 +218,7 @@ public class CodeSystemEntityVersionService {
   }
 
   @Transactional
-  public void duplicate(String codeSystem, Long entityId, Long id) {
+  public CodeSystemEntityVersion duplicate(String codeSystem, Long entityId, Long id) {
     CodeSystemEntityVersion version = load(id);
     version.setId(null);
     version.setCreated(null);
@@ -232,6 +234,7 @@ public class CodeSystemEntityVersionService {
       version.getAssociations().forEach(a -> a.setId(null));
     }
     save(version, entityId);
+    return version;
   }
 
   @Transactional
@@ -260,4 +263,5 @@ public class CodeSystemEntityVersionService {
 
     return codeSystemEntityVersions.stream().filter(Objects::nonNull).collect(Collectors.toList());
   }
+
 }

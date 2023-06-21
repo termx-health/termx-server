@@ -82,7 +82,7 @@ public class CodeSystemDuplicateService {
   }
 
   @Transactional
-  public void duplicateCodeSystemVersion(String targetVersionVersion, String targetCodeSystem, String sourceVersionVersion, String sourceCodeSystem) {
+  public CodeSystemVersion duplicateCodeSystemVersion(String targetVersionVersion, String targetCodeSystem, String sourceVersionVersion, String sourceCodeSystem) {
     userPermissionService.checkPermitted(targetCodeSystem, "CodeSystem", "edit");
 
     CodeSystemVersion version = codeSystemVersionService.load(sourceCodeSystem, sourceVersionVersion).orElse(null);
@@ -108,6 +108,7 @@ public class CodeSystemDuplicateService {
     }
 
     duplicateConcepts(List.of(version), sourceCodeSystem, sourceVersionVersion, targetCodeSystem, propertyMap);
+    return version;
   }
 
   private void duplicateConcepts(List<CodeSystemVersion> versions,

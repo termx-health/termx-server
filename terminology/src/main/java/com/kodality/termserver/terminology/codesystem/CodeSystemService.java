@@ -12,7 +12,6 @@ import com.kodality.termserver.ts.codesystem.CodeSystemTransactionRequest;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
-import com.kodality.termserver.ts.codesystem.EntityPropertyQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleType;

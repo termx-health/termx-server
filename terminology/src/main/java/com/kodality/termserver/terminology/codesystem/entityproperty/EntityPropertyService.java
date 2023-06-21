@@ -23,7 +23,6 @@ public class EntityPropertyService {
   private final EntityPropertyRepository repository;
   private final DesignationService designationService;
   private final EntityPropertyValueService entityPropertyValueService;
-
   private final UserPermissionService userPermissionService;
 
   public Optional<EntityProperty> load(Long id) {

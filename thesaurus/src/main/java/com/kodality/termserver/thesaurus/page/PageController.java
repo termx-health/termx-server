@@ -3,6 +3,8 @@ package com.kodality.termserver.thesaurus.page;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.auth.Authorized;
+import com.kodality.termserver.sys.provenance.Provenance;
+import com.kodality.termserver.sys.provenance.ProvenanceService;
 import com.kodality.termserver.thesaurus.Privilege;
 import com.kodality.termserver.thesaurus.pagecontent.PageContentService;
 import com.kodality.termserver.thesaurus.pagelink.PageLinkService;
@@ -25,6 +27,7 @@ public class PageController {
   private final PageService pageService;
   private final PageContentService contentService;
   private final PageLinkService linkService;
+  private final ProvenanceService provenanceService;
 
   @Authorized(Privilege.T_VIEW)
   @Get(uri = "/{id}")
@@ -41,20 +44,25 @@ public class PageController {
   @Authorized(Privilege.T_EDIT)
   @Post
   public HttpResponse<?> savePage(@Body PageRequest request) {
-    return HttpResponse.created(pageService.save(request.getPage(), request.getContent()));
+    Page page = pageService.save(request.getPage(), request.getContent());
+    provenanceService.create(new Provenance("created", "Page", page.getId().toString()));
+    return HttpResponse.created(page);
   }
 
   @Authorized(Privilege.T_EDIT)
   @Put(uri = "/{id}")
   public HttpResponse<?> updatePage(@PathVariable Long id, @Body PageRequest request) {
     request.getPage().setId(id);
-    return HttpResponse.created(pageService.save(request.getPage(), request.getContent()));
+    Page page = pageService.save(request.getPage(), request.getContent());
+    provenanceService.create(new Provenance("modified", "Page", page.getId().toString()));
+    return HttpResponse.created(page);
   }
 
   @Authorized(Privilege.T_EDIT)
   @Delete(uri = "/{id}")
   public HttpResponse<?> deletePage(@PathVariable Long id) {
     pageService.cancel(id);
+    provenanceService.create(new Provenance("deleted", "Page", id.toString()));
     return HttpResponse.ok();
   }
 
@@ -62,6 +70,7 @@ public class PageController {
   @Post(uri = "/{id}/contents")
   public HttpResponse<?> savePageContent(@PathVariable Long id, @Body PageContent content) {
     contentService.save(content, id);
+    provenanceService.create(new Provenance("modified", "Page", id.toString()));
     return HttpResponse.created(content);
   }
 
@@ -70,6 +79,7 @@ public class PageController {
   public HttpResponse<?> updatePageContent(@PathVariable Long id, @PathVariable Long contentId, @Body PageContent content) {
     content.setId(contentId);
     contentService.save(content, id);
+    provenanceService.create(new Provenance("modified", "Page", id.toString()));
     return HttpResponse.created(content);
   }
 
