@@ -30,7 +30,7 @@ public abstract class BaseFhirMapper {
     return fhir.getCount() == null || fhir.getCount() == 0 ? 0 : (fhir.getPage() - 1) * fhir.getCount();
   }
 
-  protected static Map<String, String> getSimpleParams(SearchCriterion fhir) {
+  public static Map<String, String> getSimpleParams(SearchCriterion fhir) {
     return fhir.getRawParams().keySet().stream()
         .filter(k -> CollectionUtils.isNotEmpty(fhir.getRawParams().get(k)))
         .collect(Collectors.toMap(k -> k, k -> fhir.getRawParams().get(k).get(0)));

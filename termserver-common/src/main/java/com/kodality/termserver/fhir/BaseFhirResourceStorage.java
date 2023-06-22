@@ -1,5 +1,6 @@
 package com.kodality.termserver.fhir;
 
+import com.kodality.kefhir.core.api.resource.ResourceSearchHandler;
 import com.kodality.kefhir.core.api.resource.ResourceStorage;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.core.model.ResourceVersion;
@@ -10,10 +11,10 @@ import com.kodality.kefhir.core.model.search.SearchResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import java.util.List;
 
-public abstract class BaseFhirResourceStorage implements ResourceStorage {
-
-  public abstract SearchResult search(SearchCriterion criteria);
+public abstract class BaseFhirResourceStorage implements ResourceStorage, ResourceSearchHandler {
   public abstract ResourceVersion load(String id);
+
+  public abstract String getResourceType();
 
   @Override
   public List<ResourceVersion> load(List<ResourceId> ids) {
@@ -32,11 +33,6 @@ public abstract class BaseFhirResourceStorage implements ResourceStorage {
   }
 
   @Override
-  public ResourceVersion saveForce(ResourceId id, ResourceContent content) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public void delete(ResourceId id) {
     throw new UnsupportedOperationException();
   }
@@ -48,6 +44,11 @@ public abstract class BaseFhirResourceStorage implements ResourceStorage {
 
   @Override
   public String generateNewId() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public SearchResult search(SearchCriterion criteria) {
     throw new UnsupportedOperationException();
   }
 }

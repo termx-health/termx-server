@@ -3,8 +3,6 @@ package com.kodality.termserver.fhir.conceptmap;
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceVersion;
 import com.kodality.kefhir.core.model.VersionId;
-import com.kodality.kefhir.core.model.search.SearchCriterion;
-import com.kodality.kefhir.core.model.search.SearchResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termserver.fhir.BaseFhirResourceStorage;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirMapper;
@@ -48,11 +46,6 @@ public class ConceptMapResourceStorage extends BaseFhirResourceStorage {
     MapSetVersion version = versionNumber == null ? mapSetVersionService.loadLastVersion(id) :
         mapSetVersionService.load(id, versionNumber).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "resource not found"));
     return toFhir(mapSet, version);
-  }
-
-  @Override
-  public SearchResult search(SearchCriterion criteria) {
-    throw new UnsupportedOperationException();
   }
 
   private ResourceVersion toFhir(MapSet mapSet, MapSetVersion version) {

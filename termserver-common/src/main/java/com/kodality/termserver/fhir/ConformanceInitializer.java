@@ -10,12 +10,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.kodality.termserver.fhir.conformance;
+package com.kodality.termserver.fhir;
 
 import com.kodality.commons.util.resource.ResourcesLocator;
 import com.kodality.kefhir.core.service.conformance.ConformanceResourceLoader;
 import com.kodality.kefhir.structure.service.ResourceFormatService;
 import io.micronaut.context.annotation.Replaces;
+import io.micronaut.core.io.ResourceLoader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,10 +35,11 @@ import org.hl7.fhir.r5.model.Resource;
 public class ConformanceInitializer implements ConformanceResourceLoader {
   private final ResourceFormatService resourceFormatService;
   private final Map<String, List<Resource>> resources = new HashMap<>();
+  private final ResourceLoader resourceLoader;
 
   @PostConstruct
   public void init() {
-    ResourcesLocator.readResources("conformance/**").forEach(res -> {
+    resourceLoader.getResources("conformance").flatMap(url -> ResourcesLocator.readResources(url.toString() + "/**")).forEach(res -> {
       Resource resource = this.resourceFormatService.parse(res.getContentString());
       if (resource.getResourceType().name().equals("Bundle")) {
         ((Bundle) resource).getEntry().forEach(e -> {
@@ -51,16 +53,7 @@ public class ConformanceInitializer implements ConformanceResourceLoader {
 
   @SuppressWarnings("unchecked")
   public <T extends Resource> List<T> load(String name) {
-    if (name.equals("CapabilityStatement")) {
-      return (List<T>) resources.get("CapabilityStatement");
-    }
-    if (name.equals("StructureDefinition")) {
-      return (List<T>) resources.get("StructureDefinition");
-    }
-    if (name.equals("SearchParameter")) {
-      return (List<T>) resources.get("SearchParameter");
-    }
-    return List.of();
+    return (List<T>) resources.getOrDefault(name, new ArrayList<>());
   }
 
 }

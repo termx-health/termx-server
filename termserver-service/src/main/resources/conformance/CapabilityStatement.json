@@ -318,6 +318,22 @@
             "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-translate"
           }
         ]
+        },
+        {
+          "type": "Provenance",
+          "profile": "http://hl7.org/fhir/StructureDefinition/Provenance",
+          "interaction": [
+            {
+              "code": "search-type"
+            }
+          ],
+          "readHistory": true,
+          "searchParam": [
+            {
+              "name": "target",
+              "type": "string"
+            }
+          ]
         }
       ]
     }
