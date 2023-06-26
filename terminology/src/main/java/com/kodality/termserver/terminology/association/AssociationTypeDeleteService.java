@@ -1,12 +1,12 @@
 package com.kodality.termserver.terminology.association;
 
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.ApiError;
+import com.kodality.termserver.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termserver.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termserver.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.ts.codesystem.CodeSystemAssociationQueryParams;
 import com.kodality.termserver.ts.mapset.MapSetAssociation;
 import com.kodality.termserver.ts.mapset.MapSetAssociationQueryParams;
-import com.kodality.termserver.terminology.codesystem.association.CodeSystemAssociationService;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

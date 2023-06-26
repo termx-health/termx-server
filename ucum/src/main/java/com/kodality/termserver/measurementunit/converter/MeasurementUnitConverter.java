@@ -1,6 +1,6 @@
 package com.kodality.termserver.measurementunit.converter;
 
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.measurementunit.MeasurementUnitService;
 import com.kodality.termserver.ucum.MeasurementUnit;
 import java.math.BigDecimal;

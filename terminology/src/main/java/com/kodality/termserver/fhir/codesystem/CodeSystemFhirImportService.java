@@ -1,6 +1,6 @@
 package com.kodality.termserver.fhir.codesystem;
 
-import com.kodality.termserver.BinaryHttpClient;
+import com.kodality.termserver.http.BinaryHttpClient;
 import com.kodality.termserver.terminology.codesystem.CodeSystemImportService;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.association.AssociationKind;

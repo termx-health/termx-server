@@ -3,15 +3,15 @@ package com.kodality.termserver.observationdefinition;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
-import com.kodality.termserver.exception.ApiError;
-import com.kodality.termserver.sys.job.JobLogResponse;
-import com.kodality.termserver.sys.job.logger.ImportLogger;
 import com.kodality.termserver.observationdefintion.ObservationDefinition;
 import com.kodality.termserver.observationdefintion.ObservationDefinitionImportRequest;
 import com.kodality.termserver.observationdefintion.ObservationDefinitionSearchParams;
+import com.kodality.termserver.sys.job.JobLogResponse;
+import com.kodality.termserver.sys.job.logger.ImportLogger;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -80,7 +80,7 @@ public class ObservationDefinitionController {
         importLogger.logImport(jobLogResponse.getJobId(), e);
       } catch (Exception e) {
         log.error("Error while importing observation definition", e);
-        importLogger.logImport(jobLogResponse.getJobId(), ApiError.EI000.toApiException());
+        importLogger.logImport(jobLogResponse.getJobId(), ApiError.OD002.toApiException());
       }
     }));
     return jobLogResponse;

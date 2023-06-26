@@ -1,15 +1,14 @@
 package com.kodality.termserver.atcest;
 
-import com.kodality.termserver.BinaryHttpClient;
 import com.kodality.termserver.atcest.utils.AtcEst;
 import com.kodality.termserver.atcest.utils.AtcEstCsvReader;
 import com.kodality.termserver.atcest.utils.AtcEstMapper;
-import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
+import com.kodality.termserver.http.BinaryHttpClient;
 import com.kodality.termserver.ts.CodeSystemImportProvider;
+import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
 import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -7,7 +7,7 @@ import com.kodality.termserver.icd10est.utils.Icd10EstMapper
 import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest
 import com.kodality.termserver.utils.MatcherUtil
-import com.kodality.termserver.utils.TemplateUtil
+import com.kodality.termserver.utils.ResourceUtil
 import com.kodality.termserver.utils.XmlMapperUtil
 import spock.lang.Shared
 import spock.lang.Specification
@@ -26,7 +26,7 @@ class Icd10EstMapperTest extends Specification {
 
   void setupSpec() {
     mapper = XmlMapperUtil.getMapper()
-    xml = TemplateUtil.getTemplate("icd10-est.xml")
+    xml = ResourceUtil.readAsString("icd10-est.xml")
   }
 
   void setup() {

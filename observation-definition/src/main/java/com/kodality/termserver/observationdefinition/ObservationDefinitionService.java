@@ -1,7 +1,7 @@
 package com.kodality.termserver.observationdefinition;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.observationdefinition.component.ObservationDefinitionComponentService;
 import com.kodality.termserver.observationdefinition.interpretation.ObservationDefinitionInterpretationService;
 import com.kodality.termserver.observationdefinition.mapping.ObservationDefinitionMappingService;

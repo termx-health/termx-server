@@ -40,7 +40,6 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
-import io.micronaut.http.annotation.QueryValue;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;

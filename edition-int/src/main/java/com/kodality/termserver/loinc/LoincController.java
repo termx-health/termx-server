@@ -2,13 +2,13 @@ package com.kodality.termserver.loinc;
 
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.loinc.utils.LoincImportRequest;
 import com.kodality.termserver.sys.job.JobLogResponse;
 import com.kodality.termserver.sys.job.logger.ImportLogger;
-import com.kodality.termserver.loinc.utils.LoincImportRequest;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
@@ -69,7 +69,7 @@ public class LoincController {
         importLogger.logImport(jobLogResponse.getJobId(), e);
       } catch (Exception e) {
         log.error("Error while importing code system file (TE700)", e);
-        importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
+        importLogger.logImport(jobLogResponse.getJobId(), ApiError.EI000.toApiException());
       }
     }));
     return jobLogResponse;

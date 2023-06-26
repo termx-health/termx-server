@@ -16,10 +16,6 @@
     <include file="08-code_system_supplement.sql" relativeToChangelogFile="true"/>
     <include file="09-naming_system.sql" relativeToChangelogFile="true"/>
 
-    <include file="20-space.sql" relativeToChangelogFile="true"/>
-    <include file="21-package.sql" relativeToChangelogFile="true"/>
-    <include file="22-terminology_server.sql" relativeToChangelogFile="true"/>
-
     <include file="views/concept_closure.sql" relativeToChangelogFile="true"/>
     <include file="views/concept_name.sql" relativeToChangelogFile="true"/>
     <include file="views/concept_order.sql" relativeToChangelogFile="true"/>
@@ -61,6 +57,18 @@
         create index designation_text_search_idx on terminology.designation USING gin (terminology.text_search(name) gin_trgm_ops);
         create index value_set_text_search_idx on terminology.value_set USING gin (terminology.text_search(id, uri) gin_trgm_ops);
         create index value_set_names_search_idx on terminology.value_set USING gin (terminology.jsonb_search(title) gin_trgm_ops);
+      </sql>
+    </changeSet>
+
+
+    <changeSet id="drop_obsolete_tables" author="kodality">
+      <sql>
+        drop table if exists terminology.package_version_resource;
+        drop table if exists terminology.package_version;
+        drop table if exists terminology.package;
+        drop table if exists terminology.project;
+        drop table if exists terminology.space;
+        drop table if exists terminology.terminology_server;
       </sql>
     </changeSet>
 </databaseChangeLog>

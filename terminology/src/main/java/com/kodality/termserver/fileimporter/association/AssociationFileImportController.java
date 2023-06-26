@@ -2,10 +2,10 @@ package com.kodality.termserver.fileimporter.association;
 
 import com.kodality.commons.exception.ApiException;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
-import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.fileimporter.FileImporterUtils;
 import com.kodality.termserver.fileimporter.association.utils.AssociationFileImportRequest;
 import com.kodality.termserver.sys.job.JobLogResponse;

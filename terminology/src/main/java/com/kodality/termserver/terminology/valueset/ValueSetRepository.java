@@ -57,10 +57,10 @@ public class ValueSetRepository extends BaseRepository {
         "left join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A' " +
         "left join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' " +
         "left join terminology.code_system cs on cs.id = vsvr.code_system and cs.sys_status = 'A' " +
-        "left join terminology.package_version_resource pvr on pvr.resource_type = 'value-set' and pvr.resource_id = vs.id and pvr.sys_status = 'A' " +
-        "left join terminology.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
-        "left join terminology.package p on p.id = pv.package_id and p.sys_status = 'A' " +
-        "left join terminology.space s on s.id = p.space_id and s.sys_status = 'A' ";
+        "left join sys.package_version_resource pvr on pvr.resource_type = 'value-set' and pvr.resource_id = vs.id and pvr.sys_status = 'A' " +
+        "left join sys.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
+        "left join sys.package p on p.id = pv.package_id and p.sys_status = 'A' " +
+        "left join sys.space s on s.id = p.space_id and s.sys_status = 'A' ";
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(distinct(vs.id)) from terminology.value_set vs " + join);
       sb.append(filter(params));

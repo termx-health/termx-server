@@ -1,12 +1,12 @@
 package com.kodality.termserver.orphanet;
 
-import com.kodality.termserver.BinaryHttpClient;
-import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
+import com.kodality.termserver.http.BinaryHttpClient;
 import com.kodality.termserver.orphanet.utils.OrphanetClassificationList;
 import com.kodality.termserver.orphanet.utils.OrphanetClassificationList.ClassificationNode;
 import com.kodality.termserver.orphanet.utils.OrphanetMapper;
 import com.kodality.termserver.orphanet.utils.OrphanetXmlReader;
 import com.kodality.termserver.ts.CodeSystemImportProvider;
+import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.util.List;

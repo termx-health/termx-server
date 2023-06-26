@@ -3,7 +3,7 @@ package com.kodality.termserver.terminology.codesystem;
 import com.kodality.commons.model.Issue;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.MapUtil;
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;
 import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;

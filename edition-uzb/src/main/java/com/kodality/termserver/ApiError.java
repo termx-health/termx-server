@@ -7,7 +7,6 @@ import java.util.Map;
 import lombok.Getter;
 
 public enum ApiError {
-
   EU000("EU000","Import failed");
 
   @Getter

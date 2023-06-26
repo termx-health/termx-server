@@ -5,8 +5,7 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.model.Issue;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.PipeUtil;
-import com.kodality.termserver.BinaryHttpClient;
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.fhir.codesystem.CodeSystemFhirImportService;
 import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportProcessor;
 import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest;
@@ -15,6 +14,7 @@ import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImpor
 import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingProperty;
 import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportResponse;
 import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportResult;
+import com.kodality.termserver.http.BinaryHttpClient;
 import com.kodality.termserver.terminology.codesystem.CodeSystemImportService;
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
 import com.kodality.termserver.terminology.codesystem.CodeSystemValidationService;

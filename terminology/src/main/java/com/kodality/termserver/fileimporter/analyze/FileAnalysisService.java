@@ -1,8 +1,8 @@
 package com.kodality.termserver.fileimporter.analyze;
 
-import com.kodality.termserver.BinaryHttpClient;
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.fileimporter.analyze.FileAnalysisResponse.FileAnalysisColumn;
+import com.kodality.termserver.http.BinaryHttpClient;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

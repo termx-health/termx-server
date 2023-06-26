@@ -20,7 +20,4 @@ public interface Privilege {
   String NS_VIEW = "*.NamingSystem.view";
   String NS_EDIT = "*.NamingSystem.edit";
   String NS_PUBLISH = "*.NamingSystem.publish";
-
-  String P_VIEW = "*.Project.view";
-  String P_EDIT = "*.Project.edit";
 }

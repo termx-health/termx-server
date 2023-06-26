@@ -1,6 +1,6 @@
 package com.kodality.termserver.fileimporter.codesystem.utils;
 
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingProperty;
 import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingEntityPropertyValue;
 import com.kodality.termserver.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingResponseProperty;
