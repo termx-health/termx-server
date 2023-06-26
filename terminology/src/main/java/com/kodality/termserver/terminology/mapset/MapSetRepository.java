@@ -103,10 +103,12 @@ public class MapSetRepository extends BaseRepository {
     }
     sb.appendIfNotNull("and msv.version = ?", params.getVersionVersion());
     sb.appendIfNotNull("and msa.source_concept_code = ?", params.getAssociationSourceCode());
+    sb.appendIfNotNull("and cse_s.id = ?", params.getAssociationSourceId());
     sb.appendIfNotNull("and cs_s.id = ?", params.getAssociationSourceSystem());
     sb.appendIfNotNull("and cs_s.uri = ?", params.getAssociationSourceSystemUri());
     sb.appendIfNotNull("and csv_s.version = ?", params.getAssociationSourceSystemVersion());
     sb.appendIfNotNull("and msa.target_concept_code = ?", params.getAssociationTargetCode());
+    sb.appendIfNotNull("and cse_t.id = ?", params.getAssociationTargetId());
     sb.appendIfNotNull("and cs_t.id = ?", params.getAssociationTargetSystem());
     sb.appendIfNotNull("and cs_t.uri = ?", params.getAssociationTargetSystemUri());
     sb.appendIfNotNull("and csv_t.version = ?", params.getAssociationTargetSystemVersion());

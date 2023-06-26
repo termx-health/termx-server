@@ -14,6 +14,7 @@ import lombok.experimental.Accessors;
 public class EntityProperty {
   private Long id;
   private String name;
+  private String kind; // designation, property
   private String type;
   private String description;
   private String status;

@@ -27,6 +27,9 @@ public class ConceptRepository extends BaseRepository {
 
   private final Map<String, String> orderMapping = Map.of("code", "c.code");
 
+  private final String select = "select distinct on (c.code) c.*, " +
+      "(exists (select 1 from terminology.code_system_entity_version csev where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status = 'active')) as immutable ";
+
   public void save(Concept concept) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", concept.getId());
@@ -40,15 +43,15 @@ public class ConceptRepository extends BaseRepository {
   }
 
   public Concept load(Long id) {
-    String sql = "select * from terminology.concept where sys_status = 'A' and id = ?";
+    String sql = select + "from terminology.concept c where c.sys_status = 'A' and c.id = ?";
     return getBean(sql, bp, id);
   }
 
   public Concept load(List<String> codeSystems, String code) {
-    SqlBuilder sb = new SqlBuilder("select * from terminology.concept where sys_status = 'A'");
-    sb.and("code = ?", code);
+    SqlBuilder sb = new SqlBuilder(select + "from terminology.concept c where c.sys_status = 'A'");
+    sb.and("c.code = ?", code);
     if (CollectionUtils.isNotEmpty(codeSystems)) {
-      sb.and().in("code_system", codeSystems);
+      sb.and().in("c.code_system", codeSystems);
     }
     return getBean(sb.getSql(), bp, sb.getParams());
   }
@@ -60,7 +63,7 @@ public class ConceptRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select distinct on (c.code) c.*, " +
+      SqlBuilder sb = new SqlBuilder(select + ", " +
           isLeaf(params) + "as leaf, " +
           childCount(params) + "as child_count " +
           "from terminology.concept c " + join);

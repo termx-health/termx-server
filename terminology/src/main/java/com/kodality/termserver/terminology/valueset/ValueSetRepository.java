@@ -57,6 +57,7 @@ public class ValueSetRepository extends BaseRepository {
         "left join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A' " +
         "left join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' " +
         "left join terminology.code_system cs on cs.id = vsvr.code_system and cs.sys_status = 'A' " +
+        "left join terminology.value_set_snapshot vss on vsv.id = vss.value_set_version_id and vss.sys_status = 'A' " +
         "left join sys.package_version_resource pvr on pvr.resource_type = 'value-set' and pvr.resource_id = vs.id and pvr.sys_status = 'A' " +
         "left join sys.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
         "left join sys.package p on p.id = pv.package_id and p.sys_status = 'A' " +
@@ -106,8 +107,10 @@ public class ValueSetRepository extends BaseRepository {
     sb.appendIfNotNull("and vsvr.type = 'include' and vsvr.code_system = ?", params.getCodeSystem());
     sb.appendIfNotNull("and vsvr.type = 'include' and cs.uri = ?", params.getCodeSystemUri());
     if (params.getConceptCode() != null) {
-      sb.append("and (vsv.id is not null and exists (select 1 from terminology.value_set_expand(vsv.id) vse where (vse.concept ->> 'code') = ?)", params.getConceptCode());
-      sb.append("or vsvr.type = 'include' and exists (select 1 from jsonb_array_elements(vsvr.concepts) c where (c -> 'concept' ->> 'code') = ?))", params.getConceptCode());
+      sb.append("and exists (select 1 from jsonb_array_elements(vss.expansion::jsonb) exp where (exp -> 'concept' ->> 'code') = ?)", params.getConceptCode());
+    }
+    if (params.getConceptId() != null) {
+      sb.append("and exists (select 1 from jsonb_array_elements(vss.expansion::jsonb) exp where (exp -> 'concept' ->> 'id')::bigint = ?)", params.getConceptId());
     }
     sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
     sb.appendIfNotNull("and p.id = ?", params.getPackageId());

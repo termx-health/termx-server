@@ -9,7 +9,9 @@ import com.kodality.termserver.ts.codesystem.CodeSystemContent;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestConcept;
+import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestProperty;
 import com.kodality.termserver.ts.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.EntityPropertyKind;
 import com.kodality.termserver.ts.codesystem.EntityPropertyType;
 import com.kodality.termserver.icd10.utils.Icd10.Class;
 import com.kodality.termserver.icd10.utils.Icd10.Fragment;
@@ -38,10 +40,10 @@ public class Icd10Mapper {
     return request;
   }
 
-  private static List<Pair<String, String>> getProperties() {
+  private static List<CodeSystemImportRequestProperty> getProperties() {
     return List.of(
-        Pair.of(DISPLAY, EntityPropertyType.string),
-        Pair.of(SYNONYM, EntityPropertyType.string));
+        new CodeSystemImportRequestProperty().setName(DISPLAY).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation),
+        new CodeSystemImportRequestProperty().setName(SYNONYM).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation));
   }
 
   private static List<Pair<String, String>> getAssociations() {

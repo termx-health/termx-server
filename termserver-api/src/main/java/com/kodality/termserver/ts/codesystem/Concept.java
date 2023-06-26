@@ -19,6 +19,7 @@ public class Concept extends CodeSystemEntity {
 
   private Boolean leaf;
   private Long childCount;
+  private boolean immutable;
 
   @JsonIgnore
   public Optional<CodeSystemEntityVersion> getLastActiveVersion() {

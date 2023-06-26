@@ -9,8 +9,10 @@ import com.kodality.termserver.ts.codesystem.CodeSystemContent;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestCodeSystem;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestConcept;
+import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestProperty;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestVersion;
 import com.kodality.termserver.ts.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.EntityPropertyKind;
 import com.kodality.termserver.ts.codesystem.EntityPropertyType;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
 import io.micronaut.core.util.StringUtils;
@@ -60,11 +62,11 @@ public class LoincPartMapper {
         .setReleaseDate(LocalDate.now());
   }
 
-  private static List<Pair<String, String>> getProperties() {
+  private static List<CodeSystemImportRequestProperty> getProperties() {
     return List.of(
-        Pair.of(DISPLAY, EntityPropertyType.string),
-        Pair.of(ALIAS, EntityPropertyType.string),
-        Pair.of(TYPE, EntityPropertyType.string));
+        new CodeSystemImportRequestProperty().setName(DISPLAY).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation),
+        new CodeSystemImportRequestProperty().setName(ALIAS).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation),
+        new CodeSystemImportRequestProperty().setName(TYPE).setType(EntityPropertyType.string).setKind(EntityPropertyKind.property));
   }
 
   private static List<CodeSystemImportRequestConcept> toConcepts(List<LoincPart> parts) {

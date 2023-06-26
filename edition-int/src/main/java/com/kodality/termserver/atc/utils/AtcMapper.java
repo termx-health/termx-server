@@ -9,7 +9,9 @@ import com.kodality.termserver.ts.codesystem.CodeSystemContent;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestConcept;
+import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestProperty;
 import com.kodality.termserver.ts.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.EntityPropertyKind;
 import com.kodality.termserver.ts.codesystem.EntityPropertyType;
 import java.util.List;
 import java.util.Map;
@@ -34,8 +36,8 @@ public class AtcMapper {
     return request;
   }
 
-  private static List<Pair<String, String>> getProperties() {
-    return List.of(Pair.of(DISPLAY, EntityPropertyType.string));
+  private static List<CodeSystemImportRequestProperty> getProperties() {
+    return List.of(new CodeSystemImportRequestProperty().setName(DISPLAY).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation));
   }
 
   private static List<Pair<String, String>> getAssociations() {

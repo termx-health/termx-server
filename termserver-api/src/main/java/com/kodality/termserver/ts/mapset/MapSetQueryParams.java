@@ -26,10 +26,12 @@ public class MapSetQueryParams extends QueryParams {
   private String text;
   private String textContains;
 
+  private Long associationSourceId;
   private String associationSourceCode;
   private String associationSourceSystem;
   private String associationSourceSystemUri;
   private String associationSourceSystemVersion;
+  private Long associationTargetId;
   private String associationTargetCode;
   private String associationTargetSystem;
   private String associationTargetSystemUri;

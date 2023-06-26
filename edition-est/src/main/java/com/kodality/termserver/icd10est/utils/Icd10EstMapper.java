@@ -9,7 +9,9 @@ import com.kodality.termserver.ts.codesystem.CodeSystemContent;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestConcept;
+import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestProperty;
 import com.kodality.termserver.ts.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.EntityPropertyKind;
 import com.kodality.termserver.ts.codesystem.EntityPropertyType;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
 import com.kodality.termserver.icd10est.utils.Icd10Est.Node;
@@ -42,13 +44,13 @@ public class Icd10EstMapper {
     return request;
   }
 
-  private static List<Pair<String, String>> getProperties() {
+  private static List<CodeSystemImportRequestProperty> getProperties() {
     return List.of(
-        Pair.of(DISPLAY, EntityPropertyType.string),
-        Pair.of(SYNONYM, EntityPropertyType.string),
-        Pair.of(NOTICE, EntityPropertyType.string),
-        Pair.of(INCLUDE, EntityPropertyType.string),
-        Pair.of(EXCLUDE, EntityPropertyType.string));
+        new CodeSystemImportRequestProperty().setName(DISPLAY).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation),
+        new CodeSystemImportRequestProperty().setName(SYNONYM).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation),
+        new CodeSystemImportRequestProperty().setName(NOTICE).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation),
+        new CodeSystemImportRequestProperty().setName(INCLUDE).setType(EntityPropertyType.string).setKind(EntityPropertyKind.property),
+        new CodeSystemImportRequestProperty().setName(EXCLUDE).setType(EntityPropertyType.string).setKind(EntityPropertyKind.property));
   }
 
   private static List<Pair<String, String>> getAssociations() {

@@ -32,7 +32,7 @@ public class CodeSystemRepository extends BaseRepository {
   });
 
   private static final String select = "select distinct on (cs.id) cs.*, " +
-      "(select jsonb_agg(ep.p) from (select json_build_object('id', ep.id, 'name', ep.name, 'type', ep.type, 'description', ep.description, 'status', ep.status, 'orderNumber', ep.order_number, 'preferred', ep.preferred, 'required', ep.required, 'rule', ep.rule, 'created', ep.created) as p from terminology.entity_property ep where ep.code_system = cs.id and ep.sys_status = 'A' order by ep.order_number) ep) as properties ";
+      "(select jsonb_agg(ep.p) from (select json_build_object('id', ep.id, 'name', ep.name, 'kind', ep.kind, 'type', ep.type, 'description', ep.description, 'status', ep.status, 'orderNumber', ep.order_number, 'preferred', ep.preferred, 'required', ep.required, 'rule', ep.rule, 'created', ep.created) as p from terminology.entity_property ep where ep.code_system = cs.id and ep.sys_status = 'A' order by ep.order_number) ep) as properties ";
 
   public void save(CodeSystem codeSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();

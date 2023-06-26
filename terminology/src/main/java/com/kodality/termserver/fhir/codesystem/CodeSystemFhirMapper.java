@@ -108,6 +108,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   }
 
   private static List<CodeSystemProperty> toFhirCodeSystemProperty(List<EntityProperty> entityProperties) {
+    if (CollectionUtils.isEmpty(entityProperties)) {
+      return List.of();
+    }
     return entityProperties.stream().map(p ->
         new CodeSystemProperty()
             .setCode(p.getName())

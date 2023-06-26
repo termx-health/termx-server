@@ -10,9 +10,11 @@ import com.kodality.termserver.ts.codesystem.CodeSystemContent;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestCodeSystem;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestConcept;
+import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestProperty;
 import com.kodality.termserver.ts.codesystem.CodeSystemImportRequest.CodeSystemImportRequestVersion;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.Designation;
+import com.kodality.termserver.ts.codesystem.EntityPropertyKind;
 import com.kodality.termserver.ts.codesystem.EntityPropertyType;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
 import java.time.LocalDate;
@@ -55,14 +57,14 @@ public class LoincMapper {
         .setReleaseDate(LocalDate.now());
   }
 
-  private static List<Pair<String, String>> toProperties(List<LoincConcept> concepts) {
-    List<Pair<String, String>> properties = concepts.stream()
+  private static List<CodeSystemImportRequestProperty> toProperties(List<LoincConcept> concepts) {
+    List<CodeSystemImportRequestProperty> properties = concepts.stream()
         .flatMap(c -> c.getProperties().stream()).collect(Collectors.toSet()).stream()
         .collect(Collectors.toMap(LoincConceptProperty::getName, p -> p, (p, q) -> p)).values().stream()
-        .map(property -> Pair.of(property.getName(), property.getType()))
+        .map(property -> new CodeSystemImportRequestProperty().setName(property.getName()).setType(property.getType()).setKind(EntityPropertyKind.property))
         .collect(Collectors.toList());
-    properties.add(Pair.of(DISPLAY, EntityPropertyType.string));
-    properties.add(Pair.of(KEY_WORDS, EntityPropertyType.string));
+    properties.add(new CodeSystemImportRequestProperty().setName(DISPLAY).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation));
+    properties.add(new CodeSystemImportRequestProperty().setName(KEY_WORDS).setType(EntityPropertyType.string).setKind(EntityPropertyKind.property));
     return properties;
   }
 

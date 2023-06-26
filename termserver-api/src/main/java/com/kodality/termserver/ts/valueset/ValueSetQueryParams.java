@@ -34,6 +34,7 @@ public class ValueSetQueryParams extends QueryParams {
   private String codeSystem;
   private String codeSystemUri;
   private String conceptCode;
+  private Long conceptId;
 
   private String lang;
 

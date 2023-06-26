@@ -98,6 +98,13 @@ alter table terminology.entity_property add column required boolean;
 alter table terminology.entity_property add column rule jsonb;
 --
 
+--changeset kodality:entity_property-kind
+alter table terminology.entity_property add column kind text;
+update terminology.entity_property ep set kind = 'designation' where ep.name = any(array['display', 'definition', 'alias']);
+update terminology.entity_property ep set kind = 'property' where kind is null;
+alter table terminology.entity_property alter column kind set not null;
+--
+
 --changeset kodality:terminology.entity_property_value
 drop table if exists terminology.entity_property_value;
 create table terminology.entity_property_value (

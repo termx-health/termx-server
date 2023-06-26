@@ -75,8 +75,9 @@ public class TerminologyCodeSystemImportProvider extends CodeSystemImportProvide
   private List<EntityProperty> mapProperties(CodeSystemImportRequest request) {
     return Optional.ofNullable(request.getProperties()).orElse(List.of()).stream().map(p -> {
       EntityProperty property = new EntityProperty();
-      property.setName(p.getKey());
-      property.setType(p.getValue());
+      property.setName(p.getName());
+      property.setType(p.getType());
+      property.setKind(p.getKind());
       property.setStatus(PublicationStatus.active);
       return property;
     }).toList();

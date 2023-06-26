@@ -19,7 +19,7 @@ public class CodeSystemImportRequest {
   private CodeSystemImportRequestVersion version;
   private List<CodeSystemImportRequestConcept> concepts;
 
-  private List<Pair<String, String>> properties; //code and type
+  private List<CodeSystemImportRequestProperty> properties;
   private List<Pair<String, String>> associations; //code and kind
 
   private boolean activate = true;
@@ -74,6 +74,15 @@ public class CodeSystemImportRequest {
     private List<Designation> designations;
     private List<EntityPropertyValue> propertyValues;
     private List<CodeSystemAssociation> associations;
+  }
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class CodeSystemImportRequestProperty {
+    private String name;
+    private String type;
+    private String kind;
   }
 }
 
