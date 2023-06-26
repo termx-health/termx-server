@@ -10,7 +10,7 @@ dependencies {
   annotationProcessor "io.micronaut.spring:micronaut-spring-annotation"
 
   implementation project(':termserver-api')
-  implementation project(':termserver-common')
+  implementation project(':termserver-core')
   implementation project(':terminology')
   implementation project(':snomed')
   implementation project(':ucum')
@@ -21,7 +21,6 @@ dependencies {
   implementation project(':edition-est')
   implementation project(':edition-uzb')
 
-  implementation('com.kodality.taskflow:taskflow-service:1.0-SNAPSHOT') { changing = true }
 
   implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
   implementation("com.kodality.commons:commons-cache:${rootProject.commonsVersion}")
@@ -40,6 +39,7 @@ dependencies {
   implementation("io.micronaut:micronaut-management")
   implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
 
+  implementation("com.fasterxml.jackson.core:jackson-core:${rootProject.jacksonVersion}")
   implementation("io.reactivex.rxjava2:rxjava:2.2.21")
   implementation("io.swagger.core.v3:swagger-annotations")
   implementation("io.micronaut.openapi:micronaut-openapi:3.2.0")

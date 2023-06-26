@@ -2,7 +2,7 @@ package com.kodality.termserver.liquibase;
 
 import com.kodality.commons.micronaut.BeanContext;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termserver.AuthorizedFileReaderCustomChange;
+import com.kodality.termserver.file.AuthorizedFileReaderCustomChange;
 import com.kodality.termserver.ts.CodeSystemFhirImportProvider;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import lombok.extern.slf4j.Slf4j;

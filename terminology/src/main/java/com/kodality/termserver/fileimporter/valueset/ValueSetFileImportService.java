@@ -1,6 +1,6 @@
 package com.kodality.termserver.fileimporter.valueset;
 
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.fhir.valueset.ValueSetFhirImportService;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;

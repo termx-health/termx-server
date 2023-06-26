@@ -9,7 +9,7 @@ include 'edition-uzb'
 include 'termserver-api'
 include 'termserver-client'
 include 'termserver-service'
-include 'termserver-common'
+include 'termserver-core'
 
 include 'gatling'
 

@@ -2,13 +2,13 @@ package com.kodality.termserver.thesaurus.pagecontent;
 
 import com.github.slugify.Slugify;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.exception.ApiError;
-import com.kodality.termserver.thesaurus.page.PageRepository;
-import com.kodality.termserver.thesaurus.pagerelation.PageRelationService;
-import com.kodality.termserver.thesaurus.template.TemplateContentService;
+import com.kodality.termserver.thesaurus.ApiError;
 import com.kodality.termserver.thesaurus.page.Page;
 import com.kodality.termserver.thesaurus.page.PageContent;
 import com.kodality.termserver.thesaurus.page.PageContentQueryParams;
+import com.kodality.termserver.thesaurus.page.PageRepository;
+import com.kodality.termserver.thesaurus.pagerelation.PageRelationService;
+import com.kodality.termserver.thesaurus.template.TemplateContentService;
 import com.kodality.termserver.utils.TextUtil;
 import java.util.List;
 import java.util.Map;

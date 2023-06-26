@@ -1,7 +1,7 @@
 package com.kodality.termserver.fhir.valueset;
 
-import com.kodality.termserver.BinaryHttpClient;
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.ApiError;
+import com.kodality.termserver.http.BinaryHttpClient;
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
 import com.kodality.termserver.terminology.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;

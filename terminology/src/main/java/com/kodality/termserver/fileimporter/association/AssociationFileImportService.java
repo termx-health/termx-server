@@ -3,7 +3,7 @@ package com.kodality.termserver.fileimporter.association;
 import com.kodality.commons.exception.ApiException;
 import com.kodality.commons.model.Issue;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.fileimporter.association.utils.AssociationFileImportRequest;
 import com.kodality.termserver.fileimporter.association.utils.AssociationFileImportRow;
 import com.kodality.termserver.fileimporter.association.utils.AssociationFileImportRowMapper;

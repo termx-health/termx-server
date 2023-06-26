@@ -4,7 +4,7 @@ import com.kodality.commons.micronaut.BeanContext;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.range.LocalDateRange;
-import com.kodality.termserver.AuthorizedFileReaderCustomChange;
+import com.kodality.termserver.file.AuthorizedFileReaderCustomChange;
 import com.kodality.termserver.measurementunit.MeasurementUnitService;
 import com.kodality.termserver.ucum.MeasurementUnit;
 import com.univocity.parsers.common.processor.RowListProcessor;

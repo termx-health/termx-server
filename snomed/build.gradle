@@ -5,16 +5,14 @@ dependencies {
     annotationProcessor "io.micronaut.spring:micronaut-spring-annotation"
 
     implementation project(':termserver-api')
-    implementation project(':termserver-common')
-
-    implementation('com.kodality.taskflow:taskflow-service:1.0-SNAPSHOT') { changing = true }
+    implementation project(':termserver-core')
 
     implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-cache:${rootProject.commonsVersion}")
-    api("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}")
+    implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}")
     implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.commonsMicronautVersion}")
     implementation("com.kodality.commons:commons-tenant:${rootProject.commonsMicronautVersion}")
 

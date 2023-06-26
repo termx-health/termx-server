@@ -2,10 +2,10 @@ package com.kodality.termserver.fileimporter.mapset;
 
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.Privilege;
 import com.kodality.termserver.auth.Authorized;
 import com.kodality.termserver.auth.SessionStore;
-import com.kodality.termserver.exception.ApiError;
 import com.kodality.termserver.fileimporter.mapset.utils.MapSetFileImportRequest;
 import com.kodality.termserver.sys.job.JobLogResponse;
 import com.kodality.termserver.sys.job.logger.ImportLogger;

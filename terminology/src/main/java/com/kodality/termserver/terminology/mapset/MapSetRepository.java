@@ -59,10 +59,10 @@ public class MapSetRepository extends BaseRepository {
         "left join terminology.code_system_version csv_t on csv_t.code_system = cse_t.code_system and csv_t.sys_status = 'A' " +
         "left join terminology.code_system cs_s on (cs_s.id = csv_s.code_system or msa.source_code_system = cs_s.id) and cs_s.sys_status = 'A' " +
         "left join terminology.code_system cs_t on (cs_t.id = csv_t.code_system or msa.target_code_system = cs_t.id) and cs_t.sys_status = 'A' " +
-        "left join terminology.package_version_resource pvr on pvr.resource_type = 'map-set' and pvr.resource_id = ms.id and pvr.sys_status = 'A' " +
-        "left join terminology.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
-        "left join terminology.package p on p.id = pv.package_id and p.sys_status = 'A' " +
-        "left join terminology.space s on s.id = p.space_id and s.sys_status = 'A' ";
+        "left join sys.package_version_resource pvr on pvr.resource_type = 'map-set' and pvr.resource_id = ms.id and pvr.sys_status = 'A' " +
+        "left join sys.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
+        "left join sys.package p on p.id = pv.package_id and p.sys_status = 'A' " +
+        "left join sys.space s on s.id = p.space_id and s.sys_status = 'A' ";
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(distinct(ms.id)) from terminology.map_set ms " + join);
       sb.append(filter(params));

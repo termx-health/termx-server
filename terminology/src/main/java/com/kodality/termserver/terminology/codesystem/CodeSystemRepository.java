@@ -73,10 +73,10 @@ public class CodeSystemRepository extends BaseRepository {
         "left join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A' " +
         "left join terminology.code_system_entity cse on cse.code_system = cs.id and cse.sys_status = 'A' " +
         "left join terminology.concept c on c.id = cse.id and c.sys_status = 'A' " +
-        "left join terminology.package_version_resource pvr on pvr.resource_type = 'code-system' and pvr.resource_id = cs.id and pvr.sys_status = 'A' " +
-        "left join terminology.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
-        "left join terminology.package p on p.id = pv.package_id and p.sys_status = 'A' " +
-        "left join terminology.space s on s.id = p.space_id and s.sys_status = 'A' ";
+        "left join sys.package_version_resource pvr on pvr.resource_type = 'code-system' and pvr.resource_id = cs.id and pvr.sys_status = 'A' " +
+        "left join sys.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
+        "left join sys.package p on p.id = pv.package_id and p.sys_status = 'A' " +
+        "left join sys.space s on s.id = p.space_id and s.sys_status = 'A' ";
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(distinct(cs.id)) from terminology.code_system cs " + join);
       sb.append(filter(params));

@@ -1,6 +1,6 @@
 package com.kodality.termserver.fileimporter.mapset;
 
-import com.kodality.termserver.exception.ApiError;
+import com.kodality.termserver.ApiError;
 import com.kodality.termserver.fileimporter.mapset.utils.MapSetFileImportRequest;
 import com.kodality.termserver.fileimporter.mapset.utils.MapSetFileImportRow;
 import com.kodality.termserver.fileimporter.mapset.utils.MapSetFileProcessingMapper;

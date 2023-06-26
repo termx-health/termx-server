@@ -1,11 +1,11 @@
 package com.kodality.termserver.icd10est;
 
-import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
-import com.kodality.termserver.BinaryHttpClient;
+import com.kodality.termserver.http.BinaryHttpClient;
 import com.kodality.termserver.icd10est.utils.Icd10Est;
 import com.kodality.termserver.icd10est.utils.Icd10EstMapper;
 import com.kodality.termserver.icd10est.utils.Icd10EstZipReader;
 import com.kodality.termserver.ts.CodeSystemImportProvider;
+import com.kodality.termserver.ts.codesystem.CodeSystemImportConfiguration;
 import jakarta.inject.Singleton;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
