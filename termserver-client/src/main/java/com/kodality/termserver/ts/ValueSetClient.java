@@ -4,15 +4,12 @@ import com.kodality.commons.client.BaseHttpClient;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termserver.ts.codesystem.Concept;
-import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSet;
 import com.kodality.termserver.ts.valueset.ValueSetExpandRequest;
 import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.ts.valueset.ValueSetVersionQueryParams;
-import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -42,20 +39,8 @@ public class ValueSetClient {
     return client.GET("/" + valueSet + "/versions/" + version, ValueSetVersion.class);
   }
 
-  public CompletableFuture<QueryResult<Concept>> queryConcepts(String valueSet, ConceptQueryParams params) {
-    return client.GET("/" + valueSet + "/concepts?" + BaseHttpClient.toQueryParams(params), JsonUtil.getParametricType(QueryResult.class, Concept.class));
-  }
-
-  public CompletableFuture<ValueSetVersionConcept> getValueSetConcept(String valueSet, String version, Long id) {
-    return client.GET("/" + valueSet + "/versions/" + version + "/concepts/" + id, ValueSetVersionConcept.class);
-  }
-
   public CompletableFuture<List<ValueSetVersionConcept>> expand(ValueSetExpandRequest request) {
     return client.POST("/expand", request, JsonUtil.getParametricType(List.class, ValueSetVersionConcept.class));
-  }
-
-  public CompletableFuture<ValueSetVersionRule> getRule(String valueSet, Long id) {
-    return client.GET("/" + valueSet + "/rules/" + id, ValueSetVersionRule.class);
   }
 
 }

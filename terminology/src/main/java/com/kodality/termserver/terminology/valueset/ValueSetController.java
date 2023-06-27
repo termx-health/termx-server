@@ -15,7 +15,6 @@ import com.kodality.termserver.sys.provenance.Provenance;
 import com.kodality.termserver.sys.provenance.ProvenanceService;
 import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleService;
-import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleSetService;
 import com.kodality.termserver.ts.valueset.ValueSet;
 import com.kodality.termserver.ts.valueset.ValueSetExpandRequest;
 import com.kodality.termserver.ts.valueset.ValueSetQueryParams;
@@ -23,7 +22,6 @@ import com.kodality.termserver.ts.valueset.ValueSetTransactionRequest;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.ts.valueset.ValueSetVersionQueryParams;
-import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -46,7 +44,6 @@ public class ValueSetController {
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
-  private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final ImportLogger importLogger;
   private final ProvenanceService provenanceService;
@@ -70,14 +67,6 @@ public class ValueSetController {
       throw new NotFoundException("ValueSet not found: " + valueSet);
     }
     return vs;
-  }
-
-  @Authorized(Privilege.VS_EDIT)
-  @Post
-  public HttpResponse<?> saveValueSet(@Body @Valid ValueSet valueSet) {
-    valueSetService.save(valueSet);
-    provenanceService.create(new Provenance("created", "ValueSet", valueSet.getId()));
-    return HttpResponse.created(valueSet);
   }
 
   @Authorized(Privilege.CS_EDIT)
@@ -124,14 +113,14 @@ public class ValueSetController {
   }
 
   @Authorized(Privilege.VS_EDIT)
-  @Put(uri = "/{valueSet}/versions/{id}")
-  public HttpResponse<?> updateVersion(@PathVariable @ResourceId String valueSet, @PathVariable Long id, @Body @Valid ValueSetVersion version) {
-    version.setId(id);
-    version.setValueSet(valueSet);
-    valueSetVersionService.save(version);
-    provenanceService.create(new Provenance("modified", "ValueSetVersion", version.getId().toString())
-        .addContext("part-of", "ValueSet", version.getValueSet()));
-    return HttpResponse.created(version);
+  @Put(uri = "/{valueSet}/versions/{version}")
+  public HttpResponse<?> updateVersion(@PathVariable @ResourceId String valueSet, @PathVariable String version, @Body @Valid ValueSetVersion valueSetVersion) {
+    valueSetVersion.setVersion(version);
+    valueSetVersion.setValueSet(valueSet);
+    valueSetVersionService.save(valueSetVersion);
+    provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersion.getId().toString())
+        .addContext("part-of", "ValueSet", valueSetVersion.getValueSet()));
+    return HttpResponse.created(valueSetVersion);
   }
 
   @Authorized(Privilege.VS_PUBLISH)
@@ -194,47 +183,32 @@ public class ValueSetController {
   }
 
   //----------------ValueSet Version Rule----------------
-  @Authorized(Privilege.VS_VIEW)
-  @Get(uri = "/{valueSet}/rule-set")
-  public ValueSetVersionRuleSet getRuleSet(@PathVariable @ResourceId String valueSet) {
-    return valueSetVersionRuleSetService.load(valueSet).orElseThrow(() -> new NotFoundException("ValueSet version rule not found"));
-  }
-
-
-  @Authorized(Privilege.VS_VIEW)
-  @Get(uri = "/{valueSet}/rules/{id}")
-  public ValueSetVersionRule getRule(@PathVariable @ResourceId String valueSet, @PathVariable Long id) {
-    return valueSetVersionRuleService.load(id).orElseThrow(() -> new NotFoundException("ValueSet version rule not found: " + id));
-  }
-
   @Authorized(Privilege.VS_EDIT)
-  @Post(uri = "/{valueSet}/rule-sets/{ruleSetId}/rules")
-  public HttpResponse<?> createRule(@PathVariable @ResourceId String valueSet, @PathVariable Long ruleSetId, @Body @Valid ValueSetVersionRule rule) {
+  @Post(uri = "/{valueSet}/versions/{version}/rules")
+  public HttpResponse<?> createRule(@PathVariable @ResourceId String valueSet, @PathVariable String version, @Body @Valid ValueSetVersionRule rule) {
     rule.setId(null);
-    valueSetVersionRuleService.save(rule, ruleSetId, valueSet);
-    provenanceService.create(new Provenance("modified", "ValueSetVersion", rule.getValueSetVersion().getId().toString())
+    valueSetVersionRuleService.save(rule, valueSet, version);
+    provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersionService.load(valueSet, version).orElseThrow().getId().toString())
         .addContext("part-of", "ValueSet", valueSet));
     return HttpResponse.created(rule);
   }
 
   @Authorized(Privilege.VS_EDIT)
-  @Put(uri = "/{valueSet}/rule-sets/{ruleSetId}/rules/{id}")
-  public HttpResponse<?> updateRule(@PathVariable @ResourceId String valueSet, @PathVariable Long ruleSetId, @PathVariable Long id,
+  @Put(uri = "/{valueSet}/versions/{version}/rules/{id}")
+  public HttpResponse<?> updateRule(@PathVariable @ResourceId String valueSet, @PathVariable String version, @PathVariable Long id,
                                     @Body @Valid ValueSetVersionRule rule) {
     rule.setId(id);
-    valueSetVersionRuleService.save(rule, ruleSetId, valueSet);
-    provenanceService.create(new Provenance("modified", "ValueSetVersion", rule.getValueSetVersion().getId().toString())
+    valueSetVersionRuleService.save(rule, valueSet, version);
+    provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersionService.load(valueSet, version).orElseThrow().getId().toString())
         .addContext("part-of", "ValueSet", valueSet));
     return HttpResponse.created(rule);
   }
 
   @Authorized(Privilege.VS_EDIT)
-  @Delete(uri = "/{valueSet}/rules/{id}")
-  public HttpResponse<?> deleteRule(@PathVariable @ResourceId String valueSet, @PathVariable Long id) {
-    ValueSetVersionRule rule =
-        valueSetVersionRuleService.load(id).orElseThrow(() -> new NotFoundException("ValueSet version rule not found: " + id));
+  @Delete(uri = "/{valueSet}/versions/{version}/rules/{id}")
+  public HttpResponse<?> deleteRule(@PathVariable @ResourceId String valueSet, @PathVariable String version, @PathVariable Long id) {
     valueSetVersionRuleService.delete(id, valueSet);
-    provenanceService.create(new Provenance("modified", "ValueSetVersion", rule.getValueSetVersion().getId().toString())
+    provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersionService.load(valueSet, version).orElseThrow().getId().toString())
         .addContext("part-of", "ValueSet", valueSet));
     return HttpResponse.ok();
   }

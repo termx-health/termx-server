@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ValueSetVersionRuleService {
   private final ValueSetVersionRuleRepository repository;
+  private final ValueSetVersionRuleSetRepository ruleSetRepository;
 
   private final UserPermissionService userPermissionService;
 
@@ -26,19 +27,21 @@ public class ValueSetVersionRuleService {
   }
 
   @Transactional
-  public void save(List<ValueSetVersionRule> rules, Long ruleSetId, String valueSet) {
+  public void save(List<ValueSetVersionRule> rules, String valueSet, String valueSetVersion) {
     userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
+
+    Long ruleSetId = ruleSetRepository.load(valueSet, valueSetVersion).getId();
 
     repository.retain(rules, ruleSetId);
     if (rules != null) {
-      rules.forEach(rule -> save(rule, ruleSetId, valueSet));
+      rules.forEach(rule -> repository.save(rule, ruleSetId));
     }
   }
 
   @Transactional
-  public void save(ValueSetVersionRule rule, Long ruleSetId, String valueSet) {
+  public void save(ValueSetVersionRule rule, String valueSet, String valueSetVersion) {
     userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
-    repository.save(rule, ruleSetId);
+    repository.save(rule, ruleSetRepository.load(valueSet, valueSetVersion).getId());
   }
 
   @Transactional

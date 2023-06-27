@@ -48,7 +48,7 @@ public class ValueSetService {
       valueSetVersionService.save(version);
 
       if (CollectionUtils.isNotEmpty(version.getRuleSet().getRules())) {
-        valueSetVersionRuleService.save(version.getRuleSet().getRules(), version.getRuleSet().getId(), valueSet.getId());
+        valueSetVersionRuleService.save(version.getRuleSet().getRules(), valueSet.getId(), version.getVersion());
       }
     }
   }

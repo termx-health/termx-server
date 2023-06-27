@@ -208,7 +208,7 @@ public class CodeSystemEntityVersionService {
   }
 
   @Transactional
-  public CodeSystemEntityVersion duplicate(String codeSystem, Long entityId, Long id) {
+  public CodeSystemEntityVersion duplicate(String codeSystem, Long id) {
     CodeSystemEntityVersion version = load(id);
     version.setId(null);
     version.setCreated(null);
@@ -223,7 +223,7 @@ public class CodeSystemEntityVersionService {
     if (version.getAssociations() != null) {
       version.getAssociations().forEach(a -> a.setId(null));
     }
-    save(version, entityId);
+    save(version, version.getCodeSystemEntityId());
     return version;
   }
 

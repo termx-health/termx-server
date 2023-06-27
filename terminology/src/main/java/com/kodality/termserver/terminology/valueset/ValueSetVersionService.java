@@ -3,11 +3,11 @@ package com.kodality.termserver.terminology.valueset;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ApiError;
 import com.kodality.termserver.auth.UserPermissionService;
-import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.terminology.valueset.ruleset.ValueSetVersionRuleSetService;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionQueryParams;
+import com.kodality.termserver.ts.valueset.ValueSetVersionReference;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet;
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ValueSetVersionService {
   private final ValueSetVersionRepository repository;
   private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
-  private final ValueSetVersionConceptService valueSetVersionConceptService;
 
   private final UserPermissionService userPermissionService;
 
@@ -31,6 +30,7 @@ public class ValueSetVersionService {
   public void save(ValueSetVersion version) {
     userPermissionService.checkPermitted(version.getValueSet(), "ValueSet", "edit");
 
+    version.setId(load(version.getValueSet(), version.getVersion()).map(ValueSetVersionReference::getId).orElse(null));
     if (!PublicationStatus.draft.equals(version.getStatus()) && version.getId() == null) {
       throw ApiError.TE101.toApiException();
     }

@@ -27,4 +27,10 @@ public class ValueSetVersionRuleSetRepository extends BaseRepository {
     return getBean(sql, bp, valueSetVersionId);
   }
 
+  public ValueSetVersionRuleSet load(String valueSet, String valueSetVersion) {
+    String sql = "select * from terminology.value_set_version_rule_set vsvrs where vsvrs.sys_status = 'A' " +
+        "and exists(select 1 from terminology.value_set_version vsv where vsv.id = vsvrs.value_set_version_id and vsv.value_set = ? and vsv.version = ? and vsv.sys_status = 'A')";
+    return getBean(sql, bp, valueSet, valueSetVersion);
+  }
+
 }

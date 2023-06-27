@@ -235,7 +235,7 @@ public class ValueSetFhirImportService {
     existingVersion.ifPresent(v -> valueSetVersionService.cancel(v.getId(), valueSet.getId()));
     log.info("Saving value set version {}", version.getVersion());
     valueSetVersionService.save(version);
-    valueSetVersionRuleService.save(version.getRuleSet().getRules(), version.getRuleSet().getId(), valueSet.getId());
+    valueSetVersionRuleService.save(version.getRuleSet().getRules(), valueSet.getId(), version.getVersion());
     return version;
   }
 }

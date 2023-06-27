@@ -5,20 +5,15 @@ import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termserver.ts.codesystem.CodeSystem;
-import com.kodality.termserver.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
-import com.kodality.termserver.ts.codesystem.CodeSystemSupplement;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
-import com.kodality.termserver.ts.codesystem.Designation;
 import com.kodality.termserver.ts.codesystem.EntityProperty;
 import com.kodality.termserver.ts.codesystem.EntityPropertyQueryParams;
-import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -73,25 +68,5 @@ public class CodeSystemClient {
 
   public CompletableFuture<EntityProperty> getEntityProperty(String codeSystem, Long id) {
     return client.GET("/" + codeSystem + "/entity-properties/" + id, EntityProperty.class);
-  }
-
-  public CompletableFuture<EntityPropertyValue> getEntityPropertyValue(String codeSystem, Long id) {
-    return client.GET("/" + codeSystem + "/entity-property-values/" + id, EntityPropertyValue.class);
-  }
-
-  public CompletableFuture<Designation> getDesignation(String codeSystem, Long id) {
-    return client.GET("/" + codeSystem + "/designations/" + id, Designation.class);
-  }
-
-  public CompletableFuture<CodeSystemAssociation> getAssociation(String codeSystem, Long id) {
-    return client.GET("/" + codeSystem + "/associations/" + id, CodeSystemAssociation.class);
-  }
-
-  public CompletableFuture<List<CodeSystemSupplement>> getSupplements(String codeSystem) {
-    return client.GET("/" + codeSystem + "/supplements", JsonUtil.getParametricType(List.class, CodeSystemSupplement.class));
-  }
-
-  public CompletableFuture<CodeSystemSupplement> getSupplement(String codeSystem, Long id) {
-    return client.GET("/" + codeSystem + "/supplements/" + id, CodeSystemSupplement.class);
   }
 }

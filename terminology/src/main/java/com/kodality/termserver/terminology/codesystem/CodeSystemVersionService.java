@@ -6,6 +6,7 @@ import com.kodality.termserver.auth.UserPermissionService;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionQueryParams;
+import com.kodality.termserver.ts.codesystem.CodeSystemVersionReference;
 import jakarta.inject.Singleton;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -25,6 +26,8 @@ public class CodeSystemVersionService {
   @Transactional
   public void save(CodeSystemVersion version) {
     userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
+
+    version.setId(load(version.getCodeSystem(), version.getVersion()).map(CodeSystemVersionReference::getId).orElse(null));
 
     if (!PublicationStatus.draft.equals(version.getStatus()) && version.getId() == null) {
       throw ApiError.TE101.toApiException();
