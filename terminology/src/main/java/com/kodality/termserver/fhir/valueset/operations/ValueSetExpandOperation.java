@@ -60,7 +60,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   }
 
   public com.kodality.zmei.fhir.resource.terminology.ValueSet run(Parameters req) {
-    String url = req.findParameter("url").map(ParametersParameter::getValueUrl)
+    String url = req.findParameter("url").map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueString())
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "parameter url required"));
     String versionNr = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
 
