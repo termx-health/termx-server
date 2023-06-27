@@ -286,6 +286,13 @@ public class CodeSystemController {
   }
 
   @Authorized(Privilege.CS_EDIT)
+  @Delete(uri = "/{codeSystem}/entities/versions/{id}")
+  public HttpResponse<?> deleteEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
+    codeSystemEntityVersionService.cancel(id, codeSystem);
+    return HttpResponse.noContent();
+  }
+
+  @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/entities/{entityId}/versions/{id}/duplicate")
   public HttpResponse<?> duplicateEntityVersion(@PathVariable String codeSystem,  @PathVariable Long entityId, @PathVariable Long id) {
     CodeSystemEntityVersion newVersion = codeSystemEntityVersionService.duplicate(codeSystem, entityId, id);

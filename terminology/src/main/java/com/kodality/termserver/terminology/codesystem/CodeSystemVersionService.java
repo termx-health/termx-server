@@ -148,7 +148,6 @@ public class CodeSystemVersionService {
   @Transactional
   public void linkEntityVersions(Long codeSystemVersionId, List<Long> entityVersionIds) {
     long start = System.currentTimeMillis();
-    CodeSystemVersion codeSystemVersion = repository.load(codeSystemVersionId);
     repository.linkEntityVersions(entityVersionIds, codeSystemVersionId);
     log.info("Linked (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }
