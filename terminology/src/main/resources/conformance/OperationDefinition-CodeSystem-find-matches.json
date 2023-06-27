@@ -1,0 +1,189 @@
+{
+  "id": "CodeSystem-find-matches",
+  "url": "http://hl7.org/fhir/OperationDefinition/CodeSystem-find-matches",
+  "code": "find-matches",
+  "date": "2023-03-26T15:21:02+11:00",
+  "kind": "operation",
+  "name": "FindMatches",
+  "type": true,
+  "title": "Finding codes based on supplied properties",
+  "status": "draft",
+  "system": false,
+  "version": "5.0.0",
+  "instance": true,
+  "resource": [
+    "CodeSystem"
+  ],
+  "parameter": [
+    {
+      "max": "1",
+      "min": 1,
+      "use": "in",
+      "name": "system",
+      "type": "uri",
+      "documentation": "The system in which composition is to be performed. This must be provided unless the operation is invoked on a code system instance",
+      "scope": [
+        "type"
+      ]
+    },
+    {
+      "max": "1",
+      "min": 0,
+      "use": "in",
+      "name": "version",
+      "type": "string",
+      "documentation": "The version of the system for the inferencing to be performed",
+      "scope": [
+        "type"
+      ]
+    },
+    {
+      "max": "*",
+      "min": 1,
+      "use": "in",
+      "name": "property",
+      "type": "string",
+      "documentation": "One or more properties that contain information to be composed into the code"
+    },
+    {
+      "max": "1",
+      "min": 0,
+      "use": "in",
+      "name": "exact",
+      "type": "boolean",
+      "documentation": "Whether the operation is being used by a human ('false'), or a machine ('true'). If the operation is being used by a human, the terminology server can return a list of possible matches, with commentary. For a machine, the server returns complete or partial matches, not possible matches. The default value is 'false'"
+    },
+    {
+      "max": "*",
+      "min": 0,
+      "use": "out",
+      "name": "match",
+      "part": [
+        {
+          "max": "1",
+          "min": 1,
+          "use": "out",
+          "name": "code",
+          "type": "Coding",
+          "documentation": "A code that matches the properties provided"
+        },
+        {
+          "max": "*",
+          "min": 0,
+          "use": "out",
+          "name": "unmatched",
+          "part": [
+            {
+              "max": "1",
+              "min": 1,
+              "use": "out",
+              "name": "code",
+              "type": "code",
+              "documentation": "Identifies the property provided"
+            },
+            {
+              "max": "1",
+              "min": 1,
+              "use": "out",
+              "name": "value",
+              "type": "Element",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "Coding"
+                },
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "boolean"
+                },
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "code"
+                },
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "dateTime"
+                },
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "integer"
+                },
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "string"
+                }
+              ],
+              "documentation": "The value of the property provided"
+            },
+            {
+              "max": "*",
+              "min": 0,
+              "use": "out",
+              "name": "property",
+              "part": [
+                {
+                  "max": "1",
+                  "min": 1,
+                  "use": "out",
+                  "name": "code",
+                  "type": "code",
+                  "documentation": "Identifies the sub-property provided"
+                },
+                {
+                  "max": "1",
+                  "min": 1,
+                  "use": "out",
+                  "name": "value",
+                  "type": "Element",
+                  "extension": [
+                    {
+                      "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                      "valueUri": "Coding"
+                    },
+                    {
+                      "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                      "valueUri": "boolean"
+                    },
+                    {
+                      "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                      "valueUri": "code"
+                    },
+                    {
+                      "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                      "valueUri": "dateTime"
+                    },
+                    {
+                      "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                      "valueUri": "integer"
+                    },
+                    {
+                      "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                      "valueUri": "string"
+                    }
+                  ],
+                  "documentation": "The value of the sub-property provided"
+                }
+              ],
+              "documentation": "Nested Properties (mainly used for SNOMED CT composition, for relationship Groups)"
+            }
+          ],
+          "documentation": "One or more properties that contain properties that could not be matched into the code"
+        },
+        {
+          "max": "1",
+          "min": 0,
+          "use": "out",
+          "name": "comment",
+          "type": "string",
+          "documentation": "Information about the quality of the match, if operation is for a human"
+        }
+      ],
+      "documentation": "Concepts returned by the server as a result of the inferencing operation"
+    }
+  ],
+  "publisher": "HL7 (FHIR Project)",
+  "description": "Given a set of properties (and text), return one or more possible matching codes\n\nThis operation takes a set of properties, and examines the code system looking for codes in the code system that match a set of known properties. \n\nWhen looking for matches, there are 3 possible types of match:\n* a complete match - a code that represents all the provided properties correctly\n* a partial match - a code that represents some of the provided properties correctly, and not others \n* a possible match - a code that may represent the provided properties closely, but may capture less or more precise information for some of the properties\n\nThe $find-matches operation can be called in one of 2 modes:\n* By a human, looking for the best match for a set of properties. In this mode, the server returns a list of complete, possible or partial matches (possibly with comments), so that the user can choose (or not) the most appropriate code\n* By a machine (typically in a system interface performing a transformation). In this mode, the server returns only a list of complete and partial matches, but no possible matches. The machine can choose a code from the list (or not) based on what properties are not coded\n\nThese modes are differentiated by the 'exact' parameter, so the client can indicate whether it only wants exact matches (including partial matches) or whether potential matches based on text matching are desired\n \nThe find-matches operation is still preliminary. The interface can be expected to change as more experience is gained from implementations.",
+  "affectsState": false,
+  "experimental": false,
+  "resourceType": "OperationDefinition"
+}

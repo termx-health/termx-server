@@ -1,8 +1,11 @@
 package com.kodality.termserver.fhir.codesystem.operations;
 
+import com.kodality.kefhir.core.api.resource.InstanceOperationDefinition;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
+import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termserver.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;
 import com.kodality.termserver.ts.PublicationStatus;
 import com.kodality.termserver.ts.codesystem.Concept;
@@ -15,7 +18,6 @@ import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.core.util.CollectionUtils;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +27,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 @Slf4j
 @Factory
 @RequiredArgsConstructor
-public class CodeSystemFindMatchesOperation implements TypeOperationDefinition {
+public class CodeSystemFindMatchesOperation implements InstanceOperationDefinition,TypeOperationDefinition {
   private final ConceptService conceptService;
 
   public String getResourceType() {
@@ -36,17 +38,40 @@ public class CodeSystemFindMatchesOperation implements TypeOperationDefinition {
     return "find-matches";
   }
 
+  @Override
+  public ResourceContent run(ResourceId id, ResourceContent params) {
+    String[] parts = CodeSystemFhirMapper.parseCompositeId(id.getResourceId());
+    String csId = parts[0];
+    String versionNumber = parts[1];
 
-  public ResourceContent run(ResourceContent p) {
-    Parameters req = FhirMapper.fromJson(p.getValue(), Parameters.class);
-    Parameters resp = run(req);
+    Parameters req = FhirMapper.fromJson(params.getValue(), Parameters.class);
+    boolean exact = req.findParameter("exact").map(ParametersParameter::getValueBoolean).orElse(false);
+    List<String> properties = req.getParameter().stream().filter(p -> "property".equals(p.getName()))
+        .map(p -> p.getPart("code").getValueCode() + p.findPart("value").map(pp -> "|" + pp.getValueString()).orElse(""))
+        .toList();
+
+    if (CollectionUtils.isEmpty(properties)) {
+      throw new FhirException(400, IssueType.INVALID, "at least one property required");
+    }
+
+    ConceptQueryParams conceptParams = new ConceptQueryParams();
+    conceptParams.setCodeSystem(csId);
+    conceptParams.setCodeSystemVersion(versionNumber);
+    if (exact) {
+      conceptParams.setPropertyValues(String.join(";", properties));
+    } else {
+      conceptParams.setPropertyValuesPartial(String.join(";", properties));
+    }
+    Parameters resp = response(conceptService.query(conceptParams).getData());
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }
 
-  private Parameters run(Parameters req) {
+
+  public ResourceContent run(ResourceContent params) {
+    Parameters req = FhirMapper.fromJson(params.getValue(), Parameters.class);
     String system = req.findParameter("system").map(ParametersParameter::getValueString).orElse(null);
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
-    Boolean exact = req.findParameter("exact").map(ParametersParameter::getValueBoolean).orElse(null);
+    boolean exact = req.findParameter("exact").map(ParametersParameter::getValueBoolean).orElse(false);
     List<String> properties = req.getParameter().stream().filter(p -> "property".equals(p.getName()))
         .map(p -> p.getPart("code").getValueCode() + p.findPart("value").map(pp -> "|" + pp.getValueString()).orElse(""))
         .toList();
@@ -61,16 +86,16 @@ public class CodeSystemFindMatchesOperation implements TypeOperationDefinition {
     ConceptQueryParams conceptParams = new ConceptQueryParams();
     conceptParams.setCodeSystemUri(system);
     conceptParams.setCodeSystemVersion(version);
-    conceptParams.setPropertyValues(String.join(";", properties));
-    List<Concept> match = new ArrayList<>(conceptService.query(conceptParams).getData());
-
-    if (exact == null || !exact) {
-      conceptParams.setPropertyValues(null);
+    if (exact) {
+      conceptParams.setPropertyValues(String.join(";", properties));
+    } else {
       conceptParams.setPropertyValuesPartial(String.join(";", properties));
-      match.addAll(conceptService.query(conceptParams).getData().stream()
-          .filter(pm -> match.stream().noneMatch(em -> em.getId().equals(pm.getId())))
-          .toList());
     }
+    Parameters resp = response(conceptService.query(conceptParams).getData());
+    return new ResourceContent(FhirMapper.toJson(resp), "json");
+  }
+
+  private static Parameters response(List<Concept> match) {
     return new Parameters().setParameter(match.stream().map(c -> {
       Coding coding = new Coding();
       coding.setSystem(c.getCodeSystem());

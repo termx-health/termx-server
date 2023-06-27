@@ -1,8 +1,11 @@
 package com.kodality.termserver.fhir.valueset.operations;
 
+import com.kodality.kefhir.core.api.resource.InstanceOperationDefinition;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
+import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termserver.fhir.valueset.ValueSetFhirMapper;
 import com.kodality.termserver.terminology.valueset.ValueSetVersionService;
 import com.kodality.termserver.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termserver.ts.codesystem.Designation;
@@ -27,7 +30,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 @Slf4j
 @Factory
 @RequiredArgsConstructor
-public class ValueSetValidateCodeOperation implements TypeOperationDefinition {
+public class ValueSetValidateCodeOperation implements InstanceOperationDefinition, TypeOperationDefinition {
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
 
@@ -39,6 +42,18 @@ public class ValueSetValidateCodeOperation implements TypeOperationDefinition {
     return "validate-code";
   }
 
+  @Override
+  public ResourceContent run(ResourceId id, ResourceContent parameters) {
+    Parameters req = FhirMapper.fromJson(parameters.getValue(), Parameters.class);
+    String[] parts = ValueSetFhirMapper.parseCompositeId(id.getResourceId());
+    String vsId = parts[0];
+    String versionNumber = parts[1];
+    ValueSetVersion vsVersion = valueSetVersionService.load(vsId, versionNumber)
+        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "ValueSet version not found"));
+    Parameters resp = run(vsVersion, req);
+    return new ResourceContent(FhirMapper.toJson(resp), "json");
+  }
+
   public ResourceContent run(ResourceContent p) {
     Parameters req = FhirMapper.fromJson(p.getValue(), Parameters.class);
     Parameters resp = run(req);
@@ -48,22 +63,26 @@ public class ValueSetValidateCodeOperation implements TypeOperationDefinition {
   public Parameters run(Parameters req) {
     String url = req.findParameter("url").map(ParametersParameter::getValueUri)
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
-    String code = req.findParameter("code").map(ParametersParameter::getValueCode)
-        .orElse(req.findParameter("coding").map(ParametersParameter::getValueCoding).map(Coding::getCode)
-        .orElse(req.findParameter("codeableConcept").map(ParametersParameter::getValueCodeableConcept).map(CodeableConcept::getCoding)
-            .map(c -> c.stream().map(Coding::getCode).collect(Collectors.joining("")))
-        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required"))));
     String version = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
-    String system = req.findParameter("system").map(ParametersParameter::getValueUri).orElse(null);
-    String systemVersion = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);
-    String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
 
     ValueSetVersion vsVersion = version == null ? valueSetVersionService.loadLastVersionByUri(url) :
         valueSetVersionService.query(new ValueSetVersionQueryParams().setValueSetUri(url).setVersion(version)).findFirst().orElse(null);
-
     if (vsVersion == null) {
       return error("valueset version not found");
     }
+    return run(vsVersion, req);
+  }
+
+  public Parameters run(ValueSetVersion vsVersion, Parameters req) {
+    String code = req.findParameter("code").map(ParametersParameter::getValueCode)
+        .orElse(req.findParameter("coding").map(ParametersParameter::getValueCoding).map(Coding::getCode)
+            .orElse(req.findParameter("codeableConcept").map(ParametersParameter::getValueCodeableConcept).map(CodeableConcept::getCoding)
+                .map(c -> c.stream().map(Coding::getCode).collect(Collectors.joining("")))
+                .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required"))));
+
+    String system = req.findParameter("system").map(ParametersParameter::getValueUri).orElse(null);
+    String systemVersion = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);
+    String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
 
     ValueSetVersionConceptQueryParams cParams = new ValueSetVersionConceptQueryParams()
         .setConceptCode(code)
