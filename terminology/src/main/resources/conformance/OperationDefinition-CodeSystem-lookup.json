@@ -1,0 +1,286 @@
+{
+  "id": "CodeSystem-lookup",
+  "url": "http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup",
+  "code": "lookup",
+  "date": "2023-03-26T15:21:02+11:00",
+  "kind": "operation",
+  "name": "Lookup",
+  "type": true,
+  "title": "Concept Look Up & Decomposition",
+  "status": "active",
+  "system": false,
+  "comment": "Note that the $lookup operation is more than just a code system search  - the server finds the concept, and gathers the return information from the underlying code system definitions.",
+  "version": "5.0.0",
+  "instance": true,
+  "resource": [
+    "CodeSystem"
+  ],
+  "parameter": [
+    {
+      "max": "1",
+      "min": 1,
+      "use": "in",
+      "name": "code",
+      "type": "code",
+      "documentation": "The code that is to be located. If a code is provided, a system must be provided"
+    },
+    {
+      "max": "1",
+      "min": 1,
+      "use": "in",
+      "name": "system",
+      "type": "uri",
+      "documentation": "The system for the code that is to be located",
+      "scope": [
+        "type"
+      ]
+    },
+    {
+      "max": "1",
+      "min": 0,
+      "use": "in",
+      "name": "version",
+      "type": "string",
+      "documentation": "The version of the system, if one was provided in the source data",
+      "scope": [
+        "type"
+      ]
+    },
+    {
+      "max": "1",
+      "min": 0,
+      "use": "in",
+      "name": "date",
+      "type": "dateTime",
+      "documentation": "The date for which the information should be returned. Normally, this is the current conditions (which is the default value) but under some circumstances, systems need to acccess this information as it would have been in the past. A typical example of this would be where code selection is constrained to the set of codes that were available when the patient was treated, not when the record is being edited. Note that which date is appropriate is a matter for implementation policy."
+    },
+    {
+      "max": "*",
+      "min": 0,
+      "use": "in",
+      "name": "property",
+      "type": "code",
+      "documentation": "A property that the client wishes to be returned in the output. If no properties are specified, the server chooses what to return. The following properties are defined for all code systems: name, version (code system info) and code information: display, designation, and lang.X where X is a designation language code. These properties are returned explicitly in named out parameters with matching names, or in designations. In addition, any property codes defined by [this specification](codesystem.html#defined-props) or by the CodeSystem ([CodeSystem.property.code](codesystem-definitions.html#CodeSystem.property)) are allowed, and these are returned in the out parameter ```property```"
+    },
+    {
+      "max": "1",
+      "min": 1,
+      "use": "out",
+      "name": "name",
+      "type": "string",
+      "documentation": "A display name for the code system"
+    },
+    {
+      "max": "1",
+      "min": 0,
+      "use": "out",
+      "name": "version",
+      "type": "string",
+      "documentation": "The version that these details are based on"
+    },
+    {
+      "max": "1",
+      "min": 1,
+      "use": "out",
+      "name": "display",
+      "type": "string",
+      "documentation": "The preferred display for this concept"
+    },
+    {
+      "max": "1",
+      "min": 0,
+      "use": "out",
+      "name": "definition",
+      "type": "string",
+      "documentation": "A statement of the meaning of the concept from the code system"
+    },
+    {
+      "max": "*",
+      "min": 0,
+      "use": "out",
+      "name": "designation",
+      "part": [
+        {
+          "max": "1",
+          "min": 0,
+          "use": "out",
+          "name": "language",
+          "type": "code",
+          "documentation": "The language this designation is defined for"
+        },
+        {
+          "max": "1",
+          "min": 0,
+          "use": "out",
+          "name": "use",
+          "type": "Coding",
+          "documentation": "A code that details how this designation would be used"
+        },
+        {
+          "max": "*",
+          "min": 0,
+          "use": "out",
+          "name": "additionalUse",
+          "type": "Coding",
+          "documentation": "Additional codes that detail how this designation would be used (if there is more than one)"
+        },
+        {
+          "max": "1",
+          "min": 1,
+          "use": "out",
+          "name": "value",
+          "type": "string",
+          "documentation": "The text value for this designation"
+        }
+      ],
+      "documentation": "Additional representations for this concept"
+    },
+    {
+      "max": "*",
+      "min": 0,
+      "use": "out",
+      "name": "property",
+      "part": [
+        {
+          "max": "1",
+          "min": 1,
+          "use": "out",
+          "name": "code",
+          "type": "code",
+          "documentation": "Identifies the property returned"
+        },
+        {
+          "max": "1",
+          "min": 0,
+          "use": "out",
+          "name": "value",
+          "type": "Element",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+              "valueUri": "Coding"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+              "valueUri": "boolean"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+              "valueUri": "code"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+              "valueUri": "dateTime"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+              "valueUri": "decimal"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+              "valueUri": "integer"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+              "valueUri": "string"
+            }
+          ],
+          "documentation": "The value of the property returned"
+        },
+        {
+          "max": "1",
+          "min": 0,
+          "use": "out",
+          "name": "description",
+          "type": "string",
+          "documentation": "Human Readable representation of the property value (e.g. display for a code)"
+        },
+        {
+          "max": "1",
+          "min": 0,
+          "use": "out",
+          "name": "source",
+          "type": "canonical",
+          "documentation": "If information from a supplement is included as a property (e.g. any additional property or property value), then this parameter must assert the url of the supplement."
+        },
+        {
+          "max": "*",
+          "min": 0,
+          "use": "out",
+          "name": "subproperty",
+          "part": [
+            {
+              "max": "1",
+              "min": 1,
+              "use": "out",
+              "name": "code",
+              "type": "code",
+              "documentation": "Identifies the sub-property returned"
+            },
+            {
+              "max": "1",
+              "min": 1,
+              "use": "out",
+              "name": "value",
+              "type": "Element",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "Coding"
+                },
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "boolean"
+                },
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "code"
+                },
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "dateTime"
+                },
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "decimal"
+                },
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "integer"
+                },
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/operationdefinition-allowed-type",
+                  "valueUri": "string"
+                }
+              ],
+              "documentation": "The value of the sub-property returned"
+            },
+            {
+              "max": "1",
+              "min": 0,
+              "use": "out",
+              "name": "description",
+              "type": "string",
+              "documentation": "Human Readable representation of the sub-property value (e.g. display for a code)"
+            },
+            {
+              "max": "1",
+              "min": 0,
+              "use": "out",
+              "name": "source",
+              "type": "canonical",
+              "documentation": "If information from a supplement is included as a subproperty (e.g. any additional subproperty or subproperty value), then this parameter must assert the url of the supplement."
+            }
+          ],
+          "documentation": "Nested Properties (mainly used for SNOMED CT decomposition, for relationship Groups)"
+        }
+      ],
+      "documentation": "One or more properties that contain additional information about the code, including status. For complex terminologies (e.g. SNOMED CT, LOINC, medications), these properties serve to decompose the code"
+    }
+  ],
+  "publisher": "HL7 (FHIR Project)",
+  "description": "Given a code/system, or a Coding, get additional details about the concept, including definition, status, designations, and properties. One of the products of this operation is a full decomposition of a code from a structured terminology.\n\nWhen invoking this operation, a client SHALL provide both a system and a code, either using the system+code parameters, or in the coding parameter. Other parameters are optional",
+  "affectsState": false,
+  "experimental": false,
+  "resourceType": "OperationDefinition"
+}

@@ -12,6 +12,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class CodeSystemVersionQueryParams extends QueryParams {
   private String codeSystem;
+  private String codeSystemUri;
   private List<String> permittedCodeSystems;
   private String version;
   private String status;

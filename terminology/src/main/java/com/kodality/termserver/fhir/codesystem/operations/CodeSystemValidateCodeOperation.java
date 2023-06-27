@@ -1,8 +1,11 @@
 package com.kodality.termserver.fhir.codesystem.operations;
 
+import com.kodality.kefhir.core.api.resource.InstanceOperationDefinition;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
+import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termserver.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
 import com.kodality.termserver.terminology.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;
@@ -27,7 +30,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 @Slf4j
 @Factory
 @RequiredArgsConstructor
-public class CodeSystemValidateCodeOperation implements TypeOperationDefinition {
+public class CodeSystemValidateCodeOperation implements InstanceOperationDefinition, TypeOperationDefinition {
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
@@ -40,6 +43,18 @@ public class CodeSystemValidateCodeOperation implements TypeOperationDefinition 
     return "validate-code";
   }
 
+  @Override
+  public ResourceContent run(ResourceId id, ResourceContent parameters) {
+    Parameters req = FhirMapper.fromJson(parameters.getValue(), Parameters.class);
+    String[] parts = CodeSystemFhirMapper.parseCompositeId(id.getResourceId());
+    String csId = parts[0];
+    String versionNumber = parts[1];
+    CodeSystemVersion csv = codeSystemVersionService.load(csId, versionNumber)
+        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "Concept version not found"));
+    Parameters resp = run(csv.getCodeSystem(), csv.getId(), req);
+    return new ResourceContent(FhirMapper.toJson(resp), "json");
+  }
+
   public ResourceContent run(ResourceContent p) {
     Parameters req = FhirMapper.fromJson(p.getValue(), Parameters.class);
     Parameters resp = run(req);
@@ -49,13 +64,7 @@ public class CodeSystemValidateCodeOperation implements TypeOperationDefinition 
   private Parameters run(Parameters req) {
     String url = req.findParameter("url").map(ParametersParameter::getValueString)
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
-    String code = req.findParameter("code").map(ParametersParameter::getValueString)
-        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
-    String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
-
-    ConceptQueryParams cp = new ConceptQueryParams();
-    cp.setCode(code);
 
     CodeSystemQueryParams csp = new CodeSystemQueryParams();
     csp.setUri(url);
@@ -64,20 +73,33 @@ public class CodeSystemValidateCodeOperation implements TypeOperationDefinition 
     if (cs == null) {
       return error("CodeSystem not found by url " + url);
     }
-    cp.setCodeSystem(cs.getId());
 
+    CodeSystemVersion csv = null;
     if (version != null) {
       CodeSystemVersionQueryParams csvp = new CodeSystemVersionQueryParams();
-      csvp.setCodeSystem(cp.getCodeSystem());
+      csvp.setCodeSystem(cs.getId());
       csvp.setVersion(version);
       csvp.setStatus(PublicationStatus.active);
       csvp.setLimit(1);
-      CodeSystemVersion csv = codeSystemVersionService.query(csvp).findFirst().orElse(null);
+      csv = codeSystemVersionService.query(csvp).findFirst().orElse(null);
       if (csv == null) {
         return error("CodeSystem active version not found");
       }
-      cp.setCodeSystemVersionId(csv.getId());
     }
+
+    return run(cs.getId(), csv == null ? null : csv.getId(), req);
+  }
+
+  private Parameters run(String csId, Long versionId, Parameters req) {
+    String code = req.findParameter("code").map(ParametersParameter::getValueString)
+        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
+    String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
+
+
+    ConceptQueryParams cp = new ConceptQueryParams();
+    cp.setCode(code);
+    cp.setCodeSystem(csId);
+    cp.setCodeSystemVersionId(versionId);
 
     Concept concept = conceptService.query(cp).findFirst().orElse(null);
     if (concept == null) {

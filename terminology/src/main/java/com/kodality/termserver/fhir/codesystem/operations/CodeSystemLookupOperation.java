@@ -1,9 +1,11 @@
 package com.kodality.termserver.fhir.codesystem.operations;
 
-import com.kodality.commons.exception.ApiClientException;
+import com.kodality.kefhir.core.api.resource.InstanceOperationDefinition;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
+import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termserver.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termserver.terminology.codesystem.CodeSystemService;
 import com.kodality.termserver.ts.codesystem.CodeSystem;
 import com.kodality.termserver.ts.codesystem.CodeSystemQueryParams;
@@ -27,7 +29,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Singleton
 @RequiredArgsConstructor
-public class CodeSystemLookupOperation implements TypeOperationDefinition {
+public class CodeSystemLookupOperation implements InstanceOperationDefinition, TypeOperationDefinition {
   private final CodeSystemService codeSystemService;
 
   public String getResourceType() {
@@ -38,19 +40,34 @@ public class CodeSystemLookupOperation implements TypeOperationDefinition {
     return "lookup";
   }
 
+  @Override
+  public ResourceContent run(ResourceId id, ResourceContent parameters) {
+    Parameters req = FhirMapper.fromJson(parameters.getValue(), Parameters.class);
+    String[] parts = CodeSystemFhirMapper.parseCompositeId(id.getResourceId());
+    String csId = parts[0];
+    String versionNumber = parts[1];
+    Parameters resp = run(csId, null, versionNumber, req);
+    return new ResourceContent(FhirMapper.toJson(resp), "json");
+  }
+
   public ResourceContent run(ResourceContent c) {
     Parameters req = FhirMapper.fromJson(c.getValue(), Parameters.class);
-    String code = req.findParameter("code").map(ParametersParameter::getValueString).orElse(null);
-    String system = req.findParameter("system").map(ParametersParameter::getValueString).orElse(null);
+    String system = req.findParameter("system").map(ParametersParameter::getValueString)
+        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "system parameter required"));
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
+
+    Parameters resp = run(null, system, version, req);
+    return new ResourceContent(FhirMapper.toJson(resp), "json");
+  }
+
+  private Parameters run(String csId, String system, String version, Parameters req) {
+    String code = req.findParameter("code").map(ParametersParameter::getValueString)
+        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
     LocalDate date = req.findParameter("date").map(pp -> LocalDateTime.parse(pp.getValueString()).toLocalDate()).orElse(null);
     List<String> properties = req.getParameter().stream().filter(p -> "property".equals(p.getName())).map(ParametersParameter::getValueString).toList();
 
-    if (code == null || system == null) {
-      throw new ApiClientException("code and system parameters required");
-    }
-
     CodeSystemQueryParams csParams = new CodeSystemQueryParams()
+        .setId(csId)
         .setConceptCode(code)
         .setConceptCodeSystemVersion(version)
         .setUri(system)
@@ -59,10 +76,8 @@ public class CodeSystemLookupOperation implements TypeOperationDefinition {
         .setVersionExpirationDateLe(date)
         .setVersionsDecorated(true).setConceptsDecorated(true).setPropertiesDecorated(true)
         .limit(1);
-    CodeSystem cs = codeSystemService.query(csParams).findFirst().orElse(null);
-    if (cs == null) {
-      throw new FhirException(404, IssueType.NOTFOUND, "CodeSystem not found");
-    }
+    CodeSystem cs = codeSystemService.query(csParams).findFirst()
+        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "CodeSystem not found"));
 
     Parameters resp = new Parameters();
     resp.addParameter(new ParametersParameter().setName("name")
@@ -86,7 +101,7 @@ public class CodeSystemLookupOperation implements TypeOperationDefinition {
         );
       });
     });
-    return new ResourceContent(FhirMapper.toJson(resp), "json");
+    return resp;
   }
 
   private static Stream<EntityPropertyValue> findPropertyValues(CodeSystem cs, Long propertyId) {

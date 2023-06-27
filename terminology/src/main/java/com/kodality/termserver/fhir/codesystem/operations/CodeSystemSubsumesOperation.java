@@ -1,15 +1,18 @@
 package com.kodality.termserver.fhir.codesystem.operations;
 
+import com.kodality.kefhir.core.api.resource.InstanceOperationDefinition;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
+import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termserver.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termserver.terminology.codesystem.CodeSystemVersionService;
 import com.kodality.termserver.terminology.codesystem.concept.ConceptService;
+import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.ts.codesystem.ConceptQueryParams;
 import com.kodality.termserver.ts.codesystem.EntityPropertyValue;
 import com.kodality.zmei.fhir.FhirMapper;
-import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import jakarta.inject.Singleton;
@@ -22,7 +25,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 @Slf4j
 @Singleton
 @RequiredArgsConstructor
-public class CodeSystemSubsumesOperation implements TypeOperationDefinition {
+public class CodeSystemSubsumesOperation implements InstanceOperationDefinition, TypeOperationDefinition {
   private final ConceptService conceptService;
   private final CodeSystemVersionService codeSystemVersionService;
 
@@ -34,6 +37,18 @@ public class CodeSystemSubsumesOperation implements TypeOperationDefinition {
     return "subsumes";
   }
 
+  @Override
+  public ResourceContent run(ResourceId id, ResourceContent p) {
+    Parameters req = FhirMapper.fromJson(p.getValue(), Parameters.class);
+    String[] parts = CodeSystemFhirMapper.parseCompositeId(id.getResourceId());
+    String csId = parts[0];
+    String versionNumber = parts[1];
+    CodeSystemVersion csv = codeSystemVersionService.load(csId, versionNumber)
+        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "Concept version not found"));
+    Parameters resp = run(csv, req);
+    return new ResourceContent(FhirMapper.toJson(resp), "json");
+  }
+
   public ResourceContent run(ResourceContent p) {
     Parameters req = FhirMapper.fromJson(p.getValue(), Parameters.class);
     Parameters resp = run(req);
@@ -41,22 +56,21 @@ public class CodeSystemSubsumesOperation implements TypeOperationDefinition {
   }
 
   public Parameters run(Parameters req) {
-    String system = req.findParameter("system").map(ParametersParameter::getValueString).orElse(null);
+    String system = req.findParameter("system").map(ParametersParameter::getValueString)
+        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
-    String codeA = req.findParameter("codeA").map(ParametersParameter::getValueString).orElse(null);
-    String codeB = req.findParameter("codeA").map(ParametersParameter::getValueString).orElse(null);
-    Coding codingA = req.findParameter("codingA").map(ParametersParameter::getValueCoding).orElse(null);
-    Coding codingB = req.findParameter("codingB").map(ParametersParameter::getValueCoding).orElse(null);
+    CodeSystemVersion csv = version == null ? codeSystemVersionService.loadLastVersionByUri(system) : codeSystemVersionService.loadVersionByUri(system, version)
+        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "Concept version not found"));
+    return run(csv, req);
+  }
 
-    if (codeA == null && codingA == null || codeB == null && codingB == null) {
-      throw new FhirException(400, IssueType.INVALID, "either code or coding required");
-    }
-    if ((codeA != null || codeB != null) && system == null) {
-      throw new FhirException(400, IssueType.INVALID, "system is required");
-    }
-
-    Concept conceptA = codingA != null ? findConcept(codingA) : findConcept(system, version, codeA);
-    Concept conceptB = codingB != null ? findConcept(codingB) : findConcept(system, version, codeB);
+  public Parameters run(CodeSystemVersion csv, Parameters req) {
+    String codeA = req.findParameter("codeA").map(ParametersParameter::getValueString)
+        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "codeA parameter required"));
+    String codeB = req.findParameter("codeA").map(ParametersParameter::getValueString)
+        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "codeB parameter required"));
+    Concept conceptA = findConcept(csv, codeA);
+    Concept conceptB = findConcept(csv, codeB);
     return subsumes(conceptA, conceptB);
   }
 
@@ -78,20 +92,13 @@ public class CodeSystemSubsumesOperation implements TypeOperationDefinition {
     );
   }
 
-  private Concept findConcept(Coding coding) {
-    String version = coding.getVersion() != null ? coding.getVersion() : codeSystemVersionService.loadLastVersionByUri(coding.getSystem()).getVersion();
-    return findConcept(coding.getSystem(), version, coding.getCode());
-  }
-
-  private Concept findConcept(String uri, String version, String code) {
-    version = version != null ? version : codeSystemVersionService.loadLastVersionByUri(uri).getVersion();
+  private Concept findConcept(CodeSystemVersion codeSystemVersion, String code) {
     ConceptQueryParams conceptParams = new ConceptQueryParams();
     conceptParams.setCode(code);
-    conceptParams.setCodeSystemUri(uri);
-    conceptParams.setCodeSystemVersion(version);
+    conceptParams.setCodeSystemVersionId(codeSystemVersion.getId());
     conceptParams.setLimit(1);
     return conceptService.query(conceptParams).findFirst()
-        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "Concept '" + code + "' not found in " + uri));
+        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "Concept '" + code + "' not found in " + codeSystemVersion.getCodeSystem()));
   }
 
 }

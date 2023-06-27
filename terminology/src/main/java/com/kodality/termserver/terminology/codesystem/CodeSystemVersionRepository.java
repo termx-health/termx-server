@@ -7,7 +7,6 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termserver.ts.PublicationStatus;
-import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersion;
 import com.kodality.termserver.ts.codesystem.CodeSystemVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
@@ -70,6 +69,8 @@ public class CodeSystemVersionRepository extends BaseRepository {
   private SqlBuilder filter(CodeSystemVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and csv.code_system = ?", params.getCodeSystem());
+    sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs where cs.id = csv.code_system and cs.uri = ? and cs.sys_status = 'A')",
+        params.getCodeSystemUri());
     if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
       sb.and().in("csv.code_system", params.getPermittedCodeSystems());
     }

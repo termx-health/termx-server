@@ -60,6 +60,14 @@ public class CodeSystemVersionService {
     return repository.loadLastVersionByUri(uri);
   }
 
+  public Optional<CodeSystemVersion> loadVersionByUri(String uri, String versionCode) {
+    CodeSystemVersionQueryParams p = new CodeSystemVersionQueryParams();
+    p.setCodeSystemUri(uri);
+    p.setVersion(versionCode);
+    p.setLimit(1);
+    return repository.query(p).findFirst();
+  }
+
   public QueryResult<CodeSystemVersion> query(CodeSystemVersionQueryParams params) {
     return repository.query(params);
   }
