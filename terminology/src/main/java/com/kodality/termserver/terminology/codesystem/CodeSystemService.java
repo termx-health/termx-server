@@ -54,7 +54,6 @@ public class CodeSystemService {
       codeSystemVersionService.save(version);
     }
 
-
     if (request.getValueSet() != null) {
       CodeSystemVersion codeSystemVersion = version == null ? codeSystemVersionService.loadLastVersion(codeSystem.getId()) : version;
       request.getValueSet().getValueSet().setTitle(codeSystem.getTitle());

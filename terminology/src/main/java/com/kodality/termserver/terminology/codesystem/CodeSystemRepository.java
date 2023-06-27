@@ -18,6 +18,8 @@ import jakarta.inject.Singleton;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 @Singleton
 public class CodeSystemRepository extends BaseRepository {
@@ -69,14 +71,7 @@ public class CodeSystemRepository extends BaseRepository {
   }
 
   public QueryResult<CodeSystem> query(CodeSystemQueryParams params) {
-    String join =
-        "left join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A' " +
-        "left join terminology.code_system_entity cse on cse.code_system = cs.id and cse.sys_status = 'A' " +
-        "left join terminology.concept c on c.id = cse.id and c.sys_status = 'A' " +
-        "left join sys.package_version_resource pvr on pvr.resource_type = 'code-system' and pvr.resource_id = cs.id and pvr.sys_status = 'A' " +
-        "left join sys.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
-        "left join sys.package p on p.id = pv.package_id and p.sys_status = 'A' " +
-        "left join sys.space s on s.id = p.space_id and s.sys_status = 'A' ";
+    String join = getJoin(params);
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(distinct(cs.id)) from terminology.code_system cs " + join);
       sb.append(filter(params));
@@ -120,17 +115,17 @@ public class CodeSystemRepository extends BaseRepository {
               "     or terminology.jsonb_search(cs.title) like '%' || terminology.search_translate(?) || '%' )",
           params.getTextContains(), params.getTextContains());
     }
-    sb.appendIfNotNull("and c.code = ?", params.getConceptCode());
-    sb.appendIfNotNull("and csv.id = ?", params.getVersionId());
     sb.appendIfNotNull("and csv.version = ?", params.getVersionVersion());
+    sb.appendIfNotNull("and csv.id = ?", params.getVersionId());
     sb.appendIfNotNull("and csv.status = ?", params.getVersionStatus());
     sb.appendIfNotNull("and csv.release_date >= ?", params.getVersionReleaseDateGe());
     sb.appendIfNotNull("and (csv.expiration_date <= ? or csv.expiration_date is null)", params.getVersionExpirationDateLe());
+    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev" +
+        " where csev.code_system_entity_id = cse.id and csev.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
+    sb.appendIfNotNull("and c.code = ?", params.getConceptCode());
     sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
     sb.appendIfNotNull("and p.id = ?", params.getPackageId());
     sb.appendIfNotNull("and s.id = ?", params.getSpaceId());
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev" +
-        " where csev.code_system_entity_id = cse.id and csev.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
     return sb;
   }
 
@@ -151,5 +146,34 @@ public class CodeSystemRepository extends BaseRepository {
   public void cancel(String codeSystem) {
     SqlBuilder sb = new SqlBuilder("select * from terminology.cancel_code_system(?)", codeSystem);
     jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
+  }
+
+  private String getJoin(CodeSystemQueryParams params) {
+    String join = "";
+    if (CollectionUtils.isNotEmpty(Stream.of(
+            params.getVersionVersion(), params.getVersionId(), params.getVersionStatus(),
+            params.getVersionReleaseDateGe(), params.getVersionExpirationDateLe())
+        .filter(Objects::nonNull).toList())) {
+      join += "left join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A' ";
+    }
+    if (CollectionUtils.isNotEmpty(Stream.of(
+            params.getCodeSystemEntityVersionId(), params.getConceptCode())
+        .filter(Objects::nonNull).toList())) {
+      join += "left join terminology.code_system_entity cse on cse.code_system = cs.id and cse.sys_status = 'A' ";
+    }
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getConceptCode()).filter(Objects::nonNull).toList())) {
+      join += "left join terminology.concept c on c.id = cse.id and c.sys_status = 'A' ";
+    }
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getPackageVersionId(), params.getPackageId(), params.getSpaceId()).filter(Objects::nonNull).toList())) {
+      join += "left join sys.package_version_resource pvr on pvr.resource_type = 'code-system' and pvr.resource_id = cs.id and pvr.sys_status = 'A' " +
+          "left join sys.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' ";
+    }
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getPackageId(), params.getSpaceId()).filter(Objects::nonNull).toList())) {
+      join += "left join sys.package p on p.id = pv.package_id and p.sys_status = 'A' ";
+    }
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getSpaceId()).filter(Objects::nonNull).toList())) {
+      join += "left join sys.space s on s.id = p.space_id and s.sys_status = 'A' ";
+    }
+    return join;
   }
 }

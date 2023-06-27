@@ -47,7 +47,8 @@ public class LoincMapper {
         .setTitle(new LocalizedName(Map.of("en", "LOINC")))
         .setContent(CodeSystemContent.complete)
         .setCaseSensitive(CaseSignificance.entire_term_case_insensitive)
-        .setSupportedLanguages(List.of(Language.en));
+        .setSupportedLanguages(List.of(Language.en))
+        .setHierarchyMeaning(SUBSUMES);
   }
 
   private static CodeSystemImportRequestVersion toVersion(String version) {

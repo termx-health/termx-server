@@ -35,7 +35,7 @@ public class IchiUzMapper {
     List<String> supportedLanguages = List.of(Language.en, Language.uz_cyrl, Language.uz_latn, Language.ru);
 
     CodeSystemImportRequest request = new CodeSystemImportRequest(configuration);
-    request.getCodeSystem().setContent(CodeSystemContent.supplement).setSupportedLanguages(supportedLanguages);
+    request.getCodeSystem().setContent(CodeSystemContent.supplement).setSupportedLanguages(supportedLanguages).setHierarchyMeaning(IS_A);
     request.getVersion().setSupportedLanguages(supportedLanguages);
 
     request.setProperties(getProperties()).setAssociations(getAssociations());

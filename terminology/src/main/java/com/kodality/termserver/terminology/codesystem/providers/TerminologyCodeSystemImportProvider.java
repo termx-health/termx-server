@@ -37,6 +37,7 @@ public class TerminologyCodeSystemImportProvider extends CodeSystemImportProvide
     codeSystem.setDescription(request.getCodeSystem().getDescription());
     codeSystem.setContent(Optional.ofNullable(request.getCodeSystem().getContent()).orElse(CodeSystemContent.complete));
     codeSystem.setBaseCodeSystem(request.getCodeSystem().getBaseCodeSystem());
+    codeSystem.setHierarchyMeaning(request.getCodeSystem().getHierarchyMeaning());
 
     codeSystem.setVersions(mapVersions(request));
     codeSystem.setProperties(mapProperties(request));

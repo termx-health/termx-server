@@ -28,7 +28,7 @@ public class AtcEstMapper {
     List<String> supportedLanguages = List.of(Language.en, Language.et);
 
     CodeSystemImportRequest request = new CodeSystemImportRequest(configuration);
-    request.getCodeSystem().setContent(CodeSystemContent.supplement).setSupportedLanguages(supportedLanguages);
+    request.getCodeSystem().setContent(CodeSystemContent.supplement).setSupportedLanguages(supportedLanguages).setHierarchyMeaning(IS_A);
     request.getVersion().setSupportedLanguages(supportedLanguages);
 
     request.setProperties(getProperties()).setAssociations(getAssociations());

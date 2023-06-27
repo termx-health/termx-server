@@ -36,7 +36,7 @@ public class Icd10EstMapper {
     List<String> supportedLanguages = List.of(Language.en, Language.et, Language.la);
 
     CodeSystemImportRequest request = new CodeSystemImportRequest(configuration);
-    request.getCodeSystem().setContent(CodeSystemContent.supplement).setSupportedLanguages(supportedLanguages);
+    request.getCodeSystem().setContent(CodeSystemContent.supplement).setSupportedLanguages(supportedLanguages).setHierarchyMeaning(IS_A);
     request.getVersion().setSupportedLanguages(supportedLanguages);
 
     request.setProperties(getProperties()).setAssociations(getAssociations());

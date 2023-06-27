@@ -48,9 +48,9 @@ public class CodeSystemImportRequest {
     private LocalizedName title;
     private String content;
     private String caseSensitive;
-    private String narrative;
     private LocalizedName description;
     private List<String> supportedLanguages;
+    private String hierarchyMeaning;
 
     private String baseCodeSystem;
   }

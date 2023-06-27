@@ -32,7 +32,7 @@ public class Icd10Mapper {
     List<String> supportedLanguages = List.of(Language.en);
 
     CodeSystemImportRequest request = new CodeSystemImportRequest(configuration);
-    request.getCodeSystem().setContent(CodeSystemContent.complete).setSupportedLanguages(supportedLanguages);
+    request.getCodeSystem().setContent(CodeSystemContent.complete).setSupportedLanguages(supportedLanguages).setHierarchyMeaning(IS_A);
     request.getVersion().setSupportedLanguages(supportedLanguages);
 
     request.setProperties(getProperties()).setAssociations(getAssociations());

@@ -58,7 +58,8 @@ public class LoincAnswerListMapper {
         .setTitle(new LocalizedName(Map.of("en", "LOINC answer list")))
         .setContent(CodeSystemContent.complete)
         .setCaseSensitive(CaseSignificance.entire_term_case_insensitive)
-        .setSupportedLanguages(List.of(Language.en));
+        .setSupportedLanguages(List.of(Language.en))
+        .setHierarchyMeaning(IS_A);
   }
 
   private static CodeSystemImportRequestVersion toVersion(String version) {
