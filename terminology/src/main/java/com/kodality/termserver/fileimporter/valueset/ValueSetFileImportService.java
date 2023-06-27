@@ -16,7 +16,7 @@ public class ValueSetFileImportService {
 
   public void process(ValueSetFileImportRequest request, byte[] file) {
     if ("json".equals(request.getType())) {
-      valueSetFhirImportService.importValueSet(new String(file, StandardCharsets.UTF_8));
+      valueSetFhirImportService.importValueSet(new String(file, StandardCharsets.UTF_8), request.getValueSetId());
     } else { //TODO fsh file import
       throw ApiError.TE720.toApiException(Map.of("format", request.getType()));
     }

@@ -30,19 +30,19 @@ public class CodeSystemFhirImportService {
         PublicationStatus.active.equals(codeSystem.getStatus()));
   }
 
-  public void importCodeSystemFromUrl(String url) {
+  public void importCodeSystemFromUrl(String url, String codeSystemId) {
     String resource = getResource(url);
-    importCodeSystem(resource);
+    importCodeSystem(resource, codeSystemId);
   }
 
-  public void importCodeSystem(String resource) {
+  public void importCodeSystem(String resource, String codeSystemId) {
     Resource res = FhirMapper.fromJson(resource, Resource.class);
     if ("Bundle".equals(res.getResourceType())) {
       Bundle bundle = FhirMapper.fromJson(resource, Bundle.class);
       bundle.getEntry().forEach(e -> importCodeSystem((CodeSystem) e.getResource()));
     } else {
-      com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem =
-          FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
+      com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
+      codeSystem.setId(codeSystemId);
       importCodeSystem(codeSystem);
     }
   }

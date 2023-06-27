@@ -38,9 +38,9 @@ public class CodeSystemSyncOperation implements TypeOperationDefinition {
   public ResourceContent run(ResourceContent c) {
     Parameters req = FhirMapper.fromJson(c.getValue(), Parameters.class);
 
-    List<String> urls = CollectionUtils.isEmpty(req.getParameter()) ? List.of() :
-        req.getParameter().stream().filter(p -> "url".equals(p.getName())).map(ParametersParameter::getValueString).toList();
-    if (urls.isEmpty()) {
+    List<ParametersParameter> resources = CollectionUtils.isEmpty(req.getParameter()) ? List.of() :
+        req.getParameter().stream().filter(p -> "resources".equals(p.getName())).toList();
+    if (resources.isEmpty()) {
       throw ApiError.TE106.toApiException();
     }
 
@@ -52,9 +52,11 @@ public class CodeSystemSyncOperation implements TypeOperationDefinition {
         log.info("Fhir code system import started");
         long start = System.currentTimeMillis();
 
-        urls.forEach(url -> {
+        resources.forEach(res -> {
+          String url = res.findPart("url").map(ParametersParameter::getValueString).orElseThrow();
+          String id = res.findPart("id").map(ParametersParameter::getValueString).orElseThrow();
           try {
-            importService.importCodeSystemFromUrl(url);
+            importService.importCodeSystemFromUrl(url, id);
             successes.add(String.format("CodeSystem from resource %s imported", url));
           } catch (Exception e) {
             warnings.add(String.format("CodeSystem from resource %s was not imported due to error: %s", url, e.getMessage()));

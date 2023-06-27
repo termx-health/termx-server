@@ -70,16 +70,17 @@ public class ValueSetFhirImportService {
     return valueSet;
   }
 
-  public void importValueSetFromUrl(String url) {
+  public void importValueSetFromUrl(String url, String id) {
     String resource = getResource(url);
-    importValueSet(resource);
+    importValueSet(resource, id);
   }
 
-  public void importValueSet(String resource) {
+  public void importValueSet(String resource, String id) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhir = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
     if (!ResourceType.valueSet.equals(fhir.getResourceType())) {
       throw ApiError.TE107.toApiException();
     }
+    fhir.setId(id);
     importValueSet(fhir, false);
   }
 

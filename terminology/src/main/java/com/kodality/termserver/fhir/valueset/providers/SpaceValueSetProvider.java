@@ -50,7 +50,7 @@ public class SpaceValueSetProvider implements SpaceResourceProvider {
   private List<String> importCodeSystems(List<ImportUrl> urls) {
     return urls.stream().map(url -> {
       try {
-        vsFhirImportService.importValueSetFromUrl(url.url);
+        vsFhirImportService.importValueSetFromUrl(url.url, url.resourceId);
         return url.resourceId;
       } catch (Exception e) {
         log.error(e.getMessage());

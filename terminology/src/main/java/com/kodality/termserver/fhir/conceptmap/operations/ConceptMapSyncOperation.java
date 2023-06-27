@@ -42,9 +42,9 @@ public class ConceptMapSyncOperation implements TypeOperationDefinition {
   }
 
   private Parameters run(Parameters req) {
-    List<String> urls = CollectionUtils.isEmpty(req.getParameter()) ? List.of() :
-        req.getParameter().stream().filter(p -> "url".equals(p.getName())).map(ParametersParameter::getValueString).toList();
-    if (urls.isEmpty()) {
+    List<ParametersParameter> resources = CollectionUtils.isEmpty(req.getParameter()) ? List.of() :
+        req.getParameter().stream().filter(p -> "resources".equals(p.getName())).toList();
+    if (resources.isEmpty()) {
       throw ApiError.TE106.toApiException();
     }
 
@@ -56,16 +56,16 @@ public class ConceptMapSyncOperation implements TypeOperationDefinition {
         List<String> warnings = new ArrayList<>();
         log.info("Fhir map set import started");
         long start = System.currentTimeMillis();
-
-        urls.forEach(url -> {
+        resources.forEach(res -> {
+          String url = res.findPart("url").map(ParametersParameter::getValueString).orElseThrow();
+          String id = res.findPart("id").map(ParametersParameter::getValueString).orElseThrow();
           try {
-            importService.importMapSet(url);
+            importService.importMapSet(url, id);
             successes.add(String.format("ConceptMap from resource %s imported", url));
           } catch (Exception e) {
             warnings.add(String.format("ConceptMap from resource %s was not imported due to error: %s", url, e.getMessage()));
           }
         });
-
         log.info("Fhir map set import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
         importLogger.logImport(jobLogResponse.getJobId(), successes, warnings);
       } catch (ApiClientException e) {

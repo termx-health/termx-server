@@ -50,7 +50,7 @@ public class SpaceCodeSystemProvider implements SpaceResourceProvider {
   private List<String> importCodeSystems(List<ImportUrl> urls) {
     return urls.stream().map(url -> {
       try {
-        csFhirImportService.importCodeSystemFromUrl(url.url);
+        csFhirImportService.importCodeSystemFromUrl(url.url, url.resourceId);
         return url.resourceId;
       } catch (Exception e) {
         log.error(e.getMessage());

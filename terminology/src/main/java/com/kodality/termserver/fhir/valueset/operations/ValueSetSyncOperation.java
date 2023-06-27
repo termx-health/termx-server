@@ -37,14 +37,15 @@ public class ValueSetSyncOperation implements TypeOperationDefinition {
     return "sync";
   }
 
-  public ResourceContent run(ResourceContent res) {
-    Parameters req = FhirMapper.fromJson(res.getValue(), Parameters.class);
+  public ResourceContent run(ResourceContent c) {
+    Parameters req = FhirMapper.fromJson(c.getValue(), Parameters.class);
 
-    List<String> urls = CollectionUtils.isEmpty(req.getParameter()) ? List.of() :
-        req.getParameter().stream().filter(p -> "url".equals(p.getName())).map(ParametersParameter::getValueString).toList();
-    if (urls.isEmpty()) {
+    List<ParametersParameter> resources = CollectionUtils.isEmpty(req.getParameter()) ? List.of() :
+        req.getParameter().stream().filter(p -> "resources".equals(p.getName())).toList();
+    if (resources.isEmpty()) {
       throw ApiError.TE106.toApiException();
     }
+
 
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
@@ -53,9 +54,11 @@ public class ValueSetSyncOperation implements TypeOperationDefinition {
         List<String> warnings = new ArrayList<>();
         log.info("Fhir value set import started");
         long start = System.currentTimeMillis();
-        urls.forEach(url -> {
+        resources.forEach(res -> {
+          String url = res.findPart("url").map(ParametersParameter::getValueString).orElseThrow();
+          String id = res.findPart("id").map(ParametersParameter::getValueString).orElseThrow();
           try {
-            importService.importValueSetFromUrl(url);
+            importService.importValueSetFromUrl(url, id);
             successes.add(String.format("ValueSet from resource %s imported", url));
           } catch (Exception e) {
             String warning = String.format("ValueSet from resource %s was not imported due to error: %s", url, e.getMessage());

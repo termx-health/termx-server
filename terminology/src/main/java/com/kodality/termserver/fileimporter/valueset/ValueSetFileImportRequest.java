@@ -10,6 +10,6 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @Introspected
 public class ValueSetFileImportRequest {
-  private String link;
+  private String valueSetId;
   private String type; // json; fsh
 }

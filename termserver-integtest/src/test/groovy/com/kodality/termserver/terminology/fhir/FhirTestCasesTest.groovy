@@ -82,10 +82,10 @@ class FhirTestCasesTest extends TermserverIntegTest {
   def importResource(String path) {
     def resource = toFhir(path, Resource.class)
     if (resource.resourceType == "CodeSystem") {
-      csImportService.importCodeSystem(FhirMapper.toJson(resource))
+      csImportService.importCodeSystem(FhirMapper.toJson(resource), resource.id)
     }
     if (resource.resourceType == "ValueSet") {
-      vsImportService.importValueSet(FhirMapper.toJson(resource))
+      vsImportService.importValueSet(FhirMapper.toJson(resource), resource.id)
     }
   }
 

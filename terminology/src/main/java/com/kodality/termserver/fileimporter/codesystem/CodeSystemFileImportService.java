@@ -104,7 +104,7 @@ public class CodeSystemFileImportService {
 
   public CodeSystemFileImportResponse process(CodeSystemFileImportRequest request, byte[] file) {
     if ("json".equals(request.getType())) {
-      codeSystemFhirImportService.importCodeSystem(new String(file, StandardCharsets.UTF_8));
+      codeSystemFhirImportService.importCodeSystem(new String(file, StandardCharsets.UTF_8), request.getCodeSystem().getId());
       return new CodeSystemFileImportResponse();
     } //TODO fsh file import
 

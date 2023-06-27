@@ -24,12 +24,13 @@ public class ConceptMapFhirImportService {
   private final BinaryHttpClient client = new BinaryHttpClient();
 
   @Transactional
-  public void importMapSet(String url) {
+  public void importMapSet(String url, String id) {
     String resource = getResource(url);
     ConceptMap conceptMap = FhirMapper.fromJson(resource, ConceptMap.class);
     if (!ResourceType.conceptMap.equals(conceptMap.getResourceType())) {
       throw ApiError.TE107.toApiException();
     }
+    conceptMap.setId(id);
     importMapSet(conceptMap);
   }
 
