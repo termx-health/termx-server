@@ -67,7 +67,7 @@ public class CodeSystemSubsumesOperation implements InstanceOperationDefinition,
   public Parameters run(CodeSystemVersion csv, Parameters req) {
     String codeA = req.findParameter("codeA").map(ParametersParameter::getValueString)
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "codeA parameter required"));
-    String codeB = req.findParameter("codeA").map(ParametersParameter::getValueString)
+    String codeB = req.findParameter("codeB").map(ParametersParameter::getValueString)
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "codeB parameter required"));
     Concept conceptA = findConcept(csv, codeA);
     Concept conceptB = findConcept(csv, codeB);
