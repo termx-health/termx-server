@@ -29,7 +29,7 @@ public class CommonTaskService {
   private final ProjectService projectService;
   private final WorkflowService workflowService;
 
-  private final static String PROJECT_CODE = "kts";
+  private final static String PROJECT_CODE = "termx";
   private final static String INSTITUTION = "1";
   private final static String TASK_TYPE = "task";
 

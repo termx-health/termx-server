@@ -16,11 +16,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @OpenAPIDefinition(
     info = @Info(
-        title = "KTS",
+        title = "TermX",
         description = "${openapi.description}",
         contact = @Contact(url = "https://kodality.com", name = "Kodality support", email = "support@kodality.com")
     ),
-    externalDocs = @ExternalDocumentation(description = "Read more about KTS", url = "https://wiki.kodality.dev/en/terminology-server")
+    externalDocs = @ExternalDocumentation(description = "Read more about TermX", url = "https://wiki.kodality.dev/en/terminology-server")
 )
 @OpenAPIInclude(
     tags = @Tag(name = "Terminology"),

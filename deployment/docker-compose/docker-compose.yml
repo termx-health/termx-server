@@ -1,15 +1,15 @@
 version: '3.9'
 services:
-  terminology-server:
+  termx-server:
     restart: unless-stopped
-    image: docker.kodality.com/terminology-server:latest
-    container_name: terminology-server
+    image: docker.kodality.com/termx-server:latest
+    container_name: termx-server
     depends_on:
-      - terminology-postgres
+      - termx-postgres
     env_file:
       - server.env
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://terminology-server:8200/health" ]
+      test: [ "CMD", "curl", "-f", "http://termx-server:8200/health" ]
       interval: 5s
       timeout: 5s
       retries: 60
@@ -17,21 +17,21 @@ services:
       - 8200:8200
     mem_reservation: 2g
 
-  terminology-web:
+  termx-web:
     restart: unless-stopped
-    image: docker.kodality.com/terminology-web:latest
-    container_name: terminology-web
+    image: docker.kodality.com/termx-web:latest
+    container_name: termx-web
     depends_on:
-      - terminology-server
+      - termx-server
     volumes:
       - ./env.js:/usr/share/nginx/html/assets/env.js
     ports:
       - 9000:80
 
-  terminology-postgres:
+  termx-postgres:
     restart: unless-stopped
     image: postgres:14
-    container_name: terminology-postgres
+    container_name: termx-postgres
     volumes:
       - ./pgdata:/var/lib/postgresql/data
     env_file:
@@ -39,10 +39,10 @@ services:
     ports:
       - 5432:5432
     shm_size: 1g
-  terminology-swagger:
+  termx-swagger:
     restart: unless-stopped
     image: swaggerapi/swagger-ui
-    container_name: terminology-swagger
+    container_name: termx-swagger
     env_file:
       - swagger.env
     ports:

@@ -27,8 +27,8 @@ build_docker:
   script:
     - ./gradlew clean assemble
     - cd termserver-service
-    - docker build -t docker.kodality.com/terminology-server:latest --build-arg BUILD_TIME=$BUILD_TIME .
-    - docker push docker.kodality.com/terminology-server:latest
+    - docker build -t docker.kodality.com/termx-server:latest --build-arg BUILD_TIME=$BUILD_TIME .
+    - docker push docker.kodality.com/termx-server:latest
   only:
     - main
 
@@ -40,8 +40,8 @@ release:
     - ./gradlew clean assemble
 
     - cd termserver-service
-    - docker build -t docker.kodality.com/terminology-server:$APP_VERSION --build-arg APP_VERSION=$APP_VERSION .
-    - docker push docker.kodality.com/terminology-server:$APP_VERSION
+    - docker build -t docker.kodality.com/termx-server:$APP_VERSION --build-arg APP_VERSION=$APP_VERSION .
+    - docker push docker.kodality.com/termx-server:$APP_VERSION
   only:
     - /^\d*\.\d*\.\d*$/
   except:

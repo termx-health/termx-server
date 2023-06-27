@@ -2,7 +2,7 @@ plugins {
   id 'maven-publish'
 }
 
-group "com.kodality.termserver"
+group "com.kodality.termx"
 
 allprojects {
   apply plugin: "java-library"
