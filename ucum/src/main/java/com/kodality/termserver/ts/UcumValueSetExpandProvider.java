@@ -3,6 +3,7 @@ package com.kodality.termserver.ts;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.Concept;
 import com.kodality.termserver.measurementunit.MeasurementUnitService;
+import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ucum.MeasurementUnit;
 import com.kodality.termserver.ucum.MeasurementUnitQueryParams;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
@@ -28,7 +29,7 @@ public class UcumValueSetExpandProvider extends ValueSetExternalExpandProvider {
   }
 
   @Override
-  public List<ValueSetVersionConcept> ruleExpand(ValueSetVersionRule rule) {
+  public List<ValueSetVersionConcept> ruleExpand(ValueSetVersionRule rule, ValueSetVersion version) {
     List<ValueSetVersionConcept> ruleConcepts = CollectionUtils.isEmpty(rule.getConcepts()) ? new ArrayList<>() : rule.getConcepts();
     if (CollectionUtils.isEmpty(rule.getFilters())) {
       ruleConcepts.forEach(this::decorate);

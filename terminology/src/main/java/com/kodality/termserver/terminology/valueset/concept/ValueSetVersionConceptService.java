@@ -59,16 +59,17 @@ public class ValueSetVersionConceptService {
     if (versionId == null) {
       return new ArrayList<>();
     }
+    ValueSetVersion version = valueSetVersionRepository.load(versionId);
 
     List<ValueSetVersionConcept> expansion = internalExpand(versionId, ruleSet);
     if (ruleSet == null) {
       ruleSet = valueSetVersionRuleSetService.load(versionId).orElse(null);
     }
     for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
-      expansion.addAll(provider.expand(ruleSet));
+      expansion.addAll(provider.expand(ruleSet, version));
       if (ruleSet != null) {
         ruleSet.getRules().stream().filter(r -> r.getValueSetVersion() != null && r.getValueSetVersion().getId() != null)
-            .forEach(r -> expansion.addAll(provider.expand(valueSetVersionRuleSetService.load(r.getValueSetVersion().getId()).orElse(null))));
+            .forEach(r -> expansion.addAll(provider.expand(valueSetVersionRuleSetService.load(r.getValueSetVersion().getId()).orElse(null), version)));
       }
     }
     return expansion;

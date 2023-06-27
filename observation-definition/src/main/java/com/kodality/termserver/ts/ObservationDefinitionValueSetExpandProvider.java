@@ -4,6 +4,7 @@ import com.kodality.termserver.observationdefinition.ObservationDefinitionServic
 import com.kodality.termserver.observationdefintion.ObservationDefinition;
 import com.kodality.termserver.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termserver.ts.codesystem.Concept;
+import com.kodality.termserver.ts.valueset.ValueSetVersion;
 import com.kodality.termserver.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termserver.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
@@ -28,7 +29,7 @@ public class ObservationDefinitionValueSetExpandProvider extends ValueSetExterna
   }
 
   @Override
-  public List<ValueSetVersionConcept> ruleExpand(ValueSetVersionRule rule) {
+  public List<ValueSetVersionConcept> ruleExpand(ValueSetVersionRule rule, ValueSetVersion version) {
     List<ValueSetVersionConcept> ruleConcepts = CollectionUtils.isEmpty(rule.getConcepts()) ? new ArrayList<>() : rule.getConcepts();
     if (CollectionUtils.isEmpty(rule.getFilters())) {
       ruleConcepts.forEach(this::decorate);
