@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-docker rm -vf terminology-postgres
-docker run -d --restart=unless-stopped --name terminology-postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:14
+docker rm -vf termx-postgres
+docker run -d --restart=unless-stopped --name termx-postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:14
 sleep 3
 
-docker exec -i terminology-postgres psql -U postgres <<-EOSQL
+docker exec -i termx-postgres psql -U postgres <<-EOSQL
 CREATE ROLE termserver_admin LOGIN PASSWORD 'test' NOSUPERUSER INHERIT NOCREATEDB CREATEROLE NOREPLICATION;
 CREATE ROLE termserver_app   LOGIN PASSWORD 'test' NOSUPERUSER INHERIT NOCREATEDB CREATEROLE NOREPLICATION;
 CREATE ROLE termserver_viewer NOLOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;

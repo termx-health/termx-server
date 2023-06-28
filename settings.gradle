@@ -1,6 +1,6 @@
 //includeBuild '../taskflow-service'
 
-rootProject.name="terminology-server"
+rootProject.name="termx-server"
 
 include 'edition-int'
 include 'edition-est'
