@@ -11,8 +11,13 @@ import lombok.experimental.Accessors;
 public class PageQueryParams extends QueryParams {
   private boolean root;
   private String ids;
-  private Long idNe;
+  private String idsNe;
+  private String spaceIds;
   private Long rootId;
   private String textContains;
-  private String slug;
+  private String slugs;
+
+  public interface Ordering {
+    String modified = "modified";
+  }
 }

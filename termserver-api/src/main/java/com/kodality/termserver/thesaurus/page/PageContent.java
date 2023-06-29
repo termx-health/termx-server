@@ -1,6 +1,7 @@
 package com.kodality.termserver.thesaurus.page;
 
-import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -10,14 +11,13 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class PageContent {
   private Long id;
+  @NotNull
   private Long pageId;
+  @JsonIgnore
+  private Long spaceId;
   private String name;
   private String slug;
   private String lang;
   private String content;
   private String contentType;
-
-  // fixme: until full-blown authoring service appears
-  private String modifiedBy;
-  private LocalDateTime modifiedAt;
 }

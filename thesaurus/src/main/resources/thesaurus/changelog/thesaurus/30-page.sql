@@ -23,3 +23,10 @@ create table thesaurus.page (
 
 select core.create_table_metadata('thesaurus.page');
 --rollback drop table if exists thesaurus.page;
+
+
+--changeset kodality:page-space_id
+alter table thesaurus.page add column space_id bigint constraint page_space_fk references sys.space(id);
+update thesaurus.page set space_id = (select id from sys.space where code = 'system');
+alter table thesaurus.page alter column space_id set not null;
+--

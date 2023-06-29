@@ -9,5 +9,6 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class SpaceQueryParams extends QueryParams {
+  private String codes;
   private String textContains;
 }

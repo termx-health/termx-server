@@ -57,6 +57,12 @@ public class PageLinkRepository extends BaseRepository {
     if (StringUtils.isNotBlank(params.getTargetIds())) {
       sb.and().in("pl.target_id", params.getTargetIds(), Long::valueOf);
     }
+    if (StringUtils.isNotBlank(params.getSpaceIds())) {
+      sb.append("and (");
+      sb.append("exists(select 1 from thesaurus.page p where pl.source_id = p.id").and().in("p.space_id", params.getSpaceIds(), Long::valueOf).append(") and");
+      sb.append("exists(select 1 from thesaurus.page p where pl.target_id = p.id").and().in("p.space_id", params.getSpaceIds(), Long::valueOf).append(")");
+      sb.append(")");
+    }
     return sb;
   }
 
