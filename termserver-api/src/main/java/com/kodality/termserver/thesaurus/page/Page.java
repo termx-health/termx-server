@@ -1,7 +1,7 @@
 package com.kodality.termserver.thesaurus.page;
 
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
@@ -23,8 +23,8 @@ public class Page {
   private List<PageTag> tags;
   private List<PageRelation> relations;
 
-  private LocalDateTime createdAt;
+  private OffsetDateTime createdAt;
   private String createdBy;
-  private LocalDateTime modifiedAt;
+  private OffsetDateTime modifiedAt;
   private String modifiedBy;
 }
