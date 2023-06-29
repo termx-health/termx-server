@@ -12,6 +12,7 @@ public class PageLinkQueryParams extends QueryParams {
   private Boolean root;
   private String sourceIds;
   private String targetIds;
+  private String spaceIds;
 
   public interface Ordering {
     String orderNumber = "orderNumber";

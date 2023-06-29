@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import javax.inject.Singleton;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 public class SpaceRepository extends BaseRepository {
@@ -43,11 +44,11 @@ public class SpaceRepository extends BaseRepository {
 
   public QueryResult<Space> query(SpaceQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from sys.space s where s.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from sys.space s");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from sys.space s where s.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select * from sys.space s");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -55,7 +56,10 @@ public class SpaceRepository extends BaseRepository {
   }
 
   private SqlBuilder filter(SpaceQueryParams params) {
-    SqlBuilder sb = new SqlBuilder();
+    SqlBuilder sb = new SqlBuilder("where s.sys_status = 'A'");
+    if (StringUtils.isNotEmpty(params.getCodes())) {
+      sb.and().in("code", params.getCodes());
+    }
     return sb;
   }
 

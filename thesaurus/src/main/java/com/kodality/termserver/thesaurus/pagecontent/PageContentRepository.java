@@ -12,15 +12,13 @@ import javax.inject.Singleton;
 
 @Singleton
 public class PageContentRepository extends BaseRepository {
-  private final PgBeanProcessor bp = new PgBeanProcessor(PageContent.class, p -> {
-    p.overrideColumnMapping("sys_modified_at", "modifiedAt");
-    p.overrideColumnMapping("sys_modified_by", "modifiedBy");
-  });
+  private final PgBeanProcessor bp = new PgBeanProcessor(PageContent.class);
 
   public void save(PageContent content, Long pageId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", content.getId());
     ssb.property("page_id", pageId);
+    ssb.property("space_id", content.getSpaceId());
     ssb.property("name", content.getName());
     ssb.property("slug", content.getSlug());
     ssb.property("lang", content.getLang());
@@ -56,7 +54,8 @@ public class PageContentRepository extends BaseRepository {
 
   private SqlBuilder filter(PageContentQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and slug = ?", params.getSlug());
+    sb.appendIfNotNull(params.getSlugs(), (s, p) -> s.and().in("slug", p));
+    sb.appendIfNotNull(params.getSpaceIds(), (s, p) -> s.and().in("space_id", p, Long::valueOf));
     return sb;
   }
 }

@@ -16,11 +16,14 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
+import io.micronaut.validation.Validated;
 import java.util.List;
+import javax.validation.Valid;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+@Validated
 @Controller("/pages")
 @RequiredArgsConstructor
 public class PageController {
@@ -43,7 +46,7 @@ public class PageController {
 
   @Authorized(Privilege.T_EDIT)
   @Post
-  public HttpResponse<?> savePage(@Body PageRequest request) {
+  public HttpResponse<?> savePage(@Body @Valid PageRequest request) {
     Page page = pageService.save(request.getPage(), request.getContent());
     provenanceService.create(new Provenance("created", "Page", page.getId().toString()));
     return HttpResponse.created(page);
@@ -51,7 +54,7 @@ public class PageController {
 
   @Authorized(Privilege.T_EDIT)
   @Put(uri = "/{id}")
-  public HttpResponse<?> updatePage(@PathVariable Long id, @Body PageRequest request) {
+  public HttpResponse<?> updatePage(@PathVariable Long id, @Body @Valid PageRequest request) {
     request.getPage().setId(id);
     Page page = pageService.save(request.getPage(), request.getContent());
     provenanceService.create(new Provenance("modified", "Page", page.getId().toString()));

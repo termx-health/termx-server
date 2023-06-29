@@ -44,11 +44,13 @@ public class PageContentService {
   }
 
   private PageContent prepare(PageContent c, Long pageId) {
+    Page page = pageRepository.load(pageId);
+
     c.setSlug(Slugify.builder().build().slugify(c.getName()));
     c.setContent(c.getContent() == null ? "" : c.getContent());
+    c.setSpaceId(page.getSpaceId());
 
     if (isNew(c)) {
-      Page page = pageRepository.load(pageId);
       c.setContent(templateContentService.findContent(page.getTemplateId(), c.getLang()).orElse(c.getContent()));
     } else {
       PageContent currentContent = load(c.getId());
@@ -65,7 +67,8 @@ public class PageContentService {
 
   private PageContent validate(PageContent c) {
     PageContentQueryParams params = new PageContentQueryParams();
-    params.setSlug(c.getSlug());
+    params.setSlugs(c.getSlug());
+    params.setSpaceIds(c.getSpaceId().toString());
     params.setLimit(1);
     Optional<PageContent> sameSlugContent = repository.query(params).findFirst();
     if (sameSlugContent.isPresent() && !sameSlugContent.get().getId().equals(c.getId())) {

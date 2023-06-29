@@ -18,4 +18,6 @@
     <include file="01-init-user.sql" relativeToChangelogFile="true"/>
 
     <include file="sys/changelog.xml" relativeToChangelogFile="true"/>
+
+    <include file="data/changelog.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
