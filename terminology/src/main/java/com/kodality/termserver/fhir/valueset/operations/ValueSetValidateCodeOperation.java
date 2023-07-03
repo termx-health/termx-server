@@ -61,7 +61,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   public Parameters run(Parameters req) {
-    String url = req.findParameter("url").map(ParametersParameter::getValueUri)
+    String url = req.findParameter("url").map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueString())
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
     String version = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
 
@@ -80,7 +80,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
                 .map(c -> c.stream().map(Coding::getCode).collect(Collectors.joining("")))
                 .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required"))));
 
-    String system = req.findParameter("system").map(ParametersParameter::getValueUri).orElse(null);
+    String system = req.findParameter("system").map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueString()).orElse(null);
     String systemVersion = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
 
