@@ -27,4 +27,6 @@ public class SnomedDescription {
   private String reviewer;
   private LocalDateTime created;
   private LocalDateTime reviewed;
+
+  private boolean local;
 }

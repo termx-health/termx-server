@@ -7,11 +7,11 @@ docker pull postgres:14
 ```  
 Run Docker container
 ```bash 
-docker run -d --restart=unless-stopped --name terminology-postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres postgres:14
+docker run -d --restart=unless-stopped --name termx-postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:14
 ``` 
 Connect and create database\users using the following command
 ```bash 
-docker exec -i terminology-postgres psql -U postgres <<-EOSQL
+docker exec -i termx-postgres psql -U postgres <<-EOSQL
 CREATE ROLE termserver_admin LOGIN PASSWORD 'test' NOSUPERUSER INHERIT NOCREATEDB CREATEROLE NOREPLICATION;
 CREATE ROLE termserver_app   LOGIN PASSWORD 'test' NOSUPERUSER INHERIT NOCREATEDB CREATEROLE NOREPLICATION;
 CREATE ROLE termserver_viewer NOLOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;

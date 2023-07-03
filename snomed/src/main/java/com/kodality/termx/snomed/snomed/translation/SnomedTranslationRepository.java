@@ -4,8 +4,11 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.snomed.concept.SnomedTranslation;
+import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
+import io.micronaut.core.util.StringUtils;
 import java.util.List;
 import javax.inject.Singleton;
 
@@ -63,8 +66,32 @@ public class SnomedTranslationRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public List<SnomedTranslation> loadActive() {
-    String sql = "select * from snomed.snomed_translation where sys_status = 'A' and status = ?";
-    return getBeans(sql, bp, SnomedTranslationStatus.active);
+  public List<SnomedTranslation> loadAll(boolean onlyActive) {
+    SqlBuilder sb = new SqlBuilder("select * from snomed.snomed_translation where sys_status = 'A'");
+    sb.appendIfTrue(onlyActive, "and status = ?", SnomedTranslationStatus.active);
+    return getBeans(sb.getSql(), bp, sb.getParams());
+  }
+
+  public QueryResult<SnomedTranslation> query(SnomedTranslationSearchParams params) {
+    return query(params, p -> {
+      SqlBuilder sb = new SqlBuilder("select count(1) from snomed.snomed_translation st");
+      sb.append(filter(params));
+      return queryForObject(sb.getSql(), Integer.class, sb.getParams());
+    }, p -> {
+      SqlBuilder sb = new SqlBuilder("select * from snomed.snomed_translation st");
+      sb.append(filter(params));
+      sb.append(limit(params));
+      return getBeans(sb.getSql(), bp, sb.getParams());
+    });
+  }
+
+  private SqlBuilder filter(SnomedTranslationSearchParams params) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.append("where st.sys_status = 'A'");
+    sb.appendIfNotNull("and status = ?", params.getStatus());
+    if (StringUtils.isNotEmpty(params.getDescriptionIds())) {
+      sb.and().in("description_id", params.getDescriptionIds());
+    }
+    return sb;
   }
 }

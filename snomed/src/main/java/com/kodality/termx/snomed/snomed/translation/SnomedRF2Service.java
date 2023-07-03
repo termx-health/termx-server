@@ -1,6 +1,8 @@
 package com.kodality.termx.snomed.snomed.translation;
 
 import com.kodality.termx.auth.SessionStore;
+import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
+import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.LorqueProcessService;
 import com.kodality.termx.sys.lorque.ProcessResult;
@@ -92,7 +94,7 @@ public class SnomedRF2Service {
   }
 
   private List<SnomedTranslation> loadTranslations() {
-    return snomedTranslationService.loadActive();
+    return snomedTranslationService.query(new SnomedTranslationSearchParams().setStatus(SnomedTranslationStatus.active).all()).getData();
   }
 
   private List<SnomedConcept> loadConcepts(List<SnomedTranslation> translations) {

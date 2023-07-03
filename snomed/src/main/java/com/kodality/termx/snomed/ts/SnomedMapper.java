@@ -32,12 +32,12 @@ public class SnomedMapper {
   }
 
   public SnomedConceptSearchParams toSnomedParams(ConceptQueryParams params) {
-   SnomedConceptSearchParams snomedParams = new SnomedConceptSearchParams();
+    SnomedConceptSearchParams snomedParams = new SnomedConceptSearchParams();
     snomedParams.setConceptIds(StringUtils.isNotEmpty(params.getCode()) ? Arrays.stream(params.getCode().split(",")).toList() : List.of());
     snomedParams.setTerm(params.getTextContains());
     snomedParams.setActive(true);
     snomedParams.setLimit(params.getLimit());
-   return snomedParams;
+    return snomedParams;
   }
 
   public CodeSystemEntityVersion toConceptVersion(SnomedConcept snomedConcept) {

@@ -1,10 +1,15 @@
 package com.kodality.termx.snomed.snomed.translation;
 
 import com.kodality.commons.model.CodeName;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.taskflow.task.Task;
 import com.kodality.taskflow.task.Task.TaskContextItem;
 import com.kodality.termx.snomed.concept.SnomedTranslation;
+import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
+import com.kodality.termx.snomed.description.SnomedDescription;
+import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
+import com.kodality.termx.snomed.snomed.SnomedService;
 import com.kodality.termx.taskflow.CommonTaskService;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
@@ -14,10 +19,12 @@ import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.routines.checkdigit.CheckDigitException;
 import org.apache.commons.validator.routines.checkdigit.VerhoeffCheckDigit;
+import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
 @RequiredArgsConstructor
 public class SnomedTranslationService {
+  private final SnomedService snomedService;
   private final CommonTaskService taskService;
   private final SnomedTranslationRepository repository;
 
@@ -34,10 +41,23 @@ public class SnomedTranslationService {
     return repository.load(id);
   }
 
-  public List<SnomedTranslation> loadActive() {
-    return repository.loadActive();
+  public List<SnomedTranslation> loadAll(boolean onlyActive, boolean unlinked) {
+    SnomedTranslationSearchParams params = new SnomedTranslationSearchParams().setStatus(onlyActive ? SnomedTranslationStatus.active : null).all();
+    List<SnomedTranslation> translations = query(params).getData();
+
+    if (CollectionUtils.isNotEmpty(translations) && unlinked) {
+      List<String> conceptIds = translations.stream().map(SnomedTranslation::getConceptId).distinct().toList();
+      List<SnomedDescription> snomedDescriptions = snomedService.searchDescriptions(new SnomedDescriptionSearchParams().setAll(true).setConceptIds(conceptIds));
+      translations = translations.stream().filter(t -> snomedDescriptions.stream().noneMatch(sd -> sd.getDescriptionId().equals(t.getDescriptionId()))).toList();
+    }
+    return translations;
   }
 
+  public QueryResult<SnomedTranslation> query(SnomedTranslationSearchParams params) {
+    return repository.query(params);
+  }
+
+  @Transactional
   public void save(String conceptId, List<SnomedTranslation> translations) {
     List<Long> cancelledTranslations = repository.retain(conceptId, translations);
     taskService.cancelTasks(cancelledTranslations, TASK_CTX_TYPE);
@@ -55,10 +75,6 @@ public class SnomedTranslationService {
     }
   }
 
-  public void updateStatus(Long id, String status) {
-    repository.updateStatus(id, status);
-  }
-
   private void createTask(String conceptId, SnomedTranslation t) {
     Task task = new Task();
     task.setBusinessStatus(t.getStatus());
@@ -66,7 +82,7 @@ public class SnomedTranslationService {
     task.setContent(String.format("Module: %s \nLanguage: %s \nTerm: %s \nType: %s \nAcceptability: %s",
         t.getModule(), t.getLanguage(), t.getTerm(), t.getType(), t.getAcceptability()));
     task.setContext(List.of(new TaskContextItem().setId(t.getId()).setType(TASK_CTX_TYPE)));
-    taskService.createTask(task, WORKFLOW);
+//    taskService.createTask(task, WORKFLOW);
   }
 
   private void prepare(SnomedTranslation t) {
@@ -101,5 +117,4 @@ public class SnomedTranslationService {
     });
     return translations;
   }
-
 }

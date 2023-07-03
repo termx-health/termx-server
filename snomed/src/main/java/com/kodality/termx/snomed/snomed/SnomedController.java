@@ -4,20 +4,24 @@ package com.kodality.termx.snomed.snomed;
 import com.kodality.commons.util.AsyncHelper;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.snomed.Privilege;
-import com.kodality.termx.sys.lorque.LorqueProcess;
-import com.kodality.termx.sys.lorque.LorqueProcessService;
+import com.kodality.termx.snomed.branch.SnomedBranch;
+import com.kodality.termx.snomed.branch.SnomedBranchRequest;
 import com.kodality.termx.snomed.client.SnowstormClient;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslation;
 import com.kodality.termx.snomed.decriptionitem.SnomedDescriptionItemResponse;
 import com.kodality.termx.snomed.decriptionitem.SnomedDescriptionItemSearchParams;
+import com.kodality.termx.snomed.description.SnomedDescription;
+import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
 import com.kodality.termx.snomed.refset.SnomedRefsetMemberResponse;
 import com.kodality.termx.snomed.refset.SnomedRefsetResponse;
 import com.kodality.termx.snomed.refset.SnomedRefsetSearchParams;
 import com.kodality.termx.snomed.search.SnomedSearchResult;
 import com.kodality.termx.snomed.snomed.translation.SnomedRF2Service;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
+import com.kodality.termx.sys.lorque.LorqueProcess;
+import com.kodality.termx.sys.lorque.LorqueProcessService;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
@@ -25,9 +29,14 @@ import io.micronaut.http.MediaType;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.Put;
+import io.micronaut.http.annotation.QueryValue;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,10 +44,71 @@ import lombok.extern.slf4j.Slf4j;
 @Controller("/snomed")
 @RequiredArgsConstructor
 public class SnomedController {
+  private final SnomedService snomedService;
   private final SnowstormClient snowstormClient;
   private final SnomedRF2Service snomedRF2Service;
   private final LorqueProcessService lorqueProcessService;
   private final SnomedTranslationService translationService;
+
+  //----------------Branches----------------
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/branches")
+  public List<SnomedBranch> loadBranches() {
+    return snowstormClient.loadBranches().join();
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/branches/{path}")
+  public SnomedBranch loadBranch(@Parameter String path) {
+    return snowstormClient.loadBranch(path).join();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Post("/branches")
+  public SnomedBranch createBranch(@Body SnomedBranchRequest request) {
+    return snowstormClient.createBranch(request).join();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Put("/branches/{path}")
+  public SnomedBranch updateBranch(@Parameter String path, @Body SnomedBranchRequest request) {
+    return snowstormClient.updateBranch(path, request).join();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Delete("/branches/{path}")
+  public HttpResponse<?> deleteBranch(@Parameter String path) {
+    snowstormClient.deleteBranch(path).join();
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Post("/branches/{path}/lock")
+  public HttpResponse<?> lockBranch(@PathVariable String path, @QueryValue String lockMessage) {
+    snowstormClient.lockBranch(path, Map.of("lockMessage", lockMessage)).join();
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Post("/branches/{path}/unlock")
+  public HttpResponse<?> unlockBranch(@Parameter String path) {
+    snowstormClient.unlockBranch(path).join();
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Post("/branches/{path}/integrity-check")
+  public Object branchIntegrityCheck(@Parameter String path) {
+    return snowstormClient.branchIntegrityCheck(path).join();
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/branches/{path}/descriptions{?params*}")
+  public SnomedSearchResult<SnomedDescription> findDescriptions(@Parameter String path, SnomedDescriptionSearchParams params) {
+    path += "/";
+    return snomedService.searchDescriptions(path, params);
+  }
 
   //----------------Concepts----------------
 
@@ -73,7 +143,7 @@ public class SnomedController {
   //----------------Descriptions----------------
 
   @Authorized(Privilege.SNOMED_VIEW)
-  @Get("/concept-descriptions{?params*}")
+  @Get("/descriptions{?params*}")
   public SnomedDescriptionItemResponse findConceptDescriptions(SnomedDescriptionItemSearchParams params) {
     params.setActive(true);
     params.setConceptActive(true);
@@ -106,8 +176,14 @@ public class SnomedController {
 //----------------Translations----------------
 
   @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/translations")
+  public List<SnomedTranslation> queryTranslations(@QueryValue Boolean active, @QueryValue Boolean unlinked) {
+    return translationService.loadAll(active, unlinked);
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
   @Get("/translations/{id}")
-  public SnomedTranslation load(@Parameter Long id) {
+  public SnomedTranslation loadTranslation(@Parameter Long id) {
     return translationService.load(id);
   }
 
