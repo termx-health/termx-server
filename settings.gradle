@@ -6,10 +6,10 @@ include 'edition-int'
 include 'edition-est'
 include 'edition-uzb'
 
-include 'termserver-api'
-include 'termserver-client'
-include 'termserver-service'
-include 'termserver-core'
+include 'termx-api'
+include 'termx-client'
+include 'termx-app'
+include 'termx-core'
 
 include 'gatling'
 
@@ -18,5 +18,5 @@ include 'snomed'
 include 'ucum'
 include 'observation-definition'
 include 'terminology'
-include 'termserver-integtest'
+include 'termx-integtest'
 

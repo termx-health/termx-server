@@ -5,13 +5,15 @@
 		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
 
   <changeSet id="measurement-unit" author="kodality">
-    <customChange class="com.kodality.termserver.liquibase.MeasurementUnitTsvImport">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.MeasurementUnitTsvImport">
       <param name="files" value="ucum/changelog/data/measurement-unit.tsv"/>
     </customChange>
   </changeSet>
 
   <changeSet id="measurement-unit-supplement" author="kodality">
-    <customChange class="com.kodality.termserver.liquibase.MeasurementUnitImport">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.MeasurementUnitImport">
       <param name="files" value="ucum/changelog/data/measurement-unit-supplement.json"/>
     </customChange>
   </changeSet>

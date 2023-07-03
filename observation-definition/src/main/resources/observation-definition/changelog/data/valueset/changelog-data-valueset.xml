@@ -6,49 +6,57 @@
 
 
   <changeSet id="administrative-gender" author="kodality">
-    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.ValueSetFhirImport">
       <param name="files" value="observation-definition/changelog/data/valueset/administrative-gender.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="body-site" author="kodality">
-    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.ValueSetFhirImport">
       <param name="files" value="observation-definition/changelog/data/valueset/body-site.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="device-type" author="kodality">
-    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.ValueSetFhirImport">
       <param name="files" value="observation-definition/changelog/data/valueset/device-type.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="observation-category" author="kodality">
-    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.ValueSetFhirImport">
       <param name="files" value="observation-definition/changelog/data/valueset/observation-category.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="observation-interpretation" author="kodality">
-    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.ValueSetFhirImport">
       <param name="files" value="observation-definition/changelog/data/valueset/observation-interpretation.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="observation-methods" author="kodality">
-    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.ValueSetFhirImport">
       <param name="files" value="observation-definition/changelog/data/valueset/observation-methods.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="permitted-data-type" author="kodality">
-    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.ValueSetFhirImport">
       <param name="files" value="observation-definition/changelog/data/valueset/permitted-data-type.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="v2-0487" author="kodality">
-    <customChange class="com.kodality.termserver.liquibase.ValueSetFhirImport">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.ValueSetFhirImport">
       <param name="files" value="observation-definition/changelog/data/valueset/v2-0487.json"/>
     </customChange>
   </changeSet>
