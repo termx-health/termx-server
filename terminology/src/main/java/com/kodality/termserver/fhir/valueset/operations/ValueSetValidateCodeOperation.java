@@ -74,8 +74,8 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   public Parameters run(ValueSetVersion vsVersion, Parameters req) {
-    String code = req.findParameter("code").map(ParametersParameter::getValueCode)
-        .orElse(req.findParameter("coding").map(ParametersParameter::getValueCoding).map(Coding::getCode)
+    String code = req.findParameter("code").map(pp -> pp.getValueCode() != null ? pp.getValueCode() : pp.getValueString())
+        .orElse(req.findParameter("coding").map(pp -> pp.getValueCoding() != null ? pp.getValueCoding().getCode() : pp.getValueString())
             .orElse(req.findParameter("codeableConcept").map(ParametersParameter::getValueCodeableConcept).map(CodeableConcept::getCoding)
                 .map(c -> c.stream().map(Coding::getCode).collect(Collectors.joining("")))
                 .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required"))));
