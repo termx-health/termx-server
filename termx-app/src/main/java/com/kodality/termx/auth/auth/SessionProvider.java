@@ -1,0 +1,15 @@
+package com.kodality.termx.auth.auth;
+
+import com.kodality.termx.auth.SessionInfo;
+import io.micronaut.http.HttpRequest;
+
+public abstract class SessionProvider {
+
+  public abstract SessionInfo authenticate(HttpRequest<?> request);
+
+  public int getOrder() {
+    return 50;
+  }
+
+}
+

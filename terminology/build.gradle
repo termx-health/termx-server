@@ -4,8 +4,8 @@ dependencies {
     annotationProcessor "io.micronaut.openapi:micronaut-openapi"
     annotationProcessor "io.micronaut.spring:micronaut-spring-annotation"
 
-    api project(':termserver-api')
-    api project(':termserver-core')
+    api project(':termx-api')
+    api project(':termx-core')
 
     implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}")

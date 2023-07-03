@@ -1,0 +1,23 @@
+package com.kodality.termx.terminology.codesystem.designation;
+
+import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.ts.codesystem.Designation;
+import com.kodality.termx.ts.codesystem.DesignationQueryParams;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
+import lombok.RequiredArgsConstructor;
+
+@Controller("/ts/designations")
+@RequiredArgsConstructor
+public class DesignationController {
+  private final DesignationService designationService;
+
+  @Authorized(Privilege.CS_VIEW)
+  @Get(uri = "{?params*}")
+  public QueryResult<Designation> queryDesignations(DesignationQueryParams params) {
+    return designationService.query(params);
+  }
+
+}
