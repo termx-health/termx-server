@@ -11,7 +11,6 @@ import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptSer
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
-import com.kodality.termx.ts.valueset.ValueSetVersionConceptQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.Coding;
@@ -78,17 +77,9 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
             .orElseGet(() -> req.findParameter("codeableConcept")
                 .map(cc -> cc.getValueCodeableConcept().getCoding().stream().map(Coding::getCode).collect(Collectors.joining("")))
                 .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required"))));
-
-    String system = req.findParameter("system").map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueString()).orElse(null);
-    String systemVersion = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
-
-    ValueSetVersionConceptQueryParams cParams = new ValueSetVersionConceptQueryParams()
-        .setConceptCode(code)
-        .setValueSetVersionId(vsVersion.getId())
-        .setCodeSystemUri(system)
-        .setCodeSystemVersion(systemVersion);
-    ValueSetVersionConcept concept = valueSetVersionConceptService.query(cParams).findFirst().orElse(null);
+    ValueSetVersionConcept concept = valueSetVersionConceptService.expand(vsVersion.getId(), null)
+        .stream().filter(c -> code.equals(c.getConcept().getCode())).findFirst().orElse(null);
     if (concept == null) {
       return error("invalid code");
     }

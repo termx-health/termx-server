@@ -1,6 +1,5 @@
 package com.kodality.termx.terminology.valueset.concept;
 
-import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.terminology.codesystem.designation.DesignationService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionRepository;
@@ -14,7 +13,6 @@ import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.DesignationQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
-import com.kodality.termx.ts.valueset.ValueSetVersionConceptQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
@@ -118,17 +116,6 @@ public class ValueSetVersionConceptService {
         c.setAdditionalDesignations(CollectionUtils.isEmpty(c.getAdditionalDesignations()) ? csDesignations : c.getAdditionalDesignations());
       }
     });
-    return concepts;
-  }
-
-  public QueryResult<ValueSetVersionConcept> query(ValueSetVersionConceptQueryParams params) {
-    if (params.getValueSetVersionId() == null) {
-      return QueryResult.empty();
-    }
-    QueryResult<ValueSetVersionConcept> concepts = repository.query(params);
-    if (params.isDecorated()) {
-      concepts.setData(decorate(concepts.getData()));
-    }
     return concepts;
   }
 }
