@@ -77,7 +77,7 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
         .setVersionsDecorated(true).setConceptsDecorated(true).setPropertiesDecorated(true)
         .limit(1);
     CodeSystem cs = codeSystemService.query(csParams).findFirst()
-        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "CodeSystem not found"));
+        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "Concept not found"));
 
     Parameters resp = new Parameters();
     resp.addParameter(new ParametersParameter().setName("name")
