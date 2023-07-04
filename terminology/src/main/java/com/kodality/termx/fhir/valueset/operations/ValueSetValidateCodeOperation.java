@@ -6,8 +6,10 @@ import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termx.fhir.valueset.ValueSetFhirMapper;
+import com.kodality.termx.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
+import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
@@ -18,6 +20,7 @@ import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.core.util.CollectionUtils;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 public class ValueSetValidateCodeOperation implements InstanceOperationDefinition, TypeOperationDefinition {
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final CodeSystemService codeSystemService;
 
   public String getResourceType() {
     return ResourceType.ValueSet.name();
@@ -77,9 +81,21 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
             .orElseGet(() -> req.findParameter("codeableConcept")
                 .map(cc -> cc.getValueCodeableConcept().getCoding().stream().map(Coding::getCode).collect(Collectors.joining("")))
                 .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required"))));
+
+    String system = req.findParameter("system").map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueString())
+        .map(uri -> codeSystemService.query(new CodeSystemQueryParams().setUri(uri)).findFirst()
+            .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "CodeSystem not found")).getId()
+        ).orElse(null);
+    String systemVersion = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
-    ValueSetVersionConcept concept = valueSetVersionConceptService.expand(vsVersion.getId(), null)
-        .stream().filter(c -> code.equals(c.getConcept().getCode())).findFirst().orElse(null);
+
+    List<ValueSetVersionConcept> concepts = valueSetVersionConceptService.expand(vsVersion.getId(), null);
+    ValueSetVersionConcept concept = concepts.stream()
+        .filter(c -> c.getConcept().getCode().equals(code)
+                     && (system == null || system.equals(c.getConcept().getCodeSystem()))
+                     && (systemVersion == null || c.getConcept().getVersions().stream().anyMatch(e -> e.getCodeSystemVersion().equals(systemVersion)))
+        ).findFirst().orElse(null);
+
     if (concept == null) {
       return error("invalid code");
     }
