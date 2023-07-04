@@ -61,7 +61,7 @@ public class SnomedController {
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/branches/{path}")
   public SnomedBranch loadBranch(@Parameter String path) {
-    return snowstormClient.loadBranch(path).join();
+    return snowstormClient.loadBranch(parsePath(path)).join();
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
@@ -73,41 +73,41 @@ public class SnomedController {
   @Authorized(Privilege.SNOMED_EDIT)
   @Put("/branches/{path}")
   public SnomedBranch updateBranch(@Parameter String path, @Body SnomedBranchRequest request) {
-    return snowstormClient.updateBranch(path, request).join();
+    return snowstormClient.updateBranch(parsePath(path), request).join();
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Delete("/branches/{path}")
   public HttpResponse<?> deleteBranch(@Parameter String path) {
-    snowstormClient.deleteBranch(path).join();
+    snowstormClient.deleteBranch(parsePath(path)).join();
     return HttpResponse.ok();
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Post("/branches/{path}/lock")
   public HttpResponse<?> lockBranch(@PathVariable String path, @QueryValue String lockMessage) {
-    snowstormClient.lockBranch(path, Map.of("lockMessage", lockMessage)).join();
+    snowstormClient.lockBranch(parsePath(path), Map.of("lockMessage", lockMessage)).join();
     return HttpResponse.ok();
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Post("/branches/{path}/unlock")
   public HttpResponse<?> unlockBranch(@Parameter String path) {
-    snowstormClient.unlockBranch(path).join();
+    snowstormClient.unlockBranch(parsePath(path)).join();
     return HttpResponse.ok();
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Post("/branches/{path}/integrity-check")
   public Object branchIntegrityCheck(@Parameter String path) {
-    return snowstormClient.branchIntegrityCheck(path).join();
+    return snowstormClient.branchIntegrityCheck(parsePath(path)).join();
   }
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/branches/{path}/descriptions{?params*}")
   public SnomedSearchResult<SnomedDescription> findDescriptions(@Parameter String path, SnomedDescriptionSearchParams params) {
     path += "/";
-    return snomedService.searchDescriptions(path, params);
+    return snomedService.searchDescriptions(parsePath(path), params);
   }
 
   //----------------Concepts----------------
@@ -213,5 +213,9 @@ public class SnomedController {
     return response
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=snomed_translations.zip")
         .contentType(MediaType.of("application/zip"));
+  }
+
+  private String parsePath(String path) {
+    return path.replace("--", "/");
   }
 }
