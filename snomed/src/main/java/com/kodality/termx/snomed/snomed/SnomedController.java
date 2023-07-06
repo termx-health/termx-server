@@ -2,6 +2,7 @@ package com.kodality.termx.snomed.snomed;
 
 
 import com.kodality.commons.util.AsyncHelper;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.snomed.Privilege;
 import com.kodality.termx.snomed.branch.SnomedBranch;
@@ -9,6 +10,7 @@ import com.kodality.termx.snomed.branch.SnomedBranchRequest;
 import com.kodality.termx.snomed.client.SnowstormClient;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
+import com.kodality.termx.snomed.concept.SnomedConceptTransactionRequest;
 import com.kodality.termx.snomed.concept.SnomedTranslation;
 import com.kodality.termx.snomed.decriptionitem.SnomedDescriptionItemResponse;
 import com.kodality.termx.snomed.decriptionitem.SnomedDescriptionItemSearchParams;
@@ -17,12 +19,17 @@ import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
 import com.kodality.termx.snomed.refset.SnomedRefsetMemberResponse;
 import com.kodality.termx.snomed.refset.SnomedRefsetResponse;
 import com.kodality.termx.snomed.refset.SnomedRefsetSearchParams;
+import com.kodality.termx.snomed.rf2.SnomedExportJob;
+import com.kodality.termx.snomed.rf2.SnomedExportRequest;
+import com.kodality.termx.snomed.rf2.SnomedImportJob;
+import com.kodality.termx.snomed.rf2.SnomedImportRequest;
 import com.kodality.termx.snomed.search.SnomedSearchResult;
 import com.kodality.termx.snomed.snomed.translation.SnomedRF2Service;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.LorqueProcessService;
 import io.micronaut.context.annotation.Parameter;
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
@@ -31,14 +38,20 @@ import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Part;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import io.micronaut.http.annotation.QueryValue;
+import io.micronaut.http.multipart.CompletedFileUpload;
+import io.netty.handler.codec.http.multipart.MemoryAttribute;
+import io.reactivex.Flowable;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.reactivestreams.Publisher;
 
 @Slf4j
 @Controller("/snomed")
@@ -48,6 +61,7 @@ public class SnomedController {
   private final SnowstormClient snowstormClient;
   private final SnomedRF2Service snomedRF2Service;
   private final LorqueProcessService lorqueProcessService;
+  private final SnomedTransactionService transactionService;
   private final SnomedTranslationService translationService;
 
   //----------------Branches----------------
@@ -103,11 +117,42 @@ public class SnomedController {
     return snowstormClient.branchIntegrityCheck(parsePath(path)).join();
   }
 
+
+  //----------------RF2----------------
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Post("/exports")
+  public Map<String, String> createExportJob(@Body SnomedExportRequest request) {
+    return Map.of("jobId", snowstormClient.createExportJob(request).join());
+  }
+
   @Authorized(Privilege.SNOMED_VIEW)
-  @Get("/branches/{path}/descriptions{?params*}")
-  public SnomedSearchResult<SnomedDescription> findDescriptions(@Parameter String path, SnomedDescriptionSearchParams params) {
-    path += "/";
-    return snomedService.searchDescriptions(parsePath(path), params);
+  @Get("/exports/{jobId}")
+  public SnomedExportJob loadExportJob(@Parameter String jobId) {
+    return snowstormClient.loadExportJob(jobId).join();
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get(value = "/exports/{jobId}/archive", produces = "application/zip")
+  public HttpResponse<?> getRF2File(@Parameter String jobId) {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(snowstormClient.getRF2File(jobId));
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=snomed_translations.zip")
+        .contentType(MediaType.of("application/zip"));
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Post(value = "/imports", consumes = MediaType.MULTIPART_FORM_DATA)
+  public Map<String, String> createImportJob(Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
+    SnomedImportRequest req = JsonUtil.fromJson(request.getValue(), SnomedImportRequest.class);
+    byte[] importFile = readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet());
+    return snomedService.importRF2File(req, importFile);
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/imports/{jobId}")
+  public SnomedImportJob loadImportJob(@Parameter String jobId) {
+    return snowstormClient.loadImportJob(jobId).join();
   }
 
   //----------------Concepts----------------
@@ -140,6 +185,13 @@ public class SnomedController {
     return concepts;
   }
 
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Post("/branches/{path}/concepts/transaction")
+  public HttpResponse<?> conceptTransaction(@Parameter String path, @Body SnomedConceptTransactionRequest request) {
+    transactionService.transaction(parsePath(path), request);
+    return HttpResponse.ok();
+  }
+
   //----------------Descriptions----------------
 
   @Authorized(Privilege.SNOMED_VIEW)
@@ -156,6 +208,21 @@ public class SnomedController {
     futures.joinAll();
 
     return response;
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/branches/{path}/descriptions{?params*}")
+  public SnomedSearchResult<SnomedDescription> findDescriptions(@Parameter String path, SnomedDescriptionSearchParams params) {
+    path += "/";
+    return snomedService.searchDescriptions(parsePath(path), params);
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Delete("/branches/{path}/descriptions/{descriptionId}")
+  public HttpResponse<?> deleteDescription(@Parameter String path, @Parameter String descriptionId) {
+    path += "/";
+    snowstormClient.deleteDescription(parsePath(path), descriptionId).join();
+    return HttpResponse.ok();
   }
 
   //----------------RefSets----------------
@@ -217,5 +284,13 @@ public class SnomedController {
 
   private String parsePath(String path) {
     return path.replace("--", "/");
+  }
+
+  private static byte[] readBytes(CompletedFileUpload file) {
+    try {
+      return file.getBytes();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

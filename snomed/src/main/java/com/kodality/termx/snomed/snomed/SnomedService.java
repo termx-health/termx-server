@@ -7,14 +7,18 @@ import com.kodality.termx.snomed.concept.SnomedTranslation;
 import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.description.SnomedDescription;
 import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
+import com.kodality.termx.snomed.rf2.SnomedImportRequest;
 import com.kodality.termx.snomed.search.SnomedSearchResult;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationRepository;
 import jakarta.inject.Singleton;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
 @Slf4j
@@ -72,5 +76,16 @@ public class SnomedService {
     List<SnomedTranslation> translations = translationRepository.query(new SnomedTranslationSearchParams().setDescriptionIds(descriptionIds).all()).getData();
     descriptions.getItems().forEach(d -> d.setLocal(translations.stream().anyMatch(t -> t.getDescriptionId().equals(d.getDescriptionId()))));
     return descriptions;
+  }
+
+  @Transactional
+  public Map<String, String> importRF2File(SnomedImportRequest req, byte[] importFile) {
+    String jobId = snowstormClient.createImportJob(req).join();
+    try {
+      snowstormClient.uploadRF2File(jobId, importFile).join();
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    }
+    return Map.of("jobId", jobId);
   }
 }

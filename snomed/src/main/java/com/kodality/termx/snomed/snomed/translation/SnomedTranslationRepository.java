@@ -89,6 +89,9 @@ public class SnomedTranslationRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.append("where st.sys_status = 'A'");
     sb.appendIfNotNull("and status = ?", params.getStatus());
+    if (StringUtils.isNotEmpty(params.getIds())) {
+      sb.and().in("id", params.getIds(), Long::valueOf);
+    }
     if (StringUtils.isNotEmpty(params.getDescriptionIds())) {
       sb.and().in("description_id", params.getDescriptionIds());
     }

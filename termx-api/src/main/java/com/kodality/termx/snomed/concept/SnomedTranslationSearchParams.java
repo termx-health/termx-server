@@ -9,6 +9,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class SnomedTranslationSearchParams extends QueryParams {
+  private String ids;
   private String descriptionIds;
   private String status;
 }

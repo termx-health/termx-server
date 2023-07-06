@@ -1,6 +1,7 @@
 package com.kodality.termx.snomed.client;
 
 import com.kodality.commons.client.HttpClient;
+import com.kodality.termx.http.BinaryHttpClient;
 import io.micronaut.context.annotation.Bean;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;
@@ -9,6 +10,7 @@ import io.micronaut.http.HttpHeaders;
 import java.net.http.HttpRequest.Builder;
 import java.util.Base64;
 import java.util.Optional;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Requires(notEnv = "test")
 @Factory
@@ -25,16 +27,24 @@ public class SnowstormClientFactory {
 
   @Bean
   public SnowstormClient getSnowstormClient() {
-    return new SnowstormClient(snowstormUrl, baseUrl -> new HttpClient(baseUrl) {
+    return new SnowstormClient(snowstormUrl, baseUrl -> Pair.of(new HttpClient(baseUrl) {
       @Override
       public Builder builder(String path) {
-        Builder builder = super.builder(path);
-        if (snowstormUser.isPresent() && snowstormPassword.isPresent()) {
-          builder.setHeader(HttpHeaders.AUTHORIZATION, basicAuth(snowstormUser.get(), snowstormPassword.get()));
-        }
-        return builder;
+        return SnowstormClientFactory.builder(super.builder(path), snowstormUser, snowstormPassword);
       }
-    });
+    }, new BinaryHttpClient(baseUrl) {
+      @Override
+      public Builder builder(String path) {
+        return SnowstormClientFactory.builder(super.builder(path), snowstormUser, snowstormPassword);
+      }
+    }));
+  }
+
+  private static Builder builder(Builder builder, Optional<String> snowstormUser, Optional<String> snowstormPassword) {
+    if (snowstormUser.isPresent() && snowstormPassword.isPresent()) {
+      builder.setHeader(HttpHeaders.AUTHORIZATION, basicAuth(snowstormUser.get(), snowstormPassword.get()));
+    }
+    return builder;
   }
 
   private static String basicAuth(String username, String password) {
