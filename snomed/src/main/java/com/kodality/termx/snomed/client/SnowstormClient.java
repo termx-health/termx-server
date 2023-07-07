@@ -134,7 +134,7 @@ public class SnowstormClient {
 
   public CompletableFuture<SnomedSearchResult<SnomedConcept>> queryConcepts(String path, SnomedConceptSearchParams params) {
     String query = "?" + HttpClient.toQueryParams(params);
-    return client.GET(path + "concepts" + query, JsonUtil.getParametricType(SnomedSearchResult.class, SnomedConcept.class));
+    return client.GET("browser/" + path + "concepts" + query, JsonUtil.getParametricType(SnomedSearchResult.class, SnomedConcept.class));
   }
 
   public CompletableFuture<List<SnomedConcept>> findConceptChildren(String conceptId) {
