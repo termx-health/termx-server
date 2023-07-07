@@ -29,8 +29,6 @@ dependencies {
     implementation("org.commonmark:commonmark:0.21.0")
     implementation("com.github.slugify:slugify:3.0.2")
 
-    api("com.kodality.taskflow:taskflow-service:${taskflowVersion}") { changing = true }
-
     implementation("com.kodality.kefhir:kefhir-core:${kefhirVersion}") { changing = true }
     implementation("com.kodality.zmei:zmei-fhir:${rootProject.zmeiVersion}") { changing = true }
     implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}") { changing = true }

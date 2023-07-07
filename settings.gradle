@@ -10,13 +10,15 @@ include 'termx-api'
 include 'termx-client'
 include 'termx-app'
 include 'termx-core'
+include 'termx-integtest'
 
 include 'gatling'
 
+include 'task'
 include 'thesaurus'
-include 'snomed'
-include 'ucum'
 include 'observation-definition'
 include 'terminology'
-include 'termx-integtest'
+
+include 'snomed'
+include 'ucum'
 

@@ -1,6 +1,5 @@
 package com.kodality.termx.snomed.concept;
 
-import com.kodality.commons.model.CodeName;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -18,6 +17,4 @@ public class SnomedTranslation {
   private String type;
   private String acceptability;
   private String status;
-
-  private CodeName task;
 }

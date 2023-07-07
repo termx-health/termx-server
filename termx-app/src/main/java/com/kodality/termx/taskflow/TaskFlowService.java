@@ -1,7 +1,5 @@
 package com.kodality.termx.taskflow;
 
-import com.kodality.commons.model.CodeName;
-import com.kodality.commons.model.LocalizedName;
 import com.kodality.taskflow.project.ProjectService;
 import com.kodality.taskflow.task.Task;
 import com.kodality.taskflow.task.Task.TaskPriority;
@@ -10,21 +8,16 @@ import com.kodality.taskflow.task.TaskSearchParams;
 import com.kodality.taskflow.task.TaskService;
 import com.kodality.taskflow.workflow.WorkflowSearchParams;
 import com.kodality.taskflow.workflow.WorkflowService;
-import com.kodality.termx.ts.Language;
-import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
 @RequiredArgsConstructor
-public class CommonTaskService {
+public class TaskFlowService {
   private final TaskService taskService;
   private final ProjectService projectService;
   private final WorkflowService workflowService;
@@ -32,17 +25,6 @@ public class CommonTaskService {
   private final static String PROJECT_CODE = "termx";
   private final static String INSTITUTION = "1";
   private final static String TASK_TYPE = "task";
-
-  public Map<String, List<CodeName>> findTaskCtxGroup(String context) {
-    List<Task> tasks = findTasks(context);
-    return tasks.stream()
-        .filter(t -> t.getContext() != null)
-        .collect(Collectors.groupingBy(t -> t.getContext().stream().map(c -> c.getType() + "|" + c.getId()).collect(Collectors.joining(","))))
-        .entrySet().stream()
-        .map(es -> Pair.of(es.getKey(), es.getValue().stream()
-            .map(t -> new CodeName().setId(t.getId()).setCode(t.getNumber()).setNames(new LocalizedName(Map.of(Language.en, t.getTitle())))).toList()))
-        .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
-  }
 
   public List<Task> findTasks(String context) {
     if (StringUtils.isEmpty(context)) {
@@ -54,7 +36,6 @@ public class CommonTaskService {
     return taskService.search(params).getData();
   }
 
-  @Transactional
   public void createTask(Task task, String workflow) {
     String context = task.getContext().stream().map(ctx -> ctx.getType() + "|" + ctx.getId()).collect(Collectors.joining(","));
     Optional<Task> exitingTask = findTasks(context).stream().findFirst();
@@ -86,11 +67,11 @@ public class CommonTaskService {
     return workflowService.search(params).findFirst().orElseThrow().getId();
   }
 
-  public void cancelTasks(List<Long> ids, String taskCtxType) {
-    if (CollectionUtils.isEmpty(ids)) {
+  public void cancelTasks(String context) {
+    if (StringUtils.isEmpty(context)) {
       return;
     }
-    List<Task> tasks = findTasks(ids.stream().map(id -> taskCtxType + "|" + id).collect(Collectors.joining(",")));
+    List<Task> tasks = findTasks(context);
     tasks.forEach(t -> {
       t.setStatus(TaskStatus.cancelled);
       taskService.save(t, null);

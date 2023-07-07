@@ -1,0 +1,74 @@
+package com.kodality.termx.task;
+
+import com.kodality.commons.model.CodeName;
+import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.task.Task.TaskActivity;
+import io.micronaut.context.annotation.Parameter;
+import io.micronaut.http.annotation.Body;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.Put;
+import io.micronaut.validation.Validated;
+import java.util.List;
+import java.util.Map;
+import javax.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@Validated
+@Controller("/tm")
+@RequiredArgsConstructor
+public class TaskController {
+  private final TaskProvider taskProvider;
+
+  // ----------- Tasks -----------
+
+  @Authorized(Privilege.T_VIEW)
+  @Get(uri = "/tasks{?params*}")
+  public QueryResult<Task> queryTasks(TaskQueryParams params) {
+    return taskProvider.queryTasks(params);
+  }
+
+  @Authorized(Privilege.T_VIEW)
+  @Get(uri = "/tasks/{number}")
+  public Task loadTask(@Parameter String number) {
+    return taskProvider.loadTask(number);
+  }
+
+  @Authorized(Privilege.T_EDIT)
+  @Post("/tasks")
+  public Task saveTask(@Body Task task) {
+    task.setNumber(null);
+    return taskProvider.saveTask(task);
+  }
+
+  @Authorized(Privilege.T_EDIT)
+  @Put("/tasks/{number}")
+  public Task updateTask(@Parameter String number, @Body Task task) {
+    task.setNumber(number);
+    return taskProvider.saveTask(task);
+  }
+
+  @Authorized(Privilege.T_EDIT)
+  @Post("/tasks/{number}/activities")
+  public TaskActivity createTaskActivity(@Parameter String number, @Valid @Body Map<String, String> body) {
+    return taskProvider.createTaskActivity(number, body.get("note"));
+  }
+
+
+  // ----------- Projects -----------
+
+  @Authorized(Privilege.T_VIEW)
+  @Get(uri = "/projects")
+  public List<CodeName> loadProjects() {
+    return taskProvider.loadProjects();
+  }
+
+  @Authorized(Privilege.T_VIEW)
+  @Get(uri = "/projects/{code}/workflows")
+  public List<Workflow> loadProjectWorkflows(@Parameter String code) {
+    return taskProvider.loadProjectWorkFlows(code);
+  }
+}

@@ -16,11 +16,13 @@ dependencies {
   implementation project(':ucum')
   implementation project(':observation-definition')
   implementation project(':thesaurus')
+  implementation project(':task')
 
   implementation project(':edition-int')
   implementation project(':edition-est')
   implementation project(':edition-uzb')
 
+  implementation("com.kodality.taskflow:taskflow-service:${taskflowVersion}") { changing = true }
 
   implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
   implementation("com.kodality.commons:commons-cache:${rootProject.commonsVersion}")
