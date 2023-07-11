@@ -72,7 +72,9 @@ application {
 
 shadowJar {
   zip64 true
-  mergeServiceFiles()
+  mergeServiceFiles {
+    exclude 'META-INF/services/org.xmlpull.v1.XmlPullParserFactory'
+  }
 }
 
 run {
