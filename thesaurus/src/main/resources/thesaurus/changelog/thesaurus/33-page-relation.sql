@@ -22,3 +22,10 @@ create index page_relation_page_idx on thesaurus.page_relation(page_id);
 
 select core.create_table_metadata('thesaurus.page_relation');
 --rollback drop table if exists thesaurus.page_relation;
+
+
+--changeset kodality:page_relation_content_fk-fix
+alter table thesaurus.page_relation drop constraint page_relation_content_fk;
+alter table thesaurus.page_relation add constraint page_relation_content_fk foreign key (content_id) references thesaurus.page_content(id);
+--
+

@@ -38,9 +38,23 @@ public class PageContentService {
   }
 
   @Transactional
-  public void save(PageContent content, Long pageId) {
-    repository.save(validate(prepare(content, pageId)), pageId);
+  public void save(PageContent c, Long pageId) {
+    PageContent content = prepare(c, pageId);
+    validate(content);
+
+    repository.save(content, pageId);
     pageRelationService.save(content, pageId);
+  }
+
+  private void validate(PageContent c) {
+    PageContentQueryParams params = new PageContentQueryParams();
+    params.setSlugs(c.getSlug());
+    params.setSpaceIds(c.getSpaceId().toString());
+    params.setLimit(1);
+    Optional<PageContent> sameSlugContent = repository.query(params).findFirst();
+    if (sameSlugContent.isPresent() && !sameSlugContent.get().getId().equals(c.getId())) {
+      throw ApiError.T000.toApiException(Map.of("slug", c.getSlug()));
+    }
   }
 
   private PageContent prepare(PageContent c, Long pageId) {
@@ -50,7 +64,7 @@ public class PageContentService {
     c.setContent(c.getContent() == null ? "" : c.getContent());
     c.setSpaceId(page.getSpaceId());
 
-    if (isNew(c)) {
+    if (c.getId() == null) {
       c.setContent(templateContentService.findContent(page.getTemplateId(), c.getLang()).orElse(c.getContent()));
     } else {
       PageContent currentContent = load(c.getId());
@@ -60,21 +74,4 @@ public class PageContentService {
     }
     return c;
   }
-
-  private boolean isNew(PageContent c) {
-    return c.getId() == null;
-  }
-
-  private PageContent validate(PageContent c) {
-    PageContentQueryParams params = new PageContentQueryParams();
-    params.setSlugs(c.getSlug());
-    params.setSpaceIds(c.getSpaceId().toString());
-    params.setLimit(1);
-    Optional<PageContent> sameSlugContent = repository.query(params).findFirst();
-    if (sameSlugContent.isPresent() && !sameSlugContent.get().getId().equals(c.getId())) {
-      throw ApiError.T000.toApiException(Map.of("slug", c.getSlug()));
-    }
-    return c;
-  }
-
 }

@@ -14,8 +14,17 @@ import javax.inject.Singleton;
 @Singleton
 public class PageRelationRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(PageRelation.class, p -> {
-    p.addColumnProcessor("content_id","content",PgBeanProcessor.toIdCodeName());
+    p.addColumnProcessor("content", PgBeanProcessor.fromJson());
   });
+
+  private final String select = """
+      select
+        pr.*,
+        (select json_build_object('id', pc.id, 'code', pc.slug, 'names', json_build_object(pc.lang, pc.name))) content,
+        pc.space_id
+      from thesaurus.page_relation pr
+        left join thesaurus.page_content pc on pc.id = pr.content_id
+      """;
 
   public void save(PageRelation relation, Long pageId, Long contentId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -30,7 +39,7 @@ public class PageRelationRepository extends BaseRepository {
   }
 
   public List<PageRelation> loadAll(Long pageId) {
-    String sql = "select * from thesaurus.page_relation where sys_status = 'A' and page_id = ?";
+    String sql = select + "where pr.sys_status = 'A' and pr.page_id = ?";
     return getBeans(sql, bp, pageId);
   }
 
@@ -43,11 +52,11 @@ public class PageRelationRepository extends BaseRepository {
 
   public QueryResult<PageRelation> query(PageRelationQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from thesaurus.page_relation pr where pr.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select count(1) from thesaurus.page_relation pr");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from thesaurus.page_relation pr where pr.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder(select);
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -55,10 +64,10 @@ public class PageRelationRepository extends BaseRepository {
   }
 
   private SqlBuilder filter(PageRelationQueryParams params) {
-    SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and type = ?", params.getType());
+    SqlBuilder sb = new SqlBuilder("where pr.sys_status = 'A'");
+    sb.appendIfNotNull("and pr.type = ?", params.getType());
     if (StringUtils.isNotEmpty(params.getTarget())) {
-      sb.and().in("target", params.getTarget());
+      sb.and().in("pr.target", params.getTarget());
     }
     return sb;
   }

@@ -11,7 +11,9 @@ import lombok.experimental.Accessors;
 public class PageRelation {
   private Long id;
   private Long pageId;
+  private Long spaceId;
   private CodeName content;
-  private String target;
+
   private String type;
+  private String target;
 }
