@@ -1,9 +1,9 @@
-package com.kodality.termx.thesaurus.structuredefinition;
+package com.kodality.termx.modeler.structuredefinition;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Authorized;
-import com.kodality.termx.thesaurus.Privilege;
+import com.kodality.termx.modeler.Privilege;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -19,32 +19,32 @@ import lombok.RequiredArgsConstructor;
 public class StructureDefinitionController {
   private final StructureDefinitionService service;
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(Privilege.M_VIEW)
   @Get(uri = "/{id}")
   public StructureDefinition getStructureDefinition(@PathVariable Long id) {
     return service.load(id).orElseThrow(() -> new NotFoundException("Structure definition not found: " + id));
   }
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(Privilege.M_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<StructureDefinition> queryStructureDefinitions(StructureDefinitionQueryParams params) {
     return service.query(params);
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(Privilege.M_EDIT)
   @Post
   public HttpResponse<?> saveStructureDefinition(@Body StructureDefinition structureDefinition) {
     return HttpResponse.created(service.save(structureDefinition));
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(Privilege.M_EDIT)
   @Put(uri = "/{id}")
   public HttpResponse<?> updateStructureDefinition(@PathVariable Long id,@Body StructureDefinition structureDefinition) {
     structureDefinition.setId(id);
     return HttpResponse.created(service.save(structureDefinition));
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(Privilege.M_EDIT)
   @Delete(uri = "/{id}")
   public HttpResponse<?> deleteStructureDefinition(@PathVariable Long id) {
     service.cancel(id);

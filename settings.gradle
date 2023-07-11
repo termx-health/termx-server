@@ -18,6 +18,7 @@ include 'task'
 include 'thesaurus'
 include 'observation-definition'
 include 'terminology'
+include 'modeler'
 
 include 'snomed'
 include 'ucum'

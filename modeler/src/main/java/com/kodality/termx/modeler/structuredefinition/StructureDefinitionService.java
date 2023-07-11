@@ -1,8 +1,8 @@
-package com.kodality.termx.thesaurus.structuredefinition;
+package com.kodality.termx.modeler.structuredefinition;
 
 import com.kodality.commons.model.QueryResult;
+import jakarta.inject.Singleton;
 import java.util.Optional;
-import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

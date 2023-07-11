@@ -1,4 +1,4 @@
-package com.kodality.termx.thesaurus.structuredefinition;
+package com.kodality.termx.modeler.structuredefinition;
 
 import lombok.Getter;
 import lombok.Setter;

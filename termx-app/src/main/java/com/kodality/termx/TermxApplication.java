@@ -40,7 +40,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
     tags = @Tag(name = "Thesaurus"),
     classes = {
         com.kodality.termx.thesaurus.tag.TagController.class,
-        com.kodality.termx.thesaurus.structuredefinition.StructureDefinitionController.class,
         com.kodality.termx.thesaurus.template.TemplateController.class,
         com.kodality.termx.thesaurus.page.PageController.class,
         com.kodality.termx.thesaurus.pagecontent.PageContentController.class,
@@ -50,6 +49,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @OpenAPIInclude(
     tags = @Tag(name = "Observation definition"),
     classes = {com.kodality.termx.observationdefinition.ObservationDefinitionController.class}
+)
+@OpenAPIInclude(
+    tags = @Tag(name = "Modeler"),
+    classes = {
+        com.kodality.termx.modeler.structuredefinition.StructureDefinitionController.class
+    }
 )
 @OpenAPIInclude(
     tags = @Tag(name = "SNOMED"),

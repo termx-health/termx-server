@@ -17,6 +17,7 @@ dependencies {
   implementation project(':observation-definition')
   implementation project(':thesaurus')
   implementation project(':task')
+  implementation project(':modeler')
 
   implementation project(':edition-int')
   implementation project(':edition-est')

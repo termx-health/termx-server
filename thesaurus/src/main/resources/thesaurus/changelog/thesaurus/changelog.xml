@@ -14,6 +14,5 @@
   <include file="32-page-link-closure.sql" relativeToChangelogFile="true"/>
   <include file="33-page-relation.sql" relativeToChangelogFile="true"/>
   <include file="34-page-tag.sql" relativeToChangelogFile="true"/>
-  <include file="40-structure-definition.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

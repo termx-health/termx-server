@@ -1,0 +1,26 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+    <changeSet id="create_schema_modeler" author="kodality">
+        <sql>
+            create schema if not exists modeler;
+        </sql>
+    </changeSet>
+
+    <changeSet id="default_privileges_for_schema_modeler" author="kodality">
+        <sql>
+            GRANT USAGE ON SCHEMA modeler TO termserver_app;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT USAGE ON SEQUENCES TO termserver_app;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT EXECUTE ON FUNCTIONS TO termserver_app;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT SELECT,INSERT,UPDATE ON TABLES TO termserver_app;
+
+            GRANT USAGE ON SCHEMA modeler TO termserver_viewer;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT EXECUTE ON FUNCTIONS TO termserver_viewer;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT SELECT ON TABLES TO termserver_viewer;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
