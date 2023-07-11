@@ -50,18 +50,16 @@ public class TransformationDefinitionController {
   }
 
   @Post("{id}/transform")
-  public Object transformInstance(@PathVariable Long id, @Body InstanceTransformationRequest req) {
-    return new TransformationResult(transformerService.transform(req.source, load(id)));
+  public TransformationResult transformInstance(@PathVariable Long id, @Body InstanceTransformationRequest req) {
+    return transformerService.transform(req.source, load(id));
   }
 
   @Post("/transform")
-  public Object transform(@Body TransformationRequest req) {
-    return new TransformationResult(transformerService.transform(req.source, req.definition));
+  public TransformationResult transform(@Body TransformationRequest req) {
+    return transformerService.transform(req.source, req.definition);
   }
 
   public record TransformationRequest(TransformationDefinition definition, String source) {}
 
   public record InstanceTransformationRequest(String source) {}
-
-  public record TransformationResult(String result) {}
 }

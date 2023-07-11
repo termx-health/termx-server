@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
 import lombok.RequiredArgsConstructor;
+import org.hl7.fhir.exceptions.FHIRException;
+import org.hl7.fhir.exceptions.FHIRFormatError;
 import org.hl7.fhir.r5.formats.JsonParser;
 import org.hl7.fhir.r5.formats.XmlParser;
 import org.hl7.fhir.r5.model.Resource;
@@ -21,19 +23,22 @@ public class TransformerService {
   private final StructureDefinitionService structureDefinitionService;
   private final HttpClient httpClient = new HttpClient();
 
-  public String transform(String source, TransformationDefinition def) {
+  public TransformationResult transform(String source, TransformationDefinition def) {
     try {
       MatchboxEngine engine = new MatchboxEngineBuilder().getEngine();
       StructureMap sm = getStructureMap(def.getMapping(), engine);
       engine.addCanonicalResource(sm);
       def.getResources().forEach(res -> engine.addCanonicalResource(parse(getContent(res))));
-      return engine.transform(source, true, sm.getUrl(), true);
+      String result = engine.transform(source, true, sm.getUrl(), true);
+      return new TransformationResult().setResult(result);
     } catch (IOException | URISyntaxException e) {
       throw new RuntimeException(e);
+    } catch (FHIRException fe) {
+      return new TransformationResult().setError(fe.getMessage());
     }
   }
 
-  private StructureMap getStructureMap(TransformationDefinitionResource res, MatchboxEngine engine) {
+  private StructureMap getStructureMap(TransformationDefinitionResource res, MatchboxEngine engine) throws FHIRFormatError {
     String content = getContent(res);
     if (content.startsWith("///")) { //XXX not sure if this is what defines Fhir Mapping Language
       return engine.parseMapR5(content);
@@ -53,14 +58,14 @@ public class TransformerService {
   private String queryResource(String fhirServerUrl, String resource) {
     return httpClient.GET(fhirServerUrl + "/" + resource).thenApply(HttpResponse::body).join();
   }
-  
-  private <R extends Resource> R parse(String input) {
+
+  private <R extends Resource> R parse(String input) throws FHIRFormatError {
     try {
       if (input.startsWith("<")) {
         return (R) new XmlParser().parse(input);
       }
       return (R) new JsonParser().parse(input);
-    } catch (Exception e) {
+    }catch(IOException e){
       throw new RuntimeException(e);
     }
   }
