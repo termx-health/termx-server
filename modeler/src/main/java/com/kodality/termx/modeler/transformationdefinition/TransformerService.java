@@ -13,6 +13,7 @@ import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.exceptions.FHIRFormatError;
+import org.hl7.fhir.r5.context.ContextUtilities;
 import org.hl7.fhir.r5.elementmodel.Element;
 import org.hl7.fhir.r5.elementmodel.Manager.FhirFormat;
 import org.hl7.fhir.r5.formats.IParser.OutputStyle;
@@ -21,6 +22,7 @@ import org.hl7.fhir.r5.formats.XmlParser;
 import org.hl7.fhir.r5.model.Bundle;
 import org.hl7.fhir.r5.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r5.model.Resource;
+import org.hl7.fhir.r5.model.StructureDefinition.StructureDefinitionKind;
 import org.hl7.fhir.r5.model.StructureMap;
 import org.hl7.fhir.r5.utils.structuremap.StructureMapUtilities;
 import org.hl7.fhir.utilities.xhtml.NodeType;
@@ -59,6 +61,11 @@ public class TransformerService {
       sm.getStructure().stream().filter(s -> s.getAlias() == null)
           .forEach(s -> s.setAlias(eng.getContext().listStructures().stream()
               .filter(sd -> sd.getUrl().equals(s.getUrl())).findFirst().orElseThrow().getName()));
+
+      //fix snapshots?
+      ContextUtilities cu = new ContextUtilities(eng.getContext());
+      cu.allStructures().stream().filter(sd -> !sd.hasSnapshot())
+          .forEach(sd -> cu.generateSnapshot(sd, sd.getKind() != null && sd.getKind() == StructureDefinitionKind.LOGICAL));
 
       String result = transform(eng, source, sm.getUrl());
       return new TransformationResult().setResult(result);
@@ -107,7 +114,8 @@ public class TransformerService {
   }
 
   public String transform(ValidationEngine eng, String input, String mapUri) throws FHIRException, IOException {
-    Element transformed = eng.transform(input.getBytes(StandardCharsets.UTF_8), FhirFormat.JSON, mapUri);
+    FhirFormat format = input.startsWith("<") ? FhirFormat.XML : FhirFormat.JSON;
+    Element transformed = eng.transform(input.getBytes(StandardCharsets.UTF_8), format, mapUri);
     ByteArrayOutputStream boas = new ByteArrayOutputStream();
     new org.hl7.fhir.r5.elementmodel.JsonParser(eng.getContext()).compose(transformed, boas, OutputStyle.PRETTY, null);
     String result = boas.toString(StandardCharsets.UTF_8);
