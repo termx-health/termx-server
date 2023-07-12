@@ -21,3 +21,9 @@ create unique index terminology_server_ukey on sys.terminology_server (code) whe
 
 select core.create_table_metadata('sys.terminology_server');
 --
+
+--changeset kodality:terminology_server-kind
+alter table sys.terminology_server add column kind jsonb;
+update sys.terminology_server set kind = '["terminology"]'::jsonb;
+alter table sys.terminology_server alter column kind set not null;
+--

@@ -12,6 +12,7 @@ import javax.inject.Singleton;
 public class TerminologyServerRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(TerminologyServer.class, bp -> {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("kind", PgBeanProcessor.fromJson());
   });
 
   public void save(TerminologyServer server) {
@@ -19,6 +20,7 @@ public class TerminologyServerRepository extends BaseRepository {
     ssb.property("id", server.getId());
     ssb.property("code", server.getCode());
     ssb.jsonProperty("names", server.getNames());
+    ssb.jsonProperty("kind", server.getKind());
     ssb.property("root_url", server.getRootUrl());
     ssb.property("active", server.isActive());
     ssb.property("current_installation", server.isCurrentInstallation());
