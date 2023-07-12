@@ -18,6 +18,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemTransactionRequest;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
+import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.ConceptTransactionRequest;
@@ -159,10 +160,19 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/versions/{version}/duplicate")
-  public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version, @Body @Valid CodeSystemVersionDuplicateRequest request) {
+  public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version, @Body @Valid CodeSystemVersionDuplicateRequest request) {
     CodeSystemVersion newVersion = codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), request.getCodeSystem(), version, codeSystem);
     provenanceService.create(new Provenance("created", "CodeSystemVersion", newVersion.getId().toString())
         .addContext("part-of", "CodeSystem", codeSystem));
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.CS_PUBLISH)
+  @Delete(uri = "/{codeSystem}/versions/{version}")
+  public HttpResponse<?> deleteCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version) {
+    Long versionId = codeSystemVersionService.load(codeSystem, version).map(CodeSystemVersionReference::getId).orElseThrow();
+    codeSystemVersionService.cancel(versionId, codeSystem);
+    provenanceService.create(new Provenance("deleted", "CodeSystemVersion", versionId.toString()));
     return HttpResponse.ok();
   }
 

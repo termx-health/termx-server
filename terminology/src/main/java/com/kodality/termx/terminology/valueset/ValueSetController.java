@@ -22,6 +22,7 @@ import com.kodality.termx.ts.valueset.ValueSetTransactionRequest;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
+import com.kodality.termx.ts.valueset.ValueSetVersionReference;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -148,6 +149,15 @@ public class ValueSetController {
     provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersionService.load(valueSet, version).orElseThrow().getId().toString())
         .addContext("part-of", "ValueSet", valueSet));
     return HttpResponse.noContent();
+  }
+
+  @Authorized(Privilege.CS_PUBLISH)
+  @Delete(uri = "/{valueset}/versions/{version}")
+  public HttpResponse<?> deleteValueSetVersion(@PathVariable @ResourceId String valueset, @PathVariable String version) {
+    Long versionId = valueSetVersionService.load(valueset, version).map(ValueSetVersionReference::getId).orElseThrow();
+    valueSetVersionService.cancel(versionId, valueset);
+    provenanceService.create(new Provenance("deleted", "ValueSetVersion", versionId.toString()));
+    return HttpResponse.ok();
   }
 
   //----------------ValueSet Version Concept----------------
