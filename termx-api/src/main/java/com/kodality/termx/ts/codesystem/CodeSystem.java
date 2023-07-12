@@ -31,10 +31,18 @@ public class CodeSystem {
   private String sequence;
   private Object copyright;
   private Object permissions;
+  private CodeSystemSettings settings;
 
   private String baseCodeSystem;
 
   private List<Concept> concepts;
   private List<EntityProperty> properties;
   private List<CodeSystemVersion> versions;
+
+  @Getter
+  @Setter
+  private static class CodeSystemSettings {
+    private boolean reviewRequired;
+    private boolean approvalRequired;
+  }
 }

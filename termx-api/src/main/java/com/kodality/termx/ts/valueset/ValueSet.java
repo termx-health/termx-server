@@ -27,8 +27,16 @@ public class ValueSet {
   private List<ContactDetail> contacts;
   private Object copyright;
   private Object permissions;
+  private ValueSetSettings settings;
 
   private List<ValueSetVersion> versions;
 
   private List<ValueSetSnapshot> snapshots;
+
+  @Getter
+  @Setter
+  private static class ValueSetSettings {
+    private boolean reviewRequired;
+    private boolean approvalRequired;
+  }
 }

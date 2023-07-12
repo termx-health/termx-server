@@ -24,6 +24,7 @@ public class ValueSetRepository extends BaseRepository {
     bp.addColumnProcessor("name", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("purpose", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("settings", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
   });
@@ -41,6 +42,7 @@ public class ValueSetRepository extends BaseRepository {
     ssb.jsonProperty("contacts", valueSet.getContacts());
     ssb.property("narrative", valueSet.getNarrative());
     ssb.property("experimental", valueSet.getExperimental());
+    ssb.jsonProperty("settings", valueSet.getSettings());
     ssb.property("sys_status", "A");
 
     SqlBuilder sb = ssb.buildUpsert("terminology.value_set", "id");

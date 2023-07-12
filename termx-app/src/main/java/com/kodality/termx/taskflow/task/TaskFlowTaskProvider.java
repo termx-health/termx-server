@@ -14,6 +14,8 @@ import com.kodality.taskflow.workflow.WorkflowService;
 import com.kodality.termx.task.TaskProvider;
 import com.kodality.termx.task.TaskQueryParams;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
@@ -31,9 +33,13 @@ public class TaskFlowTaskProvider extends TaskProvider {
   public QueryResult<com.kodality.termx.task.Task> queryTasks(TaskQueryParams params) {
     QueryResult<Task> result = taskService.search(mapper.map(params));
 
+    List<String> workflowIds = result.getData().stream().map(Task::getWorkflowId).distinct().map(String::valueOf).toList();
+    WorkflowSearchParams wfParams = new WorkflowSearchParams().setIds(String.join(",", workflowIds)).limit(workflowIds.size());
+    Map<Long, String> workflows = workflowService.search(wfParams).getData().stream().collect(Collectors.toMap(Workflow::getId, Workflow::getTaskType));
+
     QueryResult<com.kodality.termx.task.Task> termxResult = new QueryResult<>();
     termxResult.setMeta(result.getMeta());
-    termxResult.setData(result.getData().stream().map(mapper::map).toList());
+    termxResult.setData(result.getData().stream().map(task -> mapper.map(task).setWorkflow(workflows.get(task.getWorkflowId()))).toList());
     return termxResult;
   }
 

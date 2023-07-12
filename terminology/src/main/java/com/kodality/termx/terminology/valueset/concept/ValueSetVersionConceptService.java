@@ -59,6 +59,10 @@ public class ValueSetVersionConceptService {
     }
     ValueSetVersion version = valueSetVersionRepository.load(versionId);
 
+    if (PublicationStatus.active.equals(version.getStatus()) && version.getSnapshot() != null && version.getSnapshot().getExpansion() != null) {
+      return version.getSnapshot().getExpansion();
+    }
+
     List<ValueSetVersionConcept> expansion = internalExpand(versionId, ruleSet);
     if (ruleSet == null) {
       ruleSet = valueSetVersionRuleSetService.load(versionId).orElse(null);

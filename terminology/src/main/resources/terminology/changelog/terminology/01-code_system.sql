@@ -89,3 +89,7 @@ alter table terminology.code_system_version drop column description;
 alter table terminology.code_system_version rename column description_temp to description;
 
 --
+
+--changeset kodality:code_system-settings
+alter table terminology.code_system add column settings jsonb;
+--
