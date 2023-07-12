@@ -19,9 +19,12 @@ import org.hl7.fhir.r5.formats.IParser.OutputStyle;
 import org.hl7.fhir.r5.formats.JsonParser;
 import org.hl7.fhir.r5.formats.XmlParser;
 import org.hl7.fhir.r5.model.Bundle;
+import org.hl7.fhir.r5.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r5.model.Resource;
 import org.hl7.fhir.r5.model.StructureMap;
 import org.hl7.fhir.r5.utils.structuremap.StructureMapUtilities;
+import org.hl7.fhir.utilities.xhtml.NodeType;
+import org.hl7.fhir.utilities.xhtml.XhtmlNode;
 import org.hl7.fhir.validation.ValidationEngine;
 import org.hl7.fhir.validation.ValidationEngine.ValidationEngineBuilder;
 
@@ -51,6 +54,12 @@ public class TransformerService {
       ValidationEngine eng = new ValidationEngine(engine);
       eng.getContext().cacheResource(sm);
       def.getResources().forEach(res -> eng.getContext().cacheResource(parse(getContent(res))));
+
+      // this should not be needed. ValidationEngine#getSourceResourceFromStructureMap searches for definition by alias, however alias is nullable. workaround.
+      sm.getStructure().stream().filter(s -> s.getAlias() == null)
+          .forEach(s -> s.setAlias(eng.getContext().listStructures().stream()
+              .filter(sd -> sd.getUrl().equals(s.getUrl())).findFirst().orElseThrow().getName()));
+
       String result = transform(eng, source, sm.getUrl());
       return new TransformationResult().setResult(result);
     } catch (IOException e) {
@@ -63,7 +72,12 @@ public class TransformerService {
   private StructureMap getStructureMap(TransformationDefinitionResource res) throws FHIRFormatError {
     String content = getContent(res);
     if (content.startsWith("///")) { //XXX not sure if this is what defines Fhir Mapping Language
-      return new StructureMapUtilities(engine.getContext()).parse(content, "map");
+      StructureMap map = new StructureMapUtilities(engine.getContext()).parse(content, "map");
+      map.getText().setStatus(NarrativeStatus.GENERATED);
+      map.getText().setDiv(new XhtmlNode(NodeType.Element, "div"));
+      String render = StructureMapUtilities.render(map);
+      map.getText().getDiv().addTag("pre").addText(render);
+      return map;
     }
     return parse(content);
   }
