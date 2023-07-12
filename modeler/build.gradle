@@ -24,13 +24,7 @@ dependencies {
     implementation("io.micronaut:micronaut-http-server")
     implementation("io.reactivex.rxjava2:rxjava:2.2.21")
 
-    implementation('health.matchbox:matchbox-engine:3.2.3') {
-        exclude group: "ca.uhn.hapi.fhir"
-    }
-    //conflicts with kefhir.
-    implementation 'ca.uhn.hapi.fhir:org.hl7.fhir.utilities'
     implementation 'ca.uhn.hapi.fhir:org.hl7.fhir.validation:6.0.1'
     implementation 'ca.uhn.hapi.fhir:org.hl7.fhir.convertors:6.0.1'
     implementation 'ca.uhn.hapi.fhir:org.hl7.fhir.r5:6.0.1'
-    implementation 'ca.uhn.hapi.fhir:org.hl7.fhir.r4:6.0.1'
 }

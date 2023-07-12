@@ -1,24 +1,29 @@
 package com.kodality.termx.modeler.transformationdefinition;
 
-import ch.ahdis.matchbox.engine.MatchboxEngine;
-import ch.ahdis.matchbox.engine.MatchboxEngine.MatchboxEngineBuilder;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
 import io.micronaut.core.io.ResourceLoader;
 import jakarta.inject.Singleton;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.exceptions.FHIRFormatError;
+import org.hl7.fhir.r5.elementmodel.Element;
+import org.hl7.fhir.r5.elementmodel.Manager.FhirFormat;
+import org.hl7.fhir.r5.formats.IParser.OutputStyle;
 import org.hl7.fhir.r5.formats.JsonParser;
 import org.hl7.fhir.r5.formats.XmlParser;
 import org.hl7.fhir.r5.model.Bundle;
-import org.hl7.fhir.r5.model.CanonicalResource;
 import org.hl7.fhir.r5.model.Resource;
 import org.hl7.fhir.r5.model.StructureMap;
+import org.hl7.fhir.r5.utils.structuremap.StructureMapUtilities;
+import org.hl7.fhir.validation.ValidationEngine;
+import org.hl7.fhir.validation.ValidationEngine.ValidationEngineBuilder;
 
 @RequiredArgsConstructor
 @Singleton
@@ -26,17 +31,15 @@ public class TransformerService {
   private final StructureDefinitionService structureDefinitionService;
   private final ResourceLoader resourceLoader;
   private final HttpClient httpClient = new HttpClient();
-  private MatchboxEngine baseEngine;
+  private ValidationEngine engine;
 
   @PostConstruct
   public void init() {
     try {
-      baseEngine = new MatchboxEngineBuilder().getEngine();
-      baseEngine.setVersion("5.0");
-      baseEngine.setDebug(true);
+      engine = new ValidationEngineBuilder().fromNothing();
       // looks fishy
       ((Bundle) parse(new String(resourceLoader.getResources("conformance/base/profile-types.json").findFirst().orElseThrow().openStream().readAllBytes())))
-          .getEntry().forEach(e -> baseEngine.addCanonicalResource((CanonicalResource) e.getResource()));
+          .getEntry().forEach(e -> engine.getContext().cacheResource(e.getResource()));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -44,11 +47,11 @@ public class TransformerService {
 
   public TransformationResult transform(String source, TransformationDefinition def) {
     try {
-      MatchboxEngine engine = new MatchboxEngine(baseEngine);
-      StructureMap sm = getStructureMap(def.getMapping(), engine);
-      engine.addCanonicalResource(sm);
-      def.getResources().forEach(res -> engine.addCanonicalResource(parse(getContent(res))));
-      String result = engine.transform(source, true, sm.getUrl(), true);
+      StructureMap sm = getStructureMap(def.getMapping());
+      ValidationEngine eng = new ValidationEngine(engine);
+      eng.getContext().cacheResource(sm);
+      def.getResources().forEach(res -> eng.getContext().cacheResource(parse(getContent(res))));
+      String result = transform(eng, source, sm.getUrl());
       return new TransformationResult().setResult(result);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -57,10 +60,10 @@ public class TransformerService {
     }
   }
 
-  private StructureMap getStructureMap(TransformationDefinitionResource res, MatchboxEngine engine) throws FHIRFormatError {
+  private StructureMap getStructureMap(TransformationDefinitionResource res) throws FHIRFormatError {
     String content = getContent(res);
     if (content.startsWith("///")) { //XXX not sure if this is what defines Fhir Mapping Language
-      return baseEngine.parseMapR5(content);
+      return new StructureMapUtilities(engine.getContext()).parse(content, "map");
     }
     return parse(content);
   }
@@ -87,6 +90,15 @@ public class TransformerService {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public String transform(ValidationEngine eng, String input, String mapUri) throws FHIRException, IOException {
+    Element transformed = eng.transform(input.getBytes(StandardCharsets.UTF_8), FhirFormat.JSON, mapUri);
+    ByteArrayOutputStream boas = new ByteArrayOutputStream();
+    new org.hl7.fhir.r5.elementmodel.JsonParser(eng.getContext()).compose(transformed, boas, OutputStyle.PRETTY, null);
+    String result = boas.toString(StandardCharsets.UTF_8);
+    boas.close();
+    return result;
   }
 
 }
