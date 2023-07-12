@@ -5,15 +5,18 @@ import ch.ahdis.matchbox.engine.MatchboxEngine.MatchboxEngineBuilder;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
+import io.micronaut.core.io.ResourceLoader;
 import jakarta.inject.Singleton;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
+import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.exceptions.FHIRFormatError;
 import org.hl7.fhir.r5.formats.JsonParser;
 import org.hl7.fhir.r5.formats.XmlParser;
+import org.hl7.fhir.r5.model.Bundle;
+import org.hl7.fhir.r5.model.CanonicalResource;
 import org.hl7.fhir.r5.model.Resource;
 import org.hl7.fhir.r5.model.StructureMap;
 
@@ -21,17 +24,33 @@ import org.hl7.fhir.r5.model.StructureMap;
 @Singleton
 public class TransformerService {
   private final StructureDefinitionService structureDefinitionService;
+  private final ResourceLoader resourceLoader;
   private final HttpClient httpClient = new HttpClient();
+  private MatchboxEngine baseEngine;
+
+  @PostConstruct
+  public void init() {
+    try {
+      baseEngine = new MatchboxEngineBuilder().getEngine();
+      baseEngine.setVersion("5.0");
+      baseEngine.setDebug(true);
+      // looks fishy
+      ((Bundle) parse(new String(resourceLoader.getResources("conformance/base/profile-types.json").findFirst().orElseThrow().openStream().readAllBytes())))
+          .getEntry().forEach(e -> baseEngine.addCanonicalResource((CanonicalResource) e.getResource()));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   public TransformationResult transform(String source, TransformationDefinition def) {
     try {
-      MatchboxEngine engine = new MatchboxEngineBuilder().getEngine();
+      MatchboxEngine engine = new MatchboxEngine(baseEngine);
       StructureMap sm = getStructureMap(def.getMapping(), engine);
       engine.addCanonicalResource(sm);
       def.getResources().forEach(res -> engine.addCanonicalResource(parse(getContent(res))));
       String result = engine.transform(source, true, sm.getUrl(), true);
       return new TransformationResult().setResult(result);
-    } catch (IOException | URISyntaxException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     } catch (FHIRException fe) {
       return new TransformationResult().setError(fe.getMessage());
@@ -41,7 +60,7 @@ public class TransformerService {
   private StructureMap getStructureMap(TransformationDefinitionResource res, MatchboxEngine engine) throws FHIRFormatError {
     String content = getContent(res);
     if (content.startsWith("///")) { //XXX not sure if this is what defines Fhir Mapping Language
-      return engine.parseMapR5(content);
+      return baseEngine.parseMapR5(content);
     }
     return parse(content);
   }
@@ -65,7 +84,7 @@ public class TransformerService {
         return (R) new XmlParser().parse(input);
       }
       return (R) new JsonParser().parse(input);
-    }catch(IOException e){
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
