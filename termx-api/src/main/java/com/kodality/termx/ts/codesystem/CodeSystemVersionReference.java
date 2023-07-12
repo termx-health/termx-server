@@ -10,4 +10,5 @@ import lombok.experimental.Accessors;
 public class CodeSystemVersionReference {
   private Long id;
   private String version;
+  private String status;
 }

@@ -70,7 +70,8 @@ public class CodeSystemDuplicateService {
     List<CodeSystemVersion> versions = sourceCs.getVersions(); //TODO load versions
     versions.forEach(v -> {
       v.setId(null);
-      v.setCreated(null).setStatus(PublicationStatus.draft).setCodeSystem(targetCodeSystem.getId());
+      v.setStatus(PublicationStatus.draft);
+      v.setCreated(null).setCodeSystem(targetCodeSystem.getId());
     });
     codeSystemVersionService.save(versions, targetCodeSystem.getId());
 

@@ -18,7 +18,6 @@ public class CodeSystemVersion extends CodeSystemVersionReference {
   private String preferredLanguage;
   private List<String> supportedLanguages;
   private LocalizedName description;
-  private String status;
   private LocalDate releaseDate;
   private LocalDate expirationDate;
   private OffsetDateTime created;

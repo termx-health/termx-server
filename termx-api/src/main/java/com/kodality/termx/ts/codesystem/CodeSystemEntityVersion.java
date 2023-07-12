@@ -25,7 +25,7 @@ public class CodeSystemEntityVersion {
   private List<Designation> designations;
   private List<CodeSystemAssociation> associations;
 
-  private String codeSystemVersion;
+  private List<CodeSystemVersionReference> versions;
 
   private Long codeSystemEntityId;
 

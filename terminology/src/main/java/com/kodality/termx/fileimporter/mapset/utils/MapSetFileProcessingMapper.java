@@ -5,6 +5,7 @@ import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationKind;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
 import com.kodality.termx.ts.mapset.MapSetEntityVersion;
@@ -46,8 +47,14 @@ public class MapSetFileProcessingMapper {
       MapSetAssociation association = new MapSetAssociation();
       association.setMapSet(mapSetId);
       association.setStatus(PublicationStatus.active);
-      association.setSource(new CodeSystemEntityVersion().setCodeSystem(row.getSourceCodeSystem()).setCodeSystemVersion(row.getSourceVersion()).setCode(row.getSourceCode()));
-      association.setTarget(new CodeSystemEntityVersion().setCodeSystem(row.getTargetCodeSystem()).setCodeSystemVersion(row.getTargetVersion()).setCode(row.getTargetCode()));
+      association.setSource(new CodeSystemEntityVersion()
+          .setCodeSystem(row.getSourceCodeSystem())
+          .setVersions(row.getSourceVersion() == null ? List.of() : List.of(new CodeSystemVersionReference().setVersion(row.getSourceVersion())))
+          .setCode(row.getSourceCode()));
+      association.setTarget(new CodeSystemEntityVersion()
+          .setCodeSystem(row.getTargetCodeSystem())
+          .setVersions(row.getTargetVersion() == null ? List.of() : List.of(new CodeSystemVersionReference().setVersion(row.getTargetVersion())))
+          .setCode(row.getTargetCode()));
       association.setAssociationType(row.getEquivalence());
       association.setVersions(List.of(new MapSetEntityVersion().setStatus(PublicationStatus.draft).setDescription(row.getComment())));
       if (association.getSource() != null && association.getTarget() != null) {

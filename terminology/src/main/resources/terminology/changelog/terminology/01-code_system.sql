@@ -93,3 +93,8 @@ alter table terminology.code_system_version rename column description_temp to de
 --changeset kodality:code_system-settings
 alter table terminology.code_system add column settings jsonb;
 --
+
+--changeset kodality:code_system-case_sensitive-def-value
+update terminology.code_system set case_sensitive = 'ci' where case_sensitive is null;
+alter table terminology.code_system alter column case_sensitive set not null;
+--

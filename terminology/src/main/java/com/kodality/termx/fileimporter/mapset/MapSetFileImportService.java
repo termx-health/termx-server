@@ -11,6 +11,7 @@ import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptSer
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
@@ -108,7 +109,7 @@ public class MapSetFileImportService {
   private CodeSystemEntityVersion findEntityVersion(CodeSystemEntityVersion entityVersion, int index) {
     CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
     params.setCodeSystem(entityVersion.getCodeSystem());
-    params.setCodeSystemVersion(entityVersion.getCodeSystemVersion());
+    params.setCodeSystemVersion(entityVersion.getVersions().stream().findFirst().map(CodeSystemVersionReference::getVersion).orElse(null));
     params.setCode(entityVersion.getCode());
     params.setLimit(1);
     return codeSystemEntityVersionService.query(params).findFirst().orElseThrow(() -> ApiError.TE707.toApiException(Map.of("rowNumber", index)));

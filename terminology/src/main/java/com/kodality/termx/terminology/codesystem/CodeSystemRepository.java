@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
@@ -52,7 +53,7 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.jsonProperty("identifiers", codeSystem.getIdentifiers());
     ssb.jsonProperty("contacts", codeSystem.getContacts());
     ssb.property("content", codeSystem.getContent());
-    ssb.property("case_sensitive", codeSystem.getCaseSensitive());
+    ssb.property("case_sensitive", codeSystem.getCaseSensitive() == null ? CaseSignificance.entire_term_case_insensitive : codeSystem.getCaseSensitive());
     ssb.property("sequence", codeSystem.getSequence());
     ssb.property("base_code_system", codeSystem.getBaseCodeSystem());
     ssb.jsonProperty("settings", codeSystem.getSettings());

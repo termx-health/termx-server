@@ -93,7 +93,8 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     ValueSetVersionConcept concept = concepts.stream()
         .filter(c -> c.getConcept().getCode().equals(code)
                      && (system == null || system.equals(c.getConcept().getCodeSystem()))
-                     && (systemVersion == null || c.getConcept().getVersions().stream().anyMatch(e -> e.getCodeSystemVersion().equals(systemVersion)))
+                     && (systemVersion == null || c.getConcept().getVersions().stream()
+            .anyMatch(e -> e.getVersions() != null && e.getVersions().stream().anyMatch(v -> systemVersion.equals(v.getVersion()))))
         ).findFirst().orElse(null);
 
     if (concept == null) {
