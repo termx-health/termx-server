@@ -20,4 +20,8 @@ public class TransformationDefinitionService {
   public QueryResult<TransformationDefinition> search(TransformationDefinitionQueryParams params) {
     return repository.search(params);
   }
+
+  public void delete(Long id) {
+    repository.delete(id);
+  }
 }

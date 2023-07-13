@@ -17,7 +17,7 @@ public class TransformationDefinitionRepository extends BaseRepository {
     p.addColumnProcessor("mapping", PgBeanProcessor.fromJson());
   });
 
-  private final Map<String, String> orderMapping = Map.of("name", "td.nme");
+  private final Map<String, String> orderMapping = Map.of("name", "td.name");
 
   public void save(TransformationDefinition td) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -54,6 +54,11 @@ public class TransformationDefinitionRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder("where td.sys_status = 'A'");
     sb.appendIfNotNull("and td.name ilike '%' || ? || '%'", params.getNameContains());
     return sb;
+  }
+
+  public void delete(Long id) {
+    String sql = "update modeler.transformation_definition set sys_status = 'C' where id = ? and sys_status = 'A'";
+    jdbcTemplate.update(sql, id);
   }
 
 }
