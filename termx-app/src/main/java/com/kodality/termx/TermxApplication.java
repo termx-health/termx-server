@@ -37,13 +37,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
     }
 )
 @OpenAPIInclude(
-    tags = @Tag(name = "Thesaurus"),
+    tags = @Tag(name = "Wiki"),
     classes = {
-        com.kodality.termx.thesaurus.tag.TagController.class,
-        com.kodality.termx.thesaurus.template.TemplateController.class,
-        com.kodality.termx.thesaurus.page.PageController.class,
-        com.kodality.termx.thesaurus.pagecontent.PageContentController.class,
-        com.kodality.termx.thesaurus.pagerelation.PageRelationController.class
+        com.kodality.termx.wiki.tag.TagController.class,
+        com.kodality.termx.wiki.template.TemplateController.class,
+        com.kodality.termx.wiki.page.PageController.class,
+        com.kodality.termx.wiki.pagecontent.PageContentController.class,
+        com.kodality.termx.wiki.pagerelation.PageRelationController.class
     }
 )
 @OpenAPIInclude(

@@ -1,0 +1,26 @@
+<databaseChangeLog
+				xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+				xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+				xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+	<changeSet id="create_schema_wiki" author="wiki">
+		<sql>
+            create schema if not exists wiki;
+        </sql>
+	</changeSet>
+
+	<changeSet id="default_privileges_for_schema_wiki" author="wiki">
+		<sql>
+            GRANT USAGE ON SCHEMA wiki TO termserver_app;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA wiki GRANT USAGE ON SEQUENCES TO termserver_app;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA wiki GRANT EXECUTE ON FUNCTIONS TO termserver_app;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA wiki GRANT SELECT,INSERT,UPDATE ON TABLES TO termserver_app;
+
+            GRANT USAGE ON SCHEMA wiki TO termserver_viewer;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA wiki GRANT EXECUTE ON FUNCTIONS TO termserver_viewer;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA wiki GRANT SELECT ON TABLES TO termserver_viewer;
+        </sql>
+	</changeSet>
+
+</databaseChangeLog>
