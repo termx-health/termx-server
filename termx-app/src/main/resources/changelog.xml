@@ -6,7 +6,7 @@
 
   <include file="sys/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="terminology/changelog/changelog.xml" relativeToChangelogFile="false"/>
-  <include file="thesaurus/changelog/changelog.xml" relativeToChangelogFile="false"/>
+  <include file="wiki/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="ucum/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="snomed/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="observation-definition/changelog/changelog.xml" relativeToChangelogFile="false"/>

@@ -15,7 +15,7 @@ include 'termx-integtest'
 include 'gatling'
 
 include 'task'
-include 'thesaurus'
+include 'wiki'
 include 'observation-definition'
 include 'terminology'
 include 'modeler'

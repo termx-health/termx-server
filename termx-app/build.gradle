@@ -15,7 +15,7 @@ dependencies {
   implementation project(':snomed')
   implementation project(':ucum')
   implementation project(':observation-definition')
-  implementation project(':thesaurus')
+  implementation project(':wiki')
   implementation project(':task')
   implementation project(':modeler')
 
