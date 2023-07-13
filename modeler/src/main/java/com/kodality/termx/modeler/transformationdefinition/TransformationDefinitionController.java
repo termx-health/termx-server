@@ -3,7 +3,6 @@ package com.kodality.termx.modeler.transformationdefinition;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.modeler.Privilege;
-import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
@@ -35,18 +34,18 @@ public class TransformationDefinitionController {
 
   @Authorized(Privilege.M_EDIT)
   @Post
-  public HttpResponse<?> create(@Valid @Body TransformationDefinition def) {
+  public TransformationDefinition create(@Valid @Body TransformationDefinition def) {
     def.setId(null);
     service.save(def);
-    return HttpResponse.created(def);
+    return def;
   }
 
   @Authorized(Privilege.M_EDIT)
   @Put(uri = "/{id}")
-  public HttpResponse<?> update(@PathVariable Long id, @Valid @Body TransformationDefinition def) {
+  public TransformationDefinition update(@PathVariable Long id, @Valid @Body TransformationDefinition def) {
     def.setId(id);
     service.save(def);
-    return HttpResponse.ok(def);
+    return def;
   }
 
   @Post("{id}/transform")
