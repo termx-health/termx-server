@@ -24,6 +24,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionReference;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import io.micronaut.core.annotation.Introspected;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -35,7 +36,9 @@ import io.micronaut.http.annotation.Put;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -46,6 +49,7 @@ public class ValueSetController {
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final ValueSetDuplicateService valueSetDuplicateService;
   private final ImportLogger importLogger;
   private final ProvenanceService provenanceService;
 
@@ -151,6 +155,15 @@ public class ValueSetController {
     return HttpResponse.noContent();
   }
 
+  @Authorized(Privilege.CS_EDIT)
+  @Post(uri = "/{valueSet}/versions/{version}/duplicate")
+  public HttpResponse<?> duplicateValueSetVersion(@PathVariable @ResourceId String valueSet, @PathVariable String version, @Body @Valid ValueSetVersionDuplicateRequest request) {
+    ValueSetVersion newVersion = valueSetDuplicateService.duplicateValueSetVersion(request.getVersion(), request.getValueSet(), version, valueSet);
+    provenanceService.create(new Provenance("created", "ValueSetVersion", newVersion.getId().toString())
+        .addContext("part-of", "ValueSet", valueSet));
+    return HttpResponse.ok();
+  }
+
   @Authorized(Privilege.CS_PUBLISH)
   @Delete(uri = "/{valueset}/versions/{version}")
   public HttpResponse<?> deleteValueSetVersion(@PathVariable @ResourceId String valueset, @PathVariable String version) {
@@ -221,5 +234,13 @@ public class ValueSetController {
     provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersionService.load(valueSet, version).orElseThrow().getId().toString())
         .addContext("part-of", "ValueSet", valueSet));
     return HttpResponse.ok();
+  }
+
+  @Getter
+  @Setter
+  @Introspected
+  public static class ValueSetVersionDuplicateRequest {
+    private String valueSet;
+    private String version;
   }
 }
