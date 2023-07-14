@@ -138,7 +138,7 @@ public class ValueSetRepository extends BaseRepository {
   }
 
   public void changeId(String currentId, String newId) {
-    SqlBuilder sb = new SqlBuilder("update terminology.value_set set id = ? where id = ?", newId, currentId);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
+    SqlBuilder sb = new SqlBuilder("select * from terminology.change_value_set_id(?,?)", currentId, newId);
+    jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
   }
 }
