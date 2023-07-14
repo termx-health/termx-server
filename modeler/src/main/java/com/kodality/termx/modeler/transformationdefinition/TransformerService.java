@@ -2,6 +2,7 @@ package com.kodality.termx.modeler.transformationdefinition;
 
 import com.kodality.commons.client.HttpClient;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
+import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionMapping;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
 import io.micronaut.core.io.ResourceLoader;
 import jakarta.inject.Singleton;
@@ -9,6 +10,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.exceptions.FHIRException;
@@ -22,6 +26,7 @@ import org.hl7.fhir.r5.formats.XmlParser;
 import org.hl7.fhir.r5.model.Bundle;
 import org.hl7.fhir.r5.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r5.model.Resource;
+import org.hl7.fhir.r5.model.StructureDefinition;
 import org.hl7.fhir.r5.model.StructureDefinition.StructureDefinitionKind;
 import org.hl7.fhir.r5.model.StructureMap;
 import org.hl7.fhir.r5.utils.structuremap.StructureMapUtilities;
@@ -76,7 +81,7 @@ public class TransformerService {
     }
   }
 
-  private StructureMap getStructureMap(TransformationDefinitionResource res) throws FHIRFormatError {
+  private StructureMap getStructureMap(TransformationDefinitionMapping res) throws FHIRFormatError {
     String content = getContent(res);
     if (content.startsWith("///")) { //XXX not sure if this is what defines Fhir Mapping Language
       StructureMap map = new StructureMapUtilities(engine.getContext()).parse(content, "map");
@@ -93,6 +98,14 @@ public class TransformerService {
     return switch (res.getSource()) {
       case "static" -> res.getReference().getContent();
       case "definition" -> structureDefinitionService.load(res.getReference().getStructureDefinitionId()).orElseThrow().getContent();
+      case "fhir" -> queryResource(res.getReference().getFhirServer(), res.getReference().getFhirResource());
+      default -> throw new RuntimeException("unknown resouce source");
+    };
+  }
+
+  private String getContent(TransformationDefinitionMapping res) {
+    return switch (res.getSource()) {
+      case "static" -> res.getReference().getContent();
       case "fhir" -> queryResource(res.getReference().getFhirServer(), res.getReference().getFhirResource());
       default -> throw new RuntimeException("unknown resouce source");
     };
@@ -123,4 +136,24 @@ public class TransformerService {
     return result;
   }
 
+  public String generateFml(TransformationDefinition definition) {
+    List<String> rows = new ArrayList<>();
+    rows.add("/// url = 'http://hl7.org/fhir/StructureMap/" + definition.getName() + "'");
+    rows.add("/// name = '" + definition.getName() + "'");
+    rows.add("/// title = '" + definition.getName() + "'");
+    rows.add("");
+    List<StructureDefinition> definitions =
+        definition.getResources().stream().filter(r -> r.getType().equals("definition")).map(x -> this.<StructureDefinition>parse(getContent(x))).toList();
+    definitions.subList(0, definitions.size() - 1).forEach(source -> {
+      rows.add("uses \"" + source.getUrl() + "\" alias " + source.getType() + " as source");
+    });
+    StructureDefinition target = definitions.get(definitions.size() - 1);
+    rows.add("uses \"" + target.getUrl() + "\" alias " + target.getType() + " as target");
+
+    rows.add("");
+    rows.add("group example(source src : "+definitions.get(0).getType()+", target tgt : "+target.getType()+") {");
+    rows.add("  ");
+    rows.add("}");
+    return rows.stream().collect(Collectors.joining("\n"));
+  }
 }

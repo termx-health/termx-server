@@ -67,7 +67,14 @@ public class TransformationDefinitionController {
     return transformerService.transform(req.source, req.definition);
   }
 
+  @Post("/generate-fml")
+  public FmlGenerationResult generateFml(@Body TransformationDefinition definition) {
+    return new FmlGenerationResult(transformerService.generateFml(definition));
+  }
+
   public record TransformationRequest(TransformationDefinition definition, String source) {}
 
   public record InstanceTransformationRequest(String source) {}
+
+  public record FmlGenerationResult(String fml) {}
 }
