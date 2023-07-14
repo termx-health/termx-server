@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.exceptions.FHIRFormatError;
 import org.hl7.fhir.r5.context.ContextUtilities;
@@ -144,18 +145,21 @@ public class TransformerService {
     rows.add("/// name = '" + definition.getName() + "'");
     rows.add("/// title = '" + definition.getName() + "'");
     rows.add("");
-    List<StructureDefinition> definitions =
-        definition.getResources().stream().filter(r -> r.getType().equals("definition")).map(x -> this.<StructureDefinition>parse(getContent(x))).toList();
-    definitions.subList(0, definitions.size() - 1).forEach(source -> {
-      rows.add("uses \"" + source.getUrl() + "\" alias " + source.getType() + " as source");
-    });
-    StructureDefinition target = definitions.get(definitions.size() - 1);
-    rows.add("uses \"" + target.getUrl() + "\" alias " + target.getType() + " as target");
 
-    rows.add("");
-    rows.add("group example(source src : " + definitions.get(0).getType() + ", target tgt : " + target.getType() + ") {");
-    rows.add("  ");
-    rows.add("}");
+    if (CollectionUtils.isNotEmpty(definition.getResources())) {
+      List<StructureDefinition> definitions =
+          definition.getResources().stream().filter(r -> r.getType().equals("definition")).map(x -> this.<StructureDefinition>parse(getContent(x))).toList();
+      definitions.subList(0, definitions.size() - 1).forEach(source -> {
+        rows.add("uses \"" + source.getUrl() + "\" alias " + source.getType() + " as source");
+      });
+      StructureDefinition target = definitions.get(definitions.size() - 1);
+      rows.add("uses \"" + target.getUrl() + "\" alias " + target.getType() + " as target");
+
+      rows.add("");
+      rows.add("group example(source src : " + definitions.get(0).getType() + ", target tgt : " + target.getType() + ") {");
+      rows.add("  ");
+      rows.add("}");
+    }
     return rows.stream().collect(Collectors.joining("\n"));
   }
 }
