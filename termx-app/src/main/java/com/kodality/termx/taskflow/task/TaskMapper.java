@@ -77,6 +77,7 @@ public class TaskMapper {
 
   public com.kodality.termx.task.Task.TaskActivity map(TaskActivity activity) {
     com.kodality.termx.task.Task.TaskActivity termxActivity = new com.kodality.termx.task.Task.TaskActivity();
+    termxActivity.setId(activity.getId().toString());
     termxActivity.setNote(activity.getNote());
     termxActivity.setUpdatedBy(activity.getUpdatedBy() == null ? null : activity.getUpdatedBy().getSub());
     termxActivity.setUpdatedAt(activity.getUpdatedAt());

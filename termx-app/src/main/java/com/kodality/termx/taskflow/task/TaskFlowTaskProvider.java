@@ -76,6 +76,16 @@ public class TaskFlowTaskProvider extends TaskProvider {
   }
 
   @Override
+  public com.kodality.termx.task.Task.TaskActivity updateTaskActivity(String number, String activityId, String note) {
+    return mapper.map(taskActivityService.update(Long.valueOf(activityId), note));
+  }
+
+  @Override
+  public void cancelTaskActivity(String number, String activityId) {
+    taskActivityService.cancel(Long.valueOf(activityId));
+  }
+
+  @Override
   public List<CodeName> loadProjects() {
     return projectService.loadAll().stream().map(p -> new CodeName().setCode(p.getCode()).setNames(p.getNames())).toList();
   }

@@ -45,6 +45,7 @@ public class Task {
   @Setter
   @Accessors(chain = true)
   public static class TaskActivity {
+    private String id;
     private String note;
     private Map<String, TaskActivityTransition> transition;
     private String updatedBy;

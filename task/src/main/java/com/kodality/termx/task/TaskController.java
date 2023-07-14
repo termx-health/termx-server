@@ -6,8 +6,10 @@ import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.task.Task.TaskActivity;
 import io.micronaut.context.annotation.Parameter;
+import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
@@ -55,6 +57,19 @@ public class TaskController {
   @Post("/tasks/{number}/activities")
   public TaskActivity createTaskActivity(@Parameter String number, @Valid @Body Map<String, String> body) {
     return taskProvider.createTaskActivity(number, body.get("note"));
+  }
+
+  @Authorized(Privilege.T_EDIT)
+  @Put("/tasks/{number}/activities/{id}")
+  public TaskActivity createTaskActivity(@Parameter String number, @Parameter String id, @Valid @Body Map<String, String> body) {
+    return taskProvider.updateTaskActivity(number, id, body.get("note"));
+  }
+
+  @Authorized(Privilege.T_EDIT)
+  @Delete("/tasks/{number}/activities/{id}")
+  public HttpResponse<?> deleteTaskActivity(@Parameter String number, @Parameter String id) {
+    taskProvider.cancelTaskActivity(number, id);
+    return HttpResponse.ok();
   }
 
 
