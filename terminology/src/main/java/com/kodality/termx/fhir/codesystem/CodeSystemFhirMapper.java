@@ -56,7 +56,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setIdentifier(toFhirIdentifiers(codeSystem.getIdentifiers()));
     fhirCodeSystem.setContact(toFhirContacts(codeSystem.getContacts()));
     fhirCodeSystem.setContent(codeSystem.getContent());
-    fhirCodeSystem.setCaseSensitive(codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
+    fhirCodeSystem.setCaseSensitive(
+        codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
 
     fhirCodeSystem.setVersion(version.getVersion());
     fhirCodeSystem.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
@@ -96,6 +97,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   }
 
   private static String findDesignation(List<Designation> designations, List<EntityProperty> properties, String propertyName) {
+    if (properties == null) {
+      return null;
+    }
     EntityProperty property = properties.stream().filter(p -> p.getName().equals(propertyName)).findFirst().orElse(null);
     if (property == null || designations == null) {
       return null;

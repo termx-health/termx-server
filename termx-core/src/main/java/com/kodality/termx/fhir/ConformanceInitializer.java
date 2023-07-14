@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class ConformanceInitializer implements ConformanceResourceLoader {
   private final ResourceFormatService resourceFormatService;
   private final Map<String, List<Resource>> resources = new HashMap<>();
   private final ResourceLoader resourceLoader;
+  private final List<TermxGeneratedConformanceProvider> generators;
 
   @PostConstruct
   public void init() {
@@ -53,7 +55,13 @@ public class ConformanceInitializer implements ConformanceResourceLoader {
 
   @SuppressWarnings("unchecked")
   public <T extends Resource> List<T> load(String name) {
-    return (List<T>) resources.getOrDefault(name, new ArrayList<>());
+    if (resources.containsKey(name)) {
+      return (List<T>) resources.get(name);
+    }
+    return (List<T>) generators.stream().map(g -> g.generate(name)).filter(Objects::nonNull).toList();
   }
 
+  public interface TermxGeneratedConformanceProvider {
+    Resource generate(String name);
+  }
 }

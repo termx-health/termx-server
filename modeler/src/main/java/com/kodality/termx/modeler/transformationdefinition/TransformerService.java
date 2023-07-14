@@ -1,9 +1,10 @@
 package com.kodality.termx.modeler.transformationdefinition;
 
 import com.kodality.commons.client.HttpClient;
+import com.kodality.termx.fhir.conceptmap.ConceptMapResourceStorage;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
-import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionMapping;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.core.io.ResourceLoader;
 import jakarta.inject.Singleton;
 import java.io.ByteArrayOutputStream;
@@ -30,6 +31,7 @@ import org.hl7.fhir.r5.model.StructureDefinition;
 import org.hl7.fhir.r5.model.StructureDefinition.StructureDefinitionKind;
 import org.hl7.fhir.r5.model.StructureMap;
 import org.hl7.fhir.r5.utils.structuremap.StructureMapUtilities;
+import org.hl7.fhir.utilities.FhirPublication;
 import org.hl7.fhir.utilities.xhtml.NodeType;
 import org.hl7.fhir.utilities.xhtml.XhtmlNode;
 import org.hl7.fhir.validation.ValidationEngine;
@@ -39,14 +41,18 @@ import org.hl7.fhir.validation.ValidationEngine.ValidationEngineBuilder;
 @Singleton
 public class TransformerService {
   private final StructureDefinitionService structureDefinitionService;
+  private final ConceptMapResourceStorage conceptMapFhirService;
   private final ResourceLoader resourceLoader;
   private final HttpClient httpClient = new HttpClient();
   private ValidationEngine engine;
+  @Value("${micronaut.server.port}")
+  private String port;
 
   @PostConstruct
   public void init() {
     try {
       engine = new ValidationEngineBuilder().fromNothing();
+      engine.connectToTSServer("http://localhost:" + port + "/fhir", null, FhirPublication.R5);
       // looks fishy
       ((Bundle) parse(new String(resourceLoader.getResources("conformance/base/profile-types.json").findFirst().orElseThrow().openStream().readAllBytes())))
           .getEntry().forEach(e -> engine.getContext().cacheResource(e.getResource()));
@@ -81,7 +87,7 @@ public class TransformerService {
     }
   }
 
-  private StructureMap getStructureMap(TransformationDefinitionMapping res) throws FHIRFormatError {
+  private StructureMap getStructureMap(TransformationDefinitionResource res) throws FHIRFormatError {
     String content = getContent(res);
     if (content.startsWith("///")) { //XXX not sure if this is what defines Fhir Mapping Language
       StructureMap map = new StructureMapUtilities(engine.getContext()).parse(content, "map");
@@ -97,17 +103,13 @@ public class TransformerService {
   private String getContent(TransformationDefinitionResource res) {
     return switch (res.getSource()) {
       case "static" -> res.getReference().getContent();
-      case "definition" -> structureDefinitionService.load(res.getReference().getStructureDefinitionId()).orElseThrow().getContent();
       case "fhir" -> queryResource(res.getReference().getFhirServer(), res.getReference().getFhirResource());
-      default -> throw new RuntimeException("unknown resouce source");
-    };
-  }
-
-  private String getContent(TransformationDefinitionMapping res) {
-    return switch (res.getSource()) {
-      case "static" -> res.getReference().getContent();
-      case "fhir" -> queryResource(res.getReference().getFhirServer(), res.getReference().getFhirResource());
-      default -> throw new RuntimeException("unknown resouce source");
+      case "local" -> switch (res.getType()) {
+        case "definition" -> structureDefinitionService.load(Long.valueOf(res.getReference().getLocalId())).orElseThrow().getContent();
+        case "conceptmap" -> conceptMapFhirService.load(res.getReference().getLocalId()).getContent().getValue();
+        default -> throw new RuntimeException("unknown type: " + res.getType());
+      };
+      default -> throw new RuntimeException("unknown resource source " + res.getSource());
     };
   }
 
@@ -151,7 +153,7 @@ public class TransformerService {
     rows.add("uses \"" + target.getUrl() + "\" alias " + target.getType() + " as target");
 
     rows.add("");
-    rows.add("group example(source src : "+definitions.get(0).getType()+", target tgt : "+target.getType()+") {");
+    rows.add("group example(source src : " + definitions.get(0).getType() + ", target tgt : " + target.getType() + ") {");
     rows.add("  ");
     rows.add("}");
     return rows.stream().collect(Collectors.joining("\n"));

@@ -14,30 +14,11 @@ public class TransformationDefinition {
   private String name;
   @Valid
   @NotNull
-  private TransformationDefinitionMapping mapping;
+  private TransformationDefinitionResource mapping;
   @Valid
   @NotNull
   private List<TransformationDefinitionResource> resources;
   private String testSource;
-
-  @Getter
-  @Setter
-  public static class TransformationDefinitionMapping {
-    @NotNull
-    private String name;
-    @NotNull
-    private String source;
-    @NotNull
-    private TransformationDefinitionMappingReference reference;
-  }
-
-  @Getter
-  @Setter
-  public static class TransformationDefinitionMappingReference {
-    private String fhirServer;
-    private String fhirResource;
-    private String content;
-  }
 
   @Getter
   @Setter
@@ -54,7 +35,7 @@ public class TransformationDefinition {
   @Getter
   @Setter
   public static class TransformationDefinitionResourceReference {
-    private Long structureDefinitionId;
+    private String localId;
     private String fhirServer;
     private String fhirResource;
     private String content;
