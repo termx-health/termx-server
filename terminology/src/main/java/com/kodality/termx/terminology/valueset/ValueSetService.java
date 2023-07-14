@@ -78,4 +78,10 @@ public class ValueSetService {
     }
     repository.cancel(valueSet);
   }
+
+  @Transactional
+  public void changeId(String currentId, String newId) {
+    userPermissionService.checkPermitted(currentId, "ValueSet", "edit");
+    repository.changeId(currentId, newId);
+  }
 }

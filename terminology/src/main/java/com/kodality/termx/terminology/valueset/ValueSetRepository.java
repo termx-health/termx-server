@@ -136,4 +136,9 @@ public class ValueSetRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder("select * from terminology.cancel_value_set(?)", valueSet);
     jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
   }
+
+  public void changeId(String currentId, String newId) {
+    SqlBuilder sb = new SqlBuilder("update terminology.value_set set id = ? where id = ?", newId, currentId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }

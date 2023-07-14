@@ -34,6 +34,7 @@ import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
 import lombok.Getter;
@@ -82,6 +83,15 @@ public class CodeSystemController {
     CodeSystem targetCodeSystem = new CodeSystem().setId(request.getCodeSystem()).setUri(request.getCodeSystemUri());
     codeSystemDuplicateService.duplicateCodeSystem(targetCodeSystem, codeSystem);
     provenanceService.create(new Provenance("created", "CodeSystem", targetCodeSystem.getId()));
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.CS_EDIT)
+  @Post(uri = "/{codeSystem}/change-id")
+  public HttpResponse<?> changeCodeSystemId(@PathVariable String codeSystem, @Valid @Body Map<String, String> body) {
+    String newId = body.get("id");
+    codeSystemService.changeId(codeSystem, newId);
+    provenanceService.create(new Provenance("modified", "CodeSystem", newId));
     return HttpResponse.ok();
   }
 

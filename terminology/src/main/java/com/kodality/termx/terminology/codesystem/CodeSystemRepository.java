@@ -179,4 +179,9 @@ public class CodeSystemRepository extends BaseRepository {
     }
     return join;
   }
+
+  public void changeId(String currentId, String newId) {
+    SqlBuilder sb = new SqlBuilder("update terminology.code_system set id = ? where id = ?", newId, currentId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
 }

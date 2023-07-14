@@ -34,6 +34,7 @@ import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
 import lombok.Getter;
@@ -80,6 +81,15 @@ public class ValueSetController {
     valueSetService.save(request);
     provenanceService.create(new Provenance("modified", "ValueSet", request.getValueSet().getId()));
     return HttpResponse.created(request.getValueSet());
+  }
+
+  @Authorized(Privilege.CS_EDIT)
+  @Post(uri = "/{valueSet}/change-id")
+  public HttpResponse<?> changeValueSetId(@PathVariable String valueSet, @Valid @Body Map<String, String> body) {
+    String newId = body.get("id");
+    valueSetService.changeId(valueSet, newId);
+    provenanceService.create(new Provenance("modified", "ValueSet", newId));
+    return HttpResponse.ok();
   }
 
   @Authorized(Privilege.VS_PUBLISH)

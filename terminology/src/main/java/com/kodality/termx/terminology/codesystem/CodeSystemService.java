@@ -126,4 +126,10 @@ public class CodeSystemService {
     }
     repository.cancel(codeSystem);
   }
+
+  @Transactional
+  public void changeId(String currentId, String newId) {
+    userPermissionService.checkPermitted(currentId, "CodeSystem", "edit");
+    repository.changeId(currentId, newId);
+  }
 }
