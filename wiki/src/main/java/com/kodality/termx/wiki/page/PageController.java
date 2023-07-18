@@ -1,14 +1,17 @@
 package com.kodality.termx.wiki.page;
 
 import com.kodality.commons.exception.NotFoundException;
+import com.kodality.commons.micronaut.rest.MultipartBodyReader;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.wiki.Privilege;
+import com.kodality.termx.wiki.page.Page.PageAttachment;
 import com.kodality.termx.wiki.pagecontent.PageContentService;
 import com.kodality.termx.wiki.pagelink.PageLinkService;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Delete;
@@ -16,8 +19,11 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
+import io.micronaut.http.server.multipart.MultipartBody;
+import io.micronaut.http.server.types.files.StreamedFile;
 import io.micronaut.validation.Validated;
 import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -91,6 +97,26 @@ public class PageController {
   public List<Long> getPath(@PathVariable Long id) {
     return linkService.getPath(id);
   }
+
+
+  @Authorized(Privilege.T_EDIT)
+  @Post(value = "/{id}/files", consumes = MediaType.MULTIPART_FORM_DATA)
+  public Map<String, PageAttachment> uploadFiles(@PathVariable Long id, @Body MultipartBody partz) {
+    MultipartBodyReader.MultipartBody body = MultipartBodyReader.readMultipart(partz);
+    return pageService.saveAttachments(id, body.getAttachments());
+  }
+
+  @Authorized(Privilege.T_VIEW)
+  @Get(uri = "/{id}/files")
+  public List<PageAttachment> getFiles(@PathVariable Long id) {
+    return pageService.getAttachments(id);
+  }
+
+  @Get(uri = "/files/{id}/{fileName}")
+  public StreamedFile getFileContent(@PathVariable Long id, @PathVariable String fileName) {
+    return pageService.getAttachmentContent(id, fileName);
+  }
+
 
   @Getter
   @Setter
