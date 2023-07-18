@@ -49,3 +49,17 @@ Snowstorm server serves SNOMED terminology and may be installed if you need SNOM
 Check Snowstorm installation and configuration [documentation](https://wiki.kodality.dev/terminology-server/snowstorm).
 
 After installation add properties `snowstorm.url`, `snowstorm.user`, `snowstorm.password` to `application.yml` file.
+
+
+## MinIO
+
+```shell
+docker run \
+  -p 9000:9000 \
+  -p 9001:9001 \
+  --name termx-minio \
+  -e "MINIO_ROOT_USER=minio" \
+  -e "MINIO_ROOT_PASSWORD=supersecretpass" \
+  -d \
+  quay.io/minio/minio server /data --console-address ":9001"
+```

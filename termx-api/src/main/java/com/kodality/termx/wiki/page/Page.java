@@ -35,4 +35,12 @@ public class Page {
   public static class PageSettings {
     private long templateId;
   }
+
+  @Getter
+  @Setter
+  public static class PageAttachment {
+    private String fileId;
+    private String fileName;
+    private String contentType;
+  }
 }

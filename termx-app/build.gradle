@@ -25,6 +25,7 @@ dependencies {
 
   implementation("com.kodality.taskflow:taskflow-service:${taskflowVersion}") { changing = true }
 
+  implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}")
   implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
   implementation("com.kodality.commons:commons-cache:${rootProject.commonsVersion}")
   implementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
@@ -49,6 +50,7 @@ dependencies {
   implementation("com.auth0:java-jwt:4.0.0")
   implementation('com.auth0:jwks-rsa:0.21.2')
   implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
+  implementation("io.minio:minio:8.4.6")
 
   runtimeOnly "ch.qos.logback:logback-classic:1.4.5"
 
