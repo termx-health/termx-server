@@ -8,6 +8,7 @@ import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.wiki.Privilege;
 import com.kodality.termx.wiki.page.Page.PageAttachment;
+import com.kodality.termx.wiki.pageattachment.PageAttachmentService;
 import com.kodality.termx.wiki.pagecontent.PageContentService;
 import com.kodality.termx.wiki.pagelink.PageLinkService;
 import io.micronaut.http.HttpResponse;
@@ -35,17 +36,18 @@ import lombok.Setter;
 public class PageController {
   private final PageService pageService;
   private final PageContentService contentService;
+  private final PageAttachmentService attachmentService;
   private final PageLinkService linkService;
   private final ProvenanceService provenanceService;
 
   @Authorized(Privilege.T_VIEW)
-  @Get(uri = "/{id}")
+  @Get("/{id}")
   public Page getPage(@PathVariable Long id) {
     return pageService.load(id).orElseThrow(() -> new NotFoundException("Page not found: " + id));
   }
 
   @Authorized(Privilege.T_VIEW)
-  @Get(uri = "{?params*}")
+  @Get("{?params*}")
   public QueryResult<Page> queryPages(PageQueryParams params) {
     return pageService.query(params);
   }
@@ -59,7 +61,7 @@ public class PageController {
   }
 
   @Authorized(Privilege.T_EDIT)
-  @Put(uri = "/{id}")
+  @Put("/{id}")
   public HttpResponse<?> updatePage(@PathVariable Long id, @Body @Valid PageRequest request) {
     request.getPage().setId(id);
     Page page = pageService.save(request.getPage(), request.getContent());
@@ -68,7 +70,7 @@ public class PageController {
   }
 
   @Authorized(Privilege.T_EDIT)
-  @Delete(uri = "/{id}")
+  @Delete("/{id}")
   public HttpResponse<?> deletePage(@PathVariable Long id) {
     pageService.cancel(id);
     provenanceService.create(new Provenance("deleted", "Page", id.toString()));
@@ -76,7 +78,7 @@ public class PageController {
   }
 
   @Authorized(Privilege.T_EDIT)
-  @Post(uri = "/{id}/contents")
+  @Post("/{id}/contents")
   public HttpResponse<?> savePageContent(@PathVariable Long id, @Body PageContent content) {
     contentService.save(content, id);
     provenanceService.create(new Provenance("modified", "Page", id.toString()));
@@ -84,7 +86,7 @@ public class PageController {
   }
 
   @Authorized(Privilege.T_EDIT)
-  @Put(uri = "/{id}/contents/{contentId}")
+  @Put("/{id}/contents/{contentId}")
   public HttpResponse<?> updatePageContent(@PathVariable Long id, @PathVariable Long contentId, @Body PageContent content) {
     content.setId(contentId);
     contentService.save(content, id);
@@ -93,7 +95,7 @@ public class PageController {
   }
 
   @Authorized(Privilege.T_VIEW)
-  @Get(uri = "/{id}/path")
+  @Get("/{id}/path")
   public List<Long> getPath(@PathVariable Long id) {
     return linkService.getPath(id);
   }
@@ -103,18 +105,24 @@ public class PageController {
   @Post(value = "/{id}/files", consumes = MediaType.MULTIPART_FORM_DATA)
   public Map<String, PageAttachment> uploadFiles(@PathVariable Long id, @Body MultipartBody partz) {
     MultipartBodyReader.MultipartBody body = MultipartBodyReader.readMultipart(partz);
-    return pageService.saveAttachments(id, body.getAttachments());
+    return attachmentService.saveAttachments(id, body.getAttachments());
   }
 
   @Authorized(Privilege.T_VIEW)
-  @Get(uri = "/{id}/files")
+  @Get("/{id}/files")
   public List<PageAttachment> getFiles(@PathVariable Long id) {
-    return pageService.getAttachments(id);
+    return attachmentService.getAttachments(id);
   }
 
-  @Get(uri = "/files/{id}/{fileName}")
-  public StreamedFile getFileContent(@PathVariable Long id, @PathVariable String fileName) {
-    return pageService.getAttachmentContent(id, fileName);
+  @Get("/static/{id}/files/{fileName}")
+  public StreamedFile getFile(@PathVariable Long id, @PathVariable String fileName) {
+    // todo: make it public? should generate temporary files? something else?
+    return attachmentService.getAttachmentContent(id, fileName);
+  }
+
+  @Delete("/{id}/files/{fileName}")
+  public void deleteFile(@PathVariable Long id, @PathVariable String fileName) {
+    attachmentService.deleteAttachmentContent(id, fileName);
   }
 
 

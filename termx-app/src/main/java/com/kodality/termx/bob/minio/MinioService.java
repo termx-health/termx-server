@@ -13,6 +13,7 @@ import io.minio.GetObjectResponse;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.StatObjectArgs;
 import io.minio.StatObjectResponse;
 import io.minio.errors.ErrorResponseException;
@@ -91,6 +92,18 @@ public class MinioService {
       minioClient.putObject(req);
     } catch (Exception e) {
       throw new RuntimeException("Failed to upload file '" + object.getStorage().getFilename() + "': " + e.getMessage());
+    }
+  }
+
+  public void delete(BobObject object) {
+    try {
+      minioClient.removeObject(
+          RemoveObjectArgs.builder()
+              .bucket(object.getStorage().getContainer())
+              .object(object.getStorage().getFullPath())
+              .build());
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to delete file '" + object.getStorage().getFilename() + "': " + e.getMessage());
     }
   }
 

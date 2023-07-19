@@ -40,6 +40,14 @@ public class BobObjectService {
     return objectRepository.getUuid(id);
   }
 
+  @Transactional
+  public void delete(String uuid) {
+    BobObject object = load(uuid);
+    getMinio().delete(object);
+    objectRepository.deleteStorage(object.getId());
+    objectRepository.delete(object.getId());
+  }
+
   private void persistContent(BobObject object, byte[] content) {
     BobStorage storage = object.getStorage();
     prepareTypeAndPath(storage);

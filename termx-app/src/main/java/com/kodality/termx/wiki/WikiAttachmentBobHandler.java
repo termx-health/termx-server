@@ -56,6 +56,11 @@ public class WikiAttachmentBobHandler implements WikiAttachmentStorageHandler {
     return objectService.loadContent(object);
   }
 
+  @Override
+  public void deleteAttachment(String uuid) {
+    objectService.delete(uuid);
+  }
+
   private void checkDuplicate(Attachment a, Map<String, Object> meta) {
     List<PageAttachment> existingFiles = queryAttachments(new WikiAttachmentQueryParams().setMeta(meta));
     Optional<PageAttachment> existingFile = existingFiles.stream().filter(f -> f.getFileName().equals(a.getFileName())).findFirst();

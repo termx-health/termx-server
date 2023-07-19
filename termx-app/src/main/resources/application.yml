@@ -59,7 +59,7 @@ auth:
       - '/fhir-swagger'
       - '/swagger'
       - '/github/cb'
-      - '/pages/files'
+      - '/pages/static'
 
 snowstorm:
   url: https://snowstorm.kodality.dev/

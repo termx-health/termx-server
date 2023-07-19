@@ -16,6 +16,8 @@ public interface WikiAttachmentStorageHandler {
 
   StreamedFile getAttachmentContent(String uuid);
 
+  void deleteAttachment(String uuid);
+
   @Getter
   @Setter
   @Accessors(chain = true)

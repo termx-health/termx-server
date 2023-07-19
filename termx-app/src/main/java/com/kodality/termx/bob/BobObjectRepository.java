@@ -77,5 +77,13 @@ public class BobObjectRepository extends BaseRepository {
     SqlBuilder sb = ssb.buildInsert("bob.object_storage", "id");
     return jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
   }
+
+  public void deleteStorage(Long objectId) {
+    jdbcTemplate.update("update bob.object_storage set sys_status = 'C' where object_id = ? and sys_status = 'A'", objectId);
+  }
+
+  public void delete(Long objectId) {
+    jdbcTemplate.update("update bob.object set sys_status = 'C' where id = ? and sys_status = 'A'", objectId);
+  }
 }
 
