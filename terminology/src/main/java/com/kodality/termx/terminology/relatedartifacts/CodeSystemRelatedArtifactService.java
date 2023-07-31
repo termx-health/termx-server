@@ -38,7 +38,8 @@ public class CodeSystemRelatedArtifactService extends RelatedArtifactService {
   }
 
   private List<RelatedArtifact> findMapSets(String id) {
-    List<MapSet> mapSets = mapSetService.query(new MapSetQueryParams().setAssociationSourceSystem(id).all()).getData();
+    List<MapSet> mapSets = new ArrayList<>();
+    mapSets.addAll(mapSetService.query(new MapSetQueryParams().setAssociationSourceSystem(id).all()).getData());
     mapSets.addAll(mapSetService.query(new MapSetQueryParams().setAssociationTargetSystem(id).all()).getData());
     return mapSets.stream().map(ms -> new RelatedArtifact().setId(ms.getId()).setType("MapSet")).collect(Collectors.toList());
   }
