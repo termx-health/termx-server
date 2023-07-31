@@ -12,4 +12,5 @@ public class PageContentQueryParams extends QueryParams {
   private String slugs;
   private String textContains;
   private String spaceIds;
+  private String relations; //targetType|targetId1,targetType|targetId2
 }

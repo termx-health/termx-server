@@ -5,8 +5,10 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.wiki.page.PageContent;
 import com.kodality.termx.wiki.page.PageContentQueryParams;
+import io.micronaut.core.util.StringUtils;
 import java.util.List;
 import javax.inject.Singleton;
 
@@ -57,6 +59,16 @@ public class PageContentRepository extends BaseRepository {
     sb.appendIfNotNull(params.getSlugs(), (s, p) -> s.and().in("pc.slug", p));
     sb.appendIfNotNull(params.getSpaceIds(), (s, p) -> s.and().in("pc.space_id", p, Long::valueOf));
     sb.appendIfNotNull(params.getTextContains(), (s, p) -> s.and("pc.name ~* ?", p));
+
+    if (StringUtils.isNotEmpty(params.getRelations())) {
+      String[] relations = params.getRelations().split(",");
+      sb.and("( 1<>1");
+      for (String relation: relations) {
+        String[] r = PipeUtil.parsePipe(relation);
+        sb.or("exists (select 1 from wiki.page_relation pr where pr.type = ? and pr.target = ? and pr.sys_status = 'A' and pr.content_id = pc.id)", r[0], r[1]);
+      }
+      sb.append(")");
+    }
     return sb;
   }
 }
