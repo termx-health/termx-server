@@ -64,6 +64,7 @@ public class CodeSystemFileImportMapper {
           EntityProperty property = new EntityProperty();
           property.setName(fpProperty.getPropertyName());
           property.setType(fpProperty.getPropertyType());
+          property.setKind(fpProperty.getPropertyKind());
           property.setStatus(PublicationStatus.active);
           return property;
         }).collect(Collectors.toList());

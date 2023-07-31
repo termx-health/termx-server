@@ -20,6 +20,7 @@ public class CodeSystemFileImportResult {
   public static class FileProcessingResponseProperty {
     private String propertyType;
     private String propertyName;
+    private String propertyKind;
   }
 
   @Getter

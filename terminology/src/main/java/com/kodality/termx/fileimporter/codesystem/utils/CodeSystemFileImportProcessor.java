@@ -4,6 +4,8 @@ import com.kodality.termx.ApiError;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingProperty;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingEntityPropertyValue;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingResponseProperty;
+import com.kodality.termx.ts.codesystem.EntityPropertyKind;
+import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -30,11 +32,15 @@ import static com.kodality.termx.ts.codesystem.EntityPropertyType.integer;
 
 public class CodeSystemFileImportProcessor {
   public static final String IDENTIFIER_PROPERTY = "concept-code";
+  public static final String DESIGNATION_PROPERTY_TYPE = "designation";
 
 
   public static CodeSystemFileImportResult process(String type, byte[] file, List<FileProcessingProperty> importProperties) {
     if (importProperties.stream().filter(p -> IDENTIFIER_PROPERTY.equals(p.getName()) && p.isPreferred()).count() > 1) {
       throw ApiError.TE707.toApiException();
+    }
+    if (importProperties.stream().noneMatch(p -> DESIGNATION_PROPERTY_TYPE.equals(p.getPropertyType()))) {
+      throw ApiError.TE721.toApiException();
     }
     importProperties.stream().filter(p -> p.getPropertyType() == null).findFirst().ifPresent(p -> {
       throw ApiError.TE706.toApiException(Map.of("propertyName", p.getName()));
@@ -82,7 +88,8 @@ public class CodeSystemFileImportProcessor {
         .map(p -> {
           return new FileProcessingResponseProperty()
               .setPropertyName(p.getPropertyName() != null ? p.getPropertyName() : p.getColumnName())
-              .setPropertyType(p.getPropertyType());
+              .setPropertyType(DESIGNATION_PROPERTY_TYPE.equals(p.getPropertyType()) ? EntityPropertyType.string : p.getPropertyType())
+              .setPropertyKind(DESIGNATION_PROPERTY_TYPE.equals(p.getPropertyType()) ? EntityPropertyKind.designation : EntityPropertyKind.property);
         })
         .filter(distinctByKey(FileProcessingResponseProperty::getPropertyName))
         .collect(Collectors.toList());
@@ -98,7 +105,7 @@ public class CodeSystemFileImportProcessor {
     FileProcessingEntityPropertyValue ep = new FileProcessingEntityPropertyValue();
     ep.setColumnName(prop.getColumnName());
     ep.setPropertyName(prop.getName());
-    ep.setPropertyType(prop.getPropertyType());
+    ep.setPropertyType(DESIGNATION_PROPERTY_TYPE.equals(prop.getPropertyType()) ? EntityPropertyType.string : prop.getPropertyType());
     ep.setPropertyTypeFormat(prop.getPropertyTypeFormat());
     ep.setLang(prop.getLang());
     ep.setValue(transformedValue);

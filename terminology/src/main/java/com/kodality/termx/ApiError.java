@@ -64,6 +64,7 @@ public enum ApiError {
   TE718("TE718", "Target concept with code \"{{code}}\" is missing in CS version \"{{version}}\""),
   TE719("TE719", "Constraint validation: {{error}}"),
   TE720("TE720", "Unsupported import file format: {{format}}"),
+  TE721("TE721", "At least one property with type \"designation\" should be present"),
   TE801("TE801", "Association type is required, can't be deleted."),
   TE802("TE802", "Association type is used in code system '{{codeSystem}}' association, can't be deleted."),
   TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted.");
