@@ -15,6 +15,7 @@ import io.micronaut.validation.Validated;
 import java.io.IOException;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.r5.formats.IParser.OutputStyle;
 import org.hl7.fhir.r5.formats.JsonParser;
 
@@ -73,7 +74,9 @@ public class TransformationDefinitionController {
   @Post("/parse-fml")
   public ParseResponse parse(@Body ParseRequest req) {
     try {
-      return new ParseResponse(new JsonParser().setOutputStyle(OutputStyle.PRETTY).composeString(transformerService.parseFml(req.fml)));
+      return new ParseResponse(new JsonParser().setOutputStyle(OutputStyle.PRETTY).composeString(transformerService.parseFml(req.fml)), null);
+    } catch (FHIRException e) {
+      return new ParseResponse(null, e.getMessage());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -92,5 +95,5 @@ public class TransformationDefinitionController {
 
   public record ParseRequest(String fml) {}
 
-  public record ParseResponse(String json) {}
+  public record ParseResponse(String json, String error) {}
 }
