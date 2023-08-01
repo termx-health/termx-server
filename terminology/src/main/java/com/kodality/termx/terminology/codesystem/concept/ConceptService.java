@@ -9,6 +9,7 @@ import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionS
 import com.kodality.termx.terminology.valueset.ValueSetVersionRepository;
 import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termx.ts.CodeSystemExternalProvider;
+import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemEntity;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityType;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
@@ -16,6 +17,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.ConceptTransactionRequest;
+import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
@@ -23,12 +25,14 @@ import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -196,5 +200,37 @@ public class ConceptService {
 
     codeSystemEntityService.cancel(conceptId);
     repository.cancel(conceptId);
+  }
+
+  @Transactional
+  public void propagateProperties(String code, List<Long> targetConceptIds, String codeSystem) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+
+    List<EntityPropertyValue> propertyValues = load(codeSystem, code).orElseThrow()
+        .getLastVersion().orElseThrow()
+        .getPropertyValues().stream().peek(pv -> pv.setId(null)).toList();
+
+    ConceptQueryParams params = new ConceptQueryParams();
+    params.setId(String.join(",", targetConceptIds.stream().map(String::valueOf).toList()));
+    params.setLimit(targetConceptIds.size());
+
+    Map<Long, List<CodeSystemEntityVersion>> targetVersions = query(params).getData().stream()
+        .map(c -> {
+          CodeSystemEntityVersion version = new CodeSystemEntityVersion().setCodeSystem(codeSystem).setStatus(PublicationStatus.draft);
+          if (c.getLastDraftVersion().isPresent()) {
+            version = c.getLastDraftVersion().get();
+          } else if (c.getLastVersion().isPresent()) {
+            version = c.getLastVersion().get();
+            version.setId(null);
+            version.setStatus(PublicationStatus.draft);
+            version.setCreated(null);
+            version.setDesignations(version.getDesignations().stream().peek(d -> d.setId(null)).toList());
+            version.setAssociations(version.getAssociations().stream().peek(a -> a.setId(null)).toList());
+          }
+          version.setPropertyValues(propertyValues);
+          return Pair.of(c.getId(), version);
+        }).collect(Collectors.toMap(Pair::getKey, p -> List.of(p.getValue())));
+
+    codeSystemEntityVersionService.batchSave(targetVersions, codeSystem);
   }
 }

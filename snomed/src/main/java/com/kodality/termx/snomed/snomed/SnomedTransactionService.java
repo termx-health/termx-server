@@ -63,7 +63,7 @@ public class SnomedTransactionService {
   }
 
   private String getPropertyValue(Concept concept, String property) {
-    Optional<CodeSystemEntityVersion> version = concept.getLastActiveVersion();
+    Optional<CodeSystemEntityVersion> version = concept.getLastVersion();
     return version.flatMap(v -> v.getPropertyValue(property)).map(String::valueOf).orElse(null);
   }
 

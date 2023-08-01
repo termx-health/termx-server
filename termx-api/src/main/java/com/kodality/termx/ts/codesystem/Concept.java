@@ -22,9 +22,18 @@ public class Concept extends CodeSystemEntity {
   private boolean immutable;
 
   @JsonIgnore
-  public Optional<CodeSystemEntityVersion> getLastActiveVersion() {
+  public Optional<CodeSystemEntityVersion> getLastVersion() {
     return this.getVersions().stream()
         .filter(v -> !PublicationStatus.retired.equals(v.getStatus()))
         .max(Comparator.comparing(CodeSystemEntityVersion::getCreated));
   }
+
+  @JsonIgnore
+  public Optional<CodeSystemEntityVersion> getLastDraftVersion() {
+    return this.getVersions().stream()
+        .filter(v -> PublicationStatus.draft.equals(v.getStatus()))
+        .max(Comparator.comparing(CodeSystemEntityVersion::getCreated));
+  }
+
+
 }

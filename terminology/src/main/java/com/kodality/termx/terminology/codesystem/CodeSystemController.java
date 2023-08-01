@@ -202,6 +202,15 @@ public class CodeSystemController {
     return conceptService.load(codeSystem, code).orElseThrow(() -> new NotFoundException("Concept not found: " + code));
   }
 
+  @Authorized(Privilege.CS_VIEW)
+  @Post(uri = "/{codeSystem}/concepts/{code}/propagate-properties")
+  public HttpResponse<?> propagateProperties(@PathVariable @ResourceId String codeSystem, @PathVariable String code, @Body @Valid CodeSystemConceptPropertyPropagationRequest request) {
+    conceptService.propagateProperties(code, request.getTargetConceptIds(), codeSystem);
+    request.getTargetConceptIds().forEach(id -> provenanceService.create(new Provenance("created", "CodeSystemEntity", id.toString())
+        .addContext("part-of", "CodeSystem", codeSystem)));
+    return HttpResponse.ok();
+  }
+
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/concepts/transaction")
   public HttpResponse<?> saveConceptTransaction(@PathVariable @ResourceId String codeSystem, @Body @Valid ConceptTransactionRequest request) {
@@ -376,5 +385,12 @@ public class CodeSystemController {
   @Introspected
   public static class CodeSystemEntityVersionLinkRequest {
     private List<Long> entityVersionIds;
+  }
+
+  @Getter
+  @Setter
+  @Introspected
+  public static class CodeSystemConceptPropertyPropagationRequest {
+    private List<Long> targetConceptIds;
   }
 }

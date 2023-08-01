@@ -136,7 +136,7 @@ public class DesignationRepository extends BaseRepository {
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
         DesignationRepository.this.setValues(ps, i, designationsToUpdate);
-        ps.setLong(12, designationsToUpdate.get(i).getValue().getId());
+        ps.setLong(11, designationsToUpdate.get(i).getValue().getId());
       }
       @Override public int getBatchSize() {return designationsToUpdate.size();}
     });
