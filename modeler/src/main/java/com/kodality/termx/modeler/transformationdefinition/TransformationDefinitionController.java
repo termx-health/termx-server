@@ -12,8 +12,11 @@ import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import io.micronaut.validation.Validated;
+import java.io.IOException;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.hl7.fhir.r5.formats.IParser.OutputStyle;
+import org.hl7.fhir.r5.formats.JsonParser;
 
 @Validated
 @RequiredArgsConstructor
@@ -67,6 +70,15 @@ public class TransformationDefinitionController {
     return transformerService.transform(req.source, req.definition);
   }
 
+  @Post("/parse-fml")
+  public ParseResponse parse(@Body ParseRequest req) {
+    try {
+      return new ParseResponse(new JsonParser().setOutputStyle(OutputStyle.PRETTY).composeString(transformerService.parseFml(req.fml)));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   @Post("/generate-fml")
   public FmlGenerationResult generateFml(@Body TransformationDefinition definition) {
     return new FmlGenerationResult(transformerService.generateFml(definition));
@@ -77,4 +89,8 @@ public class TransformationDefinitionController {
   public record InstanceTransformationRequest(String source) {}
 
   public record FmlGenerationResult(String fml) {}
+
+  public record ParseRequest(String fml) {}
+
+  public record ParseResponse(String json) {}
 }

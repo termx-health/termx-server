@@ -91,12 +91,7 @@ public class TransformerService {
   private StructureMap getStructureMap(TransformationDefinitionResource res) throws FHIRFormatError {
     String content = getContent(res);
     if (content.startsWith("///")) { //XXX not sure if this is what defines Fhir Mapping Language
-      StructureMap map = new StructureMapUtilities(engine.getContext()).parse(content, "map");
-      map.getText().setStatus(NarrativeStatus.GENERATED);
-      map.getText().setDiv(new XhtmlNode(NodeType.Element, "div"));
-      String render = StructureMapUtilities.render(map);
-      map.getText().getDiv().addTag("pre").addText(render);
-      return map;
+      return parseFml(content);
     }
     return parse(content);
   }
@@ -127,6 +122,15 @@ public class TransformerService {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public StructureMap parseFml(String content) {
+    StructureMap map = new StructureMapUtilities(engine.getContext()).parse(content, "map");
+    map.getText().setStatus(NarrativeStatus.GENERATED);
+    map.getText().setDiv(new XhtmlNode(NodeType.Element, "div"));
+    String render = StructureMapUtilities.render(map);
+    map.getText().getDiv().addTag("pre").addText(render);
+    return map;
   }
 
   public String transform(ValidationEngine eng, String input, String mapUri) throws FHIRException, IOException {
