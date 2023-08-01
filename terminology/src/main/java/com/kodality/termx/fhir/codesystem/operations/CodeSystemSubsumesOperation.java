@@ -17,6 +17,7 @@ import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import jakarta.inject.Singleton;
 import java.util.List;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -76,10 +77,10 @@ public class CodeSystemSubsumesOperation implements InstanceOperationDefinition,
 
   private Parameters subsumes(Concept conceptA, Concept conceptB) {
     List<Long> codeAProperties = conceptA.getVersions().stream()
-        .flatMap(entityVersion -> entityVersion.getPropertyValues().stream())
+        .flatMap(entityVersion -> entityVersion.getPropertyValues() == null ? Stream.empty() : entityVersion.getPropertyValues().stream())
         .map(EntityPropertyValue::getEntityPropertyId).toList();
     List<Long> codeBProperties = conceptB.getVersions().stream()
-        .flatMap(entityVersion -> entityVersion.getPropertyValues().stream())
+        .flatMap(entityVersion -> entityVersion.getPropertyValues() == null ? Stream.empty() : entityVersion.getPropertyValues().stream())
         .map(EntityPropertyValue::getEntityPropertyId).toList();
 
     boolean subsumes = codeAProperties.stream().allMatch(ap -> codeBProperties.stream().anyMatch(bp -> bp.equals(ap)));

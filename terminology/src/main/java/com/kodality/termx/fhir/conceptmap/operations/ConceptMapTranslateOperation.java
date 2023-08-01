@@ -53,14 +53,12 @@ public class ConceptMapTranslateOperation implements InstanceOperationDefinition
   }
 
   private Parameters run(String cmId, String cmUrl, String cmVersion, Parameters req) {
-    String code = req.findParameter("code").map(ParametersParameter::getValueString).orElse(null);
-    String system = req.findParameter("system").map(ParametersParameter::getValueString).orElse(null);
+    String code = req.findParameter("code").or(() -> req.findParameter("sourceCode")).map(ParametersParameter::getValueString)
+        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "sourceCode (code) parameter required"));
+    String system = req.findParameter("system").map(ParametersParameter::getValueString)
+        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "system parameter required"));
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
     String targetSystem = req.findParameter("targetSystem").map(ParametersParameter::getValueString).orElse(null);
-
-    if (code == null || system == null) {
-      return new Parameters();
-    }
 
     MapSetQueryParams msParams = new MapSetQueryParams()
         .setId(cmId)
@@ -69,7 +67,7 @@ public class ConceptMapTranslateOperation implements InstanceOperationDefinition
         .setAssociationSourceCode(code)
         .setAssociationSourceSystemUri(system)
         .setAssociationSourceSystemVersion(version)
-        .setAssociationTargetSystem(targetSystem)
+        .setAssociationTargetSystemUri(targetSystem)
         .setAssociationsDecorated(true);
     msParams.setLimit(1);
     MapSet mapSet = mapSetService.query(msParams).findFirst().orElse(null);
