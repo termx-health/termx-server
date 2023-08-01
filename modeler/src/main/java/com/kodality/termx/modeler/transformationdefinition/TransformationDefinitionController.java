@@ -75,10 +75,8 @@ public class TransformationDefinitionController {
   public ParseResponse parse(@Body ParseRequest req) {
     try {
       return new ParseResponse(new JsonParser().setOutputStyle(OutputStyle.PRETTY).composeString(transformerService.parseFml(req.fml)), null);
-    } catch (FHIRException e) {
+    } catch (FHIRException | IOException e) {
       return new ParseResponse(null, e.getMessage());
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     }
   }
 

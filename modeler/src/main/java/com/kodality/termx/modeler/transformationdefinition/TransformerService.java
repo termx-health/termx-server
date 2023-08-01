@@ -18,7 +18,6 @@ import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.hl7.fhir.exceptions.FHIRException;
-import org.hl7.fhir.exceptions.FHIRFormatError;
 import org.hl7.fhir.r5.context.ContextUtilities;
 import org.hl7.fhir.r5.elementmodel.Element;
 import org.hl7.fhir.r5.elementmodel.Manager.FhirFormat;
@@ -64,31 +63,45 @@ public class TransformerService {
 
   public TransformationResult transform(String source, TransformationDefinition def) {
     try {
-      StructureMap sm = getStructureMap(def.getMapping());
       ValidationEngine eng = new ValidationEngine(engine);
-      eng.getContext().cacheResource(sm);
-      def.getResources().forEach(res -> eng.getContext().cacheResource(parse(getContent(res))));
 
-      // this should not be needed. ValidationEngine#getSourceResourceFromStructureMap searches for definition by alias, however alias is nullable. workaround.
-      sm.getStructure().stream().filter(s -> s.getAlias() == null)
-          .forEach(s -> s.setAlias(eng.getContext().listStructures().stream()
-              .filter(sd -> sd.getUrl().equals(s.getUrl())).findFirst().orElseThrow().getName()));
+      for (TransformationDefinitionResource res : def.getResources()) {
+        try {
+          eng.getContext().cacheResource(parse(getContent(res)));
+        } catch (FHIRException e) {
+          return new TransformationResult().setError("Invalid resource " + res.getName() + ": " + e.getMessage());
+        }
+      }
 
-      //fix snapshots?
-      ContextUtilities cu = new ContextUtilities(eng.getContext());
-      cu.allStructures().stream().filter(sd -> !sd.hasSnapshot())
-          .forEach(sd -> cu.generateSnapshot(sd, sd.getKind() != null && sd.getKind() == StructureDefinitionKind.LOGICAL));
+      StructureMap sm;
+      try {
+        sm = getStructureMap(def.getMapping());
+        prepareStructureMap(eng, sm);
+        eng.getContext().cacheResource(sm);
+      } catch (FHIRException e) {
+        return new TransformationResult().setError("Invalid structure map: " + e.getMessage());
+      }
 
       String result = transform(eng, source, sm.getUrl());
       return new TransformationResult().setResult(result);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    } catch (FHIRException fe) {
-      return new TransformationResult().setError(fe.getMessage());
+    } catch (IOException | FHIRException e) {
+      return new TransformationResult().setError("Transformation error: " + e.getMessage());
     }
   }
 
-  private StructureMap getStructureMap(TransformationDefinitionResource res) throws FHIRFormatError {
+  private void prepareStructureMap(ValidationEngine eng, StructureMap sm) {
+    // this should not be needed. ValidationEngine#getSourceResourceFromStructureMap searches for definition by alias, however alias is nullable. workaround.
+    sm.getStructure().stream().filter(s -> s.getAlias() == null)
+        .forEach(s -> s.setAlias(eng.getContext().listStructures().stream()
+            .filter(sd -> sd.getUrl().equals(s.getUrl())).findFirst().orElseThrow().getName()));
+
+    //fix snapshots?
+    ContextUtilities cu = new ContextUtilities(eng.getContext());
+    cu.allStructures().stream().filter(sd -> !sd.hasSnapshot())
+        .forEach(sd -> cu.generateSnapshot(sd, sd.getKind() != null && sd.getKind() == StructureDefinitionKind.LOGICAL));
+  }
+
+  private StructureMap getStructureMap(TransformationDefinitionResource res) {
     String content = getContent(res);
     if (content.startsWith("///")) { //XXX not sure if this is what defines Fhir Mapping Language
       return parseFml(content);
@@ -113,14 +126,14 @@ public class TransformerService {
     return httpClient.GET(fhirServerUrl + "/" + resource).thenApply(HttpResponse::body).join();
   }
 
-  private <R extends Resource> R parse(String input) throws FHIRFormatError {
+  private <R extends Resource> R parse(String input) {
     try {
       if (input.startsWith("<")) {
         return (R) new XmlParser().parse(input);
       }
       return (R) new JsonParser().parse(input);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    } catch (Exception e) {
+      throw new FHIRException(e.getMessage(), e);
     }
   }
 
@@ -133,7 +146,7 @@ public class TransformerService {
     return map;
   }
 
-  public String transform(ValidationEngine eng, String input, String mapUri) throws FHIRException, IOException {
+  private String transform(ValidationEngine eng, String input, String mapUri) throws IOException {
     FhirFormat format = input.startsWith("<") ? FhirFormat.XML : FhirFormat.JSON;
     Element transformed = eng.transform(input.getBytes(StandardCharsets.UTF_8), format, mapUri);
     ByteArrayOutputStream boas = new ByteArrayOutputStream();
