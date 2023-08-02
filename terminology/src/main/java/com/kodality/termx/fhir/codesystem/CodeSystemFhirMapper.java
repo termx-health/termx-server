@@ -15,6 +15,7 @@ import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.Narrative;
@@ -22,16 +23,24 @@ import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptDesignation;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemProperty;
+import io.micronaut.context.annotation.Value;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 
 public class CodeSystemFhirMapper extends BaseFhirMapper {
+  private static Optional<String> termxWebUrl;
+  private static final String concept_order = "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder";
+
+  public CodeSystemFhirMapper(@Value("${termx.web-url}") Optional<String> termxWebUrl) {
+    CodeSystemFhirMapper.termxWebUrl = termxWebUrl;
+  }
 
   public static String toFhirId(CodeSystem cs, CodeSystemVersion csv) {
     return cs.getId() + "@" + csv.getVersion();
@@ -43,6 +52,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   public static com.kodality.zmei.fhir.resource.terminology.CodeSystem toFhir(CodeSystem codeSystem, CodeSystemVersion version) {
     com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem = new com.kodality.zmei.fhir.resource.terminology.CodeSystem();
+    termxWebUrl.ifPresent(url -> fhirCodeSystem.addExtension(new Extension("http://hl7.org/fhir/tools/StructureDefinition/web-source")
+        .setValueUrl(url + "/fhir/CodeSystem/" + codeSystem.getId())));
     fhirCodeSystem.setId(toFhirId(codeSystem, version));
     fhirCodeSystem.setUrl(codeSystem.getUri());
     fhirCodeSystem.setPublisher(codeSystem.getPublisher());

@@ -23,16 +23,25 @@ import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclu
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeFilter;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains;
+import io.micronaut.context.annotation.Context;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Context
 public class ValueSetFhirMapper extends BaseFhirMapper {
+  private static Optional<String> termxWebUrl;
   private static final String concept_order = "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder";
+
+  public ValueSetFhirMapper(@Value("${termx.web-url}") Optional<String> termxWebUrl) {
+    ValueSetFhirMapper.termxWebUrl = termxWebUrl;
+  }
 
   public static String toFhirId(ValueSet vs, ValueSetVersion vsv) {
     return vs.getId() + "@" + vsv.getVersion();
@@ -44,6 +53,8 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
 
   public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
+    termxWebUrl.ifPresent(url -> fhirValueSet.addExtension(new Extension("http://hl7.org/fhir/tools/StructureDefinition/web-source")
+        .setValueUrl(url + "/fhir/ValueSet/" + valueSet.getId())));
     fhirValueSet.setId(toFhirId(valueSet, version));
     fhirValueSet.setUrl(valueSet.getUri());
     fhirValueSet.setName(toFhirName(valueSet.getName()));
