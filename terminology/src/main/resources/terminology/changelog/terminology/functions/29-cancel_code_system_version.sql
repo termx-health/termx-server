@@ -19,6 +19,29 @@ update terminology.entity_version_code_system_version_membership
 set sys_status = 'D'
 where code_system_version_id = p_code_system_version_id;
 
+update terminology.entity_property_value pv
+set sys_status = 'D'
+where pv.code_system_entity_version_id in (select evcsm.code_system_entity_version_id from terminology.entity_version_code_system_version_membership evcsm where evcsm.code_system_version_id = p_code_system_version_id) and
+not exists(select 1 from terminology.entity_version_code_system_version_membership evcsm where evcsm.code_system_entity_version_id = pv.code_system_entity_version_id and evcsm.sys_status = 'A');
+
+update terminology.designation d
+set sys_status = 'D'
+where d.code_system_entity_version_id in (select evcsm.code_system_entity_version_id from terminology.entity_version_code_system_version_membership evcsm where evcsm.code_system_version_id = p_code_system_version_id) and
+not exists(select 1 from terminology.entity_version_code_system_version_membership evcsm where evcsm.code_system_entity_version_id = d.code_system_entity_version_id and evcsm.sys_status = 'A');
+
+update terminology.code_system_entity_version csev
+set sys_status = 'D'
+where csev.id in (select evcsm.code_system_entity_version_id from terminology.entity_version_code_system_version_membership evcsm where evcsm.code_system_version_id = p_code_system_version_id) and
+not exists(select 1 from terminology.entity_version_code_system_version_membership evcsm where evcsm.code_system_entity_version_id = csev.id and evcsm.sys_status = 'A');
+
+update terminology.code_system_entity cse
+set sys_status = 'D'
+where not exists(select 1 from terminology.code_system_entity_version csev where csev.code_system_entity_id = cse.id and csev.sys_status = 'A');
+
+update terminology.concept c
+set sys_status = 'D'
+where not exists(select 1 from terminology.code_system_entity cse where cse.id = c.id and cse.sys_status = 'A');
+
 update terminology.code_system_version
 set sys_status = 'D'
 where id = p_code_system_version_id;
