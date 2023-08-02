@@ -155,6 +155,9 @@ public class ConceptRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCodeSystemEntityVersionId())) {
       sb.and().in("csev.id", params.getCodeSystemEntityVersionId(), Long::valueOf);
     }
+    if (StringUtils.isNotEmpty(params.getProperties())) {
+      sb.and().in("epv.entity_property_id", params.getProperties(), Long::valueOf);
+    }
     if (StringUtils.isNotEmpty(params.getPropertyValues()) || StringUtils.isNotEmpty(params.getPropertyValuesPartial())) {
       sb.append(checkPropertyValue(params.getPropertyValues(), params.getPropertyValuesPartial()));
     }
@@ -320,12 +323,12 @@ public class ConceptRepository extends BaseRepository {
             params.getCodeSystemVersion(), params.getCodeSystemVersionId(),
             params.getCodeSystemVersionReleaseDateLe(), params.getCodeSystemVersionReleaseDateGe(),
             params.getCodeSystemVersionExpirationDateLe(), params.getCodeSystemVersionExpirationDateLe(),
-            params.getPropertyValues(), params.getPropertyValuesPartial())
+            params.getProperties(), params.getPropertyValues(), params.getPropertyValuesPartial())
         .filter(Objects::nonNull).toList())) {
       join += "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A'";
     }
 
-    if (CollectionUtils.isNotEmpty(Stream.of(params.getPropertyRoot(), params.getPropertySource()).filter(Objects::nonNull).toList())) {
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getProperties(), params.getPropertyRoot(), params.getPropertySource()).filter(Objects::nonNull).toList())) {
       join += "left join terminology.entity_property_value epv on epv.code_system_entity_version_id = csev.id and epv.sys_status = 'A' ";
     }
 
