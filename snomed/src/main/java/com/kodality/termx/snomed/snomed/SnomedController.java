@@ -29,6 +29,7 @@ import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.LorqueProcessService;
 import io.micronaut.context.annotation.Parameter;
+import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
@@ -48,6 +49,7 @@ import io.reactivex.Flowable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
@@ -177,9 +179,8 @@ public class SnomedController {
   public SnomedSearchResult<SnomedConcept> findConcepts(SnomedConceptSearchParams params) {
     SnomedSearchResult<SnomedConcept> concepts = snowstormClient.queryConcepts(params).join();
 
-    AsyncHelper futures = new AsyncHelper();
-    concepts.getItems().forEach(concept -> futures.add(snowstormClient.loadConcept(concept.getConceptId()).thenApply(c -> concept.setDescriptions(c.getDescriptions()))));
-    futures.joinAll();
+    Map<String, List<SnomedDescription>> descriptions = getDescriptions(concepts.getItems().stream().map(SnomedConcept::getConceptId).toList());
+    concepts.getItems().forEach(c -> c.setDescriptions(descriptions.get(c.getConceptId())));
 
     return concepts;
   }
@@ -291,5 +292,15 @@ public class SnomedController {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private Map<String, List<SnomedDescription>> getDescriptions(List<String> conceptIds) {
+    if (CollectionUtils.isEmpty(conceptIds)) {
+      return Map.of();
+    }
+    SnomedDescriptionSearchParams descriptionParams = new SnomedDescriptionSearchParams();
+    descriptionParams.setConceptIds(conceptIds);
+    descriptionParams.setAll(true);
+    return snomedService.searchDescriptions(descriptionParams).stream().collect(Collectors.groupingBy(SnomedDescription::getConceptId));
   }
 }
