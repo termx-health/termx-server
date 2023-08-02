@@ -103,7 +103,7 @@ public class CodeSystemFileImportProcessor {
   private static List<FileProcessingEntityPropertyValue> mapPropValue(FileProcessingProperty prop, String rawValue) {
     List<String> rowValues = List.of(rawValue);
     if (StringUtils.isNotEmpty(prop.getPropertyDelimiter())) {
-      rowValues = Arrays.stream(rawValue.split(prop.getPropertyDelimiter())).toList();
+      rowValues = Arrays.stream(rawValue.split(prop.getPropertyDelimiter())).map(String::trim).toList();
     }
 
     return rowValues.stream().map(val -> {
