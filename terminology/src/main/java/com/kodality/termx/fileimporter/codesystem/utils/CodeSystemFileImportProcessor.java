@@ -7,6 +7,7 @@ import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportResu
 import com.kodality.termx.ts.codesystem.EntityPropertyKind;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.univocity.parsers.common.processor.RowListProcessor;
+import io.micronaut.core.util.StringUtils;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -64,18 +65,18 @@ public class CodeSystemFileImportProcessor {
           continue;
         }
 
-        FileProcessingEntityPropertyValue ep = mapPropValue(prop, r[idx]);
-        var propertyValues = entity.getOrDefault(ep.getPropertyName(), new ArrayList<>());
-        propertyValues.add(ep);
-        entity.put(ep.getPropertyName(), propertyValues);
+        List<FileProcessingEntityPropertyValue> values = mapPropValue(prop, r[idx]);
+        var propertyValues = entity.getOrDefault(prop.getPropertyName(), new ArrayList<>());
+        propertyValues.addAll(values);
+        entity.put(prop.getPropertyName(), propertyValues);
       }
 
 
       for (FileProcessingProperty prop : identifierProperties) {
         int idx = headers.indexOf(prop.getColumnName());
         if (r[idx] != null) {
-          FileProcessingEntityPropertyValue ep = mapPropValue(prop, r[idx]);
-          entity.put(ep.getPropertyName(), List.of(ep));
+          List<FileProcessingEntityPropertyValue> ep = mapPropValue(prop, r[idx]);
+          entity.put(prop.getPropertyName(), ep);
           break;
         }
       }
@@ -99,17 +100,24 @@ public class CodeSystemFileImportProcessor {
   }
 
 
-  private static FileProcessingEntityPropertyValue mapPropValue(FileProcessingProperty prop, String rawValue) {
-    Object transformedValue = transformPropertyValue(rawValue, prop.getPropertyType(), prop.getPropertyTypeFormat());
+  private static List<FileProcessingEntityPropertyValue> mapPropValue(FileProcessingProperty prop, String rawValue) {
+    List<String> rowValues = List.of(rawValue);
+    if (StringUtils.isNotEmpty(prop.getPropertyDelimiter())) {
+      rowValues = Arrays.stream(rawValue.split(prop.getPropertyDelimiter())).toList();
+    }
 
-    FileProcessingEntityPropertyValue ep = new FileProcessingEntityPropertyValue();
-    ep.setColumnName(prop.getColumnName());
-    ep.setPropertyName(prop.getName());
-    ep.setPropertyType(DESIGNATION_PROPERTY_TYPE.equals(prop.getPropertyType()) ? EntityPropertyType.string : prop.getPropertyType());
-    ep.setPropertyTypeFormat(prop.getPropertyTypeFormat());
-    ep.setLang(prop.getLang());
-    ep.setValue(transformedValue);
-    return ep;
+    return rowValues.stream().map(val -> {
+      Object transformedValue = transformPropertyValue(val, prop.getPropertyType(), prop.getPropertyTypeFormat());
+
+      FileProcessingEntityPropertyValue ep = new FileProcessingEntityPropertyValue();
+      ep.setColumnName(prop.getColumnName());
+      ep.setPropertyName(prop.getName());
+      ep.setPropertyType(DESIGNATION_PROPERTY_TYPE.equals(prop.getPropertyType()) ? EntityPropertyType.string : prop.getPropertyType());
+      ep.setPropertyTypeFormat(prop.getPropertyTypeFormat());
+      ep.setLang(prop.getLang());
+      ep.setValue(transformedValue);
+      return ep;
+    }).collect(Collectors.toList());
   }
 
 
