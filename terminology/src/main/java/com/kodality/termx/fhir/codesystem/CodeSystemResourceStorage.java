@@ -87,7 +87,7 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
   }
 
   private List<CodeSystemEntityVersion> loadEntities(CodeSystemVersion version, String code) {
-    if (version == null || version.getConceptsTotal() > 1000) {
+    if (version == null || version.getConceptsTotal() > 10000) {
       return List.of();
     }
     CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
