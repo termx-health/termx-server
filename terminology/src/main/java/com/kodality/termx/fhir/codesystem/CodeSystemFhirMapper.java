@@ -23,6 +23,7 @@ import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptDesignation;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemProperty;
+import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Value;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -34,6 +35,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 
+@Context
 public class CodeSystemFhirMapper extends BaseFhirMapper {
   private static Optional<String> termxWebUrl;
   private static final String concept_order = "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder";
