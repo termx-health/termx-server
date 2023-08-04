@@ -5,12 +5,15 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.task.Task.TaskActivity;
+import com.kodality.termx.utils.PatchUtil;
+import com.kodality.termx.utils.PatchUtil.PatchRequest;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Patch;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import io.micronaut.validation.Validated;
@@ -51,6 +54,13 @@ public class TaskController {
   public Task updateTask(@Parameter String number, @Body Task task) {
     task.setNumber(number);
     return taskProvider.saveTask(task);
+  }
+
+  @Authorized(Privilege.T_EDIT)
+  @Patch("/tasks/{number}")
+  public Task patchTask(@Parameter String number, @Body PatchRequest request) {
+    Task currentTask = taskProvider.loadTask(number);
+    return taskProvider.saveTask(PatchUtil.mergeFields(request, currentTask));
   }
 
   @Authorized(Privilege.T_EDIT)
