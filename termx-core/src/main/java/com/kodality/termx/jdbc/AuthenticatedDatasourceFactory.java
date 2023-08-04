@@ -11,6 +11,9 @@ import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.EachBean;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Replaces;
+import java.util.ArrayList;
+import java.util.List;
+import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Factory
 @Replaces(factory = DatasourceFactory.class)
 public class AuthenticatedDatasourceFactory {
+  private final List<HikariUrlDataSource> dataSources = new ArrayList<>(2);
 
   public AuthenticatedDatasourceFactory(BeanContext bc) {
     // bc required to run migrations
@@ -28,9 +32,25 @@ public class AuthenticatedDatasourceFactory {
   @EachBean(DatasourceConfiguration.class)
   public DataSource dataSource(DatasourceConfiguration datasourceConfiguration) {
     if (datasourceConfiguration.getName().equals("liquibase")) {
-      return new HikariUrlDataSource(datasourceConfiguration);
+      HikariUrlDataSource ds = new HikariUrlDataSource(datasourceConfiguration);
+      dataSources.add(ds);
+      return ds;
     }
-    return new AuthenticatedDataSource(datasourceConfiguration, () -> SessionStore.get().map(SessionInfo::getUsername).orElse("unknown"));
+    AuthenticatedDataSource ds = new AuthenticatedDataSource(datasourceConfiguration, () -> SessionStore.get().map(SessionInfo::getUsername).orElse("unknown"));
+    dataSources.add(ds);
+    return ds;
   }
 
+  @PreDestroy
+  public void close() {
+    for (HikariUrlDataSource dataSource : dataSources) {
+      try {
+        dataSource.close();
+      } catch (Exception e) {
+        if (log.isWarnEnabled()) {
+          log.warn("Error closing data source [" + dataSource + "]: " + e.getMessage(), e);
+        }
+      }
+    }
+  }
 }
