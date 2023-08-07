@@ -12,5 +12,6 @@ import lombok.experimental.Accessors;
 public class AssociationTypeQueryParams extends QueryParams {
   private String code;
   private String codeContains;
+  private String associationKinds;
   private List<String> permittedCodes;
 }

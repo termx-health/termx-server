@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.association.AssociationTypeQueryParams;
+import io.micronaut.core.util.StringUtils;
 import javax.inject.Singleton;
 
 @Singleton
@@ -49,6 +50,9 @@ public class AssociationTypeRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and code = ?", params.getCode());
     sb.appendIfNotNull("and code ~* ?", params.getCodeContains());
+    if (StringUtils.isNotEmpty(params.getAssociationKinds())) {
+      return sb.and().in("association_kind", params.getAssociationKinds());
+    }
     return sb;
   }
 
