@@ -57,7 +57,7 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
     }
     CodeSystemVersion version = versionNumber == null ? codeSystemVersionService.loadLastVersion(codeSystemId) :
         codeSystemVersionService.load(codeSystemId, versionNumber).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "resource not found"));
-    version.setEntities(loadEntities(version, null));
+    version.setEntities(loadEntities(version, null, true));
     return toFhir(codeSystem, version);
   }
 
@@ -81,13 +81,13 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
     QueryResult<CodeSystem> result = codeSystemService.query(CodeSystemFhirMapper.fromFhir(criteria));
     String code = criteria.getRawParams().containsKey("code") ? criteria.getRawParams().get("code").get(0) : null;
     return new SearchResult(result.getMeta().getTotal(), result.getData().stream().flatMap(cs -> cs.getVersions().stream().map(csv -> {
-      csv.setEntities(loadEntities(csv, code));
+      csv.setEntities(loadEntities(csv, code, false));
       return toFhir(cs, csv);
     })).toList());
   }
 
-  private List<CodeSystemEntityVersion> loadEntities(CodeSystemVersion version, String code) {
-    if (version == null || version.getConceptsTotal() > 10000) {
+  private List<CodeSystemEntityVersion> loadEntities(CodeSystemVersion version, String code, boolean loadLargeEntities) {
+    if (version == null || (version.getConceptsTotal() > 1000 && !loadLargeEntities)) {
       return List.of();
     }
     CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
