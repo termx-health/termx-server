@@ -25,8 +25,10 @@ import com.kodality.zmei.fhir.FhirMapper;
 import jakarta.inject.Singleton;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
+@Slf4j
 @Singleton
 @RequiredArgsConstructor
 public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
@@ -55,10 +57,21 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
     if (codeSystem == null) {
       return null;
     }
+
+    long start = System.currentTimeMillis();
     CodeSystemVersion version = versionNumber == null ? codeSystemVersionService.loadLastVersion(codeSystemId) :
         codeSystemVersionService.load(codeSystemId, versionNumber).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "resource not found"));
+    log.info("Code System load took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
+    start = System.currentTimeMillis();
+
     version.setEntities(loadEntities(version, null, true));
-    return toFhir(codeSystem, version);
+    log.info("Entities load took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
+    start = System.currentTimeMillis();
+
+    ResourceVersion resourceVersion = toFhir(codeSystem, version);
+    log.info("To FHIR conversion took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
+
+    return resourceVersion;
   }
 
   @Override

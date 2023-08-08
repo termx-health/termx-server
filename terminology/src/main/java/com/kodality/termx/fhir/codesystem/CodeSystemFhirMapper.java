@@ -7,6 +7,7 @@ import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
@@ -33,8 +34,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
+
+@Slf4j
 @Context
 public class CodeSystemFhirMapper extends BaseFhirMapper {
   private static Optional<String> termxWebUrl;
@@ -76,16 +83,21 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
     fhirCodeSystem.setStatus(version.getStatus());
     fhirCodeSystem.setProperty(toFhirCodeSystemProperty(codeSystem.getProperties()));
+
+    List<Pair<CodeSystemAssociation, CodeSystemEntityVersion>> entitiesWithAssociations =
+        version.getEntities().stream().filter(e -> e.getAssociations() != null).flatMap(e -> e.getAssociations().stream().map(a -> Pair.of(a, e))).toList();
+    Map<Long, List<CodeSystemEntityVersion>> entities =
+        entitiesWithAssociations.stream().collect(Collectors.groupingBy(e -> e.getKey().getTargetId(), mapping(Pair::getValue, toList())));
+
     fhirCodeSystem.setConcept(version.getEntities().stream()
         .filter(e -> CollectionUtils.isEmpty(e.getAssociations()))
-        .map(e -> toFhir(e, codeSystem, version.getEntities()))
+        .map(e -> toFhir(e, codeSystem, entities))
         .sorted(Comparator.comparing(CodeSystemConcept::getCode))
         .collect(Collectors.toList()));
-
     return fhirCodeSystem;
   }
 
-  private static CodeSystemConcept toFhir(CodeSystemEntityVersion e, CodeSystem codeSystem, List<CodeSystemEntityVersion> entities) {
+  private static CodeSystemConcept toFhir(CodeSystemEntityVersion e, CodeSystem codeSystem, Map<Long, List<CodeSystemEntityVersion>> entities) {
     CodeSystemConcept concept = new CodeSystemConcept();
     concept.setCode(e.getCode());
     concept.setDisplay(findDesignation(e.getDesignations(), codeSystem.getProperties(), "display"));
@@ -166,11 +178,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     }).sorted(Comparator.comparing(CodeSystemConceptProperty::getCode)).toList();
   }
 
-  private static List<CodeSystemConcept> getChildConcepts(List<CodeSystemEntityVersion> entities, Long targetId, CodeSystem codeSystem) {
-    List<CodeSystemConcept> result =
-        entities.stream().filter(e -> e.getAssociations() != null)
-            .filter(e -> e.getAssociations().stream().anyMatch(a -> a.getTargetId().equals(targetId)))
-            .map(e -> toFhir(e, codeSystem, entities)).collect(Collectors.toList());
+  private static List<CodeSystemConcept> getChildConcepts(Map<Long, List<CodeSystemEntityVersion>> entities, Long targetId, CodeSystem codeSystem) {
+    List<CodeSystemConcept> result = entities.getOrDefault(targetId, List.of()).stream().map(e -> toFhir(e, codeSystem, entities)).collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
   }
 
