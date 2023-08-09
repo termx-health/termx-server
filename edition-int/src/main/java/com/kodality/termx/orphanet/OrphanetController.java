@@ -1,22 +1,28 @@
 package com.kodality.termx.orphanet;
 
 import com.kodality.commons.exception.ApiClientException;
-import com.kodality.termx.ApiError;
+import com.kodality.commons.exception.ApiException;
+import com.kodality.commons.model.Issue;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
 import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration;
-import io.micronaut.core.annotation.NonNull;
-import io.micronaut.http.annotation.Body;
+import com.kodality.termx.utils.FileUtil;
+import io.micronaut.core.annotation.Nullable;
+import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Part;
 import io.micronaut.http.annotation.Post;
-import io.micronaut.http.annotation.QueryValue;
+import io.micronaut.http.multipart.CompletedFileUpload;
+import io.netty.handler.codec.http.multipart.MemoryAttribute;
+import io.reactivex.Flowable;
 import java.util.concurrent.CompletableFuture;
-import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.reactivestreams.Publisher;
 
 @Slf4j
 @Controller("/orphanet")
@@ -29,14 +35,21 @@ public class OrphanetController {
   private static final String JOB_TYPE = "Orphanet";
 
   @Authorized(Privilege.CS_EDIT)
-  @Post("/import")
-  public JobLogResponse importIcd10(@NonNull @QueryValue String url, @Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
+  @Post(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA)
+  public JobLogResponse importIcd10(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
+    CodeSystemImportConfiguration configuration = JsonUtil.fromJson(request.getValue(), CodeSystemImportConfiguration.class);
+    byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
+
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getPublisher(), JOB_TYPE);
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Orphanet import started");
         long start = System.currentTimeMillis();
-        service.importOrpha(url, configuration);
+        if (file != null) {
+          service.importOrpha(importFile, configuration);
+        } else {
+          service.importOrpha(configuration);
+        }
         log.info("Orphanet import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
         importLogger.logImport(jobLogResponse.getJobId());
       } catch (ApiClientException e) {
@@ -44,7 +57,7 @@ public class OrphanetController {
         importLogger.logImport(jobLogResponse.getJobId(), e);
       } catch (Exception e) {
         log.error("Error while importing Orphanet", e);
-        importLogger.logImport(jobLogResponse.getJobId(), ApiError.EI000.toApiException());
+        importLogger.logImport(jobLogResponse.getJobId(), new ApiException(500, Issue.error(e.getMessage())));
       }
     }));
     return jobLogResponse;

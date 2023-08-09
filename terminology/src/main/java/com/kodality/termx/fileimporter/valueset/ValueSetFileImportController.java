@@ -6,7 +6,7 @@ import com.kodality.termx.ApiError;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.auth.SessionStore;
-import com.kodality.termx.fileimporter.FileImporterUtils;
+import com.kodality.termx.utils.FileUtil;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
 import io.micronaut.core.annotation.Nullable;
@@ -33,7 +33,7 @@ public class ValueSetFileImportController {
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
     ValueSetFileImportRequest req = JsonUtil.fromJson(request.getValue(), ValueSetFileImportRequest.class);
-    byte[] importFile = file != null ? FileImporterUtils.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
+    byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
     JobLogResponse jobLogResponse = importLogger.createJob("VS-FILE-IMPORT");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {

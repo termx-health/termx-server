@@ -1,7 +1,7 @@
 package com.kodality.termx.fileimporter.analyze;
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.fileimporter.FileImporterUtils;
+import com.kodality.termx.utils.FileUtil;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
@@ -25,7 +25,7 @@ public class FileAnalysisController {
     FileAnalysisRequest req = JsonUtil.fromJson(request.getValue(), FileAnalysisRequest.class);
 
     return file != null
-        ? fileAnalysisService.analyze(req, FileImporterUtils.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()))
+        ? fileAnalysisService.analyze(req, FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()))
         : fileAnalysisService.analyze(req);
   }
 }

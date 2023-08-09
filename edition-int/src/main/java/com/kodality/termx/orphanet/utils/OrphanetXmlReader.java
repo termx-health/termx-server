@@ -14,17 +14,17 @@ public class OrphanetXmlReader {
   private static final XmlMapper MAPPER = XmlMapperUtil.getMapper();
   private static final XMLInputFactory XML_INPUT_FACTORY = XMLInputFactory.newFactory();
 
-  public OrphanetClassificationList read(byte[] data) {
+  public <T> T read(byte[] data, Class<T> clazz) {
     XMLStreamReader streamReader;
     try {
       streamReader = XML_INPUT_FACTORY.createXMLStreamReader(new ByteArrayInputStream(data));
       while (streamReader.hasNext()) {
-        if (streamReader.hasName() && "ClassificationList".equals(streamReader.getLocalName())) {
-          break;
+        if (streamReader.hasName() && clazz.getSimpleName().equals(streamReader.getLocalName())) {
+          return MAPPER.readValue(streamReader, clazz);
         }
         streamReader.next();
       }
-      return MAPPER.readValue(streamReader, OrphanetClassificationList.class);
+      return null;
     } catch (IOException | XMLStreamException e) {
       log.error("Error while reading orphanet data", e);
       throw new RuntimeException(e);

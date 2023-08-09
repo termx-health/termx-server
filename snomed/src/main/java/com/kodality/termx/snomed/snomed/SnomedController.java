@@ -28,6 +28,7 @@ import com.kodality.termx.snomed.snomed.translation.SnomedRF2Service;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.LorqueProcessService;
+import com.kodality.termx.utils.FileUtil;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.http.HttpHeaders;
@@ -46,7 +47,6 @@ import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.netty.handler.codec.http.multipart.MemoryAttribute;
 import io.reactivex.Flowable;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -146,7 +146,7 @@ public class SnomedController {
   @Post(value = "/imports", consumes = MediaType.MULTIPART_FORM_DATA)
   public Map<String, String> createImportJob(Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
     SnomedImportRequest req = JsonUtil.fromJson(request.getValue(), SnomedImportRequest.class);
-    byte[] importFile = readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet());
+    byte[] importFile = FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet());
     return snomedService.importRF2File(req, importFile);
   }
 
@@ -284,14 +284,6 @@ public class SnomedController {
 
   private String parsePath(String path) {
     return path.replace("--", "/");
-  }
-
-  private static byte[] readBytes(CompletedFileUpload file) {
-    try {
-      return file.getBytes();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   private Map<String, List<SnomedDescription>> getDescriptions(List<String> conceptIds) {

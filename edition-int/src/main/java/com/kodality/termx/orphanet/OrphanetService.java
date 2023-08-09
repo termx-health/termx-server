@@ -1,15 +1,14 @@
 package com.kodality.termx.orphanet;
 
 import com.kodality.termx.http.BinaryHttpClient;
-import com.kodality.termx.orphanet.utils.OrphanetClassificationList;
-import com.kodality.termx.orphanet.utils.OrphanetClassificationList.ClassificationNode;
+import com.kodality.termx.orphanet.utils.ClassificationList;
+import com.kodality.termx.orphanet.utils.DisorderList;
 import com.kodality.termx.orphanet.utils.OrphanetMapper;
 import com.kodality.termx.orphanet.utils.OrphanetXmlReader;
 import com.kodality.termx.ts.CodeSystemImportProvider;
 import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,13 +22,20 @@ public class OrphanetService {
   private final BinaryHttpClient client = new BinaryHttpClient();
 
   @Transactional
-  public void importOrpha(String url, CodeSystemImportConfiguration configuration) {
-    OrphanetClassificationList classificationList = new OrphanetXmlReader().read(getResource(url));
-    if (CollectionUtils.isEmpty(classificationList.getClassifications())) {
-      return;
+  public void importOrpha(byte[] file, CodeSystemImportConfiguration configuration) {
+    ClassificationList classificationList = new OrphanetXmlReader().read(file, ClassificationList.class);
+    DisorderList disorderList = new OrphanetXmlReader().read(file, DisorderList.class);
+    if (classificationList != null && CollectionUtils.isNotEmpty(classificationList.getClassifications())) {
+      importProvider.importCodeSystem(OrphanetMapper.toRequest(configuration, classificationList));
     }
-    List<ClassificationNode> classificationNodes = classificationList.getClassifications().get(0).getClassificationNodeRootList().getClassificationNodes();
-    importProvider.importCodeSystem(OrphanetMapper.toRequest(configuration, classificationNodes));
+    if (disorderList != null && CollectionUtils.isNotEmpty(disorderList.getDisorders())) {
+      importProvider.importCodeSystem(OrphanetMapper.toRequest(configuration, disorderList));
+    }
+  }
+
+  @Transactional
+  public void importOrpha(CodeSystemImportConfiguration configuration) {
+    importOrpha(getResource(configuration.getSourceUrl()), configuration);
   }
 
   private byte[] getResource(String url) {

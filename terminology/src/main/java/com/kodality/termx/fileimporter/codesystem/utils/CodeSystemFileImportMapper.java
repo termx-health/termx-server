@@ -143,31 +143,6 @@ public class CodeSystemFileImportMapper {
     }).collect(Collectors.toList());
   }
 
-
-  // Value Set
-  public static ValueSet toValueSet(CodeSystem codeSystem, ValueSet existingValueSet) {
-    ValueSet valueSet = existingValueSet == null ? new ValueSet() : existingValueSet;
-    valueSet.setId(codeSystem.getId());
-    valueSet.setUri(codeSystem.getUri() == null ? valueSet.getUri() : codeSystem.getUri());
-    valueSet.setTitle(codeSystem.getTitle() == null ? valueSet.getTitle() : codeSystem.getTitle());
-    return valueSet;
-  }
-
-  public static ValueSetVersion toValueSetVersion(FileProcessingCodeSystemVersion fpVersion, String valueSet, CodeSystemVersion codeSystemVersion) {
-    ValueSetVersion version = new ValueSetVersion();
-    version.setValueSet(valueSet);
-    version.setVersion(fpVersion.getVersion());
-    version.setStatus(PublicationStatus.draft);
-    version.setReleaseDate(fpVersion.getReleaseDate());
-    version.setRuleSet(new ValueSetVersionRuleSet().setRules(List.of(
-        new ValueSetVersionRule()
-            .setType(ValueSetVersionRuleType.include)
-            .setCodeSystem(codeSystemVersion.getCodeSystem())
-            .setCodeSystemVersion(codeSystemVersion)
-    )));
-    return version;
-  }
-
   public static List<AssociationType> toAssociationTypes(List<FileProcessingResponseProperty> properties) {
     return properties.stream().anyMatch(p -> CONCEPT_PARENT.equals(p.getPropertyName())) ?
         List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true)) : List.of();

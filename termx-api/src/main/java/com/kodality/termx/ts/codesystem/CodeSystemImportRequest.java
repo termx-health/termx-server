@@ -22,6 +22,8 @@ public class CodeSystemImportRequest {
   private List<Pair<String, String>> associations; //code and kind
 
   private boolean activate = true;
+  private boolean generateValueSet;
+  private boolean cleanRun;
 
   public CodeSystemImportRequest(CodeSystemImportConfiguration configuration) {
     this.codeSystem = new CodeSystemImportRequestCodeSystem().setId(configuration.getCodeSystem())
@@ -35,6 +37,9 @@ public class CodeSystemImportRequest {
         .setReleaseDate(configuration.getValidFrom())
         .setExpirationDate(configuration.getValidTo())
         .setDescription(configuration.getCodeSystemVersionDescription());
+
+    this.cleanRun = configuration.isCleanRun();
+    this.generateValueSet = configuration.isGenerateValueSet();
   }
 
   @Getter

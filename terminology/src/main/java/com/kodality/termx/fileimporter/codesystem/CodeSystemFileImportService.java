@@ -23,12 +23,10 @@ import com.kodality.termx.terminology.codesystem.compare.CodeSystemCompareResult
 import com.kodality.termx.terminology.codesystem.compare.CodeSystemCompareResult.CodeSystemCompareResultDiffItem;
 import com.kodality.termx.terminology.codesystem.compare.CodeSystemCompareService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
-import com.kodality.termx.terminology.valueset.ValueSetService;
-import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
-import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystemImportAction;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termx.ts.codesystem.Concept;
@@ -38,8 +36,6 @@ import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityProperty.EntityPropertyRule;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue.EntityPropertyValueCodingValue;
-import com.kodality.termx.ts.valueset.ValueSet;
-import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -71,8 +67,6 @@ import org.springframework.transaction.annotation.Transactional;
 import static com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportMapper.CONCEPT_CODE;
 import static com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportMapper.toAssociationTypes;
 import static com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportMapper.toCodeSystem;
-import static com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportMapper.toValueSet;
-import static com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportMapper.toValueSetVersion;
 import static com.kodality.termx.ts.codesystem.EntityPropertyType.coding;
 import static io.micronaut.core.util.CollectionUtils.last;
 import static java.util.stream.Collectors.groupingBy;
@@ -89,10 +83,7 @@ public class CodeSystemFileImportService {
   private final CodeSystemValidationService codeSystemValidationService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final ConceptService conceptService;
-  private final ValueSetService valueSetService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
-  private final ValueSetVersionRuleService valueSetVersionRuleService;
-  private final ValueSetVersionService valueSetVersionService;
 
   private final BinaryHttpClient client = new BinaryHttpClient();
 
@@ -150,7 +141,11 @@ public class CodeSystemFileImportService {
 
       try {
         log.info("\tImporting CS copy");
-        codeSystemImportService.importCodeSystem(copy, associationTypes, PublicationStatus.active.equals(mappedCsVersionStatus));
+        CodeSystemImportAction action = new CodeSystemImportAction()
+            .setActivate(PublicationStatus.active.equals(mappedCsVersionStatus))
+            .setGenerateValueSet(request.isGenerateValueSet())
+            .setCleanRun(request.isCleanRun());
+        codeSystemImportService.importCodeSystem(copy, associationTypes, action);
       } catch (Exception e) {
         TransactionManager.rollback();
         resp.getErrors().add(ApiError.TE716.toIssue(Map.of("exception", ExceptionUtils.getMessage(e))));
@@ -187,13 +182,14 @@ public class CodeSystemFileImportService {
     // If the new version has an ID, the importer will simply update the cancelled one.
     // Setting null to prevent that.
     mappedCodeSystem.getVersions().forEach(cv -> cv.setId(null));
-    codeSystemImportService.importCodeSystem(mappedCodeSystem, associationTypes, PublicationStatus.active.equals(mappedCsVersionStatus));
+    CodeSystemImportAction action = new CodeSystemImportAction()
+        .setActivate(PublicationStatus.active.equals(mappedCsVersionStatus))
+        .setGenerateValueSet(request.isGenerateValueSet())
+        .setCleanRun(request.isCleanRun());
+    codeSystemImportService.importCodeSystem(mappedCodeSystem, associationTypes, action);
 
     if (PublicationStatus.retired.equals(mappedCsVersionStatus)) {
       retireVersion(mappedCodeSystem);
-    }
-    if (request.isGenerateValueSet()) {
-      generateValueSet(reqCodeSystem, reqVersion, mappedCodeSystem);
     }
     return resp;
   }
@@ -220,22 +216,6 @@ public class CodeSystemFileImportService {
     String latestVersion = codeSystem.getVersions().get(0).getVersion();
     codeSystemVersionService.retire(csId, latestVersion);
   }
-
-  private void generateValueSet(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, CodeSystem codeSystem) {
-    ValueSet existingValueSet = valueSetService.load(fpCodeSystem.getId());
-    ValueSet valueSet = toValueSet(codeSystem, existingValueSet);
-    valueSetService.save(valueSet);
-
-    ValueSetVersion valueSetVersion = toValueSetVersion(fpVersion, valueSet.getId(), codeSystem.getVersions().get(0));
-    Optional<ValueSetVersion> existingVSVersion = valueSetVersionService.load(valueSet.getId(), valueSetVersion.getVersion());
-    existingVSVersion.ifPresent(version -> valueSetVersion.setId(version.getId()));
-    if (existingVSVersion.isPresent() && !existingVSVersion.get().getStatus().equals(PublicationStatus.draft)) {
-      throw ApiError.TE104.toApiException(Map.of("version", codeSystem.getVersions().get(0).getVersion()));
-    }
-    valueSetVersionService.save(valueSetVersion);
-    valueSetVersionRuleService.save(valueSetVersion.getRuleSet().getRules(), valueSet.getId(), valueSetVersion.getVersion());
-  }
-
 
   // validation
 

@@ -1,0 +1,195 @@
+{
+  "id": "orpha-flag-value",
+  "resourceType": "CodeSystem",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/tools/StructureDefinition/web-source",
+      "valueUrl": "https://termx.kodality.dev/fhir/CodeSystem/orpha-flag-value"
+    }
+  ],
+  "url": "https://www.orphadata.com/classification/flag-value",
+  "version": "1.0.0",
+  "name": "ORPHAFlagvalue",
+  "title": "ORPHA Flag value",
+  "status": "draft",
+  "date": "2023-08-02T00:00:00Z",
+  "description": "",
+  "purpose": "",
+  "caseSensitive": false,
+  "hierarchyMeaning": "is-a",
+  "content": "complete",
+  "property": [
+    {
+      "code": "display",
+      "type": "string"
+    }
+  ],
+  "concept": [
+    {
+      "code": "1",
+      "display": "Active",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Active"
+        }
+      ],
+      "concept": [
+        {
+          "code": "129",
+          "display": "Active",
+          "designation": [
+            {
+              "language": "en",
+              "use": {
+                "code": "display"
+              },
+              "value": "Active"
+            }
+          ]
+        },
+        {
+          "code": "513",
+          "display": "Active",
+          "designation": [
+            {
+              "language": "en",
+              "use": {
+                "code": "display"
+              },
+              "value": "Active"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "8208",
+      "display": "Inactive: Obsolete",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Inactive: Obsolete"
+        }
+      ],
+      "concept": [
+        {
+          "code": "16",
+          "display": "Inactive: Obsolete",
+          "designation": [
+            {
+              "language": "en",
+              "use": {
+                "code": "display"
+              },
+              "value": "Inactive: Obsolete"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "8225",
+      "display": "Inactive: Non rare in Europe",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Inactive: Non rare in Europe"
+        }
+      ],
+      "concept": [
+        {
+          "code": "1056",
+          "display": "Inactive: Non rare in Europe",
+          "designation": [
+            {
+              "language": "en",
+              "use": {
+                "code": "display"
+              },
+              "value": "Inactive: Non rare in Europe"
+            }
+          ]
+        },
+        {
+          "code": "48",
+          "display": "Inactive: Non rare in Europe",
+          "designation": [
+            {
+              "language": "en",
+              "use": {
+                "code": "display"
+              },
+              "value": "Inactive: Non rare in Europe"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "8449",
+      "display": "Inactive: Deprecated",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Inactive: Deprecated"
+        }
+      ],
+      "concept": [
+        {
+          "code": "257",
+          "display": "Inactive: Deprecated",
+          "designation": [
+            {
+              "language": "en",
+              "use": {
+                "code": "display"
+              },
+              "value": "Inactive: Deprecated"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "9216",
+      "display": "Inactive: Obsolete",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Inactive: Obsolete"
+        }
+      ],
+      "concept": [
+        {
+          "code": "1024",
+          "display": "Inactive: Obsolete",
+          "designation": [
+            {
+              "language": "en",
+              "use": {
+                "code": "display"
+              },
+              "value": "Inactive: Obsolete"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

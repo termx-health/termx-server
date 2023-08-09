@@ -1,14 +1,13 @@
 package com.kodality.termx.orphanet.utils;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class OrphanetClassificationList {
+public class ClassificationList {
 
   @JacksonXmlProperty(localName = "count")
   private Integer count;
@@ -21,13 +20,13 @@ public class OrphanetClassificationList {
   public static class Classification {
 
     @JacksonXmlProperty
-    private Long id;
+    private String id;
 
     @JacksonXmlProperty(localName = "OrphaNumber")
     private String orphaNumber;
 
     @JacksonXmlProperty(localName = "Name")
-    private Name name;
+    private OrphanetName name;
 
     @JacksonXmlProperty(localName = "ClassificationNodeRootList")
     private ClassificationNodeRootList classificationNodeRootList;
@@ -49,7 +48,7 @@ public class OrphanetClassificationList {
   public static class ClassificationNode {
 
     @JacksonXmlProperty(localName = "Disorder")
-    private Disorder disorder;
+    private OrphanetDisorder disorder;
 
     @JacksonXmlProperty(localName = "ClassificationNodeChildList")
     private ClassificationNodeChildList classificationNodeChildList;
@@ -66,40 +65,4 @@ public class OrphanetClassificationList {
     @JacksonXmlProperty(localName = "ClassificationNode")
     private List<ClassificationNode> classificationNodes;
   }
-
-  @Getter
-  @Setter
-  public static class Disorder {
-
-    @JacksonXmlProperty
-    private Long id;
-
-    @JacksonXmlProperty(localName = "OrphaCode")
-    private String orphaCode;
-
-    @JacksonXmlProperty(localName = "Name")
-    private Name name;
-
-    @JacksonXmlProperty(localName = "DisorderType")
-    private DisorderType disorderType;
-  }
-
-  @Getter
-  @Setter
-  public static class DisorderType {
-    @JacksonXmlProperty(localName = "Name")
-    private Name category;
-  }
-
-  @Getter
-  @Setter
-  public static class Name {
-
-    @JacksonXmlProperty
-    private String lang;
-
-    @JacksonXmlText
-    private String value;
-  }
-
 }

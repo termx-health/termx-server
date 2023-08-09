@@ -1,14 +1,17 @@
 package com.kodality.termx.terminology.codesystem.providers;
 
 import com.kodality.termx.terminology.codesystem.CodeSystemImportService;
+import com.kodality.termx.terminology.codesystem.CodeSystemVersionService;
 import com.kodality.termx.ts.CodeSystemImportProvider;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemContent;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termx.ts.codesystem.CodeSystemImportAction;
 import com.kodality.termx.ts.codesystem.CodeSystemImportRequest;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
+import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import java.util.List;
@@ -20,12 +23,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TerminologyCodeSystemImportProvider extends CodeSystemImportProvider {
   private final CodeSystemImportService codeSystemImportService;
+  private final CodeSystemVersionService codeSystemVersionService;
 
   @Override
   public void importCodeSystem(CodeSystemImportRequest request) {
     CodeSystem codeSystem = toCodeSystem(request);
     List<AssociationType> associationTypes = toAssociationTypes(request);
-    codeSystemImportService.importCodeSystem(codeSystem, associationTypes, request.isActivate());
+    CodeSystemImportAction action = new CodeSystemImportAction()
+        .setActivate(request.isActivate())
+        .setCleanRun(request.isCleanRun())
+        .setGenerateValueSet(request.isGenerateValueSet());
+    codeSystemImportService.importCodeSystem(codeSystem, associationTypes, action);
   }
 
   private CodeSystem toCodeSystem(CodeSystemImportRequest request) {
@@ -63,6 +71,10 @@ public class TerminologyCodeSystemImportProvider extends CodeSystemImportProvide
 
   private List<CodeSystemVersion> mapVersions(CodeSystemImportRequest request) {
     CodeSystemVersion version = new CodeSystemVersion();
+    Optional<CodeSystemVersion> existingVersion = findVersion(request.getCodeSystem().getId(), request.getVersion().getVersion());
+    if (existingVersion.isPresent()) {
+      return List.of(existingVersion.get());
+    }
     version.setCodeSystem(request.getCodeSystem().getId());
     version.setVersion(request.getVersion().getVersion());
     version.setSupportedLanguages(request.getVersion().getSupportedLanguages());
@@ -92,5 +104,13 @@ public class TerminologyCodeSystemImportProvider extends CodeSystemImportProvide
       type.setDirected(true);
       return type;
     }).toList();
+  }
+
+  private Optional<CodeSystemVersion> findVersion(String csId, String version) {
+    CodeSystemVersionQueryParams params = new CodeSystemVersionQueryParams();
+    params.setVersion(version);
+    params.setCodeSystem(csId);
+    params.setLimit(1);
+    return codeSystemVersionService.query(params).findFirst();
   }
 }

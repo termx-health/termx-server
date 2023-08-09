@@ -7,6 +7,9 @@ import com.kodality.termx.terminology.codesystem.association.CodeSystemAssociati
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.codesystem.entityproperty.EntityPropertyService;
+import com.kodality.termx.terminology.valueset.ValueSetService;
+import com.kodality.termx.terminology.valueset.ValueSetVersionService;
+import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.codesystem.CodeSystem;
@@ -14,11 +17,17 @@ import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemEntity;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termx.ts.codesystem.CodeSystemImportAction;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
+import com.kodality.termx.ts.valueset.ValueSet;
+import com.kodality.termx.ts.valueset.ValueSetVersion;
+import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
+import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import com.kodality.termx.ts.valueset.ValueSetVersionRuleType;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
@@ -52,10 +61,14 @@ public class CodeSystemImportService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
+  private final ValueSetService valueSetService;
+  private final ValueSetVersionService valueSetVersionService;
+  private final ValueSetVersionRuleService valueSetVersionRuleService;
+
   private final UserPermissionService userPermissionService;
 
   @Transactional
-  public CodeSystem importCodeSystem(CodeSystem codeSystem, List<AssociationType> associationTypes, boolean activateVersion) {
+  public CodeSystem importCodeSystem(CodeSystem codeSystem, List<AssociationType> associationTypes, CodeSystemImportAction action) {
     userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
 
     long start = System.currentTimeMillis();
@@ -65,13 +78,17 @@ public class CodeSystemImportService {
 
     saveCodeSystem(codeSystem);
     CodeSystemVersion codeSystemVersion = codeSystem.getVersions().get(0);
-    saveCodeSystemVersion(codeSystemVersion);
+    saveCodeSystemVersion(codeSystemVersion, action.isCleanRun());
 
     List<EntityProperty> entityProperties = saveProperties(codeSystem.getProperties(), codeSystem.getId());
     saveConcepts(codeSystem.getConcepts(), codeSystemVersion, entityProperties);
 
-    if (activateVersion) {
+    if (action.isActivate()) {
       codeSystemVersionService.activate(codeSystem.getId(), codeSystemVersion.getVersion());
+    }
+
+    if (action.isGenerateValueSet()) {
+      generateValueSet(codeSystem);
     }
 
     log.info("IMPORT FINISHED (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
@@ -87,12 +104,15 @@ public class CodeSystemImportService {
     }
   }
 
-  private void saveCodeSystemVersion(CodeSystemVersion codeSystemVersion) {
+  private void saveCodeSystemVersion(CodeSystemVersion codeSystemVersion, boolean cleanRun) {
     Optional<CodeSystemVersion> existingVersion = codeSystemVersionService.load(codeSystemVersion.getCodeSystem(), codeSystemVersion.getVersion());
-    if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
+
+    if (cleanRun && existingVersion.isPresent()) {
+      log.info("Cancelling existing code system version {}", codeSystemVersion.getVersion());
+      codeSystemVersionService.cancel(existingVersion.get().getId(), existingVersion.get().getCodeSystem());
+    } else if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
       throw ApiError.TE104.toApiException(Map.of("version", codeSystemVersion.getVersion()));
     }
-    existingVersion.ifPresent(v -> codeSystemVersionService.cancel(v.getId(), v.getCodeSystem()));
     log.info("Saving code system version {}", codeSystemVersion.getVersion());
     codeSystemVersionService.save(codeSystemVersion);
   }
@@ -190,5 +210,50 @@ public class CodeSystemImportService {
           batch.forEach(a -> a.setTargetId(a.getTargetCode() == null ? null :
               targets.stream().filter(t -> t.getCode().equals(a.getTargetCode())).findFirst().map(CodeSystemEntityVersion::getId).orElse(null)));
         });
+    associations.keySet().forEach(k -> associations.put(k, associations.get(k).stream().filter(a -> a.getTargetId() != null).toList()));
+  }
+
+  // VS
+  private void generateValueSet(CodeSystem codeSystem) {
+    log.info("Generating value set");
+    long start = System.currentTimeMillis();
+
+    ValueSet existingValueSet = valueSetService.load(codeSystem.getId());
+    ValueSet valueSet = toValueSet(codeSystem, existingValueSet);
+    valueSetService.save(valueSet);
+
+    ValueSetVersion valueSetVersion = toValueSetVersion(valueSet.getId(), codeSystem.getVersions().get(0));
+    Optional<ValueSetVersion> existingVSVersion = valueSetVersionService.load(valueSet.getId(), valueSetVersion.getVersion());
+    existingVSVersion.ifPresent(version -> valueSetVersion.setId(version.getId()));
+    if (existingVSVersion.isPresent() && !existingVSVersion.get().getStatus().equals(PublicationStatus.draft)) {
+      throw ApiError.TE104.toApiException(Map.of("version", codeSystem.getVersions().get(0).getVersion()));
+    }
+    valueSetVersionService.save(valueSetVersion);
+    valueSetVersionRuleService.save(valueSetVersion.getRuleSet().getRules(), valueSet.getId(), valueSetVersion.getVersion());
+
+    log.info("Value set generated (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
+  }
+
+  public static ValueSet toValueSet(CodeSystem codeSystem, ValueSet existingValueSet) {
+    ValueSet valueSet = existingValueSet == null ? new ValueSet() : existingValueSet;
+    valueSet.setId(codeSystem.getId());
+    valueSet.setUri(codeSystem.getUri() == null ? valueSet.getUri() : codeSystem.getUri());
+    valueSet.setTitle(codeSystem.getTitle() == null ? valueSet.getTitle() : codeSystem.getTitle());
+    return valueSet;
+  }
+
+  public static ValueSetVersion toValueSetVersion(String valueSet, CodeSystemVersion codeSystemVersion) {
+    ValueSetVersion version = new ValueSetVersion();
+    version.setValueSet(valueSet);
+    version.setVersion(codeSystemVersion.getVersion());
+    version.setStatus(PublicationStatus.draft);
+    version.setReleaseDate(codeSystemVersion.getReleaseDate());
+    version.setRuleSet(new ValueSetVersionRuleSet().setRules(List.of(
+        new ValueSetVersionRule()
+            .setType(ValueSetVersionRuleType.include)
+            .setCodeSystem(codeSystemVersion.getCodeSystem())
+            .setCodeSystemVersion(codeSystemVersion)
+    )));
+    return version;
   }
 }

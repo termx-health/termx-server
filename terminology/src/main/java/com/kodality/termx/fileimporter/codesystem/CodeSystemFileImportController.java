@@ -7,7 +7,7 @@ import com.kodality.termx.ApiError;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.auth.SessionStore;
-import com.kodality.termx.fileimporter.FileImporterUtils;
+import com.kodality.termx.utils.FileUtil;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportRequest;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportResponse;
 import com.kodality.termx.sys.job.JobLogResponse;
@@ -41,7 +41,7 @@ public class CodeSystemFileImportController {
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
     CodeSystemFileImportRequest req = JsonUtil.fromJson(request.getValue(), CodeSystemFileImportRequest.class);
-    byte[] importFile = file != null ? FileImporterUtils.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
+    byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
     JobLogResponse jobLogResponse = importLogger.createJob("CS-FILE-IMPORT");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {

@@ -1,9 +1,9 @@
-package com.kodality.termx.fileimporter;
+package com.kodality.termx.utils;
 
 import io.micronaut.http.multipart.CompletedFileUpload;
 import java.io.IOException;
 
-public class FileImporterUtils {
+public class FileUtil {
   public static byte[] readBytes(CompletedFileUpload file) {
     try {
       return file.getBytes();

@@ -26,4 +26,10 @@ public class CodeSystemImportConfiguration {
   private LocalizedName codeSystemName;
   private LocalizedName codeSystemDescription;
   private LocalizedName codeSystemVersionDescription;
+  private String status;
+
+  private String sourceUrl;
+
+  private boolean generateValueSet;
+  private boolean cleanRun;
 }

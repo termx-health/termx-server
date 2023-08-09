@@ -15,6 +15,7 @@ import com.kodality.termx.sys.space.overview.SpaceOverviewResponse;
 import com.kodality.termx.sys.spacepackage.Package;
 import com.kodality.termx.sys.spacepackage.PackageService;
 import com.kodality.termx.sys.spacepackage.PackageTransactionRequest;
+import com.kodality.termx.utils.FileUtil;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
@@ -26,7 +27,6 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.reactivex.Flowable;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
@@ -106,7 +106,7 @@ public class SpaceController {
     }
 
 
-    String yaml = new String(readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()));
+    String yaml = new String(FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()));
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Space import started");
@@ -124,14 +124,4 @@ public class SpaceController {
     }));
     return HttpResponse.ok(job);
   }
-
-
-  private byte[] readBytes(CompletedFileUpload file) {
-    try {
-      return file.getBytes();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
 }

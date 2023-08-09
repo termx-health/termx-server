@@ -6,7 +6,7 @@ import com.kodality.termx.ApiError;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.auth.SessionStore;
-import com.kodality.termx.fileimporter.FileImporterUtils;
+import com.kodality.termx.utils.FileUtil;
 import com.kodality.termx.fileimporter.association.utils.AssociationFileImportRequest;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
@@ -35,7 +35,7 @@ public class AssociationFileImportController {
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
     AssociationFileImportRequest req = JsonUtil.fromJson(request.getValue(), AssociationFileImportRequest.class);
-    byte[] importFile = FileImporterUtils.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet());
+    byte[] importFile = FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet());
 
     JobLogResponse jobLogResponse = importLogger.createJob("ASSOCIATION-FILE-IMPORT");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {

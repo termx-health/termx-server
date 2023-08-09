@@ -9,6 +9,7 @@ import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.loinc.utils.LoincImportRequest;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
+import com.kodality.termx.utils.FileUtil;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
@@ -17,7 +18,6 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.netty.handler.codec.http.multipart.MemoryAttribute;
 import io.reactivex.Flowable;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
@@ -46,15 +46,15 @@ public class LoincController {
       @Part("request") MemoryAttribute request) {
     LoincImportRequest req = JsonUtil.fromJson(request.getValue(), LoincImportRequest.class);
     List<Pair<String, byte[]>> files = List.of(
-        Pair.of("parts", partsFile != null ? readBytes(Flowable.fromPublisher(partsFile).firstOrError().blockingGet()) : null),
-        Pair.of("terminology", terminologyFile != null ? readBytes(Flowable.fromPublisher(terminologyFile).firstOrError().blockingGet()) : null),
+        Pair.of("parts", partsFile != null ? FileUtil.readBytes(Flowable.fromPublisher(partsFile).firstOrError().blockingGet()) : null),
+        Pair.of("terminology", terminologyFile != null ? FileUtil.readBytes(Flowable.fromPublisher(terminologyFile).firstOrError().blockingGet()) : null),
         Pair.of("supplementary-properties",
-            supplementaryPropertiesFile != null ? readBytes(Flowable.fromPublisher(supplementaryPropertiesFile).firstOrError().blockingGet()) : null),
-        Pair.of("panels", panelsFile != null ? readBytes(Flowable.fromPublisher(panelsFile).firstOrError().blockingGet()) : null),
-        Pair.of("answer-list", answerListFile != null ? readBytes(Flowable.fromPublisher(answerListFile).firstOrError().blockingGet()) : null),
-        Pair.of("answer-list-link", answerListLinkFile != null ? readBytes(Flowable.fromPublisher(answerListLinkFile).firstOrError().blockingGet()) : null),
-        Pair.of("translations", translationsFile != null ? readBytes(Flowable.fromPublisher(translationsFile).firstOrError().blockingGet()) : null),
-        Pair.of("order-observation", orderObservationFile != null ? readBytes(Flowable.fromPublisher(orderObservationFile).firstOrError().blockingGet()) : null));
+            supplementaryPropertiesFile != null ? FileUtil.readBytes(Flowable.fromPublisher(supplementaryPropertiesFile).firstOrError().blockingGet()) : null),
+        Pair.of("panels", panelsFile != null ? FileUtil.readBytes(Flowable.fromPublisher(panelsFile).firstOrError().blockingGet()) : null),
+        Pair.of("answer-list", answerListFile != null ? FileUtil.readBytes(Flowable.fromPublisher(answerListFile).firstOrError().blockingGet()) : null),
+        Pair.of("answer-list-link", answerListLinkFile != null ? FileUtil.readBytes(Flowable.fromPublisher(answerListLinkFile).firstOrError().blockingGet()) : null),
+        Pair.of("translations", translationsFile != null ? FileUtil.readBytes(Flowable.fromPublisher(translationsFile).firstOrError().blockingGet()) : null),
+        Pair.of("order-observation", orderObservationFile != null ? FileUtil.readBytes(Flowable.fromPublisher(orderObservationFile).firstOrError().blockingGet()) : null));
 
     JobLogResponse jobLogResponse = importLogger.createJob("LOINC-IMPORT");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
@@ -73,14 +73,5 @@ public class LoincController {
       }
     }));
     return jobLogResponse;
-  }
-
-
-  private byte[] readBytes(CompletedFileUpload file) {
-    try {
-      return file.getBytes();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 }

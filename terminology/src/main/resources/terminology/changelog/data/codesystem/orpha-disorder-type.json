@@ -1,0 +1,172 @@
+{
+  "id": "orpha-disorder-type",
+  "resourceType": "CodeSystem",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/tools/StructureDefinition/web-source",
+      "valueUrl": "https://termx.kodality.dev/fhir/CodeSystem/orpha-disorder-type"
+    }
+  ],
+  "url": "https://www.orphadata.com/classification/disorder-type",
+  "version": "1.0.0",
+  "name": "ORPHADisorderType",
+  "title": "ORPHA Disorder Type",
+  "status": "draft",
+  "date": "2023-08-02T00:00:00Z",
+  "publisher": "orphanet",
+  "description": "",
+  "purpose": "",
+  "caseSensitive": false,
+  "content": "complete",
+  "property": [
+    {
+      "code": "display",
+      "type": "string"
+    }
+  ],
+  "concept": [
+    {
+      "code": "21394",
+      "display": "Disease",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Disease"
+        }
+      ]
+    },
+    {
+      "code": "21401",
+      "display": "Malformation syndrome",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Malformation syndrome"
+        }
+      ]
+    },
+    {
+      "code": "21408",
+      "display": "Biological anomaly",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Biological anomaly"
+        }
+      ]
+    },
+    {
+      "code": "21415",
+      "display": "Morphological anomaly",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Morphological anomaly"
+        }
+      ]
+    },
+    {
+      "code": "21422",
+      "display": "Clinical syndrome",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Clinical syndrome"
+        }
+      ]
+    },
+    {
+      "code": "21429",
+      "display": "Particular clinical situation in a disease or syndrome",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Particular clinical situation in a disease or syndrome"
+        }
+      ]
+    },
+    {
+      "code": "21436",
+      "display": "Clinical group",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Clinical group"
+        }
+      ]
+    },
+    {
+      "code": "21443",
+      "display": "Etiological subtype",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Etiological subtype"
+        }
+      ]
+    },
+    {
+      "code": "21450",
+      "display": "Clinical subtype",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Clinical subtype"
+        }
+      ]
+    },
+    {
+      "code": "21457",
+      "display": "Histopathological subtype",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Histopathological subtype"
+        }
+      ]
+    },
+    {
+      "code": "36561",
+      "display": "Category",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Category"
+        }
+      ]
+    }
+  ]
+}

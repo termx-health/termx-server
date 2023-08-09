@@ -1,0 +1,80 @@
+{
+  "id": "orpha-total-status",
+  "resourceType": "CodeSystem",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/tools/StructureDefinition/web-source",
+      "valueUrl": "https://termx.kodality.dev/fhir/CodeSystem/orpha-total-status"
+    }
+  ],
+  "url": "https://orphanet.com/classification/total-status",
+  "version": "1.0.0",
+  "name": "ORPHATotalStatus",
+  "title": "ORPHA Total status",
+  "status": "draft",
+  "date": "2023-08-02T00:00:00Z",
+  "description": "",
+  "purpose": "",
+  "caseSensitive": false,
+  "content": "complete",
+  "property": [
+    {
+      "code": "display",
+      "type": "string"
+    }
+  ],
+  "concept": [
+    {
+      "code": "active",
+      "display": "Active",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Active"
+        }
+      ]
+    },
+    {
+      "code": "deprecated",
+      "display": "Inactive: Deprecated",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Inactive: Deprecated"
+        }
+      ]
+    },
+    {
+      "code": "non-rare-in-eu",
+      "display": "Inactive: Non rare disease in Europe",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Inactive: Non rare disease in Europe"
+        }
+      ]
+    },
+    {
+      "code": "obsolete",
+      "display": "Inactive: Obsolete",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Inactive: Obsolete"
+        }
+      ]
+    }
+  ]
+}

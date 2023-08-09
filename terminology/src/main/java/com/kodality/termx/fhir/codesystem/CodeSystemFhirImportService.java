@@ -5,6 +5,7 @@ import com.kodality.termx.terminology.codesystem.CodeSystemImportService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationKind;
 import com.kodality.termx.ts.association.AssociationType;
+import com.kodality.termx.ts.codesystem.CodeSystemImportAction;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.Resource;
 import com.kodality.zmei.fhir.resource.other.Bundle;
@@ -26,8 +27,8 @@ public class CodeSystemFhirImportService {
   @Transactional
   public void importCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
     List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
-    importService.importCodeSystem(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem), associationTypes,
-        PublicationStatus.active.equals(codeSystem.getStatus()));
+    CodeSystemImportAction action = new CodeSystemImportAction().setActivate(PublicationStatus.active.equals(codeSystem.getStatus())).setCleanRun(true);
+    importService.importCodeSystem(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem), associationTypes, action);
   }
 
   public void importCodeSystemFromUrl(String url, String codeSystemId) {

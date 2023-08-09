@@ -1,0 +1,67 @@
+{
+  "id": "orpha-classification-level",
+  "resourceType": "CodeSystem",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/tools/StructureDefinition/web-source",
+      "valueUrl": "https://termx.kodality.dev/fhir/CodeSystem/orpha-classification-level"
+    }
+  ],
+  "url": "https://www.orphadata.com/classification/classification-level",
+  "version": "1.0.0",
+  "name": "ORPHAClassificationLevel",
+  "title": "ORPHA Classification Level",
+  "status": "draft",
+  "date": "2023-08-02T00:00:00Z",
+  "description": "",
+  "purpose": "",
+  "caseSensitive": false,
+  "content": "complete",
+  "property": [
+    {
+      "code": "display",
+      "type": "string"
+    }
+  ],
+  "concept": [
+    {
+      "code": "36540",
+      "display": "Group of disorders",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Group of disorders"
+        }
+      ]
+    },
+    {
+      "code": "36547",
+      "display": "Disorder",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Disorder"
+        }
+      ]
+    },
+    {
+      "code": "36554",
+      "display": "Subtype of disorder",
+      "designation": [
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Subtype of disorder"
+        }
+      ]
+    }
+  ]
+}

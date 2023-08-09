@@ -81,6 +81,34 @@
     </customChange>
   </changeSet>
 
+  <changeSet id="orpha-classification-level" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/orpha-classification-level.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="orpha-disorder-type" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/orpha-disorder-type.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="orpha-flag-value" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/orpha-flag-value.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="orpha-total-status" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/orpha-total-status.json"/>
+    </customChange>
+  </changeSet>
+
   <changeSet id="publisher" author="kodality">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
