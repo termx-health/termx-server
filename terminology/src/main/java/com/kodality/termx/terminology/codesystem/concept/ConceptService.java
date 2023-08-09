@@ -111,6 +111,7 @@ public class ConceptService {
     CodeSystemEntityVersion entityVersion = request.getEntityVersion();
     entityVersion.setCodeSystem(request.getCodeSystem());
     codeSystemEntityVersionService.save(entityVersion, concept.getId());
+    entityVersion.setCodeSystemEntityId(concept.getId());
     if (request.getCodeSystemVersion() != null) {
       codeSystemVersionService.linkEntityVersions(request.getCodeSystem(), request.getCodeSystemVersion(), List.of(entityVersion.getId()));
     }

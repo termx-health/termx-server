@@ -1,4 +1,5 @@
 //includeBuild '../taskflow-service'
+includeBuild '../kodality-commons'
 
 rootProject.name="termx-server"
 

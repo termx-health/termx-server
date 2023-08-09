@@ -28,6 +28,9 @@ import com.kodality.termx.snomed.snomed.translation.SnomedRF2Service;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.LorqueProcessService;
+import com.kodality.termx.sys.provenance.Provenance;
+import com.kodality.termx.sys.provenance.ProvenanceService;
+import com.kodality.termx.sys.provenance.ProvenanceUtil;
 import com.kodality.termx.utils.FileUtil;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.core.util.CollectionUtils;
@@ -64,6 +67,7 @@ public class SnomedController {
   private final LorqueProcessService lorqueProcessService;
   private final SnomedTransactionService transactionService;
   private final SnomedTranslationService translationService;
+  private final ProvenanceService provenanceService;
 
   //----------------Branches----------------
 
@@ -204,7 +208,8 @@ public class SnomedController {
     SnomedDescriptionItemResponse response = snowstormClient.findConceptDescriptions(params).join();
 
     AsyncHelper futures = new AsyncHelper();
-    response.getItems().forEach(item -> futures.add(snowstormClient.loadConcept(item.getConcept().getConceptId()).thenApply(c -> item.getConcept().setDescriptions(c.getDescriptions()))));
+    response.getItems().forEach(item -> futures.add(
+        snowstormClient.loadConcept(item.getConcept().getConceptId()).thenApply(c -> item.getConcept().setDescriptions(c.getDescriptions()))));
     futures.joinAll();
 
     return response;
@@ -263,9 +268,12 @@ public class SnomedController {
   @Authorized(Privilege.SNOMED_VIEW)
   @Post("/concepts/{conceptId}/translations")
   public HttpResponse<?> saveTranslations(@Parameter String conceptId, @Body List<SnomedTranslation> translations) {
-    translationService.save(conceptId, translations);
+    provenanceTranslations("snomed-translations-save", conceptId, () -> {
+      translationService.save(conceptId, translations);
+    });
     return HttpResponse.ok();
   }
+
   @Authorized(Privilege.SNOMED_VIEW)
   @Post(value = "/translations/export-rf2")
   public HttpResponse<?> startRF2Export() {
@@ -280,6 +288,15 @@ public class SnomedController {
     return response
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=snomed_translations.zip")
         .contentType(MediaType.of("application/zip"));
+  }
+
+  private void provenanceTranslations(String action, String conceptId, Runnable save) {
+    List<SnomedTranslation> before = translationService.load(conceptId);
+    save.run();
+    List<SnomedTranslation> after = translationService.load(conceptId);
+    provenanceService.create(new Provenance(action, "CodeSystem", "snomed-ct").setChanges(
+        ProvenanceUtil.diff(Map.of("snomed." + conceptId, before), Map.of("snomed." + conceptId, after))
+    ));
   }
 
   private String parsePath(String path) {

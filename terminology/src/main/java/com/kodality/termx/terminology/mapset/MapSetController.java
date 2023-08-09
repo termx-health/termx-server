@@ -6,8 +6,6 @@ import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.auth.ResourceId;
 import com.kodality.termx.auth.UserPermissionService;
-import com.kodality.termx.sys.provenance.Provenance;
-import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termx.terminology.mapset.entity.MapSetEntityVersionService;
 import com.kodality.termx.ts.mapset.MapSet;
@@ -38,7 +36,6 @@ public class MapSetController {
   private final MapSetVersionService mapSetVersionService;
   private final MapSetAssociationService mapSetAssociationService;
   private final MapSetEntityVersionService mapSetEntityVersionService;
-  private final ProvenanceService provenanceService;
 
   private final UserPermissionService userPermissionService;
 
@@ -61,7 +58,6 @@ public class MapSetController {
   @Post
   public HttpResponse<?> saveMapSet(@Body @Valid MapSet mapSet) {
     mapSetService.save(mapSet);
-    provenanceService.create(new Provenance("created", "MapSet", mapSet.getId()));
     return HttpResponse.created(mapSet);
   }
 
@@ -69,7 +65,6 @@ public class MapSetController {
   @Post("/transaction")
   public HttpResponse<?> saveMapSetTransaction(@Body @Valid MapSetTransactionRequest mapSet) {
     mapSetService.save(mapSet);
-    provenanceService.create(new Provenance("modified", "MapSet", mapSet.getMapSet().getId()));
     return HttpResponse.created(mapSet);
   }
 
@@ -77,7 +72,6 @@ public class MapSetController {
   @Delete(uri = "/{mapSet}")
   public HttpResponse<?> deleteMapSet(@PathVariable @ResourceId String mapSet) {
     mapSetService.cancel(mapSet);
-    provenanceService.create(new Provenance("deleted", "MapSet", mapSet));
     return HttpResponse.ok();
   }
 
@@ -103,8 +97,6 @@ public class MapSetController {
     version.setId(null);
     version.setMapSet(mapSet);
     mapSetVersionService.save(version);
-    provenanceService.create(new Provenance("created", "MapSetVersion", version.getId().toString())
-        .addContext("part-of", "MapSet", version.getMapSet()));
     return HttpResponse.created(version);
   }
 
@@ -114,8 +106,6 @@ public class MapSetController {
     version.setId(id);
     version.setMapSet(mapSet);
     mapSetVersionService.save(version);
-    provenanceService.create(new Provenance("modified", "MapSetVersion", version.getId().toString())
-        .addContext("part-of", "MapSet", version.getMapSet()));
     return HttpResponse.created(version);
   }
 
@@ -123,8 +113,6 @@ public class MapSetController {
   @Post(uri = "/{mapSet}/versions/{version}/activate")
   public HttpResponse<?> activateVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
     mapSetVersionService.activate(mapSet, version);
-    provenanceService.create(new Provenance("modified", "MapSetVersion", mapSetVersionService.load(mapSet, version).orElseThrow().getId().toString())
-        .addContext("part-of", "MapSet", mapSet));
     return HttpResponse.noContent();
   }
 
@@ -132,8 +120,6 @@ public class MapSetController {
   @Post(uri = "/{mapSet}/versions/{version}/retire")
   public HttpResponse<?> retireVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
     mapSetVersionService.retire(mapSet, version);
-    provenanceService.create(new Provenance("modified", "MapSetVersion", mapSetVersionService.load(mapSet, version).orElseThrow().getId().toString())
-        .addContext("part-of", "MapSet", mapSet));
     return HttpResponse.noContent();
   }
 
@@ -164,7 +150,6 @@ public class MapSetController {
   public HttpResponse<?> createAssociation(@PathVariable @ResourceId String mapSet, @Body @Valid MapSetAssociation association) {
     association.setId(null);
     mapSetAssociationService.save(association, mapSet);
-    provenanceService.create(new Provenance("modified", "MapSet", mapSet));
     return HttpResponse.created(association);
   }
 
@@ -173,7 +158,6 @@ public class MapSetController {
   public HttpResponse<?> updateAssociation(@PathVariable @ResourceId String mapSet, @PathVariable Long id, @Body @Valid MapSetAssociation association) {
     association.setId(id);
     mapSetAssociationService.save(association, mapSet);
-    provenanceService.create(new Provenance("modified", "MapSet", mapSet));
     return HttpResponse.created(association);
   }
 
@@ -193,19 +177,16 @@ public class MapSetController {
     version.setId(null);
     version.setMapSet(mapSet);
     mapSetEntityVersionService.save(version, entityId);
-    provenanceService.create(new Provenance("created", "MapSetEntityVersion", version.getId().toString())
-        .addContext("part-of", "MapSet", mapSet));
     return HttpResponse.created(version);
   }
 
   @Authorized(Privilege.MS_EDIT)
   @Put(uri = "/{mapSet}/entities/{entityId}/versions/{id}")
-  public HttpResponse<?> updateVersion(@PathVariable @ResourceId String mapSet, @PathVariable Long entityId, @PathVariable Long id,  @Body @Valid MapSetEntityVersion version) {
+  public HttpResponse<?> updateVersion(@PathVariable @ResourceId String mapSet, @PathVariable Long entityId, @PathVariable Long id,
+                                       @Body @Valid MapSetEntityVersion version) {
     version.setId(id);
     version.setMapSet(mapSet);
     mapSetEntityVersionService.save(version, entityId);
-    provenanceService.create(new Provenance("modified", "MapSetEntityVersion", version.getId().toString())
-        .addContext("part-of", "MapSet", mapSet));
     return HttpResponse.created(version);
   }
 
@@ -213,8 +194,6 @@ public class MapSetController {
   @Post(uri = "/{mapSet}/entities/versions/{id}/activate")
   public HttpResponse<?> activateVersion(@PathVariable @ResourceId String mapSet, @PathVariable Long id) {
     mapSetEntityVersionService.activate(id);
-    provenanceService.create(new Provenance("modified", "MapSetEntityVersion", id.toString())
-        .addContext("part-of", "MapSet", mapSet));
     return HttpResponse.noContent();
   }
 
@@ -222,8 +201,6 @@ public class MapSetController {
   @Post(uri = "/{mapSet}/entities/versions/{id}/retire")
   public HttpResponse<?> retireVersion(@PathVariable @ResourceId String mapSet, @PathVariable Long id) {
     mapSetEntityVersionService.retire(id);
-    provenanceService.create(new Provenance("modified", "MapSetEntityVersion", id.toString())
-        .addContext("part-of", "MapSet", mapSet));
     return HttpResponse.noContent();
   }
 
@@ -231,8 +208,6 @@ public class MapSetController {
   @Post(uri = "/{mapSet}/versions/{version}/entity-versions/{entityVersionId}/membership")
   public HttpResponse<?> linkEntityVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version, @PathVariable Long entityVersionId) {
     mapSetVersionService.linkEntityVersion(mapSet, version, entityVersionId);
-    provenanceService.create(new Provenance("modified", "MapSetVersion", mapSetVersionService.load(mapSet, version).orElseThrow().getId().toString())
-        .addContext("part-of", "MapSet", mapSet));
     return HttpResponse.ok();
   }
 
@@ -240,8 +215,6 @@ public class MapSetController {
   @Delete(uri = "/{mapSet}/versions/{version}/entity-versions/{entityVersionId}/membership")
   public HttpResponse<?> unlinkEntityVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version, @PathVariable Long entityVersionId) {
     mapSetVersionService.unlinkEntityVersion(mapSet, version, entityVersionId);
-    provenanceService.create(new Provenance("modified", "MapSetVersion", mapSetVersionService.load(mapSet, version).orElseThrow().getId().toString())
-        .addContext("part-of", "MapSet", mapSet));
     return HttpResponse.ok();
   }
 }

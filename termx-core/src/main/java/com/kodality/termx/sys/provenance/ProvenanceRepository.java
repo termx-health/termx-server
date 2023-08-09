@@ -15,6 +15,7 @@ public class ProvenanceRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(Provenance.class, p -> {
     p.addColumnProcessor("target", PgBeanProcessor.fromJson());
     p.addColumnProcessor("author", PgBeanProcessor.fromJson());
+    p.addColumnProcessor("detail", PgBeanProcessor.fromJson());
     p.addColumnProcessor("context", PgBeanProcessor.fromJson(JsonUtil.getListType(ProvenanceContext.class)));
   });
 
@@ -26,6 +27,7 @@ public class ProvenanceRepository extends BaseRepository {
     ssb.property("activity", p.getActivity());
     ssb.jsonProperty("author", p.getAuthor());
     ssb.jsonProperty("context", p.getContext());
+    ssb.jsonProperty("detail", p.getDetail());
     SqlBuilder sb = ssb.buildInsert("sys.provenance", "id");
     return jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
   }
@@ -34,7 +36,8 @@ public class ProvenanceRepository extends BaseRepository {
     String[] pipe = PipeUtil.parsePipe(targetPipe);
     String sql = "select * from sys.provenance where sys_status = 'A' and" +
                  " ((target ->> 'type' = ? and target ->> 'id' = ?)" +
-                 " or context @?? ('$[*] ? (@.role == \"part-of\" && @.entity.type == \"' || ? || '\" && @.entity.id == \"' || ? || '\")')::jsonpath)";
+                 " or context @?? ('$[*] ? (@.role == \"part-of\" && @.entity.type == \"' || ? || '\" && @.entity.id == \"' || ? || '\")')::jsonpath)" +
+                 " order by date desc";
     return getBeans(sql, bp, pipe[0], pipe[1], pipe[0], pipe[1]);
   }
 }

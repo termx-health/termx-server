@@ -23,3 +23,9 @@ create index provenance_activity_idx on sys.provenance(activity);
 create index provenance_target_idx on sys.provenance((target ->> 'type'), (target ->> 'id'));
 create index provenance_context_idx ON sys.provenance USING GIN (context);
 --
+--changeset kodality:provenance-remove-audit
+select audit.drop_log('sys.provenance');
+--
+--changeset kodality:provenance-add-detail
+alter table sys.provenance add column detail jsonb;
+--

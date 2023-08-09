@@ -11,5 +11,11 @@ update terminology.entity_property
     set rule = jsonb_set(rule, '{valueSet}', to_jsonb(p_new_value_set))
     where (rule ->> 'valueSet') like '%' || p_current_value_set || '%';
 
+update sys.provenance set target = jsonb_set(target, '{id}', ('"' || p_new_value_set || '"')::jsonb)
+  where target ->> 'type' = 'ValueSet' and target ->> 'id' = p_current_value_set;
+update sys.provenance set context = replace(context::text, '"' || p_current_value_set || '"', '"' || p_new_value_set || '"')::jsonb
+  where context @? ('$[*] ? (@.entity.type == "ValueSet" && @.entity.id == "' || p_current_value_set || '")')::jsonpath;
+
+
 $function$
 ;

@@ -12,7 +12,7 @@ import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
 import com.kodality.termx.sys.provenance.Provenance;
-import com.kodality.termx.sys.provenance.ProvenanceService;
+import com.kodality.termx.sys.provenance.Provenance.ProvenanceChange;
 import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.ts.valueset.ValueSet;
@@ -52,7 +52,7 @@ public class ValueSetController {
   private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final ValueSetDuplicateService valueSetDuplicateService;
   private final ImportLogger importLogger;
-  private final ProvenanceService provenanceService;
+  private final ValueSetProvenanceService provenanceService;
 
   private final UserPermissionService userPermissionService;
 
@@ -78,8 +78,9 @@ public class ValueSetController {
   @Authorized(Privilege.CS_EDIT)
   @Post("/transaction")
   public HttpResponse<?> saveValueSetTransaction(@Body @Valid ValueSetTransactionRequest request) {
-    valueSetService.save(request);
-    provenanceService.create(new Provenance("modified", "ValueSet", request.getValueSet().getId()));
+    provenanceService.provenanceValueSetTransaction("save", request, () -> {
+      valueSetService.save(request);
+    });
     return HttpResponse.created(request.getValueSet());
   }
 
@@ -88,7 +89,8 @@ public class ValueSetController {
   public HttpResponse<?> changeValueSetId(@PathVariable String valueSet, @Valid @Body Map<String, String> body) {
     String newId = body.get("id");
     valueSetService.changeId(valueSet, newId);
-    provenanceService.create(new Provenance("modified", "ValueSet", newId));
+    provenanceService.create(new Provenance("change-id", "ValueSet", newId)
+        .setChanges(Map.of("id", ProvenanceChange.of(valueSet, newId))));
     return HttpResponse.ok();
   }
 
@@ -96,7 +98,7 @@ public class ValueSetController {
   @Delete(uri = "/{valueSet}")
   public HttpResponse<?> deleteValueSet(@PathVariable @ResourceId String valueSet) {
     valueSetService.cancel(valueSet);
-    provenanceService.create(new Provenance("deleted", "ValueSet", valueSet));
+    provenanceService.create(new Provenance("delete", "ValueSet", valueSet));
     return HttpResponse.ok();
   }
 
@@ -121,9 +123,9 @@ public class ValueSetController {
   public HttpResponse<?> createVersion(@PathVariable @ResourceId String valueSet, @Body @Valid ValueSetVersion version) {
     version.setId(null);
     version.setValueSet(valueSet);
-    valueSetVersionService.save(version);
-    provenanceService.create(new Provenance("created", "ValueSetVersion", version.getId().toString())
-        .addContext("part-of", "ValueSet", version.getValueSet()));
+    provenanceService.provenanceValueSetVersion("save", valueSet, version.getVersion(), () -> {
+      valueSetVersionService.save(version);
+    });
     return HttpResponse.created(version);
   }
 
@@ -132,45 +134,46 @@ public class ValueSetController {
   public HttpResponse<?> updateVersion(@PathVariable @ResourceId String valueSet, @PathVariable String version, @Body @Valid ValueSetVersion valueSetVersion) {
     valueSetVersion.setVersion(version);
     valueSetVersion.setValueSet(valueSet);
-    valueSetVersionService.save(valueSetVersion);
-    provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersion.getId().toString())
-        .addContext("part-of", "ValueSet", valueSetVersion.getValueSet()));
+    provenanceService.provenanceValueSetVersion("save", valueSet, version, () -> {
+      valueSetVersionService.save(valueSetVersion);
+    });
     return HttpResponse.created(valueSetVersion);
   }
 
   @Authorized(Privilege.VS_PUBLISH)
   @Post(uri = "/{valueSet}/versions/{version}/activate")
   public HttpResponse<?> activateVersion(@PathVariable @ResourceId String valueSet, @PathVariable String version) {
-    valueSetVersionService.activate(valueSet, version);
-    provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersionService.load(valueSet, version).orElseThrow().getId().toString())
-        .addContext("part-of", "ValueSet", valueSet));
+    provenanceService.provenanceValueSetVersion("activate", valueSet, version, () -> {
+      valueSetVersionService.activate(valueSet, version);
+    });
     return HttpResponse.noContent();
   }
 
   @Authorized(Privilege.VS_PUBLISH)
   @Post(uri = "/{valueSet}/versions/{version}/retire")
   public HttpResponse<?> retireVersion(@PathVariable @ResourceId String valueSet, @PathVariable String version) {
-    valueSetVersionService.retire(valueSet, version);
-    provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersionService.load(valueSet, version).orElseThrow().getId().toString())
-        .addContext("part-of", "ValueSet", valueSet));
+    provenanceService.provenanceValueSetVersion("retire", valueSet, version, () -> {
+      valueSetVersionService.retire(valueSet, version);
+    });
     return HttpResponse.noContent();
   }
 
   @Authorized(Privilege.VS_PUBLISH)
   @Post(uri = "/{valueSet}/versions/{version}/draft")
   public HttpResponse<?> saveAsDraft(@PathVariable @ResourceId String valueSet, @PathVariable String version) {
-    valueSetVersionService.saveAsDraft(valueSet, version);
-    provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersionService.load(valueSet, version).orElseThrow().getId().toString())
-        .addContext("part-of", "ValueSet", valueSet));
+    provenanceService.provenanceValueSetVersion("save", valueSet, version, () -> {
+      valueSetVersionService.saveAsDraft(valueSet, version);
+    });
     return HttpResponse.noContent();
   }
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{valueSet}/versions/{version}/duplicate")
-  public HttpResponse<?> duplicateValueSetVersion(@PathVariable @ResourceId String valueSet, @PathVariable String version, @Body @Valid ValueSetVersionDuplicateRequest request) {
-    ValueSetVersion newVersion = valueSetDuplicateService.duplicateValueSetVersion(request.getVersion(), request.getValueSet(), version, valueSet);
-    provenanceService.create(new Provenance("created", "ValueSetVersion", newVersion.getId().toString())
-        .addContext("part-of", "ValueSet", valueSet));
+  public HttpResponse<?> duplicateValueSetVersion(@PathVariable @ResourceId String valueSet, @PathVariable String version,
+                                                  @Body @Valid ValueSetVersionDuplicateRequest request) {
+    provenanceService.provenanceValueSetVersion("duplicate", valueSet, request.getVersion(), () -> {
+      valueSetDuplicateService.duplicateValueSetVersion(request.getVersion(), request.getValueSet(), version, valueSet);
+    });
     return HttpResponse.ok();
   }
 
@@ -179,7 +182,8 @@ public class ValueSetController {
   public HttpResponse<?> deleteValueSetVersion(@PathVariable @ResourceId String valueset, @PathVariable String version) {
     Long versionId = valueSetVersionService.load(valueset, version).map(ValueSetVersionReference::getId).orElseThrow();
     valueSetVersionService.cancel(versionId, valueset);
-    provenanceService.create(new Provenance("deleted", "ValueSetVersion", versionId.toString()));
+    provenanceService.create(new Provenance("deleted", "ValueSetVersion", versionId.toString(), version)
+        .addContext("part-of", "ValueSet", valueset));
     return HttpResponse.ok();
   }
 
@@ -220,9 +224,9 @@ public class ValueSetController {
   @Post(uri = "/{valueSet}/versions/{version}/rules")
   public HttpResponse<?> createRule(@PathVariable @ResourceId String valueSet, @PathVariable String version, @Body @Valid ValueSetVersionRule rule) {
     rule.setId(null);
-    valueSetVersionRuleService.save(rule, valueSet, version);
-    provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersionService.load(valueSet, version).orElseThrow().getId().toString())
-        .addContext("part-of", "ValueSet", valueSet));
+    provenanceService.provenanceValueSetVersion("save-rules", valueSet, version, () -> {
+      valueSetVersionRuleService.save(rule, valueSet, version);
+    });
     return HttpResponse.created(rule);
   }
 
@@ -231,18 +235,18 @@ public class ValueSetController {
   public HttpResponse<?> updateRule(@PathVariable @ResourceId String valueSet, @PathVariable String version, @PathVariable Long id,
                                     @Body @Valid ValueSetVersionRule rule) {
     rule.setId(id);
-    valueSetVersionRuleService.save(rule, valueSet, version);
-    provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersionService.load(valueSet, version).orElseThrow().getId().toString())
-        .addContext("part-of", "ValueSet", valueSet));
+    provenanceService.provenanceValueSetVersion("save-rules", valueSet, version, () -> {
+      valueSetVersionRuleService.save(rule, valueSet, version);
+    });
     return HttpResponse.created(rule);
   }
 
   @Authorized(Privilege.VS_EDIT)
   @Delete(uri = "/{valueSet}/versions/{version}/rules/{id}")
   public HttpResponse<?> deleteRule(@PathVariable @ResourceId String valueSet, @PathVariable String version, @PathVariable Long id) {
-    valueSetVersionRuleService.delete(id, valueSet);
-    provenanceService.create(new Provenance("modified", "ValueSetVersion", valueSetVersionService.load(valueSet, version).orElseThrow().getId().toString())
-        .addContext("part-of", "ValueSet", valueSet));
+    provenanceService.provenanceValueSetVersion("delete-rules", valueSet, version, () -> {
+      valueSetVersionRuleService.delete(id, valueSet);
+    });
     return HttpResponse.ok();
   }
 
