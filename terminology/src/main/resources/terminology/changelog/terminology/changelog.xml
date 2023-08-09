@@ -43,6 +43,8 @@
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/31-cancel_value_set_version.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/32-change_code_system_id.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/33-change_value_set_id.sql"/>
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/40-entity_property_summary.sql"/>
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/41-entity_property_concept_summary.sql"/>
     </changeSet>
 
     <changeSet id="terminology_function_indexes_5" author="kodality">
