@@ -10,10 +10,10 @@ import jakarta.inject.Singleton;
 public class CodeSystemCompareRepository extends BaseRepository {
   public CodeSystemCompareResult compare(Long sourceCsVersionId, Long targetCsVersionId) {
     String s = "select c.code, csev.status, csev.id version_id, csev.description," +
-        "        (select jsonb_agg(ep.name || '|' || epv.value::text order by ep.name) " +
+        "        (select jsonb_agg(ep.name || '|' || epv.value::text order by ep.name, epv.value::text)  " +
         "          from terminology.entity_property_value epv, terminology.entity_property ep " +
         "         where epv.entity_property_id = ep.id and epv.code_system_entity_version_id = csev.id) properties, " +
-        "        (select jsonb_agg(ep.name || '|' || d.name::text order by d.name) " +
+        "        (select jsonb_agg(ep.name || '|' || d.language || '|' || d.name::text order by ep.name, d.language, d.name::text)  " +
         "           from terminology.designation d, terminology.entity_property ep " +
         "         where d.designation_type_id = ep.id and d.code_system_entity_version_id  = csev.id) designations " +
         "   from terminology.code_system_version csv" +
