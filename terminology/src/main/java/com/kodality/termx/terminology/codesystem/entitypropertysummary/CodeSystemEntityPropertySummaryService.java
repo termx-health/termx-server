@@ -12,7 +12,7 @@ public class CodeSystemEntityPropertySummaryService {
     return new CodeSystemEntityPropertySummary(repository.getSummary(codeSystem, version));
   }
 
-  public CodeSystemEntityPropertyConceptSummary getConceptSummary(String codeSystem, String version, Long entityPropertyId) {
-    return new CodeSystemEntityPropertyConceptSummary(repository.getConceptSummary(codeSystem, version, entityPropertyId));
+  public CodeSystemEntityPropertyConceptSummary getConceptSummary(String codeSystem, String version, Long entityPropertyId, String entityPropertyValues) {
+    return new CodeSystemEntityPropertyConceptSummary(repository.getConceptSummary(codeSystem, version, entityPropertyId, entityPropertyValues));
   }
 }
