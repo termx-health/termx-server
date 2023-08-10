@@ -48,10 +48,8 @@ public class CodeSystemEntityVersionService {
   public CodeSystemEntityVersion save(CodeSystemEntityVersion version, Long codeSystemEntityId) {
     userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
 
-    if (!PublicationStatus.draft.equals(version.getStatus())) {
-      throw ApiError.TE101.toApiException();
-    }
-    version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
+    validate(version);
+    prepare(version);
     repository.save(version, codeSystemEntityId);
 
     designationService.save(version.getDesignations(), version.getId(), version.getCodeSystem());
@@ -65,10 +63,8 @@ public class CodeSystemEntityVersionService {
   public void batchSave(Map<Long, List<CodeSystemEntityVersion>> versions, String codeSystem) {
     userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
     versions.values().forEach(versionList -> versionList.forEach(v -> {
-      if (!PublicationStatus.draft.equals(v.getStatus())) {
-        throw ApiError.TE101.toApiException();
-      }
-      v.setCreated(v.getCreated() == null ? OffsetDateTime.now() : v.getCreated());
+      validate(v);
+      prepare(v);
     }));
 
     long start = System.currentTimeMillis();
@@ -254,4 +250,13 @@ public class CodeSystemEntityVersionService {
     return codeSystemEntityVersions.stream().filter(Objects::nonNull).collect(Collectors.toList());
   }
 
+  private void prepare(CodeSystemEntityVersion version) {
+    version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
+  }
+
+  private void validate(CodeSystemEntityVersion version) {
+    if (!PublicationStatus.draft.equals(version.getStatus())) {
+      throw ApiError.TE101.toApiException();
+    }
+  }
 }

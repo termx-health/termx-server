@@ -1,5 +1,6 @@
 package com.kodality.termx.terminology.codesystem;
 
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ApiError;
 import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.association.AssociationTypeService;
@@ -20,9 +21,11 @@ import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemImportAction;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.Concept;
+import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
+import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
@@ -32,6 +35,7 @@ import com.kodality.zmei.fhir.datatypes.Coding;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,7 +85,7 @@ public class CodeSystemImportService {
     saveCodeSystemVersion(codeSystemVersion, action.isCleanRun());
 
     List<EntityProperty> entityProperties = saveProperties(codeSystem.getProperties(), codeSystem.getId());
-    saveConcepts(codeSystem.getConcepts(), codeSystemVersion, entityProperties);
+    saveConcepts(codeSystem.getConcepts(), codeSystemVersion, entityProperties, action.isCleanConceptRun());
 
     if (action.isActivate()) {
       codeSystemVersionService.activate(codeSystem.getId(), codeSystemVersion.getVersion());
@@ -126,10 +130,11 @@ public class CodeSystemImportService {
     return entityPropertyService.save(entityProperties, codeSystem);
   }
 
-  public void saveConcepts(List<Concept> concepts, CodeSystemVersion version, List<EntityProperty> entityProperties) {
+  public void saveConcepts(List<Concept> concepts, CodeSystemVersion version, List<EntityProperty> entityProperties, boolean cleanRun) {
     userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
 
-    concepts = concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new)); //removes duplicate codes
+    concepts =
+        concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new)); //removes duplicate codes
     log.info("Creating '{}' concepts", concepts.size());
     long start = System.currentTimeMillis();
     conceptService.batchSave(concepts, version.getCodeSystem());
@@ -143,6 +148,9 @@ public class CodeSystemImportService {
     Map<Long, List<CodeSystemEntityVersion>> entityVersionMap = concepts.stream()
         .map(concept -> Pair.of(concept.getId(), prepareEntityVersion(concept.getVersions().get(0), entityProperties)))
         .collect(Collectors.toMap(Pair::getKey, p -> List.of(p.getValue())));
+    if (!cleanRun) {
+      mergeWithCurrentVersions(version.getId(), entityVersionMap);
+    }
     codeSystemEntityVersionService.batchSave(entityVersionMap, version.getCodeSystem());
     log.info("Concept versions created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
 
@@ -158,11 +166,7 @@ public class CodeSystemImportService {
 
     log.info("Creating associations between code system entity versions");
     start = System.currentTimeMillis();
-    Map<Long, List<CodeSystemAssociation>> associations = concepts.stream().peek(c -> {
-      if (c.getVersions().get(0).getAssociations() == null) {
-        c.getVersions().get(0).setAssociations(new ArrayList<>());
-      }
-    }).collect(Collectors.toMap(c -> c.getVersions().get(0).getId(), c -> c.getVersions().get(0).getAssociations()));
+    Map<Long, List<CodeSystemAssociation>> associations = entityVersionMap.values().stream().flatMap(Collection::stream).collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getAssociations));
     prepareCodeSystemAssociations(associations, version.getId());
     codeSystemAssociationService.batchUpsert(associations, version.getCodeSystem());
     log.info("Associations created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
@@ -171,30 +175,38 @@ public class CodeSystemImportService {
   private CodeSystemEntityVersion prepareEntityVersion(CodeSystemEntityVersion entityVersion, List<EntityProperty> properties) {
     entityVersion.setStatus(PublicationStatus.draft);
     if (CollectionUtils.isNotEmpty(entityVersion.getPropertyValues())) {
-      entityVersion.getPropertyValues().forEach(pv -> {
-        Optional<EntityProperty> property =
-            properties.stream().filter(p -> p.getName().equals(pv.getEntityProperty()) || p.getId().equals(pv.getEntityPropertyId())).findFirst();
-        if (property.isPresent()) {
-          pv.setEntityPropertyId(property.get().getId());
-          if (property.get().getType().equals(EntityPropertyType.coding)) {
-            try {
-              Coding coding = (Coding) pv.getValue();
-              conceptService.load(coding.getSystem(), coding.getCode()).ifPresent(pv::setValue);
-            } catch (RuntimeException ignored) {
-            }
-          }
-        }
-      });
-      entityVersion.setPropertyValues(entityVersion.getPropertyValues().stream().filter(pv -> pv.getEntityPropertyId() != null).collect(Collectors.toList()));
+      entityVersion.setPropertyValues(prepareEntityVersionProperties(entityVersion.getPropertyValues(), properties));
     }
     if (CollectionUtils.isNotEmpty(entityVersion.getDesignations())) {
-      entityVersion.getDesignations().forEach(d -> d.setDesignationTypeId(
-          d.getDesignationTypeId() != null ? d.getDesignationTypeId() :
-              d.getDesignationType() != null ?
-                  properties.stream().filter(p -> d.getDesignationType().equals(p.getName())).findFirst().map(EntityProperty::getId).orElse(null) : null));
-      entityVersion.setDesignations(entityVersion.getDesignations().stream().filter(d -> d.getDesignationTypeId() != null).collect(Collectors.toList()));
+      entityVersion.setDesignations(prepareEntityVersionDesignations(entityVersion.getDesignations(), properties));
     }
     return entityVersion;
+  }
+
+  private List<EntityPropertyValue> prepareEntityVersionProperties(List<EntityPropertyValue> propertyValues, List<EntityProperty> properties) {
+    propertyValues.forEach(pv -> {
+      Optional<EntityProperty> property =
+          properties.stream().filter(p -> p.getName().equals(pv.getEntityProperty()) || p.getId().equals(pv.getEntityPropertyId())).findFirst();
+      if (property.isPresent()) {
+        pv.setEntityPropertyId(property.get().getId());
+        if (property.get().getType().equals(EntityPropertyType.coding)) {
+          try {
+            Coding coding = (Coding) pv.getValue();
+            conceptService.load(coding.getSystem(), coding.getCode()).ifPresent(pv::setValue);
+          } catch (RuntimeException ignored) {
+          }
+        }
+      }
+    });
+    return propertyValues.stream().filter(pv -> pv.getEntityPropertyId() != null).collect(Collectors.toList());
+  }
+
+  private List<Designation> prepareEntityVersionDesignations(List<Designation> designations, List<EntityProperty> properties) {
+    designations.forEach(d -> d.setDesignationTypeId(
+        d.getDesignationTypeId() != null ? d.getDesignationTypeId() :
+            d.getDesignationType() != null ?
+                properties.stream().filter(p -> d.getDesignationType().equals(p.getName())).findFirst().map(EntityProperty::getId).orElse(null) : null));
+    return designations.stream().filter(d -> d.getDesignationTypeId() != null).collect(Collectors.toList());
   }
 
   private void prepareCodeSystemAssociations(Map<Long, List<CodeSystemAssociation>> associations, Long versionId) {
@@ -211,6 +223,55 @@ public class CodeSystemImportService {
               targets.stream().filter(t -> t.getCode().equals(a.getTargetCode())).findFirst().map(CodeSystemEntityVersion::getId).orElse(null)));
         });
     associations.keySet().forEach(k -> associations.put(k, associations.get(k).stream().filter(a -> a.getTargetId() != null).toList()));
+  }
+
+
+  private void mergeWithCurrentVersions(Long csVersionId, Map<Long, List<CodeSystemEntityVersion>> versions) {
+    List<Long> entityIds = versions.keySet().stream().toList();
+    IntStream.range(0, (entityIds.size() + 10000 - 1) / 10000)
+        .mapToObj(i -> entityIds.subList(i * 10000, Math.min(versions.size(), (i + 1) * 10000))).forEach(batch -> {
+          CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams()
+              .setCodeSystemEntityIds(batch.stream().map(String::valueOf).collect(Collectors.joining(",")))
+              .setStatus(String.join(",", PublicationStatus.active, PublicationStatus.draft))
+              .all();
+          Map<Long, List<CodeSystemEntityVersion>> existingVersions = codeSystemEntityVersionService.query(params).getData().stream().collect(Collectors.groupingBy(CodeSystemEntityVersion::getCodeSystemEntityId));
+          existingVersions.keySet().forEach(entityId -> {
+            Optional<CodeSystemEntityVersion> lastDraftVersion = existingVersions.get(entityId).stream().filter(v -> PublicationStatus.draft.equals(v.getStatus())).max(
+                Comparator.comparing(CodeSystemEntityVersion::getCreated));
+            Optional<CodeSystemEntityVersion> lastActiveVersion = existingVersions.get(entityId).stream().filter(v -> PublicationStatus.active.equals(v.getStatus())).max(Comparator.comparing(CodeSystemEntityVersion::getCreated));
+            if (lastDraftVersion.isPresent()) {
+              versions.put(entityId, mergeWithDraftVersion(versions.get(entityId), lastDraftVersion.get()));
+            } else if (lastActiveVersion.isPresent()) {
+              versions.put(entityId, mergeWithActiveVersion(versions.get(entityId), lastActiveVersion.get(), csVersionId));
+            }
+          });
+        });
+  }
+
+  private List<CodeSystemEntityVersion> mergeWithActiveVersion(List<CodeSystemEntityVersion> newVersions, CodeSystemEntityVersion activeVersion, Long csVersionId) {
+    codeSystemEntityVersionService.retire(activeVersion.getId());
+    codeSystemVersionService.unlinkEntityVersions(csVersionId, List.of(activeVersion.getId()));
+    return mergeVersions(newVersions, activeVersion);
+  }
+
+  private List<CodeSystemEntityVersion> mergeWithDraftVersion(List<CodeSystemEntityVersion> newVersions, CodeSystemEntityVersion draftVersion) {
+    newVersions.forEach(v -> v.setId(draftVersion.getId()));
+    return mergeVersions(newVersions, draftVersion);
+  }
+
+  private List<CodeSystemEntityVersion> mergeVersions(List<CodeSystemEntityVersion> targetVersions, CodeSystemEntityVersion sourceVersion) {
+    targetVersions.forEach(v -> {
+      v.setPropertyValues(Optional.ofNullable(v.getPropertyValues()).orElse(new ArrayList<>()));
+      v.getPropertyValues().addAll(Optional.ofNullable(sourceVersion.getPropertyValues()).orElse(new ArrayList<>()).stream()
+          .filter(pv -> v.getPropertyValues().stream().noneMatch(pv1 -> pv.getEntityPropertyId().equals(pv1.getEntityPropertyId()) && (JsonUtil.toJson(pv.getValue()).equals(JsonUtil.toJson(pv1.getValue()))))).toList());
+      v.setDesignations(Optional.ofNullable(v.getDesignations()).orElse(new ArrayList<>()));
+      v.getDesignations().addAll(Optional.ofNullable(sourceVersion.getDesignations()).orElse(new ArrayList<>()).stream()
+          .filter(d -> v.getDesignations().stream().noneMatch(d1 -> d.getName().equals(d1.getName()) && d.getLanguage().equals(d1.getLanguage()) && d.getDesignationTypeId().equals(d1.getDesignationTypeId()))).toList());
+      v.setAssociations(Optional.ofNullable(v.getAssociations()).orElse(new ArrayList<>()));
+      v.getAssociations().addAll(Optional.ofNullable(sourceVersion.getAssociations()).orElse(new ArrayList<>()).stream()
+          .filter(a -> v.getAssociations().stream().noneMatch(a1 -> a.getAssociationType().equals(a1.getAssociationType()) && a.getTargetCode().equals(a1.getTargetCode()))).toList());
+    });
+    return targetVersions;
   }
 
   // VS

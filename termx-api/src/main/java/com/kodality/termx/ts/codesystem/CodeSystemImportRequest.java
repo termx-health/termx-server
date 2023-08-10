@@ -24,6 +24,7 @@ public class CodeSystemImportRequest {
   private boolean activate = true;
   private boolean generateValueSet;
   private boolean cleanRun;
+  private boolean cleanConceptRun;
 
   public CodeSystemImportRequest(CodeSystemImportConfiguration configuration) {
     this.codeSystem = new CodeSystemImportRequestCodeSystem().setId(configuration.getCodeSystem())
@@ -39,6 +40,7 @@ public class CodeSystemImportRequest {
         .setDescription(configuration.getCodeSystemVersionDescription());
 
     this.cleanRun = configuration.isCleanRun();
+    this.cleanConceptRun = configuration.isCleanConceptRun();
     this.generateValueSet = configuration.isGenerateValueSet();
   }
 

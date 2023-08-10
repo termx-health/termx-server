@@ -32,6 +32,7 @@ public class TerminologyCodeSystemImportProvider extends CodeSystemImportProvide
     CodeSystemImportAction action = new CodeSystemImportAction()
         .setActivate(request.isActivate())
         .setCleanRun(request.isCleanRun())
+        .setCleanConceptRun(request.isCleanConceptRun())
         .setGenerateValueSet(request.isGenerateValueSet());
     codeSystemImportService.importCodeSystem(codeSystem, associationTypes, action);
   }

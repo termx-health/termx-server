@@ -11,4 +11,5 @@ public class CodeSystemImportAction {
   private boolean activate;
   private boolean generateValueSet;
   private boolean cleanRun;
+  private boolean cleanConceptRun;
 }

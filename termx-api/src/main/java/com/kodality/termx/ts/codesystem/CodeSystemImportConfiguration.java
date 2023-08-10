@@ -32,4 +32,5 @@ public class CodeSystemImportConfiguration {
 
   private boolean generateValueSet;
   private boolean cleanRun;
+  private boolean cleanConceptRun;
 }
