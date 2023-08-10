@@ -116,7 +116,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
             .setLanguage(d.getLanguage())
             .setValue(d.getName())
             .setUse(new Coding(d.getDesignationType())))
-        .sorted(Comparator.comparing(CodeSystemConceptDesignation::getLanguage))
+        .sorted(Comparator.comparing(d -> d.getLanguage() == null ? "" : d.getLanguage()))
         .sorted(Comparator.comparing(d -> d.getUse().getCode()))
         .toList();
   }
