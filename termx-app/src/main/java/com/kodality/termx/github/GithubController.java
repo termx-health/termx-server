@@ -10,6 +10,7 @@ import io.micronaut.http.annotation.QueryValue;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -17,33 +18,33 @@ import lombok.Setter;
 @Controller("/github")
 @RequiredArgsConstructor
 public class GithubController {
-  private final GithubService githubService;
+  private final Optional<GithubService> githubService;
 
   @Get("/cb")
   public HttpResponse<?> authCallback(@QueryValue String state, @QueryValue String code) throws URISyntaxException {
-    String redirectUri = githubService.authorizeUser(state, code);
+    String redirectUri = githubService.orElseThrow().authorizeUser(state, code);
     return HttpResponse.redirect(new URI(redirectUri));
   }
 
   @Post("/authorize")
   public HttpResponse<?> authorize(@Body UserState state) {
-    String redirectUri = githubService.getAuthRedirect(state.state);
+    String redirectUri = githubService.orElseThrow().getAuthRedirect(state.state);
     return HttpResponse.ok(Map.of("redirectUri", redirectUri));
   }
 
   @Get(value = "/installations", produces = MediaType.APPLICATION_JSON)
   public HttpResponse<?> getInstallations() {
-    return HttpResponse.ok(githubService.getInstallations());
+    return HttpResponse.ok(githubService.map(s -> s.getInstallations()).orElse("{}"));
   }
 
   @Get(value = "/repositories", produces = MediaType.APPLICATION_JSON)
   public HttpResponse<?> getRepos(@QueryValue String installationId) {
-    return HttpResponse.ok(githubService.getRepositories(installationId));
+    return HttpResponse.ok(githubService.orElseThrow().getRepositories(installationId));
   }
 
   @Post(value = "/export", produces = MediaType.APPLICATION_JSON)
   public HttpResponse<?> export(@Body ExportData data) {
-    return HttpResponse.ok(githubService.export(data));
+    return HttpResponse.ok(githubService.orElseThrow().export(data));
   }
 
   @Getter

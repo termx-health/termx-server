@@ -9,10 +9,10 @@ import com.kodality.taskflow.task.TaskService;
 import com.kodality.taskflow.workflow.WorkflowSearchParams;
 import com.kodality.taskflow.workflow.WorkflowService;
 import io.micronaut.core.util.StringUtils;
+import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

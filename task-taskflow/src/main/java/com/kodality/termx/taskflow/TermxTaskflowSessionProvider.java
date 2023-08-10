@@ -3,8 +3,8 @@ package com.kodality.termx.taskflow;
 import com.kodality.taskflow.auth.TaskflowSessionInfo;
 import com.kodality.taskflow.auth.TaskflowSessionProvider;
 import com.kodality.termx.auth.SessionStore;
+import jakarta.inject.Singleton;
 import java.util.Optional;
-import javax.inject.Singleton;
 
 @Singleton
 public class TermxTaskflowSessionProvider implements TaskflowSessionProvider {

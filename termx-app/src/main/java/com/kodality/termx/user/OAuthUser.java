@@ -1,4 +1,4 @@
-package com.kodality.termx.taskflow;
+package com.kodality.termx.user;
 
 import lombok.Getter;
 import lombok.Setter;

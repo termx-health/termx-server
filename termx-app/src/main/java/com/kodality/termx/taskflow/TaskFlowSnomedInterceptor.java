@@ -1,10 +1,9 @@
-package com.kodality.termx.taskflow.snomed;
+package com.kodality.termx.taskflow;
 
 import com.kodality.taskflow.task.Task;
 import com.kodality.taskflow.task.Task.TaskContextItem;
 import com.kodality.termx.snomed.concept.SnomedTranslation;
 import com.kodality.termx.snomed.snomed.SnomedInterceptor;
-import com.kodality.termx.taskflow.TaskFlowService;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;

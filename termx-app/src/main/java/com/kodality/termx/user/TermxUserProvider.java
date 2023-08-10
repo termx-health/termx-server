@@ -1,7 +1,5 @@
 package com.kodality.termx.user;
 
-import com.kodality.termx.taskflow.OAuthUser;
-import com.kodality.termx.taskflow.OAuthUserHttpClient;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;

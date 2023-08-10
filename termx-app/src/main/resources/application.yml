@@ -66,10 +66,11 @@ snowstorm:
   user: termserver-app
   password: ''
 
-github:
-  client:
-    id: 'client-id'
-    secret: 'secret'
-  app-id: ${GITHUB_APP_ID}
-  app-name: ${GITHUB_APP_NAME}
-  private-key-path: '/path/to/private-key.pem'
+
+#github:
+#  client:
+#    id: 'client-id'
+#    secret: 'secret'
+#  app-id: ${GITHUB_APP_ID}
+#  app-name: ${GITHUB_APP_NAME}
+#  private-key-path: '/path/to/private-key.pem'

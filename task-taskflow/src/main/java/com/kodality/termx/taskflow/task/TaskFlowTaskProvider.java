@@ -13,10 +13,10 @@ import com.kodality.taskflow.workflow.WorkflowSearchParams;
 import com.kodality.taskflow.workflow.WorkflowService;
 import com.kodality.termx.task.TaskProvider;
 import com.kodality.termx.task.TaskQueryParams;
+import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

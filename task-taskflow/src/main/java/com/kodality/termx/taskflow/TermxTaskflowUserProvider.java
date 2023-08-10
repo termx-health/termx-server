@@ -3,8 +3,8 @@ package com.kodality.termx.taskflow;
 import com.kodality.taskflow.api.TaskflowUserProvider;
 import com.kodality.taskflow.user.TaskflowUser;
 import com.kodality.termx.user.UserProvider;
+import jakarta.inject.Singleton;
 import java.util.List;
-import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 

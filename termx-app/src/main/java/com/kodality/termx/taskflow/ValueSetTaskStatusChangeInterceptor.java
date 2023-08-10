@@ -1,4 +1,4 @@
-package com.kodality.termx.taskflow.valueset;
+package com.kodality.termx.taskflow;
 
 import com.kodality.taskflow.api.TaskStatusChangeInterceptor;
 import com.kodality.taskflow.task.Task;

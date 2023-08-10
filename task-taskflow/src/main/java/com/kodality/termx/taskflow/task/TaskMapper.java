@@ -8,7 +8,7 @@ import com.kodality.taskflow.user.TaskflowUser;
 import com.kodality.taskflow.workflow.Workflow;
 import com.kodality.termx.task.TaskQueryParams;
 import com.kodality.termx.task.Workflow.WorkflowTransition;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class TaskMapper {

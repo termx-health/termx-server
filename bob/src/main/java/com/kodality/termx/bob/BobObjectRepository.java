@@ -28,14 +28,14 @@ public class BobObjectRepository extends BaseRepository {
       """;
 
   public QueryResult<BobObject> query(BobObjectQueryParams params) {
-    return query(params, p -> {
+    return BaseRepository.query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from bob.object o inner join bob.object_storage os on os.sys_status = 'A' and os.object_id = o.id");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
       SqlBuilder sb = new SqlBuilder(select);
       sb.append(filter(params));
-      sb.append(limit(params));
+      sb.append(BaseRepository.limit(params));
       return getBeansFromJson(sb.getSql(), BobObject.class, sb.getParams());
     });
   }

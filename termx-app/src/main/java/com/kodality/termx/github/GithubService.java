@@ -6,6 +6,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.auth.SessionInfo;
 import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.github.GithubController.ExportData;
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpHeaders;
 import io.netty.handler.codec.http.QueryStringDecoder;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Requires(property = "github.client.id")
 @Singleton
 public class GithubService {
 

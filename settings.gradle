@@ -15,10 +15,12 @@ include 'termx-integtest'
 include 'gatling'
 
 include 'task'
+include 'task-taskflow'
 include 'wiki'
 include 'observation-definition'
 include 'terminology'
 include 'modeler'
+include 'bob'
 
 include 'snomed'
 include 'ucum'
