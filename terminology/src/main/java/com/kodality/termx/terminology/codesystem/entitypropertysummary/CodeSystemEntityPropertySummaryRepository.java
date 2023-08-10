@@ -21,8 +21,28 @@ public class CodeSystemEntityPropertySummaryRepository extends BaseRepository {
     bp.addColumnProcessor("concept_ids", PgBeanProcessor.fromJson(JsonUtil.getListType(Long.class)));
   });
 
-  public List<CodeSystemEntityPropertySummaryItem> getSummary(String codeSystem, String version) {
-    SqlBuilder sb = new SqlBuilder("select * from terminology.entity_property_summary(?::text, ?::text)", codeSystem, version);
+  public List<CodeSystemEntityPropertySummaryItem> getSummary(String codeSystem, String version, String entityPropertyValues) {
+    String sql = "select ep.id property_id, ep.name property_name, count(distinct csev.id) concept_cnt," +
+        "       count(distinct epv.value) prop_cnt, '[' || string_agg(distinct epv.value::text, ',') || ']' prop_list" +
+        "  from terminology.code_system_version csv" +
+        "       inner join terminology.code_system_entity cse ON csv.code_system = cse.code_system and cse.sys_status = 'A'" +
+        "       inner join terminology.code_system_entity_version csev" +
+        "               on csev.code_system = csv.code_system and csev.code_system_entity_id = cse.id and csev.sys_status = 'A'" +
+        "       inner join terminology.entity_version_code_system_version_membership mem" +
+        "               on csev.id = mem.code_system_entity_version_id and csv.id = mem.code_system_version_id and mem.sys_status = 'A'" +
+        "       inner join terminology.entity_property_value epv ON csev.id =  epv.code_system_entity_version_id and epv.sys_status = 'A'" +
+        "       inner join terminology.entity_property ep ON ep.id = epv.entity_property_id and ep.type= 'Coding' and ep.sys_status = 'A'" +
+        " where csv.code_system = ?::text" +
+        "   and (csv.version = ?::text or ?::text is null)" +
+        "   and csv.sys_status = 'A'";
+    SqlBuilder sb = new SqlBuilder(sql, codeSystem, version, version);
+    if (StringUtils.isNotEmpty(entityPropertyValues)) {
+      String[] values = entityPropertyValues.split(",");
+      for (String v: values) {
+        sb.append("and exists(select 1 from terminology.entity_property_value epv where csev.id = epv.code_system_entity_version_id and epv.value ->> 'code' = ?::text)", v);
+      }
+    }
+    sb.append("group by ep.id, ep.name");
     return getBeans(sb.getSql(), bp, sb.getParams());
   }
 

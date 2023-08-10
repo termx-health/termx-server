@@ -16,14 +16,14 @@ public class CodeSystemEntityPropertySummaryController {
 
   @Authorized(Privilege.CS_VIEW)
   @Get("/{codeSystem}/entity-property-summary")
-  public CodeSystemEntityPropertySummary getSummary(@PathVariable String codeSystem) {
-    return service.getSummary(codeSystem, null);
+  public CodeSystemEntityPropertySummary getSummary(@PathVariable String codeSystem, @Nullable @QueryValue String entityPropertyValues) {
+    return service.getSummary(codeSystem, null, entityPropertyValues);
   }
 
   @Authorized(Privilege.CS_VIEW)
   @Get("/{codeSystem}/versions/{version}/entity-property-summary")
-  public CodeSystemEntityPropertySummary getSummary(@PathVariable String codeSystem, @PathVariable String version) {
-    return service.getSummary(codeSystem, version);
+  public CodeSystemEntityPropertySummary getSummary(@PathVariable String codeSystem, @PathVariable String version, @Nullable @QueryValue String entityPropertyValues) {
+    return service.getSummary(codeSystem, version, entityPropertyValues);
   }
 
   @Authorized(Privilege.CS_VIEW)

@@ -8,8 +8,8 @@ import lombok.RequiredArgsConstructor;
 public class CodeSystemEntityPropertySummaryService {
   private final CodeSystemEntityPropertySummaryRepository repository;
 
-  public CodeSystemEntityPropertySummary getSummary(String codeSystem, String version) {
-    return new CodeSystemEntityPropertySummary(repository.getSummary(codeSystem, version));
+  public CodeSystemEntityPropertySummary getSummary(String codeSystem, String version, String entityPropertyValues) {
+    return new CodeSystemEntityPropertySummary(repository.getSummary(codeSystem, version, entityPropertyValues));
   }
 
   public CodeSystemEntityPropertyConceptSummary getConceptSummary(String codeSystem, String version, Long entityPropertyId, String entityPropertyValues) {
