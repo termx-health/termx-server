@@ -133,7 +133,8 @@ public class CodeSystemProvenanceService {
   private Map<String, ProvenanceChange> diff(CodeSystemEntityVersion left, CodeSystemEntityVersion right) {
     Function<CodeSystemEntityVersion, Map<String, Object>> fn = cs -> {
       Map<String, Object> map = JsonUtil.getObjectMapper().convertValue(cs, Map.class);
-      map.put("designations", cs.getDesignations() == null ? null : cs.getDesignations().stream().collect(Collectors.toMap(Designation::getName, x -> x)));
+      map.put("designations", cs.getDesignations() == null ? null : cs.getDesignations().stream()
+          .collect(Collectors.toMap(Designation::getDesignationType, x -> x)));
       map.put("propertyValues", cs.getPropertyValues() == null ? null : cs.getPropertyValues().stream()
           .collect(Collectors.toMap(EntityPropertyValue::getEntityProperty, x -> x)));
       return map;
