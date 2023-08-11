@@ -67,7 +67,9 @@ public enum ApiError {
   TE721("TE721", "At least one property with type \"designation\" should be present"),
   TE801("TE801", "Association type is required, can't be deleted."),
   TE802("TE802", "Association type is used in code system '{{codeSystem}}' association, can't be deleted."),
-  TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted.");
+  TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted."),
+  TE804("TE804", "Target concept is not defined."),
+  TE805("TE805", "Target concept and source concepts are the same.");
 
   @Getter
   private String code;
