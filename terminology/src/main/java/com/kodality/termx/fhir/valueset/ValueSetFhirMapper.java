@@ -227,6 +227,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         case "version" -> params.setVersionVersion(v);
         case "url" -> params.setUri(v);
         case "name", "title" -> params.setNameContains(v);
+        case "name:contains" -> params.setNameContains(v);
         case "status" -> params.setVersionStatus(v);
         case "reference" -> params.setCodeSystemUri(v);
         case "publisher" -> params.setVersionSource(v);
