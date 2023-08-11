@@ -89,6 +89,9 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("csev.code ", params.getCode());
     }
+    if (StringUtils.isNotEmpty(params.getCodesNe())) {
+      sb.and().notIn("csev.code ", params.getCodesNe());
+    }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
       sb.append("and (csev.code ~* ? or " +
               "csev.description ~* ? or " +
