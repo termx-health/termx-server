@@ -32,6 +32,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
     ssb.property("code_system", version.getCodeSystem());
     ssb.property("version", version.getVersion());
     ssb.property("preferred_language", version.getPreferredLanguage());
+    ssb.property("algorithm", version.getAlgorithm());
     ssb.property("supported_languages", "?::text[]", PgUtil.array(version.getSupportedLanguages()));
     ssb.jsonProperty("description", version.getDescription());
     ssb.property("release_date", version.getReleaseDate());

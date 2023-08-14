@@ -98,3 +98,11 @@ alter table terminology.code_system add column settings jsonb;
 update terminology.code_system set case_sensitive = 'ci' where case_sensitive is null;
 alter table terminology.code_system alter column case_sensitive set not null;
 --
+
+--changeset kodality:code_system_version-algorithm
+alter table terminology.code_system_version add column algorithm text;
+--
+
+--changeset kodality:code_system-copyright
+alter table terminology.code_system add column copyright jsonb;
+--

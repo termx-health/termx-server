@@ -25,7 +25,7 @@ public class ValueSet {
   private Boolean experimental;
   private List<Identifier> identifiers;
   private List<ContactDetail> contacts;
-  private Object copyright;
+  private ValueSetCopyright copyright;
   private Object permissions;
   private ValueSetSettings settings;
 
@@ -38,5 +38,13 @@ public class ValueSet {
   private static class ValueSetSettings {
     private boolean reviewRequired;
     private boolean approvalRequired;
+  }
+
+  @Getter
+  @Setter
+  public static class ValueSetCopyright {
+    private String holder;
+    private String jurisdiction;
+    private String statement;
   }
 }

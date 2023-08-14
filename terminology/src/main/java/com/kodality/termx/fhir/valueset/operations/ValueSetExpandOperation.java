@@ -6,6 +6,8 @@ import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termx.fhir.valueset.ValueSetFhirMapper;
+import com.kodality.termx.sys.provenance.Provenance;
+import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.terminology.valueset.ValueSetService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
@@ -27,6 +29,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 @RequiredArgsConstructor
 public class ValueSetExpandOperation implements InstanceOperationDefinition, TypeOperationDefinition {
   private final ValueSetService valueSetService;
+  private final ProvenanceService provenanceService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
 
@@ -89,9 +92,10 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
 
     List<ValueSetVersionConcept> expandedConcepts = valueSetVersionConceptService.expand(vs.getId(), version.getVersion(), null);
+    List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + version.getId());
 
     if (req == null) {
-      return ValueSetFhirMapper.toFhir(vs, version, expandedConcepts, false);
+      return ValueSetFhirMapper.toFhir(vs, version, provenances, expandedConcepts, false);
     }
 
 
@@ -101,7 +105,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     if (active) {
       expandedConcepts = expandedConcepts.stream().filter(ValueSetVersionConcept::isActive).toList();
     }
-    return ValueSetFhirMapper.toFhir(vs, version, expandedConcepts, flat);
+    return ValueSetFhirMapper.toFhir(vs, version, provenances, expandedConcepts, flat);
   }
 
 }

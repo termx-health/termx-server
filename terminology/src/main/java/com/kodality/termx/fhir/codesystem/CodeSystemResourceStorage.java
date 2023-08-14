@@ -9,6 +9,8 @@ import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.kefhir.core.model.search.SearchResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termx.fhir.BaseFhirResourceStorage;
+import com.kodality.termx.sys.provenance.Provenance;
+import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.terminology.codesystem.CodeSystemImportService;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.codesystem.CodeSystemVersionService;
@@ -36,6 +38,7 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+  private final ProvenanceService provenanceService;
   private final CodeSystemImportService importService;
 
   @Override
@@ -112,9 +115,10 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
   }
 
   private ResourceVersion toFhir(CodeSystem cs, CodeSystemVersion csv) {
+    List<Provenance> provenances = provenanceService.find("CodeSystemVersion|" + csv.getId());
     return cs == null ? null : new ResourceVersion(
         new VersionId("CodeSystem", CodeSystemFhirMapper.toFhirId(cs, csv)),
-        new ResourceContent(CodeSystemFhirMapper.toFhirJson(cs, csv), "json")
+        new ResourceContent(CodeSystemFhirMapper.toFhirJson(cs, csv, provenances), "json")
     );
   }
 

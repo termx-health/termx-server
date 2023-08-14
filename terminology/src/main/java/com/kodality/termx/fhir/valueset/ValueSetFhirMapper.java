@@ -4,6 +4,7 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.termx.fhir.BaseFhirMapper;
+import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
@@ -14,6 +15,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleType;
 import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.Narrative;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose;
@@ -47,11 +49,11 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return vs.getId() + "@" + vsv.getVersion();
   }
 
-  public static String toFhirJson(ValueSet vs, ValueSetVersion vsv) {
-    return FhirMapper.toJson(toFhir(vs, vsv));
+  public static String toFhirJson(ValueSet vs, ValueSetVersion vsv, List<Provenance> provenances) {
+    return FhirMapper.toJson(toFhir(vs, vsv, provenances));
   }
 
-  public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version) {
+  public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
     termxWebUrl.ifPresent(url -> fhirValueSet.addExtension(new Extension("http://hl7.org/fhir/tools/StructureDefinition/web-source")
         .setValueUrl(url + "/fhir/ValueSet/" + valueSet.getId())));
@@ -65,13 +67,20 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     fhirValueSet.setIdentifier(toFhirIdentifiers(valueSet.getIdentifiers()));
     fhirValueSet.setText(valueSet.getNarrative() == null ? null : new Narrative().setDiv(valueSet.getNarrative()));
     fhirValueSet.setPublisher(valueSet.getPublisher());
-    fhirValueSet.setExperimental(valueSet.getExperimental());
+    fhirValueSet.setExperimental(valueSet.getExperimental() != null && valueSet.getExperimental());
+    fhirValueSet.setLastReviewDate(Optional.ofNullable(provenances).flatMap(list -> list.stream().filter(p -> "reviewed".equals(p.getActivity()))
+        .max(Comparator.comparing(Provenance::getDate)).map(p -> p.getDate().toLocalDate())).orElse(null));
+    fhirValueSet.setApprovalDate(Optional.ofNullable(provenances).flatMap(list -> list.stream().filter(p -> "approved".equals(p.getActivity()))
+        .max(Comparator.comparing(Provenance::getDate)).map(p -> p.getDate().toLocalDate())).orElse(null));
+    fhirValueSet.setCopyright(valueSet.getCopyright() != null ? valueSet.getCopyright().getHolder() : null);
+    fhirValueSet.setCopyrightLabel(valueSet.getCopyright() != null ? valueSet.getCopyright().getStatement() : null);
+    fhirValueSet.setJurisdiction(valueSet.getCopyright() != null && valueSet.getCopyright().getJurisdiction() != null  ? List.of(new CodeableConcept().setText(valueSet.getCopyright().getJurisdiction())) : null);
 
     fhirValueSet.setVersion(version.getVersion());
+    fhirValueSet.setVersionAlgorithmString(version.getAlgorithm());
     fhirValueSet.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
     fhirValueSet.setStatus(version.getStatus());
     fhirValueSet.setCompose(toFhirCompose(version.getRuleSet()));
-    //TODO copyright
     return fhirValueSet;
   }
 
@@ -138,9 +147,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }).collect(Collectors.toList());
   }
 
-  public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<ValueSetVersionConcept> concepts,
-                                                                            boolean flat) {
-    com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = toFhir(valueSet, version);
+  public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances,
+                                                                            List<ValueSetVersionConcept> concepts, boolean flat) {
+    com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = toFhir(valueSet, version, provenances);
     fhirValueSet.setExpansion(toFhirExpansion(concepts, flat));
     return fhirValueSet;
   }

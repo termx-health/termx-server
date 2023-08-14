@@ -9,6 +9,8 @@ import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.kefhir.core.model.search.SearchResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termx.fhir.BaseFhirResourceStorage;
+import com.kodality.termx.sys.provenance.Provenance;
+import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.terminology.valueset.ValueSetService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.ts.valueset.ValueSet;
@@ -16,6 +18,7 @@ import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.zmei.fhir.FhirMapper;
 import jakarta.inject.Singleton;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
@@ -25,6 +28,7 @@ public class ValueSetResourceStorage extends BaseFhirResourceStorage {
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetFhirImportService importService;
+  private final ProvenanceService provenanceService;
 
   @Override
   public String getResourceType() {
@@ -73,10 +77,11 @@ public class ValueSetResourceStorage extends BaseFhirResourceStorage {
         result.getData().stream().flatMap(cs -> cs.getVersions().stream().map(csv -> toFhir(cs, csv))).toList());
   }
 
-  private ResourceVersion toFhir(ValueSet valueSet, ValueSetVersion version) {
-    return valueSet == null ? null : new ResourceVersion(
-        new VersionId("ValueSet", ValueSetFhirMapper.toFhirId(valueSet, version)),
-        new ResourceContent(ValueSetFhirMapper.toFhirJson(valueSet, version), "json")
+  private ResourceVersion toFhir(ValueSet vs, ValueSetVersion vsv) {
+    List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + vsv.getId());
+    return vs == null ? null : new ResourceVersion(
+        new VersionId("ValueSet", ValueSetFhirMapper.toFhirId(vs, vsv)),
+        new ResourceContent(ValueSetFhirMapper.toFhirJson(vs, vsv, provenances), "json")
     );
   }
 

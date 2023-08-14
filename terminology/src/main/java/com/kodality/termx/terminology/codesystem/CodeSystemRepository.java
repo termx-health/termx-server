@@ -30,6 +30,7 @@ public class CodeSystemRepository extends BaseRepository {
     bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("purpose", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("settings", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("copyright", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
     bp.addColumnProcessor("properties", PgBeanProcessor.fromJson(JsonUtil.getListType(EntityProperty.class)));
@@ -55,6 +56,7 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.property("content", codeSystem.getContent());
     ssb.property("case_sensitive", codeSystem.getCaseSensitive() == null ? CaseSignificance.entire_term_case_insensitive : codeSystem.getCaseSensitive());
     ssb.property("sequence", codeSystem.getSequence());
+    ssb.jsonProperty("copyright", codeSystem.getCopyright());
     ssb.property("base_code_system", codeSystem.getBaseCodeSystem());
     ssb.jsonProperty("settings", codeSystem.getSettings());
     ssb.property("sys_status", "A");

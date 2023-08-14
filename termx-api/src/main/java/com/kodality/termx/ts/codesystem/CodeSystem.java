@@ -29,7 +29,7 @@ public class CodeSystem {
   private String content;
   private String caseSensitive;
   private String sequence;
-  private Object copyright;
+  private CodeSystemCopyright copyright;
   private Object permissions;
   private CodeSystemSettings settings;
 
@@ -41,8 +41,16 @@ public class CodeSystem {
 
   @Getter
   @Setter
-  private static class CodeSystemSettings {
+  public static class CodeSystemSettings {
     private boolean reviewRequired;
     private boolean approvalRequired;
+  }
+
+  @Getter
+  @Setter
+  public static class CodeSystemCopyright {
+    private String holder;
+    private String jurisdiction;
+    private String statement;
   }
 }

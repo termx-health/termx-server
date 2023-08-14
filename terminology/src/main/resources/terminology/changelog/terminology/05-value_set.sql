@@ -184,3 +184,7 @@ alter table terminology.value_set_version add column algorithm text;
 --changeset kodality:value_set-settings
 alter table terminology.value_set add column settings jsonb;
 --
+
+--changeset kodality:value_set-copyright
+alter table terminology.value_set add column copyright jsonb;
+--

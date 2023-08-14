@@ -5,6 +5,7 @@ import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.termx.fhir.BaseFhirMapper;
+import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
@@ -18,6 +19,7 @@ import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.Narrative;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
@@ -55,11 +57,11 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return cs.getId() + "@" + csv.getVersion();
   }
 
-  public static String toFhirJson(CodeSystem cs, CodeSystemVersion csv) {
-    return FhirMapper.toJson(toFhir(cs, csv));
+  public static String toFhirJson(CodeSystem cs, CodeSystemVersion csv, List<Provenance> provenances) {
+    return FhirMapper.toJson(toFhir(cs, csv, provenances));
   }
 
-  public static com.kodality.zmei.fhir.resource.terminology.CodeSystem toFhir(CodeSystem codeSystem, CodeSystemVersion version) {
+  public static com.kodality.zmei.fhir.resource.terminology.CodeSystem toFhir(CodeSystem codeSystem, CodeSystemVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem = new com.kodality.zmei.fhir.resource.terminology.CodeSystem();
     termxWebUrl.ifPresent(url -> fhirCodeSystem.addExtension(new Extension("http://hl7.org/fhir/tools/StructureDefinition/web-source")
         .setValueUrl(url + "/fhir/CodeSystem/" + codeSystem.getId())));
@@ -78,8 +80,17 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setContent(codeSystem.getContent());
     fhirCodeSystem.setCaseSensitive(
         codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
+    fhirCodeSystem.setExperimental(codeSystem.getExperimental() != null && codeSystem.getExperimental());
+    fhirCodeSystem.setLastReviewDate(Optional.ofNullable(provenances).flatMap(list -> list.stream().filter(p -> "reviewed".equals(p.getActivity()))
+        .max(Comparator.comparing(Provenance::getDate)).map(p -> p.getDate().toLocalDate())).orElse(null));
+    fhirCodeSystem.setApprovalDate(Optional.ofNullable(provenances).flatMap(list -> list.stream().filter(p -> "approved".equals(p.getActivity()))
+        .max(Comparator.comparing(Provenance::getDate)).map(p -> p.getDate().toLocalDate())).orElse(null));
+    fhirCodeSystem.setCopyright(codeSystem.getCopyright() != null ? codeSystem.getCopyright().getHolder() : null);
+    fhirCodeSystem.setCopyrightLabel(codeSystem.getCopyright() != null ? codeSystem.getCopyright().getStatement() : null);
+    fhirCodeSystem.setJurisdiction(codeSystem.getCopyright() != null && codeSystem.getCopyright().getJurisdiction() != null  ? List.of(new CodeableConcept().setText(codeSystem.getCopyright().getJurisdiction())) : null);
 
     fhirCodeSystem.setVersion(version.getVersion());
+    fhirCodeSystem.setVersionAlgorithmString(version.getAlgorithm());
     fhirCodeSystem.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
     fhirCodeSystem.setStatus(version.getStatus());
     fhirCodeSystem.setProperty(toFhirCodeSystemProperty(codeSystem.getProperties()));

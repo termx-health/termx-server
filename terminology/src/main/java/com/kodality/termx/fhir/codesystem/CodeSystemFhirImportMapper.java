@@ -96,6 +96,7 @@ public class CodeSystemFhirImportMapper {
     version.setPreferredLanguage(Language.en);
     version.setSupportedLanguages(List.of(Language.en));
     version.setStatus(PublicationStatus.draft);
+    version.setAlgorithm(fhirCodeSystem.getVersionAlgorithmString());
     version.setReleaseDate(fhirCodeSystem.getDate() == null ? LocalDate.now() : LocalDate.from(fhirCodeSystem.getDate()));
     return List.of(version);
   }
