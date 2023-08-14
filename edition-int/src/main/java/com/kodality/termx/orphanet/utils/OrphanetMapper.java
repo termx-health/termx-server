@@ -27,7 +27,7 @@ public class OrphanetMapper {
   private static final String SYNONYM = "synonym";
   private static final String DEFINITION = "definition";
   private static final String DISORDER_TYPE = "disorder-type";
-  private static final String ORPHA_CODE = "orpha-code";
+  private static final String DISORDER_ID = "disorder-id";
   private static final String EXPERT_LINK = "expert-link";
   private static final String IS_A = "is-a";
   private static final String RELATED = "relatedto";
@@ -62,7 +62,7 @@ public class OrphanetMapper {
         new CodeSystemImportRequestProperty().setName(DISPLAY).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation),
         new CodeSystemImportRequestProperty().setName(SYNONYM).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation),
         new CodeSystemImportRequestProperty().setName(DISORDER_TYPE).setType(EntityPropertyType.coding).setKind(EntityPropertyKind.property),
-        new CodeSystemImportRequestProperty().setName(ORPHA_CODE).setType(EntityPropertyType.string).setKind(EntityPropertyKind.property),
+        new CodeSystemImportRequestProperty().setName(DISORDER_ID).setType(EntityPropertyType.string).setKind(EntityPropertyKind.property),
         new CodeSystemImportRequestProperty().setName(EXPERT_LINK).setType(EntityPropertyType.string).setKind(EntityPropertyKind.property)
     );
   }
@@ -94,7 +94,7 @@ public class OrphanetMapper {
 
   private static CodeSystemImportRequestConcept mapConcept(OrphanetDisorder disorder) {
     CodeSystemImportRequestConcept concept = new CodeSystemImportRequestConcept();
-    concept.setCode(disorder.getId());
+    concept.setCode(disorder.getOrphaCode());
     concept.setDesignations(mapDesignations(disorder));
     concept.setPropertyValues(mapPropertyValues(disorder));
     concept.setAssociations(mapAssociations(disorder));
@@ -155,8 +155,8 @@ public class OrphanetMapper {
           .setCodeSystem("orpha-disorder-type");
       values.add(new EntityPropertyValue().setValue(coding).setEntityProperty(DISORDER_TYPE));
     }
-    if (disorder.getOrphaCode() != null) {
-      values.add(new EntityPropertyValue().setValue(disorder.getOrphaCode()).setEntityProperty(ORPHA_CODE));
+    if (disorder.getId() != null) {
+      values.add(new EntityPropertyValue().setValue(disorder.getId()).setEntityProperty(DISORDER_ID));
     }
     if (disorder.getExpertLink() != null) {
       values.add(new EntityPropertyValue().setValue(disorder.getExpertLink().getValue()).setEntityProperty(EXPERT_LINK));
@@ -184,7 +184,7 @@ public class OrphanetMapper {
       CodeSystemAssociation association = new CodeSystemAssociation();
       association.setAssociationType(IS_A);
       association.setStatus(PublicationStatus.active);
-      association.setTargetCode(parent.getDisorder().getId());
+      association.setTargetCode(parent.getDisorder().getOrphaCode());
       associations.add(association);
     }
     return associations;
