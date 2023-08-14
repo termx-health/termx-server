@@ -13,6 +13,7 @@ import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.valueset.ValueSet;
+import com.kodality.termx.ts.valueset.ValueSet.ValueSetCopyright;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
@@ -38,8 +39,8 @@ public class ValueSetFhirImportMapper {
     vs.setId(CodeSystemFhirMapper.parseCompositeId(valueSet.getId())[0]);
     vs.setUri(valueSet.getUrl());
     vs.setPublisher(valueSet.getPublisher());
+    vs.setName(valueSet.getName());
     vs.setTitle(toLocalizedName(valueSet.getTitle()));
-    vs.setName(toLocalizedName(valueSet.getName()));
     vs.setDescription(toLocalizedName(valueSet.getDescription()));
     vs.setPurpose(toLocalizedName(valueSet.getPurpose()));
     vs.setNarrative(valueSet.getText() == null ? null : valueSet.getText().getDiv());
@@ -47,7 +48,7 @@ public class ValueSetFhirImportMapper {
     vs.setContacts(mapContacts(valueSet.getContact()));
     vs.setVersions(List.of(mapVersion(valueSet)));
     vs.setExperimental(valueSet.getExperimental());
-    //TODO copyright
+    vs.setCopyright(new ValueSetCopyright().setHolder(valueSet.getCopyright()).setStatement(valueSet.getCopyrightLabel()));
     return vs;
   }
 

@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 public class CodeSystemRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(CodeSystem.class, bp -> {
     bp.addColumnProcessor("title", PgBeanProcessor.fromJson());
-    bp.addColumnProcessor("name", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("purpose", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("settings", PgBeanProcessor.fromJson());
@@ -44,8 +43,8 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.property("id", codeSystem.getId());
     ssb.property("uri", codeSystem.getUri());
     ssb.property("publisher", codeSystem.getPublisher());
+    ssb.property("name", codeSystem.getName());
     ssb.jsonProperty("title", codeSystem.getTitle());
-    ssb.jsonProperty("name", codeSystem.getName());
     ssb.jsonProperty("description", codeSystem.getDescription());
     ssb.jsonProperty("purpose", codeSystem.getPurpose());
     ssb.property("hierarchy_meaning", codeSystem.getHierarchyMeaning());

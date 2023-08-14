@@ -188,3 +188,11 @@ alter table terminology.value_set add column settings jsonb;
 --changeset kodality:value_set-copyright
 alter table terminology.value_set add column copyright jsonb;
 --
+
+
+--changeset kodality:value_set-name-to-text
+alter table terminology.value_set rename name to name_bak;
+alter table terminology.value_set add column name text;
+update terminology.value_set set name = (select replace(n.value::text, '"'::text, ''::text) from jsonb_each(name_bak::jsonb) n limit 1 );
+alter table terminology.value_set drop column name_bak;
+--

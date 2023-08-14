@@ -68,8 +68,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setId(toFhirId(codeSystem, version));
     fhirCodeSystem.setUrl(codeSystem.getUri());
     fhirCodeSystem.setPublisher(codeSystem.getPublisher());
+    fhirCodeSystem.setName(codeSystem.getName());
     fhirCodeSystem.setTitle(toFhirName(codeSystem.getTitle()));
-    fhirCodeSystem.setName(toFhirName(codeSystem.getName()));
     fhirCodeSystem.setDescription(toFhirName(codeSystem.getDescription()));
     fhirCodeSystem.setPurpose(toFhirName(codeSystem.getPurpose()));
     fhirCodeSystem.setHierarchyMeaning(codeSystem.getHierarchyMeaning());

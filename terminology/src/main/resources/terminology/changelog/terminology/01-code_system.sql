@@ -106,3 +106,10 @@ alter table terminology.code_system_version add column algorithm text;
 --changeset kodality:code_system-copyright
 alter table terminology.code_system add column copyright jsonb;
 --
+
+--changeset kodality:code_system-name-to-text
+alter table terminology.code_system rename name to name_bak;
+alter table terminology.code_system add column name text;
+update terminology.code_system set name = (select replace(n.value::text, '"'::text, ''::text) from jsonb_each(name_bak::jsonb) n limit 1 );
+alter table terminology.code_system drop column name_bak;
+--

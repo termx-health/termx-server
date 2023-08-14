@@ -17,8 +17,8 @@ public class ValueSet {
   private String id;
   private String uri;
   private String publisher;
+  private String name;
   private LocalizedName title;
-  private LocalizedName name;
   private LocalizedName description;
   private LocalizedName purpose;
   private String narrative;
@@ -42,6 +42,7 @@ public class ValueSet {
 
   @Getter
   @Setter
+  @Accessors(chain = true)
   public static class ValueSetCopyright {
     private String holder;
     private String jurisdiction;

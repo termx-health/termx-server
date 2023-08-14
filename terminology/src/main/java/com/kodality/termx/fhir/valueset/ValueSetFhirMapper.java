@@ -59,7 +59,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         .setValueUrl(url + "/fhir/ValueSet/" + valueSet.getId())));
     fhirValueSet.setId(toFhirId(valueSet, version));
     fhirValueSet.setUrl(valueSet.getUri());
-    fhirValueSet.setName(toFhirName(valueSet.getName()));
+    fhirValueSet.setName(valueSet.getName());
     fhirValueSet.setTitle(toFhirName(valueSet.getTitle()));
     fhirValueSet.setDescription(toFhirName(valueSet.getDescription()));
     fhirValueSet.setPurpose(toFhirName(valueSet.getPurpose()));

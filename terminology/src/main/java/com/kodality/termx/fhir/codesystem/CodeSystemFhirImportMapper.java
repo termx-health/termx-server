@@ -8,6 +8,7 @@ import com.kodality.termx.ts.ContactDetail.Telecom;
 import com.kodality.termx.ts.Language;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystem.CodeSystemCopyright;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
@@ -17,6 +18,7 @@ import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyKind;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import com.kodality.termx.ts.valueset.ValueSet.ValueSetCopyright;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
 import io.micronaut.core.util.CollectionUtils;
@@ -41,8 +43,8 @@ public class CodeSystemFhirImportMapper {
     codeSystem.setId(CodeSystemFhirMapper.parseCompositeId(fhirCodeSystem.getId())[0]);
     codeSystem.setUri(fhirCodeSystem.getUrl());
     codeSystem.setPublisher(fhirCodeSystem.getPublisher());
+    codeSystem.setName(fhirCodeSystem.getName());
     codeSystem.setTitle(toLocalizedName(fhirCodeSystem.getTitle()));
-    codeSystem.setName(toLocalizedName(fhirCodeSystem.getName()));
     codeSystem.setDescription(toLocalizedName(fhirCodeSystem.getDescription()));
     codeSystem.setPurpose(toLocalizedName(fhirCodeSystem.getPurpose()));
     codeSystem.setHierarchyMeaning(fhirCodeSystem.getHierarchyMeaning());
@@ -53,7 +55,7 @@ public class CodeSystemFhirImportMapper {
     codeSystem.setContent(fhirCodeSystem.getContent());
     codeSystem.setCaseSensitive(fhirCodeSystem.getCaseSensitive() != null && fhirCodeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
         CaseSignificance.entire_term_case_insensitive);
-    //TODO: copyright
+    codeSystem.setCopyright(new CodeSystemCopyright().setHolder(fhirCodeSystem.getCopyright()).setStatement(fhirCodeSystem.getCopyrightLabel()));
 
     codeSystem.setVersions(mapVersion(fhirCodeSystem));
     codeSystem.setConcepts(mapConcepts(fhirCodeSystem.getConcept(), fhirCodeSystem, null));

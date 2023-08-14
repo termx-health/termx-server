@@ -21,7 +21,6 @@ import javax.inject.Singleton;
 public class ValueSetRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(ValueSet.class, bp -> {
     bp.addColumnProcessor("title", PgBeanProcessor.fromJson());
-    bp.addColumnProcessor("name", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("purpose", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("settings", PgBeanProcessor.fromJson());
@@ -35,8 +34,8 @@ public class ValueSetRepository extends BaseRepository {
     ssb.property("id", valueSet.getId());
     ssb.property("uri", valueSet.getUri());
     ssb.property("publisher", valueSet.getPublisher());
+    ssb.property("name", valueSet.getName());
     ssb.jsonProperty("title", valueSet.getTitle());
-    ssb.jsonProperty("name", valueSet.getName());
     ssb.jsonProperty("description", valueSet.getDescription());
     ssb.jsonProperty("purpose", valueSet.getPurpose());
     ssb.jsonProperty("identifiers", valueSet.getIdentifiers());
