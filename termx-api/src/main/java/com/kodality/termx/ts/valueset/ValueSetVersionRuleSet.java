@@ -32,6 +32,9 @@ public class ValueSetVersionRuleSet {
     private String valueSet;
     private ValueSetVersionReference valueSetVersion;
 
+    private String codeSystemUri;
+    private String valueSetUri;
+
     @Getter
     @Setter
     @Accessors(chain = true)

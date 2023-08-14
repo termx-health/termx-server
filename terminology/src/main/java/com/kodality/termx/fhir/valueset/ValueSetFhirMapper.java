@@ -104,10 +104,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }
     return rules.stream().filter(r -> r.getType().equals(type)).map(rule -> {
       ValueSetComposeInclude include = new ValueSetComposeInclude();
-      include.setSystem(rule.getCodeSystem());
+      include.setSystem(rule.getCodeSystemUri());
       include.setConcept(toFhirConcept(rule.getConcepts()));
       include.setFilter(toFhirFilter(rule.getFilters()));
-      include.setValueSet(rule.getValueSet());
+      include.setValueSet(rule.getValueSetUri());
       return include;
     }).collect(Collectors.toList());
   }
