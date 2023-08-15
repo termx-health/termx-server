@@ -1,5 +1,6 @@
 package com.kodality.termx.snomed.ts;
 
+import com.kodality.commons.model.LocalizedName;
 import com.kodality.termx.snomed.concept.SnomedConcept.SnomedConceptName;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.ts.CaseSignificance;
@@ -17,6 +18,7 @@ import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 
@@ -100,7 +102,7 @@ public class SnomedMapper {
       EntityProperty property = new EntityProperty();
       property.setType(EntityPropertyType.string);
       property.setName(t.getConceptId());
-      property.setDescription(t.getPt().getTerm());
+      property.setDescription(t.getPt().getTerm() != null ? new LocalizedName(Map.of(t.getPt().getLang(), t.getPt().getTerm())) : null);
       property.setStatus(t.isActive() ? PublicationStatus.active : PublicationStatus.retired);
       return property;
     }).collect(Collectors.toList());

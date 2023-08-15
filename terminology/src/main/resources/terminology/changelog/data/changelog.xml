@@ -6,6 +6,7 @@
 
   <include file="association/changelog-data-association.xml" relativeToChangelogFile="true"/>
   <include file="codesystem/changelog-data-codesystem.xml" relativeToChangelogFile="true"/>
+  <include file="property/changelog-data-property.xml" relativeToChangelogFile="true"/>
   <include file="valueset/changelog-data-valueset.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

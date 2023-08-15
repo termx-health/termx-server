@@ -105,8 +105,21 @@ public class CodeSystemFhirImportMapper {
 
   private static List<EntityProperty> mapProperties(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     List<EntityProperty> defaultProperties = new ArrayList<>();
-    defaultProperties.add(new EntityProperty().setName(DISPLAY).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation).setStatus(PublicationStatus.active));
-    defaultProperties.add(new EntityProperty().setName(DEFINITION).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation).setStatus(PublicationStatus.active));
+
+    EntityProperty display = new EntityProperty();
+    display.setName(DISPLAY);
+    display.setType(EntityPropertyType.string);
+    display.setKind(EntityPropertyKind.designation);
+    display.setStatus(PublicationStatus.active);
+
+    EntityProperty definition = new EntityProperty();
+    definition.setName(DEFINITION);
+    definition.setType(EntityPropertyType.string);
+    definition.setKind(EntityPropertyKind.designation);
+    definition.setStatus(PublicationStatus.active);
+
+    defaultProperties.add(display);
+    defaultProperties.add(definition);
     if (fhirCodeSystem.getProperty() == null) {
       return defaultProperties;
     }
@@ -114,7 +127,8 @@ public class CodeSystemFhirImportMapper {
     List<EntityProperty> properties = fhirCodeSystem.getProperty().stream().map(p -> {
       EntityProperty property = new EntityProperty();
       property.setName(p.getCode());
-      property.setDescription(p.getDescription());
+      property.setUri(p.getUri());
+      property.setDescription(toLocalizedName(p.getDescription()));
       property.setType(p.getType());
       property.setKind(EntityPropertyKind.property);
       property.setStatus(PublicationStatus.active);
@@ -127,7 +141,14 @@ public class CodeSystemFhirImportMapper {
           .filter(c -> c.getDesignation() != null)
           .flatMap(c -> c.getDesignation().stream())
           .filter(d -> d.getUse() != null && d.getUse().getCode() != null)
-          .map(d -> new EntityProperty().setName(d.getUse().getCode()).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation).setStatus(PublicationStatus.active)).toList();
+          .map(d -> {
+            EntityProperty ep = new EntityProperty();
+            ep.setName(d.getUse().getCode());
+            ep.setType(EntityPropertyType.string);
+            ep.setKind(EntityPropertyKind.designation);
+            ep.setStatus(PublicationStatus.active);
+            return ep;
+          }).toList();
       properties.addAll(designationProperties);
     }
     return properties.stream().collect(Collectors.toMap(EntityProperty::getName, p -> p, (p, q) -> p)).values().stream().toList();

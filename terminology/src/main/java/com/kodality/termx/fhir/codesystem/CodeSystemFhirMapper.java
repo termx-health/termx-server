@@ -154,7 +154,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         new CodeSystemProperty()
             .setCode(p.getName())
             .setType(p.getType())
-            .setDescription(p.getDescription())
+            .setUri(p.getUri())
+            .setDescription(toFhirName(p.getDescription()))
     ).sorted(Comparator.comparing(CodeSystemProperty::getCode)).toList();
   }
 

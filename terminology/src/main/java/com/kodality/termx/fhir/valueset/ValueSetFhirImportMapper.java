@@ -153,8 +153,11 @@ public class ValueSetFhirImportMapper {
       return null;
     }
     return filters.stream().map(f -> {
+      EntityProperty ep = new EntityProperty();
+      ep.setName(f.getProperty());
+
       ValueSetRuleFilter filter = new ValueSetRuleFilter();
-      filter.setProperty(new EntityProperty().setName(f.getProperty()));
+      filter.setProperty(ep);
       filter.setOperator(f.getOp());
       filter.setValue(f.getValue());
       return filter;

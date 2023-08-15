@@ -126,3 +126,39 @@ create index entity_property_value_code_system_entity_version_idx on terminology
 
 select core.create_table_metadata('terminology.entity_property_value');
 --rollback drop table if exists terminology.entity_property_value;
+
+
+
+--changeset kodality:defined_entity_property
+drop table if exists terminology.defined_entity_property;
+create table terminology.defined_entity_property (
+    id                  bigserial                 not null primary key,
+    name                text                      not null,
+    type                text                      not null,
+    kind                text                      not null,
+    uri                 text,
+    rule                jsonb,
+    description         jsonb,
+    sys_created_at      timestamp                 not null,
+    sys_created_by      text                      not null,
+    sys_modified_at     timestamp                 not null,
+    sys_modified_by     text                      not null,
+    sys_status          char(1)     default 'A'   not null collate "C",
+    sys_version         int                       not null
+);
+
+select core.create_table_metadata('terminology.defined_entity_property');
+--rollback drop table if exists terminology.defined_entity_property;
+
+
+--changeset kodality:entity_property-uri,defined_entity_property_id
+alter table terminology.entity_property add column uri text;
+alter table terminology.entity_property add column defined_entity_property_id bigint;
+--
+
+--changeset kodality:entity_property-description
+alter table terminology.entity_property add column description_temp jsonb;
+update terminology.entity_property set description_temp = jsonb_strip_nulls(jsonb_build_object('en', description));
+alter table terminology.entity_property drop column description;
+alter table terminology.entity_property rename column description_temp to description;
+--

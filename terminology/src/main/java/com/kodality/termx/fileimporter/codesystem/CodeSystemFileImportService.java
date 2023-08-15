@@ -33,7 +33,7 @@ import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
-import com.kodality.termx.ts.codesystem.EntityProperty.EntityPropertyRule;
+import com.kodality.termx.ts.codesystem.DefinedEntityProperty.EntityPropertyRule;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue.EntityPropertyValueCodingValue;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;

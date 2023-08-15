@@ -36,7 +36,7 @@ public class CodeSystemRepository extends BaseRepository {
   });
 
   private static final String select = "select distinct on (cs.id) cs.*, " +
-      "(select jsonb_agg(ep.p) from (select json_build_object('id', ep.id, 'name', ep.name, 'kind', ep.kind, 'type', ep.type, 'description', ep.description, 'status', ep.status, 'orderNumber', ep.order_number, 'preferred', ep.preferred, 'required', ep.required, 'rule', ep.rule, 'created', ep.created) as p from terminology.entity_property ep where ep.code_system = cs.id and ep.sys_status = 'A' order by ep.order_number) ep) as properties ";
+      "(select jsonb_agg(ep.p) from (select json_build_object('id', ep.id, 'name', ep.name, 'uri', ep.uri, 'kind', ep.kind, 'type', ep.type, 'description', ep.description, 'status', ep.status, 'orderNumber', ep.order_number, 'preferred', ep.preferred, 'required', ep.required, 'rule', ep.rule, 'created', ep.created, 'definedEntityPropertyId', ep.defined_entity_property_id) as p from terminology.entity_property ep where ep.code_system = cs.id and ep.sys_status = 'A' order by ep.order_number) ep) as properties ";
 
   public void save(CodeSystem codeSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -110,12 +110,12 @@ public class CodeSystemRepository extends BaseRepository {
     sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getName());
     sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%' || terminology.search_translate(?) || '%'", params.getNameContains());
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and ( terminology.text_search(cs.id, cs.uri) like '%`' || terminology.search_translate(?) || '`%'" +
+      sb.append("and ( terminology.text_search(cs.id, cs.uri, cs.name) like '%`' || terminology.search_translate(?) || '`%'" +
               "     or terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '`%' )",
           params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and ( terminology.text_search(cs.id, cs.uri) like '%' || terminology.search_translate(?) || '%'" +
+      sb.append("and ( terminology.text_search(cs.id, cs.uri, cs.name) like '%' || terminology.search_translate(?) || '%'" +
               "     or terminology.jsonb_search(cs.title) like '%' || terminology.search_translate(?) || '%' )",
           params.getTextContains(), params.getTextContains());
     }
@@ -136,13 +136,11 @@ public class CodeSystemRepository extends BaseRepository {
   private Map<String, String> sortMap(String lang) {
     Map<String, String> sortMap = new HashMap<>(Map.of(
         Ordering.id, "cs.id",
-        Ordering.uri, "cs.uri"
+        Ordering.uri, "cs.uri",
+        Ordering.name, "cs.name"
     ));
     if (StringUtils.isNotEmpty(lang)) {
       sortMap.put(Ordering.description, "cs.description ->> '" + lang + "'");
-    }
-    if (StringUtils.isNotEmpty(lang)) {
-      sortMap.put(Ordering.name, "cs.name ->> '" + lang + "'");
     }
     return sortMap;
   }

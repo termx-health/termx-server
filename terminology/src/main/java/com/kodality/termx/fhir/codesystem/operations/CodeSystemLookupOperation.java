@@ -5,6 +5,7 @@ import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.ts.codesystem.CodeSystem;
@@ -96,7 +97,7 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
       findPropertyValues(cs, p.getId()).forEach(pv -> {
         resp.addParameter(new ParametersParameter("property")
             .addPart(new ParametersParameter("code").setValueString(p.getName()))
-            .addPart(new ParametersParameter("description").setValueString(p.getDescription()))
+            .addPart(new ParametersParameter("description").setValueString(BaseFhirMapper.toFhirName(p.getDescription())))
             .addPart(toParameter(p.getType(), pv))
         );
       });

@@ -54,7 +54,7 @@ public abstract class BaseFhirMapper {
     return identifiers.stream().map(i -> new Identifier().setSystem(i.getSystem()).setValue(i.getValue())).collect(Collectors.toList());
   }
 
-  protected static String toFhirName(LocalizedName name) {
+  public static String toFhirName(LocalizedName name) {
     if (name == null) {
       return null;
     }

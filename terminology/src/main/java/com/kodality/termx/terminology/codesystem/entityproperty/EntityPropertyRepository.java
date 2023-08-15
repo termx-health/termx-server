@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 public class EntityPropertyRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(EntityProperty.class, p -> {
     p.addColumnProcessor("rule", PgBeanProcessor.fromJson());
+    p.addColumnProcessor("description", PgBeanProcessor.fromJson());
   });
 
   private final Map<String, String> orderMapping = Map.of("order-number", "ep.order_number");
@@ -28,15 +29,17 @@ public class EntityPropertyRepository extends BaseRepository {
     ssb.property("id", entityProperty.getId());
     ssb.property("code_system", codeSystem);
     ssb.property("name", entityProperty.getName());
+    ssb.property("uri", entityProperty.getUri());
     ssb.property("kind", entityProperty.getKind());
     ssb.property("type", entityProperty.getType());
-    ssb.property("description", entityProperty.getDescription());
+    ssb.jsonProperty("description", entityProperty.getDescription());
     ssb.property("status", entityProperty.getStatus());
     ssb.property("order_number", entityProperty.getOrderNumber());
     ssb.property("preferred", entityProperty.isPreferred());
     ssb.property("required", entityProperty.isRequired());
     ssb.property("created", entityProperty.getCreated());
     ssb.jsonProperty("rule", entityProperty.getRule());
+    ssb.property("defined_entity_property_id", entityProperty.getDefinedEntityPropertyId());
 
     SqlBuilder sb = ssb.buildSave("terminology.entity_property", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());

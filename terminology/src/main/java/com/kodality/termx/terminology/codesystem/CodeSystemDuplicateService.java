@@ -109,8 +109,8 @@ public class CodeSystemDuplicateService {
       EntityPropertyQueryParams propertyParams = new EntityPropertyQueryParams().setCodeSystem(sourceCodeSystem);
       propertyParams.all();
       List<EntityProperty> properties = entityPropertyService.query(propertyParams).getData();
-      Map<Long, EntityProperty> propertiesToSave = properties.stream().collect(Collectors.toMap(EntityProperty::getId, p -> p.setId(null)));
-      entityPropertyService.save(propertiesToSave.values().stream().toList(), targetCodeSystem);
+      Map<Long, EntityProperty> propertiesToSave = properties.stream().collect(Collectors.toMap(EntityProperty::getId, p -> p));
+      entityPropertyService.save(propertiesToSave.values().stream().peek(p -> p.setId(null)).toList(), targetCodeSystem);
       propertyMap = propertiesToSave.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> e.getValue().getId()));
     }
 
