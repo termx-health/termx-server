@@ -14,11 +14,23 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ValueSetVersionConcept {
   private Long id;
-  private Concept concept;
-  private Long conceptVersionId;
+  private ValueSetVersionConceptValue concept;
   private Designation display;
   private List<Designation> additionalDesignations;
   private Integer orderNumber;
 
-  private boolean active;
+  private boolean active; //calculated field
+
+  @Getter
+  @Setter
+  public static class ValueSetVersionConceptValue {
+    private Long id;
+    private String code;
+    private String codeSystem;
+    private String codeSystemUri;
+
+    public static ValueSetVersionConceptValue fromConcept(Concept c) {
+      return new ValueSetVersionConceptValue().setCode(c.getCode()).setCodeSystem(c.getCodeSystem());
+    }
+  }
 }

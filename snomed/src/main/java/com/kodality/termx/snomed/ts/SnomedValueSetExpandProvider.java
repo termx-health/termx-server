@@ -54,7 +54,7 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
     Map<String, List<SnomedDescription>> snomedDescriptions = getDescriptions(snomedConcepts.stream().map(SnomedConcept::getConceptId).toList());
 
     return snomedConcepts.stream().map(c -> new ValueSetVersionConcept()
-        .setConcept(snomedMapper.toConcept(c))
+        .setConcept(snomedMapper.toVSConcept(c))
         .setActive(c.isActive())
         .setDisplay(new Designation().setName(c.getPt().getTerm()).setLanguage(c.getPt().getLang()))
         .setAdditionalDesignations(snomedDescriptions.getOrDefault(c.getConceptId(), List.of()).stream().filter(d -> languages.contains(d.getLang()))

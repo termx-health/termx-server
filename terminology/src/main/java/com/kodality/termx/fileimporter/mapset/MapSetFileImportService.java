@@ -12,9 +12,9 @@ import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
-import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import java.util.Arrays;
 import java.util.List;
@@ -88,8 +88,8 @@ public class MapSetFileImportService {
 
 
   private MapSet prepareMapSet(MapSet mapSet) {
-    List<Concept> sourceVSConcepts = valueSetVersionConceptService.expand(mapSet.getSourceValueSet(), null, null).stream().map(ValueSetVersionConcept::getConcept).toList();
-    List<Concept> targetVSConcepts = valueSetVersionConceptService.expand(mapSet.getTargetValueSet(), null, null).stream().map(ValueSetVersionConcept::getConcept).toList();
+    List<ValueSetVersionConceptValue> sourceVSConcepts = valueSetVersionConceptService.expand(mapSet.getSourceValueSet(), null, null).stream().map(ValueSetVersionConcept::getConcept).toList();
+    List<ValueSetVersionConceptValue > targetVSConcepts = valueSetVersionConceptService.expand(mapSet.getTargetValueSet(), null, null).stream().map(ValueSetVersionConcept::getConcept).toList();
     mapSet.getAssociations().forEach(association -> {
       association.setSource(prepareAssociation(association.getSource(), sourceVSConcepts, mapSet.getAssociations().indexOf(association)));
       association.setTarget(prepareAssociation(association.getTarget(), targetVSConcepts, mapSet.getAssociations().indexOf(association)));
@@ -97,8 +97,8 @@ public class MapSetFileImportService {
     return mapSet;
   }
 
-  private CodeSystemEntityVersion prepareAssociation(CodeSystemEntityVersion entityVersion, List<Concept> valueSetConcepts, int index) {
-    Optional<Concept> concept = valueSetConcepts.stream().filter(vsc -> vsc.getCode().equals(entityVersion.getCode())).findFirst();
+  private CodeSystemEntityVersion prepareAssociation(CodeSystemEntityVersion entityVersion, List<ValueSetVersionConceptValue> valueSetConcepts, int index) {
+    Optional<ValueSetVersionConceptValue> concept = valueSetConcepts.stream().filter(vsc -> vsc.getCode().equals(entityVersion.getCode())).findFirst();
     if (concept.isEmpty()) {
       throw ApiError.TE710.toApiException(Map.of("rowNumber", index));
     }

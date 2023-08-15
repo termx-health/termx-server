@@ -16,6 +16,7 @@ import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSet.ValueSetCopyright;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
@@ -128,7 +129,7 @@ public class ValueSetFhirImportMapper {
     }
     return concepts.stream().map(c -> {
       ValueSetVersionConcept concept = new ValueSetVersionConcept();
-      concept.setConcept(new Concept().setCode(c.getCode()));
+      concept.setConcept(new ValueSetVersionConceptValue().setCode(c.getCode()));
       concept.setDisplay(c.getDisplay() != null ? new Designation().setName(c.getDisplay()) : null);
       concept.setAdditionalDesignations(mapDesignations(c.getDesignation()));
       return concept;

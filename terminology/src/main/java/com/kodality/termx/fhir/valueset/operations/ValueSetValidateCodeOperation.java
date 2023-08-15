@@ -86,16 +86,12 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .map(uri -> codeSystemService.query(new CodeSystemQueryParams().setUri(uri)).findFirst()
             .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "CodeSystem not found")).getId()
         ).orElse(null);
-    String systemVersion = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
 
     List<ValueSetVersionConcept> concepts = valueSetVersionConceptService.expand(vsVersion.getId(), null);
     ValueSetVersionConcept concept = concepts.stream()
-        .filter(c -> c.getConcept().getCode().equals(code)
-                     && (system == null || system.equals(c.getConcept().getCodeSystem()))
-                     && (systemVersion == null || c.getConcept().getVersions().stream()
-            .anyMatch(e -> e.getVersions() != null && e.getVersions().stream().anyMatch(v -> systemVersion.equals(v.getVersion()))))
-        ).findFirst().orElse(null);
+        .filter(c -> c.getConcept().getCode().equals(code) && (system == null || system.equals(c.getConcept().getCodeSystem())))
+        .findFirst().orElse(null);
 
     if (concept == null) {
       return error("invalid code");

@@ -51,9 +51,9 @@ public class UcumValueSetExpandProvider extends ValueSetExternalExpandProvider {
 
     return measurementUnitService.query(params).getData().stream().map(unit -> {
       ValueSetVersionConcept concept = new ValueSetVersionConcept();
-      concept.setConcept(ucumMapper.toConcept(unit));
+      concept.setConcept(ucumMapper.toVSConcept(unit));
       concept.setActive(true);
-      concept.setAdditionalDesignations(concept.getConcept().getVersions().stream().findFirst().map(CodeSystemEntityVersion::getDesignations).orElse(new ArrayList<>()));
+      concept.setAdditionalDesignations(ucumMapper.toConceptVersion(unit).getDesignations());
       return concept;
     }).collect(Collectors.toList());
   }

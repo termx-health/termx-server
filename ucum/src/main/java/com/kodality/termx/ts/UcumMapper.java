@@ -4,6 +4,7 @@ import com.kodality.commons.model.LocalizedName;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import com.kodality.termx.ucum.MeasurementUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +14,21 @@ import javax.inject.Singleton;
 @Singleton
 public class UcumMapper {
   private static final String UCUM = "ucum";
+  private static final String UCUM_URI = "http://unitsofmeasure.org";
 
   public Concept toConcept(MeasurementUnit unit) {
     Concept concept = new Concept();
     concept.setCode(unit.getCode());
     concept.setVersions(List.of(toConceptVersion(unit)));
     concept.setCodeSystem(UCUM);
+    return concept;
+  }
+
+  public ValueSetVersionConceptValue toVSConcept(MeasurementUnit unit) {
+    ValueSetVersionConceptValue concept = new ValueSetVersionConceptValue();
+    concept.setCode(unit.getCode());
+    concept.setCodeSystem(UCUM);
+    concept.setCodeSystemUri(UCUM_URI);
     return concept;
   }
 

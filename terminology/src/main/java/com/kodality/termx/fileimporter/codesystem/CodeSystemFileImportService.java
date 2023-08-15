@@ -37,6 +37,7 @@ import com.kodality.termx.ts.codesystem.EntityProperty.EntityPropertyRule;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue.EntityPropertyValueCodingValue;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -492,6 +493,9 @@ public class CodeSystemFileImportService {
 
     public static MiniConcept fromConcept(ValueSetVersionConcept vc) {
       MiniConcept c = MiniConcept.fromConcept(vc.getConcept());
+      if (vc.getDisplay() != null) {
+        c.setDesignations(new ArrayList<>(List.of(vc.getDisplay())));
+      }
       if (vc.getAdditionalDesignations() != null) {
         c.setDesignations(ListUtils.union(c.getDesignations(), vc.getAdditionalDesignations().stream().toList()));
       }
@@ -505,6 +509,13 @@ public class CodeSystemFileImportService {
       if (c.getVersions() != null) {
         mc.setDesignations(c.getVersions().stream().flatMap(v -> v.getDesignations() == null ? Stream.empty() : v.getDesignations().stream()).toList());
       }
+      return mc;
+    }
+
+    public static MiniConcept fromConcept(ValueSetVersionConceptValue c) {
+      MiniConcept mc = new MiniConcept();
+      mc.setCode(c.getCode());
+      mc.setCodeSystem(c.getCodeSystem());
       return mc;
     }
   }

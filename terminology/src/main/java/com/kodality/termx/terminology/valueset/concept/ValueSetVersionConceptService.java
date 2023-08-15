@@ -97,18 +97,21 @@ public class ValueSetVersionConceptService {
     designationParams.setLimit(designationIds.size());
     List<Designation> designations = designationService.query(designationParams).getData();
 
-    List<String> versionIds = concepts.stream().map(ValueSetVersionConcept::getConceptVersionId).filter(Objects::nonNull).map(String::valueOf).toList();
-    CodeSystemEntityVersionQueryParams entityVersionParams = new CodeSystemEntityVersionQueryParams();
-    entityVersionParams.setIds(String.join(",", versionIds));
-    entityVersionParams.setStatus(String.join(",", List.of(PublicationStatus.active, PublicationStatus.draft)));
-    entityVersionParams.all();
-    List<CodeSystemEntityVersion> versions = CollectionUtils.isEmpty(versionIds) ? new ArrayList<>() : codeSystemEntityVersionService.query(entityVersionParams).getData();
+    List<CodeSystemEntityVersion> versions = new ArrayList<>();
+    concepts.stream().collect(Collectors.groupingBy(c -> c.getConcept().getCodeSystem())).forEach((cs, csConcepts) -> {
+      List<String> codes = csConcepts.stream().map(c -> c.getConcept().getCode()).filter(Objects::nonNull).toList();
+      CodeSystemEntityVersionQueryParams entityVersionParams = new CodeSystemEntityVersionQueryParams();
+      entityVersionParams.setCode(String.join(",", codes));
+      entityVersionParams.setCodeSystem(String.join(",", cs));
+      entityVersionParams.setStatus(String.join(",", List.of(PublicationStatus.active, PublicationStatus.draft)));
+      entityVersionParams.all();
+      versions.addAll(CollectionUtils.isEmpty(codes) ? List.of() : codeSystemEntityVersionService.query(entityVersionParams).getData());
+    });
 
     concepts.forEach(c -> {
-      List<CodeSystemEntityVersion> conceptVersions = versions.stream().filter(v -> v.getId().equals(c.getConceptVersionId())).toList();
-      c.getConcept().setVersions(conceptVersions);
-      c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? c.getDisplay() : designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
+      List<CodeSystemEntityVersion> conceptVersions = versions.stream().filter(v -> v.getCode().equals(c.getConcept().getCode()) && v.getCodeSystem().equals(c.getConcept().getCodeSystem())).toList();
       c.setActive(c.isActive() || conceptVersions.stream().anyMatch(v -> PublicationStatus.active.equals(v.getStatus())));
+      c.setDisplay(c.getDisplay() == null || c.getDisplay().getId() == null ? c.getDisplay() : designations.stream().filter(d -> d.getId().equals(c.getDisplay().getId())).findFirst().orElse(c.getDisplay()));
       c.setAdditionalDesignations(CollectionUtils.isNotEmpty(c.getAdditionalDesignations()) ? c.getAdditionalDesignations().stream()
           .map(ad -> ad.getId() == null ? ad : designations.stream().filter(d -> d.getId().equals(ad.getId())).findFirst().orElse(ad))
           .collect(Collectors.toList()) : null);

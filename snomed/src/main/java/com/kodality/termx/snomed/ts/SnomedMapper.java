@@ -12,6 +12,7 @@ import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.description.SnomedDescription;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.Arrays;
@@ -22,12 +23,21 @@ import javax.inject.Singleton;
 @Singleton
 public class SnomedMapper {
   private static final String SNOMED = "snomed-ct";
+  private static final String SNOMED_URI = "http://snomed.info/sct";
 
   public Concept toConcept(SnomedConcept snomedConcept) {
     Concept concept = new Concept();
     concept.setCode(snomedConcept.getConceptId());
     concept.setVersions(List.of(toConceptVersion(snomedConcept)));
     concept.setCodeSystem(SNOMED);
+    return concept;
+  }
+
+  public ValueSetVersionConceptValue toVSConcept(SnomedConcept snomedConcept) {
+    ValueSetVersionConceptValue concept = new ValueSetVersionConceptValue();
+    concept.setCode(snomedConcept.getConceptId());
+    concept.setCodeSystem(SNOMED);
+    concept.setCodeSystemUri(SNOMED_URI);
     return concept;
   }
 

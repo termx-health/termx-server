@@ -26,6 +26,7 @@ import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.zmei.fhir.FhirMapper;
@@ -168,7 +169,7 @@ public class ValueSetFhirImportService {
 
   private void prepareConcept(ValueSetVersionConcept c, String codeSystem) {
     Concept concept = conceptService.save(new Concept().setCode(c.getConcept().getCode()), codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
-    c.setConcept(concept);
+    c.setConcept(ValueSetVersionConceptValue.fromConcept(concept));
   }
 
   private CodeSystemEntityVersion prepareCodeSystemVersion(ValueSetVersionConcept c, String codeSystem, Long codeSystemVersionId) {

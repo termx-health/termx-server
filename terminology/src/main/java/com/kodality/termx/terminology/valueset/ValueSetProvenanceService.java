@@ -4,10 +4,10 @@ import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.sys.provenance.Provenance.ProvenanceChange;
 import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.sys.provenance.ProvenanceUtil;
-import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetTransactionRequest;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.inject.Singleton;
@@ -57,9 +57,12 @@ public class ValueSetProvenanceService {
 
   private Map<String, ProvenanceChange> diff(ValueSetVersion left, ValueSetVersion right) {
     Consumer<ValueSetVersion> fn = vs -> {
+      if (vs.getRuleSet() == null || vs.getRuleSet().getRules() == null) {
+        return;
+      }
       vs.getRuleSet().getRules().forEach(r -> {
         if (r.getConcepts() != null) {
-          r.getConcepts().forEach(c -> c.setConcept(new Concept().setCode(c.getConcept().getCode())));
+          r.getConcepts().forEach(c -> c.setConcept(new ValueSetVersionConceptValue().setCode(c.getConcept().getCode())));
         }
       });
     };
