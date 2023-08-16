@@ -33,11 +33,15 @@ import static com.kodality.termx.ts.codesystem.EntityPropertyType.integer;
 
 public class CodeSystemFileImportProcessor {
   public static final String IDENTIFIER_PROPERTY = "concept-code";
+  public static final String HIERARCHICAL_CONCEPT = "hierarchical-concept";
   public static final String DESIGNATION_PROPERTY_TYPE = "designation";
 
 
   public static CodeSystemFileImportResult process(String type, byte[] file, List<FileProcessingProperty> importProperties) {
-    if (importProperties.stream().filter(p -> IDENTIFIER_PROPERTY.equals(p.getName()) && p.isPreferred()).count() > 1) {
+    if (importProperties.stream().noneMatch(p -> List.of(IDENTIFIER_PROPERTY, HIERARCHICAL_CONCEPT).contains(p.getName()))) {
+      throw ApiError.TE722.toApiException();
+    }
+    if (importProperties.stream().filter(p -> List.of(IDENTIFIER_PROPERTY, HIERARCHICAL_CONCEPT).contains(p.getName()) && p.isPreferred()).count() > 1) {
       throw ApiError.TE707.toApiException();
     }
     if (importProperties.stream().noneMatch(p -> DESIGNATION_PROPERTY_TYPE.equals(p.getPropertyType()))) {
