@@ -17,7 +17,6 @@ public class PackageRepository extends BaseRepository {
     ssb.property("space_id", spaceId);
     ssb.property("code", p.getCode());
     ssb.property("status", p.getStatus());
-    ssb.property("git", p.getGit());
 
     SqlBuilder sb = ssb.buildSave("sys.package", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());

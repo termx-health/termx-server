@@ -20,6 +20,21 @@ public class Space {
   private boolean shared;
   private Object acl;
   private List<String> terminologyServers;
+  private SpaceIntegration integration;
 
   private List<Package> packages;
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class SpaceIntegration {
+    private SpaceIntegrationGithub github;
+  }
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class SpaceIntegrationGithub {
+    private String repo;
+  }
 }

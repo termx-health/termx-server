@@ -11,7 +11,6 @@ public class Package {
   private Long id;
   private String code;
   private String status;
-  private String git;
 
   private Long spaceId;
 }

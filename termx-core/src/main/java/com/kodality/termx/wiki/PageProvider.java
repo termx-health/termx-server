@@ -9,4 +9,8 @@ public abstract class PageProvider {
   public List<PageContent> getRelatedPageContents(String resourceId, String resourceType) {
     return new ArrayList<>();
   }
+
+  public List<PageContent> findPages(Long spaceId) {
+    return new ArrayList<>();
+  }
 }

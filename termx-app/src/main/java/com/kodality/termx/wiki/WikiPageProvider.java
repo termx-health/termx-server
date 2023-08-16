@@ -17,4 +17,9 @@ public class WikiPageProvider extends PageProvider {
   public List<PageContent> getRelatedPageContents(String resourceId, String resourceType) {
     return pageContentService.query(new PageContentQueryParams().setRelations(resourceType + "|" + resourceId).all()).getData();
   }
+
+  @Override
+  public List<PageContent> findPages(Long spaceId) {
+    return pageContentService.query(new PageContentQueryParams().setSpaceIds(spaceId.toString()).all()).getData();
+  }
 }

@@ -26,3 +26,7 @@ create unique index space_ukey on sys.space (code) where (sys_status = 'A');
 
 select core.create_table_metadata('sys.space');
 --
+
+--changeset kodality:space-integration
+alter table sys.space add column integration jsonb;
+--

@@ -14,6 +14,7 @@ public class SpaceRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(Space.class, bp -> {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("acl", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("integration", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("terminology_servers", PgBeanProcessor.fromJson(JsonUtil.getListType(String.class)));
   });
 
@@ -25,6 +26,7 @@ public class SpaceRepository extends BaseRepository {
     ssb.property("active", space.isActive());
     ssb.property("shared", space.isShared());
     ssb.jsonProperty("acl", space.getAcl());
+    ssb.jsonProperty("integration", space.getIntegration());
     ssb.jsonProperty("terminology_servers", space.getTerminologyServers());
 
     SqlBuilder sb = ssb.buildSave("sys.space", "id");

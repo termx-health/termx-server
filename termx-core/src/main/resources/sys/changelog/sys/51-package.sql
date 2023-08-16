@@ -58,3 +58,7 @@ select core.create_table_metadata('sys.package_version');
 
 select core.create_table_metadata('sys.package_version_resource');
 --
+
+--changeset kodality:package-remove-git
+alter table sys.package drop column git;
+--
