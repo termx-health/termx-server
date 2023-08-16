@@ -1,8 +1,9 @@
-package com.kodality.termx.snomed.snomed.translation;
+package com.kodality.termx.snomed.snomed.rf2;
 
 import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
+import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.LorqueProcessService;
 import com.kodality.termx.sys.lorque.ProcessResult;

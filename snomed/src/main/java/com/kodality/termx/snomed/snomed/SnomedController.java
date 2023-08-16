@@ -24,7 +24,8 @@ import com.kodality.termx.snomed.rf2.SnomedExportRequest;
 import com.kodality.termx.snomed.rf2.SnomedImportJob;
 import com.kodality.termx.snomed.rf2.SnomedImportRequest;
 import com.kodality.termx.snomed.search.SnomedSearchResult;
-import com.kodality.termx.snomed.snomed.translation.SnomedRF2Service;
+import com.kodality.termx.snomed.snomed.csv.SnomedConceptCsvService;
+import com.kodality.termx.snomed.snomed.rf2.SnomedRF2Service;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.LorqueProcessService;
@@ -64,6 +65,7 @@ public class SnomedController {
   private final SnomedService snomedService;
   private final SnowstormClient snowstormClient;
   private final SnomedRF2Service snomedRF2Service;
+  private final SnomedConceptCsvService snomedConceptCsvService;
   private final LorqueProcessService lorqueProcessService;
   private final SnomedTransactionService transactionService;
   private final SnomedTranslationService translationService;
@@ -188,6 +190,23 @@ public class SnomedController {
 
     return concepts;
   }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Post(value = "/concepts/export-csv")
+  public HttpResponse<?> startConceptCsvExport(@Body SnomedConceptSearchParams params) {
+    LorqueProcess lorqueProcess = snomedConceptCsvService.startCsvExport(params);
+    return HttpResponse.accepted().body(lorqueProcess);
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get(value = "/concepts/export-csv/result/{lorqueProcessId}", produces = "application/csv")
+  public HttpResponse<?> getConceptCsv(Long lorqueProcessId) {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=concepts.csv")
+        .contentType(MediaType.of("application/csv"));
+  }
+
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Post("/branches/{path}/concepts/transaction")
