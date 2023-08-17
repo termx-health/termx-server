@@ -17,6 +17,7 @@ import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 
@@ -63,15 +64,13 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
   }
 
   private List<ValueSetVersionConcept> prepare(List<ValueSetVersionConcept> concepts, List<String> languages) {
-    SnomedConceptSearchParams params = new SnomedConceptSearchParams();
-    params.setConceptIds(concepts.stream().map(c -> c.getConcept().getCode()).collect(Collectors.toList()));
-    params.setAll(true);
-    Map<String, SnomedConcept> snomedConcepts = snomedService.searchConcepts(params).stream().collect(Collectors.toMap(SnomedConcept::getConceptId, c -> c));
+    Map<String, List<SnomedConcept>> snomedConcepts = snomedService.loadConcepts(concepts.stream().map(c -> c.getConcept().getCode()).collect(Collectors.toList())).stream()
+        .collect(Collectors.groupingBy(SnomedConcept::getConceptId));
 
     Map<String, List<SnomedDescription>> snomedDescriptions = getDescriptions(snomedConcepts.keySet().stream().toList());
 
     concepts.forEach(c -> {
-      SnomedConcept sc = snomedConcepts.get(c.getConcept().getCode());
+      SnomedConcept sc = Optional.ofNullable(snomedConcepts.get(c.getConcept().getCode())).flatMap(l -> l.stream().findFirst()).orElse(null);
       if (sc == null) {
         return;
       }

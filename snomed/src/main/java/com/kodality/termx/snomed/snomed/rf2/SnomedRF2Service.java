@@ -103,10 +103,7 @@ public class SnomedRF2Service {
     if (CollectionUtils.isEmpty(conceptIds)) {
       return List.of();
     }
-    SnomedConceptSearchParams params = new SnomedConceptSearchParams();
-    params.setConceptIds(conceptIds);
-    params.setAll(true);
-    return snomedService.searchConcepts(params);
+    return snomedService.loadConcepts(conceptIds);
   }
 
   private Map<String, Concept> loadModules() {

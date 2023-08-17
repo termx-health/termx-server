@@ -25,11 +25,7 @@ public class SnomedCodeSystemProvider extends CodeSystemExternalProvider {
 
   @Override
   public List<CodeSystemEntityVersion> loadLastVersions(List<String> codes) {
-    SnomedConceptSearchParams params = new SnomedConceptSearchParams();
-    params.setConceptIds(codes);
-    params.setActive(true);
-    params.setAll(true);
-    List<SnomedConcept> snomedConcepts = snomedService.searchConcepts(params);
+    List<SnomedConcept> snomedConcepts = snomedService.loadConcepts(codes, true);
     return snomedConcepts.stream().map(snomedMapper::toConceptVersion).toList();
   }
 

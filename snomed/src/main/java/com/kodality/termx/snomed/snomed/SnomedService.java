@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,24 @@ public class SnomedService {
   private final SnomedTranslationRepository translationRepository;
 
   private static final int MAX_COUNT = 9999;
+  private static final int MAX_CONCEPT_COUNT = 300;
+
+  public List<SnomedConcept> loadConcepts(List<String> ids) {
+    return loadConcepts(ids, null);
+  }
+
+  public List<SnomedConcept> loadConcepts(List<String> ids, Boolean active) {
+    List<SnomedConcept> concepts = new ArrayList<>();
+    IntStream.range(0, (ids.size() + MAX_CONCEPT_COUNT - 1) / MAX_CONCEPT_COUNT)
+        .mapToObj(i -> ids.subList(i * MAX_CONCEPT_COUNT, Math.min(ids.size(), (i + 1) * MAX_CONCEPT_COUNT))).forEach(batch -> {
+          SnomedConceptSearchParams params = new SnomedConceptSearchParams();
+          params.setConceptIds(batch);
+          params.setLimit(batch.size());
+          params.setActive(active);
+          concepts.addAll(searchConcepts(params));
+        });
+    return concepts;
+  }
 
   public List<SnomedConcept> searchConcepts(SnomedConceptSearchParams params) {
     if (params.isAll()) {
