@@ -42,6 +42,13 @@ public class SpaceGithubController {
     return HttpResponse.ok();
   }
 
+  @Authorized(Privilege.P_EDIT)
+  @Post("/pull")
+  public HttpResponse<?> pull(@Parameter Long id) {
+    service().pull(id);
+    return HttpResponse.ok();
+  }
+
   public record SpaceGithubAuthRequest(String returnUrl) {}
   public record SpaceGithubCommitRequest(String message) {}
 }

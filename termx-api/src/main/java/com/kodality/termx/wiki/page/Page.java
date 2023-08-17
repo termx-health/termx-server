@@ -33,7 +33,7 @@ public class Page {
   @Getter
   @Setter
   public static class PageSettings {
-    private long templateId;
+    private Long templateId;
   }
 
   @Getter

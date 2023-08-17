@@ -29,6 +29,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
+import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.base64.Base64;
 
 @Requires(property = "github.client.id")
 @Singleton
@@ -140,6 +141,15 @@ public class GithubService {
 
   public List<GithubContent> listContents(String repo, String path) {
     return JsonUtil.fromJson(get("/repos/" + repo + "/contents/" + path), JsonUtil.getListType(GithubContent.class));
+  }
+
+  public GithubContent getContent(String repo, String path) {
+    String resp = get("/repos/" + repo + "/contents/" + path);
+    GithubContent content = JsonUtil.fromJson(resp, GithubContent.class);
+    if ("base64".equals(JsonUtil.read(resp, "$.encoding"))) {
+      content.setContent(new String(Base64.decode(content.getContent().replaceAll("\n", ""))));
+    }
+    return content;
   }
 
   public String getLastCommitSha(String repo) {

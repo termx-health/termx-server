@@ -5,21 +5,24 @@ import com.kodality.termx.github.GithubService;
 import com.kodality.termx.github.GithubService.GithubCommit;
 import com.kodality.termx.github.GithubService.GithubContent;
 import com.kodality.termx.github.GithubService.GithubStatus;
-import com.kodality.termx.wiki.PageProvider;
-import com.kodality.termx.wiki.page.PageContent;
 import io.micronaut.context.annotation.Requires;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 @Requires(bean = GithubService.class)
 @Singleton
 @RequiredArgsConstructor
 public class SpaceGithubService {
   private final SpaceService spaceService;
-  private final PageProvider pageProvider;
   private final GithubService githubService;
+  private final List<SpaceGithubDataHandler> dataHandlers;
 
   public SpaceGithubAuthResult authenticate(Long spaceId, String returnUrl) {
     Space space = spaceService.load(spaceId);
@@ -33,37 +36,60 @@ public class SpaceGithubService {
   public GithubStatus status(Long spaceId) {
     Space space = spaceService.load(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
-    return githubService.status(repo, "wiki", collectWiki(spaceId));
+    return dataHandlers.stream().map(h -> {
+      return githubService.status(repo, h.getName(), getCurrentContent(spaceId, h));
+    }).reduce(new GithubStatus(), (a, b) -> {
+      a.setSha(b.getSha());
+      a.getFiles().putAll(b.getFiles());
+      return a;
+    });
   }
 
   public void push(Long spaceId, String message) {
     Space space = spaceService.load(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
 
-    List<GithubContent> changes = collectWiki(spaceId);
-    GithubStatus status = githubService.status(repo, "wiki", changes);
-    if (status.getFiles().isEmpty() || status.getFiles().values().stream().distinct().allMatch(s -> GithubStatus.U.equals(s))) {
-      // nothing changed
-      return;
+    List<GithubContent> allChanges = dataHandlers.stream().flatMap(h -> {
+      Map<String, GithubContent> changes = getCurrentContent(spaceId, h).stream().collect(Collectors.toMap(GithubContent::getPath, c -> c));
+      GithubStatus status = githubService.status(repo, h.getName(), new ArrayList<>(changes.values()));
+      return Stream.concat(
+          status.getFiles().keySet().stream().filter(k -> List.of(GithubStatus.A, GithubStatus.M).contains(status.getFiles().get(k))).map(changes::get),
+          status.getFiles().keySet().stream().filter(k -> GithubStatus.D.equals(status.getFiles().get(k))).map(p -> new GithubContent().setPath(p))
+      );
+    }).toList();
+    if (allChanges.isEmpty()) {
+      return; // nothing changed
     }
-    changes.addAll(status.getFiles().keySet().stream()
-        .filter(k -> GithubStatus.D.equals(status.getFiles().get(k)))
-        .map(p -> new GithubContent().setPath(p)).toList());
 
     GithubCommit c = new GithubCommit();
     c.setMessage(message == null ? "update" : message);
     c.setAuthorName(SessionStore.require().getUsername());
     c.setAuthorEmail(SessionStore.require().getUsername() + "@termx"); // TODO email
-    c.setFiles(changes);
+    c.setFiles(allChanges);
     githubService.commit(repo, c);
   }
 
-  private List<GithubContent> collectWiki(Long spaceId) {
-    List<PageContent> pages = pageProvider.findPages(spaceId);
-    return pages.stream().map(p -> new GithubContent()
-        .setContent(p.getContent())
-        .setPath("wiki/" + p.getSlug() + "." + p.getLang() + ".md")
-    ).collect(Collectors.toList());
+  @Transactional
+  public void pull(Long spaceId) {
+    Space space = spaceService.load(spaceId);
+    String repo = space.getIntegration().getGithub().getRepo();
+
+    dataHandlers.forEach(h -> {
+      List<GithubContent> changes = getCurrentContent(spaceId, h);
+      GithubStatus status = githubService.status(repo, "wiki", changes);
+      Map<String, String> content = status.getFiles().keySet().stream()
+          .filter(k -> List.of(GithubStatus.M, GithubStatus.A, GithubStatus.D).contains(status.getFiles().get(k)))
+          .collect(com.kodality.commons.stream.Collectors.<String, String, String>toMap(
+              k -> StringUtils.removeStart(k, h.getName() + "/"),
+              k -> GithubStatus.A.equals(status.getFiles().get(k)) ? null : githubService.getContent(repo, k).getContent()
+          ));
+      h.saveContent(spaceId, content
+      );
+    });
+  }
+
+  private List<GithubContent> getCurrentContent(Long spaceId, SpaceGithubDataHandler h) {
+    return h.getContent(spaceId).entrySet().stream().map(e -> new GithubContent().setPath(h.getName() + "/" + e.getKey()).setContent(e.getValue())).toList();
   }
 
   public record SpaceGithubAuthResult(boolean isAuthenticated, String redirectUrl) {}
