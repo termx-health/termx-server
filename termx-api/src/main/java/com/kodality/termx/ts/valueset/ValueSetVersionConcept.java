@@ -1,7 +1,9 @@
 package com.kodality.termx.ts.valueset;
 
+import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
+import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
 import lombok.Getter;
@@ -19,12 +21,15 @@ public class ValueSetVersionConcept {
   private List<Designation> additionalDesignations;
   private Integer orderNumber;
 
+  private boolean enumerated; //calculated field
   private boolean active; //calculated field
+  private List<CodeSystemAssociation> associations; //decorated field
+  private List<EntityPropertyValue> propertyValues; //decorated field
 
   @Getter
   @Setter
   public static class ValueSetVersionConceptValue {
-    private Long id;
+    private Long conceptVersionId;
     private String code;
     private String codeSystem;
     private String codeSystemUri;

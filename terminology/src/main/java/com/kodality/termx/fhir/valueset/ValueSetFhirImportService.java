@@ -49,16 +49,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class ValueSetFhirImportService {
-  private final ConceptService conceptService;
   private final ValueSetService valueSetService;
   private final CodeSystemService codeSystemService;
-  private final DesignationService designationService;
-  private final EntityPropertyService entityPropertyService;
   private final ValueSetVersionService valueSetVersionService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
-  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
-
   private final BinaryHttpClient client = new BinaryHttpClient();
 
   @Transactional
@@ -82,7 +77,7 @@ public class ValueSetFhirImportService {
       throw ApiError.TE107.toApiException();
     }
     fhir.setId(id);
-    importValueSet(fhir, false);
+    importValueSet(fhir, PublicationStatus.active.equals(fhir.getStatus()));
   }
 
   private String getResource(String url) {
@@ -132,92 +127,6 @@ public class ValueSetFhirImportService {
             .setReleaseDateLe(LocalDate.now())
             .setExpirationDateGe(LocalDate.now())).findFirst().orElse(null));
       }
-    }
-  }
-
-  private List<ValueSetVersionConcept> prepareConcepts(List<ValueSetVersionConcept> concepts, String codeSystem, Long codeSystemVersionId) {
-    List<ValueSetVersionConcept> conceptsToAdd = new ArrayList<>();
-    if (CollectionUtils.isEmpty(concepts)) {
-      return conceptsToAdd;
-    }
-
-    boolean contentNotPresent = CodeSystemContent.notPresent.equals(codeSystemService.load(codeSystem).map(CodeSystem::getContent).orElse(null));
-
-    concepts.stream().filter(c -> c.getConcept() != null && c.getConcept().getCode() != null).forEach(concept -> {
-      if (!conceptExists(concept, codeSystem, codeSystemVersionId)) {
-        if (contentNotPresent) {
-          conceptsToAdd.add(concept);
-        } else {
-          prepareConcept(concept, codeSystem);
-          CodeSystemEntityVersion codeSystemEntityVersion = prepareCodeSystemVersion(concept, codeSystem, codeSystemVersionId);
-          prepareDesignations(concept, codeSystemEntityVersion.getId());
-        }
-      }
-    });
-
-    return conceptsToAdd;
-  }
-
-  private boolean conceptExists(ValueSetVersionConcept c, String codeSystem, Long codeSystemVersionId) {
-    ConceptQueryParams params = new ConceptQueryParams();
-    params.setCodeSystem(codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
-    params.setCodeSystemVersionId(codeSystemVersionId);
-    params.setCode(c.getConcept().getCode());
-    params.setLimit(1);
-    return conceptService.query(params).findFirst().isPresent();
-  }
-
-  private void prepareConcept(ValueSetVersionConcept c, String codeSystem) {
-    Concept concept = conceptService.save(new Concept().setCode(c.getConcept().getCode()), codeSystem == null ? c.getConcept().getCodeSystem() : codeSystem);
-    c.setConcept(ValueSetVersionConceptValue.fromConcept(concept));
-  }
-
-  private CodeSystemEntityVersion prepareCodeSystemVersion(ValueSetVersionConcept c, String codeSystem, Long codeSystemVersionId) {
-    CodeSystemEntityVersion version = codeSystemEntityVersionService
-        .query(
-            new CodeSystemEntityVersionQueryParams()
-                .setCodeSystem(c.getConcept().getCodeSystem())
-                .setCode(c.getConcept().getCode())
-                .setStatus(String.join(",", PublicationStatus.draft, PublicationStatus.active)))
-        .findFirst()
-        .orElse(
-            new CodeSystemEntityVersion()
-                .setCodeSystem(c.getConcept().getCodeSystem())
-                .setCode(c.getConcept().getCode())
-                .setStatus(PublicationStatus.draft));
-    if (version.getId() == null) {
-      codeSystemEntityVersionService.save(version, c.getConcept().getId());
-      codeSystemEntityVersionService.activate(version.getId());
-    }
-
-    if (codeSystem != null && codeSystemVersionId != null) {
-      codeSystemVersionService.linkEntityVersions(codeSystemVersionId, List.of(version.getId()));
-    }
-    return version;
-  }
-
-  private void prepareDesignations(ValueSetVersionConcept c, Long codeSystemEntityVersionId) {
-    if (c.getConcept().getId() == null) {
-      return;
-    }
-    Long propertyId = entityPropertyService
-        .query(new EntityPropertyQueryParams().setCodeSystem(c.getConcept().getCodeSystem()).setNames("display"))
-        .findFirst().map(EntityProperty::getId).orElse(null);
-
-    if (c.getDisplay() != null) {
-      designationService
-          .query(new DesignationQueryParams().setConceptCode(c.getConcept().getCode()).setName(c.getDisplay().getName())
-              .setDesignationKind(c.getDisplay().getDesignationKind()))
-          .findFirst().ifPresentOrElse(c::setDisplay, () -> {
-            c.getDisplay().setDesignationTypeId(propertyId);
-            designationService.save(c.getDisplay(), codeSystemEntityVersionId, c.getConcept().getCodeSystem());
-          });
-    }
-    if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
-      c.getAdditionalDesignations().forEach(d -> {
-        d.setDesignationTypeId(propertyId);
-        designationService.save(d, codeSystemEntityVersionId, c.getConcept().getCodeSystem());
-      });
     }
   }
 

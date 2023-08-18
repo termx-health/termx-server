@@ -18,8 +18,8 @@ import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyKind;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
-import com.kodality.termx.ts.valueset.ValueSet.ValueSetCopyright;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
+import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptDesignation;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Singleton;
@@ -95,8 +96,13 @@ public class CodeSystemFhirImportMapper {
     CodeSystemVersion version = new CodeSystemVersion();
     version.setCodeSystem(fhirCodeSystem.getId());
     version.setVersion(fhirCodeSystem.getVersion() == null ? "1.0.0" : fhirCodeSystem.getVersion());
-    version.setPreferredLanguage(Language.en);
-    version.setSupportedLanguages(List.of(Language.en));
+    version.setPreferredLanguage(fhirCodeSystem.getLanguage() == null ? Language.en : fhirCodeSystem.getLanguage());
+    version.setSupportedLanguages(Optional.ofNullable(fhirCodeSystem.getConcept()).orElse(new ArrayList<>()).stream()
+        .filter(c -> c.getDesignation() != null)
+        .flatMap(c -> c.getDesignation().stream().map(CodeSystemConceptDesignation::getLanguage)).filter(Objects::nonNull).distinct().collect(Collectors.toList()));
+    if (!version.getSupportedLanguages().contains(version.getPreferredLanguage())) {
+      version.getSupportedLanguages().add(version.getPreferredLanguage());
+    }
     version.setStatus(PublicationStatus.draft);
     version.setAlgorithm(fhirCodeSystem.getVersionAlgorithmString());
     version.setReleaseDate(fhirCodeSystem.getDate() == null ? LocalDate.now() : LocalDate.from(fhirCodeSystem.getDate()));
@@ -200,11 +206,11 @@ public class CodeSystemFhirImportMapper {
     if (c.getDesignation() == null) {
       c.setDesignation(new ArrayList<>());
     }
-    List<Designation> designations = c.getDesignation().stream().filter(d -> d.getLanguage() != null).map(d -> {
+    List<Designation> designations = c.getDesignation().stream().map(d -> {
       Designation designation = new Designation();
       designation.setDesignationType(d.getUse() == null ? DISPLAY : d.getUse().getCode());
       designation.setName(d.getValue());
-      designation.setLanguage(d.getLanguage());
+      designation.setLanguage(d.getLanguage() == null ? Language.en : d.getLanguage());
       designation.setCaseSignificance(caseSignificance);
       designation.setDesignationKind("text");
       designation.setStatus("active");
@@ -215,11 +221,11 @@ public class CodeSystemFhirImportMapper {
     display.setDesignationType(DISPLAY);
     display.setName(c.getDisplay());
     display.setPreferred(true);
-    display.setLanguage(Language.en);
+    display.setLanguage(codeSystem.getLanguage() == null ? Language.en : codeSystem.getLanguage());
     display.setCaseSignificance(caseSignificance);
     display.setDesignationKind("text");
     display.setStatus("active");
-    if (designations.stream().noneMatch(d -> isSameDesignation(d, display))) {
+    if (display.getName() != null && designations.stream().noneMatch(d -> isSameDesignation(d, display))) {
       designations.add(display);
     }
 
@@ -227,11 +233,11 @@ public class CodeSystemFhirImportMapper {
       Designation definition = new Designation();
       definition.setDesignationType(DEFINITION);
       definition.setName(c.getDefinition());
-      definition.setLanguage(Language.en);
+      definition.setLanguage(codeSystem.getLanguage() == null ? Language.en : codeSystem.getLanguage());
       definition.setCaseSignificance(caseSignificance);
       definition.setDesignationKind("text");
       definition.setStatus("active");
-      if (designations.stream().noneMatch(d -> isSameDesignation(d, definition))) {
+      if (definition.getName() != null && designations.stream().noneMatch(d -> isSameDesignation(d, definition))) {
         designations.add(definition);
       }
     }
@@ -239,7 +245,7 @@ public class CodeSystemFhirImportMapper {
   }
 
   private static boolean isSameDesignation(Designation d1, Designation d2) {
-    return d1.getDesignationType().equals(d2.getDesignationType()) && d1.getName().equals(d2.getName());
+    return d1.getDesignationType().equals(d2.getDesignationType()) && d1.getName().equals(d2.getName()) && d1.getLanguage().equals(d2.getLanguage());
   }
 
   private static List<EntityPropertyValue> mapPropertyValues(List<CodeSystemConceptProperty> propertyValues) {

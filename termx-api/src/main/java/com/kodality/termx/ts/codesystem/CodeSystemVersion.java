@@ -15,7 +15,6 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class CodeSystemVersion extends CodeSystemVersionReference {
   private String codeSystem;
-  private String preferredLanguage;
   private List<String> supportedLanguages;
   private LocalizedName description;
   private String algorithm;

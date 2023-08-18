@@ -362,7 +362,7 @@ public class CodeSystemFileImportService {
           long start = System.currentTimeMillis();
 
           if (StringUtils.isNotBlank(rule.getValueSet())) {
-            List<ValueSetVersionConcept> expand = valueSetVersionConceptService.expand(rule.getValueSet(), null, null);
+            List<ValueSetVersionConcept> expand = valueSetVersionConceptService.expand(rule.getValueSet(), null);
             log.info("\texpand took {} millis", System.currentTimeMillis() - start);
             return expand.stream().map(MiniConcept::fromConcept).toList();
           }

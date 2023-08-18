@@ -32,7 +32,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
 
   private final static String select =
       "select csev.*" +
-          ", (select jsonb_agg(json_build_object('id', csv.id, 'version', csv.version, 'status', csv.status))" +
+          ", (select jsonb_agg(json_build_object('id', csv.id, 'version', csv.version, 'status', csv.status, 'preferredLanguage', csv.preferred_language))" +
           "   from terminology.code_system_version csv where csv.sys_status = 'A' " +
           "       and exists (select 1 from terminology.entity_version_code_system_version_membership evcsvm " +
           "         where evcsvm.code_system_entity_version_id = csev.id and evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A')) versions ";

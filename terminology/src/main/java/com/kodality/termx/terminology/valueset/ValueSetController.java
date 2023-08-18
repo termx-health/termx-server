@@ -193,7 +193,7 @@ public class ValueSetController {
   @Post(uri = "/expand")
   public List<ValueSetVersionConcept> expand(@Body @Valid ValueSetExpandRequest request) {
     userPermissionService.checkPermitted(request.getValueSet(), "ValueSet", "view");
-    return valueSetVersionConceptService.expand(request.getValueSet(), request.getValueSetVersion(), request.getRuleSet());
+    return valueSetVersionConceptService.expand(request.getValueSet(), request.getValueSetVersion());
   }
 
   @Authorized(Privilege.VS_VIEW)
@@ -205,7 +205,7 @@ public class ValueSetController {
       try {
         log.info("ValueSet '{}' expand started", request.getValueSet());
         long start = System.currentTimeMillis();
-        valueSetVersionConceptService.expand(request.getValueSet(), request.getValueSetVersion(), request.getRuleSet());
+        valueSetVersionConceptService.expand(request.getValueSet(), request.getValueSetVersion());
         log.info("ValueSet '{}' expand  took {}", request.getValueSet(), (System.currentTimeMillis() - start) / 1000 + " seconds");
         importLogger.logImport(jobLogResponse.getJobId());
       } catch (ApiClientException e) {

@@ -118,7 +118,7 @@ class CodeSystemImportServiceTest extends Specification {
 
     then:
     codeSystemValidationService.validateConcepts(_, _) >> []
-    valueSetVersionConceptService.expand(ep.rule.valueSet, _, _) >> [
+    valueSetVersionConceptService.expand(ep.rule.valueSet, _) >> [
         new ValueSetVersionConcept(
             concept: new Concept(code: 'code-1', codeSystem: 'cs-1', versions: [version('#')])),
         new ValueSetVersionConcept(

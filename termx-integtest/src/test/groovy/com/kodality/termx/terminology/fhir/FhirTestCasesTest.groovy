@@ -130,9 +130,82 @@ class FhirTestCasesTest extends TermxIntegTest {
     actualValueSet.status == expectedValueSet.status
     actualValueSet.name == expectedValueSet.name
     actualValueSet.title == expectedValueSet.title
+    actualValueSet.experimental == expectedValueSet.experimental
     actualValueSet.publisher == expectedValueSet.publisher
-    actualValueSet.expansion.total == expectedValueSet.expansion.total
-    actualValueSet.expansion.contains.code.sort() == expectedValueSet.expansion.contains.code.sort()
+    actualValueSet.description == expectedValueSet.description
+    actualValueSet.immutable == expectedValueSet.immutable
+    actualValueSet.purpose == expectedValueSet.purpose
+    actualValueSet.copyright == expectedValueSet.copyright
+    actualValueSet.copyrightLabel == expectedValueSet.copyrightLabel
+    if (actualValueSet.expansion != null && expectedValueSet.expansion != null) {
+      actualValueSet.expansion.total == expectedValueSet.expansion.total
+      checkContains(actualValueSet.expansion.contains, expectedValueSet.expansion.contains)
+    } else {
+      actualValueSet.expansion == null
+      expectedValueSet.expansion == null
+    }
+  }
+
+
+  def checkContains(List<ValueSet.ValueSetExpansionContains> actualContains, List<ValueSet.ValueSetExpansionContains> expectedContains) {
+    actualContains.stream().noneMatch { ac -> {
+      boolean check = checkContainsSingle(ac, expectedContains.stream().filter { ec -> (ec.code == ac.code) }.findFirst().orElse(null))
+      return !check
+    }}
+  }
+
+
+  boolean checkContainsSingle(ValueSet.ValueSetExpansionContains actualContains, ValueSet.ValueSetExpansionContains expectedContains) {
+    println '-------------------------'
+    println '--------ACTUAL-----------'
+    println actualContains.display
+    println actualContains.designation
+    if (actualContains.designation != null) {
+      println('designation -> ')
+      actualContains.designation.forEach {d -> {
+        println d.value
+        println d.language
+      }}
+    }
+    println '--------EXPECTED---------'
+    println expectedContains.display
+    println expectedContains.designation
+    if (expectedContains.designation != null) {
+      println('designation -> ')
+      expectedContains.designation.forEach {d -> {
+        println d.value
+        println d.language
+      }}
+    }
+    return actualContains != null &&
+        expectedContains != null &&
+        actualContains.code == expectedContains.code &&
+        actualContains.display == expectedContains.display &&
+        actualContains.system == expectedContains.system &&
+        actualContains.inactive == expectedContains.inactive &&
+        (!isEmpty(actualContains.designation) && !isEmpty(expectedContains.designation) && checkDesignations(actualContains.designation, expectedContains.designation)
+            || isEmpty(actualContains.designation) && isEmpty(expectedContains.designation)) &&
+        (!isEmpty(actualContains.contains) && !isEmpty(expectedContains.contains) && checkContains(actualContains.contains, expectedContains.contains)
+            || isEmpty(actualContains.contains) && isEmpty(expectedContains.contains))
+  }
+
+  def checkDesignations(List<ValueSet.ValueSetComposeIncludeConceptDesignation> actualDesignations, List<ValueSet.ValueSetComposeIncludeConceptDesignation> expectedDesignations) {
+    actualDesignations.stream().noneMatch { ad -> {
+      boolean check = checkDesignationsSingle(ad, expectedDesignations.stream().filter { ed -> (ad.value == ed.value && (ed.language == null || ed.language == ad.language)) }.findFirst().orElse(null))
+      return !check
+    }}
+  }
+
+  boolean checkDesignationsSingle(ValueSet.ValueSetComposeIncludeConceptDesignation actualDesignation, ValueSet.ValueSetComposeIncludeConceptDesignation expectedDesignation) {
+    return actualDesignation != null &&
+        expectedDesignation != null &&
+        actualDesignation.value == expectedDesignation.value &&
+        (expectedDesignation.language == null || actualDesignation.language == expectedDesignation.language) &&
+        (expectedDesignation.use == null || actualDesignation.use.code == expectedDesignation.use.code)
+  }
+
+  <T> boolean isEmpty(List<T> contains) {
+    return contains == null || contains == []
   }
 
   def checkValidateCodeResult(Parameters actualResult, Parameters expectedResult) {
@@ -143,7 +216,7 @@ class FhirTestCasesTest extends TermxIntegTest {
   def <T extends Resource> T toFhir(String path, Class<T> clazz) {
     def json = new String(getClass().getClassLoader().getResourceAsStream("fhir/" + path).readAllBytes())
     json = json.replace("\uFEFF", "")
-    json = json.replace("\$" + "instant"  + "\$", "")
+    json = json.replace("\$" + "instant" + "\$", "")
     return FhirMapper.fromJson(json, clazz)
   }
 }

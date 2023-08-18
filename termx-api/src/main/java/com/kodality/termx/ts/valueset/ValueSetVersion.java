@@ -13,6 +13,7 @@ import lombok.Setter;
 @Introspected
 public class ValueSetVersion extends ValueSetVersionReference {
   private String valueSet;
+  private String preferredLanguage;
   private List<String> supportedLanguages;
   private LocalizedName description;
   private String status;

@@ -11,4 +11,5 @@ public class CodeSystemVersionReference {
   private Long id;
   private String version;
   private String status;
+  private String preferredLanguage;
 }

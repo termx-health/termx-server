@@ -88,7 +88,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         ).orElse(null);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
 
-    List<ValueSetVersionConcept> concepts = valueSetVersionConceptService.expand(vsVersion.getId(), null);
+    List<ValueSetVersionConcept> concepts = valueSetVersionConceptService.expand(vsVersion, null);
     ValueSetVersionConcept concept = concepts.stream()
         .filter(c -> c.getConcept().getCode().equals(code) && (system == null || system.equals(c.getConcept().getCodeSystem())))
         .findFirst().orElse(null);

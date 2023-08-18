@@ -42,6 +42,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   }
 
   public ResourceContent run(ResourceId id, ResourceContent p) {
+    Parameters req = FhirMapper.fromJson(p.getValue(), Parameters.class);
     String[] parts = ValueSetFhirMapper.parseCompositeId(id.getResourceId());
     String vsId = parts[0];
     String versionNumber = parts[1];
@@ -52,7 +53,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     ValueSet valueSet = valueSetService.query(vsParams).findFirst()
         .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "value set not found: " + id.getResourceId()));
 
-    com.kodality.zmei.fhir.resource.terminology.ValueSet resp = expand(valueSet, versionNumber, null);
+    com.kodality.zmei.fhir.resource.terminology.ValueSet resp = expand(valueSet, versionNumber, req);
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }
 
@@ -91,21 +92,12 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       throw new FhirException(400, IssueType.NOTFOUND, "value set version not found");
     }
 
-    List<ValueSetVersionConcept> expandedConcepts = valueSetVersionConceptService.expand(vs.getId(), version.getVersion(), null);
+    String displayLanguage = req == null ? null : req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
+        .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString).orElse(null));
+    List<ValueSetVersionConcept> expandedConcepts = valueSetVersionConceptService.expand(vs.getId(), version.getVersion(), displayLanguage);
     List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + version.getId());
 
-    if (req == null) {
-      return ValueSetFhirMapper.toFhir(vs, version, provenances, expandedConcepts, false);
-    }
-
-
-    boolean flat = req.findParameter("excludeNested").map(ParametersParameter::getValueBoolean).orElse(false);
-    boolean active = req.findParameter("activeOnly").map(ParametersParameter::getValueBoolean).orElse(false);
-
-    if (active) {
-      expandedConcepts = expandedConcepts.stream().filter(ValueSetVersionConcept::isActive).toList();
-    }
-    return ValueSetFhirMapper.toFhir(vs, version, provenances, expandedConcepts, flat);
+    return ValueSetFhirMapper.toFhir(vs, version, provenances, expandedConcepts, req);
   }
 
 }

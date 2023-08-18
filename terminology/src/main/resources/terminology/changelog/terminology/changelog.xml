@@ -27,7 +27,6 @@
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/00-text_search.sql" />
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/00-jsonb_search.sql" />
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/01-value_set_expand.sql" />
-        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/02-rule_set_expand.sql" />
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/11-code_system_closure.sql" />
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/12-refresh_concept_closure.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/21-cancel_entity.sql"/>

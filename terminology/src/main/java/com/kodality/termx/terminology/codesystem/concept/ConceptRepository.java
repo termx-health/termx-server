@@ -150,7 +150,6 @@ public class ConceptRepository extends BaseRepository {
     sb.appendIfNotNull("and csv.release_date <= ?", params.getCodeSystemVersionReleaseDateLe());
     sb.appendIfNotNull("and (csv.expiration_date >= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateGe());
     sb.appendIfNotNull("and (csv.expiration_date <= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateLe());
-    sb.appendIfNotNull(params.getValueSetExpandResultIds(), (sql, s) -> sql.and().in("c.id", s, Long::valueOf));
     sb.appendIfNotNull("and csev.status = ?", params.getCodeSystemEntityStatus());
     if (StringUtils.isNotEmpty(params.getCodeSystemEntityVersionId())) {
       sb.and().in("csev.id", params.getCodeSystemEntityVersionId(), Long::valueOf);

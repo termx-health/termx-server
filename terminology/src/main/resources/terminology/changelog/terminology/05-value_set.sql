@@ -196,3 +196,7 @@ alter table terminology.value_set add column name text;
 update terminology.value_set set name = (select replace(n.value::text, '"'::text, ''::text) from jsonb_each(name_bak::jsonb) n limit 1 );
 alter table terminology.value_set drop column name_bak;
 --
+
+--changeset kodality:value_set_version-preferred_language
+alter table terminology.value_set_version add column preferred_language text;
+--

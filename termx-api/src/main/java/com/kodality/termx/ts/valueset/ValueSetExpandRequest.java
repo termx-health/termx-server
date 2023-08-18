@@ -10,5 +10,4 @@ import lombok.Setter;
 public class ValueSetExpandRequest {
   private String valueSet;
   private String valueSetVersion;
-  private ValueSetVersionRuleSet ruleSet;
 }

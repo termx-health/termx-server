@@ -82,7 +82,6 @@ public class ValueSetFhirImportMapper {
     ValueSetVersion version = new ValueSetVersion();
     version.setValueSet(valueSet.getId());
     version.setVersion(valueSet.getVersion() == null ? "1.0.0" : valueSet.getVersion());
-    version.setSupportedLanguages(List.of(Language.en));
     version.setStatus(PublicationStatus.draft);
     version.setReleaseDate(valueSet.getDate() == null ? LocalDate.now() : LocalDate.from(valueSet.getDate()));
     version.setRuleSet(mapRuleSet(valueSet));

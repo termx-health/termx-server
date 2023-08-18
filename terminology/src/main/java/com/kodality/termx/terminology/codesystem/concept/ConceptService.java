@@ -43,8 +43,6 @@ public class ConceptService {
   private final CodeSystemRepository codeSystemRepository;
   private final CodeSystemEntityService codeSystemEntityService;
   private final CodeSystemVersionService codeSystemVersionService;
-  private final ValueSetVersionRepository valueSetVersionRepository;
-  private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final List<CodeSystemExternalProvider> codeSystemProviders;
 
@@ -179,19 +177,6 @@ public class ConceptService {
       if (StringUtils.isEmpty(params.getCodeSystem())) {
         params.setCodeSystem(String.join(",", codeSystems));
       }
-    }
-    if (params.getValueSet() != null && params.getValueSetVersion() == null) {
-      ValueSetVersion valueSetVersion = valueSetVersionRepository.loadLastVersion(params.getValueSet());
-      params.setValueSetVersionId(valueSetVersion == null ? null : valueSetVersion.getId());
-    }
-    if (params.getValueSet() != null && params.getValueSetVersion() != null) {
-      params.setValueSetVersionId(valueSetVersionRepository.load(params.getValueSet(), params.getValueSetVersion()).getId());
-    }
-    if (params.getValueSetVersionId() != null) {
-      params.setValueSetExpandResultIds(valueSetVersionConceptService.expand(params.getValueSetVersionId(), null).stream()
-          .map(c -> c.getConcept().getId())
-          .filter(Objects::nonNull)
-          .map(String::valueOf).collect(Collectors.joining(",")));
     }
   }
 

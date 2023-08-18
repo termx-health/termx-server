@@ -74,7 +74,7 @@ public class CodeSystemValidationService {
           EntityPropertyRule rule = ep.getRule();
 
           if (StringUtils.isNotBlank(rule.getValueSet())) {
-            List<ValueSetVersionConcept> expand = valueSetVersionConceptService.expand(rule.getValueSet(), null, null);
+            List<ValueSetVersionConcept> expand = valueSetVersionConceptService.expand(rule.getValueSet(), null);
             return expand.stream().map(ValueSetVersionConcept::getConcept).toList();
           }
 

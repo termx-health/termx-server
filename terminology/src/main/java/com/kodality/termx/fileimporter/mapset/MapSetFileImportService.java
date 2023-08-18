@@ -88,8 +88,8 @@ public class MapSetFileImportService {
 
 
   private MapSet prepareMapSet(MapSet mapSet) {
-    List<ValueSetVersionConceptValue> sourceVSConcepts = valueSetVersionConceptService.expand(mapSet.getSourceValueSet(), null, null).stream().map(ValueSetVersionConcept::getConcept).toList();
-    List<ValueSetVersionConceptValue > targetVSConcepts = valueSetVersionConceptService.expand(mapSet.getTargetValueSet(), null, null).stream().map(ValueSetVersionConcept::getConcept).toList();
+    List<ValueSetVersionConceptValue> sourceVSConcepts = valueSetVersionConceptService.expand(mapSet.getSourceValueSet(), null).stream().map(ValueSetVersionConcept::getConcept).toList();
+    List<ValueSetVersionConceptValue > targetVSConcepts = valueSetVersionConceptService.expand(mapSet.getTargetValueSet(), null).stream().map(ValueSetVersionConcept::getConcept).toList();
     mapSet.getAssociations().forEach(association -> {
       association.setSource(prepareAssociation(association.getSource(), sourceVSConcepts, mapSet.getAssociations().indexOf(association)));
       association.setTarget(prepareAssociation(association.getTarget(), targetVSConcepts, mapSet.getAssociations().indexOf(association)));
