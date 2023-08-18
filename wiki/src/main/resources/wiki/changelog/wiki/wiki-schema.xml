@@ -23,9 +23,10 @@
         </sql>
 	</changeSet>
 
-  <changeSet id="wiki-schema-extensions" author="kodality">
+  <changeSet id="wiki-schema-extensions-2" author="kodality">
     <sql>
         CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public;
+        CREATE EXTENSION IF NOT EXISTS btree_gist SCHEMA public;
       </sql>
   </changeSet>
 
