@@ -15,6 +15,7 @@ public class Page {
   private Long id;
   @NotNull
   private Long spaceId;
+  private String code;
   private String status;
   private PageSettings settings;
   private boolean leaf;

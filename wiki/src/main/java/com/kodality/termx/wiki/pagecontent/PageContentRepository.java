@@ -41,6 +41,11 @@ public class PageContentRepository extends BaseRepository {
     return getBeans(sql, bp, pageId);
   }
 
+  public void delete(Long pageId) {
+    String sql = "update wiki.page_content set sys_status = 'C' where sys_status = 'A' and id = ?";
+    jdbcTemplate.update(sql, pageId);
+  }
+
   public QueryResult<PageContent> query(PageContentQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from wiki.page_content pc where pc.sys_status = 'A' ");

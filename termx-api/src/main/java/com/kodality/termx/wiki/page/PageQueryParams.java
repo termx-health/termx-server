@@ -12,6 +12,7 @@ public class PageQueryParams extends QueryParams {
   private boolean root;
   private String ids;
   private String idsNe;
+  private String codes;
   private String spaceIds;
   private Long rootId;
   private String textContains;

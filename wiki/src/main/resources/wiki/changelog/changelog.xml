@@ -6,13 +6,6 @@
     <include file="core-db/changelog/core/changelog.xml" relativeToChangelogFile="false"/>
     <include file="core-db/changelog/audit/changelog.xml" relativeToChangelogFile="false"/>
 
-    <changeSet id="create_deprecated_sequences" author="wiki">
-        <sql>
-            create sequence if not exists core.s_entity;
-            create sequence if not exists core.s_transaction;
-        </sql>
-    </changeSet>
-
     <include file="01-init-user.sql" relativeToChangelogFile="true"/>
 
     <include file="wiki/changelog.xml" relativeToChangelogFile="true"/>

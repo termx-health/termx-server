@@ -34,3 +34,8 @@ insert into wiki.page(id, status, space_id, settings)
 select id, status, space_id, jsonb_build_object('templateId', template_id) from thesaurus.page where sys_status = 'A';
 select setval('wiki.page_id_seq', (select last_value from thesaurus.page_id_seq));
 --
+
+--changeset wiki:page-code
+alter table wiki.page add column code text not null default uuid_generate_v4();
+alter table wiki.page add constraint page_code_excl EXCLUDE USING gist (code WITH =, space_id with =) where (sys_status='A');
+--

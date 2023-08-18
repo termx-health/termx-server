@@ -6,6 +6,7 @@ import com.kodality.termx.wiki.pagelink.PageLinkService;
 import com.kodality.termx.wiki.pagerelation.PageRelationService;
 import com.kodality.termx.wiki.pagetag.PageTagService;
 import java.util.Optional;
+import java.util.UUID;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,8 +32,17 @@ public class PageService {
 
   @Transactional
   public Page save(Page page, PageContent content) {
-    repository.save(page);
+    page = save(page);
     pageContentService.save(content, page.getId());
+    return page;
+  }
+
+  @Transactional
+  public Page save(Page page) {
+    if (page.getCode() == null) {
+      page.setCode(UUID.randomUUID().toString());
+    }
+    repository.save(page);
     pageLinkService.saveSources(page.getLinks(), page.getId());
     pageTagService.save(page.getTags(), page.getId());
     return load(page.getId()).orElse(null);
