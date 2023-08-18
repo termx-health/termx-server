@@ -12,7 +12,6 @@ import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
-import com.kodality.termx.wiki.PageProvider;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,6 +73,7 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
       if (sc == null) {
         return;
       }
+      c.setConcept(snomedMapper.toVSConcept(sc));
       c.setActive(sc.isActive());
       c.setDisplay(new Designation().setName(sc.getPt().getTerm()).setLanguage(sc.getPt().getLang()));
       c.setAdditionalDesignations(snomedDescriptions.getOrDefault(sc.getConceptId(), List.of()).stream().filter(d -> languages.contains(d.getLang()))
