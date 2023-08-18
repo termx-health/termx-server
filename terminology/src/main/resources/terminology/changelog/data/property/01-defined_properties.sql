@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset kodality:concept-defined-properties
+--changeset kodality:concept-defined-properties-1
 with t (name, kind, type, uri, description) as (values ('status', 'property', 'string', 'http://hl7.org/fhir/concept-properties#status', '{"en": "Status"}'::jsonb),
                                                  ('inactive', 'property', 'boolean', 'http://hl7.org/fhir/concept-properties#inactive', '{"en": "Inactive"}'::jsonb),
                                                  ('effectiveDate', 'property', 'dateTime', 'http://hl7.org/fhir/concept-properties#effectiveDate', '{"en": "Effective Date"}'::jsonb),
@@ -19,7 +19,7 @@ with t (name, kind, type, uri, description) as (values ('status', 'property', 's
                                                  ('replacedby', 'property', 'code', 'http://hl7.org/fhir/StructureDefinition/codesystem-replacedby', '{"en": "Replaced By"}'::jsonb),
                                                  ('conceptOrder', 'property', 'integer', 'http://hl7.org/fhir/StructureDefinition/codesystem-conceptOrder', '{"en": "Concept Order"}'::jsonb),
 
-                                                 ('display', 'designation', 'string', null, '{"en": "Display"}'::jsonb),
+                                                 ('display', 'designation', 'string', 'http://terminology.hl7.org/CodeSystem/designation-usage|display', '{"en": "Display"}'::jsonb),
                                                  ('definition', 'designation', 'string', null, '{"en": "Definition"}'::jsonb)
 
 )

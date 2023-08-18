@@ -18,6 +18,7 @@ import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -136,9 +137,9 @@ public class CodeSystemFileImportMapper {
     if (entity.keySet().stream().anyMatch(HIERARCHICAL_CONCEPT::equals)) {
       String parentCode = findParent(code, entities, 1);
       if (parentCode == null) {
-        return List.of();
+        return new ArrayList<>();
       }
-      return List.of(new CodeSystemAssociation().setAssociationType("is-a").setTargetCode(parentCode).setStatus(PublicationStatus.active));
+      return new ArrayList<>(List.of(new CodeSystemAssociation().setAssociationType("is-a").setTargetCode(parentCode).setStatus(PublicationStatus.active)));
     }
 
     return entity.keySet().stream().filter(CONCEPT_PARENT::equals).flatMap(key -> {
