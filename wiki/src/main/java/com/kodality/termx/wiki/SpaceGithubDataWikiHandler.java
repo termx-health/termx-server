@@ -129,7 +129,8 @@ public class SpaceGithubDataWikiHandler implements SpaceGithubDataHandler {
         }
       }
       if (page.getId() == null || !Objects.equals(parentPageId, (CollectionUtils.isEmpty(page.getLinks()) ? null : page.getLinks().get(0).getSourceId()))) {
-        page.setLinks(parentPageId == null ? new ArrayList<>() : List.of(new PageLink().setSourceId(parentPageId).setOrderNumber(order)));
+        page.setLinks(parentPageId == null ? new ArrayList<>(/* how to set order number? */)
+            : List.of(new PageLink().setSourceId(parentPageId).setOrderNumber(order)));
         log.info("saving " + page.getCode());
         page = pageService.save(page);
         currentPages.put(page.getCode(), page);
