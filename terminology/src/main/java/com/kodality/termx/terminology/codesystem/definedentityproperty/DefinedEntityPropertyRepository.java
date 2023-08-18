@@ -26,6 +26,7 @@ public class DefinedEntityPropertyRepository extends BaseRepository {
     ssb.property("name", entityProperty.getName());
     ssb.property("kind", entityProperty.getKind());
     ssb.property("type", entityProperty.getType());
+    ssb.property("uri", entityProperty.getUri());
     ssb.jsonProperty("rule", entityProperty.getRule());
     ssb.jsonProperty("description", entityProperty.getDescription());
 
