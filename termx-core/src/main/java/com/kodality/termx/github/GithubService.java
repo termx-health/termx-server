@@ -86,7 +86,6 @@ public class GithubService {
     if (stateObj == null) {
       throw new InvalidRequestStateException("invalid 'state'");
     }
-    this.cacheManager.getCache("state").remove(state);
     String user = stateObj.get("user");
     String repo = stateObj.get("repo");
     String token = getAccessToken(code);
