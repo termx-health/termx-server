@@ -107,7 +107,7 @@ public class PageLinkRepository extends BaseRepository {
 
   public void retainByTargetId(List<PageLink> links, Long targetId) {
     SqlBuilder sb = new SqlBuilder("update wiki.page_link set sys_status = 'C'");
-    sb.append("where  sys_status = 'A' and source_id != target_id and target_id = ?", targetId);
+    sb.append("where sys_status = 'A' and target_id = ?", targetId);
     sb.andNotIn("id", links, PageLink::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }

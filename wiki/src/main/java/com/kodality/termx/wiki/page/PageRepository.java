@@ -33,6 +33,7 @@ public class PageRepository extends BaseRepository {
   public void save(Page page) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", page.getId());
+    ssb.property("code", page.getCode());
     ssb.property("space_id", page.getSpaceId());
     ssb.jsonProperty("settings", page.getSettings());
     ssb.property("status", page.getStatus());
@@ -67,6 +68,7 @@ public class PageRepository extends BaseRepository {
     sb.appendIfNotNull(params.getIdsNe(), (s, p) -> s.and().notIn("id", p, Long::valueOf));
     sb.appendIfNotNull(params.getSpaceIds(), (s, p) -> s.and().in("space_id", p, Long::valueOf));
     sb.appendIfNotNull(params.getSlugs(), (s, p) -> s.and("exists(select 1 from wiki.page_content pc where pc.page_id = p.id and pc.sys_status = 'A'").and().in("pc.slug", p).append(")"));
+    sb.appendIfNotNull(params.getCodes(), (s, p) -> s.and().in("code", p));
     sb.appendIfNotNull("and exists(select 1 from wiki.page_content pc where pc.page_id = p.id and pc.sys_status = 'A' and pc.name ~* ?)", params.getTextContains());
     sb.appendIfNotNull("and exists(select 1 from wiki.page_link pl where pl.source_id = ? and pl.target_id = p.id and pl.target_id != pl.source_id and pl.sys_status = 'A')", params.getRootId());
     sb.appendIfTrue(params.isRoot(), "and exists(select 1 from wiki.page_link pl where  pl.source_id = p.id and pl.target_id = p.id and pl.sys_status = 'A')");

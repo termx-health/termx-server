@@ -8,6 +8,7 @@ import com.kodality.termx.wiki.page.Page;
 import com.kodality.termx.wiki.page.PageContent;
 import com.kodality.termx.wiki.page.PageContentQueryParams;
 import com.kodality.termx.wiki.page.PageRepository;
+import com.kodality.termx.wiki.pagelink.PageLinkRepository;
 import com.kodality.termx.wiki.pagerelation.PageRelationService;
 import com.kodality.termx.wiki.template.TemplateContentService;
 import java.util.List;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PageContentService {
   private final PageRepository pageRepository;
   private final PageContentRepository repository;
+  private final PageLinkRepository pageLinkRepository;
   private final PageRelationService pageRelationService;
   private final TemplateContentService templateContentService;
 
@@ -44,6 +46,13 @@ public class PageContentService {
 
     repository.save(content, pageId);
     pageRelationService.save(content, pageId);
+  }
+
+  @Transactional
+  public void delete(Long id) {
+    //TODO: validate child links empty?
+    Long pageId = load(id).getPageId();
+    repository.delete(id);
   }
 
   private void validate(PageContent c) {
