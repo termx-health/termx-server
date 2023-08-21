@@ -113,6 +113,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return rules.stream().filter(r -> r.getType().equals(type)).map(rule -> {
       ValueSetComposeInclude include = new ValueSetComposeInclude();
       include.setSystem(rule.getCodeSystemUri());
+      include.setVersion(rule.getCodeSystemVersion() == null ? null : rule.getCodeSystemVersion().getVersion());
       include.setConcept(toFhirConcept(rule.getConcepts()));
       include.setFilter(toFhirFilter(rule.getFilters()));
       include.setValueSet(rule.getValueSetUri());
@@ -214,6 +215,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     ValueSetExpansionContains contains = new ValueSetExpansionContains();
     contains.setCode(c.getConcept().getCode());
     contains.setSystem(c.getConcept().getCodeSystemUri());
+    contains.setVersion(c.getConcept().getCodeSystemVersions() != null ? c.getConcept().getCodeSystemVersions().stream().findFirst().orElse(null) : null);
     contains.setInactive(!c.isActive() ? true : null);
     contains.setDisplay(c.getDisplay() == null || (lang != null && !c.getDisplay().getLanguage().startsWith(lang)) ? null : c.getDisplay().getName());
     contains.setDesignation(CollectionUtils.isNotEmpty(c.getAdditionalDesignations()) && includeDesignations ? c.getAdditionalDesignations().stream()
