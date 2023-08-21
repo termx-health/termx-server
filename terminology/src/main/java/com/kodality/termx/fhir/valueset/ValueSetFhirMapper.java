@@ -28,6 +28,7 @@ import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclu
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeFilter;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.CollectionUtils;
@@ -156,29 +157,33 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
 
   public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances,
                                                                             List<ValueSetVersionConcept> concepts, Parameters param) {
-    boolean flat = Optional.ofNullable(param).map(p -> p.findParameter("excludeNested").map(ParametersParameter::getValueBoolean).orElse(false)).orElse(false);
     boolean active = Optional.ofNullable(param).map(p -> p.findParameter("activeOnly").map(ParametersParameter::getValueBoolean).orElse(false)).orElse(false);
-    boolean includeDesignations = Optional.ofNullable(param).map(p -> p.findParameter("includeDesignations").map(pr -> pr.getValueBoolean() != null && pr.getValueBoolean() || "true".equals(pr.getValueString())).orElse(false)).orElse(false);
-    boolean includeDefinition = Optional.ofNullable(param).map(p -> p.findParameter("includeDefinition").map(pr -> pr.getValueBoolean()  != null && pr.getValueBoolean() || "true".equals(pr.getValueString())).orElse(false)).orElse(false);
-    String language = Optional.ofNullable(param).map(Resource::getLanguage).orElse(null);
-
     if (active) {
       concepts = concepts.stream().filter(ValueSetVersionConcept::isActive).toList();
     }
 
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = toFhir(valueSet, version, provenances);
-    fhirValueSet.setExpansion(toFhirExpansion(concepts, flat, includeDesignations, includeDefinition, language));
+    fhirValueSet.setExpansion(toFhirExpansion(concepts, param));
     return fhirValueSet;
   }
 
-  private static ValueSetExpansion toFhirExpansion(List<ValueSetVersionConcept> concepts, boolean flat,
-                                                   boolean includeDesignations, boolean includeDefinition,
-                                                   String lang) {
+  private static ValueSetExpansion toFhirExpansion(List<ValueSetVersionConcept> concepts, Parameters param) {
+    boolean flat = Optional.ofNullable(param).map(p -> p.findParameter("excludeNested").map(ParametersParameter::getValueBoolean).orElse(false)).orElse(false);
+    boolean includeDesignations = Optional.ofNullable(param).map(
+        p -> p.findParameter("includeDesignations").map(pr -> pr.getValueBoolean() != null && pr.getValueBoolean() || "true".equals(pr.getValueString()))
+            .orElse(false)).orElse(false);
+    boolean includeDefinition = Optional.ofNullable(param).map(
+        p -> p.findParameter("includeDefinition").map(pr -> pr.getValueBoolean() != null && pr.getValueBoolean() || "true".equals(pr.getValueString()))
+            .orElse(false)).orElse(false);
+    String lang = Optional.ofNullable(param).map(Resource::getLanguage).orElse(null);
+
+
     ValueSetExpansion expansion = new ValueSetExpansion();
     if (concepts == null) {
       return expansion;
     }
     expansion.setTotal(concepts.size());
+    expansion.setParameter(toValueSetParameter(param));
 
     if (flat) {
       expansion.setContains(concepts.stream().map(c -> toFhirExpansionContains(c, lang, includeDesignations, includeDefinition)).collect(Collectors.toList()));
@@ -186,6 +191,22 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       expansion.setContains(getChildConcepts(concepts, null, lang, includeDesignations, includeDefinition));
     }
     return expansion;
+  }
+
+  private static List<ValueSetExpansionParameter> toValueSetParameter(Parameters param) {
+    if (param == null || param.getParameter() == null) {
+      return null;
+    }
+
+    return param.getParameter().stream().map(p -> new ValueSetExpansionParameter().setName(p.getName())
+        .setValueString(p.getValueString())
+        .setValueBoolean(p.getValueBoolean())
+        .setValueInteger(p.getValueInteger())
+        .setValueDecimal(p.getValueDecimal())
+        .setValueUri(p.getValueUri())
+        .setValueCode(p.getValueCode())
+        .setValueDateTime(p.getValueDateTime())
+    ).toList();
   }
 
   private static ValueSetExpansionContains toFhirExpansionContains(ValueSetVersionConcept c, String lang, boolean includeDesignations,
@@ -205,7 +226,8 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
           return d;
         }).collect(Collectors.toList()) : new ArrayList<>());
     if (c.getDisplay() != null && (lang != null && !c.getDisplay().getLanguage().startsWith(lang))) {
-      contains.getDesignation().add(new ValueSetComposeIncludeConceptDesignation().setValue(c.getDisplay().getName()).setLanguage(c.getDisplay().getLanguage()));
+      contains.getDesignation()
+          .add(new ValueSetComposeIncludeConceptDesignation().setValue(c.getDisplay().getName()).setLanguage(c.getDisplay().getLanguage()));
     }
     contains.setExtension(CollectionUtils.isNotEmpty(c.getAdditionalDesignations()) && includeDefinition ? c.getAdditionalDesignations().stream()
         .filter(d -> "definition".equals(d.getDesignationType())).map(d -> {

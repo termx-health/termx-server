@@ -94,8 +94,21 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
     String displayLanguage = req == null ? null : req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
         .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString).orElse(null));
+
     List<ValueSetVersionConcept> expandedConcepts = valueSetVersionConceptService.expand(vs.getId(), version.getVersion(), displayLanguage);
     List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + version.getId());
+
+
+    Integer offset = req == null ? null : req.findParameter("offset").map(ParametersParameter::getValueInteger)
+        .orElse(req.findParameter("offset").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
+    if (offset != null) {
+      expandedConcepts = offset > expandedConcepts.size() ? List.of() : expandedConcepts.subList(0, offset);
+    }
+    Integer count = req == null ? null : req.findParameter("count").map(ParametersParameter::getValueInteger)
+        .orElse(req.findParameter("count").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
+    if (count != null) {
+      expandedConcepts = expandedConcepts.stream().limit(count).toList();
+    }
 
     return ValueSetFhirMapper.toFhir(vs, version, provenances, expandedConcepts, req);
   }
