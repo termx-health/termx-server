@@ -106,8 +106,6 @@ public class ValueSetVersionConceptService {
 
           List<String> preferredLanguages = versions.stream().flatMap(v -> v.getVersions().stream().map(CodeSystemVersionReference::getPreferredLanguage))
               .filter(Objects::nonNull).toList();
-          List<String> csVersions = versions.stream().flatMap(v -> v.getVersions().stream().map(CodeSystemVersionReference::getVersion)).toList();
-          c.getConcept().setCodeSystemVersions(csVersions);
 
           List<Designation> designations = versions.stream()
               .filter(v -> CollectionUtils.isNotEmpty(v.getDesignations()))
