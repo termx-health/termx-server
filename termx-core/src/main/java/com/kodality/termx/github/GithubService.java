@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.kodality.commons.cache.CacheManager;
 import com.kodality.commons.client.HttpClient;
+import com.kodality.commons.client.HttpClientError;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.MapUtil;
 import com.kodality.termx.auth.SessionStore;
@@ -139,7 +140,15 @@ public class GithubService {
   }
 
   public List<GithubContent> listContents(String repo, String path) {
-    return JsonUtil.fromJson(get("/repos/" + repo + "/contents/" + path), JsonUtil.getListType(GithubContent.class));
+    try {
+      String a = get("/repos/" + repo + "/contents/" + path);
+      return JsonUtil.fromJson(a, JsonUtil.getListType(GithubContent.class));
+    } catch (HttpClientError e) {
+      if (e.getResponse().statusCode() == 404) {
+        return List.of();
+      }
+      throw e;
+    }
   }
 
   public GithubContent getContent(String repo, String path) {
