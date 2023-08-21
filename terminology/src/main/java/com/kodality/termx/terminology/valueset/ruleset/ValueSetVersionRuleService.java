@@ -1,11 +1,16 @@
 package com.kodality.termx.terminology.valueset.ruleset;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.ApiError;
 import com.kodality.termx.auth.UserPermissionService;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +46,7 @@ public class ValueSetVersionRuleService {
   @Transactional
   public void save(ValueSetVersionRule rule, String valueSet, String valueSetVersion) {
     userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
+    validate(rule);
     repository.save(rule, ruleSetRepository.load(valueSet, valueSetVersion).getId());
   }
 
@@ -54,4 +60,17 @@ public class ValueSetVersionRuleService {
     return repository.query(params);
   }
 
+  private void validate(ValueSetVersionRule rule) {
+    if (rule.getConcepts() != null) {
+      boolean notDefined = rule.getConcepts().stream().anyMatch(c -> c.getConcept() == null || c.getConcept().getCode() == null);
+      if (notDefined) {
+        throw ApiError.TE308.toApiException();
+      }
+
+      Map<String, List<ValueSetVersionConcept>> grouped = rule.getConcepts().stream().collect(Collectors.groupingBy(c -> c.getConcept().getCode() + (c.getConcept().getCodeSystem() != null ? "|" + c.getConcept().getCodeSystem() : "")));
+      if (rule.getConcepts().size() != grouped.keySet().size()) {
+        throw ApiError.TE309.toApiException(Map.of("duplicates", grouped.entrySet().stream().filter(es -> es.getValue().size() > 1).map(Entry::getKey).collect(Collectors.joining(", "))));
+      }
+    }
+  }
 }

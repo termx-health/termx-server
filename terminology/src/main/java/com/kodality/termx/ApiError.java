@@ -40,6 +40,8 @@ public enum ApiError {
   TE305("TE305", "Value set is used in other value set rule, can't be deleted."),
   TE306("TE306", "Value set version is used in other value set rule, can't be deleted."),
   TE307("TE307", "Value set expansion failed."),
+  TE308("TE308", "Rule concept line does not contain concept code information."),
+  TE309("TE309", "Rule concepts contain duplicates: {{duplicates}}."),
   TE401("TE401", "Version '{{version}}' of map set '{{mapSet}}' doesn't exist."),
   TE501("TE501", "Naming system '{{namingSystem}}' not found."),
   TE601("TE601", "Cannot convert units of different kinds."),
@@ -71,7 +73,6 @@ public enum ApiError {
   TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted."),
   TE804("TE804", "Target concept is not defined."),
   TE805("TE805", "Target concept and source concepts are the same.");
-
   @Getter
   private String code;
   @Getter
