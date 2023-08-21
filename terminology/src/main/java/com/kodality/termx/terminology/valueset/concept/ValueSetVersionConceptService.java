@@ -104,7 +104,10 @@ public class ValueSetVersionConceptService {
         .peek(c -> {
           List<CodeSystemEntityVersion> versions = Optional.ofNullable(groupedVersions.get(c.getConcept().getCode())).orElse(new ArrayList<>());
 
-          List<String> preferredLanguages = versions.stream().flatMap(v -> v.getVersions().stream().map(CodeSystemVersionReference::getPreferredLanguage)).toList();
+          List<String> preferredLanguages = versions.stream().flatMap(v -> v.getVersions().stream().map(CodeSystemVersionReference::getPreferredLanguage))
+              .filter(Objects::nonNull).toList();
+          List<String> csVersions = versions.stream().flatMap(v -> v.getVersions().stream().map(CodeSystemVersionReference::getVersion)).toList();
+          c.getConcept().setCodeSystemVersions(csVersions);
 
           List<Designation> designations = versions.stream()
               .filter(v -> CollectionUtils.isNotEmpty(v.getDesignations()))
