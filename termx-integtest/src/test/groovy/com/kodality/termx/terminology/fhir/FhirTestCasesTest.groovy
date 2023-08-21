@@ -148,35 +148,16 @@ class FhirTestCasesTest extends TermxIntegTest {
 
 
   def checkContains(List<ValueSet.ValueSetExpansionContains> actualContains, List<ValueSet.ValueSetExpansionContains> expectedContains) {
-    actualContains.stream().noneMatch { ac -> {
-      boolean check = checkContainsSingle(ac, expectedContains.stream().filter { ec -> (ec.code == ac.code) }.findFirst().orElse(null))
-      return !check
-    }}
+    actualContains.stream().noneMatch { ac ->
+      {
+        boolean check = checkContainsSingle(ac, expectedContains.stream().filter { ec -> (ec.code == ac.code) }.findFirst().orElse(null))
+        return !check
+      }
+    }
   }
 
 
   boolean checkContainsSingle(ValueSet.ValueSetExpansionContains actualContains, ValueSet.ValueSetExpansionContains expectedContains) {
-    println '-------------------------'
-    println '--------ACTUAL-----------'
-    println actualContains.display
-    println actualContains.designation
-    if (actualContains.designation != null) {
-      println('designation -> ')
-      actualContains.designation.forEach {d -> {
-        println d.value
-        println d.language
-      }}
-    }
-    println '--------EXPECTED---------'
-    println expectedContains.display
-    println expectedContains.designation
-    if (expectedContains.designation != null) {
-      println('designation -> ')
-      expectedContains.designation.forEach {d -> {
-        println d.value
-        println d.language
-      }}
-    }
     return actualContains != null &&
         expectedContains != null &&
         actualContains.code == expectedContains.code &&
@@ -190,10 +171,12 @@ class FhirTestCasesTest extends TermxIntegTest {
   }
 
   def checkDesignations(List<ValueSet.ValueSetComposeIncludeConceptDesignation> actualDesignations, List<ValueSet.ValueSetComposeIncludeConceptDesignation> expectedDesignations) {
-    actualDesignations.stream().noneMatch { ad -> {
-      boolean check = checkDesignationsSingle(ad, expectedDesignations.stream().filter { ed -> (ad.value == ed.value && (ed.language == null || ed.language == ad.language)) }.findFirst().orElse(null))
-      return !check
-    }}
+    actualDesignations.stream().noneMatch { ad ->
+      {
+        boolean check = checkDesignationsSingle(ad, expectedDesignations.stream().filter { ed -> (ad.value == ed.value && (ed.language == null || ed.language == ad.language)) }.findFirst().orElse(null))
+        return !check
+      }
+    }
   }
 
   boolean checkDesignationsSingle(ValueSet.ValueSetComposeIncludeConceptDesignation actualDesignation, ValueSet.ValueSetComposeIncludeConceptDesignation expectedDesignation) {
@@ -208,9 +191,39 @@ class FhirTestCasesTest extends TermxIntegTest {
     return contains == null || contains == []
   }
 
-  def checkValidateCodeResult(Parameters actualResult, Parameters expectedResult) {
-    actualResult.findParameter("result").isPresent()
-    expectedResult.findParameter("result").isPresent()
+  def checkValidateCodeResult(Parameters actual, Parameters expected) {
+    println('-------------------------------------------')
+    println JsonUtil.toJson(actual)
+    println JsonUtil.toJson(expected)
+    println ''
+    println checkParameter(actual, expected, "code")
+    println ''
+    println checkParameter(actual, expected, "display")
+    println ''
+    println checkParameter(actual, expected, "result")
+    println ''
+    println checkParameter(actual, expected, "system")
+    println ''
+    println checkParameter(actual, expected, "version")
+    println ''
+
+    checkParameter(actual, expected, "code")
+    checkParameter(actual, expected, "display")
+    checkParameter(actual, expected, "result")
+    checkParameter(actual, expected, "system")
+  }
+
+  boolean checkParameter(Parameters actual, Parameters expected, String param) {
+    println param
+    def actualParam = actual.findParameter(param)
+    def expectedParam = expected.findParameter(param)
+    return actualParam.isEmpty() && expectedParam.isEmpty() ||
+        actualParam.isPresent() && expectedParam.isPresent() &&
+        actualParam.get().getValueBoolean() == expectedParam.get().getValueBoolean() &&
+        actualParam.get().getValueCode() == expectedParam.get().getValueCode() &&
+        actualParam.get().getValueString() == expectedParam.get().getValueString() &&
+        actualParam.get().getValueUri() == expectedParam.get().getValueUri() &&
+        actualParam.get().getValueUrl() == expectedParam.get().getValueUrl()
   }
 
   def <T extends Resource> T toFhir(String path, Class<T> clazz) {

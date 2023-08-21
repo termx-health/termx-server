@@ -34,6 +34,8 @@ public class ValueSetVersionConcept {
     private String codeSystem;
     private String codeSystemUri;
 
+    private List<String> codeSystemVersions; //decorated field
+
     public static ValueSetVersionConceptValue fromConcept(Concept c) {
       return new ValueSetVersionConceptValue().setCode(c.getCode()).setCodeSystem(c.getCodeSystem());
     }

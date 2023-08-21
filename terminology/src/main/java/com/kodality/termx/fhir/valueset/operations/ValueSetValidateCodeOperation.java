@@ -6,15 +6,14 @@ import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termx.fhir.valueset.ValueSetFhirMapper;
-import com.kodality.termx.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
-import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
@@ -22,7 +21,6 @@ import io.micronaut.context.annotation.Factory;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -34,7 +32,6 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 public class ValueSetValidateCodeOperation implements InstanceOperationDefinition, TypeOperationDefinition {
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
-  private final CodeSystemService codeSystemService;
 
   public String getResourceType() {
     return ResourceType.ValueSet.name();
@@ -63,8 +60,9 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   public Parameters run(Parameters req) {
-    String url = req.findParameter("url").map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueString())
-        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
+    String url =
+        req.findParameter("url").map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueUri() != null ? pp.getValueUri() : pp.getValueString())
+            .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
     String version = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
 
     ValueSetVersion vsVersion = version == null ? valueSetVersionService.loadLastVersionByUri(url) :
@@ -76,35 +74,69 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   public Parameters run(ValueSetVersion vsVersion, Parameters req) {
-    String code = req.findParameter("code").map(pp -> pp.getValueCode() != null ? pp.getValueCode() : pp.getValueString())
-        .orElseGet(() -> req.findParameter("coding").map(pp -> pp.getValueCoding() != null ? pp.getValueCoding().getCode() : pp.getValueString())
-            .orElseGet(() -> req.findParameter("codeableConcept")
-                .map(cc -> cc.getValueCodeableConcept().getCoding().stream().map(Coding::getCode).collect(Collectors.joining("")))
-                .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required"))));
-
-    String system = req.findParameter("system").map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueString())
-        .map(uri -> codeSystemService.query(new CodeSystemQueryParams().setUri(uri)).findFirst()
-            .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "CodeSystem not found")).getId()
-        ).orElse(null);
+    String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
+    String system = findSystem(req);
+    String version = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
+    String displayLanguage = req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
+            .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString).orElse(null));
 
-    List<ValueSetVersionConcept> concepts = valueSetVersionConceptService.expand(vsVersion, null);
-    ValueSetVersionConcept concept = concepts.stream()
-        .filter(c -> c.getConcept().getCode().equals(code) && (system == null || system.equals(c.getConcept().getCodeSystem())))
+    if (req.findParameter("coding").isPresent()) {
+      Coding coding = req.findParameter("coding").map(ParametersParameter::getValueCoding).orElse(null);
+      code = coding != null && coding.getCode() != null ? coding.getCode() : code;
+      system = coding != null && coding.getSystem() != null ? coding.getSystem() : system;
+      version = coding != null && coding.getVersion() != null ? coding.getVersion() : version;
+    }
+
+    if (req.findParameter("codeableConcept").isPresent()) {
+      CodeableConcept codeableConcept = req.findParameter("codeableConcept").map(ParametersParameter::getValueCodeableConcept).orElse(null);
+      Coding coding = codeableConcept != null && codeableConcept.getCoding() != null ? codeableConcept.getCoding().stream().findFirst().orElse(null) : null;
+      code = coding != null && coding.getCode() != null ? coding.getCode() : code;
+      system = coding != null && coding.getSystem() != null ? coding.getSystem() : system;
+      version = coding != null && coding.getVersion() != null ? coding.getVersion() : version;
+    }
+
+    String finalCode = code;
+    String finalSystem = system;
+    String finalVersion = version;
+
+    if (finalCode == null) {
+      throw new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required");
+    }
+
+    List<ValueSetVersionConcept> vsConcepts = valueSetVersionConceptService.expand(vsVersion, displayLanguage);
+    ValueSetVersionConcept concept = vsConcepts.stream()
+        .filter(c -> finalCode.equals(c.getConcept().getCode()))
+        .filter(c -> finalSystem == null || finalSystem.equals(c.getConcept().getCodeSystemUri()))
+        .filter(c -> finalVersion == null || (c.getConcept().getCodeSystemVersions() != null && c.getConcept().getCodeSystemVersions().contains(finalVersion)))
         .findFirst().orElse(null);
 
     if (concept == null) {
-      return error("invalid code");
+      return error(String.format("The provided code %s is not in the value set", (system != null ? system  + "#" : "") + code));
     }
 
     Parameters parameters = new Parameters();
     String conceptDisplay = findDisplay(concept, display);
     parameters.addParameter(new ParametersParameter("result").setValueBoolean(display == null || display.equals(conceptDisplay)));
+    parameters.addParameter(new ParametersParameter("code").setValueCode(concept.getConcept().getCode()));
+    parameters.addParameter(new ParametersParameter("system").setValueUri(concept.getConcept().getCodeSystemUri()));
     parameters.addParameter(new ParametersParameter("display").setValueString(conceptDisplay));
+    String conceptVersion = Optional.ofNullable(concept.getConcept().getCodeSystemVersions()).orElse(List.of()).stream().findFirst().orElse(null);
+    if (conceptVersion != null) {
+      parameters.addParameter(new ParametersParameter("version").setValueString(conceptVersion));
+    }
     if (display != null && !display.equals(conceptDisplay)) {
       parameters.addParameter(new ParametersParameter("message").setValueString(String.format("The display '%s' is incorrect", display)));
     }
     return parameters;
+  }
+
+  private String findSystem(Parameters req) {
+    return req.findParameter("system").map(p ->
+        p.getValueUrl() != null ? p.getValueUrl() :
+            p.getValueUri() != null ? p.getValueUri() :
+                p.getValueCanonical() != null ? p.getValueCanonical() :
+                    p.getValueString()).orElse(null);
   }
 
   private String findDisplay(ValueSetVersionConcept c, String paramDisplay) {

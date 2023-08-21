@@ -85,15 +85,6 @@ public class ValueSetVersionService {
       log.warn("Version '{}' of valueSet '{}' is already activated, skipping activation process.", version, valueSet);
       return;
     }
-
-    ValueSetVersion overlappingVersion = repository.query(new ValueSetVersionQueryParams()
-        .setValueSet(valueSet)
-        .setStatus(PublicationStatus.active)
-        .setReleaseDateLe(currentVersion.getExpirationDate())
-        .setExpirationDateGe(currentVersion.getReleaseDate())).findFirst().orElse(null);
-    if (overlappingVersion != null) {
-      throw ApiError.TE103.toApiException(Map.of("version", overlappingVersion.getVersion()));
-    }
     repository.activate(valueSet, version);
   }
 
