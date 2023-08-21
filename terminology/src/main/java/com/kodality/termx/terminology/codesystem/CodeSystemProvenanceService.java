@@ -134,9 +134,9 @@ public class CodeSystemProvenanceService {
     Function<CodeSystemEntityVersion, Map<String, Object>> fn = cs -> {
       Map<String, Object> map = JsonUtil.getObjectMapper().convertValue(cs, Map.class);
       map.put("designations", cs.getDesignations() == null ? null : cs.getDesignations().stream()
-          .collect(Collectors.toMap(Designation::getDesignationType, x -> x)));
+          .collect(Collectors.groupingBy(Designation::getDesignationType)));
       map.put("propertyValues", cs.getPropertyValues() == null ? null : cs.getPropertyValues().stream()
-          .collect(Collectors.toMap(EntityPropertyValue::getEntityProperty, x -> x)));
+          .collect(Collectors.groupingBy(EntityPropertyValue::getEntityProperty)));
       return map;
     };
     return ProvenanceUtil.diff(fn.apply(left), fn.apply(right), "versions");
