@@ -8,9 +8,7 @@ import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import java.util.List;
 import javax.inject.Singleton;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Singleton
 public class ValueSetVersionConceptRepository extends BaseRepository {
 
@@ -21,9 +19,7 @@ public class ValueSetVersionConceptRepository extends BaseRepository {
   });
 
   public List<ValueSetVersionConcept> expand(Long valueSetVersionId) {
-    long start = System.currentTimeMillis();
     SqlBuilder sb = new SqlBuilder("select * from terminology.value_set_expand(?::bigint)", valueSetVersionId);
-    log.info("Value set expand function took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
     return getBeans(sb.getSql(), bp, sb.getParams());
   }
 }

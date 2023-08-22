@@ -1,5 +1,6 @@
 package com.kodality.termx.terminology.valueset.concept;
 
+import com.kodality.commons.util.DateUtil;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionRepository;
 import com.kodality.termx.terminology.valueset.snapshot.ValueSetSnapshotService;
@@ -14,6 +15,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,10 +24,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
 @Singleton
 @RequiredArgsConstructor
 public class ValueSetVersionConceptService {
@@ -36,6 +36,10 @@ public class ValueSetVersionConceptService {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   private static final String DISPLAY = "display";
+  private static final String DEPRECATION_DATE = "deprecationDate";
+  private static final String INACTIVE = "inactive";
+  private static final String STATUS = "status";
+  private static final String RETIREMENT_DATE = "retirementDate";
 
   @Transactional
   public List<ValueSetVersionConcept> expand(String vs, String vsVersion) {
@@ -81,7 +85,6 @@ public class ValueSetVersionConceptService {
   }
 
   public List<ValueSetVersionConcept> decorate(List<ValueSetVersionConcept> concepts, ValueSetVersion version, String preferredLanguage) {
-    long start = System.currentTimeMillis();
     List<String> supportedLanguages = Optional.ofNullable(version.getSupportedLanguages()).orElse(List.of());
     List<String> supportedProperties = version.getRuleSet() != null ? Optional.ofNullable(version.getRuleSet().getRules()).orElse(List.of()).stream()
         .filter(r -> r.getProperties() != null).flatMap(r -> r.getProperties().stream()).toList() : List.of();
@@ -129,15 +132,31 @@ public class ValueSetVersionConceptService {
                 .filter(d -> CollectionUtils.isEmpty(supportedLanguages) || supportedLanguages.contains(d.getLanguage()))
                 .filter(d -> c.getDisplay() == null || !d.getId().equals(c.getDisplay().getId())).toList());
           }
-          c.setActive(versions.stream().anyMatch(v -> PublicationStatus.active.equals(v.getStatus())));
+          c.setActive(calculatedActive(versions));
           c.setAssociations(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getAssociations()))
               .flatMap(v -> v.getAssociations().stream()).collect(Collectors.toList()));
           c.setPropertyValues(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getPropertyValues())).flatMap(v -> v.getPropertyValues().stream())
               .filter(p -> CollectionUtils.isEmpty(supportedProperties) || supportedProperties.contains(p.getEntityProperty())).collect(Collectors.toList()));
         }).collect(Collectors.toList());
-
-    log.info("Value set expansion decoration took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
     return res;
+  }
+
+  private boolean calculatedActive(List<CodeSystemEntityVersion> versions) {
+    boolean inactive = versions.stream().anyMatch(v -> v.getPropertyValues() != null &&
+        v.getPropertyValues().stream().anyMatch(pv -> pv.getEntityProperty().equals(INACTIVE) && (boolean) pv.getValue()));
+    boolean status = versions.stream().anyMatch(v -> v.getPropertyValues() != null &&
+        v.getPropertyValues().stream().anyMatch(pv -> pv.getEntityProperty().equals(STATUS) && List.of("deprecated", "retired").contains((String) pv.getValue())));
+    boolean retired = dateIsAfter(versions, RETIREMENT_DATE);
+    boolean deprecated = dateIsAfter(versions, DEPRECATION_DATE);
+    return versions.stream().anyMatch(v -> PublicationStatus.active.equals(v.getStatus())) && !status && !inactive && !retired && !deprecated;
+  }
+
+  private boolean dateIsAfter(List<CodeSystemEntityVersion> versions, String prop) {
+    return versions.stream().anyMatch(v -> v.getPropertyValues() != null &&
+        v.getPropertyValues().stream().filter(pv -> pv.getEntityProperty().equals(prop)).anyMatch(pv -> {
+          OffsetDateTime date = pv.getValue() instanceof OffsetDateTime ? (OffsetDateTime) pv.getValue() : DateUtil.parseOffsetDateTime((String) pv.getValue());
+          return date.isBefore(OffsetDateTime.now());
+        }));
   }
 
   private ValueSetVersion getVersion(String vs, String vsVersion) {

@@ -15,6 +15,8 @@ import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
+import com.kodality.zmei.fhir.resource.other.OperationOutcome;
+import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import io.micronaut.context.annotation.Factory;
@@ -127,6 +129,11 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     }
     if (display != null && !display.equals(conceptDisplay)) {
       parameters.addParameter(new ParametersParameter("message").setValueString(String.format("The display '%s' is incorrect", display)));
+    }
+    if (!concept.isActive()) {
+      OperationOutcome outcome = new OperationOutcome();
+      outcome.setIssue(List.of(new OperationOutcomeIssue().setCode("deleted").setSeverity("warning").setDetails(new CodeableConcept().setText("Concept is inactive"))));
+      parameters.addParameter(new ParametersParameter("issues").setResource(outcome));
     }
     return parameters;
   }
