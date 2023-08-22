@@ -6,6 +6,7 @@ import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.association.AssociationTypeService;
 import com.kodality.termx.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
+import com.kodality.termx.terminology.codesystem.definedentityproperty.DefinedEntityPropertyService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.valueset.ValueSetService;
@@ -21,6 +22,8 @@ import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemImportAction;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.Concept;
+import com.kodality.termx.ts.codesystem.DefinedEntityProperty;
+import com.kodality.termx.ts.codesystem.DefinedEntityPropertyQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
@@ -62,6 +65,7 @@ public class CodeSystemImportService {
   private final EntityPropertyService entityPropertyService;
   private final AssociationTypeService associationTypeService;
   private final CodeSystemVersionService codeSystemVersionService;
+  private final DefinedEntityPropertyService definedEntityPropertyService;
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
@@ -101,6 +105,20 @@ public class CodeSystemImportService {
 
   private void saveCodeSystem(CodeSystem codeSystem) {
     log.info("Saving code system");
+
+    if (CollectionUtils.isNotEmpty(codeSystem.getProperties())) {
+      Map<String, DefinedEntityProperty> definedProperties = definedEntityPropertyService.query(new DefinedEntityPropertyQueryParams().limit(-1)).getData().stream()
+          .collect(Collectors.toMap(p -> String.join(",", p.getName(), p.getType(), p.getKind()), p -> p));
+      codeSystem.getProperties().forEach(p -> {
+        DefinedEntityProperty definedEntityProperty = definedProperties.get(String.join(",", p.getName(), p.getType(), p.getKind()));
+        if (definedEntityProperty != null) {
+          p.setUri(definedEntityProperty.getUri());
+          p.setDescription(definedEntityProperty.getDescription());
+          p.setDefinedEntityPropertyId(definedEntityProperty.getId());
+        }
+      });
+    }
+
     Optional<CodeSystem> existingCodeSystem = codeSystemService.load(codeSystem.getId());
     if (existingCodeSystem.isEmpty()) {
       log.info("Code system {} does not exist, creating new", codeSystem.getId());
