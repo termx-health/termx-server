@@ -53,10 +53,16 @@ public class TransformerService {
     try {
       engine = new ValidationEngineBuilder().fromNothing();
       engine.connectToTSServer("http://localhost:" + port + "/fhir", null, FhirPublication.R5);
-      // looks fishy
-      ((Bundle) parse(new String(resourceLoader.getResources("conformance/base/profile-types.json").findFirst().orElseThrow().openStream().readAllBytes())))
-          .getEntry().forEach(e -> engine.getContext().cacheResource(e.getResource()));
+      loadBaseResources().getEntry().forEach(e -> engine.getContext().cacheResource(e.getResource()));
     } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public Bundle loadBaseResources() {
+    try {
+      return parse(new String(resourceLoader.getResources("conformance/base/profile-types.json").findFirst().orElseThrow().openStream().readAllBytes()));
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -86,6 +92,25 @@ public class TransformerService {
       return new TransformationResult().setResult(result);
     } catch (IOException | FHIRException e) {
       return new TransformationResult().setError("Transformation error: " + e.getMessage());
+    }
+  }
+
+  public List<StructureDefinition> transformDefinitionResource(List<TransformationDefinitionResource> resources) {
+    try {
+      ValidationEngine eng = new ValidationEngine(engine);
+      ContextUtilities cu = new ContextUtilities(eng.getContext());
+
+      return resources.stream()
+          .filter(r -> "definition".equals(r.getType()))
+          .map(r -> (StructureDefinition) parse(getContent(r)))
+          .peek(sd -> {
+            if (!sd.hasSnapshot()) {
+              cu.generateSnapshot(sd, sd.getKind() != null && sd.getKind() == StructureDefinitionKind.LOGICAL);
+            }
+          })
+          .toList();
+    } catch (IOException | FHIRException e) {
+      return List.of();
     }
   }
 
@@ -156,7 +181,7 @@ public class TransformerService {
     return result;
   }
 
-  public String generateFml(TransformationDefinition definition) {
+  public String composeFml(TransformationDefinition definition) {
     List<String> rows = new ArrayList<>();
     rows.add("/// url = 'http://hl7.org/fhir/StructureMap/" + definition.getName() + "'");
     rows.add("/// name = '" + definition.getName() + "'");
