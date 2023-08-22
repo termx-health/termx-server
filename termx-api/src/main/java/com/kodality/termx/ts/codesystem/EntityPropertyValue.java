@@ -17,9 +17,8 @@ public class EntityPropertyValue {
   private Long entityPropertyId;
   private Long codeSystemEntityVersionId;
 
-  private Long supplementId;
-
   private String entityProperty;
+  private String entityPropertyType;
 
   public EntityPropertyValueCodingValue asCodingValue() {
     return JsonUtil.fromJson(JsonUtil.toJson(value), EntityPropertyValueCodingValue.class);

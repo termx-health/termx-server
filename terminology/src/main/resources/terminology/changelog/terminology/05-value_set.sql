@@ -200,3 +200,7 @@ alter table terminology.value_set drop column name_bak;
 --changeset kodality:value_set_version-preferred_language
 alter table terminology.value_set_version add column preferred_language text;
 --
+
+--changeset kodality:value_set_version_rule-properties
+alter table terminology.value_set_version_rule add column properties jsonb;
+--

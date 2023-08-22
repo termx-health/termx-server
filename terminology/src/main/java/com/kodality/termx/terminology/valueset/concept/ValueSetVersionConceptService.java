@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.valueset.concept;
 
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionRepository;
-import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleSetService;
 import com.kodality.termx.terminology.valueset.snapshot.ValueSetSnapshotService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.ValueSetExternalExpandProvider;
@@ -33,7 +32,6 @@ public class ValueSetVersionConceptService {
   private final List<ValueSetExternalExpandProvider> externalExpandProviders;
   private final ValueSetVersionConceptRepository repository;
   private final ValueSetVersionRepository valueSetVersionRepository;
-  private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
   private final ValueSetSnapshotService valueSetSnapshotService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
@@ -85,6 +83,8 @@ public class ValueSetVersionConceptService {
   public List<ValueSetVersionConcept> decorate(List<ValueSetVersionConcept> concepts, ValueSetVersion version, String preferredLanguage) {
     long start = System.currentTimeMillis();
     List<String> supportedLanguages = Optional.ofNullable(version.getSupportedLanguages()).orElse(List.of());
+    List<String> supportedProperties = version.getRuleSet() != null ? Optional.ofNullable(version.getRuleSet().getRules()).orElse(List.of()).stream()
+        .filter(r -> r.getProperties() != null).flatMap(r -> r.getProperties().stream()).toList() : List.of();
 
     Map<String, List<ValueSetVersionConcept>> groupedConcepts = concepts.stream().collect(Collectors.groupingBy(c -> c.getConcept().getCode()));
 
@@ -130,10 +130,10 @@ public class ValueSetVersionConceptService {
                 .filter(d -> c.getDisplay() == null || !d.getId().equals(c.getDisplay().getId())).toList());
           }
           c.setActive(versions.stream().anyMatch(v -> PublicationStatus.active.equals(v.getStatus())));
-          c.setAssociations(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getAssociations())).flatMap(v -> v.getAssociations().stream())
-              .collect(Collectors.toList()));
+          c.setAssociations(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getAssociations()))
+              .flatMap(v -> v.getAssociations().stream()).collect(Collectors.toList()));
           c.setPropertyValues(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getPropertyValues())).flatMap(v -> v.getPropertyValues().stream())
-              .collect(Collectors.toList()));
+              .filter(p -> CollectionUtils.isEmpty(supportedProperties) || supportedProperties.contains(p.getEntityProperty())).collect(Collectors.toList()));
         }).collect(Collectors.toList());
 
     log.info("Value set expansion decoration took " + (System.currentTimeMillis() - start) / 1000 + " seconds");

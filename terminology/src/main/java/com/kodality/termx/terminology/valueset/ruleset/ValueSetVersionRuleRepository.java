@@ -19,6 +19,7 @@ public class ValueSetVersionRuleRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(ValueSetVersionRule.class, bp -> {
     bp.addColumnProcessor("value_set_version", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("code_system_version", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("properties", PgBeanProcessor.fromJson(JsonUtil.getListType(String.class)));
     bp.addColumnProcessor("concepts", PgBeanProcessor.fromJson(JsonUtil.getListType(ValueSetVersionConcept.class)));
     bp.addColumnProcessor("filters", PgBeanProcessor.fromJson(JsonUtil.getListType(ValueSetRuleFilter.class)));
   });
@@ -33,6 +34,7 @@ public class ValueSetVersionRuleRepository extends BaseRepository {
     ssb.property("type", rule.getType());
     ssb.property("code_system", rule.getCodeSystem());
     ssb.property("code_system_version_id", rule.getCodeSystemVersion() == null ? null : rule.getCodeSystemVersion().getId());
+    ssb.jsonProperty("properties", rule.getProperties());
     ssb.jsonProperty("concepts", rule.getConcepts());
     ssb.jsonProperty("filters", rule.getFilters());
     ssb.property("value_set", rule.getValueSet());

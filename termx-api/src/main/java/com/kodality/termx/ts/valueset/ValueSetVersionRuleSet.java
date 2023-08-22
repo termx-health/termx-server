@@ -27,6 +27,7 @@ public class ValueSetVersionRuleSet {
     private String type;
     private String codeSystem;
     private CodeSystemVersionReference codeSystemVersion;
+    private List<String> properties;
     private List<ValueSetVersionConcept> concepts;
     private List<ValueSetRuleFilter> filters;
     private String valueSet;

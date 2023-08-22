@@ -38,6 +38,7 @@ public class ValueSetVersionRepository extends BaseRepository {
       "   'rules', (select jsonb_agg(json_build_object(" +
       "      'id', vsvr.id, " +
       "      'type', vsvr.type, " +
+      "      'properties', vsvr.properties, " +
       "      'concepts', vsvr.concepts, " +
       "      'filters', vsvr.filters, " +
       "      'codeSystem', vsvr.code_system, " +
