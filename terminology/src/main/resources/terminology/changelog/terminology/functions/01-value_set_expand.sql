@@ -13,119 +13,156 @@ create or replace function terminology.value_set_expand(
     language sql
 as
 $function$
-with rule_set as (
-    select vsvrs.*
-    from terminology.value_set_version_rule_set vsvrs
-             inner join terminology.value_set_version vsv on vsv.id = vsvrs.value_set_version_id and vsv.sys_status = 'A'
-    where vsv.id = p_value_set_version_id and vsvrs.sys_status = 'A'
-    limit 1
-    ),
-    include_rules as (
-        select *
-        from terminology.value_set_version_rule vsvr
-        where vsvr.rule_set_id in (select id from rule_set) and vsvr."type" = 'include' and vsvr.sys_status = 'A' and (vsvr.code_system is null or not (vsvr.code_system = 'snomed-ct'))
-    ),
-    exclude_rules as (
-        select *
-        from terminology.value_set_version_rule vsvr
-        where vsvr.rule_set_id in (select id from rule_set) and vsvr."type" = 'exclude' and vsvr.sys_status = 'A' and (vsvr.code_system is null or not (vsvr.code_system = 'snomed-ct'))
-    ),
-    include_rule_concepts as (
-        select ir.id, ir.code_system, jsonb_array_elements(ir.concepts) c
-        from include_rules ir
-    ),
-    exclude_rule_concepts as (
-        select er.id, er.code_system, jsonb_array_elements(er.concepts) c
-        from exclude_rules er
-    ),
-    include_rule_filters as (
-        select ir.id, jsonb_array_elements(ir.filters) f
-        from include_rules ir
-    ),
-    exclude_rule_filters as (
-        select er.id, jsonb_array_elements(er.filters) f
-        from exclude_rules er
-    ),
-    include_rule_filter_concepts as (
-        select jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', csev.code_system, 'codeSystemUri', (select cs.uri from terminology.code_system cs where cs.sys_status = 'A' and cs.id = csev.code_system)) concept, null::jsonb display, null::jsonb additional_designations, null::smallint order_number
-        from terminology.code_system_entity_version csev
-            where csev.sys_status = 'A' and exists(select 1 from include_rules ir
--- filter by codesystem and version
-                        where ir.code_system = csev.code_system
-                        and exists(select 1 from terminology.entity_version_code_system_version_membership evcsvm where evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = ir.code_system_version_id and csev.id = evcsvm.code_system_entity_version_id)
--- filter by code
-                        and (exists(select 1 from include_rule_filters irf where irf.id = ir.id and (
-                            ((irf.f -> 'property' ->> 'name')::text = 'code' and (csev.code = (irf.f ->> 'value')::text or csev.code = substring(csev.code, (irf.f ->> 'value')::text)))
--- filter by property
-                            or exists (select 1 from terminology.entity_property_value epv where epv.sys_status = 'A' and csev.id = epv.code_system_entity_version_id
-                                                            and exists (select 1 from terminology.entity_property ep where ep.sys_status = 'A' and (irf.f -> 'property' ->> 'name')::text = ep.name and ep.id = epv.entity_property_id)
-                                                            and (coalesce(irf.f ->> 'value', '') = '' or to_jsonb((irf.f ->> 'value')::text) = epv.value or (irf.f ->> 'value')::text = (epv.value ->> 'code')::text))
--- filter by designation
-                            or exists (select 1 from terminology.designation d where d.sys_status = 'A' and csev.id = d.code_system_entity_version_id
-                                                            and exists (select 1 from terminology.entity_property ep where ep.sys_status = 'A' and (irf.f -> 'property' ->> 'name')::text = ep.name and ep.id = d.designation_type_id)
-                                                            and (coalesce(irf.f ->> 'value', '') = '' or (irf.f ->> 'value')::text = d.name))
--- filter by association
-                            or exists (with recursive associations as (
-                                                select csa.source_code_system_entity_version_id, csa.target_code_system_entity_version_id
-                                                from terminology.code_system_association csa where csa.sys_status = 'A'
-                                                            and (irf.f ->> 'operator')::text = csa.association_type
-                                                            and (coalesce(irf.f ->> 'value', '') = '' or exists (select 1 from terminology.code_system_entity_version csev1 where csev1.sys_status = 'A' and csev1.id = csa.target_code_system_entity_version_id and csev1.code = (irf.f ->> 'value')::text))
-                                                union select csa1.source_code_system_entity_version_id, csa1.target_code_system_entity_version_id
-                                                from terminology.code_system_association csa1 inner join associations a on a.source_code_system_entity_version_id = csa1.target_code_system_entity_version_id)
-                                       select 1 from associations where (csev.id = source_code_system_entity_version_id or csev.id = target_code_system_entity_version_id))))
--- all concepts included
-                        or (not exists (select 1 from include_rule_filters irf where irf.id = ir.id) and not exists(select 1 from include_rule_concepts irc where irc.id = ir.id))))
-    ),
-    exclude_rule_filter_concepts as (
-        select csev.code code, csev.code_system code_system
-        from terminology.code_system_entity_version csev
-            where csev.sys_status = 'A' and exists(select 1 from exclude_rules er
-                        where er.code_system = csev.code_system
-                        and exists(select 1 from terminology.entity_version_code_system_version_membership evcsvm where evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = er.code_system_version_id and csev.id = evcsvm.code_system_entity_version_id)
-                        and (exists(select 1 from exclude_rule_filters erf where erf.id = er.id and (
-                            ((erf.f -> 'property' ->> 'name')::text = 'code' and csev.code = (erf.f ->> 'value')::text)
-                            or exists (select 1 from terminology.entity_property_value epv where epv.sys_status = 'A' and csev.id = epv.code_system_entity_version_id
-                                                            and exists (select 1 from terminology.entity_property ep where ep.sys_status = 'A' and (erf.f -> 'property' ->> 'name')::text = ep.name and ep.id = epv.entity_property_id)
-                                                            and (coalesce(erf.f ->> 'value', '') = '' or to_jsonb((erf.f ->> 'value')::text) = epv.value or (erf.f ->> 'value')::text = (epv.value ->> 'code')::text))
-                            or exists (select 1 from terminology.designation d where d.sys_status = 'A' and csev.id = d.code_system_entity_version_id
-                                                            and exists (select 1 from terminology.entity_property ep where ep.sys_status = 'A' and (erf.f -> 'property' ->> 'name')::text = ep.name and ep.id = d.designation_type_id)
-                                                            and (coalesce(erf.f ->> 'value', '') = '' or (erf.f ->> 'value')::text = d.name))
-                            or exists (with recursive associations as (
-                                                select csa.source_code_system_entity_version_id, csa.target_code_system_entity_version_id
-                                                from terminology.code_system_association csa where csa.sys_status = 'A'
-                                                            and (erf.f ->> 'operator')::text = csa.association_type
-                                                            and (coalesce(erf.f ->> 'value', '') = '' or exists (select 1 from terminology.code_system_entity_version csev1 where csev1.sys_status = 'A' and csev1.id = csa.target_code_system_entity_version_id and csev1.code = (erf.f ->> 'value')::text))
-                                                union select csa1.source_code_system_entity_version_id, csa1.target_code_system_entity_version_id
-                                                from terminology.code_system_association csa1 inner join associations a on a.source_code_system_entity_version_id = csa1.target_code_system_entity_version_id)
-                                       select 1 from associations where (csev.id = source_code_system_entity_version_id or csev.id = target_code_system_entity_version_id))))
-                        or (not exists (select 1 from exclude_rule_filters erf where erf.id = er.id) and not exists(select 1 from exclude_rule_concepts erc where erc.id = er.id))))
-    ),
-    prepared_include_rule_concepts as (
-        select jsonb_build_object('conceptVersionId', csev.id, 'code', irc.c -> 'concept' ->> 'code', 'codeSystem', irc.code_system, 'codeSystemUri', (select cs.uri from terminology.code_system cs where cs.sys_status = 'A' and cs.id = irc.code_system)) concept,(irc.c -> 'display') display, (irc.c -> 'additionalDesignations') additional_designations, (irc.c -> 'orderNumber')::smallint order_number
-        from include_rule_concepts irc left join terminology.code_system_entity_version csev on (irc.c -> 'concept' ->> 'code')::text = csev.code
-            and csev.sys_status = 'A' and exists(select 1 from include_rules ir
-                        where ir.code_system = csev.code_system and ir.id = irc.id
-                        and exists(select 1 from terminology.entity_version_code_system_version_membership evcsvm where evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = ir.code_system_version_id and csev.id = evcsvm.code_system_entity_version_id))
-    ),
-    all_include_concepts as (
-       select  pirc.concept, pirc.display, pirc.additional_designations, pirc.order_number, true::boolean enumerated from prepared_include_rule_concepts pirc
-       union all
-       select irfc.concept, irfc.display, irfc.additional_designations, irfc.order_number, false::boolean enumerated from include_rule_filter_concepts irfc
-    ),
-    all_exclude_concepts as (
-       select erc.c -> 'concept' ->> 'code' code, erc.code_system code_system from exclude_rule_concepts erc
-       union all
-       select erfc.code, erfc.code_system from exclude_rule_filter_concepts erfc
-    ),
-    concepts as (
-       select * from all_include_concepts aic where not exists (select 1 from all_exclude_concepts aec where aec.code = (aic.concept ->> 'code') and aec.code_system = (aic.concept ->> 'codeSystem'))
-    ),
-    value_set_concepts as (
-        select s.* from include_rules ir, lateral terminology.value_set_expand(ir.value_set_version_id) s
-    )
-select * from (
-    select * from concepts
-    union all
-    select * from value_set_concepts) u2 order by order_number;
+with rules as (
+  select r.id rule_id, r."type", r.code_system, r.code_system_version_id, r.filters, r.concepts, cs.uri, r.value_set_version_id
+    from terminology.value_set_version_rule_set rs
+         inner join terminology.value_set_version v on v.id = rs.value_set_version_id and v.sys_status = 'A'
+         inner join terminology.value_set_version_rule r on r.rule_set_id = rs.id and r.sys_status = 'A'
+                and ((r.code_system is not null or r.value_set_version_id is not null) 
+                      and r.code_system not in ('snomed-ct','loinc','ucum'))
+         left outer join terminology.code_system cs on cs.sys_status = 'A' and cs.id = r.code_system    
+   where v.id = p_value_set_version_id and rs.sys_status = 'A'
+), 
+exact_concepts as ( 
+  with t as (
+	  select r.*, jsonb_array_elements(r.concepts) concept
+      from rules r
+  ) 
+  select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.code csev_code, 
+         jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri) obj,
+         (t.concept -> 'display') display, (t.concept -> 'additionalDesignations') additional_designations, 
+         (t.concept -> 'orderNumber')::smallint order_number
+    from t, terminology.code_system_entity_version csev,
+         terminology.entity_version_code_system_version_membership evcsvm 
+   where t.code_system = csev.code_system
+     and evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = t.code_system_version_id 
+     and csev.id = evcsvm.code_system_entity_version_id
+     and (t.concept -> 'concept' ->> 'code') = csev.code
+),
+expressions as (
+  with t as (
+    with f as (
+		  select r.*, jsonb_array_elements(r.filters) filter_, jsonb_array_length(r.filters) fcnt
+	      from rules r
+	     where r.filters is not null 
+    ) select f.*,
+             row_number() over () rn
+        from f
+  ), 
+  c as (
+  select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.id csev_id, csev.code csev_code, 
+         jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri) obj
+    from rules t, 
+         terminology.code_system_entity_version csev,
+         terminology.entity_version_code_system_version_membership evcsvm 
+   where t.code_system = csev.code_system
+     and evcsvm.sys_status = 'A' 
+     and evcsvm.code_system_version_id = t.code_system_version_id 
+     and csev.id = evcsvm.code_system_entity_version_id
+     and t.filters is not null 
+   )
+   select c.*, t.rn, t.fcnt from c, t  
+    where t.code_system = c.code_system
+      and t.rule_id = c.rule_id
+      and ((t.filter_ -> 'property' ->> 'name')::text = 'code' and 
+           (c.csev_code = (t.filter_ ->> 'value')::text or regexp_match(c.csev_code, (t.filter_ ->> 'value')::text) is not null))
+   union     
+   select c.*, t.rn, t.fcnt from c, t 
+    where t.code_system = c.code_system
+      and t.rule_id = c.rule_id
+      and exists (select 1 from terminology.entity_property_value epv, terminology.entity_property ep 
+                  where epv.sys_status = 'A' and c.csev_id = epv.code_system_entity_version_id
+                    and ep.sys_status = 'A' and ep.id = epv.entity_property_id
+                    and (t.filter_ -> 'property' ->> 'name')::text = ep.name 
+                    and (coalesce(t.filter_ ->> 'value', '') = '' or to_jsonb((t.filter_ ->> 'value')::text) = epv.value or 
+                        (t.filter_ ->> 'value')::text = (epv.value ->> 'code')::text))    
+   union  
+   select c.*, t.rn, t.fcnt from c, t 
+    where t.code_system = c.code_system
+      and t.rule_id = c.rule_id
+      and exists (select 1 from terminology.designation d, terminology.entity_property ep 
+                  where d.sys_status = 'A' and c.csev_id = d.code_system_entity_version_id
+                    and ep.sys_status = 'A' and ep.id = d.designation_type_id
+                    and (t.filter_ -> 'property' ->> 'name')::text = ep.name  
+                    and ( (t.filter_ ->> 'value')::text = d.name))   
+   union 
+   select c.*, t.rn, t.fcnt from c, t 
+    where t.code_system = c.code_system
+      and t.rule_id = c.rule_id
+      and (t.filter_ ->> 'operator')::text = 'is-a'
+      and exists (
+        with recursive r as (
+            select csa.code_system, csa.source_code_system_entity_version_id, csa.target_code_system_entity_version_id
+              from terminology.code_system_association csa,
+                   terminology.code_system_entity_version csev1
+             where csa.sys_status = 'A'
+               and csa.code_system = c.code_system
+               and (t.filter_ ->> 'operator')::text = csa.association_type
+               and csev1.sys_status = 'A' and csev1.id = csa.target_code_system_entity_version_id 
+               and csev1.code = (t.filter_ ->> 'value')::text
+            union 
+            select r.code_system, csa1.source_code_system_entity_version_id, csa1.target_code_system_entity_version_id
+              from r, terminology.code_system_association csa1
+             where r.code_system=csa1.code_system
+               and r.source_code_system_entity_version_id = csa1.target_code_system_entity_version_id
+             )
+             select 1 from r 
+              where (c.csev_id = source_code_system_entity_version_id or c.csev_id = target_code_system_entity_version_id))                    
+),
+expression_concepts as (
+	select rule_id, type, csev_code, obj, fcnt, count(*)
+	  from expressions
+	 group by rule_id, type, csev_code, obj, fcnt
+	having fcnt = count(*)   
+),
+cs as (
+  select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.id csev_id, csev.code csev_code, 
+         jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri) obj
+    from rules t, 
+         terminology.code_system_entity_version csev,
+         terminology.entity_version_code_system_version_membership evcsvm 
+   where t.code_system = csev.code_system
+     and evcsvm.sys_status = 'A' 
+     and evcsvm.code_system_version_id = t.code_system_version_id 
+     and csev.id = evcsvm.code_system_entity_version_id
+     and t.filters is null and t.concepts is null 
+),
+vs as (
+  select s.* from rules t, lateral terminology.value_set_expand(t.value_set_version_id) s
+   where t.value_set_version_id is not null 
+),
+codes as (
+	select csev_code, obj
+	  from cs
+	 where type='include'
+  union
+	select concept ->> 'code', concept
+	  from vs  
+  union
+	 select csev_code, obj
+	  from expression_concepts
+	 where type='include'
+	union
+	select csev_code, obj 
+	  from exact_concepts
+	  where type='include' 
+	except   
+	select csev_code, obj 
+	  from cs
+	 where type='exclude'
+	except
+	select csev_code, obj 
+	  from expression_concepts
+	 where type='exclude'
+	except
+	select csev_code, obj 
+	  from exact_concepts
+	  where type='exclude' 
+)
+select t.obj, ec.display, ec.additional_designations, ec.order_number, 
+       case when ec.csev_code is not null then true else false end
+  from codes t left outer join exact_concepts ec on t.csev_code = ec.csev_code
+ order by ec.order_number;
+
 $function$
 ;
