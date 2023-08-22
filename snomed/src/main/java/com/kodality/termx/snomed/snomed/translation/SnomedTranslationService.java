@@ -40,7 +40,7 @@ public class SnomedTranslationService {
 
     if (CollectionUtils.isNotEmpty(translations) && unlinked) {
       List<String> conceptIds = translations.stream().map(SnomedTranslation::getConceptId).distinct().toList();
-      List<SnomedDescription> snomedDescriptions = snomedService.searchDescriptions(new SnomedDescriptionSearchParams().setAll(true).setConceptIds(conceptIds));
+      List<SnomedDescription> snomedDescriptions = snomedService.loadDescriptions(conceptIds);
       translations = translations.stream().filter(t -> snomedDescriptions.stream().noneMatch(sd -> sd.getDescriptionId().equals(t.getDescriptionId()))).toList();
     }
     return translations;

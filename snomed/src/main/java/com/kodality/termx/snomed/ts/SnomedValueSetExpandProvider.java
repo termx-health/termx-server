@@ -1,13 +1,11 @@
 package com.kodality.termx.snomed.ts;
 
-import com.kodality.termx.snomed.description.SnomedDescription;
-import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
-import com.kodality.termx.ts.Language;
-import com.kodality.termx.ts.ValueSetExternalExpandProvider;
-import com.kodality.termx.ts.codesystem.Designation;
-import com.kodality.termx.snomed.snomed.SnomedService;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
+import com.kodality.termx.snomed.description.SnomedDescription;
+import com.kodality.termx.snomed.snomed.SnomedService;
+import com.kodality.termx.ts.ValueSetExternalExpandProvider;
+import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
@@ -36,35 +34,42 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
   }
 
   @Override
-  public List<ValueSetVersionConcept> ruleExpand(ValueSetVersionRule rule, ValueSetVersion version) {
-    List<String> languages = CollectionUtils.isEmpty(version.getSupportedLanguages()) ? List.of(Language.en) : version.getSupportedLanguages();
+  public List<ValueSetVersionConcept> ruleExpand(ValueSetVersionRule rule, ValueSetVersion version, String preferredLanguage) {
+    List<String> supportedLanguages = Optional.ofNullable(version.getSupportedLanguages()).orElse(List.of());
+    List<String> preferredLanguages = preferredLanguage != null ? List.of(preferredLanguage) :
+        version.getPreferredLanguage() != null ? List.of(version.getPreferredLanguage()) : List.of();
+
     if (CollectionUtils.isNotEmpty(rule.getConcepts())) {
-      return prepare(rule.getConcepts(), languages);
+      return prepare(rule.getConcepts(), preferredLanguages, supportedLanguages);
     }
     if (CollectionUtils.isNotEmpty(rule.getFilters())) {
-      return rule.getFilters().stream().flatMap(f -> filterConcepts(f, languages).stream()).collect(Collectors.toList());
+      return rule.getFilters().stream().flatMap(f -> filterConcepts(f, preferredLanguages, supportedLanguages).stream()).collect(Collectors.toList());
     }
     return new ArrayList<>();
   }
 
-  private List<ValueSetVersionConcept> filterConcepts(ValueSetRuleFilter filter, List<String> languages) {
+  private List<ValueSetVersionConcept> filterConcepts(ValueSetRuleFilter filter, List<String> preferredLanguages, List<String> supportedLanguages) {
     String ecl = composeEcl(filter);
     List<SnomedConcept> snomedConcepts = snomedService.searchConcepts(new SnomedConceptSearchParams().setEcl(ecl).setAll(true));
 
     Map<String, List<SnomedDescription>> snomedDescriptions = getDescriptions(snomedConcepts.stream().map(SnomedConcept::getConceptId).toList());
 
-    return snomedConcepts.stream().map(c -> new ValueSetVersionConcept()
-        .setConcept(snomedMapper.toVSConcept(c))
-        .setActive(c.isActive())
-        .setDisplay(new Designation().setName(c.getPt().getTerm()).setLanguage(c.getPt().getLang()))
-        .setAdditionalDesignations(snomedDescriptions.getOrDefault(c.getConceptId(), List.of()).stream().filter(d -> languages.contains(d.getLang()))
-            .map(d -> new Designation().setName(d.getTerm()).setLanguage(d.getLang())).toList())
+    return snomedConcepts.stream().map(sc -> {
+          ValueSetVersionConcept c = new ValueSetVersionConcept();
+          c.setConcept(snomedMapper.toVSConcept(sc));
+          c.setActive(sc.isActive());
+          c.setDisplay(findDisplay(snomedDescriptions.get(sc.getConceptId()), preferredLanguages));
+          c.setAdditionalDesignations(
+              findDesignations(snomedDescriptions.get(sc.getConceptId()), supportedLanguages, c.getDisplay() != null ? c.getDisplay().getDesignationType() : null));
+          return c;
+        }
     ).toList();
   }
 
-  private List<ValueSetVersionConcept> prepare(List<ValueSetVersionConcept> concepts, List<String> languages) {
-    Map<String, List<SnomedConcept>> snomedConcepts = snomedService.loadConcepts(concepts.stream().map(c -> c.getConcept().getCode()).collect(Collectors.toList())).stream()
-        .collect(Collectors.groupingBy(SnomedConcept::getConceptId));
+  private List<ValueSetVersionConcept> prepare(List<ValueSetVersionConcept> concepts, List<String> preferredLanguages, List<String> supportedLanguages) {
+    Map<String, List<SnomedConcept>> snomedConcepts =
+        snomedService.loadConcepts(concepts.stream().map(c -> c.getConcept().getCode()).collect(Collectors.toList())).stream()
+            .collect(Collectors.groupingBy(SnomedConcept::getConceptId));
 
     Map<String, List<SnomedDescription>> snomedDescriptions = getDescriptions(snomedConcepts.keySet().stream().toList());
 
@@ -75,9 +80,9 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
       }
       c.setConcept(snomedMapper.toVSConcept(sc));
       c.setActive(sc.isActive());
-      c.setDisplay(new Designation().setName(sc.getPt().getTerm()).setLanguage(sc.getPt().getLang()));
-      c.setAdditionalDesignations(snomedDescriptions.getOrDefault(sc.getConceptId(), List.of()).stream().filter(d -> languages.contains(d.getLang()))
-          .map(d -> new Designation().setName(d.getTerm()).setLanguage(d.getLang())).toList());
+      c.setDisplay(findDisplay(snomedDescriptions.get(sc.getConceptId()), preferredLanguages));
+      c.setAdditionalDesignations(
+          findDesignations(snomedDescriptions.get(sc.getConceptId()), supportedLanguages, c.getDisplay() != null ? c.getDisplay().getDesignationType() : null));
     });
     return concepts;
   }
@@ -86,10 +91,25 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
     if (CollectionUtils.isEmpty(conceptIds)) {
       return Map.of();
     }
-    SnomedDescriptionSearchParams descriptionParams = new SnomedDescriptionSearchParams();
-    descriptionParams.setConceptIds(conceptIds);
-    descriptionParams.setAll(true);
-   return snomedService.searchDescriptions(descriptionParams).stream().collect(Collectors.groupingBy(SnomedDescription::getConceptId));
+    return snomedService.loadDescriptions(conceptIds).stream().collect(Collectors.groupingBy(SnomedDescription::getConceptId));
+  }
+
+  private Designation findDisplay(List<SnomedDescription> snomedDescriptions, List<String> preferredLanguages) {
+    SnomedDescription description = snomedDescriptions.stream()
+        .filter(d -> CollectionUtils.isEmpty(preferredLanguages) || d.getLang() != null && preferredLanguages.contains(d.getLang()))
+        .sorted((d1, d2) -> Boolean.compare(!d1.getTypeId().equals("900000000000013009"), !d2.getTypeId().equals("900000000000013009")))
+        .max((d1, d2) -> Boolean.compare(d1.getAcceptabilityMap().containsValue("PREFERRED"), d2.getAcceptabilityMap().containsValue("PREFERRED"))).orElse(null);
+    if (description == null) {
+      return null;
+    }
+    return new Designation().setName(description.getTerm()).setLanguage(description.getLang()).setDesignationType(description.getDescriptionId());
+  }
+
+  private List<Designation> findDesignations(List<SnomedDescription> snomedDescriptions, List<String> supportedLanguages, String displayId) {
+    return snomedDescriptions.stream()
+        .filter(d -> CollectionUtils.isEmpty(supportedLanguages) || d.getLang() != null && supportedLanguages.contains(d.getLang()))
+        .filter(d -> !d.getDescriptionId().equals(displayId))
+        .map(d -> new Designation().setName(d.getTerm()).setLanguage(d.getLang())).toList();
   }
 
   private String composeEcl(ValueSetRuleFilter f) {

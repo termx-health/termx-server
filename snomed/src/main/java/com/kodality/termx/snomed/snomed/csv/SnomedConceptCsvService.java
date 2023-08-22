@@ -50,8 +50,8 @@ public class SnomedConceptCsvService {
     params.setAll(true).setLimit(null);
     List<SnomedConcept> concepts = snomedService.searchConcepts(params);
     List<SnomedDescription> descriptions = CollectionUtils.isEmpty(concepts) ? List.of() :
-        snomedService.searchDescriptions(new SnomedDescriptionSearchParams().setConceptIds(concepts.stream().map(SnomedConcept::getConceptId).toList()).setAll(true))
-            .stream().filter(d -> d.getTypeId().equals("900000000000013009") && d.getAcceptabilityMap().containsValue("PREFERRED")).toList();
+        snomedService.loadDescriptions(concepts.stream().map(SnomedConcept::getConceptId).toList()).stream()
+            .filter(d -> d.getTypeId().equals("900000000000013009") && d.getAcceptabilityMap().containsValue("PREFERRED")).toList();
     Map<String, List<SnomedDescription>> conceptDescriptions = descriptions.stream().collect(Collectors.groupingBy(SnomedDescription::getConceptId));
     List<String> langs = descriptions.stream().map(SnomedDescription::getLang).distinct().toList();
 

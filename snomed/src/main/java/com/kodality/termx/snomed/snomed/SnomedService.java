@@ -68,6 +68,18 @@ public class SnomedService {
     return snowstormClient.queryConcepts(params).join().getItems();
   }
 
+  public List<SnomedDescription> loadDescriptions(List<String> conceptIds) {
+    List<SnomedDescription> descriptions = new ArrayList<>();
+    IntStream.range(0, (conceptIds.size() + MAX_CONCEPT_COUNT - 1) / MAX_CONCEPT_COUNT)
+        .mapToObj(i -> conceptIds.subList(i * MAX_CONCEPT_COUNT, Math.min(conceptIds.size(), (i + 1) * MAX_CONCEPT_COUNT))).forEach(batch -> {
+          SnomedDescriptionSearchParams params = new SnomedDescriptionSearchParams();
+          params.setConceptIds(batch);
+          params.setAll(true);
+          descriptions.addAll(searchDescriptions(params));
+        });
+    return descriptions;
+  }
+
   public List<SnomedDescription> searchDescriptions(SnomedDescriptionSearchParams params) {
     if (params.isAll()) {
 

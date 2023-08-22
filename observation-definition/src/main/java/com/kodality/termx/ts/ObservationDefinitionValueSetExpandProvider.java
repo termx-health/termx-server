@@ -29,7 +29,7 @@ public class ObservationDefinitionValueSetExpandProvider extends ValueSetExterna
   }
 
   @Override
-  public List<ValueSetVersionConcept> ruleExpand(ValueSetVersionRule rule, ValueSetVersion version) {
+  public List<ValueSetVersionConcept> ruleExpand(ValueSetVersionRule rule, ValueSetVersion version, String preferredLanguage) {
     List<ValueSetVersionConcept> ruleConcepts = CollectionUtils.isEmpty(rule.getConcepts()) ? new ArrayList<>() : rule.getConcepts();
     if (CollectionUtils.isEmpty(rule.getFilters())) {
       ruleConcepts.forEach(this::decorate);

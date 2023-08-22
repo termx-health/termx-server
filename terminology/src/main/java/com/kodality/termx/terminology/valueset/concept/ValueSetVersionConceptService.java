@@ -23,8 +23,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Singleton
 @RequiredArgsConstructor
 public class ValueSetVersionConceptService {
@@ -71,11 +73,7 @@ public class ValueSetVersionConceptService {
     List<ValueSetVersionConcept> expansion = internalExpand(version, preferredLanguage);
     ValueSetVersionRuleSet ruleSet = version.getRuleSet();
     for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
-      expansion.addAll(provider.expand(ruleSet, version));
-      if (ruleSet != null) {
-        ruleSet.getRules().stream().filter(r -> r.getValueSetVersion() != null && r.getValueSetVersion().getId() != null)
-            .forEach(r -> expansion.addAll(provider.expand(valueSetVersionRuleSetService.load(r.getValueSetVersion().getId()).orElse(null), version)));
-      }
+      expansion.addAll(provider.expand(ruleSet, version, preferredLanguage));
     }
     return expansion;
   }
@@ -85,27 +83,27 @@ public class ValueSetVersionConceptService {
   }
 
   public List<ValueSetVersionConcept> decorate(List<ValueSetVersionConcept> concepts, ValueSetVersion version, String preferredLanguage) {
+    long start = System.currentTimeMillis();
     List<String> supportedLanguages = Optional.ofNullable(version.getSupportedLanguages()).orElse(List.of());
 
     Map<String, List<ValueSetVersionConcept>> groupedConcepts = concepts.stream().collect(Collectors.groupingBy(c -> c.getConcept().getCode()));
 
-    List<String> versionIds =
-        concepts.stream().map(c -> c.getConcept().getConceptVersionId()).filter(Objects::nonNull).distinct().map(String::valueOf).toList();
+    List<String> versionIds = concepts.stream().map(c -> c.getConcept().getConceptVersionId()).filter(Objects::nonNull).distinct().map(String::valueOf).toList();
     CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
     params.setIds(String.join(",", versionIds));
     params.limit(versionIds.size());
     List<CodeSystemEntityVersion> entityVersions = codeSystemEntityVersionService.query(params).getData();
     Map<String, List<CodeSystemEntityVersion>> groupedVersions = entityVersions.stream().collect(Collectors.groupingBy(CodeSystemEntityVersion::getCode));
 
-    return groupedConcepts.keySet().stream().map(code -> groupedConcepts.get(code).stream()
+    List<ValueSetVersionConcept> res = groupedConcepts.keySet().stream().map(code -> groupedConcepts.get(code).stream()
             .filter(ValueSetVersionConcept::isEnumerated).findFirst()
             .orElse(groupedConcepts.get(code).stream().findFirst().orElse(null)))
         .filter(Objects::nonNull)
         .peek(c -> {
           List<CodeSystemEntityVersion> versions = Optional.ofNullable(groupedVersions.get(c.getConcept().getCode())).orElse(new ArrayList<>());
 
-          List<String> preferredLanguages = versions.stream().flatMap(v -> v.getVersions().stream().map(CodeSystemVersionReference::getPreferredLanguage))
-              .filter(Objects::nonNull).toList();
+          List<String> preferredLanguages = version.getPreferredLanguage() != null ?  List.of(version.getPreferredLanguage()) :
+              versions.stream().flatMap(v -> v.getVersions().stream().map(CodeSystemVersionReference::getPreferredLanguage)).filter(Objects::nonNull).toList();
           List<String> csVersions = versions.stream().flatMap(v -> v.getVersions().stream().map(CodeSystemVersionReference::getVersion)).toList();
           c.getConcept().setCodeSystemVersions(csVersions);
 
@@ -119,9 +117,11 @@ public class ValueSetVersionConceptService {
                 .findFirst().orElse(displays.stream()
                     .filter(d -> StringUtils.isNotEmpty(preferredLanguage) && d.getLanguage() != null && d.getLanguage().startsWith(preferredLanguage))
                     .findFirst().orElse(displays.stream()
-                        .filter(d -> CollectionUtils.isEmpty(preferredLanguages) || d.getLanguage() != null && preferredLanguages.stream().anyMatch(pl -> d.getLanguage().equals(pl)))
+                        .filter(d -> CollectionUtils.isEmpty(preferredLanguages) ||
+                            d.getLanguage() != null && preferredLanguages.stream().anyMatch(pl -> d.getLanguage().equals(pl)))
                         .findFirst().orElse(displays.stream()
-                            .filter(d -> CollectionUtils.isEmpty(preferredLanguages) || d.getLanguage() != null && preferredLanguages.stream().anyMatch(pl -> d.getLanguage().startsWith(pl)))
+                            .filter(d -> CollectionUtils.isEmpty(preferredLanguages) ||
+                                d.getLanguage() != null && preferredLanguages.stream().anyMatch(pl -> d.getLanguage().startsWith(pl)))
                             .findFirst().orElse(null)))));
           }
           if (CollectionUtils.isEmpty(c.getAdditionalDesignations())) {
@@ -135,6 +135,9 @@ public class ValueSetVersionConceptService {
           c.setPropertyValues(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getPropertyValues())).flatMap(v -> v.getPropertyValues().stream())
               .collect(Collectors.toList()));
         }).collect(Collectors.toList());
+
+    log.info("Value set expansion decoration took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
+    return res;
   }
 
   private ValueSetVersion getVersion(String vs, String vsVersion) {
