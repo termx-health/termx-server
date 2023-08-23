@@ -99,31 +99,6 @@ class FhirTestCasesTest extends TermxIntegTest {
     }
   }
 
-  Map<String, List<String>> toMap(Parameters fhirParams) {
-    def grouped = fhirParams.parameter.stream().collect(Collectors.groupingBy(p -> p.name))
-    def map = new HashMap()
-    grouped.keySet().forEach(k -> map.put(k, getFhirValue(grouped.get(k))))
-    return map
-  }
-
-  List<String> getFhirValue(List<Parameters.ParametersParameter> parameters) {
-    return parameters.stream().map(p -> {
-      def stringValues = new ArrayList()
-      stringValues.addAll(p.valueCode, p.valueString, p.valueUrl, p.valueUri, p.valueCanonical, p.valueUuid)
-      def value = stringValues.stream().filter(Objects::nonNull).findFirst()
-      if (value.isPresent()) {
-        return value.get()
-      }
-      if (p.valueBoolean) {
-        return String.valueOf(p.valueBoolean)
-      }
-      if (p.valueInteger) {
-        return String.valueOf(p.valueInteger)
-      }
-      return null
-    }).filter(Objects::nonNull).collect(Collectors.toList())
-  }
-
   def checkExpandResult(ValueSet actualValueSet, ValueSet expectedValueSet) {
     actualValueSet.url == expectedValueSet.url
     actualValueSet.version == expectedValueSet.version
@@ -192,21 +167,6 @@ class FhirTestCasesTest extends TermxIntegTest {
   }
 
   def checkValidateCodeResult(Parameters actual, Parameters expected) {
-    println('-------------------------------------------')
-    println JsonUtil.toJson(actual)
-    println JsonUtil.toJson(expected)
-    println ''
-    println checkParameter(actual, expected, "code")
-    println ''
-    println checkParameter(actual, expected, "display")
-    println ''
-    println checkParameter(actual, expected, "result")
-    println ''
-    println checkParameter(actual, expected, "system")
-    println ''
-    println checkParameter(actual, expected, "version")
-    println ''
-
     checkParameter(actual, expected, "code")
     checkParameter(actual, expected, "display")
     checkParameter(actual, expected, "result")
@@ -214,7 +174,6 @@ class FhirTestCasesTest extends TermxIntegTest {
   }
 
   boolean checkParameter(Parameters actual, Parameters expected, String param) {
-    println param
     def actualParam = actual.findParameter(param)
     def expectedParam = expected.findParameter(param)
     return actualParam.isEmpty() && expectedParam.isEmpty() ||

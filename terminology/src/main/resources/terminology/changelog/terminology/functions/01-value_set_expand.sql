@@ -30,7 +30,7 @@ exact_concepts as (
   ) 
   select t.rule_id, t."type", t.code_system, t.code_system_version_id, 
          t.concept -> 'concept' ->> 'code' csev_code, 
-         jsonb_build_object('conceptVersionId', t.concept ->> 'id', 
+         jsonb_build_object('conceptVersionId', csev.id,
                             'code', t.concept -> 'concept' ->> 'code', 
                             'codeSystem', t.code_system, 'codeSystemUri', t.uri) obj,
          (t.concept -> 'display') display, 
@@ -112,7 +112,7 @@ expressions as (
                and r.source_code_system_entity_version_id = csa1.target_code_system_entity_version_id
              )
              select 1 from r 
-              where (c.csev_id = source_code_system_entity_version_id or c.csev_id = target_code_system_entity_version_id))                    
+              where (c.csev_id = source_code_system_entity_version_id))
 ),
 expression_concepts as (
 	select rule_id, type, csev_code, obj, fcnt, count(*)

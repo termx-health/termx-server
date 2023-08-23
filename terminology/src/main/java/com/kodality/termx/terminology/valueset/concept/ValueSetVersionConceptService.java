@@ -148,7 +148,8 @@ public class ValueSetVersionConceptService {
         v.getPropertyValues().stream().anyMatch(pv -> pv.getEntityProperty().equals(STATUS) && List.of("deprecated", "retired").contains((String) pv.getValue())));
     boolean retired = dateIsAfter(versions, RETIREMENT_DATE);
     boolean deprecated = dateIsAfter(versions, DEPRECATION_DATE);
-    return versions.stream().anyMatch(v -> PublicationStatus.active.equals(v.getStatus())) && !status && !inactive && !retired && !deprecated;
+    boolean noActiveVersion = CollectionUtils.isNotEmpty(versions) && versions.stream().noneMatch(v -> PublicationStatus.active.equals(v.getStatus()));
+    return !noActiveVersion && !status && !inactive && !retired && !deprecated;
   }
 
   private boolean dateIsAfter(List<CodeSystemEntityVersion> versions, String prop) {
