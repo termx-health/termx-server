@@ -28,16 +28,20 @@ exact_concepts as (
 	  select r.*, jsonb_array_elements(r.concepts) concept
       from rules r
   ) 
-  select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.code csev_code, 
-         jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri) obj,
-         (t.concept -> 'display') display, (t.concept -> 'additionalDesignations') additional_designations, 
+  select t.rule_id, t."type", t.code_system, t.code_system_version_id, 
+         t.concept -> 'concept' ->> 'code' csev_code, 
+         jsonb_build_object('conceptVersionId', t.concept ->> 'id', 
+                            'code', t.concept -> 'concept' ->> 'code', 
+                            'codeSystem', t.code_system, 'codeSystemUri', t.uri) obj,
+         (t.concept -> 'display') display, 
+         (t.concept -> 'additionalDesignations') additional_designations, 
          (t.concept -> 'orderNumber')::smallint order_number
-    from t, terminology.code_system_entity_version csev,
-         terminology.entity_version_code_system_version_membership evcsvm 
-   where t.code_system = csev.code_system
-     and evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = t.code_system_version_id 
-     and csev.id = evcsvm.code_system_entity_version_id
-     and (t.concept -> 'concept' ->> 'code') = csev.code
+    from t 
+         left outer join terminology.code_system_entity_version csev on t.code_system = csev.code_system
+                and (t.concept -> 'concept' ->> 'code') = csev.code
+         left outer join terminology.entity_version_code_system_version_membership evcsvm 
+                 on evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = t.code_system_version_id 
+                and csev.id = evcsvm.code_system_entity_version_id
 ),
 expressions as (
   with t as (
@@ -65,7 +69,8 @@ expressions as (
     where t.code_system = c.code_system
       and t.rule_id = c.rule_id
       and ((t.filter_ -> 'property' ->> 'name')::text = 'code' and 
-           (c.csev_code = (t.filter_ ->> 'value')::text or regexp_match(c.csev_code, (t.filter_ ->> 'value')::text) is not null))
+           (c.csev_code = (t.filter_ ->> 'value')::text or 
+           regexp_match(c.csev_code, (t.filter_ ->> 'value')::text||'$') is not null))
    union     
    select c.*, t.rn, t.fcnt from c, t 
     where t.code_system = c.code_system
