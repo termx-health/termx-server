@@ -92,6 +92,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         List.of(new CodeableConcept().setText(valueSet.getCopyright().getJurisdiction())) : null);
 
     fhirValueSet.setVersion(version.getVersion());
+    fhirValueSet.setLanguage(version.getPreferredLanguage());
     fhirValueSet.setVersionAlgorithmString(version.getAlgorithm());
     fhirValueSet.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
     fhirValueSet.setStatus(version.getStatus());

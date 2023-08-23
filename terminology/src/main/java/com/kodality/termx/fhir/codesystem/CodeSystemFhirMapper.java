@@ -90,6 +90,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setJurisdiction(codeSystem.getCopyright() != null && codeSystem.getCopyright().getJurisdiction() != null  ? List.of(new CodeableConcept().setText(codeSystem.getCopyright().getJurisdiction())) : null);
 
     fhirCodeSystem.setVersion(version.getVersion());
+    fhirCodeSystem.setLanguage(version.getPreferredLanguage());
     fhirCodeSystem.setVersionAlgorithmString(version.getAlgorithm());
     fhirCodeSystem.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
     fhirCodeSystem.setStatus(version.getStatus());

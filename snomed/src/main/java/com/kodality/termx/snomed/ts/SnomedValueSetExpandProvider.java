@@ -80,8 +80,8 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
       }
       c.setConcept(snomedMapper.toVSConcept(sc));
       c.setActive(sc.isActive());
-      c.setDisplay(findDisplay(snomedDescriptions.get(sc.getConceptId()), preferredLanguages));
-      c.setAdditionalDesignations(
+      c.setDisplay(c.getDisplay() == null ? findDisplay(snomedDescriptions.get(sc.getConceptId()), preferredLanguages) : c.getDisplay());
+      c.setAdditionalDesignations(CollectionUtils.isNotEmpty(c.getAdditionalDesignations()) ? c.getAdditionalDesignations() :
           findDesignations(snomedDescriptions.get(sc.getConceptId()), supportedLanguages, c.getDisplay() != null ? c.getDisplay().getDesignationType() : null));
     });
     return concepts;
