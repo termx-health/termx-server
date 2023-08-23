@@ -12,6 +12,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -84,7 +85,7 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
       c.setAdditionalDesignations(CollectionUtils.isNotEmpty(c.getAdditionalDesignations()) ? c.getAdditionalDesignations() :
           findDesignations(snomedDescriptions.get(sc.getConceptId()), supportedLanguages, c.getDisplay() != null ? c.getDisplay().getDesignationType() : null));
     });
-    return concepts;
+    return concepts.stream().sorted(Comparator.comparing(ValueSetVersionConcept::getOrderNumber)).toList();
   }
 
   private Map<String, List<SnomedDescription>> getDescriptions(List<String> conceptIds) {
