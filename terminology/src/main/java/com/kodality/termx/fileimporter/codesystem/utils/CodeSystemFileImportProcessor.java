@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -107,7 +108,7 @@ public class CodeSystemFileImportProcessor {
   private static List<FileProcessingEntityPropertyValue> mapPropValue(FileProcessingProperty prop, String rawValue) {
     List<String> rowValues = List.of(rawValue);
     if (StringUtils.isNotEmpty(prop.getPropertyDelimiter())) {
-      rowValues = Arrays.stream(rawValue.split(prop.getPropertyDelimiter())).map(String::trim).toList();
+      rowValues = Arrays.stream(rawValue.split(Pattern.quote(prop.getPropertyDelimiter()))).map(String::trim).toList();
     }
 
     return rowValues.stream().map(val -> {

@@ -32,6 +32,8 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -204,14 +206,14 @@ public class CodeSystemController {
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/concepts/{code}")
   public Concept getConcept(@PathVariable @ResourceId String codeSystem, @PathVariable String code) {
-    return conceptService.load(codeSystem, code).orElseThrow(() -> new NotFoundException("Concept not found: " + code));
+    return conceptService.load(codeSystem, parseCode(code)).orElseThrow(() -> new NotFoundException("Concept not found: " + parseCode(code)));
   }
 
   @Authorized(Privilege.CS_VIEW)
   @Post(uri = "/{codeSystem}/concepts/{code}/propagate-properties")
   public HttpResponse<?> propagateProperties(@PathVariable @ResourceId String codeSystem, @PathVariable String code,
                                              @Body @Valid CodeSystemConceptPropertyPropagationRequest request) {
-    conceptService.propagateProperties(code, request.getTargetConceptIds(), codeSystem);
+    conceptService.propagateProperties(parseCode(code), request.getTargetConceptIds(), codeSystem);
     return HttpResponse.ok();
   }
 
@@ -227,7 +229,7 @@ public class CodeSystemController {
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/versions/{version}/concepts/{code}")
   public Concept getConcept(@PathVariable @ResourceId String codeSystem, @PathVariable String version, @PathVariable String code) {
-    return conceptService.load(codeSystem, version, code).orElseThrow(() -> new NotFoundException("Concept not found: " + code));
+    return conceptService.load(codeSystem, version, parseCode(code)).orElseThrow(() -> new NotFoundException("Concept not found: " + parseCode(code)));
   }
 
   @Authorized(Privilege.CS_EDIT)
@@ -398,5 +400,9 @@ public class CodeSystemController {
   @Introspected
   public static class CodeSystemConceptPropertyPropagationRequest {
     private List<Long> targetConceptIds;
+  }
+
+  private String parseCode(String code) {
+    return URLDecoder.decode(code, StandardCharsets.UTF_8);
   }
 }
