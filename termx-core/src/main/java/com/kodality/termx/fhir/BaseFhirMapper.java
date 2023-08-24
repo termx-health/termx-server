@@ -10,7 +10,11 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -54,11 +58,11 @@ public abstract class BaseFhirMapper {
     return identifiers.stream().map(i -> new Identifier().setSystem(i.getSystem()).setValue(i.getValue())).collect(Collectors.toList());
   }
 
-  public static String toFhirName(LocalizedName name) {
+  public static String toFhirName(LocalizedName name, String lang) {
     if (name == null) {
       return null;
     }
-    return name.getOrDefault(Language.en, name.values().stream().findFirst().orElse(null));
+    return name.getOrDefault(Optional.ofNullable(lang).orElse(Language.en), name.values().stream().findFirst().orElse(null));
   }
 
 }

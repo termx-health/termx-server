@@ -94,13 +94,11 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
       );
     });
     cs.getProperties().stream().filter(p -> CollectionUtils.isEmpty(properties) || properties.contains(p.getName())).forEach(p -> {
-      findPropertyValues(cs, p.getId()).forEach(pv -> {
-        resp.addParameter(new ParametersParameter("property")
-            .addPart(new ParametersParameter("code").setValueString(p.getName()))
-            .addPart(new ParametersParameter("description").setValueString(BaseFhirMapper.toFhirName(p.getDescription())))
-            .addPart(toParameter(p.getType(), pv))
-        );
-      });
+      findPropertyValues(cs, p.getId()).forEach(pv -> resp.addParameter(new ParametersParameter("property")
+          .addPart(new ParametersParameter("code").setValueString(p.getName()))
+          .addPart(new ParametersParameter("description").setValueString(BaseFhirMapper.toFhirName(p.getDescription(), req.getLanguage())))
+          .addPart(toParameter(p.getType(), pv))
+      ));
     });
     return resp;
   }
