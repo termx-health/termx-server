@@ -85,7 +85,7 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
       c.setAdditionalDesignations(CollectionUtils.isNotEmpty(c.getAdditionalDesignations()) ? c.getAdditionalDesignations() :
           findDesignations(snomedDescriptions.get(sc.getConceptId()), supportedLanguages, c.getDisplay() != null ? c.getDisplay().getDesignationType() : null));
     });
-    return concepts.stream().sorted(Comparator.comparing(ValueSetVersionConcept::getOrderNumber)).toList();
+    return concepts.stream().sorted(Comparator.comparing(c -> c.getOrderNumber() == null ? 0 : c.getOrderNumber())).toList();
   }
 
   private Map<String, List<SnomedDescription>> getDescriptions(List<String> conceptIds) {
