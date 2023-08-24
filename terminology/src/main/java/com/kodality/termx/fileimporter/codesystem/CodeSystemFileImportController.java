@@ -65,8 +65,8 @@ public class CodeSystemFileImportController {
         log.error("Error while importing code system file", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);
       } catch (Exception e) {
-        log.error("Error while importing code system file (TE700)", e);
-        importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
+        log.error("Error while importing code system file", e);
+        importLogger.logImport(jobLogResponse.getJobId(), null, null, List.of(e.getMessage()));
       }
     }));
     return jobLogResponse;
