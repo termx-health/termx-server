@@ -14,7 +14,7 @@ create or replace function terminology.value_set_expand(
 as
 $function$
 with rules as (
-  select r.id rule_id, r."type", r.code_system, r.code_system_version_id, r.filters, r.concepts, coalesce(bcs.uri, cs.uri) uri, r.value_set_version_id
+  select r.id rule_id, r."type", r.code_system, r.code_system_version_id, r.filters, r.concepts, cs.uri uri, bcs.uri base_uri, r.value_set_version_id
     from terminology.value_set_version_rule_set rs
          inner join terminology.value_set_version v on v.id = rs.value_set_version_id and v.sys_status = 'A'
          inner join terminology.value_set_version_rule r on r.rule_set_id = rs.id and r.sys_status = 'A'
@@ -33,7 +33,7 @@ exact_concepts as (
          t.concept -> 'concept' ->> 'code' csev_code, 
          jsonb_build_object('conceptVersionId', csev.id,
                             'code', t.concept -> 'concept' ->> 'code', 
-                            'codeSystem', t.code_system, 'codeSystemUri', t.uri) obj,
+                            'codeSystem', t.code_system, 'codeSystemUri', t.uri, 'baseCodeSystemUri', t.base_uri) obj,
          (t.concept -> 'display') display, 
          (t.concept -> 'additionalDesignations') additional_designations, 
          (t.concept -> 'orderNumber')::smallint order_number
@@ -56,7 +56,7 @@ expressions as (
   ), 
   c as (
   select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.id csev_id, csev.code csev_code, 
-         jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri) obj
+         jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri, 'baseCodeSystemUri', t.base_uri) obj
     from rules t, 
          terminology.code_system_entity_version csev,
          terminology.entity_version_code_system_version_membership evcsvm 
@@ -123,7 +123,7 @@ expression_concepts as (
 ),
 cs as (
   select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.id csev_id, csev.code csev_code, 
-         jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri) obj
+         jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri, 'baseCodeSystemUri', t.base_uri) obj
     from rules t, 
          terminology.code_system_entity_version csev,
          terminology.entity_version_code_system_version_membership evcsvm 

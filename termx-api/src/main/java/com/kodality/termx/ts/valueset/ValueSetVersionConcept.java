@@ -33,6 +33,7 @@ public class ValueSetVersionConcept {
     private String code;
     private String codeSystem;
     private String codeSystemUri;
+    private String baseCodeSystemUri;
 
     private List<String> codeSystemVersions; //decorated field
 
