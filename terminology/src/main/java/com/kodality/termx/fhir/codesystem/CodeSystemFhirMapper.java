@@ -92,6 +92,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setCopyright(codeSystem.getCopyright() != null ? codeSystem.getCopyright().getHolder() : null);
     fhirCodeSystem.setCopyrightLabel(codeSystem.getCopyright() != null ? codeSystem.getCopyright().getStatement() : null);
     fhirCodeSystem.setJurisdiction(codeSystem.getCopyright() != null && codeSystem.getCopyright().getJurisdiction() != null  ? List.of(new CodeableConcept().setText(codeSystem.getCopyright().getJurisdiction())) : null);
+    fhirCodeSystem.setSupplements(codeSystem.getBaseCodeSystemUri());
 
     fhirCodeSystem.setVersion(version.getVersion());
     fhirCodeSystem.setLanguage(version.getPreferredLanguage());
@@ -224,4 +225,33 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     params.setPropertiesDecorated(true);
     return params;
   }
+
+//  private static String addTranslationExtensions(String fhirJson, CodeSystem cs, CodeSystemVersion csv) {
+//    Map<String, Object> fhirCs = JsonUtil.toMap(fhirJson);
+//    Map<String, List<TranslationExtension>> titleExtension = toFhirTranslationExtension(cs.getTitle(), csv.getPreferredLanguage());
+//    if (titleExtension != null) {
+//      fhirCs.put("title_", titleExtension);
+//    }
+//    Map<String, List<TranslationExtension>> descriptionExtension = toFhirTranslationExtension(cs.getDescription(), csv.getPreferredLanguage());
+//    if (descriptionExtension != null) {
+//      fhirCs.put("description_", descriptionExtension);
+//    }
+//    Map<String, List<TranslationExtension>> purposeExtension = toFhirTranslationExtension(cs.getPurpose(), csv.getPreferredLanguage());
+//    if (purposeExtension != null) {
+//      fhirCs.put("purpose_", purposeExtension);
+//    }
+//    return JsonUtil.toJson(fhirCs);
+//  }
+//
+//  public static void main(String[] args) throws IOException {
+//    org.hl7.fhir.r5.model.CodeSystem cs = new org.hl7.fhir.r5.model.CodeSystem();
+//    MarkdownType code = new MarkdownType("code");
+//    code.addExtension("testurl", new StringType("value"));
+//    cs.setPurposeElement(code);
+//
+//    ByteArrayOutputStream output = new ByteArrayOutputStream();
+//    JsonParser parser = new JsonParser();
+//    parser.compose(output, cs);
+//    System.out.println(output.toString(StandardCharsets.UTF_8));
+//  }
 }

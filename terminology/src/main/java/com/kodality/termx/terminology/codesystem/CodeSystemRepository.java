@@ -36,7 +36,22 @@ public class CodeSystemRepository extends BaseRepository {
   });
 
   private static final String select = "select distinct on (cs.id) cs.*, " +
-      "(select jsonb_agg(ep.p) from (select json_build_object('id', ep.id, 'name', ep.name, 'uri', ep.uri, 'kind', ep.kind, 'type', ep.type, 'description', ep.description, 'status', ep.status, 'orderNumber', ep.order_number, 'preferred', ep.preferred, 'required', ep.required, 'rule', ep.rule, 'created', ep.created, 'definedEntityPropertyId', ep.defined_entity_property_id) as p from terminology.entity_property ep where ep.code_system = cs.id and ep.sys_status = 'A' order by ep.order_number) ep) as properties ";
+      "(select jsonb_agg(ep.p) from (select json_build_object(" +
+      "               'id', ep.id, " +
+      "               'name', ep.name, " +
+      "               'uri', ep.uri, " +
+      "               'kind', ep.kind, " +
+      "               'type', ep.type, " +
+      "               'description', ep.description, " +
+      "               'status', ep.status, " +
+      "               'orderNumber', ep.order_number, " +
+      "               'preferred', ep.preferred, " +
+      "               'required', ep.required, " +
+      "               'rule', ep.rule, " +
+      "               'created', ep.created, " +
+      "               'definedEntityPropertyId', ep.defined_entity_property_id) as p " +
+      "from terminology.entity_property ep where ep.code_system = cs.id and ep.sys_status = 'A' order by ep.order_number) ep) as properties, " +
+      "(select cs1.uri from terminology.code_system cs1 where cs1.id = cs.base_code_system and cs1.sys_status = 'A') as base_code_system_uri ";
 
   public void save(CodeSystem codeSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();

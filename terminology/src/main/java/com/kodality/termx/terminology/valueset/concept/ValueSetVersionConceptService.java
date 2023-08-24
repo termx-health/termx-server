@@ -10,6 +10,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.codesystem.Designation;
+import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
@@ -143,9 +144,9 @@ public class ValueSetVersionConceptService {
 
   private boolean calculatedActive(List<CodeSystemEntityVersion> versions) {
     boolean inactive = versions.stream().anyMatch(v -> v.getPropertyValues() != null &&
-        v.getPropertyValues().stream().anyMatch(pv -> pv.getEntityProperty().equals(INACTIVE) && (boolean) pv.getValue()));
+        v.getPropertyValues().stream().anyMatch(pv -> pv.getEntityProperty().equals(INACTIVE) && EntityPropertyType.bool.equals(pv.getEntityPropertyType()) && (boolean) pv.getValue()));
     boolean status = versions.stream().anyMatch(v -> v.getPropertyValues() != null &&
-        v.getPropertyValues().stream().anyMatch(pv -> pv.getEntityProperty().equals(STATUS) && List.of("deprecated", "retired").contains((String) pv.getValue())));
+        v.getPropertyValues().stream().anyMatch(pv -> pv.getEntityProperty().equals(STATUS) && EntityPropertyType.string.equals(pv.getEntityPropertyType()) && List.of("deprecated", "retired").contains((String) pv.getValue())));
     boolean retired = dateIsAfter(versions, RETIREMENT_DATE);
     boolean deprecated = dateIsAfter(versions, DEPRECATION_DATE);
     boolean noActiveVersion = CollectionUtils.isNotEmpty(versions) && versions.stream().noneMatch(v -> PublicationStatus.active.equals(v.getStatus()));

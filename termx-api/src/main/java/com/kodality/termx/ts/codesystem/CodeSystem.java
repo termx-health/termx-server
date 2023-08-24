@@ -34,6 +34,7 @@ public class CodeSystem {
   private CodeSystemSettings settings;
 
   private String baseCodeSystem;
+  private String baseCodeSystemUri;
 
   private List<Concept> concepts;
   private List<EntityProperty> properties;
