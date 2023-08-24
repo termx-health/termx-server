@@ -114,7 +114,7 @@ public class ValueSetVersionConceptService {
           List<Designation> designations = versions.stream()
               .filter(v -> CollectionUtils.isNotEmpty(v.getDesignations()))
               .flatMap(v -> v.getDesignations().stream()).toList();
-          if (c.getDisplay() == null || c.getDisplay().getName() == null) {
+          if (c.getDisplay() == null || StringUtils.isEmpty(c.getDisplay().getName())) {
             List<Designation> displays = designations.stream().filter(d -> DISPLAY.equals(d.getDesignationType())).toList();
             c.setDisplay(displays.stream()
                 .filter(d -> StringUtils.isNotEmpty(preferredLanguage) && d.getLanguage() != null && d.getLanguage().equals(preferredLanguage))

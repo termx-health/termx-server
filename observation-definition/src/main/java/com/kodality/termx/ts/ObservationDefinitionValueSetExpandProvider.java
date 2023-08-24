@@ -40,7 +40,7 @@ public class ObservationDefinitionValueSetExpandProvider extends ValueSetExterna
   }
 
   private void decorate(ValueSetVersionConcept c) {
-    if (c.getDisplay() != null && c.getDisplay().getName() != null) {
+    if (c.getDisplay() != null && StringUtils.isNotEmpty(c.getDisplay().getName())) {
       return;
     }
     ObservationDefinition observationDefinition = observationDefinitionService.load(c.getConcept().getCode());

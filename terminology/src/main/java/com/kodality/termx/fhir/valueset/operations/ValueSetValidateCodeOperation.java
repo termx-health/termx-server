@@ -21,6 +21,7 @@ import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -148,7 +149,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
 
   private String findDisplay(ValueSetVersionConcept c, String paramDisplay) {
     if (paramDisplay == null) {
-      return c.getDisplay() == null || c.getDisplay().getName() == null ? c.getConcept().getCode() : c.getDisplay().getName();
+      return c.getDisplay() == null || StringUtils.isEmpty(c.getDisplay().getName()) ? c.getConcept().getCode() : c.getDisplay().getName();
     }
     if (c.getDisplay() != null && paramDisplay.equals(c.getDisplay().getName())) {
       return paramDisplay;
@@ -159,7 +160,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         return paramDisplay;
       }
     }
-    return c.getDisplay() == null || c.getDisplay().getName() == null ? c.getConcept().getCode() : c.getDisplay().getName();
+    return c.getDisplay() == null || StringUtils.isEmpty(c.getDisplay().getName()) ? c.getConcept().getCode() : c.getDisplay().getName();
   }
 
   private static Parameters error(String message) {
