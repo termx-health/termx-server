@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.reactivestreams.Publisher;
 
 @Slf4j
@@ -66,7 +67,7 @@ public class CodeSystemFileImportController {
         importLogger.logImport(jobLogResponse.getJobId(), e);
       } catch (Exception e) {
         log.error("Error while importing code system file", e);
-        importLogger.logImport(jobLogResponse.getJobId(), null, null, List.of(e.getMessage()));
+        importLogger.logImport(jobLogResponse.getJobId(), null, null, List.of(ExceptionUtils.getStackTrace(e)));
       }
     }));
     return jobLogResponse;

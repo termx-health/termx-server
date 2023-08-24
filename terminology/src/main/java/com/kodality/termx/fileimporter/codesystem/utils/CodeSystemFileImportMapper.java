@@ -1,6 +1,7 @@
 package com.kodality.termx.fileimporter.codesystem.utils;
 
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termx.ApiError;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingCodeSystem;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingCodeSystemVersion;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingEntityPropertyValue;
@@ -72,6 +73,9 @@ public class CodeSystemFileImportMapper {
 
   private static Concept toCsConcept(String codeSystem, Map<String, List<FileProcessingEntityPropertyValue>> entity,
                                      List<Map<String, List<FileProcessingEntityPropertyValue>>> entities) {
+    if (entity.containsKey(null)) {
+      throw ApiError.TE723.toApiException();
+    }
     Concept concept = new Concept();
     concept.setCodeSystem(codeSystem);
     concept.setCode(Optional.ofNullable(getEntityProp(entity, CONCEPT_CODE)).orElse(getEntityProp(entity, HIERARCHICAL_CONCEPT)));
