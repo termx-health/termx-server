@@ -319,7 +319,8 @@ public class CodeSystemFileImportService {
     // entity property names
     List<String> propNames = codeSystem.getProperties().stream().map(EntityProperty::getName).toList();
     // list of existing properties that are used in mapped CS
-    List<EntityProperty> selectedProps = existingEntityProperties.stream().filter(v -> propNames.contains(v.getName())).toList();
+    List<EntityProperty> selectedProps = existingEntityProperties == null ? List.of() :
+        existingEntityProperties.stream().filter(v -> propNames.contains(v.getName())).toList();
     // handy map
     Map<String, EntityProperty> propMap = selectedProps.stream().collect(toMap(EntityProperty::getName, Function.identity()));
 
