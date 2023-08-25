@@ -3,6 +3,7 @@ package com.kodality.termx.ts.codesystem;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termx.ts.ContactDetail;
+import com.kodality.termx.ts.Copyright;
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
 import lombok.Getter;
@@ -21,20 +22,19 @@ public class CodeSystem {
   private LocalizedName title;
   private LocalizedName description;
   private LocalizedName purpose;
-  private String hierarchyMeaning;
   private String narrative;
   private Boolean experimental;
   private List<Identifier> identifiers;
   private List<ContactDetail> contacts;
+  private Copyright copyright;
+
+  private String hierarchyMeaning;
   private String content;
   private String caseSensitive;
   private String sequence;
-  private CodeSystemCopyright copyright;
-  private Object permissions;
-  private CodeSystemSettings settings;
-
   private String baseCodeSystem;
   private String baseCodeSystemUri;
+  private CodeSystemSettings settings;
 
   private List<Concept> concepts;
   private List<EntityProperty> properties;
@@ -45,14 +45,5 @@ public class CodeSystem {
   public static class CodeSystemSettings {
     private boolean reviewRequired;
     private boolean approvalRequired;
-  }
-
-  @Getter
-  @Setter
-  @Accessors(chain = true)
-  public static class CodeSystemCopyright {
-    private String holder;
-    private String jurisdiction;
-    private String statement;
   }
 }

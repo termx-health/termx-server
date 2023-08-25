@@ -3,6 +3,7 @@ package com.kodality.termx.ts.valueset;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termx.ts.ContactDetail;
+import com.kodality.termx.ts.Copyright;
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
 import lombok.Getter;
@@ -25,12 +26,11 @@ public class ValueSet {
   private Boolean experimental;
   private List<Identifier> identifiers;
   private List<ContactDetail> contacts;
-  private ValueSetCopyright copyright;
-  private Object permissions;
+  private Copyright copyright;
+
   private ValueSetSettings settings;
 
   private List<ValueSetVersion> versions;
-
   private List<ValueSetSnapshot> snapshots;
 
   @Getter
@@ -38,14 +38,5 @@ public class ValueSet {
   private static class ValueSetSettings {
     private boolean reviewRequired;
     private boolean approvalRequired;
-  }
-
-  @Getter
-  @Setter
-  @Accessors(chain = true)
-  public static class ValueSetCopyright {
-    private String holder;
-    private String jurisdiction;
-    private String statement;
   }
 }
