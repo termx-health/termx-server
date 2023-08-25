@@ -11,8 +11,8 @@ import com.kodality.termx.ts.codesystem.CodeSystemAssociationQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityType;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -114,14 +114,15 @@ public class CodeSystemAssociationService {
 
     List<Long> entityVersionIds = sourceIds.stream().distinct().toList();
 
-    List<String> codes = new ArrayList<>();
+    Map<Long, String> versionCodes = new HashMap<>();
     IntStream.range(0, (entityVersionIds.size() + 1000 - 1) / 1000)
         .mapToObj(i -> entityVersionIds.subList(i * 1000, Math.min(entityVersionIds.size(), (i + 1) * 1000))).forEach(batch -> {
-          codes.addAll(codeSystemEntityVersionRepository.query(new CodeSystemEntityVersionQueryParams()
+          codeSystemEntityVersionRepository.query(new CodeSystemEntityVersionQueryParams()
               .setIds(batch.stream().map(String::valueOf).collect(Collectors.joining(","))).limit(1000))
-              .getData().stream().map(CodeSystemEntityVersion::getCode).toList());
+              .getData().forEach(v -> versionCodes.put(v.getId(), v.getCode()));
         });
-    boolean sameConcept = entityVersionIds.size() > codes.stream().distinct().toList().size();
+
+    boolean sameConcept = entries.stream().anyMatch(s -> s.getValue().stream().anyMatch(t -> versionCodes.get(s.getKey()).equals(versionCodes.get(t.getTargetId()))));
     if (sameConcept) {
       throw ApiError.TE805.toApiException();
     }
