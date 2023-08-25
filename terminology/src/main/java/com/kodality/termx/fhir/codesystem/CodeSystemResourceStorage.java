@@ -84,7 +84,7 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
         FhirMapper.fromJson(content.getValue(), com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
     List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
     CodeSystemImportAction action = new CodeSystemImportAction().setActivate(PublicationStatus.active.equals(codeSystem.getStatus()));
-    CodeSystem cs = importService.importCodeSystem(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem), associationTypes, action);
+    CodeSystem cs = importService.importCodeSystem(CodeSystemFhirMapper.fromFhirCodeSystem(codeSystem), associationTypes, action);
     return load(cs.getId(), cs.getVersions().get(0).getVersion());
   }
 

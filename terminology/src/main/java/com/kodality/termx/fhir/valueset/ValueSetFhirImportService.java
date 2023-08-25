@@ -4,29 +4,14 @@ import com.kodality.termx.ApiError;
 import com.kodality.termx.http.BinaryHttpClient;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.codesystem.CodeSystemVersionService;
-import com.kodality.termx.terminology.codesystem.concept.ConceptService;
-import com.kodality.termx.terminology.codesystem.designation.DesignationService;
-import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
-import com.kodality.termx.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.valueset.ValueSetService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.codesystem.CodeSystem;
-import com.kodality.termx.ts.codesystem.CodeSystemContent;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
-import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.codesystem.ConceptQueryParams;
-import com.kodality.termx.ts.codesystem.DesignationQueryParams;
-import com.kodality.termx.ts.codesystem.EntityProperty;
-import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.zmei.fhir.FhirMapper;
@@ -36,7 +21,6 @@ import io.micronaut.core.util.StringUtils;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,7 +42,7 @@ public class ValueSetFhirImportService {
 
   @Transactional
   public ValueSet importValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet, boolean activateVersion) {
-    ValueSet valueSet = prepare(ValueSetFhirImportMapper.mapValueSet(fhirValueSet));
+    ValueSet valueSet = prepare(ValueSetFhirMapper.fromFhirValueSet(fhirValueSet));
     ValueSetVersion valueSetVersion = prepareValueSetAndVersion(valueSet);
     if (activateVersion) {
       valueSetVersionService.activate(valueSet.getId(), valueSetVersion.getVersion());

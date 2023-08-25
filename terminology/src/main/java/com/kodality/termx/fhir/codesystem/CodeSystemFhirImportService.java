@@ -28,7 +28,7 @@ public class CodeSystemFhirImportService {
   public void importCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
     List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
     CodeSystemImportAction action = new CodeSystemImportAction().setActivate(PublicationStatus.active.equals(codeSystem.getStatus())).setCleanRun(true);
-    importService.importCodeSystem(CodeSystemFhirImportMapper.mapCodeSystem(codeSystem), associationTypes, action);
+    importService.importCodeSystem(CodeSystemFhirMapper.fromFhirCodeSystem(codeSystem), associationTypes, action);
   }
 
   public void importCodeSystemFromUrl(String url, String codeSystemId) {
