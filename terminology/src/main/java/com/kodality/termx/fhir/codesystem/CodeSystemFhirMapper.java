@@ -7,6 +7,9 @@ import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.ts.CaseSignificance;
+import com.kodality.termx.ts.Copyright;
+import com.kodality.termx.ts.Language;
+import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
@@ -15,36 +18,34 @@ import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
+import com.kodality.termx.ts.codesystem.EntityPropertyKind;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
-import com.kodality.zmei.fhir.datatypes.Narrative;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptDesignation;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemProperty;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Value;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.hl7.fhir.r5.formats.JsonParser;
-import org.hl7.fhir.r5.model.MarkdownType;
-import org.hl7.fhir.r5.model.StringType;
 
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -52,23 +53,26 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 @Context
 public class CodeSystemFhirMapper extends BaseFhirMapper {
+  private static final String DISPLAY = "display";
+  private static final String DEFINITION = "definition";
   private static Optional<String> termxWebUrl;
   public CodeSystemFhirMapper(@Value("${termx.web-url}") Optional<String> termxWebUrl) {
     CodeSystemFhirMapper.termxWebUrl = termxWebUrl;
   }
+
+  // -------------- TO FHIR --------------
 
   public static String toFhirId(CodeSystem cs, CodeSystemVersion csv) {
     return cs.getId() + "@" + csv.getVersion();
   }
 
   public static String toFhirJson(CodeSystem cs, CodeSystemVersion csv, List<Provenance> provenances) {
-    return FhirMapper.toJson(toFhir(cs, csv, provenances));
+    return addTranslationExtensions(FhirMapper.toJson(toFhir(cs, csv, provenances)), cs, csv);
   }
 
   public static com.kodality.zmei.fhir.resource.terminology.CodeSystem toFhir(CodeSystem codeSystem, CodeSystemVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem = new com.kodality.zmei.fhir.resource.terminology.CodeSystem();
-    termxWebUrl.ifPresent(url -> fhirCodeSystem.addExtension(new Extension("http://hl7.org/fhir/tools/StructureDefinition/web-source")
-        .setValueUrl(url + "/fhir/CodeSystem/" + codeSystem.getId())));
+    termxWebUrl.ifPresent(url -> toFhirWebSourceExtension(url, codeSystem.getId()));
     fhirCodeSystem.setId(toFhirId(codeSystem, version));
     fhirCodeSystem.setUrl(codeSystem.getUri());
     fhirCodeSystem.setPublisher(codeSystem.getPublisher());
@@ -76,22 +80,18 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setTitle(toFhirName(codeSystem.getTitle(), version.getPreferredLanguage()));
     fhirCodeSystem.setDescription(toFhirName(codeSystem.getDescription(), version.getPreferredLanguage()));
     fhirCodeSystem.setPurpose(toFhirName(codeSystem.getPurpose(), version.getPreferredLanguage()));
-    fhirCodeSystem.setHierarchyMeaning(codeSystem.getHierarchyMeaning());
-    fhirCodeSystem.setText(codeSystem.getNarrative() == null ? null : new Narrative().setDiv(codeSystem.getNarrative()));
-    fhirCodeSystem.setExperimental(codeSystem.getExperimental());
+    fhirCodeSystem.setText(toFhirText(codeSystem.getNarrative()));
+    fhirCodeSystem.setExperimental(codeSystem.getExperimental() != null && codeSystem.getExperimental());
     fhirCodeSystem.setIdentifier(toFhirIdentifiers(codeSystem.getIdentifiers()));
     fhirCodeSystem.setContact(toFhirContacts(codeSystem.getContacts()));
-    fhirCodeSystem.setContent(codeSystem.getContent());
-    fhirCodeSystem.setCaseSensitive(
-        codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
-    fhirCodeSystem.setExperimental(codeSystem.getExperimental() != null && codeSystem.getExperimental());
-    fhirCodeSystem.setLastReviewDate(Optional.ofNullable(provenances).flatMap(list -> list.stream().filter(p -> "reviewed".equals(p.getActivity()))
-        .max(Comparator.comparing(Provenance::getDate)).map(p -> p.getDate().toLocalDate())).orElse(null));
-    fhirCodeSystem.setApprovalDate(Optional.ofNullable(provenances).flatMap(list -> list.stream().filter(p -> "approved".equals(p.getActivity()))
-        .max(Comparator.comparing(Provenance::getDate)).map(p -> p.getDate().toLocalDate())).orElse(null));
+    fhirCodeSystem.setLastReviewDate(toFhirDate(provenances, "reviewed"));
+    fhirCodeSystem.setApprovalDate(toFhirDate(provenances, "approved"));
     fhirCodeSystem.setCopyright(codeSystem.getCopyright() != null ? codeSystem.getCopyright().getHolder() : null);
     fhirCodeSystem.setCopyrightLabel(codeSystem.getCopyright() != null ? codeSystem.getCopyright().getStatement() : null);
     fhirCodeSystem.setJurisdiction(codeSystem.getCopyright() != null && codeSystem.getCopyright().getJurisdiction() != null  ? List.of(new CodeableConcept().setText(codeSystem.getCopyright().getJurisdiction())) : null);
+    fhirCodeSystem.setHierarchyMeaning(codeSystem.getHierarchyMeaning());
+    fhirCodeSystem.setContent(codeSystem.getContent());
+    fhirCodeSystem.setCaseSensitive(codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
     fhirCodeSystem.setSupplements(codeSystem.getBaseCodeSystemUri());
 
     fhirCodeSystem.setVersion(version.getVersion());
@@ -120,7 +120,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     concept.setCode(e.getCode());
     setDesignations(concept, e.getDesignations(), version.getPreferredLanguage());
     concept.setProperty(toFhirConceptProperties(e.getPropertyValues(), codeSystem.getProperties()));
-    concept.setConcept(getChildConcepts(entities, e.getId(), codeSystem, version));
+    concept.setConcept(toFhirConcepts(entities, e.getId(), codeSystem, version));
     return concept;
   }
 
@@ -197,10 +197,239 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     }).sorted(Comparator.comparing(CodeSystemConceptProperty::getCode)).toList();
   }
 
-  private static List<CodeSystemConcept> getChildConcepts(Map<Long, List<CodeSystemEntityVersion>> entities, Long targetId, CodeSystem codeSystem,
-                                                          CodeSystemVersion version) {
+  private static List<CodeSystemConcept> toFhirConcepts(Map<Long, List<CodeSystemEntityVersion>> entities, Long targetId, CodeSystem codeSystem,
+                                                        CodeSystemVersion version) {
     List<CodeSystemConcept> result = entities.getOrDefault(targetId, List.of()).stream().map(e -> toFhir(e, codeSystem, version, entities)).collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
+  }
+
+  private static String addTranslationExtensions(String fhirJson, CodeSystem cs, CodeSystemVersion csv) {
+    Map<String, Object> fhirCs = JsonUtil.toMap(fhirJson);
+    Extension titleExtension = toFhirTranslationExtension(cs.getTitle(), csv.getPreferredLanguage());
+    if (titleExtension != null) {
+      fhirCs.put("_title", titleExtension);
+    }
+    Extension descriptionExtension = toFhirTranslationExtension(cs.getDescription(), csv.getPreferredLanguage());
+    if (descriptionExtension != null) {
+      fhirCs.put("_description", descriptionExtension);
+    }
+    Extension purposeExtension = toFhirTranslationExtension(cs.getPurpose(), csv.getPreferredLanguage());
+    if (purposeExtension != null) {
+      fhirCs.put("_purpose", purposeExtension);
+    }
+    return JsonUtil.toJson(fhirCs);
+  }
+
+  // -------------- FROM FHIR --------------
+
+  public static CodeSystem fromFhirCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
+    CodeSystem codeSystem = new CodeSystem();
+    codeSystem.setId(CodeSystemFhirMapper.parseCompositeId(fhirCodeSystem.getId())[0]);
+    codeSystem.setUri(fhirCodeSystem.getUrl());
+    codeSystem.setPublisher(fhirCodeSystem.getPublisher());
+    codeSystem.setName(fhirCodeSystem.getName());
+    codeSystem.setTitle(fromFhirName(fhirCodeSystem.getTitle(), fhirCodeSystem.getLanguage()));
+    codeSystem.setDescription(fromFhirName(fhirCodeSystem.getDescription(), fhirCodeSystem.getLanguage()));
+    codeSystem.setPurpose(fromFhirName(fhirCodeSystem.getPurpose(), fhirCodeSystem.getLanguage()));
+    codeSystem.setNarrative(fhirCodeSystem.getText() == null ? null : fhirCodeSystem.getText().getDiv());
+    codeSystem.setExperimental(fhirCodeSystem.getExperimental());
+    codeSystem.setIdentifiers(fromFhirIdentifiers(fhirCodeSystem.getIdentifier()));
+    codeSystem.setContacts(fromFhirContacts(fhirCodeSystem.getContact()));
+    codeSystem.setCopyright(new Copyright().setHolder(fhirCodeSystem.getCopyright()).setStatement(fhirCodeSystem.getCopyrightLabel()));
+    codeSystem.setHierarchyMeaning(fhirCodeSystem.getHierarchyMeaning());
+    codeSystem.setContent(fhirCodeSystem.getContent());
+    codeSystem.setCaseSensitive(fhirCodeSystem.getCaseSensitive() != null && fhirCodeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
+        CaseSignificance.entire_term_case_insensitive);
+
+    codeSystem.setVersions(fromFhirVersion(fhirCodeSystem));
+    codeSystem.setConcepts(fromFhirConcepts(fhirCodeSystem.getConcept(), fhirCodeSystem, null));
+    codeSystem.setProperties(fromFhirProperties(fhirCodeSystem));
+    return codeSystem;
+  }
+
+  private static List<CodeSystemVersion> fromFhirVersion(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
+    CodeSystemVersion version = new CodeSystemVersion();
+    version.setCodeSystem(fhirCodeSystem.getId());
+    version.setVersion(fhirCodeSystem.getVersion() == null ? "1.0.0" : fhirCodeSystem.getVersion());
+    version.setPreferredLanguage(fhirCodeSystem.getLanguage() == null ? Language.en : fhirCodeSystem.getLanguage());
+    version.setSupportedLanguages(Optional.ofNullable(fhirCodeSystem.getConcept()).orElse(new ArrayList<>()).stream()
+        .filter(c -> c.getDesignation() != null)
+        .flatMap(c -> c.getDesignation().stream().map(CodeSystemConceptDesignation::getLanguage)).filter(Objects::nonNull).distinct().collect(Collectors.toList()));
+    if (!version.getSupportedLanguages().contains(version.getPreferredLanguage())) {
+      version.getSupportedLanguages().add(version.getPreferredLanguage());
+    }
+    version.setStatus(PublicationStatus.draft);
+    version.setAlgorithm(fhirCodeSystem.getVersionAlgorithmString());
+    version.setReleaseDate(fhirCodeSystem.getDate() == null ? LocalDate.now() : LocalDate.from(fhirCodeSystem.getDate()));
+    return List.of(version);
+  }
+
+  private static List<EntityProperty> fromFhirProperties(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
+    List<EntityProperty> defaultProperties = new ArrayList<>();
+
+    EntityProperty display = new EntityProperty();
+    display.setName(DISPLAY);
+    display.setType(EntityPropertyType.string);
+    display.setKind(EntityPropertyKind.designation);
+    display.setStatus(PublicationStatus.active);
+
+    EntityProperty definition = new EntityProperty();
+    definition.setName(DEFINITION);
+    definition.setType(EntityPropertyType.string);
+    definition.setKind(EntityPropertyKind.designation);
+    definition.setStatus(PublicationStatus.active);
+
+    defaultProperties.add(display);
+    defaultProperties.add(definition);
+    if (fhirCodeSystem.getProperty() == null) {
+      return defaultProperties;
+    }
+
+    List<EntityProperty> properties = fhirCodeSystem.getProperty().stream().map(p -> {
+      EntityProperty property = new EntityProperty();
+      property.setName(p.getCode());
+      property.setUri(p.getUri());
+      property.setDescription(fromFhirName(p.getDescription(), fhirCodeSystem.getLanguage()));
+      property.setType(p.getType());
+      property.setKind(EntityPropertyKind.property);
+      property.setStatus(PublicationStatus.active);
+      return property;
+    }).collect(Collectors.toList());
+    properties.addAll(defaultProperties);
+
+    if (fhirCodeSystem.getConcept() != null) {
+      List<EntityProperty> designationProperties = fhirCodeSystem.getConcept().stream()
+          .filter(c -> c.getDesignation() != null)
+          .flatMap(c -> c.getDesignation().stream())
+          .filter(d -> d.getUse() != null && d.getUse().getCode() != null)
+          .map(d -> {
+            EntityProperty ep = new EntityProperty();
+            ep.setName(d.getUse().getCode());
+            ep.setType(EntityPropertyType.string);
+            ep.setKind(EntityPropertyKind.designation);
+            ep.setStatus(PublicationStatus.active);
+            return ep;
+          }).toList();
+      properties.addAll(designationProperties);
+    }
+    return properties.stream().collect(Collectors.toMap(EntityProperty::getName, p -> p, (p, q) -> p)).values().stream().toList();
+  }
+
+  private static List<Concept> fromFhirConcepts(List<CodeSystemConcept> fhirConcepts,
+                                                com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem, CodeSystemConcept parent) {
+    List<Concept> concepts = new ArrayList<>();
+    if (io.micronaut.core.util.CollectionUtils.isEmpty(fhirConcepts)) {
+      return concepts;
+    }
+    fhirConcepts.forEach(c -> {
+      Concept concept = new Concept();
+      concept.setCode(c.getCode());
+      concept.setCodeSystem(fhirCodeSystem.getId());
+      concept.setVersions(fromFhirConcepts(c, fhirCodeSystem, parent));
+      concepts.add(concept);
+      if (c.getConcept() != null) {
+        concepts.addAll(fromFhirConcepts(c.getConcept(), fhirCodeSystem, c));
+      }
+    });
+    return concepts;
+  }
+
+  private static List<CodeSystemEntityVersion> fromFhirConcepts(CodeSystemConcept c,
+                                                                com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem,
+                                                                CodeSystemConcept parent) {
+    CodeSystemEntityVersion version = new CodeSystemEntityVersion();
+    version.setCode(c.getCode());
+    version.setCodeSystem(codeSystem.getId());
+    version.setDesignations(fromFhirDesignations(c, codeSystem));
+    version.setPropertyValues(fromFhirProperties(c.getProperty()));
+    version.setAssociations(fromFhirAssociations(parent, codeSystem));
+    version.setStatus(fromFhirStatus(c.getProperty()));
+    return List.of(version);
+  }
+
+  private static String fromFhirStatus(List<CodeSystemConceptProperty> propertyValues) {
+    if (propertyValues == null) {
+      return null;
+    }
+    return propertyValues.stream().filter(pv -> "status".equals(pv.getCode())).findFirst().map(CodeSystemConceptProperty::getValueCode).orElse(null);
+  }
+
+  private static List<Designation> fromFhirDesignations(CodeSystemConcept c,
+                                                        com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
+    String caseSignificance = codeSystem.getCaseSensitive() != null && codeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive : CaseSignificance.entire_term_case_insensitive;
+
+    if (c.getDesignation() == null) {
+      c.setDesignation(new ArrayList<>());
+    }
+    List<Designation> designations = c.getDesignation().stream().map(d -> {
+      Designation designation = new Designation();
+      designation.setDesignationType(d.getUse() == null ? DISPLAY : d.getUse().getCode());
+      designation.setName(d.getValue());
+      designation.setLanguage(d.getLanguage() == null ? Language.en : d.getLanguage());
+      designation.setCaseSignificance(caseSignificance);
+      designation.setDesignationKind("text");
+      designation.setStatus("active");
+      return designation;
+    }).collect(Collectors.toList());
+
+    Designation display = new Designation();
+    display.setDesignationType(DISPLAY);
+    display.setName(c.getDisplay());
+    display.setPreferred(true);
+    display.setLanguage(codeSystem.getLanguage() == null ? Language.en : codeSystem.getLanguage());
+    display.setCaseSignificance(caseSignificance);
+    display.setDesignationKind("text");
+    display.setStatus("active");
+    if (display.getName() != null && designations.stream().noneMatch(d -> isSameDesignation(d, display))) {
+      designations.add(display);
+    }
+
+    if (c.getDefinition() != null) {
+      Designation definition = new Designation();
+      definition.setDesignationType(DEFINITION);
+      definition.setName(c.getDefinition());
+      definition.setLanguage(codeSystem.getLanguage() == null ? Language.en : codeSystem.getLanguage());
+      definition.setCaseSignificance(caseSignificance);
+      definition.setDesignationKind("text");
+      definition.setStatus("active");
+      if (definition.getName() != null && designations.stream().noneMatch(d -> isSameDesignation(d, definition))) {
+        designations.add(definition);
+      }
+    }
+    return designations;
+  }
+
+  private static boolean isSameDesignation(Designation d1, Designation d2) {
+    return d1.getDesignationType().equals(d2.getDesignationType()) && d1.getName().equals(d2.getName()) && d1.getLanguage().equals(d2.getLanguage());
+  }
+
+  private static List<EntityPropertyValue> fromFhirProperties(List<CodeSystemConceptProperty> propertyValues) {
+    if (propertyValues == null) {
+      return new ArrayList<>();
+    }
+    return propertyValues.stream().map(v -> {
+      EntityPropertyValue value = new EntityPropertyValue();
+      value.setValue(Stream.of(
+          v.getValueCode(), v.getValueCoding(),
+          v.getValueString(), v.getValueInteger(),
+          v.getValueBoolean(), v.getValueDateTime(), v.getValueDecimal()
+      ).filter(Objects::nonNull).findFirst().orElse(null));
+      value.setEntityProperty(v.getCode());
+      return value;
+    }).collect(Collectors.toList());
+  }
+
+  private static List<CodeSystemAssociation> fromFhirAssociations(CodeSystemConcept parent,
+                                                                  com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
+    if (parent == null) {
+      return new ArrayList<>();
+    }
+    CodeSystemAssociation association = new CodeSystemAssociation();
+    association.setAssociationType(codeSystem.getHierarchyMeaning() == null ? "is-a" : codeSystem.getHierarchyMeaning());
+    association.setStatus(PublicationStatus.active);
+    association.setTargetCode(parent.getCode());
+    association.setCodeSystem(codeSystem.getId());
+    return List.of(association);
   }
 
   public static CodeSystemQueryParams fromFhir(SearchCriterion fhir) {
@@ -225,33 +454,4 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     params.setPropertiesDecorated(true);
     return params;
   }
-
-//  private static String addTranslationExtensions(String fhirJson, CodeSystem cs, CodeSystemVersion csv) {
-//    Map<String, Object> fhirCs = JsonUtil.toMap(fhirJson);
-//    Map<String, List<TranslationExtension>> titleExtension = toFhirTranslationExtension(cs.getTitle(), csv.getPreferredLanguage());
-//    if (titleExtension != null) {
-//      fhirCs.put("title_", titleExtension);
-//    }
-//    Map<String, List<TranslationExtension>> descriptionExtension = toFhirTranslationExtension(cs.getDescription(), csv.getPreferredLanguage());
-//    if (descriptionExtension != null) {
-//      fhirCs.put("description_", descriptionExtension);
-//    }
-//    Map<String, List<TranslationExtension>> purposeExtension = toFhirTranslationExtension(cs.getPurpose(), csv.getPreferredLanguage());
-//    if (purposeExtension != null) {
-//      fhirCs.put("purpose_", purposeExtension);
-//    }
-//    return JsonUtil.toJson(fhirCs);
-//  }
-//
-//  public static void main(String[] args) throws IOException {
-//    org.hl7.fhir.r5.model.CodeSystem cs = new org.hl7.fhir.r5.model.CodeSystem();
-//    MarkdownType code = new MarkdownType("code");
-//    code.addExtension("testurl", new StringType("value"));
-//    cs.setPurposeElement(code);
-//
-//    ByteArrayOutputStream output = new ByteArrayOutputStream();
-//    JsonParser parser = new JsonParser();
-//    parser.compose(output, cs);
-//    System.out.println(output.toString(StandardCharsets.UTF_8));
-//  }
 }

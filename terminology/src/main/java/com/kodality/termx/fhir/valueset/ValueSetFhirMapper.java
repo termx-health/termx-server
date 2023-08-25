@@ -5,13 +5,21 @@ import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.termx.fhir.BaseFhirMapper;
+import com.kodality.termx.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
+import com.kodality.termx.ts.CaseSignificance;
+import com.kodality.termx.ts.Copyright;
+import com.kodality.termx.ts.Language;
+import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.Concept;
+import com.kodality.termx.ts.codesystem.Designation;
+import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
@@ -20,7 +28,6 @@ import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
-import com.kodality.zmei.fhir.datatypes.Narrative;
 import com.kodality.zmei.fhir.resource.Resource;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
@@ -37,7 +44,9 @@ import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.CollectionUtils;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -59,18 +68,20 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     ValueSetFhirMapper.termxWebUrl = termxWebUrl;
   }
 
+
+  // -------------- TO FHIR --------------
+
   public static String toFhirId(ValueSet vs, ValueSetVersion vsv) {
     return vs.getId() + "@" + vsv.getVersion();
   }
 
   public static String toFhirJson(ValueSet vs, ValueSetVersion vsv, List<Provenance> provenances) {
-    return FhirMapper.toJson(toFhir(vs, vsv, provenances));
+    return addTranslationExtensions(FhirMapper.toJson(toFhir(vs, vsv, provenances)), vs, vsv);
   }
 
   public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
-    termxWebUrl.ifPresent(url -> fhirValueSet.addExtension(new Extension("http://hl7.org/fhir/tools/StructureDefinition/web-source")
-        .setValueUrl(url + "/fhir/ValueSet/" + valueSet.getId())));
+    termxWebUrl.ifPresent(url -> fhirValueSet.addExtension(toFhirWebSourceExtension(url, valueSet.getId())));
     fhirValueSet.setId(toFhirId(valueSet, version));
     fhirValueSet.setUrl(valueSet.getUri());
     fhirValueSet.setName(valueSet.getName());
@@ -79,13 +90,11 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     fhirValueSet.setPurpose(toFhirName(valueSet.getPurpose(), version.getPreferredLanguage()));
     fhirValueSet.setContact(toFhirContacts(valueSet.getContacts()));
     fhirValueSet.setIdentifier(toFhirIdentifiers(valueSet.getIdentifiers()));
-    fhirValueSet.setText(valueSet.getNarrative() == null ? null : new Narrative().setDiv(valueSet.getNarrative()));
+    fhirValueSet.setText(toFhirText(valueSet.getNarrative()));
     fhirValueSet.setPublisher(valueSet.getPublisher());
     fhirValueSet.setExperimental(valueSet.getExperimental() != null && valueSet.getExperimental());
-    fhirValueSet.setLastReviewDate(Optional.ofNullable(provenances).flatMap(list -> list.stream().filter(p -> "reviewed".equals(p.getActivity()))
-        .max(Comparator.comparing(Provenance::getDate)).map(p -> p.getDate().toLocalDate())).orElse(null));
-    fhirValueSet.setApprovalDate(Optional.ofNullable(provenances).flatMap(list -> list.stream().filter(p -> "approved".equals(p.getActivity()))
-        .max(Comparator.comparing(Provenance::getDate)).map(p -> p.getDate().toLocalDate())).orElse(null));
+    fhirValueSet.setLastReviewDate(toFhirDate(provenances, "reviewed"));
+    fhirValueSet.setApprovalDate(toFhirDate(provenances, "approved"));
     fhirValueSet.setCopyright(valueSet.getCopyright() != null ? valueSet.getCopyright().getHolder() : null);
     fhirValueSet.setCopyrightLabel(valueSet.getCopyright() != null ? valueSet.getCopyright().getStatement() : null);
     fhirValueSet.setJurisdiction(valueSet.getCopyright() != null && valueSet.getCopyright().getJurisdiction() != null ?
@@ -321,4 +330,126 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return params;
   }
 
+  private static String addTranslationExtensions(String fhirJson, ValueSet vs, ValueSetVersion vsv) {
+    Map<String, Object> fhirVs = JsonUtil.toMap(fhirJson);
+    Extension titleExtension = toFhirTranslationExtension(vs.getTitle(), vsv.getPreferredLanguage());
+    if (titleExtension != null) {
+      fhirVs.put("_title", titleExtension);
+    }
+    Extension descriptionExtension = toFhirTranslationExtension(vs.getDescription(), vsv.getPreferredLanguage());
+    if (descriptionExtension != null) {
+      fhirVs.put("_description", descriptionExtension);
+    }
+    Extension purposeExtension = toFhirTranslationExtension(vs.getPurpose(), vsv.getPreferredLanguage());
+    if (purposeExtension != null) {
+      fhirVs.put("_purpose", purposeExtension);
+    }
+    return JsonUtil.toJson(fhirVs);
+  }
+
+  // -------------- FROM FHIR --------------
+
+  public static ValueSet fromFhirValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
+    ValueSet vs = new ValueSet();
+    vs.setId(CodeSystemFhirMapper.parseCompositeId(valueSet.getId())[0]);
+    vs.setUri(valueSet.getUrl());
+    vs.setPublisher(valueSet.getPublisher());
+    vs.setName(valueSet.getName());
+    vs.setTitle(fromFhirName(valueSet.getTitle(), valueSet.getLanguage()));
+    vs.setDescription(fromFhirName(valueSet.getDescription(), valueSet.getLanguage()));
+    vs.setPurpose(fromFhirName(valueSet.getPurpose(), valueSet.getLanguage()));
+    vs.setNarrative(valueSet.getText() == null ? null : valueSet.getText().getDiv());
+    vs.setIdentifiers(fromFhirIdentifiers(valueSet.getIdentifier()));
+    vs.setContacts(fromFhirContacts(valueSet.getContact()));
+    vs.setVersions(List.of(fromFhirVersion(valueSet)));
+    vs.setExperimental(valueSet.getExperimental());
+    vs.setCopyright(new Copyright().setHolder(valueSet.getCopyright()).setStatement(valueSet.getCopyrightLabel()));
+    return vs;
+  }
+
+  private static ValueSetVersion fromFhirVersion(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
+    ValueSetVersion version = new ValueSetVersion();
+    version.setValueSet(valueSet.getId());
+    version.setVersion(valueSet.getVersion() == null ? "1.0.0" : valueSet.getVersion());
+    version.setStatus(PublicationStatus.draft);
+    version.setPreferredLanguage(valueSet.getLanguage());
+    version.setReleaseDate(valueSet.getDate() == null ? LocalDate.now() : LocalDate.from(valueSet.getDate()));
+    version.setRuleSet(fromFhirCompose(valueSet));
+    return version;
+  }
+
+  private static ValueSetVersionRuleSet fromFhirCompose(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
+    if (valueSet.getCompose() == null) {
+      return null;
+    }
+    ValueSetVersionRuleSet ruleSet = new ValueSetVersionRuleSet();
+    ruleSet.setInactive(valueSet.getCompose().getInactive());
+    if (valueSet.getCompose().getLockedDate() != null) {
+      ruleSet.setLockedDate(valueSet.getCompose().getLockedDate().atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime());
+    }
+    ruleSet.setRules(fromFhirRules(valueSet.getCompose().getInclude(), valueSet.getCompose().getExclude()));
+    return ruleSet;
+  }
+
+  private static List<ValueSetVersionRule> fromFhirRules(List<ValueSetComposeInclude> include, List<ValueSetComposeInclude> exclude) {
+    List<ValueSetVersionRule> rules = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(include)) {
+      rules.addAll(include.stream().map(inc -> fromFhirInclude(inc, ValueSetVersionRuleType.include)).toList());
+    }
+    if (CollectionUtils.isNotEmpty(exclude)) {
+      rules.addAll(exclude.stream().map(exc -> fromFhirInclude(exc, ValueSetVersionRuleType.exclude)).toList());
+    }
+    return rules;
+  }
+
+  private static ValueSetVersionRule fromFhirInclude(ValueSetComposeInclude r, String type) {
+    ValueSetVersionRule rule = new ValueSetVersionRule();
+    rule.setType(type);
+    rule.setCodeSystem(r.getSystem());
+    rule.setConcepts(fromFhirConcepts(r.getConcept()));
+    rule.setFilters(fromFhirFilters(r.getFilter()));
+    rule.setValueSet(r.getValueSet());
+    return rule;
+  }
+
+  private static List<ValueSetVersionConcept> fromFhirConcepts(List<ValueSetComposeIncludeConcept> concepts) {
+    if (CollectionUtils.isEmpty(concepts)) {
+      return null;
+    }
+    return concepts.stream().map(c -> {
+      ValueSetVersionConcept concept = new ValueSetVersionConcept();
+      concept.setConcept(new ValueSetVersionConceptValue().setCode(c.getCode()));
+      concept.setDisplay(c.getDisplay() != null ? new Designation().setName(c.getDisplay()) : null);
+      concept.setAdditionalDesignations(fromFhirDesignations(c.getDesignation()));
+      return concept;
+    }).collect(Collectors.toList());
+  }
+
+  private static List<Designation> fromFhirDesignations(List<ValueSetComposeIncludeConceptDesignation> designation) {
+    if (CollectionUtils.isEmpty(designation)) {
+      return null;
+    }
+    return designation.stream().map(d -> new Designation()
+        .setLanguage(d.getLanguage() == null ? Language.en : d.getLanguage())
+        .setName(d.getValue())
+        .setDesignationKind("text")
+        .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)
+        .setStatus(PublicationStatus.active)).collect(Collectors.toList());
+  }
+
+  private static List<ValueSetRuleFilter> fromFhirFilters(List<ValueSetComposeIncludeFilter> filters) {
+    if (CollectionUtils.isEmpty(filters)) {
+      return null;
+    }
+    return filters.stream().map(f -> {
+      EntityProperty ep = new EntityProperty();
+      ep.setName(f.getProperty());
+
+      ValueSetRuleFilter filter = new ValueSetRuleFilter();
+      filter.setProperty(ep);
+      filter.setOperator(f.getOp());
+      filter.setValue(f.getValue());
+      return filter;
+    }).collect(Collectors.toList());
+  }
 }
