@@ -4,6 +4,7 @@ import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.github.GithubService;
 import com.kodality.termx.github.GithubService.GithubCommit;
 import com.kodality.termx.github.GithubService.GithubContent;
+import com.kodality.termx.github.GithubService.GithubDiff;
 import com.kodality.termx.github.GithubService.GithubStatus;
 import io.micronaut.context.annotation.Requires;
 import java.util.ArrayList;
@@ -45,6 +46,17 @@ public class SpaceGithubService {
     });
   }
 
+  public GithubDiff diff(Long spaceId, String file) {
+    Space space = spaceService.load(spaceId);
+    String repo = space.getIntegration().getGithub().getRepo();
+    String path = StringUtils.substringBefore(file, "/");
+    SpaceGithubDataHandler h = dataHandlers.stream().filter(n -> n.getName().equals(path)).findFirst().orElseThrow();
+    String name = StringUtils.substringAfter(file, "/");
+    return new GithubDiff()
+        .setLeft(githubService.getContent(repo, file).getContent())
+        .setRight(h.getContent(spaceId).get(name));
+  }
+
   public void push(Long spaceId, String message) {
     Space space = spaceService.load(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
@@ -76,15 +88,14 @@ public class SpaceGithubService {
 
     dataHandlers.forEach(h -> {
       List<GithubContent> changes = getCurrentContent(spaceId, h);
-      GithubStatus status = githubService.status(repo, "wiki", changes);
+      GithubStatus status = githubService.status(repo, h.getName(), changes);
       Map<String, String> content = status.getFiles().keySet().stream()
           .filter(k -> List.of(GithubStatus.M, GithubStatus.A, GithubStatus.D).contains(status.getFiles().get(k)))
           .collect(com.kodality.commons.stream.Collectors.<String, String, String>toMap(
               k -> StringUtils.removeStart(k, h.getName() + "/"),
               k -> GithubStatus.A.equals(status.getFiles().get(k)) ? null : githubService.getContent(repo, k).getContent()
           ));
-      h.saveContent(spaceId, content
-      );
+      h.saveContent(spaceId, content);
     });
   }
 

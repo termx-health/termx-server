@@ -3,6 +3,7 @@ package com.kodality.termx.sys.space;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.github.GithubService.GithubDiff;
 import com.kodality.termx.github.GithubService.GithubStatus;
 import com.kodality.termx.sys.space.SpaceGithubService.SpaceGithubAuthResult;
 import io.micronaut.context.annotation.Parameter;
@@ -11,6 +12,7 @@ import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.QueryValue;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +35,12 @@ public class SpaceGithubController {
   @Get("/status")
   public GithubStatus prepareFiles(@Parameter Long id) {
     return service().status(id);
+  }
+
+  @Authorized(Privilege.P_VIEW)
+  @Get("/diff")
+  public GithubDiff prepareFiles(@Parameter Long id, @QueryValue String file) {
+    return service().diff(id, file);
   }
 
   @Authorized(Privilege.P_EDIT)

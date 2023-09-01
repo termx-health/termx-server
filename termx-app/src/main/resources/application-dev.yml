@@ -8,3 +8,10 @@ auth:
 
 termx:
   web-url: http://localhost:4200
+
+
+github:
+  client:
+    id: 'Iv1.b0be484dcc3c28ae'
+    secret: 'bffd5a32dcf31667974c09c429f690f057d4182f'
+  app-name: termx-dev-local-publisher

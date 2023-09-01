@@ -19,7 +19,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -257,7 +257,15 @@ public class GithubService {
     public static String A = "A";
     public static String K = "K";
     private String sha;
-    private Map<String, String> files = new HashMap<>();
+    private Map<String, String> files = new LinkedHashMap<>();
+  }
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class GithubDiff {
+    private String left;
+    private String right;
   }
 
 }

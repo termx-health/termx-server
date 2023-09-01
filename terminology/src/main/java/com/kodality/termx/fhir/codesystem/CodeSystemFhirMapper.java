@@ -37,6 +37,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -101,12 +102,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setStatus(version.getStatus());
     fhirCodeSystem.setProperty(toFhirCodeSystemProperty(codeSystem.getProperties(), version.getPreferredLanguage()));
 
-    List<Pair<CodeSystemAssociation, CodeSystemEntityVersion>> entitiesWithAssociations =
+    List<Pair<CodeSystemAssociation, CodeSystemEntityVersion>> entitiesWithAssociations = version.getEntities() == null ? List.of() :
         version.getEntities().stream().filter(e -> e.getAssociations() != null).flatMap(e -> e.getAssociations().stream().map(a -> Pair.of(a, e))).toList();
     Map<Long, List<CodeSystemEntityVersion>> entities =
         entitiesWithAssociations.stream().collect(Collectors.groupingBy(e -> e.getKey().getTargetId(), mapping(Pair::getValue, toList())));
 
-    fhirCodeSystem.setConcept(version.getEntities().stream()
+    fhirCodeSystem.setConcept(version.getEntities() == null ? null : version.getEntities().stream()
         .filter(e -> CollectionUtils.isEmpty(e.getAssociations()))
         .map(e -> toFhir(e, codeSystem, version, entities))
         .sorted(Comparator.comparing(CodeSystemConcept::getCode))
@@ -204,7 +205,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   }
 
   private static String addTranslationExtensions(String fhirJson, CodeSystem cs, CodeSystemVersion csv) {
-    Map<String, Object> fhirCs = JsonUtil.toMap(fhirJson);
+    Map<String, Object> fhirCs = JsonUtil.fromJson(fhirJson, LinkedHashMap.class);
     Extension titleExtension = toFhirTranslationExtension(cs.getTitle(), csv.getPreferredLanguage());
     if (titleExtension != null) {
       fhirCs.put("_title", titleExtension);
