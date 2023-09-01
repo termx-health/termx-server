@@ -10,6 +10,7 @@ import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
+import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termx.terminology.mapset.association.MapSetAutomapService;
 import com.kodality.termx.terminology.mapset.concept.MapSetConceptService;
@@ -52,6 +53,7 @@ public class MapSetController {
   private final MapSetAssociationService mapSetAssociationService;
   private final MapSetAutomapService mapSetAutomapService;
   private final MapSetStatisticsService mapSetStatisticsService;
+  private final MapSetProvenanceService provenanceService;
 
   private final UserPermissionService userPermissionService;
 
@@ -74,15 +76,18 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_EDIT)
   @Post("/transaction")
-  public HttpResponse<?> saveMapSetTransaction(@Body @Valid MapSetTransactionRequest mapSet) {
-    mapSetService.save(mapSet);
-    return HttpResponse.created(mapSet);
+  public HttpResponse<?> saveMapSetTransaction(@Body @Valid MapSetTransactionRequest request) {
+    provenanceService.provenanceMapSetTransaction("save", request, () -> {
+      mapSetService.save(request);
+    });
+    return HttpResponse.created(request.getMapSet());
   }
 
   @Authorized(Privilege.MS_PUBLISH)
   @Delete(uri = "/{mapSet}")
   public HttpResponse<?> deleteMapSet(@PathVariable @ResourceId String mapSet) {
     mapSetService.cancel(mapSet);
+    provenanceService.create(new Provenance("delete", "MapSet", mapSet));
     return HttpResponse.ok();
   }
 
@@ -104,11 +109,13 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/versions")
-  public HttpResponse<?> createVersion(@PathVariable @ResourceId String mapSet, @Body @Valid MapSetVersion version) {
-    version.setId(null);
-    version.setMapSet(mapSet);
-    mapSetVersionService.save(version);
-    return HttpResponse.created(version);
+  public HttpResponse<?> createVersion(@PathVariable @ResourceId String mapSet, @Body @Valid MapSetVersion mapSetVersion) {
+    mapSetVersion.setId(null);
+    mapSetVersion.setMapSet(mapSet);
+    provenanceService.provenanceMapSetVersion("save", mapSet, mapSetVersion.getVersion(), () -> {
+      mapSetVersionService.save(mapSetVersion);
+    });
+    return HttpResponse.created(mapSetVersion);
   }
 
   @Authorized(Privilege.MS_EDIT)
@@ -116,28 +123,36 @@ public class MapSetController {
   public HttpResponse<?> updateVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid MapSetVersion mapSetVersion) {
     mapSetVersion.setVersion(version);
     mapSetVersion.setMapSet(mapSet);
-    mapSetVersionService.save(mapSetVersion);
+    provenanceService.provenanceMapSetVersion("save", mapSet, mapSetVersion.getVersion(), () -> {
+      mapSetVersionService.save(mapSetVersion);
+    });
     return HttpResponse.created(mapSetVersion);
   }
 
   @Authorized(Privilege.MS_PUBLISH)
   @Post(uri = "/{mapSet}/versions/{version}/activate")
   public HttpResponse<?> activateVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
-    mapSetVersionService.activate(mapSet, version);
+    provenanceService.provenanceMapSetVersion("activate", mapSet, version, () -> {
+      mapSetVersionService.activate(mapSet, version);
+    });
     return HttpResponse.noContent();
   }
 
   @Authorized(Privilege.MS_PUBLISH)
   @Post(uri = "/{mapSet}/versions/{version}/retire")
   public HttpResponse<?> retireVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
-    mapSetVersionService.retire(mapSet, version);
+    provenanceService.provenanceMapSetVersion("retire", mapSet, version, () -> {
+      mapSetVersionService.retire(mapSet, version);
+    });
     return HttpResponse.noContent();
   }
 
   @Authorized(Privilege.CS_PUBLISH)
   @Post(uri = "/{mapSet}/versions/{version}/draft")
   public HttpResponse<?> saveAsDraftMapSetVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
-    mapSetVersionService.saveAsDraft(mapSet, version);
+    provenanceService.provenanceMapSetVersion("save", mapSet, version, () -> {
+      mapSetVersionService.saveAsDraft(mapSet, version);
+    });
     return HttpResponse.noContent();
   }
 
@@ -146,6 +161,8 @@ public class MapSetController {
   public HttpResponse<?> deleteMapSetVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
     MapSetVersion msv = mapSetVersionService.load(mapSet, version).orElseThrow();
     mapSetVersionService.cancel(msv.getId(), mapSet);
+    provenanceService.create(new Provenance("deleted", "MapSetVersion", msv.getId().toString(), msv.getVersion())
+        .addContext("part-of", "MapSet", msv.getMapSet()));
     return HttpResponse.ok();
   }
 
@@ -199,28 +216,36 @@ public class MapSetController {
   @Post(uri = "/{mapSet}/versions/{version}/associations")
   public HttpResponse<?> createAssociation(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid MapSetAssociation association) {
     association.setId(null);
-    mapSetAssociationService.save(association, mapSet, version);
+    provenanceService.provenanceMapSetVersion("save-association", mapSet, version, () -> {
+      mapSetAssociationService.save(association, mapSet, version);
+    });
     return HttpResponse.created(association);
   }
 
   @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/versions/{version}/associations-batch")
   public HttpResponse<?> saveAssociations(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid Map<String,List<MapSetAssociation>> associations) {
-    mapSetAssociationService.batchSave(associations.getOrDefault("batch", List.of()), mapSet, version);
+    provenanceService.provenanceMapSetVersion("save-association-batch", mapSet, version, () -> {
+      mapSetAssociationService.batchSave(associations.getOrDefault("batch", List.of()), mapSet, version);
+    });
     return HttpResponse.ok();
   }
 
   @Authorized(Privilege.MS_EDIT)
-  @Post(uri = "/{mapSet}/associations/verify")
-  public HttpResponse<?> verifyAssociations(@PathVariable @ResourceId String mapSet, @Body @Valid Map<String, List<Long>> request) {
-    mapSetAssociationService.verify(request.get("ids"), mapSet);
+  @Post(uri = "/{mapSet}/versions/{version}/associations/verify")
+  public HttpResponse<?> verifyAssociations(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid Map<String, List<Long>> request) {
+    provenanceService.provenanceMapSetVersion("verify-association-batch", mapSet, version, () -> {
+      mapSetAssociationService.verify(request.get("ids"), mapSet);
+    });
     return HttpResponse.ok();
   }
 
   @Authorized(Privilege.MS_EDIT)
-  @Post(uri = "/{mapSet}/associations/unmap")
-  public HttpResponse<?> unmapAssociations(@PathVariable @ResourceId String mapSet, @Body @Valid Map<String, List<Long>> request) {
-    mapSetAssociationService.cancel(request.get("ids"), mapSet);
+  @Post(uri = "/{mapSet}/versions/{version}/associations/unmap")
+  public HttpResponse<?> unmapAssociations(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid Map<String, List<Long>> request) {
+    provenanceService.provenanceMapSetVersion("unmap-association-batch", mapSet, version, () -> {
+      mapSetAssociationService.cancel(request.get("ids"), mapSet);
+    });
     return HttpResponse.ok();
   }
 
