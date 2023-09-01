@@ -6,6 +6,7 @@ import com.kodality.termx.terminology.codesystem.association.CodeSystemAssociati
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.codesystem.entityproperty.EntityPropertyService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;

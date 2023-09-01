@@ -3,7 +3,7 @@ package com.kodality.termx.fhir.valueset;
 import com.kodality.termx.ApiError;
 import com.kodality.termx.http.BinaryHttpClient;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
-import com.kodality.termx.terminology.codesystem.CodeSystemVersionService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.valueset.ValueSetService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;

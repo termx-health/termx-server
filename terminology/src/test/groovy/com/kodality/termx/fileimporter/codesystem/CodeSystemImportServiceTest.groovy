@@ -5,8 +5,8 @@ import com.kodality.termx.fhir.codesystem.CodeSystemFhirImportService
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportRequest
 import com.kodality.termx.terminology.codesystem.CodeSystemImportService
 import com.kodality.termx.terminology.codesystem.CodeSystemService
-import com.kodality.termx.terminology.codesystem.CodeSystemValidationService
-import com.kodality.termx.terminology.codesystem.CodeSystemVersionService
+import com.kodality.termx.terminology.codesystem.validator.CodeSystemValidationService
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService
 import com.kodality.termx.terminology.codesystem.compare.CodeSystemCompareService
 import com.kodality.termx.terminology.codesystem.concept.ConceptService
 import com.kodality.termx.terminology.valueset.ValueSetService

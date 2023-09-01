@@ -5,11 +5,6 @@ create or replace function terminology.cancel_code_system(p_code_system text)
     language sql
 as
 $function$
-update terminology.map_set_association
-set sys_status = 'D'
-where source_code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system))
-      or target_code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system));
-
 update terminology.code_system_association
 set sys_status = 'D'
 where source_code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system))

@@ -7,8 +7,6 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
 import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
-import com.kodality.termx.ts.mapset.MapSetEntityVersion;
-import com.kodality.termx.ts.mapset.MapSetEntityVersionQueryParams;
 import com.kodality.termx.ts.mapset.MapSetQueryParams;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
@@ -46,10 +44,6 @@ public class MapSetClient {
 
   public CompletableFuture<MapSetAssociation> getAssociation(String mapSet, Long id) {
     return client.GET("/" + mapSet + "/associations/" + id, MapSetAssociation.class);
-  }
-
-  public CompletableFuture<QueryResult<MapSetEntityVersion>> queryEntityVersions(String mapSet, MapSetEntityVersionQueryParams params) {
-    return client.GET("/" + mapSet + "/entity-versions?" + BaseHttpClient.toQueryParams(params), JsonUtil.getParametricType(QueryResult.class, MapSetEntityVersion.class));
   }
 
 }

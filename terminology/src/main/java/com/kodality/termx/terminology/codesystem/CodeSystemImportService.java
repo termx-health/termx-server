@@ -9,6 +9,7 @@ import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.codesystem.definedentityproperty.DefinedEntityPropertyService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.codesystem.entityproperty.EntityPropertyService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.valueset.ValueSetService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
@@ -82,7 +83,7 @@ public class CodeSystemImportService {
     long start = System.currentTimeMillis();
     log.info("IMPORT STARTED : code system - {}", codeSystem.getId());
 
-    associationTypes.forEach(associationTypeService::save);
+    associationTypeService.createIfNotExist(associationTypes);
 
     saveCodeSystem(codeSystem);
     CodeSystemVersion codeSystemVersion = codeSystem.getVersions().get(0);

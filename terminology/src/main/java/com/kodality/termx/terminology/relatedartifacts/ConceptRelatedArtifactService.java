@@ -4,11 +4,11 @@ import com.kodality.termx.sys.space.Space;
 import com.kodality.termx.sys.space.SpaceQueryParams;
 import com.kodality.termx.sys.space.SpaceService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
-import com.kodality.termx.terminology.mapset.MapSetService;
+import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termx.terminology.valueset.ValueSetService;
 import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.mapset.MapSet;
-import com.kodality.termx.ts.mapset.MapSetQueryParams;
+import com.kodality.termx.ts.mapset.MapSetAssociation;
+import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifact;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
@@ -27,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class ConceptRelatedArtifactService extends RelatedArtifactService {
   private final ConceptService conceptService;
   private final ValueSetService valueSetService;
-  private final MapSetService mapSetService;
+  private final MapSetAssociationService mapSetAssociationService;
   private final PageProvider pageProvider;
   private final SpaceService spaceService;
 
@@ -51,9 +51,12 @@ public class ConceptRelatedArtifactService extends RelatedArtifactService {
   }
 
   private List<RelatedArtifact> findMapSets(String id) {
-    List<MapSet> mapSets = mapSetService.query(new MapSetQueryParams().setAssociationSourceId(Long.valueOf(id)).all()).getData();
-    mapSets.addAll(mapSetService.query(new MapSetQueryParams().setAssociationTargetId(Long.valueOf(id)).all()).getData());
-    return mapSets.stream().map(ms -> new RelatedArtifact().setId(ms.getId()).setType("MapSet")).collect(Collectors.toList());
+    Concept concept = conceptService.load(Long.valueOf(id)).orElseThrow();
+
+    List<MapSetAssociation> associations = new ArrayList<>();
+    associations.addAll(mapSetAssociationService.query(new MapSetAssociationQueryParams().setSourceCodeAndSystem(concept.getCode() + "|" + concept.getCodeSystem()).all()).getData());
+    associations.addAll(mapSetAssociationService.query(new MapSetAssociationQueryParams().setTargetCodeAndSystem(concept.getCode() + "|" + concept.getCodeSystem()).all()).getData());
+    return associations.stream().map(a -> new RelatedArtifact().setId(a.getMapSet()).setType("MapSet")).collect(Collectors.toList());
   }
 
 

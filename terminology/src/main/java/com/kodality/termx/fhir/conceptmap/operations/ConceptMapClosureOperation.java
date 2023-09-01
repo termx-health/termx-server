@@ -30,12 +30,6 @@ public class ConceptMapClosureOperation implements TypeOperationDefinition {
   }
 
   private ConceptMap run(Parameters req) {
-//    String name = req.findParameter("name").map(ParametersParameter::getValueString)
-//        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "name parameter required"));
-//    String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
-//    List<Coding> concepts = req.getParameter().stream().filter(p -> p.getName().equals("concept")).map(ParametersParameter::getValueCoding).toList();
-//
-
     return null;
   }
 

@@ -31,9 +31,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionController.class,
         com.kodality.termx.terminology.valueset.ValueSetController.class,
         com.kodality.termx.terminology.valueset.ValueSetVersionController.class,
-        com.kodality.termx.terminology.mapset.MapSetController.class,
-        com.kodality.termx.terminology.mapset.entity.MapSetEntityVersionController.class,
-        com.kodality.termx.terminology.mapset.association.MapSetAssociationController.class
+        com.kodality.termx.terminology.mapset.MapSetController.class
     }
 )
 @OpenAPIInclude(

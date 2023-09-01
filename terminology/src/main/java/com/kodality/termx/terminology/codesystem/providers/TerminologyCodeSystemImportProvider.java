@@ -1,7 +1,7 @@
 package com.kodality.termx.terminology.codesystem.providers;
 
 import com.kodality.termx.terminology.codesystem.CodeSystemImportService;
-import com.kodality.termx.terminology.codesystem.CodeSystemVersionService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.CodeSystemImportProvider;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationType;

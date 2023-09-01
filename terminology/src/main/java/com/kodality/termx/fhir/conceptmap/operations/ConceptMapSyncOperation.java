@@ -32,7 +32,7 @@ public class ConceptMapSyncOperation implements TypeOperationDefinition {
   }
 
   public String getOperationName() {
-    return "$sync";
+    return "sync";
   }
 
   public ResourceContent run(ResourceContent p) {
@@ -60,7 +60,7 @@ public class ConceptMapSyncOperation implements TypeOperationDefinition {
           String url = res.findPart("url").map(ParametersParameter::getValueString).orElseThrow();
           String id = res.findPart("id").map(ParametersParameter::getValueString).orElseThrow();
           try {
-            importService.importMapSet(url, id);
+            importService.importMapSetFromUrl(url, id);
             successes.add(String.format("ConceptMap from resource %s imported", url));
           } catch (Exception e) {
             warnings.add(String.format("ConceptMap from resource %s was not imported due to error: %s", url, e.getMessage()));

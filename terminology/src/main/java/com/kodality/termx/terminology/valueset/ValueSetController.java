@@ -187,7 +187,7 @@ public class ValueSetController {
     return HttpResponse.ok();
   }
 
-  //----------------ValueSet Version Concept----------------
+  //----------------ValueSet Expand----------------
 
   @Authorized(Privilege.VS_VIEW)
   @Post(uri = "/expand")

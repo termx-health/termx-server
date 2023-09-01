@@ -1,4 +1,4 @@
-package com.kodality.termx.terminology.codesystem;
+package com.kodality.termx.terminology.codesystem.validator;
 
 import com.kodality.commons.model.Issue;
 import com.kodality.commons.util.JsonUtil;

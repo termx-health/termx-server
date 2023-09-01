@@ -6,6 +6,7 @@ import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
@@ -15,6 +16,7 @@ import io.micronaut.core.util.StringUtils;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -113,8 +115,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs " +
         "where csev.code_system = cs.id and cs.uri = ? and cs.sys_status = 'A')", params.getCodeSystemUri());
     sb.appendIfNotNull("and exists (select 1 from terminology.entity_version_code_system_version_membership evcsvm " +
-            "where evcsvm.code_system_entity_version_id = csev.id and evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = ?)",
-        params.getCodeSystemVersionId());
+            "where evcsvm.code_system_entity_version_id = csev.id and evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = ?)", params.getCodeSystemVersionId());
     if (params.getCodeSystemVersion() != null) {
       sb.append("and exists (select 1 from terminology.code_system_version csv " +
           "inner join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A' " +
@@ -122,9 +123,23 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
       if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
         sb.and().in("csv.code_system", params.getPermittedCodeSystems());
       }
+      if (StringUtils.isNotEmpty(params.getCodeSystemVersions())) {
+        sb.append(checkCodeSystemVersions(params.getCodeSystemVersions()));
+      }
       sb.append(")");
     }
     return sb;
+  }
+
+  private String checkCodeSystemVersions(String codeSystemVersions) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.append("and (1<>1");
+    Arrays.stream(codeSystemVersions.split(",")).forEach(cs -> {
+      String[] csv = PipeUtil.parsePipe(cs);
+      sb.append("or").append("csv.code_system = ? and csv.version = ?", csv[0], csv[1]);
+    });
+    sb.append(")");
+    return sb.toPrettyString();
   }
 
   public void activate(Long versionId) {

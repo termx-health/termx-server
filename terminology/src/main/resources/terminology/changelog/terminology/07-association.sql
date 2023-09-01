@@ -52,41 +52,36 @@ select core.create_table_metadata('terminology.code_system_association');
 alter table terminology.code_system_association add column order_number smallint;
 --
 
---changeset kodality:map_set_association
+--changeset kodality:map_set_association-1
 drop table if exists terminology.map_set_association;
 create table terminology.map_set_association (
-    id                                          bigint              not null primary key,
+    id                                          bigint              default nextval('core.s_entity') not null primary key,
     map_set                                     text                not null,
-    source_code_system                          text                not null,
-    source_concept_code                         text                not null,
-    source_code_system_entity_version_id        bigint,
-    target_code_system                          text                not null,
-    target_concept_code                         text                not null,
-    target_code_system_entity_version_id        bigint,
-    association_type                            text                not null,
-    status                                      text                not null,
-    sys_created_at      timestamp           not null,
-    sys_created_by      text                not null,
-    sys_modified_at     timestamp           not null,
-    sys_modified_by     text                not null,
-    sys_status          char(1) default 'A' not null collate "C",
-    sys_version         int                 not null,
-    constraint ms_association_id_fk foreign key (id) references terminology.map_set_entity(id),
+    map_set_version_id                          bigint              not null,
+    source_code                                 text                not null,
+    source_display                              text,
+    source_code_system                          text,
+    target_code                                 text,
+    target_display                              text,
+    target_code_system                          text,
+    relationship                                text,
+    verified                                    boolean,
+    sys_created_at                              timestamp           not null,
+    sys_created_by                              text                not null,
+    sys_modified_at                             timestamp           not null,
+    sys_modified_by                             text                not null,
+    sys_status                                  char(1) default 'A' not null collate "C",
+    sys_version                                 int                 not null,
     constraint ms_association_map_set_fk foreign key (map_set) references terminology.map_set(id),
-    constraint ms_association_source_cs_id_fk foreign key (source_code_system) references terminology.code_system(id),
-    constraint ms_association_source_cs_entity_version_fk foreign key (source_code_system_entity_version_id) references terminology.code_system_entity_version(id),
-    constraint ms_association_target_cs_id_fk foreign key (target_code_system) references terminology.code_system(id),
-    constraint ms_association_target_cs_entity_version_fk foreign key (target_code_system_entity_version_id) references terminology.code_system_entity_version(id),
-    constraint ms_association_association_type_fk foreign key (association_type) references terminology.association_type(code)
+    constraint ms_association_map_set_version_fk foreign key (map_set_version_id) references terminology.map_set_version(id),
+    constraint ms_association_relationship_fk foreign key (relationship) references terminology.association_type(code)
 );
 create index ms_association_map_set_idx on terminology.map_set_association(map_set);
 create index ms_association_source_cs_id_idx on terminology.map_set_association(source_code_system);
-create index ms_association_source_concept_code_idx on terminology.map_set_association(source_concept_code);
-create index ms_association_source_cs_entity_version_idx on terminology.map_set_association(source_code_system_entity_version_id);
+create index ms_association_source_code_idx on terminology.map_set_association(source_code);
 create index ms_association_target_cs_id_idx on terminology.map_set_association(target_code_system);
-create index ms_association_target_concept_code_idx on terminology.map_set_association(target_concept_code);
-create index ms_association_target_cs_entity_version_idx on terminology.map_set_association(target_code_system_entity_version_id);
-create index ms_association_association_type_idx on terminology.map_set_association(association_type);
+create index ms_association_target_code_idx on terminology.map_set_association(target_code);
+create index ms_association_relationship_idx on terminology.map_set_association(relationship);
 
 select core.create_table_metadata('terminology.map_set_association');
 --rollback drop table if exists terminology.map_set_association;

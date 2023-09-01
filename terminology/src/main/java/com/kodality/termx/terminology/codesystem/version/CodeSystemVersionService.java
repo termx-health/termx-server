@@ -1,4 +1,4 @@
-package com.kodality.termx.terminology.codesystem;
+package com.kodality.termx.terminology.codesystem.version;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
@@ -86,15 +86,6 @@ public class CodeSystemVersionService {
       log.warn("Version '{}' of codesystem '{}' is already activated, skipping activation process.", version, codeSystem);
       return;
     }
-
-//    CodeSystemVersion overlappingVersion = repository.query(new CodeSystemVersionQueryParams()
-//        .setCodeSystem(codeSystem)
-//        .setStatus(PublicationStatus.active)
-//        .setReleaseDateLe(currentVersion.getExpirationDate())
-//        .setExpirationDateGe(currentVersion.getReleaseDate())).findFirst().orElse(null);
-//    if (overlappingVersion != null) {
-//      throw ApiError.TE103.toApiException(Map.of("version", overlappingVersion.getVersion()));
-//    }
     repository.activate(codeSystem, version);
   }
 

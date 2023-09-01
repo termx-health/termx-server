@@ -11,20 +11,16 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class MapSetAssociationQueryParams extends QueryParams {
   private Long id;
-  private String status;
-  private String type;
-
-  private String sourceCode;
-  private String sourceSystem;
-  private String sourceSystemUri;
-  private String sourceSystemVersion;
-
-  private String targetCode;
-  private String targetSystem;
-  private String targetSystemVersion;
-
   private String mapSet;
   private List<String> permittedMapSets;
   private String mapSetVersion;
   private Long mapSetVersionId;
+  private String relationships;
+  private String sourceCodes;
+  private String sourceCodeAndSystem; //code|system
+  private String targetCodeAndSystem; //code|system
+  private String sourceCodeAndSystemUri; //code|systemUri
+  private String targetCodeAndSystemUri; //code|systemUri
+  private Boolean noMap;
+  private Boolean verified;
 }

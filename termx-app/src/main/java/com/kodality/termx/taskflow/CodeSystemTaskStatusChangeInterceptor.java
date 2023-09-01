@@ -7,7 +7,7 @@ import com.kodality.taskflow.workflow.Workflow;
 import com.kodality.taskflow.workflow.WorkflowService;
 import com.kodality.termx.task.TaskType;
 import com.kodality.termx.terminology.codesystem.CodeSystemProvenanceService;
-import com.kodality.termx.terminology.codesystem.CodeSystemVersionService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import java.util.List;

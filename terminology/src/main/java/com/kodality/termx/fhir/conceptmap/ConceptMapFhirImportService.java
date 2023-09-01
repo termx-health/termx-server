@@ -1,12 +1,12 @@
 package com.kodality.termx.fhir.conceptmap;
 
-import com.kodality.termx.ApiError;
 import com.kodality.termx.http.BinaryHttpClient;
 import com.kodality.termx.terminology.mapset.MapSetImportService;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.zmei.fhir.FhirMapper;
-import com.kodality.zmei.fhir.resource.ResourceType;
+import com.kodality.zmei.fhir.resource.Resource;
+import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
 import jakarta.inject.Singleton;
 import java.nio.charset.StandardCharsets;
@@ -19,30 +19,38 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class ConceptMapFhirImportService {
-  private final ConceptMapFhirImportMapper mapper;
   private final MapSetImportService mapSetImportService;
+  private final ConceptMapFhirMapper mapper;
   private final BinaryHttpClient client = new BinaryHttpClient();
 
   @Transactional
-  public void importMapSet(String url, String id) {
+  public void importMapSet(ConceptMap fhirConceptMap) {
+    List<AssociationType> associationTypes = mapper.fromFhirAssociationTypes(fhirConceptMap);
+    MapSet mapSet = mapper.fromFhir(fhirConceptMap);
+    mapSetImportService.importMapSet(mapSet, associationTypes);
+  }
+
+  @Transactional
+  public void importMapSetFromUrl(String url, String mapSetId) {
     String resource = getResource(url);
-    ConceptMap conceptMap = FhirMapper.fromJson(resource, ConceptMap.class);
-    if (!ResourceType.conceptMap.equals(conceptMap.getResourceType())) {
-      throw ApiError.TE107.toApiException();
+    importMapSet(resource, mapSetId);
+  }
+
+  public void importMapSet(String resource, String mapSetId) {
+    Resource res = FhirMapper.fromJson(resource, Resource.class);
+    if ("Bundle".equals(res.getResourceType())) {
+      Bundle bundle = FhirMapper.fromJson(resource, Bundle.class);
+      bundle.getEntry().forEach(e -> importMapSet((ConceptMap) e.getResource()));
+    } else {
+      ConceptMap conceptMap = FhirMapper.fromJson(resource, ConceptMap.class);
+      conceptMap.setId(mapSetId);
+      importMapSet(conceptMap);
     }
-    conceptMap.setId(id);
-    importMapSet(conceptMap);
   }
 
   private String getResource(String url) {
     log.info("Loading fhir map set from {}", url);
     return new String(client.GET(url).body(), StandardCharsets.UTF_8);
-  }
-
-  public void importMapSet(ConceptMap fhirConceptMap) {
-    MapSet mapSet = mapper.mapMapSet(fhirConceptMap);
-    List<AssociationType> associationTypes = ConceptMapFhirImportMapper.mapAssociationTypes(fhirConceptMap);
-    mapSetImportService.importMapSet(mapSet, associationTypes);
   }
 
 }

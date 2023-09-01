@@ -48,10 +48,12 @@ public class AssociationTypeRepository extends BaseRepository {
 
   private SqlBuilder filter(AssociationTypeQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and code = ?", params.getCode());
     sb.appendIfNotNull("and code ~* ?", params.getCodeContains());
     if (StringUtils.isNotEmpty(params.getAssociationKinds())) {
       return sb.and().in("association_kind", params.getAssociationKinds());
+    }
+    if (StringUtils.isNotEmpty(params.getCode())) {
+      return sb.and().in("code", params.getCode());
     }
     return sb;
   }

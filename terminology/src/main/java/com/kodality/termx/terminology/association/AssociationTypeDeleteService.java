@@ -28,7 +28,7 @@ public class AssociationTypeDeleteService {
   }
 
   private void checkAssociationTypeUsed(String code) {
-    List<String> requiredCodeSystems = List.of("relatedto", "equivalent", "equal", "wider", "subsumes", "narrower", "specializes", "inexact", "unmatched", "disjoint");
+    List<String> requiredCodeSystems = List.of("equivalent", "source-is-narrower-than-target", "source-is-broader-than-target", "grouped-by", "is-a", "part-of", "classified-with");
     if (requiredCodeSystems.contains(code)) {
       throw ApiError.TE801.toApiException();
     }
@@ -42,7 +42,7 @@ public class AssociationTypeDeleteService {
     }
 
     MapSetAssociationQueryParams mapSetAssociationParams = new MapSetAssociationQueryParams();
-    mapSetAssociationParams.setType(code);
+    mapSetAssociationParams.setRelationships(code);
     mapSetAssociationParams.setLimit(1);
     Optional<MapSetAssociation> mapSetAssociation = mapSetAssociationService.query(mapSetAssociationParams).findFirst();
     if (mapSetAssociation.isPresent()) {

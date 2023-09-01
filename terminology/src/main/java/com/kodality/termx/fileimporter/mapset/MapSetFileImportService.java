@@ -1,25 +1,19 @@
 package com.kodality.termx.fileimporter.mapset;
 
 import com.kodality.termx.ApiError;
+import com.kodality.termx.fhir.conceptmap.ConceptMapFhirImportService;
 import com.kodality.termx.fileimporter.mapset.utils.MapSetFileImportRequest;
 import com.kodality.termx.fileimporter.mapset.utils.MapSetFileImportRow;
 import com.kodality.termx.fileimporter.mapset.utils.MapSetFileProcessingMapper;
-import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.mapset.MapSetImportService;
 import com.kodality.termx.terminology.mapset.MapSetService;
-import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termx.ts.association.AssociationType;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
-import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.mapset.MapSet;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import com.univocity.parsers.common.processor.RowListProcessor;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +26,7 @@ import static com.kodality.termx.fileimporter.FileParser.csvParser;
 public class MapSetFileImportService {
   private final MapSetService mapSetService;
   private final MapSetImportService importService;
-  private final ValueSetVersionConceptService valueSetVersionConceptService;
-  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+  private final ConceptMapFhirImportService fhirImportService;
 
   private final List<String> VALID_HEADERS = List.of(
       "sourceCodeSystem", "sourceVersion", "sourceCode",
@@ -42,8 +35,13 @@ public class MapSetFileImportService {
       "dependsOnProperty", "dependsOnSystem", "dependsOnValue"
   );
 
-  public void process(MapSetFileImportRequest req, byte[] csvFile) {
-    List<MapSetFileImportRow> rows = parseRows(csvFile);
+  public void process(MapSetFileImportRequest req, byte[] file) {
+    if ("json".equals(req.getType())) {
+      fhirImportService.importMapSet(new String(file, StandardCharsets.UTF_8), req.getMap().getId());
+      return;
+    } //TODO fsh file import
+
+    List<MapSetFileImportRow> rows = parseRows(file);
     saveProcessingResult(req, rows);
   }
 
@@ -51,7 +49,7 @@ public class MapSetFileImportService {
     MapSetFileProcessingMapper mapper = new MapSetFileProcessingMapper();
 
     MapSet existingMapSet = mapSetService.load(req.getMap().getId()).orElse(null);
-    MapSet mapSet = prepareMapSet(mapper.mapMapSet(req, rows, existingMapSet));
+    MapSet mapSet = mapper.mapMapSet(req, rows, existingMapSet);
     List<AssociationType> associationTypes = mapper.mapAssociationTypes(rows);
     importService.importMapSet(mapSet, associationTypes);
   }
@@ -84,34 +82,5 @@ public class MapSetFileImportService {
       row.setDependsOnValue(r[headers.indexOf("dependsOnValue")]);
       return row;
     }).toList();
-  }
-
-
-  private MapSet prepareMapSet(MapSet mapSet) {
-    List<ValueSetVersionConceptValue> sourceVSConcepts = valueSetVersionConceptService.expand(mapSet.getSourceValueSet(), null).stream().map(ValueSetVersionConcept::getConcept).toList();
-    List<ValueSetVersionConceptValue > targetVSConcepts = valueSetVersionConceptService.expand(mapSet.getTargetValueSet(), null).stream().map(ValueSetVersionConcept::getConcept).toList();
-    mapSet.getAssociations().forEach(association -> {
-      association.setSource(prepareAssociation(association.getSource(), sourceVSConcepts, mapSet.getAssociations().indexOf(association)));
-      association.setTarget(prepareAssociation(association.getTarget(), targetVSConcepts, mapSet.getAssociations().indexOf(association)));
-    });
-    return mapSet;
-  }
-
-  private CodeSystemEntityVersion prepareAssociation(CodeSystemEntityVersion entityVersion, List<ValueSetVersionConceptValue> valueSetConcepts, int index) {
-    Optional<ValueSetVersionConceptValue> concept = valueSetConcepts.stream().filter(vsc -> vsc.getCode().equals(entityVersion.getCode())).findFirst();
-    if (concept.isEmpty()) {
-      throw ApiError.TE710.toApiException(Map.of("rowNumber", index));
-    }
-    entityVersion.setCodeSystem(entityVersion.getCodeSystem() == null ? concept.get().getCodeSystem() : entityVersion.getCodeSystem());
-    return findEntityVersion(entityVersion, index);
-  }
-
-  private CodeSystemEntityVersion findEntityVersion(CodeSystemEntityVersion entityVersion, int index) {
-    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
-    params.setCodeSystem(entityVersion.getCodeSystem());
-    params.setCodeSystemVersion(entityVersion.getVersions().stream().findFirst().map(CodeSystemVersionReference::getVersion).orElse(null));
-    params.setCode(entityVersion.getCode());
-    params.setLimit(1);
-    return codeSystemEntityVersionService.query(params).findFirst().orElseThrow(() -> ApiError.TE707.toApiException(Map.of("rowNumber", index)));
   }
 }

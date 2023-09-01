@@ -10,6 +10,8 @@ import lombok.Setter;
 @Setter
 @Introspected
 public class MapSetFileImportRequest {
+  private String type; // csv; json;
+
   private String sourceValueSet;
   private String targetValueSet;
   private MapSetFileImportRequestMap map;

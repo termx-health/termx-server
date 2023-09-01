@@ -5,10 +5,6 @@ create or replace function terminology.delete_code_system(p_code_system text)
     language sql
 as
 $function$
-delete from terminology.map_set_association
-where source_code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system))
-        or target_code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system));
-
 delete from terminology.code_system_association
 where source_code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system))
         or target_code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system));

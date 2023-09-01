@@ -8,6 +8,7 @@ import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.sys.provenance.ProvenanceUtil;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionRepository;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;

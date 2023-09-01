@@ -17,8 +17,8 @@ import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportResu
 import com.kodality.termx.http.BinaryHttpClient;
 import com.kodality.termx.terminology.codesystem.CodeSystemImportService;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
-import com.kodality.termx.terminology.codesystem.CodeSystemValidationService;
-import com.kodality.termx.terminology.codesystem.CodeSystemVersionService;
+import com.kodality.termx.terminology.codesystem.validator.CodeSystemValidationService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.codesystem.compare.CodeSystemCompareResult;
 import com.kodality.termx.terminology.codesystem.compare.CodeSystemCompareResult.CodeSystemCompareResultDiffItem;
 import com.kodality.termx.terminology.codesystem.compare.CodeSystemCompareService;

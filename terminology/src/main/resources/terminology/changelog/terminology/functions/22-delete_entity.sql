@@ -5,10 +5,6 @@ create or replace function terminology.delete_entity(p_entity_id bigint)
     language sql
 as
 $function$
-delete from terminology.map_set_association
-where source_code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id = p_entity_id)
-        or target_code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id = p_entity_id);
-
 delete from terminology.code_system_association
 where source_code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id = p_entity_id)
         or target_code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id = p_entity_id);

@@ -1,6 +1,7 @@
 package com.kodality.termx.terminology.valueset.concept;
 
 import com.kodality.commons.util.DateUtil;
+import com.kodality.termx.terminology.codesystem.concept.ConceptUtil;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionRepository;
 import com.kodality.termx.terminology.valueset.snapshot.ValueSetSnapshotService;
@@ -115,18 +116,7 @@ public class ValueSetVersionConceptService {
               .filter(v -> CollectionUtils.isNotEmpty(v.getDesignations()))
               .flatMap(v -> v.getDesignations().stream()).toList();
           if (c.getDisplay() == null || StringUtils.isEmpty(c.getDisplay().getName())) {
-            List<Designation> displays = designations.stream().filter(d -> DISPLAY.equals(d.getDesignationType())).toList();
-            c.setDisplay(displays.stream()
-                .filter(d -> StringUtils.isNotEmpty(preferredLanguage) && d.getLanguage() != null && d.getLanguage().equals(preferredLanguage))
-                .findFirst().orElse(displays.stream()
-                    .filter(d -> StringUtils.isNotEmpty(preferredLanguage) && d.getLanguage() != null && d.getLanguage().startsWith(preferredLanguage))
-                    .findFirst().orElse(displays.stream()
-                        .filter(d -> CollectionUtils.isEmpty(preferredLanguages) ||
-                            d.getLanguage() != null && preferredLanguages.stream().anyMatch(pl -> d.getLanguage().equals(pl)))
-                        .findFirst().orElse(displays.stream()
-                            .filter(d -> CollectionUtils.isEmpty(preferredLanguages) ||
-                                d.getLanguage() != null && preferredLanguages.stream().anyMatch(pl -> d.getLanguage().startsWith(pl)))
-                            .findFirst().orElse(null)))));
+            c.setDisplay(ConceptUtil.getDisplay(designations, preferredLanguage, preferredLanguages));
           }
           if (CollectionUtils.isEmpty(c.getAdditionalDesignations())) {
             c.setAdditionalDesignations(designations.stream()

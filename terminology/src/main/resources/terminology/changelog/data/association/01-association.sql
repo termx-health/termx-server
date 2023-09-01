@@ -1,26 +1,12 @@
 --liquibase formatted sql
 
---changeset kodality:concept-map-equivalence
-with t (code, association_kind, forward_name, reverse_name, directed, description) as (values ('relatedto', 'concept-map-equivalence', 'Related To', null, true,
-                                                                                               'The concepts are related to each other, and have at least some overlap in meaning, but the exact relationship is not known.'),
-                                                                                           ('equivalent', 'concept-map-equivalence', 'Equivalent', null, true,
-                                                                                            'The definitions of the concepts mean the same thing (including when structural implications of meaning are considered) (i.e. extensionally identical).'),
-                                                                                           ('equal', 'concept-map-equivalence', 'Equal', null, true,
-                                                                                            'The definitions of the concepts are exactly the same (i.e. only grammatical differences) and structural implications of meaning are identical or irrelevant (i.e. intentionally identical).'),
-                                                                                           ('wider', 'concept-map-equivalence', 'Wider', null, true,
-                                                                                            'The target mapping is wider in meaning than the source concept.'),
-                                                                                           ('subsumes', 'concept-map-equivalence', 'Subsumes', null, true,
-                                                                                            'The target mapping subsumes the meaning of the source concept (e.g. the source is-a target).'),
-                                                                                           ('narrower', 'concept-map-equivalence', 'Narrower', null, true,
-                                                                                            'The target mapping is narrower in meaning than the source concept. The sense in which the mapping is narrower SHALL be described in the comments in this case, and applications should be careful when attempting to use these mappings operationally.'),
-                                                                                           ('specializes', 'concept-map-equivalence', 'Specializes', null, true,
-                                                                                            'The target mapping specializes the meaning of the source concept (e.g. the target is-a source).'),
-                                                                                           ('inexact', 'concept-map-equivalence', 'Inexact', null, true,
-                                                                                            'The target mapping overlaps with the source concept, but both source and target cover additional meaning, or the definitions are imprecise and it is uncertain whether they have the same boundaries to their meaning. The sense in which the mapping is inexact SHALL be described in the comments in this case, and applications should be careful when attempting to use these mappings operationally.'),
-                                                                                           ('unmatched', 'concept-map-equivalence', 'Unmatched', null, true,
-                                                                                            'There is no match for this concept in the target code system.'),
-                                                                                           ('disjoint', 'concept-map-equivalence', 'Disjoint', null, true,
-                                                                                            'This is an explicit assertion that there is no mapping between the source and target concept.')
+--changeset kodality:concept-map-equivalence-1
+with t (code, association_kind, forward_name, reverse_name, directed, description) as (values ('equivalent', 'concept-map-equivalence', 'Equivalent', null, true,
+                                                                                               'The definitions of the concepts mean the same thing.'),
+                                                                                           ('source-is-narrower-than-target', 'concept-map-equivalence', 'Source Is Narrower Than Target', null, true,
+                                                                                            'The source concept is narrower in meaning than the target concept.'),
+                                                                                           ('source-is-broader-than-target', 'concept-map-equivalence', 'Source Is Broader Than Target', null, true,
+                                                                                            'The source concept is broader in meaning than the target concept.')
 )
    , e as (select t.*, (exists(select 1 from terminology.association_type a where t.code = a.code)) as pexists from t)
    , inserted as (insert into terminology.association_type(code, association_kind, forward_name, reverse_name, directed, description) select e.code,

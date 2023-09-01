@@ -9,6 +9,7 @@ import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fileimporter.mapset.utils.MapSetFileImportRequest;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
+import com.kodality.termx.utils.FileUtil;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Part;
@@ -31,14 +32,15 @@ public class MapSetFileImportController {
   @Authorized(Privilege.MS_VIEW)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
+    MapSetFileImportRequest req = JsonUtil.fromJson(request.getValue(), MapSetFileImportRequest.class);
+    byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
+
     JobLogResponse jobLogResponse = importLogger.createJob( "MS-FILE-IMPORT");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Map set file import started");
         long start = System.currentTimeMillis();
-        CompletedFileUpload importFile = Flowable.fromPublisher(file).firstOrError().blockingGet();
-        MapSetFileImportRequest req = JsonUtil.fromJson(request.getValue(), MapSetFileImportRequest.class);
-        importService.process(req, importFile.getBytes());
+        importService.process(req, importFile);
         log.info("Map set file import took {} seconds", (System.currentTimeMillis() - start) / 1000);
         importLogger.logImport(jobLogResponse.getJobId());
       } catch (ApiClientException e) {

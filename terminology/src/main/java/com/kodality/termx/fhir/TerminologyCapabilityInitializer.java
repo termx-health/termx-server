@@ -2,7 +2,7 @@ package com.kodality.termx.fhir;
 
 import com.kodality.termx.fhir.ConformanceInitializer.TermxGeneratedConformanceProvider;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
-import com.kodality.termx.terminology.codesystem.CodeSystemVersionService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;

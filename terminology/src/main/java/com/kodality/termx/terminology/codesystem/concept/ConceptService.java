@@ -3,11 +3,9 @@ package com.kodality.termx.terminology.codesystem.concept;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.codesystem.CodeSystemRepository;
-import com.kodality.termx.terminology.codesystem.CodeSystemVersionService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
-import com.kodality.termx.terminology.valueset.ValueSetVersionRepository;
-import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termx.ts.CodeSystemExternalProvider;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemEntity;
@@ -18,7 +16,6 @@ import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.ConceptTransactionRequest;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
-import com.kodality.termx.ts.valueset.ValueSetVersion;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
@@ -26,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -127,7 +123,7 @@ public class ConceptService {
     String codeSystem = params.getCodeSystem();
     prepareParams(params);
     QueryResult<Concept> concepts = repository.query(params);
-    concepts.setData(decorate(concepts.getData(), codeSystem, params.getCodeSystemVersion()));
+    concepts.setData(decorate(concepts.getData(), codeSystem, params));
     return concepts;
   }
 
@@ -155,13 +151,15 @@ public class ConceptService {
     return concept;
   }
 
-  private List<Concept> decorate(List<Concept> concepts, String codeSystem, String codeSystemVersion) {
+  private List<Concept> decorate(List<Concept> concepts, String codeSystem, ConceptQueryParams p) {
     CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
     List<String> csEntityIds = concepts.stream().map(CodeSystemEntity::getId).map(String::valueOf).toList();
 
     if (CollectionUtils.isNotEmpty(csEntityIds)) {
       params.setCodeSystemEntityIds(String.join(",", csEntityIds));
-      params.setCodeSystemVersion(codeSystemVersion);
+      params.setCodeSystemVersion(p.getCodeSystemVersion());
+      params.setCodeSystemVersionId(p.getCodeSystemVersionId());
+      params.setCodeSystemVersions(p.getCodeSystemVersions());
       params.setCodeSystem(codeSystem);
       params.all();
       List<CodeSystemEntityVersion> versions = codeSystemEntityVersionService.query(params).getData();

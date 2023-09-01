@@ -1,4 +1,4 @@
-package com.kodality.termx.terminology.codesystem;
+package com.kodality.termx.terminology.codesystem.version;
 
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;

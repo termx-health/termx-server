@@ -2,6 +2,7 @@ package com.kodality.termx.terminology.codesystem
 
 import com.kodality.commons.model.QueryResult
 import com.kodality.termx.terminology.codesystem.concept.ConceptService
+import com.kodality.termx.terminology.codesystem.validator.CodeSystemValidationService
 import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService
 import com.kodality.termx.ts.codesystem.*
 import spock.lang.Specification

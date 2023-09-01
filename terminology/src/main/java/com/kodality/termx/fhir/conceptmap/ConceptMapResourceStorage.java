@@ -6,12 +6,18 @@ import com.kodality.kefhir.core.model.VersionId;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termx.fhir.BaseFhirResourceStorage;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirMapper;
+import com.kodality.termx.sys.provenance.Provenance;
+import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.terminology.mapset.MapSetService;
-import com.kodality.termx.terminology.mapset.MapSetVersionService;
+import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
+import com.kodality.termx.terminology.mapset.version.MapSetVersionService;
 import com.kodality.termx.ts.mapset.MapSet;
+import com.kodality.termx.ts.mapset.MapSetAssociation;
+import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
 import com.kodality.termx.ts.mapset.MapSetQueryParams;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import jakarta.inject.Singleton;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
@@ -20,6 +26,8 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 public class ConceptMapResourceStorage extends BaseFhirResourceStorage {
   private final MapSetService mapSetService;
   private final MapSetVersionService mapSetVersionService;
+  private final MapSetAssociationService mapSetAssociationService;
+  private final ProvenanceService provenanceService;
   private final ConceptMapFhirMapper mapper;
 
   @Override
@@ -36,7 +44,6 @@ public class ConceptMapResourceStorage extends BaseFhirResourceStorage {
   public ResourceVersion load(String id, String versionNumber) {
     MapSetQueryParams mapSetQueryParams = new MapSetQueryParams();
     mapSetQueryParams.setId(id);
-    mapSetQueryParams.setAssociationsDecorated(true);
     mapSetQueryParams.setVersionsDecorated(true);
     mapSetQueryParams.setLimit(1);
     MapSet mapSet = mapSetService.query(mapSetQueryParams).findFirst().orElse(null);
@@ -45,13 +52,17 @@ public class ConceptMapResourceStorage extends BaseFhirResourceStorage {
     }
     MapSetVersion version = versionNumber == null ? mapSetVersionService.loadLastVersion(id) :
         mapSetVersionService.load(id, versionNumber).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "resource not found"));
+
+    List<MapSetAssociation> associations = mapSetAssociationService.query(new MapSetAssociationQueryParams().setMapSetVersionId(version.getId()).all()).getData();
+    version.setAssociations(associations);
     return toFhir(mapSet, version);
   }
 
-  private ResourceVersion toFhir(MapSet mapSet, MapSetVersion version) {
-    return mapSet == null ? null : new ResourceVersion(
-        new VersionId("ConceptMap", ConceptMapFhirMapper.toFhirId(mapSet, version)),
-        new ResourceContent(mapper.toFhirJson(mapSet, version), "json")
+  private ResourceVersion toFhir(MapSet ms, MapSetVersion msv) {
+    List<Provenance> provenances = provenanceService.find("MapSetVersion|" + msv.getId());
+    return ms == null ? null : new ResourceVersion(
+        new VersionId("ConceptMap", ConceptMapFhirMapper.toFhirId(ms, msv)),
+        new ResourceContent(mapper.toFhirJson(ms, msv, provenances), "json")
     );
   }
 

@@ -3,17 +3,14 @@ package com.kodality.termx.terminology.mapset.association;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
-import com.kodality.termx.terminology.mapset.entity.MapSetEntityService;
-import com.kodality.termx.terminology.mapset.entity.MapSetEntityVersionService;
+import com.kodality.termx.terminology.mapset.version.MapSetVersionRepository;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
 import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
-import com.kodality.termx.ts.mapset.MapSetEntity;
-import com.kodality.termx.ts.mapset.MapSetEntityVersion;
-import com.kodality.termx.ts.mapset.MapSetEntityVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
@@ -25,58 +22,30 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MapSetAssociationService {
   private final MapSetAssociationRepository repository;
-  private final MapSetEntityService mapSetEntityService;
-  private final MapSetEntityVersionService mapSetEntityVersionService;
+  private final MapSetVersionRepository mapSetVersionRepository;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   private final UserPermissionService userPermissionService;
 
   public QueryResult<MapSetAssociation> query(MapSetAssociationQueryParams params) {
-    QueryResult<MapSetAssociation> associations = repository.query(params);
-    decorate(associations.getData(), params.getMapSet(), params.getMapSetVersion());
-    return associations;
+    return repository.query(params);
   }
 
   public Optional<MapSetAssociation> load(Long id) {
-    return Optional.ofNullable(repository.load(id)).map(a -> decorate(a, a.getMapSet(), null));
+    return Optional.ofNullable(repository.load(id));
   }
 
   public Optional<MapSetAssociation> load(String mapSet, Long id) {
-    return Optional.ofNullable(repository.load(mapSet, id)).map(a -> decorate(a, mapSet, null));
+    return Optional.ofNullable(repository.load(mapSet, id));
   }
 
   public Optional<MapSetAssociation> load(String mapSet, String mapSetVersion, Long id) {
     return query(new MapSetAssociationQueryParams()
         .setMapSet(mapSet)
         .setMapSetVersion(mapSetVersion)
-        .setId(id)).findFirst().map(a -> decorate(a, mapSet, mapSetVersion));
+        .setId(id)).findFirst();
   }
 
-  private void decorate(List<MapSetAssociation> associations, String mapSet, String mapSetVersion) {
-    if (CollectionUtils.isEmpty(associations)) {
-      return;
-    }
-    MapSetEntityVersionQueryParams params = new MapSetEntityVersionQueryParams();
-    params.setMapSetEntityIds(associations.stream().map(MapSetEntity::getId).map(String::valueOf).collect(Collectors.joining(",")));
-    params.setMapSetVersion(mapSetVersion);
-    params.setMapSet(mapSet);
-    params.setLimit(-1);
-    List<MapSetEntityVersion> versions = mapSetEntityVersionService.query(params).getData();
-    associations.forEach(a -> a.setVersions(versions.stream().filter(v -> v.getMapSetEntityId().equals(a.getId())).toList()));
-
-    List<CodeSystemEntityVersion> sources = getEntityVersions(associations.stream().map(MapSetAssociation::getSource).collect(Collectors.toList())).stream().peek(v -> v.setId(null)).toList();
-    List<CodeSystemEntityVersion> targets = getEntityVersions(associations.stream().map(MapSetAssociation::getTarget).collect(Collectors.toList())).stream().peek(v -> v.setId(null)).toList();
-    associations.forEach(a -> {
-      a.setSource(sources.stream().filter(s -> s.getCode().equals(a.getSource().getCode()) && s.getCodeSystem().equals(a.getSource().getCodeSystem()) && (a.getSource().getId() == null || a.getSource().getId().equals(s.getId()))).findFirst().orElse(a.getSource()));
-      a.setTarget(targets.stream().filter(t -> t.getCode().equals(a.getTarget().getCode()) && t.getCodeSystem().equals(a.getTarget().getCodeSystem()) && (a.getTarget().getId() == null || a.getTarget().getId().equals(t.getId()))).findFirst().orElse(a.getTarget()));
-    });
-  }
-
-
-  private MapSetAssociation decorate(MapSetAssociation association, String mapSet, String mapSetVersion) {
-    decorate(List.of(association), mapSet, mapSetVersion);
-    return association;
-  }
 
   private List<CodeSystemEntityVersion> getEntityVersions(List<CodeSystemEntityVersion> versions) {
     List<CodeSystemEntityVersion> definedVersions = versions.stream().filter(v -> v.getId() != null).toList();
@@ -96,21 +65,38 @@ public class MapSetAssociationService {
 
 
   @Transactional
-  public MapSetAssociation save(MapSetAssociation association, String mapSet) {
+  public MapSetAssociation save(MapSetAssociation association, String mapSet, String version) {
     userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
-
     association.setMapSet(mapSet);
-    mapSetEntityService.save(association);
+    association.setMapSetVersion(mapSetVersionRepository.load(mapSet, version));
     repository.save(association);
-    mapSetEntityVersionService.save(association.getVersions(), association.getId());
     return association;
   }
 
+  @Transactional
+  public void batchSave(List<MapSetAssociation> associations, String mapSet, String version) {
+    Long versionId = mapSetVersionRepository.load(mapSet, version).getId();
+
+    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
+    repository.retain(mapSet, versionId, associations.stream().map(MapSetAssociation::getId).filter(Objects::nonNull).toList());
+    repository.batchUpsert(associations, mapSet, versionId);
+  }
 
   @Transactional
-  public void cancel(Long id, String mapSet) {
+  public void batchUpsert(List<MapSetAssociation> associations, String mapSet, String version) {
     userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
-    mapSetEntityService.cancel(id);
-    repository.cancel(id);
+    repository.batchUpsert(associations, mapSet, mapSetVersionRepository.load(mapSet, version).getId());
+  }
+
+  @Transactional
+  public void verify(List<Long> ids, String mapSet) {
+    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
+    repository.verify(ids);
+  }
+
+  @Transactional
+  public void cancel(List<Long> ids, String mapSet) {
+    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
+    repository.cancel(ids);
   }
 }

@@ -22,6 +22,7 @@ public class CodeSystemEntityVersionQueryParams extends QueryParams {
   private Long codeSystemEntityId;
   private String codeSystemEntityIds;
   private Long codeSystemVersionId;
+  private String codeSystemVersions; //cs1|v1,cs2|v1
   private String codeSystemVersion;
   private String codeSystemUri;
   private Boolean unlinked;

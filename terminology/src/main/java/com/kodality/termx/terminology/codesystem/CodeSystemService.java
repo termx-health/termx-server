@@ -5,6 +5,7 @@ import com.kodality.termx.ApiError;
 import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.codesystem.entityproperty.EntityPropertyService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.valueset.ValueSetService;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;

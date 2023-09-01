@@ -15,6 +15,8 @@ public class MapSetVersionQueryParams extends QueryParams {
   private List<String> permittedMapSets;
   private String version;
   private String status;
+  private String scopeSourceCodeSystem;
+  private String scopeTargetCodeSystem;
   private LocalDate releaseDateLe;
   private LocalDate expirationDateGe;
 }

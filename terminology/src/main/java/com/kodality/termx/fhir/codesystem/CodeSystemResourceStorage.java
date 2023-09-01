@@ -13,7 +13,7 @@ import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.terminology.codesystem.CodeSystemImportService;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
-import com.kodality.termx.terminology.codesystem.CodeSystemVersionService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationKind;

@@ -20,8 +20,6 @@ update terminology.value_set_version_rule_set
 set sys_status = 'D'
 where value_set_version_id in (select id from terminology.value_set_version where value_set = p_value_set);
 
-select terminology.cancel_map_set(id) from terminology.map_set where source_value_set = p_value_set or target_value_set = p_value_set;
-
 update terminology.value_set_version
 set sys_status = 'D'
 where value_set = p_value_set;

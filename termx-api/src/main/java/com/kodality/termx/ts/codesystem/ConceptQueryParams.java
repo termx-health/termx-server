@@ -21,6 +21,7 @@ public class ConceptQueryParams extends QueryParams {
   private String codeSystemUri;
   private String codeSystemVersion;
   private Long codeSystemVersionId;
+  private String codeSystemVersions; //cs1|v1,cs2|v1
   private LocalDate codeSystemVersionReleaseDateLe;
   private LocalDate codeSystemVersionReleaseDateGe;
   private LocalDate codeSystemVersionExpirationDateLe;
@@ -40,4 +41,7 @@ public class ConceptQueryParams extends QueryParams {
   private String associationTargetRecursive; //association|sourceCode
   private String associationType;
   private String designationCiEq;
+  private Long unmapedInMapSetVersionId;
+  private Long verifiedInMapSetVersionId;
+  private Long unverifiedInMapSetVersionId;
 }

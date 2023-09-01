@@ -3,9 +3,9 @@ package com.kodality.termx.terminology.mapset;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
+import com.kodality.termx.terminology.mapset.version.MapSetVersionService;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
-import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
 import com.kodality.termx.ts.mapset.MapSetQueryParams;
 import com.kodality.termx.ts.mapset.MapSetTransactionRequest;
 import com.kodality.termx.ts.mapset.MapSetVersion;
@@ -13,7 +13,6 @@ import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,15 +47,18 @@ public class MapSetService {
     userPermissionService.checkPermitted(mapSet.getId(), "MapSet", "edit");
     repository.save(mapSet);
 
+    if (request.getVersion() == null) {
+      return;
+    }
+
     MapSetVersion version = request.getVersion();
     version.setMapSet(mapSet.getId());
     version.setReleaseDate(version.getReleaseDate() == null ? LocalDate.now() : version.getReleaseDate());
     mapSetVersionService.save(version);
 
     List<MapSetAssociation> associations = request.getAssociations();
-    if (request.getAssociations() != null) {
-      associations.forEach(association -> mapSetAssociationService.save(association, version.getMapSet()));
-      mapSetVersionService.saveEntityVersions(version.getId(), associations.stream().map(a -> a.getVersions().get(0)).collect(Collectors.toList()));
+    if (associations != null) {
+      mapSetAssociationService.batchUpsert(associations, version.getMapSet(), version.getVersion());
     }
   }
 
@@ -67,17 +69,6 @@ public class MapSetService {
   }
 
   private MapSet decorate(MapSet mapSet, MapSetQueryParams params) {
-    if (params.isAssociationsDecorated()) {
-      MapSetAssociationQueryParams associationParams = new MapSetAssociationQueryParams();
-      associationParams.setMapSet(mapSet.getId());
-      associationParams.setMapSetVersion(params.getVersionVersion());
-      associationParams.setSourceCode(params.getAssociationSourceCode());
-      associationParams.setSourceSystemUri(params.getAssociationSourceSystemUri());
-      associationParams.setSourceSystemVersion(params.getAssociationSourceSystemVersion());
-      associationParams.setTargetSystem(params.getAssociationTargetSystem());
-      associationParams.all();
-      mapSet.setAssociations(mapSetAssociationService.query(associationParams).getData());
-    }
     if (params.isVersionsDecorated()) {
       MapSetVersionQueryParams versionParams = new MapSetVersionQueryParams();
       versionParams.setMapSet(mapSet.getId());

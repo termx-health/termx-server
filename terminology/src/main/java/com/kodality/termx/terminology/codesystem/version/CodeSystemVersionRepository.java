@@ -1,4 +1,4 @@
-package com.kodality.termx.terminology.codesystem;
+package com.kodality.termx.terminology.codesystem.version;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;

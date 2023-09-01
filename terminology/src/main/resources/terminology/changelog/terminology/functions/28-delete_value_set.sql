@@ -17,8 +17,6 @@ where value_set = p_value_set or
 delete from terminology.value_set_version_rule_set
 where value_set_version_id in (select id from terminology.value_set_version where value_set = p_value_set);
 
-select terminology.delete_map_set(id) from terminology.map_set where source_value_set = p_value_set or target_value_set = p_value_set;
-
 delete from terminology.value_set_version
 where value_set = p_value_set;
 

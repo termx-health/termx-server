@@ -146,6 +146,9 @@ public class ConceptRepository extends BaseRepository {
     }
     sb.appendIfNotNull("and csv.id = ?", params.getCodeSystemVersionId());
     sb.appendIfNotNull("and csv.version = ?", params.getCodeSystemVersion());
+    if (StringUtils.isNotEmpty(params.getCodeSystemVersions())) {
+      sb.append(checkCodeSystemVersions(params.getCodeSystemVersions()));
+    }
     sb.appendIfNotNull("and csv.release_date >= ?", params.getCodeSystemVersionReleaseDateGe());
     sb.appendIfNotNull("and csv.release_date <= ?", params.getCodeSystemVersionReleaseDateLe());
     sb.appendIfNotNull("and (csv.expiration_date >= ? or csv.expiration_date is null)", params.getCodeSystemVersionExpirationDateGe());
@@ -204,7 +207,21 @@ public class ConceptRepository extends BaseRepository {
                 "union select c2.code, c_t2.code parent " + from2 + " inner join concept_codes rec on c_s2.code = rec.code) select code from concept_codes)");
       }
     }
+    sb.appendIfNotNull("and (msa.map_set_version_id <> ? or msa.map_set_version_id is null)", params.getUnmapedInMapSetVersionId());
+    sb.appendIfNotNull("and msa.map_set_version_id = ? and msa.verified = true", params.getVerifiedInMapSetVersionId());
+    sb.appendIfNotNull("and msa.map_set_version_id = ? and msa.verified = false", params.getUnverifiedInMapSetVersionId());
     return sb;
+  }
+
+  private String checkCodeSystemVersions(String codeSystemVersions) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.append("and (1<>1");
+    Arrays.stream(codeSystemVersions.split(",")).forEach(cs -> {
+      String[] csv = PipeUtil.parsePipe(cs);
+      sb.append("or").append("c.code_system = ? and csv.version = ?", csv[0], csv[1]);
+    });
+    sb.append(")");
+    return sb.toPrettyString();
   }
 
   private String checkPropertyValue(String propertyValues, String propertyValuesPartial) {
@@ -319,7 +336,7 @@ public class ConceptRepository extends BaseRepository {
             params.getPropertySource(), params.getPropertyRoot(),
             params.getAssociationRoot(), params.getAssociationSource(), params.getAssociationType(),
             params.getAssociationLeaf(), params.getAssociationTarget(),
-            params.getCodeSystemVersion(), params.getCodeSystemVersionId(),
+            params.getCodeSystemVersion(), params.getCodeSystemVersionId(), params.getCodeSystemVersions(),
             params.getCodeSystemVersionReleaseDateLe(), params.getCodeSystemVersionReleaseDateGe(),
             params.getCodeSystemVersionExpirationDateLe(), params.getCodeSystemVersionExpirationDateLe(),
             params.getProperties(), params.getPropertyValues(), params.getPropertyValuesPartial())
@@ -348,12 +365,15 @@ public class ConceptRepository extends BaseRepository {
       join += "left join terminology.code_system_entity_version c_s on c_s.id = csa_t.source_code_system_entity_version_id and c_s.sys_status = 'A' ";
     }
 
-    if (CollectionUtils.isNotEmpty(Stream.of(params.getCodeSystemVersion(), params.getCodeSystemVersionId(),
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getCodeSystemVersion(), params.getCodeSystemVersionId(), params.getCodeSystemVersions(),
         params.getCodeSystemVersionReleaseDateLe(), params.getCodeSystemVersionReleaseDateGe(),
         params.getCodeSystemVersionExpirationDateLe(), params.getCodeSystemVersionExpirationDateLe()).filter(Objects::nonNull).toList())) {
       join +=
           "left join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_entity_version_id = csev.id  and evcsvm.sys_status = 'A' " +
               "left join terminology.code_system_version csv on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A' ";
+    }
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getUnmapedInMapSetVersionId(), params.getVerifiedInMapSetVersionId()).toList())) {
+      join += "left join terminology.map_set_association msa on msa.source_code = c.code and msa.source_code_system = c.code_system and msa.sys_status = 'A' ";
     }
     return join;
   }
