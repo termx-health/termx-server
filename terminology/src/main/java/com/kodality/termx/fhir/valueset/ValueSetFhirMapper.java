@@ -134,7 +134,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       include.setVersion(rule.getCodeSystemVersion() == null ? null : rule.getCodeSystemVersion().getVersion());
       include.setConcept(toFhirConcept(rule.getConcepts()));
       include.setFilter(toFhirFilter(rule.getFilters()));
-      include.setValueSet(rule.getValueSetUri());
+      include.setValueSet(rule.getValueSetUri() == null ? null : List.of(rule.getValueSetUri()));
       return include;
     }).collect(toList());
   }
@@ -408,10 +408,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   private static ValueSetVersionRule fromFhirInclude(ValueSetComposeInclude r, String type) {
     ValueSetVersionRule rule = new ValueSetVersionRule();
     rule.setType(type);
-    rule.setCodeSystem(r.getSystem());
+    rule.setCodeSystemUri(r.getSystem());
     rule.setConcepts(fromFhirConcepts(r.getConcept()));
     rule.setFilters(fromFhirFilters(r.getFilter()));
-    rule.setValueSet(r.getValueSet());
+    rule.setValueSetUri(CollectionUtils.isEmpty(r.getValueSet()) ? null : r.getValueSet().get(0));
     return rule;
   }
 

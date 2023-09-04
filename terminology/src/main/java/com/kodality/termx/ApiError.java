@@ -16,6 +16,8 @@ public enum ApiError {
   TE107("TE107", "Wrong resource type."),
   TE108("TE108", "Code system '{{codeSystem}}' has no draft versions."),
   TE109("TE109", "Version does not exist."),
+  TE110("TE110", "Code system '{{cs}}' does not exist."),
+  TE111("TE111", "Value set '{{vs}}' does not exist."),
   TE201("TE201", "Code system '{{codeSystem}}' not found."),
   TE202("TE202", "Version '{{version}}' of code system '{{codeSystem}}' doesn't exist."),
   TE203("TE203", "Property '{{propertyName}}' is used, can't be deleted."),

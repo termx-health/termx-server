@@ -8,9 +8,11 @@ import com.kodality.termx.terminology.valueset.ValueSetService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.ts.PublicationStatus;
+import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
-import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
+import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.valueset.ValueSet;
+import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
@@ -85,7 +87,7 @@ public class ValueSetFhirImportService {
     }
     rules.forEach(r -> {
       prepareRuleValueSet(r);
-      prepareRuleCodeSystem(r, lockedDate);
+      prepareRuleCodeSystem(r);
     });
   }
 
@@ -102,15 +104,21 @@ public class ValueSetFhirImportService {
     }
   }
 
-  private void prepareRuleCodeSystem(ValueSetVersionRule r, OffsetDateTime lockedDate) {
-    if (StringUtils.isNotEmpty(r.getCodeSystem())) {
-      codeSystemService.query(new CodeSystemQueryParams().setUri(r.getCodeSystem())).findFirst().ifPresent(cs -> r.setCodeSystem(cs.getId()));
-      if (lockedDate == null) {
-        r.setCodeSystemVersion(codeSystemVersionService.query(new CodeSystemVersionQueryParams()
-            .setCodeSystem(r.getCodeSystem())
-            .setReleaseDateLe(LocalDate.now())
-            .setExpirationDateGe(LocalDate.now())).findFirst().orElse(null));
-      }
+  private void prepareRuleCodeSystem(ValueSetVersionRule r) {
+    if (StringUtils.isNotEmpty(r.getCodeSystemUri())) {
+      CodeSystem codeSystem = codeSystemService.query(new CodeSystemQueryParams().setUri(r.getCodeSystemUri())).findFirst()
+          .orElseThrow(() -> ApiError.TE110.toApiException(Map.of("cs", r.getCodeSystemUri())));
+      CodeSystemVersion codeSystemVersion = codeSystemVersionService.loadLastVersion(codeSystem.getId());
+      r.setCodeSystem(codeSystem.getId());
+      r.setCodeSystemVersion(codeSystemVersion);
+    }
+
+    if (StringUtils.isNotEmpty(r.getValueSetUri())) {
+      ValueSet valueSet = valueSetService.query(new ValueSetQueryParams().setUri(r.getValueSetUri())).findFirst()
+          .orElseThrow(() -> ApiError.TE111.toApiException(Map.of("vs", r.getValueSetUri())));
+      ValueSetVersion valueSetVersion = valueSetVersionService.loadLastVersion(valueSet.getId());
+      r.setValueSet(valueSet.getId());
+      r.setValueSetVersion(valueSetVersion);
     }
   }
 
