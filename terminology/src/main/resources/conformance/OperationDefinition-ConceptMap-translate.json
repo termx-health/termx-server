@@ -30,12 +30,9 @@
       "max": "1",
       "min": 0,
       "use": "in",
-      "name": "conceptMapVersion",
-      "type": "string",
-      "documentation": "The identifier that is used to identify a specific version of the concept map to be used for the translation. This is an arbitrary value managed by the concept map author and is not expected to be globally unique. For example, it might be a timestamp (e.g. yyyymmdd) if a managed version is not available.",
-      "scope": [
-        "type"
-      ]
+      "name": "sourceCode",
+      "type": "code",
+      "documentation": "The code that is to be translated. If a code is provided, a system must be provided\n\n"
     },
     {
       "max": "1",
@@ -49,9 +46,25 @@
       "max": "1",
       "min": 0,
       "use": "in",
-      "name": "version",
-      "type": "string",
-      "documentation": "The version of the system, if one was provided in the source data"
+      "name": "sourceCoding",
+      "type": "Coding",
+      "documentation": "A coding to translate"
+    },
+    {
+      "max": "1",
+      "min": 0,
+      "use": "in",
+      "name": "sourceCodeableConcept",
+      "type": "CodeableConcept",
+      "documentation": "A full codeableConcept to validate. The server can translate any of the coding values (e.g. existing translations) as it chooses"
+    },
+    {
+      "max": "1",
+      "min": 0,
+      "use": "in",
+      "name": "targetCode",
+      "type": "code",
+      "documentation": "The target code that is to be translated to. If a code is provided, a system must be provided"
     },
     {
       "max": "1",
@@ -60,6 +73,22 @@
       "name": "targetSystem",
       "type": "uri",
       "documentation": "identifies a target code system in which a mapping is sought. This parameter is an alternative to the targetScope parameter - only one is required. Searching for any translation to a target code system irrespective of the context (e.g. target valueset) may lead to unsafe results, and it is at the discretion of the server to decide when to support this operation"
+    },
+    {
+      "max": "1",
+      "min": 0,
+      "use": "in",
+      "name": "targetCoding",
+      "type": "Coding",
+      "documentation": "A target coding to translate to"
+    },
+    {
+      "max": "1",
+      "min": 0,
+      "use": "in",
+      "name": "targetCodeableConcept",
+      "type": "CodeableConcept",
+      "documentation": "A full codeableConcept to validate. The server can translate any of the coding values (e.g. existing translations) as it chooses"
     },
     {
       "max": "1",
