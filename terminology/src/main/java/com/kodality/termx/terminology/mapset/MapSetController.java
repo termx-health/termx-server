@@ -11,6 +11,7 @@ import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
 import com.kodality.termx.sys.provenance.Provenance;
+import com.kodality.termx.sys.provenance.Provenance.ProvenanceChange;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termx.terminology.mapset.association.MapSetAutomapService;
 import com.kodality.termx.terminology.mapset.concept.MapSetConceptService;
@@ -82,6 +83,16 @@ public class MapSetController {
     });
     return HttpResponse.created(request.getMapSet());
   }
+
+  @Authorized(Privilege.CS_EDIT)
+  @Post(uri = "/{mapSet}/change-id")
+  public HttpResponse<?> changeMapSetId(@PathVariable String mapSet, @Valid @Body Map<String, String> body) {
+    String newId = body.get("id");
+    mapSetService.changeId(mapSet, newId);
+    provenanceService.create(new Provenance("change-id", "MapSet", newId).setChanges(Map.of("id", ProvenanceChange.of(mapSet, newId))));
+    return HttpResponse.ok();
+  }
+
 
   @Authorized(Privilege.MS_PUBLISH)
   @Delete(uri = "/{mapSet}")
@@ -216,7 +227,17 @@ public class MapSetController {
   @Post(uri = "/{mapSet}/versions/{version}/associations")
   public HttpResponse<?> createAssociation(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid MapSetAssociation association) {
     association.setId(null);
-    provenanceService.provenanceMapSetVersion("save-association", mapSet, version, () -> {
+    provenanceService.provenanceMapSetVersion("create-association", mapSet, version, () -> {
+      mapSetAssociationService.save(association, mapSet, version);
+    });
+    return HttpResponse.created(association);
+  }
+
+  @Authorized(Privilege.MS_EDIT)
+  @Put(uri = "/{mapSet}/versions/{version}/associations/{id}")
+  public HttpResponse<?> updateAssociation(@PathVariable @ResourceId String mapSet, @PathVariable String version, @PathVariable Long id, @Body @Valid MapSetAssociation association) {
+    association.setId(id);
+    provenanceService.provenanceMapSetVersion("update-association", mapSet, version, () -> {
       mapSetAssociationService.save(association, mapSet, version);
     });
     return HttpResponse.created(association);
@@ -235,7 +256,7 @@ public class MapSetController {
   @Post(uri = "/{mapSet}/versions/{version}/associations/verify")
   public HttpResponse<?> verifyAssociations(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid Map<String, List<Long>> request) {
     provenanceService.provenanceMapSetVersion("verify-association-batch", mapSet, version, () -> {
-      mapSetAssociationService.verify(request.get("ids"), mapSet);
+      mapSetAssociationService.verify(request.get("verifiedIds"), request.get("unVerifiedIds"), mapSet);
     });
     return HttpResponse.ok();
   }
@@ -244,7 +265,7 @@ public class MapSetController {
   @Post(uri = "/{mapSet}/versions/{version}/associations/unmap")
   public HttpResponse<?> unmapAssociations(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid Map<String, List<Long>> request) {
     provenanceService.provenanceMapSetVersion("unmap-association-batch", mapSet, version, () -> {
-      mapSetAssociationService.cancel(request.get("ids"), mapSet);
+      mapSetAssociationService.cancel(request.get("ids"), mapSet, version);
     });
     return HttpResponse.ok();
   }

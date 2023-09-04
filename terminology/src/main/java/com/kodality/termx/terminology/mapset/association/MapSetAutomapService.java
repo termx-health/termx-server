@@ -28,19 +28,20 @@ public class MapSetAutomapService {
     List<MapSetConcept> sourceConcepts = mapSetConceptService.query(ms, msv, new MapSetConceptQueryParams().setType("source").all()).getData();
     List<MapSetConcept> targetConcepts = mapSetConceptService.query(ms, msv, new MapSetConceptQueryParams().setType("target").all()).getData();
 
-    List<MapSetAssociation> associations = new ArrayList<>();
-    if (request.isMapByCode()) {
-      associations.addAll(mapByCode(sourceConcepts, targetConcepts));
-    }
-    if (request.isMapByDesignation()) {
-      associations.addAll(mapByDesignation(sourceConcepts, targetConcepts, request));
+    List<MapSetAssociation> associationsMappedByCode = request.isMapByCode() ? mapByCode(sourceConcepts, targetConcepts) : new ArrayList<>();
+    List<MapSetAssociation> associationsMappedByDesignation = request.isMapByDesignation() ? mapByDesignation(sourceConcepts, targetConcepts, request) : new ArrayList<>();
+
+    if (request.isMapByCode() && !request.isMapByDesignation()) {
+      mapSetAssociationService.batchUpsert(associationsMappedByCode, ms, msv);
     }
 
-    associations = associations.stream()
-        .collect(Collectors.groupingBy(a -> a.getSource().getCode() + a.getSource().getCodeSystem() + a.getTarget().getCode() + a.getTarget().getCodeSystem()))
-        .values().stream().map(v -> v.stream().findFirst())
-        .filter(Optional::isPresent).map(Optional::get).toList();
-    mapSetAssociationService.batchUpsert(associations, ms, msv);
+    if (!request.isMapByCode() && request.isMapByDesignation()) {
+      mapSetAssociationService.batchUpsert(associationsMappedByDesignation, ms, msv);
+    }
+
+    if (request.isMapByCode() && request.isMapByDesignation()) {
+      mapSetAssociationService.batchUpsert(getCommon(associationsMappedByCode, associationsMappedByDesignation), ms, msv);
+    }
   }
 
   private List<MapSetAssociation> mapByCode(List<MapSetConcept> sourceConcepts, List<MapSetConcept> targetConcepts) {
@@ -86,6 +87,13 @@ public class MapSetAutomapService {
   private boolean associationNotExist(MapSetConcept s, MapSetConcept t) {
     return s.getAssociations() == null || s.getAssociations().stream()
         .noneMatch(a -> a.getTarget() != null && a.getTarget().getCode() != null && t.getCode().equals(a.getTarget().getCode().toLowerCase()));
+  }
+
+  private List<MapSetAssociation> getCommon(List<MapSetAssociation> mappedByCode, List<MapSetAssociation> mappedByDesignation) {
+    return mappedByCode.stream().filter(mbc -> mappedByDesignation.stream().anyMatch(mbd ->
+            mbc.getSource().getCode().equals(mbd.getSource().getCode()) &&
+                mbc.getTarget().getCode().equals(mbd.getTarget().getCode())))
+        .toList();
   }
 
 }

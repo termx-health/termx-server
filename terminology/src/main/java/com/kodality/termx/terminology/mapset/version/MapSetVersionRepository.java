@@ -114,45 +114,6 @@ public class MapSetVersionRepository extends BaseRepository {
     jdbcTemplate.update(sql, version.getExpirationDate(), version.getId());
   }
 
-  public void retainEntityVersions(List<MapSetEntityVersion> entityVersions, Long mapSetVersionId) {
-    SqlBuilder sb = new SqlBuilder("update terminology.entity_version_map_set_version_membership set sys_status = 'C'");
-    sb.append(" where map_set_version_id = ? and sys_status = 'A'", mapSetVersionId);
-    sb.andNotIn("map_set_entity_version_id", entityVersions, MapSetEntityVersion::getId);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
-  }
-
-  public void upsertEntityVersions(List<MapSetEntityVersion> entityVersions, Long mapSetVersionId) {
-    if (entityVersions == null) {
-      return;
-    }
-    entityVersions.forEach(v -> {
-      SaveSqlBuilder ssb = new SaveSqlBuilder();
-      ssb.property("map_set_entity_version_id", v.getId());
-      ssb.property("map_set_version_id", mapSetVersionId);
-      ssb.property("sys_status", "A");
-
-      SqlBuilder sb = ssb.buildUpsert("terminology.entity_version_map_set_version_membership", "map_set_entity_version_id", "map_set_version_id");
-      jdbcTemplate.update(sb.getSql(), sb.getParams());
-    });
-  }
-
-  public void unlinkEntityVersion(Long mapSetVersionId, Long entityVersionId) {
-    SqlBuilder sb = new SqlBuilder("update terminology.entity_version_map_set_version_membership set sys_status = 'C' where sys_status = 'A'");
-    sb.append("and map_set_version_id = ?", mapSetVersionId);
-    sb.append("and map_set_entity_version_id = ?", entityVersionId);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
-  }
-
-  public void linkEntityVersion(Long mapSetVersionId, Long entityVersionId) {
-    SaveSqlBuilder ssb = new SaveSqlBuilder();
-    ssb.property("map_set_entity_version_id", entityVersionId);
-    ssb.property("map_set_version_id", mapSetVersionId);
-    ssb.property("sys_status", "A");
-
-    SqlBuilder sb = ssb.buildUpsert("terminology.entity_version_map_set_version_membership", "map_set_entity_version_id", "map_set_version_id", "sys_status");
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
-  }
-
   public MapSetVersion loadLastVersion(String mapSet) {
     String sql = select + "from terminology.map_set_version msv where msv.sys_status = 'A' and msv.map_set = ? and (msv.status = 'active' or msv.status = 'draft') order by msv.release_date desc";
     return getBean(sql, bp, mapSet);

@@ -93,12 +93,14 @@ public class MapSetRepository extends BaseRepository {
     sb.appendIfNotNull("and ms.source_value_set = ?", params.getSourceValueSet());
     sb.appendIfNotNull("and ms.target_value_set = ?", params.getTargetValueSet());
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and (ms.id = ? or ms.uri = ? or ms.description = ? or exists (select 1 from jsonb_each_text(ms.names) where value = ?))",
-          params.getText(), params.getText(), params.getText(), params.getText());
+      sb.append("and ( terminology.text_search(ms.id, ms.uri, ms.name) like '%`' || terminology.search_translate(?) || '`%'" +
+              "     or terminology.jsonb_search(ms.title) like '%`' || terminology.search_translate(?) || '`%' )",
+          params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (ms.id ~* ? or ms.uri ~* ? or ms.description ~* ? or exists (select 1 from jsonb_each_text(ms.names) where value ~* ?))",
-          params.getTextContains(), params.getTextContains(), params.getTextContains(), params.getTextContains());
+      sb.append("and ( terminology.text_search(ms.id, ms.uri, ms.name) like '%' || terminology.search_translate(?) || '%'" +
+              "     or terminology.jsonb_search(ms.title) like '%' || terminology.search_translate(?) || '%' )",
+          params.getTextContains(), params.getTextContains());
     }
     sb.appendIfNotNull("and msv.version = ?", params.getVersionVersion());
     sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
@@ -121,6 +123,11 @@ public class MapSetRepository extends BaseRepository {
 
   public void cancel(String mapSet) {
     SqlBuilder sb = new SqlBuilder("select * from terminology.cancel_map_set(?)", mapSet);
+    jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
+  }
+
+  public void changeId(String currentId, String newId) {
+    SqlBuilder sb = new SqlBuilder("select * from terminology.change_map_set_id(?,?)", currentId, newId);
     jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
   }
 }

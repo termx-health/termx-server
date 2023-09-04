@@ -84,4 +84,10 @@ public class MapSetService {
     userPermissionService.checkPermitted(mapSet, "MapSet", "publish");
     repository.cancel(mapSet);
   }
+
+  @Transactional
+  public void changeId(String currentId, String newId) {
+    userPermissionService.checkPermitted(currentId, "MapSet", "edit");
+    repository.changeId(currentId, newId);
+  }
 }

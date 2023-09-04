@@ -2,7 +2,7 @@ package com.kodality.termx.terminology.mapset.statistics;
 
 import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
-import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
+import com.kodality.termx.terminology.mapset.association.MapSetAssociationRepository;
 import com.kodality.termx.terminology.mapset.concept.MapSetConceptService;
 import com.kodality.termx.terminology.mapset.version.MapSetVersionRepository;
 import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
@@ -31,7 +31,7 @@ public class MapSetStatisticsService {
   private final MapSetVersionRepository mapSetVersionRepository;
   private final ConceptService codeSystemConceptService;
   private final ValueSetVersionConceptService valueSetConceptService;
-  private final MapSetAssociationService mapSetAssociationService;
+  private final MapSetAssociationRepository mapSetAssociationRepository;
   private final MapSetConceptService mapSetConceptService;
 
   @Transactional
@@ -70,7 +70,7 @@ public class MapSetStatisticsService {
   }
 
 
-  public MapSetVersionStatistics calculate(MapSetVersion version) {
+  private MapSetVersionStatistics calculate(MapSetVersion version) {
     if (version == null || version.getId() == null || version.getScope() == null) {
       return null;
     }
@@ -106,12 +106,12 @@ public class MapSetStatisticsService {
 
   private Integer getMappedConcepts(Long mapSetVersionId, String relationship) {
     MapSetAssociationQueryParams params = new MapSetAssociationQueryParams().setMapSetVersionId(mapSetVersionId).setRelationships(relationship).limit(0);
-    return mapSetAssociationService.query(params).getMeta().getTotal();
+    return mapSetAssociationRepository.query(params).getMeta().getTotal();
   }
 
   private Integer getNoMapConcepts(Long mapSetVersionId) {
     MapSetAssociationQueryParams params = new MapSetAssociationQueryParams().setMapSetVersionId(mapSetVersionId).setNoMap(true).limit(0);
-    return mapSetAssociationService.query(params).getMeta().getTotal();
+    return mapSetAssociationRepository.query(params).getMeta().getTotal();
   }
 
   private Integer getUnmappedConcepts(MapSetVersion msv) {

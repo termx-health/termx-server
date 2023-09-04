@@ -4,8 +4,8 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.model.QueryResult.SearchResultMeta;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptUtil;
-import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
-import com.kodality.termx.terminology.mapset.version.MapSetVersionService;
+import com.kodality.termx.terminology.mapset.association.MapSetAssociationRepository;
+import com.kodality.termx.terminology.mapset.version.MapSetVersionRepository;
 import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
@@ -28,18 +28,18 @@ import org.apache.commons.collections4.CollectionUtils;
 @Singleton
 @RequiredArgsConstructor
 public class MapSetConceptService {
-  private final MapSetVersionService mapSetVersionService;
-  private final MapSetAssociationService mapSetAssociationService;
+  private final MapSetVersionRepository mapSetVersionService;
+  private final MapSetAssociationRepository mapSetAssociationRepository;
   private final ConceptService codeSystemConceptService;
   private final ValueSetVersionConceptService valueSetConceptService;
 
   public QueryResult<MapSetConcept> query(String mapSet, String version, MapSetConceptQueryParams params) {
-    MapSetVersion msv = mapSetVersionService.load(mapSet, version).orElseThrow();
+    MapSetVersion msv = mapSetVersionService.load(mapSet, version);
 
-    if ("source".equals(params.getType())) {
+    if ("source".equals(params.getType()) && msv != null) {
       return querySourceConcepts(msv, params);
     }
-    if ("target".equals(params.getType())) {
+    if ("target".equals(params.getType()) && msv != null) {
       return queryTargetConcepts(msv, params);
     }
     return QueryResult.empty();
@@ -81,7 +81,7 @@ public class MapSetConceptService {
     QueryResult<Concept> qr = codeSystemConceptService.query(cp);
 
     Map<String, List<MapSetAssociation>> associations = qr.findFirst().isEmpty() || params.getUnmapped() != null && params.getUnmapped() ? Map.of() :
-        mapSetAssociationService.query(new MapSetAssociationQueryParams().setMapSetVersionId(msv.getId()).setVerified(params.getVerified()).setSourceCodes(qr.getData().stream().map(Concept::getCode).collect(Collectors.joining(","))).all())
+        mapSetAssociationRepository.query(new MapSetAssociationQueryParams().setMapSetVersionId(msv.getId()).setVerified(params.getVerified()).setSourceCodes(qr.getData().stream().map(Concept::getCode).collect(Collectors.joining(","))).all())
             .getData().stream().collect(Collectors.groupingBy(a -> a.getSource().getCode() + a.getSource().getCodeSystem()));
 
     List<MapSetConcept> msc = qr.getData().stream().map(c -> new MapSetConcept()
@@ -104,7 +104,7 @@ public class MapSetConceptService {
     concepts = params.getLimit() >= 0 && params.getLimit() < concepts.size() ? concepts.subList(params.getOffset(), params.getLimit()) : concepts;
 
     Map<String, List<MapSetAssociation>> associations = CollectionUtils.isEmpty(concepts) ? Map.of() :
-        mapSetAssociationService.query(new MapSetAssociationQueryParams().setMapSetVersionId(msv.getId()).setVerified(params.getVerified()).setSourceCodes(concepts.stream().map(c -> c.getConcept().getCode()).collect(Collectors.joining(","))).all())
+        mapSetAssociationRepository.query(new MapSetAssociationQueryParams().setMapSetVersionId(msv.getId()).setVerified(params.getVerified()).setSourceCodes(concepts.stream().map(c -> c.getConcept().getCode()).collect(Collectors.joining(","))).all())
             .getData().stream().collect(Collectors.groupingBy(a -> a.getSource().getCode() + a.getSource().getCodeSystem()));
 
     List<MapSetConcept> msc = concepts.stream().map(c -> {

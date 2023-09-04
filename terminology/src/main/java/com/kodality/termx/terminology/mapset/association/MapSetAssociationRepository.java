@@ -132,8 +132,8 @@ public class MapSetAssociationRepository extends BaseRepository {
     return sb;
   }
 
-  public void verify(List<Long> ids) {
-    SqlBuilder sb = new SqlBuilder("update terminology.map_set_association set verified = true where sys_status = 'A'");
+  public void verify(List<Long> ids, boolean verified) {
+    SqlBuilder sb = new SqlBuilder("update terminology.map_set_association set verified = ? where sys_status = 'A'", verified);
     sb.and().in("id", ids);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }

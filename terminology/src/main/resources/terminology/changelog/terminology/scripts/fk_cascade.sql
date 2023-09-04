@@ -1,5 +1,16 @@
 --liquibase formatted sql
 
+--changeset kodality:map_set_fix_fk
+ALTER TABLE terminology.map_set_version DROP CONSTRAINT map_set_version_map_set_fk;
+ALTER TABLE terminology.map_set_version ADD CONSTRAINT map_set_version_map_set_fk FOREIGN KEY (map_set) REFERENCES terminology.map_set(id) ON UPDATE CASCADE;
+
+ALTER TABLE terminology.map_set_statistics DROP CONSTRAINT map_set_statistics_map_set_fk;
+ALTER TABLE terminology.map_set_statistics ADD CONSTRAINT map_set_statistics_map_set_fk FOREIGN KEY (map_set) REFERENCES terminology.map_set(id) ON UPDATE CASCADE;
+
+ALTER TABLE terminology.map_set_association DROP CONSTRAINT ms_association_map_set_fk;
+ALTER TABLE terminology.map_set_association ADD CONSTRAINT ms_association_map_set_fk FOREIGN KEY (map_set) REFERENCES terminology.map_set(id) ON UPDATE CASCADE;
+--rollback select 1;
+
 --changeset kodality:value_set_fix_fk-2
 ALTER TABLE terminology.value_set_version DROP CONSTRAINT value_set_version_value_set_fk;
 ALTER TABLE terminology.value_set_version ADD CONSTRAINT value_set_version_value_set_fk FOREIGN KEY (value_set) REFERENCES terminology.value_set(id) ON UPDATE CASCADE;
