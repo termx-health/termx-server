@@ -11,7 +11,7 @@ import com.kodality.termx.sys.space.SpaceGithubDataHandler;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,7 +38,7 @@ public class SpaceGithubDataValueSetHandler implements SpaceGithubDataHandler {
   @Override
   public Map<String, String> getContent(Long spaceId) {
     List<ValueSet> valueSets = valueSetService.query(new ValueSetQueryParams().setSpaceId(spaceId).all()).getData();
-    Map<String, String> result = new HashMap<>();
+    Map<String, String> result = new LinkedHashMap<>();
     valueSets.forEach(vs -> {
       valueSetVersionService.query(new ValueSetVersionQueryParams().setValueSet(vs.getId())).getData().forEach(vsv -> {
         List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + vsv.getId());

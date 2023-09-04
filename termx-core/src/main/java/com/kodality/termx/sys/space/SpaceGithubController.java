@@ -13,6 +13,7 @@ import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.QueryValue;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 
@@ -46,17 +47,18 @@ public class SpaceGithubController {
   @Authorized(Privilege.P_EDIT)
   @Post("/push")
   public HttpResponse<?> push(@Parameter Long id, @Body SpaceGithubCommitRequest req) {
-    service().push(id, req.message);
+    service().push(id, req.message, req.files);
     return HttpResponse.ok();
   }
 
   @Authorized(Privilege.P_EDIT)
   @Post("/pull")
-  public HttpResponse<?> pull(@Parameter Long id) {
-    service().pull(id);
+  public HttpResponse<?> pull(@Parameter Long id, @Body SpaceGithubPullRequest req) {
+    service().pull(id, req.files);
     return HttpResponse.ok();
   }
 
   public record SpaceGithubAuthRequest(String returnUrl) {}
-  public record SpaceGithubCommitRequest(String message) {}
+  public record SpaceGithubCommitRequest(String message, List<String> files) {}
+  public record SpaceGithubPullRequest(List<String> files) {}
 }

@@ -65,6 +65,13 @@ public class SpaceRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCodes())) {
       sb.and().in("code", params.getCodes());
     }
+    if (StringUtils.isNotEmpty(params.getResource())) {
+      sb.append("and exists (select 1 from sys.package_version_resource pvr where pvr.sys_status = 'A' and")
+          .pipe("pvr.resource_type", "pvr.resource_id", params.getResource())
+          .append(" and pvr.version_id in (select id from sys.package_version pv where pv.sys_status = 'A'" +
+                  " and pv.package_id in (select id from sys.package p where p.space_id = s.id and p.sys_status = 'A'))")
+          .append(")");
+    }
     return sb;
   }
 

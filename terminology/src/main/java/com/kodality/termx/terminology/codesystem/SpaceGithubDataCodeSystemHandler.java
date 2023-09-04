@@ -14,7 +14,7 @@ import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,7 +42,7 @@ public class SpaceGithubDataCodeSystemHandler implements SpaceGithubDataHandler 
   @Override
   public Map<String, String> getContent(Long spaceId) {
     List<CodeSystem> codeSystems = codeSystemService.query(new CodeSystemQueryParams().setSpaceId(spaceId).all()).getData();
-    Map<String, String> result = new HashMap<>();
+    Map<String, String> result = new LinkedHashMap<>();
     codeSystems.forEach(cs -> {
       codeSystemVersionService.query(new CodeSystemVersionQueryParams().setCodeSystem(cs.getId())).getData().forEach(csv -> {
         List<Provenance> provenances = provenanceService.find("CodeSystemVersion|" + csv.getId());
