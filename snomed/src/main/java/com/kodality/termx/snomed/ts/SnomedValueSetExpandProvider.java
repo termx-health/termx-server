@@ -28,6 +28,7 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
 
   private static final String SNOMED = "snomed-ct";
   private static final String SNOMED_IS_A = "is-a";
+  private static final String SNOMED_DESCENDANT_OF = "descendant-of";
   private static final String SNOMED_IN = "in";
 
   public SnomedValueSetExpandProvider(SnomedMapper snomedMapper, SnomedService snomedService) {
@@ -118,6 +119,9 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
     String ecl = "";
     if (f.getOperator().equals(SNOMED_IS_A)) {
       ecl += "<<";
+    }
+    if (f.getOperator().equals(SNOMED_DESCENDANT_OF)) {
+      ecl += "<";
     }
     if (f.getOperator().equals(SNOMED_IN)) {
       ecl += "^";
