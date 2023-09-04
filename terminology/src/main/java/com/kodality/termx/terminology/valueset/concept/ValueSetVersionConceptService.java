@@ -37,7 +37,6 @@ public class ValueSetVersionConceptService {
   private final ValueSetSnapshotService valueSetSnapshotService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
-  private static final String DISPLAY = "display";
   private static final String DEPRECATION_DATE = "deprecationDate";
   private static final String INACTIVE = "inactive";
   private static final String STATUS = "status";

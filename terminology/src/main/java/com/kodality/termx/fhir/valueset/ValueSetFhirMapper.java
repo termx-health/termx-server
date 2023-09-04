@@ -289,7 +289,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         .filter(c -> !c.isEnumerated() && CollectionUtils.isNotEmpty(c.getAssociations()))
         .flatMap(c -> c.getAssociations().stream().filter(a -> a.getTargetCode() != null).map(a -> Pair.of(c, a)))
         .collect(Collectors.groupingBy(c -> c.getRight().getTargetCode(), Collectors.mapping(Pair::getLeft, toList())));
-    List<ValueSetVersionConcept> rootConcepts = concepts.stream().filter(c -> c.isEnumerated() || CollectionUtils.isEmpty(c.getAssociations())).toList();
+    List<String> codes = concepts.stream().map(c -> c.getConcept().getCode()).distinct().toList();
+    List<ValueSetVersionConcept> rootConcepts = concepts.stream().filter(c -> c.isEnumerated() ||
+        CollectionUtils.isEmpty(c.getAssociations()) ||
+        c.getAssociations().stream().noneMatch(a -> codes.contains(a.getTargetCode()))).toList();
     return rootConcepts.stream()
         .map(c -> {
           ValueSetExpansionContains contains = toFhirExpansionContains(c, param);
