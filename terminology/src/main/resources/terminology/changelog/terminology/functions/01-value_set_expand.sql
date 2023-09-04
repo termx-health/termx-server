@@ -45,7 +45,8 @@ exact_concepts as (
                 and csev.id = evcsvm.code_system_entity_version_id
 ),
 expressions as (
-  with t as (
+  -- list the all unique filters
+  with recursive t as (
     with f as (
 		  select r.*, jsonb_array_elements(r.filters) filter_, jsonb_array_length(r.filters) fcnt
 	      from rules r
@@ -53,6 +54,27 @@ expressions as (
     ) select f.*,
              row_number() over () rn
         from f
+  ), 
+  -- list of the all recursive values expressed with is-a operator
+  r as (
+		select csev.code_system, csa.source_code_system_entity_version_id csev_id, t.rule_id
+		  from t 
+		       inner join terminology.code_system_entity_version csev 
+		               on csev.code_system = t.code_system and csev.sys_status ='A'
+		              and csev.code = (t.filter_ ->> 'value')::text 
+		       inner join terminology.code_system_association csa 
+		               on csa.association_type = (t.filter_ ->> 'operator') and csa.sys_status  ='A' 
+		              and csev.id = csa.target_code_system_entity_version_id
+	         left outer join terminology.entity_version_code_system_version_membership evcsvm 
+	                 on evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = t.code_system_version_id 
+	                and csev.id = evcsvm.code_system_entity_version_id
+		 where (t.filter_ ->> 'operator')::text = 'is-a'
+	  union 
+	  select r.code_system, csa1.source_code_system_entity_version_id csev_id, rule_id
+	    from r, terminology.code_system_association csa1
+	   where r.code_system=csa1.code_system
+	     and r.csev_id = csa1.target_code_system_entity_version_id
+	     and csa1.sys_status = 'A'
   ), 
   c as (
   select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.id csev_id, csev.code csev_code, 
@@ -66,6 +88,7 @@ expressions as (
      and csev.id = evcsvm.code_system_entity_version_id
      and t.filters is not null 
    )
+   -- concepts that match by exact code or regexp applied to code 
    select c.*, t.rn, t.fcnt from c, t  
     where t.code_system = c.code_system
       and t.rule_id = c.rule_id
@@ -73,16 +96,20 @@ expressions as (
            (c.csev_code = (t.filter_ ->> 'value')::text or 
            regexp_match(c.csev_code, (t.filter_ ->> 'value')::text||'$') is not null))
    union     
+   -- concepts that match by properties 
    select c.*, t.rn, t.fcnt from c, t 
     where t.code_system = c.code_system
       and t.rule_id = c.rule_id
+      and (t.filter_ ->> 'operator')::text <> 'is-a' 
       and exists (select 1 from terminology.entity_property_value epv, terminology.entity_property ep 
                   where epv.sys_status = 'A' and c.csev_id = epv.code_system_entity_version_id
                     and ep.sys_status = 'A' and ep.id = epv.entity_property_id
                     and (t.filter_ -> 'property' ->> 'name')::text = ep.name 
-                    and ((t.filter_ ->> 'value') is null or (t.filter_ -> 'value') = epv.value or
-                        (t.filter_ ->> 'value')::text = (epv.value ->> 'code')::text))    
-   union  
+                    and ((t.filter_ ->> 'value') is null or (t.filter_ -> 'value') = epv.value::jsonb or 
+                         (t.filter_ ->> 'value')::text = (epv.value ->> 'code')::text)
+                 ) 
+   union 
+   -- concepts that match by designations 
    select c.*, t.rn, t.fcnt from c, t 
     where t.code_system = c.code_system
       and t.rule_id = c.rule_id
@@ -92,28 +119,13 @@ expressions as (
                     and (t.filter_ -> 'property' ->> 'name')::text = ep.name  
                     and ((t.filter_ ->> 'value')::text = d.name))
    union 
-   select c.*, t.rn, t.fcnt from c, t 
+   -- all recursive concepts calculated before
+   select c.*, t.rn, t.fcnt from c, t, r 
     where t.code_system = c.code_system
       and t.rule_id = c.rule_id
-      and (t.filter_ ->> 'operator')::text = 'is-a'
-      and exists (
-        with recursive r as (
-            select csa.code_system, csa.source_code_system_entity_version_id, csa.target_code_system_entity_version_id
-              from terminology.code_system_association csa,
-                   terminology.code_system_entity_version csev1
-             where csa.sys_status = 'A'
-               and csa.code_system = c.code_system
-               and (t.filter_ ->> 'operator')::text = csa.association_type
-               and csev1.sys_status = 'A' and csev1.id = csa.target_code_system_entity_version_id 
-               and csev1.code = (t.filter_ ->> 'value')::text
-            union 
-            select r.code_system, csa1.source_code_system_entity_version_id, csa1.target_code_system_entity_version_id
-              from r, terminology.code_system_association csa1
-             where r.code_system=csa1.code_system
-               and r.source_code_system_entity_version_id = csa1.target_code_system_entity_version_id
-             )
-             select 1 from r 
-              where (c.csev_id = source_code_system_entity_version_id))
+      and t.code_system = r.code_system
+      and t.rule_id = r.rule_id
+      and c.csev_id = r.csev_id
 ),
 expression_concepts as (
 	select rule_id, type, csev_code, obj, fcnt, count(*)
