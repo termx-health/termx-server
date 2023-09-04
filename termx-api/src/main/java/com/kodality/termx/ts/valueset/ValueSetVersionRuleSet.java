@@ -1,7 +1,7 @@
 package com.kodality.termx.ts.valueset;
 
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
-import com.kodality.termx.ts.codesystem.EntityProperty;
+import com.kodality.termx.ts.codesystem.EntityPropertyReference;
 import io.micronaut.core.annotation.Introspected;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -40,7 +40,7 @@ public class ValueSetVersionRuleSet {
     @Setter
     @Accessors(chain = true)
     public static class ValueSetRuleFilter {
-      private EntityProperty property;
+      private EntityPropertyReference property;
       private String operator;
       private Object value;
     }

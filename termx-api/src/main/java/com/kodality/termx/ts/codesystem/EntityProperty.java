@@ -1,8 +1,8 @@
 package com.kodality.termx.ts.codesystem;
 
+import com.kodality.commons.model.LocalizedName;
 import io.micronaut.core.annotation.Introspected;
 import java.time.OffsetDateTime;
-import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -11,7 +11,9 @@ import lombok.experimental.Accessors;
 @Setter
 @Introspected
 @Accessors(chain = true)
-public class EntityProperty extends DefinedEntityProperty {
+public class EntityProperty extends EntityPropertyReference {
+  private EntityPropertyRule rule;
+  private LocalizedName description;
   private String status;
   private Integer orderNumber;
   private boolean preferred;
