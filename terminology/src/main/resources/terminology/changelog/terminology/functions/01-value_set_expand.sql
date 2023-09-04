@@ -80,7 +80,7 @@ expressions as (
                   where epv.sys_status = 'A' and c.csev_id = epv.code_system_entity_version_id
                     and ep.sys_status = 'A' and ep.id = epv.entity_property_id
                     and (t.filter_ -> 'property' ->> 'name')::text = ep.name 
-                    and (coalesce(t.filter_ ->> 'value', '') = '' or to_jsonb((t.filter_ ->> 'value')::text) = epv.value or 
+                    and ((t.filter_ ->> 'value') is null or (t.filter_ -> 'value') = epv.value or
                         (t.filter_ ->> 'value')::text = (epv.value ->> 'code')::text))    
    union  
    select c.*, t.rn, t.fcnt from c, t 
@@ -90,7 +90,7 @@ expressions as (
                   where d.sys_status = 'A' and c.csev_id = d.code_system_entity_version_id
                     and ep.sys_status = 'A' and ep.id = d.designation_type_id
                     and (t.filter_ -> 'property' ->> 'name')::text = ep.name  
-                    and ( (t.filter_ ->> 'value')::text = d.name))   
+                    and ((t.filter_ ->> 'value')::text = d.name))
    union 
    select c.*, t.rn, t.fcnt from c, t 
     where t.code_system = c.code_system

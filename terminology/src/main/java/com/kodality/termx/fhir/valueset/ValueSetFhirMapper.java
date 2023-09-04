@@ -167,7 +167,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }
     return filters.stream().map(valueSetRuleFilter -> {
       ValueSetComposeIncludeFilter filter = new ValueSetComposeIncludeFilter();
-      filter.setValue(valueSetRuleFilter.getValue());
+      filter.setValue(JsonUtil.toJson(valueSetRuleFilter.getValue()));
       filter.setOp(valueSetRuleFilter.getOperator());
       filter.setProperty(valueSetRuleFilter.getProperty().getName());
       return filter;

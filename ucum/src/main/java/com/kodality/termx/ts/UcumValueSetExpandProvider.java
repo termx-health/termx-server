@@ -1,5 +1,6 @@
 package com.kodality.termx.ts;
 
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.measurementunit.MeasurementUnitService;
@@ -43,7 +44,7 @@ public class UcumValueSetExpandProvider extends ValueSetExternalExpandProvider {
     MeasurementUnitQueryParams params = new MeasurementUnitQueryParams();
 
     if (UCUM_KIND.equals(filter.getProperty().getName())) {
-      params.setKind(filter.getValue());
+      params.setKind(JsonUtil.toJson(filter.getValue()));
       params.all();
     } else {
       return new ArrayList<>();

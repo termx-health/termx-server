@@ -42,7 +42,7 @@ public class ValueSetVersionRuleSet {
     public static class ValueSetRuleFilter {
       private EntityProperty property;
       private String operator;
-      private String value;
+      private Object value;
     }
   }
 }
