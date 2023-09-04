@@ -18,6 +18,8 @@ public class ValueSetQueryParams extends QueryParams {
   private String uriContains;
   private String name;
   private String nameContains;
+  private String title;
+  private String titleContains;
   private String description;
   private String descriptionContains;
 

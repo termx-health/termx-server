@@ -1,6 +1,8 @@
 package com.kodality.termx.fhir.conceptmap;
 
+import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
@@ -17,6 +19,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
 import com.kodality.termx.ts.mapset.MapSetAssociation.MapSetAssociationEntity;
+import com.kodality.termx.ts.mapset.MapSetQueryParams;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersion.MapSetResourceReference;
 import com.kodality.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
@@ -271,5 +274,26 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
       associationTypes.add(new AssociationType(target.getRelationship(), AssociationKind.conceptMapEquivalence, true));
     })));
     return associationTypes;
+  }
+
+  public static MapSetQueryParams fromFhir(SearchCriterion fhir) {
+    MapSetQueryParams params = new MapSetQueryParams();
+    getSimpleParams(fhir).forEach((k, v) -> {
+      switch (k) {
+        case SearchCriterion._COUNT -> params.setLimit(fhir.getCount());
+        case SearchCriterion._PAGE -> params.setOffset(getOffset(fhir));
+        case "_id" -> params.setIds(v);
+        case "url" -> params.setUri(v);
+        case "version" -> params.setVersionVersion(v);
+        case "name" -> params.setName(v);
+        case "title" -> params.setTitle(v);
+        case "status" -> params.setVersionStatus(v);
+        case "publisher" -> params.setPublisher(v);
+        case "description" -> params.setDescriptionContains(v);
+        default -> throw new ApiClientException("Search by '" + k + "' not supported");
+      }
+    });
+    params.setVersionsDecorated(true);
+    return params;
   }
 }

@@ -1,8 +1,11 @@
 package com.kodality.termx.fhir.conceptmap;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceVersion;
 import com.kodality.kefhir.core.model.VersionId;
+import com.kodality.kefhir.core.model.search.SearchCriterion;
+import com.kodality.kefhir.core.model.search.SearchResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termx.fhir.BaseFhirResourceStorage;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirMapper;
@@ -11,6 +14,10 @@ import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.terminology.mapset.MapSetService;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termx.terminology.mapset.version.MapSetVersionService;
+import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
 import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
@@ -52,11 +59,27 @@ public class ConceptMapResourceStorage extends BaseFhirResourceStorage {
     }
     MapSetVersion version = versionNumber == null ? mapSetVersionService.loadLastVersion(id) :
         mapSetVersionService.load(id, versionNumber).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "resource not found"));
-
-    List<MapSetAssociation> associations = mapSetAssociationService.query(new MapSetAssociationQueryParams().setMapSetVersionId(version.getId()).all()).getData();
-    version.setAssociations(associations);
+    version.setAssociations(loadAssociations(version));
     return toFhir(mapSet, version);
   }
+
+  @Override
+  public SearchResult search(SearchCriterion criteria) {
+    QueryResult<MapSet> result = mapSetService.query(ConceptMapFhirMapper.fromFhir(criteria));
+    return new SearchResult(result.getMeta().getTotal(), result.getData().stream().flatMap(ms -> ms.getVersions().stream().map(msv -> {
+      msv.setAssociations(loadAssociations(msv));
+      return toFhir(ms, msv);
+    })).toList());
+  }
+
+
+  private List<MapSetAssociation> loadAssociations(MapSetVersion version) {
+    if (version == null) {
+      return List.of();
+    }
+    return mapSetAssociationService.query(new MapSetAssociationQueryParams().setMapSetVersionId(version.getId()).all()).getData();
+  }
+
 
   private ResourceVersion toFhir(MapSet ms, MapSetVersion msv) {
     List<Provenance> provenances = provenanceService.find("MapSetVersion|" + msv.getId());

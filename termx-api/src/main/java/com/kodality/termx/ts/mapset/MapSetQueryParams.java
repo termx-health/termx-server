@@ -18,15 +18,17 @@ public class MapSetQueryParams extends QueryParams {
   private String uriContains;
   private String name;
   private String nameContains;
+  private String title;
+  private String titleContains;
   private String description;
   private String descriptionContains;
-  private String sourceValueSet;
-  private String targetValueSet;
+  private String publisher;
 
   private String text;
   private String textContains;
 
   private String versionVersion;
+  private String versionStatus;
   private boolean versionsDecorated;
 
   private String lang;

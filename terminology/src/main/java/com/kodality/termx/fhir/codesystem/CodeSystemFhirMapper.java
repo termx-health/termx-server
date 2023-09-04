@@ -19,6 +19,7 @@ import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyKind;
+import com.kodality.termx.ts.codesystem.EntityPropertyReference;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.zmei.fhir.Extension;
@@ -171,7 +172,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (CollectionUtils.isEmpty(propertyValues)) {
       return null;
     }
-    Map<Long, EntityProperty> entityProperties = properties.stream().collect(Collectors.toMap(ep -> ep.getId(), ep -> ep));
+    Map<Long, EntityProperty> entityProperties = properties.stream().collect(Collectors.toMap(EntityPropertyReference::getId, ep -> ep));
     return propertyValues.stream().map(pv -> {
       EntityProperty entityProperty = entityProperties.get(pv.getEntityPropertyId());
       CodeSystemConceptProperty fhir = new CodeSystemConceptProperty();
@@ -442,7 +443,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         case "_id" -> params.setIds(v);
         case "system", "url" -> params.setUri(v);
         case "version" -> params.setVersionVersion(v);
-        case "title", "name" -> params.setNameContains(v);
+        case "name" -> params.setName(v);
+        case "title" -> params.setTitle(v);
         case "status" -> params.setVersionStatus(v);
         case "publisher" -> params.setPublisher(v);
         case "description" -> params.setDescriptionContains(v);

@@ -86,23 +86,21 @@
           ],
           "searchParam": [
             {
-              "name": "date",
-              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-date",
-              "type": "date"
+              "name": "_count",
+              "type": "number"
             },
             {
-              "name": "name",
-              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-name",
-              "type": "string"
+              "name": "_page",
+              "type": "number"
             },
             {
-              "name": "reference",
-              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-reference",
-              "type": "uri"
+              "name": "_id",
+              "type": "string",
+              "documentation": "The ID of the resource"
             },
             {
-              "name": "status",
-              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-status",
+              "name": "version",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-version",
               "type": "token"
             },
             {
@@ -111,8 +109,38 @@
               "type": "uri"
             },
             {
-              "name": "version",
-              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-version",
+              "name": "name",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-name",
+              "type": "string"
+            },
+            {
+              "name": "title",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-title",
+              "type": "string"
+            },
+            {
+              "name": "status",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-status",
+              "type": "token"
+            },
+            {
+              "name": "reference",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-reference",
+              "type": "uri"
+            },
+            {
+              "name": "publisher",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-publisher",
+              "type": "string"
+            },
+            {
+              "name": "description",
+              "definition": "http://hl7.org/fhir/SearchParameter/ValueSet-description",
+              "type": "string"
+            },
+            {
+              "name": "code",
+              "definition": "This special parameter searches for codes in the value set. See additional notes on the ValueSet resource",
               "type": "token"
             }
           ],
@@ -149,11 +177,11 @@
           "readHistory": true,
           "searchParam": [
             {
-              "name": "_sort",
-              "type": "string"
+              "name": "_count",
+              "type": "number"
             },
             {
-              "name": "_count",
+              "name": "_page",
               "type": "number"
             },
             {
@@ -162,51 +190,9 @@
               "documentation": "The ID of the resource"
             },
             {
-              "name": "_lastUpdated",
-              "type": "date"
-            },
-            {
-              "name": "_security",
-              "type": "token"
-            },
-            {
-              "name": "_tag",
-              "type": "token"
-            },
-            {
-              "name": "description",
-              "type": "string",
-              "documentation": "The description of the code system"
-            },
-            {
-              "name": "identifier",
-              "type": "token",
-              "documentation": "External identifier for the code system"
-            },
-            {
-              "name": "name",
-              "type": "string",
-              "documentation": "Computationally friendly name of the code system"
-            },
-            {
-              "name": "publisher",
-              "type": "string",
-              "documentation": "Name of the publisher of the code system"
-            },
-            {
-              "name": "status",
-              "type": "token",
-              "documentation": "The current status of the code system"
-            },
-            {
               "name": "system",
               "type": "uri",
               "documentation": "The system for any codes defined by this code system (same as 'url')"
-            },
-            {
-              "name": "title",
-              "type": "string",
-              "documentation": "The human-friendly name of the code system"
             },
             {
               "name": "url",
@@ -217,6 +203,41 @@
               "name": "version",
               "type": "token",
               "documentation": "The business version of the code system"
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "documentation": "Computationally friendly name of the code system"
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "documentation": "The human-friendly name of the code system"
+            },
+            {
+              "name": "status",
+              "type": "token",
+              "documentation": "The current status of the code system"
+            },
+            {
+              "name": "publisher",
+              "type": "string",
+              "documentation": "Name of the publisher of the code system"
+            },
+            {
+              "name": "description",
+              "type": "string",
+              "documentation": "The description of the code system"
+            },
+            {
+              "name": "content-mode",
+              "type": "token",
+              "documentation": "not-present | example | fragment | complete | supplement"
+            },
+            {
+              "name": "code",
+              "type": "token",
+              "documentation": "A code defined in the code system"
             }
           ],
           "operation": [
@@ -269,29 +290,17 @@
           ],
           "searchParam": [
             {
-              "name": "date",
-              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-date",
-              "type": "date"
+              "name": "_count",
+              "type": "number"
             },
             {
-              "name": "name",
-              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-name",
-              "type": "string"
+              "name": "_page",
+              "type": "number"
             },
             {
-              "name": "status",
-              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-status",
-              "type": "token"
-            },
-            {
-              "name": "source",
-              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-source",
-              "type": "reference"
-            },
-            {
-              "name": "target",
-              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-target",
-              "type": "reference"
+              "name": "_id",
+              "type": "string",
+              "documentation": "The ID of the resource"
             },
             {
               "name": "url",
@@ -302,6 +311,31 @@
               "name": "version",
               "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-version",
               "type": "token"
+            },
+            {
+              "name": "name",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-name",
+              "type": "string"
+            },
+            {
+              "name": "title",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-title",
+              "type": "string"
+            },
+            {
+              "name": "status",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-status",
+              "type": "token"
+            },
+            {
+              "name": "publisher",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-publisher",
+              "type": "string"
+            },
+            {
+              "name": "description",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-description",
+              "type": "string"
             }
           ],
           "operation": [

@@ -118,12 +118,14 @@ public class CodeSystemRepository extends BaseRepository {
     }
     sb.appendIfNotNull("and cs.uri ~* ?", params.getUriContains());
     sb.appendIfNotNull("and cs.content = ?", params.getContent());
-    sb.appendIfNotNull("and cs.description = ?", params.getDescription());
-    sb.appendIfNotNull("and cs.description ~* ?", params.getDescriptionContains());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%`' || terminology.search_translate(?) || '`%'", params.getDescription());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%' || terminology.search_translate(?) || '%'", params.getDescriptionContains());
     sb.appendIfNotNull("and cs.base_code_system = ?", params.getBaseCodeSystem());
     sb.appendIfNotNull("and cs.publisher = ?", params.getPublisher());
-    sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getName());
-    sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%' || terminology.search_translate(?) || '%'", params.getNameContains());
+    sb.appendIfNotNull("and cs.name = ?", params.getName());
+    sb.appendIfNotNull("and cs.name ~* ?", params.getNameContains());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getTitle());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%' || terminology.search_translate(?) || '%'", params.getTitleContains());
     if (StringUtils.isNotEmpty(params.getText())) {
       sb.append("and ( terminology.text_search(cs.id, cs.uri, cs.name) like '%`' || terminology.search_translate(?) || '`%'" +
               "     or terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '`%' )",

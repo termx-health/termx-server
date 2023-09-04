@@ -89,10 +89,12 @@ public class ValueSetRepository extends BaseRepository {
     }
     sb.appendIfNotNull("and vs.uri = ?", params.getUri());
     sb.appendIfNotNull("and vs.uri ~* ?", params.getUriContains());
-    sb.appendIfNotNull("and vs.description = ?", params.getDescription());
-    sb.appendIfNotNull("and vs.description ~* ?", params.getDescriptionContains());
-    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getName());
-    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%' || terminology.search_translate(?) || '%'", params.getNameContains());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%`' || terminology.search_translate(?) || '`%'", params.getDescription());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%' || terminology.search_translate(?) || '%'", params.getDescriptionContains());
+    sb.appendIfNotNull("and vs.name = ?", params.getName());
+    sb.appendIfNotNull("and vs.name ~* ?", params.getNameContains());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getTitle());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%' || terminology.search_translate(?) || '%'", params.getTitleContains());
     if (StringUtils.isNotEmpty(params.getText())) {
       sb.append("and ( terminology.text_search(vs.id, vs.uri) like '%`' || terminology.search_translate(?) || '`%'" +
               "     or terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%' )",

@@ -81,17 +81,18 @@ public class MapSetRepository extends BaseRepository {
     sb.appendIfNotNull("and ms.id = ?", params.getId());
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("ms.id", p));
     sb.appendIfNotNull("and ms.id ~* ?", params.getIdContains());
+    sb.appendIfNotNull("and ms.publisher = ?", params.getPublisher());
     if (CollectionUtils.isNotEmpty(params.getPermittedIds())) {
       sb.and().in("ms.id", params.getPermittedIds());
     }
     sb.appendIfNotNull("and ms.uri = ?", params.getUri());
     sb.appendIfNotNull("and ms.uri ~* ?", params.getUriContains());
-    sb.appendIfNotNull("and ms.description = ?", params.getDescription());
-    sb.appendIfNotNull("and ms.description ~* ?", params.getDescriptionContains());
-    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ms.names) where value = ?)", params.getName());
-    sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ms.names) where value ~* ?)", params.getNameContains());
-    sb.appendIfNotNull("and ms.source_value_set = ?", params.getSourceValueSet());
-    sb.appendIfNotNull("and ms.target_value_set = ?", params.getTargetValueSet());
+    sb.appendIfNotNull("and terminology.jsonb_search(ms.description) like '%`' || terminology.search_translate(?) || '`%'", params.getDescription());
+    sb.appendIfNotNull("and terminology.jsonb_search(ms.description) like '%' || terminology.search_translate(?) || '%'", params.getDescriptionContains());
+    sb.appendIfNotNull("and terminology.jsonb_search(ms.title) like '%`' || terminology.search_translate(?) || '`%'", params.getTitle());
+    sb.appendIfNotNull("and terminology.jsonb_search(ms.title) like '%' || terminology.search_translate(?) || '%'", params.getTitleContains());
+    sb.appendIfNotNull("and ms.name = ?", params.getName());
+    sb.appendIfNotNull("and ms.name ~* ?", params.getNameContains());
     if (StringUtils.isNotEmpty(params.getText())) {
       sb.append("and ( terminology.text_search(ms.id, ms.uri, ms.name) like '%`' || terminology.search_translate(?) || '`%'" +
               "     or terminology.jsonb_search(ms.title) like '%`' || terminology.search_translate(?) || '`%' )",
@@ -103,6 +104,7 @@ public class MapSetRepository extends BaseRepository {
           params.getTextContains(), params.getTextContains());
     }
     sb.appendIfNotNull("and msv.version = ?", params.getVersionVersion());
+    sb.appendIfNotNull("and msv.status = ?", params.getVersionStatus());
     sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
     sb.appendIfNotNull("and p.id = ?", params.getPackageId());
     sb.appendIfNotNull("and s.id = ?", params.getSpaceId());

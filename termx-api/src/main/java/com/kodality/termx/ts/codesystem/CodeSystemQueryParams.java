@@ -21,6 +21,8 @@ public class CodeSystemQueryParams extends QueryParams {
   private String content;
   private String name;
   private String nameContains;
+  private String title;
+  private String titleContains;
   private String description;
   private String descriptionContains;
   private String baseCodeSystem;
