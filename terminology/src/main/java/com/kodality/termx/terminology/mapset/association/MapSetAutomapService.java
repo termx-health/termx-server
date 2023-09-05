@@ -10,6 +10,7 @@ import com.kodality.termx.ts.mapset.MapSetConceptQueryParams;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
@@ -58,20 +59,21 @@ public class MapSetAutomapService {
   }
 
   private Map<String, List<MapSetConcept>> groupByDesignations(List<MapSetConcept> concepts, MapSetAutomapRequest request) {
-    return concepts.stream().flatMap(s -> Optional.ofNullable(s.getDesignations()).orElse(List.of()).stream()
+    return concepts.stream().flatMap(c -> Optional.ofNullable(c.getDesignations()).orElse(List.of()).stream()
             .filter(d -> {
               boolean prop = request.getSourceProperty() == null || d.getDesignationType().equals(request.getSourceProperty());
               boolean lang = request.getSourceLanguage() == null || d.getLanguage().equals(request.getSourceLanguage());
               return prop && lang;
-            }).map(d -> Pair.of(d.getLanguage() + d.getName().toLowerCase(), s)))
+            }).map(d -> Pair.of(d.getLanguage() + d.getName().toLowerCase(), c)))
         .collect(Collectors.groupingBy(Pair::getKey, Collectors.mapping(Pair::getValue, Collectors.toList())));
   }
 
   private List<MapSetAssociation> automap(Map<String, List<MapSetConcept>> sources, Map<String, List<MapSetConcept>> targets) {
     return sources.keySet().stream().filter(targets::containsKey).flatMap(k -> sources.get(k).stream().flatMap(s -> targets.get(k).stream()
         .filter(t -> associationNotExist(s, t))
-        .map(t -> toAssociation(s, t)))
-    ).toList();
+        .map(t -> toAssociation(s, t))))
+        .collect(Collectors.groupingBy(a -> a.getSource().getCode() + a.getSource().getCodeSystem() + a.getTarget().getCode() + a.getTarget().getCodeSystem()))
+        .values().stream().map(v -> v.stream().findFirst().orElse(null)).filter(Objects::nonNull).toList();
   }
 
   private MapSetAssociation toAssociation(MapSetConcept s, MapSetConcept t) {

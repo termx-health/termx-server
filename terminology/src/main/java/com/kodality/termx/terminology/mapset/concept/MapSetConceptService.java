@@ -101,7 +101,6 @@ public class MapSetConceptService {
   private QueryResult<MapSetConcept> queryValueSetConcepts(MapSetVersion msv, MapSetResourceReference vs, MapSetConceptQueryParams params) {
     List<ValueSetVersionConcept> concepts = valueSetConceptService.expand(vs.getId(), vs.getVersion());
     concepts = concepts.stream().filter(c -> params.getTextContains() == null || c.getConcept().getCode().contains(params.getTextContains())).toList();
-    concepts = params.getLimit() >= 0 && params.getLimit() < concepts.size() ? concepts.subList(params.getOffset(), params.getLimit()) : concepts;
 
     Map<String, List<MapSetAssociation>> associations = CollectionUtils.isEmpty(concepts) ? Map.of() :
         mapSetAssociationRepository.query(new MapSetAssociationQueryParams().setMapSetVersionId(msv.getId()).setVerified(params.getVerified()).setSourceCodes(concepts.stream().map(c -> c.getConcept().getCode()).collect(Collectors.joining(","))).all())
@@ -118,13 +117,17 @@ public class MapSetConceptService {
         .setAssociations(associations.getOrDefault(c.getConcept().getCode() + c.getConcept().getCodeSystem(), List.of()));
     }).toList();
 
+    if (params.getUnmapped() != null) {
+      msc = msc.stream().filter(c -> params.getUnmapped() ? CollectionUtils.isEmpty(c.getAssociations()) : CollectionUtils.isNotEmpty(c.getAssociations())).toList();
+    }
+
     QueryResult<MapSetConcept> mscr = new QueryResult<>();
     SearchResultMeta meta = new SearchResultMeta();
-    meta.setTotal(concepts.size());
+    meta.setTotal(msc.size());
     meta.setOffset(params.getOffset());
     mscr.setMeta(meta);
-    mscr.setData(msc);
-    return new QueryResult<>(msc);
+    mscr.setData(params.getLimit() >= 0 && params.getLimit() < concepts.size() ? msc.subList(params.getOffset(), params.getLimit()) : msc);
+    return mscr;
   }
 
 }

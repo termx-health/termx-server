@@ -5,9 +5,8 @@ import com.kodality.taskflow.task.Task;
 import com.kodality.taskflow.task.Task.TaskStatus;
 import com.kodality.taskflow.workflow.Workflow;
 import com.kodality.taskflow.workflow.WorkflowService;
-import com.kodality.termx.sys.provenance.Provenance;
-import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.task.TaskType;
+import com.kodality.termx.terminology.valueset.ValueSetProvenanceService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import java.util.Optional;
@@ -19,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ValueSetTaskStatusChangeInterceptor extends TaskStatusChangeInterceptor {
   private final WorkflowService workflowService;
-  private final ProvenanceService provenanceService;
+  private final ValueSetProvenanceService provenanceService;
   private final ValueSetVersionService valueSetVersionService;
   public static final String VS_VERSION = "value-set-version";
 
@@ -33,19 +32,13 @@ public class ValueSetTaskStatusChangeInterceptor extends TaskStatusChangeInterce
     Optional<Long> vsVersionId = task.getContext().stream().filter(ctx -> VS_VERSION.equals(ctx.getType())).findFirst().map(t -> (Long) t.getId());
 
     if (workflow.getTaskType().equals(TaskType.version_review) && vsVersionId.isPresent()) {
-      createValueSetVersionProvenance("reviewed", vsVersionId.get());
+      ValueSetVersion vsv = valueSetVersionService.load(vsVersionId.get());
+      provenanceService.provenanceValueSetVersion("reviewed",vsv.getValueSet(), vsv.getVersion(), () -> {});
     }
     if (workflow.getTaskType().equals(TaskType.version_approval) && vsVersionId.isPresent()) {
-      createValueSetVersionProvenance("approved", vsVersionId.get());
-    }
-  }
-
-  private void createValueSetVersionProvenance(String activity, Long vsVersionId) {
-    ValueSetVersion version = valueSetVersionService.load(vsVersionId);
-    provenanceService.create(new Provenance(activity, "ValueSetVersion", version.getId().toString())
-        .addContext("part-of", "ValueSet", version.getValueSet()));
-    if (activity.equals("approved")) {
-      valueSetVersionService.activate(version.getValueSet(), version.getVersion());
+      ValueSetVersion vsv = valueSetVersionService.load(vsVersionId.get());
+      provenanceService.provenanceValueSetVersion("approved", vsv.getValueSet(), vsv.getVersion(),
+          () -> valueSetVersionService.activate(vsv.getValueSet(), vsv.getVersion()));
     }
   }
 }

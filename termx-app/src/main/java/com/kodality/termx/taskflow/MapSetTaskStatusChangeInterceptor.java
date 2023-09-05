@@ -33,15 +33,12 @@ public class MapSetTaskStatusChangeInterceptor extends TaskStatusChangeIntercept
 
     if (workflow.getTaskType().equals(TaskType.version_review) && msVersionId.isPresent()) {
       MapSetVersion msv = mapSetVersionService.load(msVersionId.get());
-      provenanceService.provenanceMapSetVersion("reviewed", msv.getMapSet(), msv.getVersion(), () -> {
-        mapSetVersionService.activate(msv.getMapSet(), msv.getVersion());
-      });
+      provenanceService.provenanceMapSetVersion("reviewed", msv.getMapSet(), msv.getVersion(), () -> {});
     }
     if (workflow.getTaskType().equals(TaskType.version_approval) && msVersionId.isPresent()) {
       MapSetVersion msv = mapSetVersionService.load(msVersionId.get());
-      provenanceService.provenanceMapSetVersion("approved", msv.getMapSet(), msv.getVersion(), () -> {
-        mapSetVersionService.activate(msv.getMapSet(), msv.getVersion());
-      });
+      provenanceService.provenanceMapSetVersion("approved", msv.getMapSet(), msv.getVersion(),
+          () -> mapSetVersionService.activate(msv.getMapSet(), msv.getVersion()));
     }
   }
 }

@@ -38,15 +38,12 @@ public class CodeSystemTaskStatusChangeInterceptor extends TaskStatusChangeInter
 
     if (workflow.getTaskType().equals(TaskType.version_review) && csVersionId.isPresent()) {
       CodeSystemVersion csv = codeSystemVersionService.load(csVersionId.get());
-      provenanceService.provenanceCodeSystemVersion("reviewed",csv.getCodeSystem(), csv.getVersion(), () -> {
-        codeSystemVersionService.activate(csv.getCodeSystem(), csv.getVersion());
-      });
+      provenanceService.provenanceCodeSystemVersion("reviewed",csv.getCodeSystem(), csv.getVersion(), () -> {});
     }
     if (workflow.getTaskType().equals(TaskType.version_approval) && csVersionId.isPresent()) {
       CodeSystemVersion csv = codeSystemVersionService.load(csVersionId.get());
-      provenanceService.provenanceCodeSystemVersion("approved", csv.getCodeSystem(), csv.getVersion(), () -> {
-        codeSystemVersionService.activate(csv.getCodeSystem(), csv.getVersion());
-      });
+      provenanceService.provenanceCodeSystemVersion("approved", csv.getCodeSystem(), csv.getVersion(),
+          () -> codeSystemVersionService.activate(csv.getCodeSystem(), csv.getVersion()));
     }
     if (workflow.getTaskType().equals(TaskType.concept_approval) && csEntityVersionId.isPresent()) {
       createConceptProvenance(csVersionId.orElse(null), csEntityVersionId.get());
