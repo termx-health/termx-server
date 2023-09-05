@@ -35,14 +35,15 @@ import org.apache.commons.lang3.tuple.Pair;
 public class SnowstormClient {
   protected HttpClient client;
   protected BinaryHttpClient binaryHttpClient;
-  private static final String branch = "MAIN/SNOMEDCT-EE/";
+  protected String branch;
 
   public SnowstormClient() {
   }
 
-  public SnowstormClient(String snomedUrl, Function<String, Pair<HttpClient, BinaryHttpClient>> clientProvider) {
+  public SnowstormClient(String snomedUrl, String snomedBranch, Function<String, Pair<HttpClient, BinaryHttpClient>> clientProvider) {
     client = clientProvider.apply(snomedUrl).getLeft();
     binaryHttpClient = clientProvider.apply(snomedUrl).getRight();
+    branch = snomedBranch + "/";
   }
 
   public CompletableFuture<List<SnomedBranch>> loadBranches() {

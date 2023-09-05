@@ -1,19 +1,25 @@
 package com.kodality.termx.fileimporter.mapset;
 
 import com.kodality.termx.ApiError;
+import com.kodality.termx.fhir.FhirFshConverter;
 import com.kodality.termx.fhir.conceptmap.ConceptMapFhirImportService;
 import com.kodality.termx.fileimporter.mapset.utils.MapSetFileImportRequest;
 import com.kodality.termx.fileimporter.mapset.utils.MapSetFileImportRow;
 import com.kodality.termx.fileimporter.mapset.utils.MapSetFileProcessingMapper;
 import com.kodality.termx.terminology.mapset.MapSetImportService;
 import com.kodality.termx.terminology.mapset.MapSetService;
+import com.kodality.termx.terminology.mapset.version.MapSetVersionService;
+import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.mapset.MapSet;
+import com.kodality.termx.ts.mapset.MapSetImportAction;
+import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +31,10 @@ import static com.kodality.termx.fileimporter.FileParser.csvParser;
 @RequiredArgsConstructor
 public class MapSetFileImportService {
   private final MapSetService mapSetService;
+  private final MapSetVersionService mapSetVersionService;
   private final MapSetImportService importService;
   private final ConceptMapFhirImportService fhirImportService;
+  private final Optional<FhirFshConverter> fhirFshConverter;
 
   private final List<String> VALID_HEADERS = List.of(
       "sourceCodeSystem", "sourceVersion", "sourceCode",
@@ -36,22 +44,36 @@ public class MapSetFileImportService {
   );
 
   public void process(MapSetFileImportRequest req, byte[] file) {
-    if ("json".equals(req.getType())) {
-      fhirImportService.importMapSet(new String(file, StandardCharsets.UTF_8), req.getMap().getId());
+    MapSetImportAction action = new MapSetImportAction();
+    action.setActivate(PublicationStatus.active.equals(req.getMapSetVersion().getStatus()));
+    action.setCleanRun(req.isCleanRun());
+    action.setCleanAssociationRun(req.isCleanAssociationRun());
+
+    if (req.getUrl() != null ) {
+      fhirImportService.importMapSetFromUrl(req.getUrl(), req.getMapSet().getId(), action);
       return;
-    } //TODO fsh file import
+    }
+    if ("json".equals(req.getType())) {
+      fhirImportService.importMapSet(new String(file, StandardCharsets.UTF_8), req.getMapSet().getId(), action);
+      return;
+    }
+    if ("fsh".equals(req.getType())) {
+      String json = fhirFshConverter.orElseThrow(ApiError.TE806::toApiException).toFhir(new String(file, StandardCharsets.UTF_8)).join();
+      fhirImportService.importMapSet(json, req.getMapSet().getId(), action);
+    }
 
     List<MapSetFileImportRow> rows = parseRows(file);
-    saveProcessingResult(req, rows);
+    save(req, rows, action);
   }
 
-  private void saveProcessingResult(MapSetFileImportRequest req, List<MapSetFileImportRow> rows) {
+  private void save(MapSetFileImportRequest req, List<MapSetFileImportRow> rows, MapSetImportAction action) {
     MapSetFileProcessingMapper mapper = new MapSetFileProcessingMapper();
-
-    MapSet existingMapSet = mapSetService.load(req.getMap().getId()).orElse(null);
-    MapSet mapSet = mapper.mapMapSet(req, rows, existingMapSet);
+    MapSet existingMapSet = mapSetService.load(req.getMapSet().getId()).orElse(null);
+    MapSetVersion existingMapSetVersion = mapSetVersionService.load(req.getMapSet().getId(), req.getMapSetVersion().getVersion()).orElse(null);
+    MapSet mapSet = mapper.mapMapSet(req, rows, existingMapSet, existingMapSetVersion);
     List<AssociationType> associationTypes = mapper.mapAssociationTypes(rows);
-    importService.importMapSet(mapSet, associationTypes);
+
+    importService.importMapSet(mapSet, associationTypes, action);
   }
 
   private List<MapSetFileImportRow> parseRows(byte[] csvFile) {

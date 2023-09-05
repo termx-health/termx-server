@@ -8,10 +8,10 @@ import lombok.RequiredArgsConstructor;
 @Singleton
 @RequiredArgsConstructor
 public class TerminologyMapSetImportProvider extends MapSetImportProvider {
-  private final MapSetImportService importService;
+  private final MapSetService mapSetService;
 
   @Override
   public void importMapSet(MapSetTransactionRequest request) {
-    importService.importMapSet(request);
+    mapSetService.save(request);
   }
 }

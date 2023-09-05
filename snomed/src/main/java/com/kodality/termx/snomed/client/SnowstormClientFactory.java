@@ -19,6 +19,9 @@ public class SnowstormClientFactory {
   @Value("${snowstorm.url}")
   private String snowstormUrl;
 
+  @Value("${snowstorm.branch}")
+  private Optional<String> snowstormBranch;
+
   @Value("${snowstorm.user}")
   private Optional<String> snowstormUser;
 
@@ -27,7 +30,7 @@ public class SnowstormClientFactory {
 
   @Bean
   public SnowstormClient getSnowstormClient() {
-    return new SnowstormClient(snowstormUrl, baseUrl -> Pair.of(new HttpClient(baseUrl) {
+    return new SnowstormClient(snowstormUrl, snowstormBranch.orElse("MAIN"), baseUrl -> Pair.of(new HttpClient(baseUrl) {
       @Override
       public Builder builder(String path) {
         return SnowstormClientFactory.builder(super.builder(path), snowstormUser, snowstormPassword);

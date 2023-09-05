@@ -1,6 +1,7 @@
 package com.kodality.termx.fileimporter.mapset.utils;
 
 import com.kodality.commons.model.LocalizedName;
+import com.kodality.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
 import io.micronaut.core.annotation.Introspected;
 import java.time.LocalDate;
 import lombok.Getter;
@@ -10,26 +11,30 @@ import lombok.Setter;
 @Setter
 @Introspected
 public class MapSetFileImportRequest {
-  private String type; // csv; json;
+  private String type; // csv; json; fsh;
+  private String url;
 
-  private String sourceValueSet;
-  private String targetValueSet;
-  private MapSetFileImportRequestMap map;
-  private MapSetFileImportRequestVersion version;
+  private MapSetFileImportRequestMap mapSet;
+  private MapSetFileImportRequestVersion mapSetVersion;
 
+  private boolean cleanRun;
+  private boolean cleanAssociationRun;
 
   @Getter
   @Setter
   public static class MapSetFileImportRequestMap {
     private String id;
-    private LocalizedName names;
+    private LocalizedName title;
     private String uri;
+    private LocalizedName description;
   }
 
   @Getter
   @Setter
   public static class MapSetFileImportRequestVersion {
+    private String status;
     private String version;
     private LocalDate releaseDate;
+    private MapSetVersionScope scope;
   }
 }

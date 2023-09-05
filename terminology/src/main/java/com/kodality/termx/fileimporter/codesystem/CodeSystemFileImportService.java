@@ -6,6 +6,7 @@ import com.kodality.commons.model.Issue;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ApiError;
+import com.kodality.termx.fhir.FhirFshConverter;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirImportService;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportProcessor;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportRequest;
@@ -85,6 +86,7 @@ public class CodeSystemFileImportService {
   private final CodeSystemVersionService codeSystemVersionService;
   private final ConceptService conceptService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final Optional<FhirFshConverter> fhirFshConverter;
 
   private final BinaryHttpClient client = new BinaryHttpClient();
 
@@ -98,8 +100,12 @@ public class CodeSystemFileImportService {
     if ("json".equals(request.getType())) {
       codeSystemFhirImportService.importCodeSystem(new String(file, StandardCharsets.UTF_8), request.getCodeSystem().getId());
       return new CodeSystemFileImportResponse();
-    } //TODO fsh file import
-
+    }
+    if ("fsh".equals(request.getType())) {
+      String json = fhirFshConverter.orElseThrow(ApiError.TE806::toApiException).toFhir(new String(file, StandardCharsets.UTF_8)).join();
+      codeSystemFhirImportService.importCodeSystem(json, request.getCodeSystem().getId());
+      return new CodeSystemFileImportResponse();
+    }
     CodeSystemFileImportResult result = CodeSystemFileImportProcessor.process(request.getType(), file, request.getProperties());
     return save(request, result);
   }

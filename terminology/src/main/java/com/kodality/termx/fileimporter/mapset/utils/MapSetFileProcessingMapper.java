@@ -17,30 +17,29 @@ import java.util.Objects;
 
 public class MapSetFileProcessingMapper {
 
-  public MapSet mapMapSet(MapSetFileImportRequest req, List<MapSetFileImportRow> rows, MapSet existingMapSet) {
+  public MapSet mapMapSet(MapSetFileImportRequest req, List<MapSetFileImportRow> rows, MapSet existingMapSet, MapSetVersion existingMapSetVersion) {
     MapSet ms = existingMapSet == null ? new MapSet() : existingMapSet;
-    ms.setId(req.getMap().getId());
-    ms.setUri(req.getMap().getUri() == null ? ms.getUri() : req.getMap().getUri());
-    ms.setTitle(req.getMap().getNames() == null ? ms.getTitle() : req.getMap().getNames());
-    ms.setVersions(List.of(mapVersion(req, rows)));
+    ms.setId(req.getMapSet().getId());
+    ms.setUri(req.getMapSet().getUri() == null ? ms.getUri() : req.getMapSet().getUri());
+    ms.setTitle(req.getMapSet().getTitle() == null ? ms.getTitle() : req.getMapSet().getTitle());
+    ms.setDescription(req.getMapSet().getDescription() == null ? ms.getDescription() : req.getMapSet().getDescription());
+    ms.setVersions(List.of(mapVersion(req, rows, existingMapSetVersion)));
     return ms;
   }
 
-  private static MapSetVersion mapVersion(MapSetFileImportRequest req, List<MapSetFileImportRow> rows) {
-    MapSetVersionScope scope = new MapSetVersionScope();
-    scope.setSourceType("value-set");
-    scope.setSourceValueSet(new MapSetResourceReference().setId(req.getSourceValueSet()));
-    scope.setTargetType("value-set");
-    scope.setTargetValueSet(new MapSetResourceReference().setId(req.getTargetValueSet()));
-
+  private static MapSetVersion mapVersion(MapSetFileImportRequest req, List<MapSetFileImportRow> rows, MapSetVersion existingMapSetVersion) {
     MapSetVersion version = new MapSetVersion();
-    version.setMapSet(req.getMap().getId());
-    version.setVersion(req.getVersion().getVersion());
+    version.setMapSet(req.getMapSet().getId());
+    version.setVersion(req.getMapSetVersion().getVersion());
     version.setStatus(PublicationStatus.draft);
-    version.setReleaseDate(req.getVersion().getReleaseDate());
+    version.setReleaseDate(req.getMapSetVersion().getReleaseDate());
     version.setPreferredLanguage(Language.en);
-    version.setScope(scope);
-    version.setAssociations(mapAssociations(rows, req.getMap().getId()));
+    version.setScope(req.getMapSetVersion().getScope());
+
+    if (existingMapSetVersion != null) {
+      version = existingMapSetVersion;
+    }
+    version.setAssociations(mapAssociations(rows, req.getMapSet().getId()));
     return version;
   }
 

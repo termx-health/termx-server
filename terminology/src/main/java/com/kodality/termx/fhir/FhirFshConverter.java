@@ -42,4 +42,19 @@ public class FhirFshConverter {
         });
   }
 
+  public CompletableFuture<String> toFhir(String fsh) {
+    return client.POST("/fsh2fhir", Map.of("fsh", fsh))
+        .thenApply(r -> ((List<Object>) JsonUtil.toMap(r.body()).get("fhir")).stream().findFirst().map(JsonUtil::toJson).orElseThrow())
+        .exceptionally(e -> {
+          if (e.getCause() instanceof HttpClientError he && he.getResponse().body() != null && he.getResponse().body().startsWith("{")) {
+            Map<String, Object> resp = JsonUtil.toMap(he.getResponse().body());
+            if (resp.containsKey("fhir")) {
+              //oh well. it gives 500 and still returns FSH.... ignore in this case
+              return ((List<Object>) JsonUtil.toMap(he.getResponse().body()).get("fhir")).stream().findFirst().map(JsonUtil::toJson).orElseThrow();
+            }
+          }
+          throw new RuntimeException(e);
+        });
+  }
+
 }

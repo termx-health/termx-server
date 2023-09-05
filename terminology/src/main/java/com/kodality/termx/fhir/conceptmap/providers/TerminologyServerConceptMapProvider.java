@@ -5,6 +5,7 @@ import com.kodality.termx.sys.ResourceType;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceProvider;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceSyncProvider;
 import com.kodality.termx.terminology.FhirClient;
+import com.kodality.termx.ts.mapset.MapSetImportAction;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,6 @@ public class TerminologyServerConceptMapProvider implements TerminologyServerRes
   public void syncFrom(String serverRootUrl, String resourceId) {
     FhirClient client = new FhirClient(serverRootUrl + "/fhir");
     ConceptMap conceptMap = client.<ConceptMap>read("ConceptMap", resourceId).join();
-    importService.importMapSet(conceptMap);
+    importService.importMapSet(conceptMap, new MapSetImportAction());
   }
 }

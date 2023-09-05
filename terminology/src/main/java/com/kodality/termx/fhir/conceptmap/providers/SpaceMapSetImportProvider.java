@@ -7,6 +7,7 @@ import com.kodality.termx.sys.space.resource.SpaceResourceProvider;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import com.kodality.termx.terminology.mapset.MapSetService;
 import com.kodality.termx.ts.mapset.MapSet;
+import com.kodality.termx.ts.mapset.MapSetImportAction;
 import com.kodality.termx.ts.mapset.MapSetQueryParams;
 import jakarta.inject.Singleton;
 import java.util.List;
@@ -50,7 +51,7 @@ public class SpaceMapSetImportProvider implements SpaceResourceProvider {
   private List<String> importCodeSystems(List<ImportUrl> urls) {
     return urls.stream().map(url -> {
       try {
-        msFhirImportService.importMapSetFromUrl(url.url, url.resourceId);
+        msFhirImportService.importMapSetFromUrl(url.url, url.resourceId, new MapSetImportAction());
         return url.resourceId;
       } catch (Exception e) {
         log.error(e.getMessage());

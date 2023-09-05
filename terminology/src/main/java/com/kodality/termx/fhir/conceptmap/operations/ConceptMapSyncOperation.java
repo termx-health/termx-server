@@ -8,6 +8,7 @@ import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.conceptmap.ConceptMapFhirImportService;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
+import com.kodality.termx.ts.mapset.MapSetImportAction;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
@@ -60,7 +61,7 @@ public class ConceptMapSyncOperation implements TypeOperationDefinition {
           String url = res.findPart("url").map(ParametersParameter::getValueString).orElseThrow();
           String id = res.findPart("id").map(ParametersParameter::getValueString).orElseThrow();
           try {
-            importService.importMapSetFromUrl(url, id);
+            importService.importMapSetFromUrl(url, id, new MapSetImportAction());
             successes.add(String.format("ConceptMap from resource %s imported", url));
           } catch (Exception e) {
             warnings.add(String.format("ConceptMap from resource %s was not imported due to error: %s", url, e.getMessage()));

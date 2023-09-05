@@ -65,6 +65,7 @@ snowstorm:
   url: https://snowstorm.kodality.dev/
   user: termserver-app
   password: ''
+  branch: 'MAIN'
 
 chef.url: https://termx.kodality.dev/chef
 #github:
