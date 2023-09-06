@@ -11,7 +11,6 @@ import spock.lang.Unroll
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-import static com.kodality.termx.ts.codesystem.EntityProperty.EntityPropertyRule
 
 class CodeSystemValidationServiceTest extends Specification {
   def conceptService = Mock(ConceptService)

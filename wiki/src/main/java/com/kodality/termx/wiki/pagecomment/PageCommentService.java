@@ -4,12 +4,16 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.sys.provenance.ProvenanceService;
+import com.kodality.termx.wiki.ApiError;
 import com.kodality.termx.wiki.page.PageComment;
 import com.kodality.termx.wiki.page.PageCommentQueryParams;
+import com.kodality.termx.wiki.page.PageCommentStatus;
+import com.kodality.termx.wiki.pagecomment.interceptors.PageCommentInterceptorService;
 import java.util.Objects;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
 @Slf4j
@@ -17,26 +21,42 @@ import lombok.extern.slf4j.Slf4j;
 public class PageCommentService {
   private final ProvenanceService provenanceService;
   private final PageCommentRepository commentRepository;
+  private final PageCommentInterceptorService interceptor;
+
+  public PageComment load(Long id) {
+    return commentRepository.load(id);
+  }
 
   public QueryResult<PageComment> query(PageCommentQueryParams params) {
     return commentRepository.query(params);
   }
 
+  @Transactional
   public PageComment create(PageComment comment) {
     PageComment persisted = internalSave(comment);
     provenanceService.create(new Provenance("created", "PageComment", persisted.getId().toString()));
-    return commentRepository.load(persisted.getId());
+
+    PageComment c = commentRepository.load(persisted.getId());
+    interceptor.afterCommentCreate(c);
+    return c;
   }
 
+  @Transactional
   public PageComment update(PageComment comment) {
     validateAuthor(comment.getId());
     PageComment updated = internalSave(comment);
     provenanceService.create(new Provenance("modified", "PageComment", updated.getId().toString()));
-    return commentRepository.load(updated.getId());
+
+    PageComment c = commentRepository.load(updated.getId());
+    interceptor.afterCommentUpdate(c);
+    return c;
   }
 
+  @Transactional
   public void delete(Long id) {
     validateAuthor(id);
+
+    PageComment c = commentRepository.load(id);
     provenanceService.create(new Provenance("deleted", "PageComment", id.toString()));
     commentRepository.delete(id);
 
@@ -44,6 +64,8 @@ public class PageCommentService {
       provenanceService.create(new Provenance("deleted", "PageComment", replyId.toString()));
       commentRepository.delete(replyId);
     });
+
+    interceptor.afterCommentDelete(c);
   }
 
   private PageComment internalSave(PageComment comment) {
@@ -56,10 +78,14 @@ public class PageCommentService {
   }
 
 
+  @Transactional
   public PageComment resolve(Long id) {
-    commentRepository.resolve(id);
+    commentRepository.updateStatus(id, PageCommentStatus.resolved);
     provenanceService.create(new Provenance("resolved", "PageComment", id.toString()));
-    return commentRepository.load(id);
+
+    PageComment c = commentRepository.load(id);
+    interceptor.afterStatusChange(c);
+    return c;
   }
 
 
@@ -74,7 +100,7 @@ public class PageCommentService {
     }
 
     if (!isAuthor) {
-      throw new RuntimeException("Comment can be changed only by its author");
+      throw ApiError.T021.toApiException();
     }
   }
 }

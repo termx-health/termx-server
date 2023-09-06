@@ -7,7 +7,9 @@ import java.util.Map;
 import lombok.Getter;
 
 public enum ApiError {
-  T000("T000", "Generated slug '{{slug}}' already exists, please change content name.");
+  T000("T000", "Generated slug '{{slug}}' already exists, please change content name."),
+  T021("T021", "Generated slug '{{slug}}' already exists, please change content name.")
+  ;
 
   @Getter
   private String code;

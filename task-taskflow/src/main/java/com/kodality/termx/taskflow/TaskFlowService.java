@@ -2,10 +2,12 @@ package com.kodality.termx.taskflow;
 
 import com.kodality.taskflow.project.ProjectService;
 import com.kodality.taskflow.task.Task;
+import com.kodality.taskflow.task.Task.TaskContextItem;
 import com.kodality.taskflow.task.Task.TaskPriority;
 import com.kodality.taskflow.task.Task.TaskStatus;
 import com.kodality.taskflow.task.TaskSearchParams;
 import com.kodality.taskflow.task.TaskService;
+import com.kodality.taskflow.task.activity.TaskActivityService;
 import com.kodality.taskflow.workflow.WorkflowSearchParams;
 import com.kodality.taskflow.workflow.WorkflowService;
 import io.micronaut.core.util.StringUtils;
@@ -19,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TaskFlowService {
   private final TaskService taskService;
+  private final TaskActivityService taskActivityService;
   private final ProjectService projectService;
   private final WorkflowService workflowService;
 
@@ -37,7 +40,7 @@ public class TaskFlowService {
   }
 
   public void createTask(Task task, String workflow) {
-    String context = task.getContext().stream().map(ctx -> ctx.getType() + "|" + ctx.getId()).collect(Collectors.joining(","));
+    String context = contextString(task.getContext());
     Optional<Task> exitingTask = findTasks(context).stream().findFirst();
     task.setId(exitingTask.map(Task::getId).orElse(null));
     task.setProjectId(getProjectId());
@@ -67,14 +70,25 @@ public class TaskFlowService {
     return workflowService.search(params).findFirst().orElseThrow().getId();
   }
 
-  public void cancelTasks(String context) {
+  private void updateStatus(String context, String newStatus) {
     if (StringUtils.isEmpty(context)) {
       return;
     }
     List<Task> tasks = findTasks(context);
     tasks.forEach(t -> {
-      t.setStatus(TaskStatus.cancelled);
-      taskService.save(t, null);
+      taskService.updateStatus(t.getId(), newStatus);
     });
+  }
+
+  public void cancelTasks(String context) {
+    updateStatus(context, TaskStatus.cancelled);
+  }
+
+  public void completeTasks(String context) {
+    updateStatus(context, TaskStatus.completed);
+  }
+
+  public static String contextString(List<TaskContextItem> contextItems) {
+    return contextItems.stream().map(ctx -> ctx.getType() + "|" + ctx.getId()).collect(Collectors.joining(","));
   }
 }

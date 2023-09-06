@@ -76,9 +76,9 @@ public class PageCommentRepository extends BaseRepository {
     jdbcTemplate.update(sql, id);
   }
 
-  public void resolve(Long id) {
-    String sql = "update wiki.page_comment set status = 'resolved' where sys_status = 'A' and id = ?";
-    jdbcTemplate.update(sql, id);
+  public void updateStatus(Long id, String status) {
+    String sql = "update wiki.page_comment set status = ? where sys_status = 'A' and id = ?";
+    jdbcTemplate.update(sql, status, id);
   }
 
   public List<Long> loadReplyIds(Long parentId) {

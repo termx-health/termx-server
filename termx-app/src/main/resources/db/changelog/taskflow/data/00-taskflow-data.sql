@@ -26,7 +26,7 @@ acl_consume as (
 select * from ins, acl_consume;
 --
 
---changeset kodality:taskflow.workflow-data-2
+--changeset kodality:taskflow.workflow-data-3
 with vals(project_id, task_type, transitions) as (values
   ((select id from taskflow.project where institution = '1' and code = 'termx'),
   'version-review',
@@ -59,6 +59,17 @@ with vals(project_id, task_type, transitions) as (values
     '{"from": "requested", "to": "cancelled"}'::jsonb,
     '{"from": "accepted", "to": "cancelled"}'::jsonb,
     '{"from": "rejected", "to": "cancelled"}'::jsonb
+  )),
+
+  ((select id from taskflow.project where institution = '1' and code = 'termx'),
+  'wiki-page-comment',
+  jsonb_build_array(
+    '{"from": null, "to": "requested"}'::jsonb,
+    '{"from": "requested", "to": "cancelled"}'::jsonb,
+    '{"from": "requested", "to": "accepted"}'::jsonb,
+    '{"from": "requested", "to": "completed"}'::jsonb,
+    '{"from": "accepted", "to": "completed"}'::jsonb,
+    '{"from": "accepted", "to": "cancelled"}'::jsonb
   ))
 )
 insert into taskflow.workflow(project_id, task_type, transitions)
