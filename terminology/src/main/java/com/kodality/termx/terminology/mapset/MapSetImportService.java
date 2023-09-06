@@ -13,7 +13,7 @@ import com.kodality.termx.ts.mapset.MapSetAssociation;
 import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
 import com.kodality.termx.ts.mapset.MapSetImportAction;
 import com.kodality.termx.ts.mapset.MapSetVersion;
-import com.kodality.termx.ts.mapset.MapSetVersionReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -67,13 +67,14 @@ public class MapSetImportService {
 
   private void saveMapSetVersion(MapSetVersion mapSetVersion, boolean cleanRun) {
     Optional<MapSetVersion> existingVersion = mapSetVersionService.load(mapSetVersion.getMapSet(), mapSetVersion.getVersion());
-    mapSetVersion.setId(existingVersion.map(MapSetVersionReference::getId).orElse(mapSetVersion.getId()));
 
     if (cleanRun && existingVersion.isPresent()) {
       log.info("Cancelling existing map set version {}", mapSetVersion.getVersion());
       mapSetVersionService.cancel(existingVersion.get().getId(), existingVersion.get().getMapSet());
     } else if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
       throw ApiError.TE104.toApiException(Map.of("version", mapSetVersion.getVersion()));
+    } else if (existingVersion.isPresent() && existingVersion.get().getStatus().equals(PublicationStatus.draft) && mapSetVersion.getId() == null) {
+      mapSetVersion.setId(existingVersion.get().getId());
     }
     log.info("Saving map set version {}", mapSetVersion.getVersion());
     mapSetVersionService.save(mapSetVersion);
@@ -85,7 +86,7 @@ public class MapSetImportService {
     if (!cleanRun) {
       mapSetAssociationService.batchUpsert(associations, version.getMapSet(), version.getVersion());
     } else {
-      List<MapSetAssociation> existing = mapSetAssociationService.query(new MapSetAssociationQueryParams().setMapSetVersionId(version.getId()).all()).getData();
+      List<MapSetAssociation> existing = new ArrayList<>(mapSetAssociationService.query(new MapSetAssociationQueryParams().setMapSetVersionId(version.getId()).all()).getData());
       List<String> existingKeys = existing.stream().map(this::getAssociationGroupingKey).toList();
       existing.addAll(associations.stream().filter(a -> !existingKeys.contains(getAssociationGroupingKey(a))).toList());
       mapSetAssociationService.batchSave(existing, version.getMapSet(), version.getVersion());

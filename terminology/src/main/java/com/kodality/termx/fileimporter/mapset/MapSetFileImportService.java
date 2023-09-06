@@ -45,7 +45,7 @@ public class MapSetFileImportService {
 
   public void process(MapSetFileImportRequest req, byte[] file) {
     MapSetImportAction action = new MapSetImportAction();
-    action.setActivate(PublicationStatus.active.equals(req.getMapSetVersion().getStatus()));
+    action.setActivate(req.getMapSetVersion() != null && PublicationStatus.active.equals(req.getMapSetVersion().getStatus()));
     action.setCleanRun(req.isCleanRun());
     action.setCleanAssociationRun(req.isCleanAssociationRun());
 
