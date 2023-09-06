@@ -31,3 +31,4 @@ dependencies {
     implementation('org.commonmark:commonmark:0.21.0')
     implementation("com.github.slugify:slugify:3.0.2")
 }
+
