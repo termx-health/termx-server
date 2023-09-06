@@ -77,6 +77,9 @@ public class PageController {
     return HttpResponse.ok();
   }
 
+
+  /* Content */
+
   @Authorized(Privilege.T_EDIT)
   @Post("/{id}/contents")
   public HttpResponse<?> savePageContent(@PathVariable Long id, @Body PageContent content) {
@@ -100,6 +103,8 @@ public class PageController {
     return linkService.getPath(id);
   }
 
+
+  /* Files */
 
   @Authorized(Privilege.T_EDIT)
   @Post(value = "/{id}/files", consumes = MediaType.MULTIPART_FORM_DATA)
