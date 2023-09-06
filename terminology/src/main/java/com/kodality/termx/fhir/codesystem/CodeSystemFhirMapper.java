@@ -4,6 +4,7 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
+import com.kodality.termx.ApiError;
 import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.ts.CaseSignificance;
@@ -58,6 +59,20 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   private static final String DISPLAY = "display";
   private static final String DEFINITION = "definition";
   private static Optional<String> termxWebUrl;
+
+  private static final Map<String, String> concept_status_map = Map.of(
+      "A", "active",
+      "active", "active",
+
+      "R", "retired",
+      "deprecated", "retired",
+      "retired", "retired",
+
+      "P", "draft",
+      "experimental", "draft",
+      "draft", "draft"
+  );
+
   public CodeSystemFhirMapper(@Value("${termx.web-url}") Optional<String> termxWebUrl) {
     CodeSystemFhirMapper.termxWebUrl = termxWebUrl;
   }
@@ -90,10 +105,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setApprovalDate(toFhirDate(provenances, "approved"));
     fhirCodeSystem.setCopyright(codeSystem.getCopyright() != null ? codeSystem.getCopyright().getHolder() : null);
     fhirCodeSystem.setCopyrightLabel(codeSystem.getCopyright() != null ? codeSystem.getCopyright().getStatement() : null);
-    fhirCodeSystem.setJurisdiction(codeSystem.getCopyright() != null && codeSystem.getCopyright().getJurisdiction() != null  ? List.of(new CodeableConcept().setText(codeSystem.getCopyright().getJurisdiction())) : null);
+    fhirCodeSystem.setJurisdiction(codeSystem.getCopyright() != null && codeSystem.getCopyright().getJurisdiction() != null ?
+        List.of(new CodeableConcept().setText(codeSystem.getCopyright().getJurisdiction())) : null);
     fhirCodeSystem.setHierarchyMeaning(codeSystem.getHierarchyMeaning());
     fhirCodeSystem.setContent(codeSystem.getContent());
-    fhirCodeSystem.setCaseSensitive(codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
+    fhirCodeSystem.setCaseSensitive(
+        codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
     fhirCodeSystem.setSupplements(codeSystem.getBaseCodeSystemUri());
 
     fhirCodeSystem.setVersion(version.getVersion());
@@ -121,7 +138,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     CodeSystemConcept concept = new CodeSystemConcept();
     concept.setCode(e.getCode());
     setDesignations(concept, e.getDesignations(), version.getPreferredLanguage());
-    concept.setProperty(toFhirConceptProperties(e.getPropertyValues(), codeSystem.getProperties()));
+    concept.setProperty(toFhirConceptProperties(e, codeSystem.getProperties()));
     concept.setConcept(toFhirConcepts(entities, e.getId(), codeSystem, version));
     return concept;
   }
@@ -168,40 +185,46 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     ).sorted(Comparator.comparing(CodeSystemProperty::getCode)).toList();
   }
 
-  private static List<CodeSystemConceptProperty> toFhirConceptProperties(List<EntityPropertyValue> propertyValues, List<EntityProperty> properties) {
-    if (CollectionUtils.isEmpty(propertyValues)) {
-      return null;
+  private static List<CodeSystemConceptProperty> toFhirConceptProperties(CodeSystemEntityVersion entityVersion, List<EntityProperty> properties) {
+    List<CodeSystemConceptProperty> conceptProperties = new ArrayList<>();
+
+    if (properties.stream().anyMatch(p -> "status".equals(p.getName()))) {
+      conceptProperties.add(new CodeSystemConceptProperty().setCode("status").setValueCode(entityVersion.getStatus()));
     }
-    Map<Long, EntityProperty> entityProperties = properties.stream().collect(Collectors.toMap(EntityPropertyReference::getId, ep -> ep));
-    return propertyValues.stream().map(pv -> {
-      EntityProperty entityProperty = entityProperties.get(pv.getEntityPropertyId());
-      CodeSystemConceptProperty fhir = new CodeSystemConceptProperty();
-      fhir.setCode(entityProperty.getName());
-      switch (entityProperty.getType()) {
-        case EntityPropertyType.code -> fhir.setValueCode((String) pv.getValue());
-        case EntityPropertyType.string -> fhir.setValueString((String) pv.getValue());
-        case EntityPropertyType.bool -> fhir.setValueBoolean((Boolean) pv.getValue());
-        case EntityPropertyType.decimal -> fhir.setValueDecimal(new BigDecimal(String.valueOf(pv.getValue())));
-        case EntityPropertyType.integer -> fhir.setValueInteger(Integer.valueOf(String.valueOf(pv.getValue())));
-        case EntityPropertyType.coding -> {
-          Concept concept = JsonUtil.getObjectMapper().convertValue(pv.getValue(), Concept.class);
-          fhir.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
-        }
-        case EntityPropertyType.dateTime -> {
-          if (pv.getValue() instanceof OffsetDateTime) {
-            fhir.setValueDateTime((OffsetDateTime) pv.getValue());
-          } else {
-            fhir.setValueDateTime(DateUtil.parseOffsetDateTime((String) pv.getValue()));
+    if (CollectionUtils.isNotEmpty(entityVersion.getPropertyValues())) {
+      Map<Long, EntityProperty> entityProperties = properties.stream().collect(Collectors.toMap(EntityPropertyReference::getId, ep -> ep));
+      conceptProperties.addAll(entityVersion.getPropertyValues().stream().map(pv -> {
+        EntityProperty entityProperty = entityProperties.get(pv.getEntityPropertyId());
+        CodeSystemConceptProperty fhir = new CodeSystemConceptProperty();
+        fhir.setCode(entityProperty.getName());
+        switch (entityProperty.getType()) {
+          case EntityPropertyType.code -> fhir.setValueCode((String) pv.getValue());
+          case EntityPropertyType.string -> fhir.setValueString((String) pv.getValue());
+          case EntityPropertyType.bool -> fhir.setValueBoolean((Boolean) pv.getValue());
+          case EntityPropertyType.decimal -> fhir.setValueDecimal(new BigDecimal(String.valueOf(pv.getValue())));
+          case EntityPropertyType.integer -> fhir.setValueInteger(Integer.valueOf(String.valueOf(pv.getValue())));
+          case EntityPropertyType.coding -> {
+            Concept concept = JsonUtil.getObjectMapper().convertValue(pv.getValue(), Concept.class);
+            fhir.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
+          }
+          case EntityPropertyType.dateTime -> {
+            if (pv.getValue() instanceof OffsetDateTime) {
+              fhir.setValueDateTime((OffsetDateTime) pv.getValue());
+            } else {
+              fhir.setValueDateTime(DateUtil.parseOffsetDateTime((String) pv.getValue()));
+            }
           }
         }
-      }
-      return fhir;
-    }).sorted(Comparator.comparing(CodeSystemConceptProperty::getCode)).toList();
+        return fhir;
+      }).sorted(Comparator.comparing(CodeSystemConceptProperty::getCode)).toList());
+    }
+    return conceptProperties;
   }
 
   private static List<CodeSystemConcept> toFhirConcepts(Map<Long, List<CodeSystemEntityVersion>> entities, Long targetId, CodeSystem codeSystem,
                                                         CodeSystemVersion version) {
-    List<CodeSystemConcept> result = entities.getOrDefault(targetId, List.of()).stream().map(e -> toFhir(e, codeSystem, version, entities)).collect(Collectors.toList());
+    List<CodeSystemConcept> result =
+        entities.getOrDefault(targetId, List.of()).stream().map(e -> toFhir(e, codeSystem, version, entities)).collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
   }
 
@@ -256,7 +279,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     version.setPreferredLanguage(fhirCodeSystem.getLanguage() == null ? Language.en : fhirCodeSystem.getLanguage());
     version.setSupportedLanguages(Optional.ofNullable(fhirCodeSystem.getConcept()).orElse(new ArrayList<>()).stream()
         .filter(c -> c.getDesignation() != null)
-        .flatMap(c -> c.getDesignation().stream().map(CodeSystemConceptDesignation::getLanguage)).filter(Objects::nonNull).distinct().collect(Collectors.toList()));
+        .flatMap(c -> c.getDesignation().stream().map(CodeSystemConceptDesignation::getLanguage)).filter(Objects::nonNull).distinct()
+        .collect(Collectors.toList()));
     if (!version.getSupportedLanguages().contains(version.getPreferredLanguage())) {
       version.getSupportedLanguages().add(version.getPreferredLanguage());
     }
@@ -267,54 +291,61 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   }
 
   private static List<EntityProperty> fromFhirProperties(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
-    List<EntityProperty> defaultProperties = new ArrayList<>();
+    List<EntityProperty> properties = getDefEntityProperties();
+
+    if (fhirCodeSystem.getProperty() != null) {
+      properties.addAll(fhirCodeSystem.getProperty().stream()
+          .filter(p -> properties.stream().noneMatch(ep -> ep.getName().equals(p.getCode())))
+          .map(p -> fromFhirProperty(p, fhirCodeSystem.getLanguage())).toList());
+    }
+
+    if (fhirCodeSystem.getConcept() != null) {
+      properties.addAll(fhirCodeSystem.getConcept().stream()
+          .filter(c -> c.getDesignation() != null)
+          .flatMap(c -> c.getDesignation().stream())
+          .filter(d -> d.getUse() != null && d.getUse().getCode() != null && properties.stream().noneMatch(ep -> ep.getName().equals(d.getUse().getCode())))
+          .map(CodeSystemFhirMapper::fromFhirProperty).toList());
+    }
+    return properties.stream().collect(Collectors.toMap(EntityProperty::getName, p -> p, (p, q) -> p)).values().stream().toList();
+  }
+
+  private static List<EntityProperty> getDefEntityProperties() {
+    List<EntityProperty> properties = new ArrayList<>();
 
     EntityProperty display = new EntityProperty();
     display.setName(DISPLAY);
     display.setType(EntityPropertyType.string);
     display.setKind(EntityPropertyKind.designation);
     display.setStatus(PublicationStatus.active);
+    properties.add(display);
 
     EntityProperty definition = new EntityProperty();
     definition.setName(DEFINITION);
     definition.setType(EntityPropertyType.string);
     definition.setKind(EntityPropertyKind.designation);
     definition.setStatus(PublicationStatus.active);
+    properties.add(definition);
+    return properties;
+  }
 
-    defaultProperties.add(display);
-    defaultProperties.add(definition);
-    if (fhirCodeSystem.getProperty() == null) {
-      return defaultProperties;
-    }
+  private static EntityProperty fromFhirProperty(CodeSystemConceptDesignation d) {
+    EntityProperty ep = new EntityProperty();
+    ep.setName(d.getUse().getCode());
+    ep.setType(EntityPropertyType.string);
+    ep.setKind(EntityPropertyKind.designation);
+    ep.setStatus(PublicationStatus.active);
+    return ep;
+  }
 
-    List<EntityProperty> properties = fhirCodeSystem.getProperty().stream().map(p -> {
-      EntityProperty property = new EntityProperty();
-      property.setName(p.getCode());
-      property.setUri(p.getUri());
-      property.setDescription(fromFhirName(p.getDescription(), fhirCodeSystem.getLanguage()));
-      property.setType(p.getType());
-      property.setKind(EntityPropertyKind.property);
-      property.setStatus(PublicationStatus.active);
-      return property;
-    }).collect(Collectors.toList());
-    properties.addAll(defaultProperties);
-
-    if (fhirCodeSystem.getConcept() != null) {
-      List<EntityProperty> designationProperties = fhirCodeSystem.getConcept().stream()
-          .filter(c -> c.getDesignation() != null)
-          .flatMap(c -> c.getDesignation().stream())
-          .filter(d -> d.getUse() != null && d.getUse().getCode() != null)
-          .map(d -> {
-            EntityProperty ep = new EntityProperty();
-            ep.setName(d.getUse().getCode());
-            ep.setType(EntityPropertyType.string);
-            ep.setKind(EntityPropertyKind.designation);
-            ep.setStatus(PublicationStatus.active);
-            return ep;
-          }).toList();
-      properties.addAll(designationProperties);
-    }
-    return properties.stream().collect(Collectors.toMap(EntityProperty::getName, p -> p, (p, q) -> p)).values().stream().toList();
+  private static EntityProperty fromFhirProperty(CodeSystemProperty p, String lang) {
+    EntityProperty property = new EntityProperty();
+    property.setName(p.getCode());
+    property.setUri(p.getUri());
+    property.setDescription(fromFhirName(p.getDescription(), lang));
+    property.setType(p.getType());
+    property.setKind(EntityPropertyKind.property);
+    property.setStatus(PublicationStatus.active);
+    return property;
   }
 
   private static List<Concept> fromFhirConcepts(List<CodeSystemConcept> fhirConcepts,
@@ -353,12 +384,16 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (propertyValues == null) {
       return null;
     }
-    return propertyValues.stream().filter(pv -> "status".equals(pv.getCode())).findFirst().map(CodeSystemConceptProperty::getValueCode).orElse(null);
+    return propertyValues.stream().filter(pv -> "status".equals(pv.getCode()) && pv.getValueCode() != null).findFirst()
+        .map(pv -> Optional.ofNullable(concept_status_map.get(pv.getValueCode()))
+            .orElseThrow(() -> ApiError.TE724.toApiException(Map.of("status", pv.getValueCode()))))
+        .orElse(null);
   }
 
   private static List<Designation> fromFhirDesignations(CodeSystemConcept c,
                                                         com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
-    String caseSignificance = codeSystem.getCaseSensitive() != null && codeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive : CaseSignificance.entire_term_case_insensitive;
+    String caseSignificance = codeSystem.getCaseSensitive() != null && codeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
+        CaseSignificance.entire_term_case_insensitive;
 
     if (c.getDesignation() == null) {
       c.setDesignation(new ArrayList<>());
@@ -409,7 +444,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (propertyValues == null) {
       return new ArrayList<>();
     }
-    return propertyValues.stream().map(v -> {
+    return propertyValues.stream().filter(v -> !"status".equals(v.getCode())).map(v -> {
       EntityPropertyValue value = new EntityPropertyValue();
       value.setValue(Stream.of(
           v.getValueCode(), v.getValueCoding(),

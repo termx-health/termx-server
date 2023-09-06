@@ -1,7 +1,7 @@
 --liquibase formatted sql
 
---changeset kodality:concept-defined-properties-1
-with t (name, kind, type, uri, description) as (values ('status', 'property', 'string', 'http://hl7.org/fhir/concept-properties#status', '{"en": "Status"}'::jsonb),
+--changeset kodality:concept-defined-properties-2
+with t (name, kind, type, uri, description) as (values ('status', 'property', 'code', 'http://hl7.org/fhir/concept-properties#status', '{"en": "Status"}'::jsonb),
                                                  ('inactive', 'property', 'boolean', 'http://hl7.org/fhir/concept-properties#inactive', '{"en": "Inactive"}'::jsonb),
                                                  ('effectiveDate', 'property', 'dateTime', 'http://hl7.org/fhir/concept-properties#effectiveDate', '{"en": "Effective Date"}'::jsonb),
                                                  ('deprecationDate', 'property', 'dateTime', 'http://hl7.org/fhir/concept-properties#deprecationDate', '{"en": "Deprecation Date"}'::jsonb),
