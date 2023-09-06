@@ -8,7 +8,7 @@ import lombok.Getter;
 
 public enum ApiError {
   T000("T000", "Generated slug '{{slug}}' already exists, please change content name."),
-  T021("T021", "Generated slug '{{slug}}' already exists, please change content name.")
+  T021("T021", "Comment can be changed only by its author")
   ;
 
   @Getter
