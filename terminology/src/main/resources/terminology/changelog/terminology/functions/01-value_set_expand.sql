@@ -77,16 +77,18 @@ expressions as (
 	     and csa1.sys_status = 'A'
   ), 
   c as (
-  select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.id csev_id, csev.code csev_code, 
-         jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri, 'baseCodeSystemUri', t.base_uri) obj
-    from rules t, 
-         terminology.code_system_entity_version csev,
-         terminology.entity_version_code_system_version_membership evcsvm 
-   where t.code_system = csev.code_system
-     and evcsvm.sys_status = 'A' 
-     and evcsvm.code_system_version_id = t.code_system_version_id 
-     and csev.id = evcsvm.code_system_entity_version_id
-     and t.filters is not null 
+	  select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.id csev_id, 
+	         csev.code csev_code, 
+	         jsonb_build_object('conceptVersionId', csev.id, 
+	                            'code', csev.code, 'codeSystem', t.code_system, 
+	                            'codeSystemUri', t.uri, 'baseCodeSystemUri', t.base_uri) obj
+	    from rules t
+	         left outer join terminology.code_system_entity_version csev 
+	                 on t.code_system = csev.code_system and csev.sys_status='A'
+	         left outer join terminology.entity_version_code_system_version_membership evcsvm 
+	                 on evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = t.code_system_version_id 
+	                and csev.id = evcsvm.code_system_entity_version_id
+	   where t.filters is not null      
    )
    -- concepts that match by exact code or regexp applied to code 
    select c.*, t.rn, t.fcnt from c, t  
