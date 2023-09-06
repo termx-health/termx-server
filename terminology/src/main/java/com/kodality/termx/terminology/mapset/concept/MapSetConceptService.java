@@ -126,7 +126,7 @@ public class MapSetConceptService {
     meta.setTotal(msc.size());
     meta.setOffset(params.getOffset());
     mscr.setMeta(meta);
-    mscr.setData(params.getLimit() >= 0 && params.getLimit() < concepts.size() ? msc.subList(params.getOffset(), params.getLimit()) : msc);
+    mscr.setData(params.getLimit() >= 0 && params.getLimit() < msc.size() ? msc.subList(params.getOffset(), params.getLimit()) : msc);
     return mscr;
   }
 
