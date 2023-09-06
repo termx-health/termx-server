@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public abstract class ValueSetExternalExpandProvider {
   public List<ValueSetVersionConcept> expand(ValueSetVersionRuleSet ruleSet, ValueSetVersion version, String preferredLanguage) {
-    if (ruleSet == null) {
+    if (ruleSet == null || ruleSet.getRules() == null) {
       return new ArrayList<>();
     }
     List<ValueSetVersionConcept> include = ruleSet.getRules().stream()

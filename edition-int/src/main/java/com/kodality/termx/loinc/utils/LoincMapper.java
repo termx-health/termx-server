@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class LoincMapper {
-  private static final String SUBSUMES = "subsumes";
+  private static final String IS_A = "is-a";
   private static final String DISPLAY = "display";
   private static final String KEY_WORDS = "key-words";
 
@@ -46,8 +46,7 @@ public class LoincMapper {
         .setTitle(new LocalizedName(Map.of("en", "LOINC")))
         .setContent(CodeSystemContent.complete)
         .setCaseSensitive(CaseSignificance.entire_term_case_insensitive)
-        .setSupportedLanguages(List.of(Language.en))
-        .setHierarchyMeaning(SUBSUMES);
+        .setSupportedLanguages(List.of(Language.en));
   }
 
   private static CodeSystemImportRequestVersion toVersion(String version) {
@@ -119,7 +118,7 @@ public class LoincMapper {
       return List.of();
     }
     return c.getAssociations().stream().map(a -> new CodeSystemAssociation()
-        .setAssociationType(SUBSUMES)
+        .setAssociationType(IS_A)
         .setStatus(PublicationStatus.active)
         .setOrderNumber(a.getOrder())
         .setTargetCode(a.getTargetCode())).toList();
