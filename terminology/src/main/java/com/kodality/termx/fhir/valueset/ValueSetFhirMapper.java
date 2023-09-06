@@ -118,7 +118,8 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     if (ruleSet.getLockedDate() != null) {
       compose.setLockedDate(ruleSet.getLockedDate().toLocalDate());
     }
-    compose.setProperty(ruleSet.getRules().stream().flatMap(r -> Optional.ofNullable(r.getProperties()).orElse(List.of()).stream()).toList());
+    compose.setProperty(ruleSet.getRules() == null ? List.of() :
+        ruleSet.getRules().stream().flatMap(r -> Optional.ofNullable(r.getProperties()).orElse(List.of()).stream()).toList());
     compose.setInclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.include));
     compose.setExclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.exclude));
     return compose;
