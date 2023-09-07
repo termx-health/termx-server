@@ -60,19 +60,6 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   private static final String DEFINITION = "definition";
   private static Optional<String> termxWebUrl;
 
-  private static final Map<String, String> concept_status_map = Map.of(
-      "A", "active",
-      "active", "active",
-
-      "R", "retired",
-      "deprecated", "retired",
-      "retired", "retired",
-
-      "P", "draft",
-      "experimental", "draft",
-      "draft", "draft"
-  );
-
   public CodeSystemFhirMapper(@Value("${termx.web-url}") Optional<String> termxWebUrl) {
     CodeSystemFhirMapper.termxWebUrl = termxWebUrl;
   }
@@ -385,9 +372,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       return null;
     }
     return propertyValues.stream().filter(pv -> "status".equals(pv.getCode()) && pv.getValueCode() != null).findFirst()
-        .map(pv -> Optional.ofNullable(concept_status_map.get(pv.getValueCode()))
-            .orElseThrow(() -> ApiError.TE724.toApiException(Map.of("status", pv.getValueCode()))))
-        .orElse(null);
+        .map(pv -> PublicationStatus.getStatus(pv.getValueCode()))
+        .orElse(PublicationStatus.draft);
   }
 
   private static List<Designation> fromFhirDesignations(CodeSystemConcept c,

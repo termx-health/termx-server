@@ -152,8 +152,7 @@ public class CodeSystemImportService {
   public void saveConcepts(List<Concept> concepts, CodeSystemVersion version, List<EntityProperty> entityProperties, boolean cleanRun) {
     userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
 
-    concepts =
-        concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new)); //removes duplicate codes
+    concepts = concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new)); //removes duplicate codes
     log.info("Creating '{}' concepts", concepts.size());
     long start = System.currentTimeMillis();
     conceptService.batchSave(concepts, version.getCodeSystem());
@@ -162,7 +161,7 @@ public class CodeSystemImportService {
 
     log.info("Creating '{}' concept versions", concepts.size());
     start = System.currentTimeMillis();
-    List<Long> activeConceptIds = concepts.stream().filter(c -> c.getVersions().get(0).getStatus() == null || PublicationStatus.draft.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
+    List<Long> activeConceptIds = concepts.stream().filter(c -> c.getVersions().get(0).getStatus() == null || PublicationStatus.active.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
     List<Long> retiredConceptIds = concepts.stream().filter(c -> PublicationStatus.retired.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
     Map<Long, List<CodeSystemEntityVersion>> entityVersionMap = concepts.stream()
         .map(concept -> Pair.of(concept.getId(), prepareEntityVersion(concept.getVersions().get(0), entityProperties)))

@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 public class CodeSystemFileImportMapper {
   public static final String CONCEPT_CODE = "concept-code";
   public static final String HIERARCHICAL_CONCEPT = "hierarchical-concept";
+  public static final String STATUS = "status";
   public static final String CONCEPT_DESCRIPTION = "description";
   public static final String CONCEPT_DISPLAY = "display";
   public static final String CONCEPT_DEFINITION = "definition";
@@ -100,8 +101,12 @@ public class CodeSystemFileImportMapper {
     version.setDesignations(toConceptVersionDesignations(entity));
     version.setPropertyValues(toConceptVersionPropertyValues(entity));
     version.setAssociations(toConceptVersionAssociations(version.getCode(), entity, entities));
-    version.setStatus(PublicationStatus.draft);
+    version.setStatus(toConceptVersionStatus(entity));
     return version;
+  }
+
+  private static String toConceptVersionStatus(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
+    return entity.getOrDefault(STATUS, List.of()).stream().findFirst().map(s -> PublicationStatus.getStatus((String) s.getValue())).orElse(PublicationStatus.draft);
   }
 
   private static List<Designation> toConceptVersionDesignations(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
@@ -124,7 +129,7 @@ public class CodeSystemFileImportMapper {
 
   private static List<EntityPropertyValue> toConceptVersionPropertyValues(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
     return entity.keySet().stream()
-        .filter(key -> !List.of(CONCEPT_CODE, CONCEPT_DESCRIPTION, CONCEPT_DISPLAY, CONCEPT_DEFINITION, CONCEPT_PARENT, HIERARCHICAL_CONCEPT).contains(key))
+        .filter(key -> !List.of(CONCEPT_CODE, CONCEPT_DESCRIPTION, CONCEPT_DISPLAY, CONCEPT_DEFINITION, CONCEPT_PARENT, HIERARCHICAL_CONCEPT, STATUS).contains(key))
         .filter(key -> entity.get(key).stream().noneMatch(e -> e.getLang() != null)).flatMap(key -> {
           List<FileProcessingEntityPropertyValue> fpPropertyValues = entity.get(key);
           return fpPropertyValues.stream().map(fpPropertyValue -> {
