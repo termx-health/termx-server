@@ -83,6 +83,11 @@ public class PageCommentService {
     commentRepository.updateStatus(id, PageCommentStatus.resolved);
     provenanceService.create(new Provenance("resolved", "PageComment", id.toString()));
 
+    commentRepository.loadReplyIds(id).forEach(replyId -> {
+      commentRepository.updateStatus(replyId, PageCommentStatus.resolved);
+      provenanceService.create(new Provenance("resolved", "PageComment", replyId.toString()));
+    });
+
     PageComment c = commentRepository.load(id);
     interceptor.afterStatusChange(c);
     return c;
