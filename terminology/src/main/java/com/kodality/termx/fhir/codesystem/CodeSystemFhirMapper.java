@@ -184,8 +184,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
                                                                          Map<Long, List<String>> parentMap) {
     List<CodeSystemConceptProperty> conceptProperties = new ArrayList<>();
 
-    if (properties.stream().anyMatch(p -> List.of("is-a", "parent", "partOf", "groupedBy").contains(p.getName()))) {
-      String code = properties.stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy").contains(p.getName())).findFirst().get().getName();
+    if (properties.stream().anyMatch(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName()))) {
+      String code = properties.stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName())).findFirst().get().getName();
       conceptProperties.addAll(parentMap.getOrDefault(entityVersion.getId(), List.of()).stream()
           .map(c -> new CodeSystemConceptProperty().setCode(code).setValueCode(c)).toList());
     }
@@ -281,12 +281,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (io.micronaut.core.util.CollectionUtils.isEmpty(fhirConcepts)) {
       return Map.of();
     }
-    return fhirConcepts.stream().filter(c -> c.getProperty() != null && c.getProperty().stream().anyMatch(p -> List.of("is-a", "parent", "partOf", "groupedBy", "child").contains(p.getCode())))
-        .flatMap(c -> c.getProperty().stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "child").contains(p.getCode())).map(p -> {
+    return fhirConcepts.stream().filter(c -> c.getProperty() != null && c.getProperty().stream().anyMatch(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(p.getCode())))
+        .flatMap(c -> c.getProperty().stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(p.getCode())).map(p -> {
           if (p.getCode().equals("child")) {
             return Pair.of(p.getValueCode(), c.getCode());
           }
-          return Pair.of(c.getCode(), p.getCode());
+          return Pair.of(c.getCode(), p.getValueCode());
         })).collect(Collectors.groupingBy(Pair::getKey, mapping(Pair::getValue, toList())));
   }
 
@@ -462,7 +462,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (propertyValues == null) {
       return new ArrayList<>();
     }
-    return propertyValues.stream().filter(v -> !List.of("status", "is-a", "parent", "partOf", "groupedBy", "child").contains(v.getCode())).map(v -> {
+    return propertyValues.stream().filter(v -> !List.of("status", "is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(v.getCode())).map(v -> {
       EntityPropertyValue value = new EntityPropertyValue();
       value.setValue(Stream.of(
           v.getValueCode(), v.getValueCoding(),

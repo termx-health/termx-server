@@ -24,15 +24,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class CodeSystemFileImportMapper {
   public static final String CONCEPT_CODE = "concept-code";
   public static final String HIERARCHICAL_CONCEPT = "hierarchical-concept";
-  public static final String STATUS = "status";
+  public static final String CONCEPT_STATUS = "status";
   public static final String CONCEPT_DESCRIPTION = "description";
   public static final String CONCEPT_DISPLAY = "display";
   public static final String CONCEPT_DEFINITION = "definition";
-  public static final String CONCEPT_PARENT = "is-a";
+  public static final String CONCEPT_IS_A = "is-a";
+  public static final String CONCEPT_PARENT = "parent";
+  public static final String CONCEPT_CHILD = "child";
+  public static final String CONCEPT_PART_OF = "partOf";
+  public static final String CONCEPT_GROUPED_BY = "groupedBy";
+  public static final String CONCEPT_CLASSIFIED_WITH = "classifiedWith";
+
+  private static final Map<String, String> associationMap = Map.of(
+      "is-a", "is-a",
+      "hierarchical-concept", "is-a",
+      "parent", "is-a",
+      "child", "is-a",
+      "partOf", "part-of",
+      "groupedBy", "grouped-by",
+      "classifiedWith", "classified-with"
+  );
 
   public static CodeSystem toCodeSystem(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, CodeSystemFileImportResult result,
                                         CodeSystem existingCodeSystem, CodeSystemVersion existingCodeSystemVersion) {
@@ -45,7 +62,7 @@ public class CodeSystemFileImportMapper {
     codeSystem.setProperties(toCsProperties(result.getProperties()));
     codeSystem.setConcepts(result.getEntities().stream().map(e -> toCsConcept(codeSystem.getId(), e, result.getEntities())).toList());
     codeSystem.setContent(CodeSystemContent.complete);
-    codeSystem.setHierarchyMeaning(result.getProperties().stream().anyMatch(p -> List.of(CONCEPT_PARENT, HIERARCHICAL_CONCEPT).contains(p.getPropertyName())) ? "is-a" : null);
+    codeSystem.setHierarchyMeaning(toHierarchyMeaning(result.getProperties()).orElse(null));
     return codeSystem;
   }
 
@@ -61,7 +78,7 @@ public class CodeSystemFileImportMapper {
   private static List<EntityProperty> toCsProperties(List<FileProcessingResponseProperty> fpProperties) {
     return fpProperties.stream()
         .filter(fpProperty -> fpProperty.getPropertyType() != null &&
-            !List.of(CONCEPT_CODE, CONCEPT_PARENT, HIERARCHICAL_CONCEPT).contains(fpProperty.getPropertyName()))
+            !List.of(CONCEPT_CODE, CONCEPT_IS_A, HIERARCHICAL_CONCEPT).contains(fpProperty.getPropertyName()))
         .map(fpProperty -> {
           EntityProperty property = new EntityProperty();
           property.setName(fpProperty.getPropertyName());
@@ -106,7 +123,7 @@ public class CodeSystemFileImportMapper {
   }
 
   private static String toConceptVersionStatus(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
-    return entity.getOrDefault(STATUS, List.of()).stream().findFirst().map(s -> PublicationStatus.getStatus((String) s.getValue())).orElse(PublicationStatus.draft);
+    return entity.getOrDefault(CONCEPT_STATUS, List.of()).stream().findFirst().map(s -> PublicationStatus.getStatus((String) s.getValue())).orElse(PublicationStatus.draft);
   }
 
   private static List<Designation> toConceptVersionDesignations(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
@@ -129,7 +146,9 @@ public class CodeSystemFileImportMapper {
 
   private static List<EntityPropertyValue> toConceptVersionPropertyValues(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
     return entity.keySet().stream()
-        .filter(key -> !List.of(CONCEPT_CODE, CONCEPT_DESCRIPTION, CONCEPT_DISPLAY, CONCEPT_DEFINITION, CONCEPT_PARENT, HIERARCHICAL_CONCEPT, STATUS).contains(key))
+        .filter(key -> !List.of(CONCEPT_CODE, CONCEPT_DESCRIPTION, CONCEPT_DISPLAY, CONCEPT_DEFINITION,
+            HIERARCHICAL_CONCEPT, CONCEPT_IS_A, CONCEPT_PARENT, CONCEPT_CHILD, CONCEPT_PART_OF, CONCEPT_GROUPED_BY, CONCEPT_CLASSIFIED_WITH,
+            CONCEPT_STATUS).contains(key))
         .filter(key -> entity.get(key).stream().noneMatch(e -> e.getLang() != null)).flatMap(key -> {
           List<FileProcessingEntityPropertyValue> fpPropertyValues = entity.get(key);
           return fpPropertyValues.stream().map(fpPropertyValue -> {
@@ -148,19 +167,34 @@ public class CodeSystemFileImportMapper {
       if (parentCode == null) {
         return new ArrayList<>();
       }
-      return new ArrayList<>(List.of(new CodeSystemAssociation().setAssociationType("is-a").setTargetCode(parentCode).setStatus(PublicationStatus.active)));
+      return new ArrayList<>(List.of(new CodeSystemAssociation().setAssociationType(associationMap.get(HIERARCHICAL_CONCEPT)).setTargetCode(parentCode).setStatus(PublicationStatus.active)));
     }
 
-    return entity.keySet().stream().filter(CONCEPT_PARENT::equals).flatMap(key -> {
+    List<String> parents = findParents(code, entities);
+    if (CollectionUtils.isNotEmpty(parents)) {
+      return parents.stream().map(p -> {
+        CodeSystemAssociation association = new CodeSystemAssociation();
+        association.setAssociationType(associationMap.get(CONCEPT_CHILD));
+        association.setTargetCode(p);
+        association.setStatus(PublicationStatus.active);
+        return association;
+      }).toList();
+    }
+
+    return entity.keySet().stream().filter(key -> List.of(CONCEPT_IS_A, CONCEPT_PARENT, CONCEPT_PART_OF, CONCEPT_GROUPED_BY, CONCEPT_CLASSIFIED_WITH).contains(key)).flatMap(key -> {
       List<FileProcessingEntityPropertyValue> fpPropertyValues = entity.get(key);
       return fpPropertyValues.stream().map(fpPropertyValue -> {
         CodeSystemAssociation association = new CodeSystemAssociation();
-        association.setAssociationType("is-a");
+        association.setAssociationType(associationMap.get(key));
         association.setTargetCode((String) fpPropertyValue.getValue());
         association.setStatus(PublicationStatus.active);
         return association;
       });
     }).collect(Collectors.toList());
+  }
+
+  private static List<String> findParents(String child, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities) {
+   return entities.stream().map(p -> Pair.of(getEntityProp(p, CONCEPT_CODE), getEntityProp(p, CONCEPT_CHILD))).filter(p -> child.equals(p.getValue())).map(Pair::getKey).toList();
   }
 
   private static String findParent(String child, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities, int offset) {
@@ -179,7 +213,13 @@ public class CodeSystemFileImportMapper {
   }
 
   public static List<AssociationType> toAssociationTypes(List<FileProcessingResponseProperty> properties) {
-    return properties.stream().anyMatch(p -> CONCEPT_PARENT.equals(p.getPropertyName()) || HIERARCHICAL_CONCEPT.equals(p.getPropertyName())) ?
-        List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true)) : List.of();
+    return toHierarchyMeaning(properties).map(m -> List.of(new AssociationType(m, AssociationKind.codesystemHierarchyMeaning, true)))
+        .orElse(List.of());
+  }
+
+  private static Optional<String> toHierarchyMeaning(List<FileProcessingResponseProperty> properties) {
+    return properties.stream()
+        .filter(p -> List.of(HIERARCHICAL_CONCEPT, CONCEPT_IS_A, CONCEPT_PARENT, CONCEPT_CHILD, CONCEPT_PART_OF, CONCEPT_CLASSIFIED_WITH, CONCEPT_GROUPED_BY).contains(p.getPropertyName()))
+        .findFirst().map(p -> associationMap.get(p.getPropertyName()));
   }
 }
