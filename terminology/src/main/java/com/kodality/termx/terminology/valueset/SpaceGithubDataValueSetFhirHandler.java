@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.valueset;
 
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.fhir.FhirFshConverter;
 import com.kodality.termx.fhir.valueset.ValueSetFhirImportService;
 import com.kodality.termx.fhir.valueset.ValueSetFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
@@ -14,7 +13,6 @@ import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,16 +21,20 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @Singleton
 @RequiredArgsConstructor
-public class SpaceGithubDataValueSetHandler implements SpaceGithubDataHandler {
+public class SpaceGithubDataValueSetFhirHandler implements SpaceGithubDataHandler {
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
   private final ProvenanceService provenanceService;
   private final ValueSetFhirImportService valueSetFhirImportService;
-  private final Optional<FhirFshConverter> fhirFshConverter;
 
   @Override
   public String getName() {
-    return "valueset";
+    return "valueset-fhir-json";
+  }
+
+  @Override
+  public String getDefaultDir() {
+    return "vocabulary/valueset-fhir";
   }
 
   @Override
@@ -46,7 +48,6 @@ public class SpaceGithubDataValueSetHandler implements SpaceGithubDataHandler {
         String prettyJson = JsonUtil.toPrettyJson(JsonUtil.toMap(json));
         String fhirId = ValueSetFhirMapper.toFhirId(vs, vsv);
         result.put(fhirId + ".json", prettyJson);
-        fhirFshConverter.ifPresent(c -> result.put(fhirId + ".fsh", c.toFsh(json).join()));
       });
     });
     return result;

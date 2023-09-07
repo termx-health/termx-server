@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.codesystem;
 
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.fhir.FhirFshConverter;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirImportService;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
@@ -17,7 +16,6 @@ import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,17 +24,21 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @Singleton
 @RequiredArgsConstructor
-public class SpaceGithubDataCodeSystemHandler implements SpaceGithubDataHandler {
+public class SpaceGithubDataCodeSystemFhirHandler implements SpaceGithubDataHandler {
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final ProvenanceService provenanceService;
   private final CodeSystemFhirImportService codeSystemFhirImportService;
-  private final Optional<FhirFshConverter> fhirFshConverter;
 
   @Override
   public String getName() {
-    return "codesystem";
+    return "codesystem-fhir-json";
+  }
+
+  @Override
+  public String getDefaultDir() {
+    return "vocabulary/codesystem-fhir";
   }
 
   @Override
@@ -53,7 +55,6 @@ public class SpaceGithubDataCodeSystemHandler implements SpaceGithubDataHandler 
         String prettyJson = JsonUtil.toPrettyJson(JsonUtil.toMap(json));
         String fhirId = CodeSystemFhirMapper.toFhirId(cs, csv);
         result.put(fhirId + ".json", prettyJson);
-        fhirFshConverter.ifPresent(c -> result.put(fhirId + ".fsh", c.toFsh(json).join()));
       });
     });
     return result;

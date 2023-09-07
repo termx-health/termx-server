@@ -10,6 +10,7 @@ import io.micronaut.context.annotation.Requires;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Singleton;
@@ -25,8 +26,12 @@ public class SpaceGithubService {
   private final GithubService githubService;
   private final List<SpaceGithubDataHandler> dataHandlers;
 
+  public Map<String, String> getProviders() {
+    return dataHandlers.stream().collect(Collectors.toMap(SpaceGithubDataHandler::getName, SpaceGithubDataHandler::getDefaultDir));
+  }
+
   public SpaceGithubAuthResult authenticate(Long spaceId, String returnUrl) {
-    Space space = spaceService.load(spaceId);
+    Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
     if (!githubService.isAuthorized(repo)) {
       return new SpaceGithubAuthResult(false, githubService.getAuthRedirect(returnUrl, repo));
@@ -35,10 +40,12 @@ public class SpaceGithubService {
   }
 
   public GithubStatus status(Long spaceId) {
-    Space space = spaceService.load(spaceId);
+    Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
-    return dataHandlers.stream().map(h -> {
-      return githubService.status(repo, h.getName(), getCurrentContent(spaceId, h));
+
+    return getHandlers(space).map(h -> {
+      String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
+      return githubService.status(repo, dir, getCurrentContent(space, h));
     }).reduce(new GithubStatus(), (a, b) -> {
       a.setSha(b.getSha());
       a.getFiles().putAll(b.getFiles());
@@ -47,23 +54,27 @@ public class SpaceGithubService {
   }
 
   public GithubDiff diff(Long spaceId, String file) {
-    Space space = spaceService.load(spaceId);
+    Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
-    String path = StringUtils.substringBefore(file, "/");
-    SpaceGithubDataHandler h = dataHandlers.stream().filter(n -> n.getName().equals(path)).findFirst().orElseThrow();
-    String name = StringUtils.substringAfter(file, "/");
+    Map<String, String> reverseDirs =
+        space.getIntegration().getGithub().getDirs().entrySet().stream().collect(Collectors.toMap(Entry::getValue, Entry::getKey));
+    String path = StringUtils.substringBeforeLast(file, "/");
+    String type = reverseDirs.get(path);
+    SpaceGithubDataHandler h = dataHandlers.stream().filter(n -> n.getName().equals(type)).findFirst().orElseThrow();
+    String name = StringUtils.substringAfterLast(file, "/");
     return new GithubDiff()
         .setLeft(githubService.getContent(repo, file).getContent())
         .setRight(h.getContent(spaceId).get(name));
   }
 
   public void push(Long spaceId, String message, List<String> files) {
-    Space space = spaceService.load(spaceId);
+    Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
 
-    List<GithubContent> allChanges = dataHandlers.stream().flatMap(h -> {
-          Map<String, GithubContent> changes = getCurrentContent(spaceId, h).stream().collect(Collectors.toMap(GithubContent::getPath, c -> c));
-          GithubStatus status = githubService.status(repo, h.getName(), new ArrayList<>(changes.values()));
+    List<GithubContent> allChanges = getHandlers(space).flatMap(h -> {
+          String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
+          Map<String, GithubContent> changes = getCurrentContent(space, h).stream().collect(Collectors.toMap(GithubContent::getPath, c -> c));
+          GithubStatus status = githubService.status(repo, dir, new ArrayList<>(changes.values()));
           return Stream.concat(
               status.getFiles().keySet().stream().filter(k -> List.of(GithubStatus.A, GithubStatus.M).contains(status.getFiles().get(k))).map(changes::get),
               status.getFiles().keySet().stream().filter(k -> GithubStatus.D.equals(status.getFiles().get(k))).map(p -> new GithubContent().setPath(p))
@@ -85,25 +96,42 @@ public class SpaceGithubService {
 
   @Transactional
   public void pull(Long spaceId, List<String> files) {
-    Space space = spaceService.load(spaceId);
+    Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
 
-    dataHandlers.forEach(h -> {
-      List<GithubContent> changes = getCurrentContent(spaceId, h);
-      GithubStatus status = githubService.status(repo, h.getName(), changes);
+    getHandlers(space).forEach(h -> {
+      String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
+      List<GithubContent> changes = getCurrentContent(space, h);
+      GithubStatus status = githubService.status(repo, dir, changes);
       Map<String, String> content = status.getFiles().keySet().stream()
           .filter(k -> List.of(GithubStatus.M, GithubStatus.A, GithubStatus.D).contains(status.getFiles().get(k)))
           .filter(k -> files == null || files.contains(k))
           .collect(com.kodality.commons.stream.Collectors.<String, String, String>toMap(
-              k -> StringUtils.removeStart(k, h.getName() + "/"),
+              k -> StringUtils.removeStart(k, dir + "/"),
               k -> GithubStatus.A.equals(status.getFiles().get(k)) ? null : githubService.getContent(repo, k).getContent()
           ));
       h.saveContent(spaceId, content);
     });
   }
 
-  private List<GithubContent> getCurrentContent(Long spaceId, SpaceGithubDataHandler h) {
-    return h.getContent(spaceId).entrySet().stream().map(e -> new GithubContent().setPath(h.getName() + "/" + e.getKey()).setContent(e.getValue())).toList();
+  private Space loadSpace(Long spaceId) {
+    Space space = spaceService.load(spaceId);
+    if (space.getIntegration() == null || space.getIntegration().getGithub() == null || space.getIntegration().getGithub().getRepo() == null) {
+      throw new RuntimeException("github not configured");
+    }
+    if (space.getIntegration().getGithub().getDirs() == null) {
+      space.getIntegration().getGithub().setDirs(Map.of());
+    }
+    return space;
+  }
+
+  private Stream<SpaceGithubDataHandler> getHandlers(Space space) {
+    return dataHandlers.stream().filter(h -> space.getIntegration().getGithub().getDirs().containsKey(h.getName()));
+  }
+
+  private List<GithubContent> getCurrentContent(Space space, SpaceGithubDataHandler h) {
+    String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
+    return h.getContent(space.getId()).entrySet().stream().map(e -> new GithubContent().setPath(dir + "/" + e.getKey()).setContent(e.getValue())).toList();
   }
 
   public record SpaceGithubAuthResult(boolean isAuthenticated, String redirectUrl) {}

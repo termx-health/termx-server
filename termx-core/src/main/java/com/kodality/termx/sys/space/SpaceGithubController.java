@@ -14,10 +14,11 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.QueryValue;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 
-@Controller("/spaces/{id}/github")
+@Controller("/spaces")
 @RequiredArgsConstructor
 public class SpaceGithubController {
   private final Optional<SpaceGithubService> spaceGithubService;
@@ -27,38 +28,46 @@ public class SpaceGithubController {
   }
 
   @Authorized(Privilege.P_VIEW)
-  @Post("/authenticate")
+  @Get("/github/providers")
+  public Map<String, String> getProviders() {
+    return service().getProviders();
+  }
+
+  @Authorized(Privilege.P_VIEW)
+  @Post("/{id}/github/authenticate")
   public SpaceGithubAuthResult authenticate(@Parameter Long id, @Body SpaceGithubAuthRequest r) {
     return service().authenticate(id, r.returnUrl);
   }
 
   @Authorized(Privilege.P_VIEW)
-  @Get("/status")
+  @Get("/{id}/github/status")
   public GithubStatus prepareFiles(@Parameter Long id) {
     return service().status(id);
   }
 
   @Authorized(Privilege.P_VIEW)
-  @Get("/diff")
+  @Get("/{id}/github/diff")
   public GithubDiff prepareFiles(@Parameter Long id, @QueryValue String file) {
     return service().diff(id, file);
   }
 
   @Authorized(Privilege.P_EDIT)
-  @Post("/push")
+  @Post("/{id}/github/push")
   public HttpResponse<?> push(@Parameter Long id, @Body SpaceGithubCommitRequest req) {
     service().push(id, req.message, req.files);
     return HttpResponse.ok();
   }
 
   @Authorized(Privilege.P_EDIT)
-  @Post("/pull")
+  @Post("/{id}/github/pull")
   public HttpResponse<?> pull(@Parameter Long id, @Body SpaceGithubPullRequest req) {
     service().pull(id, req.files);
     return HttpResponse.ok();
   }
 
   public record SpaceGithubAuthRequest(String returnUrl) {}
+
   public record SpaceGithubCommitRequest(String message, List<String> files) {}
+
   public record SpaceGithubPullRequest(List<String> files) {}
 }

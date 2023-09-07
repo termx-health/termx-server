@@ -1,9 +1,14 @@
 package com.kodality.termx.sys.space;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.ApiError;
 import com.kodality.termx.auth.UserPermissionService;
+import com.kodality.termx.sys.space.Space.SpaceIntegration;
+import java.util.HashSet;
+import java.util.List;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
@@ -15,8 +20,22 @@ public class SpaceService {
   @Transactional
   public Space save(Space space) {
     userPermissionService.checkPermitted(space.getCode(), "Space", "edit");
+    prepare(space);
     repository.save(space);
     return space;
+  }
+
+  private void prepare(Space space) {
+    SpaceIntegration si = space.getIntegration();
+    if (si != null && si.getGithub() != null && StringUtils.isEmpty(si.getGithub().getRepo())) {
+      si.setGithub(null);
+    }
+    if (si != null && si.getGithub() != null && si.getGithub().getDirs() != null) {
+      si.getGithub().getDirs().values().removeAll(List.of(""));
+      if (si.getGithub().getDirs().values().size() != new HashSet<>(si.getGithub().getDirs().values()).size()) {
+        throw ApiError.TC107.toApiException();
+      }
+    }
   }
 
   public Space load(Long id) {

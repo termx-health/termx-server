@@ -4,6 +4,7 @@ import com.kodality.commons.model.LocalizedName;
 import com.kodality.termx.sys.spacepackage.Package;
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -36,5 +37,6 @@ public class Space {
   @Accessors(chain = true)
   public static class SpaceIntegrationGithub {
     private String repo;
+    private Map<String, String> dirs;
   }
 }

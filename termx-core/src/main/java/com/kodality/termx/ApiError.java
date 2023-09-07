@@ -12,7 +12,8 @@ public enum ApiError {
   TC103("TC103", "Project not specified."),
   TC104("TC104", "Package or package version not specified."),
   TC105("TC105", "Terminology server for current installation is not defined."),
-  TC106("TC106", "Import failed");
+  TC106("TC106", "Import failed"),
+  TC107("TC107", "Space Github directories must be unique");
 
   @Getter
   private String code;

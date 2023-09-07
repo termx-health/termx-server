@@ -6,6 +6,10 @@ public interface SpaceGithubDataHandler {
 
   String getName();
 
+  default String getDefaultDir() {
+    return getName();
+  }
+
   //file name -> content
   Map<String, String> getContent(Long spaceId);
 
