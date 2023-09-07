@@ -38,6 +38,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -143,7 +144,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
   }
 
   private static String addTranslationExtensions(String fhirJson, MapSet ms, MapSetVersion msv) {
-    Map<String, Object> fhirMs = JsonUtil.toMap(fhirJson);
+    Map<String, Object> fhirMs = JsonUtil.fromJson(fhirJson, LinkedHashMap.class);
     Extension titleExtension = toFhirTranslationExtension(ms.getTitle(), msv.getPreferredLanguage());
     if (titleExtension != null) {
       fhirMs.put("_title", titleExtension);

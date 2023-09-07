@@ -50,6 +50,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -335,7 +336,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   }
 
   private static String addTranslationExtensions(String fhirJson, ValueSet vs, ValueSetVersion vsv) {
-    Map<String, Object> fhirVs = JsonUtil.toMap(fhirJson);
+    Map<String, Object> fhirVs = JsonUtil.fromJson(fhirJson, LinkedHashMap.class);
     Extension titleExtension = toFhirTranslationExtension(vs.getTitle(), vsv.getPreferredLanguage());
     if (titleExtension != null) {
       fhirVs.put("_title", titleExtension);
