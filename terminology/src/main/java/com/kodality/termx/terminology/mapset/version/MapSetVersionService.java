@@ -9,6 +9,7 @@ import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
+import com.kodality.termx.ts.mapset.MapSetVersionReference;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +32,9 @@ public class MapSetVersionService {
   public void save(MapSetVersion version) {
     userPermissionService.checkPermitted(version.getMapSet(), "MapSet", "edit");
 
+    if (version.getId() == null) {
+      version.setId(load(version.getMapSet(), version.getVersion()).map(MapSetVersionReference::getId).orElse(null));
+    }
     if (!PublicationStatus.draft.equals(version.getStatus()) && version.getId() == null) {
       throw ApiError.TE101.toApiException();
     }
@@ -38,12 +42,11 @@ public class MapSetVersionService {
       repository.saveExpirationDate(version);
       return;
     }
-    MapSetVersion lastDraftVersion = repository.query(new MapSetVersionQueryParams()
+    MapSetVersion existingVersion = repository.query(new MapSetVersionQueryParams()
         .setMapSet(version.getMapSet())
-        .setVersion(version.getVersion())
-        .setStatus(PublicationStatus.draft)).findFirst().orElse(null);
-    if (lastDraftVersion != null && !lastDraftVersion.getId().equals(version.getId())) {
-      throw ApiError.TE102.toApiException(Map.of("version", lastDraftVersion.getVersion()));
+        .setVersion(version.getVersion())).findFirst().orElse(null);
+    if (existingVersion != null && !existingVersion.getId().equals(version.getId())) {
+      throw ApiError.TE102.toApiException(Map.of("version", existingVersion.getVersion()));
     }
     prepare(version);
     repository.save(version);

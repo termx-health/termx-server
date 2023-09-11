@@ -30,7 +30,9 @@ public class ValueSetVersionService {
   public void save(ValueSetVersion version) {
     userPermissionService.checkPermitted(version.getValueSet(), "ValueSet", "edit");
 
-    version.setId(load(version.getValueSet(), version.getVersion()).map(ValueSetVersionReference::getId).orElse(null));
+    if (version.getId() == null) {
+      version.setId(load(version.getValueSet(), version.getVersion()).map(ValueSetVersionReference::getId).orElse(null));
+    }
     if (!PublicationStatus.draft.equals(version.getStatus()) && version.getId() == null) {
       throw ApiError.TE101.toApiException();
     }
@@ -39,12 +41,11 @@ public class ValueSetVersionService {
       return;
     }
     prepare(version);
-    ValueSetVersion lastDraftVersion = repository.query(new ValueSetVersionQueryParams()
+    ValueSetVersion existingVersion = repository.query(new ValueSetVersionQueryParams()
         .setValueSet(version.getValueSet())
-        .setVersion(version.getVersion())
-        .setStatus(PublicationStatus.draft)).findFirst().orElse(null);
-    if (lastDraftVersion != null && !lastDraftVersion.getId().equals(version.getId())) {
-      throw ApiError.TE102.toApiException(Map.of("version", lastDraftVersion.getVersion()));
+        .setVersion(version.getVersion())).findFirst().orElse(null);
+    if (existingVersion != null && !existingVersion.getId().equals(version.getId())) {
+      throw ApiError.TE102.toApiException(Map.of("version", existingVersion.getVersion()));
     }
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
     repository.save(version);

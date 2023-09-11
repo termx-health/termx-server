@@ -8,7 +8,7 @@ import lombok.Getter;
 
 public enum ApiError {
   TE101("TE101", "Could not create not draft version."),
-  TE102("TE102", "Draft version '{{version}}' already exists."),
+  TE102("TE102", "Version '{{version}}' already exists."),
   TE103("TE103", "Can't activate version, active version '{{version}}' has overlapping periods."),
   TE104("TE104", "Version '{{version}}' is already created and final, can not be changed."),
   TE105("TE105", "Version with id '{{version}}' doesn't exist."),

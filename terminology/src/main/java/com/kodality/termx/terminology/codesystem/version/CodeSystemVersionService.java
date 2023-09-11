@@ -27,8 +27,9 @@ public class CodeSystemVersionService {
   public void save(CodeSystemVersion version) {
     userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
 
-    version.setId(load(version.getCodeSystem(), version.getVersion()).map(CodeSystemVersionReference::getId).orElse(null));
-
+    if (version.getId() == null) {
+      version.setId(load(version.getCodeSystem(), version.getVersion()).map(CodeSystemVersionReference::getId).orElse(null));
+    }
     if (!PublicationStatus.draft.equals(version.getStatus()) && version.getId() == null) {
       throw ApiError.TE101.toApiException();
     }
@@ -36,12 +37,11 @@ public class CodeSystemVersionService {
       repository.saveExpirationDate(version);
       return;
     }
-    CodeSystemVersion lastDraftVersion = repository.query(new CodeSystemVersionQueryParams()
+    CodeSystemVersion existingVersion = repository.query(new CodeSystemVersionQueryParams()
         .setCodeSystem(version.getCodeSystem())
-        .setVersion(version.getVersion())
-        .setStatus(PublicationStatus.draft)).findFirst().orElse(null);
-    if (lastDraftVersion != null && !lastDraftVersion.getId().equals(version.getId())) {
-      throw ApiError.TE102.toApiException(Map.of("version", lastDraftVersion.getVersion()));
+        .setVersion(version.getVersion())).findFirst().orElse(null);
+    if (existingVersion != null && !existingVersion.getId().equals(version.getId())) {
+      throw ApiError.TE102.toApiException(Map.of("version", existingVersion.getVersion()));
     }
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
     repository.save(version);
