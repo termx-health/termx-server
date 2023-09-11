@@ -84,4 +84,10 @@ public class PageCommentRepository extends BaseRepository {
   public List<Long> loadReplyIds(Long parentId) {
     return jdbcTemplate.queryForList("select id from wiki.page_comment where sys_status = 'A' and parent_id = ?", Long.class, parentId);
   }
+
+  public void updateLineNumber(Long id, Integer newLineNumber) {
+    jdbcTemplate.update(
+        "update wiki.page_comment set options = coalesce(options, '{}'::jsonb) || jsonb_build_object('lineNumber', ?) where sys_status = 'A' and id = ?",
+        newLineNumber, id);
+  }
 }

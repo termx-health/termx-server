@@ -8,7 +8,9 @@ import com.kodality.termx.wiki.ApiError;
 import com.kodality.termx.wiki.page.PageComment;
 import com.kodality.termx.wiki.page.PageCommentQueryParams;
 import com.kodality.termx.wiki.page.PageCommentStatus;
+import com.kodality.termx.wiki.pagecomment.diff.PageCommentDiffUtil;
 import com.kodality.termx.wiki.pagecomment.interceptors.PageCommentInterceptorService;
+import java.util.List;
 import java.util.Objects;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -91,6 +93,14 @@ public class PageCommentService {
     PageComment c = commentRepository.load(id);
     interceptor.afterStatusChange(c);
     return c;
+  }
+
+  @Transactional
+  public void recalculateLineNumbers(List<PageComment> comments, String contentBefore, String contentAfter) {
+    comments.stream().filter(com -> com.getOptions() != null).forEach(com -> {
+      Integer ln = PageCommentDiffUtil.recalculateLineNumber(com.getOptions().getLineNumber(), contentBefore, contentAfter);
+      commentRepository.updateLineNumber(com.getId(), ln);
+    });
   }
 
 

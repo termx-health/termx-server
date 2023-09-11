@@ -5,10 +5,13 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.utils.TextUtil;
 import com.kodality.termx.wiki.ApiError;
 import com.kodality.termx.wiki.page.Page;
+import com.kodality.termx.wiki.page.PageComment;
+import com.kodality.termx.wiki.page.PageCommentQueryParams;
+import com.kodality.termx.wiki.page.PageCommentStatus;
 import com.kodality.termx.wiki.page.PageContent;
 import com.kodality.termx.wiki.page.PageContentQueryParams;
 import com.kodality.termx.wiki.page.PageRepository;
-import com.kodality.termx.wiki.pagelink.PageLinkRepository;
+import com.kodality.termx.wiki.pagecomment.PageCommentService;
 import com.kodality.termx.wiki.pagerelation.PageRelationService;
 import com.kodality.termx.wiki.template.TemplateContentService;
 import java.util.List;
@@ -23,8 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class PageContentService {
   private final PageRepository pageRepository;
   private final PageContentRepository repository;
-  private final PageLinkRepository pageLinkRepository;
   private final PageRelationService pageRelationService;
+  private final PageCommentService pageCommentService;
   private final TemplateContentService templateContentService;
 
   public PageContent load(Long contentId) {
@@ -43,6 +46,11 @@ public class PageContentService {
   public void save(PageContent c, Long pageId) {
     PageContent content = prepare(c, pageId);
     validate(content);
+
+    PageContent persisted = load(c.getId());
+    if (persisted != null) {
+      recalculateComments(c, persisted);
+    }
 
     repository.save(content, pageId);
     pageRelationService.save(content, pageId);
@@ -83,5 +91,14 @@ public class PageContentService {
       }
     }
     return c;
+  }
+
+  private void recalculateComments(PageContent current, PageContent persisted) {
+    PageCommentQueryParams q = new PageCommentQueryParams();
+    q.setPageContentIds(current.getId().toString());
+    q.setStatuses(PageCommentStatus.active);
+    q.all();
+    List<PageComment> comments = pageCommentService.query(q).getData();
+    pageCommentService.recalculateLineNumbers(comments, persisted.getContent(), current.getContent());
   }
 }

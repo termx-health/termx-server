@@ -14,6 +14,7 @@ import com.kodality.termx.wiki.pagecontent.PageContentService;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +26,7 @@ import static com.kodality.termx.taskflow.TaskFlowService.contextString;
 public class WikiPageCommentTaskFlowInterceptor
     implements PageCommentCreateInterceptor, PageCommentUpdateInterceptor, PageCommentDeleteInterceptor, PageCommentStatusChangeInterceptor {
   private final TaskFlowService taskFlowService;
-  private final PageContentService pageContentService;
+  private final Provider<PageContentService> pageContentService;
 
   public static final String TASK_CTX_TYPE = "page-comment";
   public static final String TASK_WORKFLOW = "wiki-page-comment";
@@ -46,7 +47,7 @@ public class WikiPageCommentTaskFlowInterceptor
       return;
     }
 
-    PageContent pageContent = pageContentService.load(comment.getPageContentId());
+    PageContent pageContent = pageContentService.get().load(comment.getPageContentId());
     Task task = new Task();
     task.setTitle(String.format("%s was commented", pageContent.getName()));
     task.setContent(String.format(

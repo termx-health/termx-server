@@ -30,5 +30,13 @@ dependencies {
     implementation("io.github.furstenheim:copy_down:1.1")
     implementation('org.commonmark:commonmark:0.21.0')
     implementation("com.github.slugify:slugify:3.0.2")
+
+    testImplementation "io.micronaut.test:micronaut-test-spock"
+    testImplementation("org.spockframework:spock-core") {
+        exclude group: "org.codehaus.groovy", module: "groovy-all"
+    }
 }
 
+test {
+    useJUnitPlatform()
+}
