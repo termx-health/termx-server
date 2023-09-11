@@ -1,7 +1,6 @@
 package com.kodality.termx.wiki.page;
 
 import java.time.OffsetDateTime;
-import java.util.Map;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
@@ -21,10 +20,16 @@ public class PageComment {
   private String comment;
   private String status;
   private int replies;
-  private Map<String, Object> options;
+  private PageCommentOptions options;
 
   private OffsetDateTime createdAt;
   private String createdBy;
   private OffsetDateTime modifiedAt;
   private String modifiedBy;
+
+  @Getter
+  @Setter
+  public static class PageCommentOptions {
+    private Integer lineNumber;
+  }
 }
