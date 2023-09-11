@@ -5,6 +5,7 @@ import com.kodality.termx.ApiError;
 import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleQueryParams;
+import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ValueSetVersionRuleService {
   private final ValueSetVersionRuleRepository repository;
-  private final ValueSetVersionRuleSetRepository ruleSetRepository;
+  private final ValueSetVersionRuleSetService ruleSetService;
 
   private final UserPermissionService userPermissionService;
 
@@ -35,11 +36,15 @@ public class ValueSetVersionRuleService {
   public void save(List<ValueSetVersionRule> rules, String valueSet, String valueSetVersion) {
     userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
 
-    Long ruleSetId = ruleSetRepository.load(valueSet, valueSetVersion).getId();
+    ValueSetVersionRuleSet ruleSet = ruleSetService.load(valueSet, valueSetVersion).orElse(null);
+    if (ruleSet == null) {
+      ruleSet = ruleSetService.save(new ValueSetVersionRuleSet(), valueSet, valueSetVersion);
+    }
 
-    repository.retain(rules, ruleSetId);
+    repository.retain(rules, ruleSet.getId());
     if (rules != null) {
-      rules.forEach(rule -> repository.save(rule, ruleSetId));
+      Long rulSetId = ruleSet.getId();
+      rules.forEach(rule -> repository.save(rule, rulSetId));
     }
   }
 
@@ -47,7 +52,13 @@ public class ValueSetVersionRuleService {
   public void save(ValueSetVersionRule rule, String valueSet, String valueSetVersion) {
     userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
     validate(rule);
-    repository.save(rule, ruleSetRepository.load(valueSet, valueSetVersion).getId());
+
+    Long ruleSetId = ruleSetService.load(valueSet, valueSetVersion).map(ValueSetVersionRuleSet::getId).orElse(null);
+    if (ruleSetId == null) {
+      ruleSetId = ruleSetService.save(new ValueSetVersionRuleSet(), valueSet, valueSetVersion).getId();
+    }
+
+    repository.save(rule, ruleSetId);
   }
 
   @Transactional

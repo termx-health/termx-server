@@ -12,13 +12,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ValueSetVersionRuleSetService {
   private final ValueSetVersionRuleSetRepository repository;
-  private final ValueSetVersionRuleService valueSetVersionRuleService;
   private final ValueSetVersionRepository valueSetVersionRepository;
+  private final ValueSetVersionRuleRepository valueSetVersionRuleRepository;
 
   private final UserPermissionService userPermissionService;
 
-  public Optional<ValueSetVersionRuleSet> load(String valueSet) {
-    return load(valueSetVersionRepository.loadLastVersion(valueSet).getId());
+  public Optional<ValueSetVersionRuleSet> load(String valueSet, String valueSetVersion) {
+    return Optional.ofNullable(repository.load(valueSet, valueSetVersion));
   }
 
   public Optional<ValueSetVersionRuleSet> load(Long valueSetVersionId) {
@@ -27,14 +27,17 @@ public class ValueSetVersionRuleSetService {
 
   private ValueSetVersionRuleSet decorate(ValueSetVersionRuleSet ruleSet) {
     if (ruleSet != null) {
-      ruleSet.setRules(valueSetVersionRuleService.loadAll(ruleSet.getId()));
+      ruleSet.setRules(valueSetVersionRuleRepository.loadAll(ruleSet.getId()));
     }
     return ruleSet;
   }
 
   @Transactional
-  public void save(ValueSetVersionRuleSet ruleSet, Long valueSetVersionId, String valueSet) {
+  public ValueSetVersionRuleSet save(ValueSetVersionRuleSet ruleSet, String valueSet, String valueSetVersion) {
     userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
-    repository.save(ruleSet, valueSetVersionId);
+
+    Long versionId = valueSetVersionRepository.load(valueSet, valueSetVersion).getId();
+    repository.save(ruleSet, versionId);
+    return ruleSet;
   }
 }

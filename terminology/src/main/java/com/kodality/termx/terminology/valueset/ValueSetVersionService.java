@@ -48,7 +48,7 @@ public class ValueSetVersionService {
     }
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
     repository.save(version);
-    valueSetVersionRuleSetService.save(version.getRuleSet(), version.getId(), version.getValueSet());
+    valueSetVersionRuleSetService.save(version.getRuleSet(), version.getValueSet(), version.getVersion());
   }
 
   private void prepare(ValueSetVersion version) {
