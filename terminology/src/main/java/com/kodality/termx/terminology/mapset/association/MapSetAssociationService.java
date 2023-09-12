@@ -2,6 +2,7 @@ package com.kodality.termx.terminology.mapset.association;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.UserPermissionService;
+import com.kodality.termx.terminology.mapset.association.propertyvalue.MapSetPropertyValueService;
 import com.kodality.termx.terminology.mapset.statistics.MapSetStatisticsService;
 import com.kodality.termx.terminology.mapset.version.MapSetVersionRepository;
 import com.kodality.termx.ts.PublicationStatus;
@@ -10,7 +11,6 @@ import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,28 +21,13 @@ public class MapSetAssociationService {
   private final MapSetAssociationRepository repository;
   private final MapSetStatisticsService mapSetStatisticsService;
   private final MapSetVersionRepository mapSetVersionRepository;
+  private final MapSetPropertyValueService mapSetPropertyValueService;
 
   private final UserPermissionService userPermissionService;
 
   public QueryResult<MapSetAssociation> query(MapSetAssociationQueryParams params) {
     return repository.query(params);
   }
-
-  public Optional<MapSetAssociation> load(Long id) {
-    return Optional.ofNullable(repository.load(id));
-  }
-
-  public Optional<MapSetAssociation> load(String mapSet, Long id) {
-    return Optional.ofNullable(repository.load(mapSet, id));
-  }
-
-  public Optional<MapSetAssociation> load(String mapSet, String mapSetVersion, Long id) {
-    return query(new MapSetAssociationQueryParams()
-        .setMapSet(mapSet)
-        .setMapSetVersion(mapSetVersion)
-        .setId(id)).findFirst();
-  }
-
 
   @Transactional
   public MapSetAssociation save(MapSetAssociation association, String mapSet, String version) {
@@ -52,6 +37,8 @@ public class MapSetAssociationService {
     association.setMapSet(mapSet);
     association.setMapSetVersion(msv);
     repository.save(association);
+    mapSetPropertyValueService.save(association.getPropertyValues(), association.getId(), mapSet);
+
     if (PublicationStatus.draft.equals(msv.getStatus())) {
       mapSetStatisticsService.calculate(msv.getMapSet(), msv.getVersion());
     }

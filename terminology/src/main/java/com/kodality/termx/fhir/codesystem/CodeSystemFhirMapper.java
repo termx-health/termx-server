@@ -4,7 +4,6 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
-import com.kodality.termx.ApiError;
 import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.ts.CaseSignificance;
@@ -20,7 +19,7 @@ import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyKind;
-import com.kodality.termx.ts.codesystem.EntityPropertyReference;
+import com.kodality.termx.ts.property.PropertyReference;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.zmei.fhir.Extension;
@@ -197,7 +196,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       conceptProperties.add(new CodeSystemConceptProperty().setCode("status").setValueCode(entityVersion.getStatus()));
     }
     if (CollectionUtils.isNotEmpty(entityVersion.getPropertyValues())) {
-      Map<Long, EntityProperty> entityProperties = properties.stream().collect(Collectors.toMap(EntityPropertyReference::getId, ep -> ep));
+      Map<Long, EntityProperty> entityProperties = properties.stream().collect(Collectors.toMap(PropertyReference::getId, ep -> ep));
       conceptProperties.addAll(entityVersion.getPropertyValues().stream().map(pv -> {
         EntityProperty entityProperty = entityProperties.get(pv.getEntityPropertyId());
         CodeSystemConceptProperty fhir = new CodeSystemConceptProperty();

@@ -31,6 +31,7 @@ public class MapSet {
   private MapSetSettings settings;
 
   private List<MapSetVersion> versions;
+  private List<MapSetProperty> properties;
 
   @Getter
   @Setter

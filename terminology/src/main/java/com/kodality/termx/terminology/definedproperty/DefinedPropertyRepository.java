@@ -1,26 +1,26 @@
-package com.kodality.termx.terminology.codesystem.definedentityproperty;
+package com.kodality.termx.terminology.definedproperty;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.ts.codesystem.DefinedEntityProperty;
-import com.kodality.termx.ts.codesystem.DefinedEntityPropertyQueryParams;
+import com.kodality.termx.ts.property.DefinedProperty;
+import com.kodality.termx.ts.property.DefinedPropertyQueryParams;
 import io.micronaut.core.util.StringUtils;
 import javax.inject.Singleton;
 
 @Singleton
-public class DefinedEntityPropertyRepository extends BaseRepository {
+public class DefinedPropertyRepository extends BaseRepository {
 
-  private final PgBeanProcessor bp = new PgBeanProcessor(DefinedEntityProperty.class, p -> {
+  private final PgBeanProcessor bp = new PgBeanProcessor(DefinedProperty.class, p -> {
     p.addColumnProcessor("rule", PgBeanProcessor.fromJson());
     p.addColumnProcessor("description", PgBeanProcessor.fromJson());
   });
 
   private final static String used = " exists (select 1 from terminology.entity_property ep where ep.sys_status = 'A' and ep.defined_entity_property_id = dep.id) used ";
 
-  public void save(DefinedEntityProperty entityProperty) {
+  public void save(DefinedProperty entityProperty) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", entityProperty.getId());
     ssb.property("name", entityProperty.getName());
@@ -35,12 +35,12 @@ public class DefinedEntityPropertyRepository extends BaseRepository {
     entityProperty.setId(id);
   }
 
-  public DefinedEntityProperty load(Long id) {
+  public DefinedProperty load(Long id) {
     String sql ="select dep.*, " + used + " from terminology.defined_entity_property dep where dep.sys_status = 'A' and dep.id = ?";
     return getBean(sql, bp, id);
   }
 
-  public QueryResult<DefinedEntityProperty> query(DefinedEntityPropertyQueryParams params) {
+  public QueryResult<DefinedProperty> query(DefinedPropertyQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from terminology.defined_entity_property dep where dep.sys_status = 'A'");
       sb.append(filter(params));
@@ -53,7 +53,7 @@ public class DefinedEntityPropertyRepository extends BaseRepository {
     });
   }
 
-  private SqlBuilder filter(DefinedEntityPropertyQueryParams params) {
+  private SqlBuilder filter(DefinedPropertyQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     if (StringUtils.isNotEmpty(params.getTextContains())) {
       sb.append("and (dep.name ~* ?" +

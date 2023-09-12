@@ -19,7 +19,6 @@ import com.kodality.termx.ts.valueset.ValueSetVersionConcept
 import spock.lang.Specification
 
 import static com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingProperty
-import static com.kodality.termx.ts.codesystem.EntityProperty.EntityPropertyRule
 import static com.kodality.termx.ts.codesystem.EntityPropertyType.coding
 import static com.kodality.termx.ts.codesystem.EntityPropertyType.string
 import static com.kodality.termx.ts.codesystem.EntityPropertyValue.EntityPropertyValueCodingValue

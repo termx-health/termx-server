@@ -85,3 +85,26 @@ create index ms_association_relationship_idx on terminology.map_set_association(
 
 select core.create_table_metadata('terminology.map_set_association');
 --rollback drop table if exists terminology.map_set_association;
+
+--changeset kodality:terminology.map_set_property_value
+drop table if exists terminology.map_set_property_value;
+create table terminology.map_set_property_value (
+    id                              bigint      default nextval('core.s_entity') primary key,
+    map_set_property_id             bigint                    not null,
+    map_set_association_id          bigint                    not null,
+    value                           jsonb                     not null,
+    sys_created_at                  timestamp                 not null,
+    sys_created_by                  text                      not null,
+    sys_modified_at                 timestamp                 not null,
+    sys_modified_by                 text                      not null,
+    sys_status                      char(1)     default 'A'   not null collate "C",
+    sys_version                     int                       not null,
+    constraint map_set_property_value_map_set_property_fk foreign key (map_set_property_id) references terminology.map_set_property(id),
+    constraint map_set_property_value_map_set_association_fk foreign key (map_set_association_id) references terminology.map_set_association(id)
+);
+create index map_set_property_value_map_set_property_idx on terminology.map_set_property_value(map_set_property_id);
+create index map_set_property_value_map_set_association_idx on terminology.map_set_property_value(map_set_association_id);
+
+select core.create_table_metadata('terminology.map_set_property_value');
+--rollback drop table if exists terminology.map_set_property_value;
+

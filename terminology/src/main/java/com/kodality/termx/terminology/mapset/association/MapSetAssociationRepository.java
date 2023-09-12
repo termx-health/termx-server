@@ -5,10 +5,12 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
 import com.kodality.termx.ts.mapset.MapSetAssociation.MapSetAssociationEntity;
 import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
+import com.kodality.termx.ts.mapset.MapSetPropertyValue;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.sql.PreparedStatement;
@@ -32,6 +34,7 @@ public class MapSetAssociationRepository extends BaseRepository {
         .setCodeSystemUri(rs.getString("source_code_system_uri"))
         .setDisplay(rs.getString("source_display"))
         .setCode(rs.getString("source_code")));
+    bp.addColumnProcessor("property_values", PgBeanProcessor.fromJson(JsonUtil.getListType(MapSetPropertyValue.class)));
   });
 
   private final Map<String, String> orderMapping = Map.of("source-code", "msa.source_code", "target-code", "msa.target_code");
@@ -39,7 +42,15 @@ public class MapSetAssociationRepository extends BaseRepository {
   private final static String select = "select msa.*, msa.target_code is null as no_map, " +
       "(select cs.uri from terminology.code_system cs where cs.id = msa.source_code_system and cs.sys_status = 'A') as source_code_system_uri, " +
       "(select cs.uri from terminology.code_system cs where cs.id = msa.target_code_system and cs.sys_status = 'A') as target_code_system_uri, " +
-      "(select json_build_object('id', msv.id, 'version', msv.version, 'status', msv.status) from terminology.map_set_version msv where msv.id = msa.map_set_version_id and msv.sys_status = 'A') as map_set_version ";
+      "(select json_build_object('id', msv.id, 'version', msv.version, 'status', msv.status) from terminology.map_set_version msv where msv.id = msa.map_set_version_id and msv.sys_status = 'A') as map_set_version, " +
+      "(select jsonb_agg(mspv.p) from (select json_build_object(" +
+      "               'id', mspv.id, " +
+      "               'value', mspv.value, " +
+      "               'mapSetPropertyId', mspv.map_set_property_id, " +
+      "               'mapSetAssociationId', mspv.map_set_association_id, " +
+      "               'mapSetPropertyName', (select msp.name from terminology.map_set_property msp where msp.id = mspv.map_set_property_id and msp.sys_status = 'A'), " +
+      "               'mapSetPropertyType', (select msp.type from terminology.map_set_property msp where msp.id = mspv.map_set_property_id and msp.sys_status = 'A')) as p " +
+      "from terminology.map_set_property_value mspv where mspv.map_set_association_id = msa.id and mspv.sys_status = 'A') mspv) as property_values ";
 
 
   public void save(MapSetAssociation association) {

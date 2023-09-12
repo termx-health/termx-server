@@ -1,6 +1,7 @@
 package com.kodality.termx.ts.mapset;
 
 import io.micronaut.core.annotation.Introspected;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -19,6 +20,8 @@ public class MapSetAssociation {
   private String relationship;
   private boolean verified;
   private boolean noMap; //calculated field (true if target code is null)
+
+  private List<MapSetPropertyValue> propertyValues;
 
   @Getter
   @Setter

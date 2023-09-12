@@ -91,3 +91,33 @@ create unique index map_set_statistics_map_set_version_id ON terminology.map_set
 
 select core.create_table_metadata('terminology.map_set_statistics');
 --rollback drop table if exists terminology.map_set_statistics;
+
+--changeset kodality:map_set_property
+drop table if exists terminology.map_set_property;
+create table terminology.map_set_property (
+    id                          bigint      default nextval('core.s_entity') primary key,
+    map_set                     text                      not null,
+    name                        text                      not null,
+    type                        text                      not null,
+    uri                         text,
+    description                 jsonb,
+    rule                        jsonb,
+    status                      text                      not null,
+    created                     timestamptz default now() not null,
+    order_number                smallint,
+    required                    boolean,
+    defined_entity_property_id  bigint,
+    sys_created_at              timestamp                 not null,
+    sys_created_by              text                      not null,
+    sys_modified_at             timestamp                 not null,
+    sys_modified_by             text                      not null,
+    sys_status                  char(1)     default 'A'   not null collate "C",
+    sys_version                 int                       not null,
+    constraint map_set_property_map_set_fk foreign key (map_set) references terminology.map_set(id),
+    constraint map_set_property_defined_property_fk foreign key (defined_entity_property_id) references terminology.defined_entity_property(id)
+);
+create index map_set_property_map_set_idx on terminology.map_set_property(map_set);
+create index map_set_property_defined_property_idx on terminology.map_set_property(defined_entity_property_id);
+
+select core.create_table_metadata('terminology.map_set_property');
+--rollback drop table if exists terminology.map_set_property;

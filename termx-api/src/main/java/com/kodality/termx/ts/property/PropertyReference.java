@@ -1,4 +1,4 @@
-package com.kodality.termx.ts.codesystem;
+package com.kodality.termx.ts.property;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class EntityPropertyReference {
+public class PropertyReference {
   private Long id;
   private String name;
   private String type;

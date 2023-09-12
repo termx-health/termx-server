@@ -1,6 +1,7 @@
 package com.kodality.termx.fhir.conceptmap;
 
 import com.kodality.commons.exception.ApiClientException;
+import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.termx.fhir.BaseFhirMapper;
@@ -16,9 +17,13 @@ import com.kodality.termx.ts.association.AssociationKind;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
+import com.kodality.termx.ts.codesystem.Concept;
+import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
 import com.kodality.termx.ts.mapset.MapSetAssociation.MapSetAssociationEntity;
+import com.kodality.termx.ts.mapset.MapSetProperty;
+import com.kodality.termx.ts.mapset.MapSetPropertyValue;
 import com.kodality.termx.ts.mapset.MapSetQueryParams;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersion.MapSetResourceReference;
@@ -27,13 +32,17 @@ import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
+import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroup;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElement;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElementTarget;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElementTargetProperty;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapProperty;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.CollectionUtils;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -47,21 +56,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 
+
 @Context
 public class ConceptMapFhirMapper extends BaseFhirMapper {
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
-  private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
 
   private static Optional<String> termxWebUrl;
 
   public ConceptMapFhirMapper(CodeSystemService codeSystemService, CodeSystemVersionService codeSystemVersionService,
-                              ValueSetService valueSetService, ValueSetVersionService valueSetVersionService,
+                              ValueSetVersionService valueSetVersionService,
                               @Value("${termx.web-url}") Optional<String> termxWebUrl) {
     this.codeSystemService = codeSystemService;
     this.codeSystemVersionService = codeSystemVersionService;
-    this.valueSetService = valueSetService;
     this.valueSetVersionService = valueSetVersionService;
     ConceptMapFhirMapper.termxWebUrl = termxWebUrl;
   }
@@ -103,7 +111,20 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     fhirConceptMap.setSourceScopeUri(version.getScope().getSourceValueSet() == null ? null : version.getScope().getSourceValueSet().getUri());
     fhirConceptMap.setTargetScopeUri(version.getScope().getTargetValueSet() == null ? null : version.getScope().getTargetValueSet().getUri());
     fhirConceptMap.setGroup(toFhirGroup(version.getAssociations(), version.getScope()));
+    fhirConceptMap.setProperty(toFhirProperties(mapSet.getProperties(), version.getPreferredLanguage()));
     return fhirConceptMap;
+  }
+
+  private List<ConceptMapProperty> toFhirProperties(List<MapSetProperty> properties, String lang) {
+    if (properties == null) {
+      return new ArrayList<>();
+    }
+    return properties.stream().map(p -> new ConceptMapProperty()
+        .setCode(p.getName())
+        .setUri(p.getUri())
+        .setType(p.getType())
+        .setDescription(toFhirName(p.getDescription(), lang))
+    ).toList();
   }
 
   private List<ConceptMapGroup> toFhirGroup(List<MapSetAssociation> associations, MapSetVersionScope scope) {
@@ -137,10 +158,39 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
               .setTarget(el.stream().map(t -> new ConceptMapGroupElementTarget()
                   .setCode(t.getTarget().getCode())
                   .setDisplay(t.getTarget().getDisplay())
-                  .setRelationship(t.getRelationship())).toList()))
+                  .setRelationship(t.getRelationship())
+                  .setProperty(toFhirPropertyValues(t.getPropertyValues()))).toList()))
           .collect(Collectors.toList()));
       return group;
     }).collect(Collectors.toList());
+  }
+
+  private List<ConceptMapGroupElementTargetProperty> toFhirPropertyValues(List<MapSetPropertyValue> propertyValues) {
+    if (propertyValues == null) {
+      return new ArrayList<>();
+    }
+    return propertyValues.stream().map(pv -> {
+      ConceptMapGroupElementTargetProperty fhir = new ConceptMapGroupElementTargetProperty().setCode(pv.getMapSetPropertyName());
+      switch (pv.getMapSetPropertyType()) {
+        case EntityPropertyType.code -> fhir.setValueCode((String) pv.getValue());
+        case EntityPropertyType.string -> fhir.setValueString((String) pv.getValue());
+        case EntityPropertyType.bool -> fhir.setValueBoolean((Boolean) pv.getValue());
+        case EntityPropertyType.decimal -> fhir.setValueDecimal(new BigDecimal(String.valueOf(pv.getValue())));
+        case EntityPropertyType.integer -> fhir.setValueInteger(Integer.valueOf(String.valueOf(pv.getValue())));
+        case EntityPropertyType.coding -> {
+          Concept concept = JsonUtil.getObjectMapper().convertValue(pv.getValue(), Concept.class);
+          fhir.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
+        }
+        case EntityPropertyType.dateTime -> {
+          if (pv.getValue() instanceof OffsetDateTime) {
+            fhir.setValueDateTime((OffsetDateTime) pv.getValue());
+          } else {
+            fhir.setValueDateTime(DateUtil.parseOffsetDateTime((String) pv.getValue()));
+          }
+        }
+      }
+      return fhir;
+    }).toList();
   }
 
   private static String addTranslationExtensions(String fhirJson, MapSet ms, MapSetVersion msv) {
@@ -176,9 +226,25 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     ms.setIdentifiers(fromFhirIdentifiers(conceptMap.getIdentifier()));
     ms.setContacts(fromFhirContacts(conceptMap.getContact()));
     ms.setCopyright(new Copyright().setHolder(conceptMap.getCopyright()).setStatement(conceptMap.getCopyrightLabel()));
+    ms.setProperties(fromFhirProperties(conceptMap.getProperty(), conceptMap.getLanguage()));
 
     ms.setVersions(List.of(fromFhirVersion(conceptMap)));
     return ms;
+  }
+
+  private List<MapSetProperty> fromFhirProperties(List<ConceptMapProperty> properties, String lang) {
+    if (properties == null) {
+      return new ArrayList<>();
+    }
+    return properties.stream().map(p -> {
+      MapSetProperty property = new MapSetProperty();
+      property.setDescription(fromFhirName(p.getDescription(), lang));
+      property.setStatus(PublicationStatus.active);
+      property.setName(p.getCode());
+      property.setUri(p.getUri());
+      property.setType(p.getType());
+      return property;
+    }).toList();
   }
 
   private MapSetVersion fromFhirVersion(ConceptMap conceptMap) {
@@ -257,10 +323,23 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
         a.setTarget(new MapSetAssociationEntity().setCode(t.getCode()).setDisplay(t.getDisplay())
             .setCodeSystem(g.getTarget() == null ? null : codeSystems.getOrDefault(g.getTarget(), g.getTarget())));
         a.setRelationship(t.getRelationship());
+        a.setPropertyValues(fromFhirPropertyValues(t.getProperty()));
         associations.add(a);
       });
     }));
     return associations;
+  }
+
+  private List<MapSetPropertyValue> fromFhirPropertyValues(List<ConceptMapGroupElementTargetProperty> propertyValues) {
+    if (propertyValues == null) {
+      return new ArrayList<>();
+    }
+    return propertyValues.stream().map(pv -> new MapSetPropertyValue()
+        .setMapSetPropertyName(pv.getCode())
+        .setValue(Stream.of(pv.getValueCode(), pv.getValueCoding(),
+            pv.getValueString(), pv.getValueInteger(),
+            pv.getValueBoolean(), pv.getValueDateTime(), pv.getValueDecimal()
+        ).filter(Objects::nonNull).findFirst().orElse(null))).toList();
   }
 
   public List<AssociationType> fromFhirAssociationTypes(ConceptMap conceptMap) {

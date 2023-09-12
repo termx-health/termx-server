@@ -29,9 +29,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
 import org.apache.commons.lang3.StringUtils;
 
 import static com.kodality.termx.ts.codesystem.EntityPropertyType.bool;

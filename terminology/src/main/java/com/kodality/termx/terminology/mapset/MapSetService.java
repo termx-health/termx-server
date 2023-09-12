@@ -3,6 +3,7 @@ package com.kodality.termx.terminology.mapset;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
+import com.kodality.termx.terminology.mapset.property.MapSetPropertyService;
 import com.kodality.termx.terminology.mapset.version.MapSetVersionService;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MapSetService {
   private final MapSetRepository repository;
   private final MapSetVersionService mapSetVersionService;
+  private final MapSetPropertyService mapSetPropertyService;
   private final MapSetAssociationService mapSetAssociationService;
 
   private final UserPermissionService userPermissionService;
@@ -39,6 +41,7 @@ public class MapSetService {
   public void save(MapSet mapSet) {
     userPermissionService.checkPermitted(mapSet.getId(), "MapSet", "edit");
     repository.save(mapSet);
+    mapSetPropertyService.save(mapSet.getProperties(), mapSet.getId());
   }
 
   @Transactional
@@ -46,6 +49,8 @@ public class MapSetService {
     MapSet mapSet = request.getMapSet();
     userPermissionService.checkPermitted(mapSet.getId(), "MapSet", "edit");
     repository.save(mapSet);
+
+    mapSetPropertyService.save(request.getProperties(), mapSet.getId());
 
     if (request.getVersion() == null) {
       return;

@@ -5,6 +5,7 @@ import com.kodality.termx.ApiError;
 import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.association.AssociationTypeService;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
+import com.kodality.termx.terminology.mapset.property.MapSetPropertyService;
 import com.kodality.termx.terminology.mapset.version.MapSetVersionService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationType;
@@ -12,11 +13,15 @@ import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
 import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
 import com.kodality.termx.ts.mapset.MapSetImportAction;
+import com.kodality.termx.ts.mapset.MapSetProperty;
+import com.kodality.termx.ts.mapset.MapSetPropertyQueryParams;
 import com.kodality.termx.ts.mapset.MapSetVersion;
+import com.kodality.termx.ts.property.PropertyReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MapSetImportService {
   private final MapSetService mapSetService;
   private final MapSetVersionService mapSetVersionService;
+  private final MapSetPropertyService mapSetPropertyService;
   private final MapSetAssociationService mapSetAssociationService;
   private final AssociationTypeService associationTypeService;
 
@@ -46,7 +52,8 @@ public class MapSetImportService {
     MapSetVersion mapSetVersion = mapSet.getVersions().get(0);
     saveMapSetVersion(mapSetVersion, action.isCleanRun());
 
-    saveAssociations(mapSetVersion.getAssociations(), mapSetVersion, action.isCleanAssociationRun());
+    List<MapSetProperty> properties = saveProperties(mapSet.getProperties(), mapSet.getId());
+    saveAssociations(mapSetVersion.getAssociations(), mapSetVersion, properties, action.isCleanAssociationRun());
 
     if (action.isActivate()) {
       mapSetVersionService.activate(mapSet.getId(), mapSetVersion.getVersion());
@@ -80,8 +87,18 @@ public class MapSetImportService {
     mapSetVersionService.save(mapSetVersion);
   }
 
-  private void saveAssociations(List<MapSetAssociation> associations, MapSetVersion version, boolean cleanRun) {
+  public List<MapSetProperty> saveProperties(List<MapSetProperty> properties, String mapSet) {
+    userPermissionService.checkPermitted(mapSet, "CodeSystem", "edit");
+
+    List<MapSetProperty> existingProperties = mapSetPropertyService.query(new MapSetPropertyQueryParams().setMapSet(mapSet)).getData();
+    List<MapSetProperty> mapSetProperties = new ArrayList<>(existingProperties);
+    mapSetProperties.addAll(properties.stream().filter(p -> existingProperties.stream().noneMatch(ep -> ep.getName().equals(p.getName()))).toList());
+    return mapSetPropertyService.save(mapSetProperties, mapSet);
+  }
+
+  private void saveAssociations(List<MapSetAssociation> associations, MapSetVersion version, List<MapSetProperty> properties, boolean cleanRun) {
     log.info("Creating '{}' associations", associations.size());
+    prepare(associations, properties);
     long start = System.currentTimeMillis();
     if (!cleanRun) {
       mapSetAssociationService.batchUpsert(associations, version.getMapSet(), version.getVersion());
@@ -92,6 +109,15 @@ public class MapSetImportService {
       mapSetAssociationService.batchSave(existing, version.getMapSet(), version.getVersion());
     }
     log.info("Associations created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
+  }
+
+  private void prepare(List<MapSetAssociation> associations, List<MapSetProperty> properties) {
+    Map<String, MapSetProperty> groupedProperties = properties.stream().collect(Collectors.toMap(PropertyReference::getName, p -> p));
+    if (associations != null) {
+      associations.stream().filter(a -> a.getPropertyValues() != null)
+          .forEach(a -> a.getPropertyValues()
+              .forEach(pv -> pv.setMapSetPropertyId(pv.getMapSetPropertyId() == null ? groupedProperties.get(pv.getMapSetPropertyName()).getId() : pv.getMapSetPropertyId())));
+    }
   }
 
   private String getAssociationGroupingKey(MapSetAssociation a) {

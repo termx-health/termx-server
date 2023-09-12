@@ -7,7 +7,6 @@ import com.kodality.termx.terminology.codesystem.association.CodeSystemAssociati
 import com.kodality.termx.terminology.codesystem.concept.ConceptRefreshViewJob;
 import com.kodality.termx.terminology.codesystem.designation.DesignationService;
 import com.kodality.termx.terminology.codesystem.entitypropertyvalue.EntityPropertyValueService;
-import com.kodality.termx.ts.CodeSystemExternalProvider;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociationQueryParams;
@@ -23,13 +22,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -41,7 +38,6 @@ public class CodeSystemEntityVersionService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionRepository repository;
   private final ConceptRefreshViewJob conceptRefreshViewJob;
-  private final List<CodeSystemExternalProvider> codeSystemProviders;
   private final UserPermissionService userPermissionService;
 
   @Transactional
@@ -233,21 +229,6 @@ public class CodeSystemEntityVersionService {
 
     repository.cancel(id);
     conceptRefreshViewJob.refreshView();
-  }
-
-  public List<CodeSystemEntityVersion> loadLastVersions(List<Pair<String, String>> versions) {
-    List<CodeSystemEntityVersion> codeSystemEntityVersions = new ArrayList<>();
-
-    versions.stream().collect(Collectors.groupingBy(Pair::getKey)).forEach((key, value) -> {
-      List<String> codes = value.stream().map(Pair::getValue).collect(Collectors.toSet()).stream().toList();
-      for (CodeSystemExternalProvider provider : codeSystemProviders) {
-        List<CodeSystemEntityVersion> csVersions = provider.loadLastVersions(key, codes);
-        codeSystemEntityVersions.addAll(csVersions);
-      }
-      codeSystemEntityVersions.addAll(repository.loadLastVersions(key, codes));
-    });
-
-    return codeSystemEntityVersions.stream().filter(Objects::nonNull).collect(Collectors.toList());
   }
 
   private void prepare(CodeSystemEntityVersion version) {

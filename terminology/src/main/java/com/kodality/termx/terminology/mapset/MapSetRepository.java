@@ -9,6 +9,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.mapset.MapSet;
+import com.kodality.termx.ts.mapset.MapSetProperty;
 import com.kodality.termx.ts.mapset.MapSetQueryParams;
 import com.kodality.termx.ts.mapset.MapSetQueryParams.Ordering;
 import io.micronaut.core.util.CollectionUtils;
@@ -27,7 +28,23 @@ public class MapSetRepository extends BaseRepository {
     bp.addColumnProcessor("copyright", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
+    bp.addColumnProcessor("properties", PgBeanProcessor.fromJson(JsonUtil.getListType(MapSetProperty.class)));
   });
+
+  private static final String select = "select distinct on (ms.id) ms.*, " +
+      "(select jsonb_agg(msp.p) from (select json_build_object(" +
+      "               'id', msp.id, " +
+      "               'name', msp.name, " +
+      "               'uri', msp.uri, " +
+      "               'type', msp.type, " +
+      "               'description', msp.description, " +
+      "               'status', msp.status, " +
+      "               'orderNumber', msp.order_number, " +
+      "               'required', msp.required, " +
+      "               'rule', msp.rule, " +
+      "               'created', msp.created, " +
+      "               'definedEntityPropertyId', msp.defined_entity_property_id) as p " +
+      "from terminology.map_set_property msp where msp.map_set = ms.id and msp.sys_status = 'A' order by msp.order_number) msp) as properties ";
 
   public void save(MapSet mapSet) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -51,7 +68,7 @@ public class MapSetRepository extends BaseRepository {
   }
 
   public MapSet load(String id) {
-    String sql = "select * from terminology.map_set where sys_status = 'A' and id = ?";
+    String sql = select + "from terminology.map_set ms where ms.sys_status = 'A' and ms.id = ?";
     return getBean(sql, bp, id);
   }
 
@@ -67,7 +84,7 @@ public class MapSetRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select distinct on (ms.id) ms.* from terminology.map_set ms " + join);
+      SqlBuilder sb = new SqlBuilder(select + "from terminology.map_set ms " + join);
       sb.append(filter(params));
       sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));
