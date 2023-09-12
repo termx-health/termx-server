@@ -1,14 +1,17 @@
 package com.kodality.termx.taskflow.task;
 
+import com.kodality.commons.stream.Collectors;
 import com.kodality.taskflow.task.Task;
 import com.kodality.taskflow.task.Task.TaskContextItem;
 import com.kodality.taskflow.task.TaskSearchParams;
 import com.kodality.taskflow.task.activity.TaskActivity;
 import com.kodality.taskflow.user.TaskflowUser;
 import com.kodality.taskflow.workflow.Workflow;
+import com.kodality.termx.task.Task.TaskActivity.TaskActivityContextItem;
 import com.kodality.termx.task.TaskQueryParams;
 import com.kodality.termx.task.Workflow.WorkflowTransition;
 import jakarta.inject.Singleton;
+import java.util.Map.Entry;
 
 @Singleton
 public class TaskMapper {
@@ -79,6 +82,17 @@ public class TaskMapper {
     com.kodality.termx.task.Task.TaskActivity termxActivity = new com.kodality.termx.task.Task.TaskActivity();
     termxActivity.setId(activity.getId().toString());
     termxActivity.setNote(activity.getNote());
+    if (activity.getTransition() != null) {
+      termxActivity.setTransition(activity.getTransition().entrySet().stream().collect(Collectors.toMap(Entry::getKey, o -> {
+        var tat = new com.kodality.termx.task.Task.TaskActivity.TaskActivityTransition();
+        tat.setFrom(o.getValue().getFrom());
+        tat.setTo(o.getValue().getTo());
+        return tat;
+      })));
+    }
+    if (activity.getContext() != null) {
+      termxActivity.setContext(activity.getContext().stream().map(c -> new TaskActivityContextItem().setId(c.getId()).setType(c.getType())).toList());
+    }
     termxActivity.setUpdatedBy(activity.getUpdatedBy() == null ? null : activity.getUpdatedBy().getSub());
     termxActivity.setUpdatedAt(activity.getUpdatedAt());
     return termxActivity;

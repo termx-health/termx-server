@@ -7,6 +7,9 @@ import com.kodality.taskflow.task.Task.TaskPriority;
 import com.kodality.taskflow.task.Task.TaskStatus;
 import com.kodality.taskflow.task.TaskSearchParams;
 import com.kodality.taskflow.task.TaskService;
+import com.kodality.taskflow.task.activity.TaskActivity;
+import com.kodality.taskflow.task.activity.TaskActivity.TaskActivityContextItem;
+import com.kodality.taskflow.task.activity.TaskActivitySearchParams;
 import com.kodality.taskflow.task.activity.TaskActivityService;
 import com.kodality.taskflow.workflow.WorkflowSearchParams;
 import com.kodality.taskflow.workflow.WorkflowService;
@@ -28,6 +31,20 @@ public class TaskFlowService {
   private final static String PROJECT_CODE = "termx";
   private final static String INSTITUTION = "1";
   private final static String TASK_TYPE = "task";
+
+
+  private Long getProjectId() {
+    return projectService.load(PROJECT_CODE, INSTITUTION).getId();
+  }
+
+  private Long getWorkflowId(String type, Long projectId) {
+    WorkflowSearchParams params = new WorkflowSearchParams();
+    params.setTypes(type);
+    params.setProjectIds(String.valueOf(projectId));
+    params.setLimit(1);
+    return workflowService.search(params).findFirst().orElseThrow().getId();
+  }
+
 
   public List<Task> findTasks(String context) {
     if (StringUtils.isEmpty(context)) {
@@ -58,16 +75,12 @@ public class TaskFlowService {
     taskService.save(task, null);
   }
 
-  private Long getProjectId() {
-    return projectService.load(PROJECT_CODE, INSTITUTION).getId();
+  public void cancelTasks(String context) {
+    updateStatus(context, TaskStatus.cancelled);
   }
 
-  private Long getWorkflowId(String type, Long projectId) {
-    WorkflowSearchParams params = new WorkflowSearchParams();
-    params.setTypes(type);
-    params.setProjectIds(String.valueOf(projectId));
-    params.setLimit(1);
-    return workflowService.search(params).findFirst().orElseThrow().getId();
+  public void completeTasks(String context) {
+    updateStatus(context, TaskStatus.completed);
   }
 
   private void updateStatus(String context, String newStatus) {
@@ -80,15 +93,36 @@ public class TaskFlowService {
     });
   }
 
-  public void cancelTasks(String context) {
-    updateStatus(context, TaskStatus.cancelled);
+
+  public List<TaskActivity> findActivities(String context) {
+    if (StringUtils.isEmpty(context)) {
+      return List.of();
+    }
+    TaskActivitySearchParams params = new TaskActivitySearchParams();
+    params.setContext(context);
+    return taskActivityService.search(params);
   }
 
-  public void completeTasks(String context) {
-    updateStatus(context, TaskStatus.completed);
+  public void createTaskActivity(TaskActivity ta) {
+    String context = ta.getContext() == null ? null : activityContextString(ta.getContext());
+    Optional<TaskActivity> existingActivity = findActivities(context).stream().findFirst();
+    ta.setTaskId(existingActivity.map(TaskActivity::getTaskId).orElse(ta.getTaskId()));
+    ta.setId(existingActivity.map(TaskActivity::getId).orElse(null));
+    ta.setUpdatedBy(existingActivity.map(TaskActivity::getUpdatedBy).orElse(null));
+    ta.setUpdatedAt(existingActivity.map(TaskActivity::getUpdatedAt).orElse(null));
+    taskActivityService.save(ta);
   }
+
+  public void cancelTaskActivity(Long taskActivityId) {
+    taskActivityService.cancel(taskActivityId);
+  }
+
 
   public static String contextString(List<TaskContextItem> contextItems) {
+    return contextItems.stream().map(ctx -> ctx.getType() + "|" + ctx.getId()).collect(Collectors.joining(","));
+  }
+
+  public static String activityContextString(List<TaskActivityContextItem> contextItems) {
     return contextItems.stream().map(ctx -> ctx.getType() + "|" + ctx.getId()).collect(Collectors.joining(","));
   }
 }
