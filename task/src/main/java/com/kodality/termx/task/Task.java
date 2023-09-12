@@ -48,6 +48,7 @@ public class Task {
     private String id;
     private String note;
     private Map<String, TaskActivityTransition> transition;
+    private List<TaskActivityContextItem> context;
     private String updatedBy;
     private OffsetDateTime updatedAt;
 
@@ -57,6 +58,14 @@ public class Task {
     public static class TaskActivityTransition {
       private String from;
       private String to;
+    }
+
+    @Getter
+    @Setter
+    @Accessors(chain = true)
+    public static class TaskActivityContextItem {
+      private String type;
+      private Object id;
     }
   }
 }

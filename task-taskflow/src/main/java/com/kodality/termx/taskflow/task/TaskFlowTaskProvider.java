@@ -7,6 +7,8 @@ import com.kodality.taskflow.project.ProjectService;
 import com.kodality.taskflow.task.Task;
 import com.kodality.taskflow.task.TaskService;
 import com.kodality.taskflow.task.activity.TaskActivity;
+import com.kodality.taskflow.task.activity.TaskActivitySearchParams;
+import com.kodality.taskflow.task.activity.TaskActivitySearchParams.Ordering;
 import com.kodality.taskflow.task.activity.TaskActivityService;
 import com.kodality.taskflow.workflow.Workflow;
 import com.kodality.taskflow.workflow.WorkflowSearchParams;
@@ -46,7 +48,7 @@ public class TaskFlowTaskProvider extends TaskProvider {
   @Override
   public com.kodality.termx.task.Task loadTask(String number) {
     Task task = taskService.load(number);
-    List<TaskActivity> activities = taskActivityService.loadAll(task.getId());
+    List<TaskActivity> activities = taskActivityService.search(new TaskActivitySearchParams().setTaskIds(task.getId().toString()).setSort(List.of(Ordering.updated)));
     Project project = projectService.load(task.getProjectId());
     Workflow workflow = workflowService.load(task.getWorkflowId());
     return mapper.map(task)
@@ -72,12 +74,19 @@ public class TaskFlowTaskProvider extends TaskProvider {
   @Override
   public com.kodality.termx.task.Task.TaskActivity createTaskActivity(String number, String note) {
     Long taskId = taskService.load(number).getId();
-    return mapper.map(taskActivityService.create(taskId, note));
+    TaskActivity ta = new TaskActivity();
+    ta.setTaskId(taskId);
+    ta.setNote(note);
+    return mapper.map(taskActivityService.save(ta));
   }
 
   @Override
   public com.kodality.termx.task.Task.TaskActivity updateTaskActivity(String number, String activityId, String note) {
-    return mapper.map(taskActivityService.update(Long.valueOf(activityId), note));
+    Long taskId = taskService.load(number).getId();
+    TaskActivity ta = taskActivityService.load(Long.valueOf(activityId));
+    ta.setTaskId(taskId);
+    ta.setNote(note);
+    return mapper.map(taskActivityService.save(ta));
   }
 
   @Override
