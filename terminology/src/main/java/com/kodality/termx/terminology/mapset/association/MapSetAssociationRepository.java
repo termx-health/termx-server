@@ -17,6 +17,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import javax.inject.Singleton;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
@@ -185,6 +187,19 @@ public class MapSetAssociationRepository extends BaseRepository {
 
       @Override
       public int getBatchSize() {return associationsToUpdate.size();}
+    });
+
+    List<Long> existingIds = associationsToUpdate.stream().map(MapSetAssociation::getId).filter(Objects::nonNull).toList();
+
+    SqlBuilder sb = new SqlBuilder(select + " from terminology.map_set_association msa where msa.sys_status = 'A' and msa.map_set_version_id = ?", mapSetVersionId);
+    List<MapSetAssociation> beans = getBeans(sb.getSql(), bp, sb.getParams());
+    List<MapSetAssociation> newAssociations = beans.stream().filter(v -> !existingIds.contains(v.getId())).toList();
+
+    associations.forEach(a -> {
+      if (a.getId() == null && CollectionUtils.isNotEmpty(newAssociations)) {
+        Optional<MapSetAssociation> association = newAssociations.stream().filter(na -> na.getUniqueKey().equals(a.getUniqueKey())).findFirst();
+        association.ifPresent(as -> a.setId(as.getId()));
+      }
     });
   }
 

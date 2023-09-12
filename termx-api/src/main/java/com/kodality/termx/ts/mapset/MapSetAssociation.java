@@ -32,4 +32,9 @@ public class MapSetAssociation {
 
     private String codeSystemUri; //only loaded field
   }
+
+  public String getUniqueKey() {
+    return (source != null ? source.code + source.codeSystem : "") +
+        (target != null ? target.code + target.codeSystem : "") + relationship + noMap;
+  }
 }

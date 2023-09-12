@@ -8,9 +8,12 @@ import com.kodality.termx.terminology.mapset.version.MapSetVersionRepository;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
 import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
+import com.kodality.termx.ts.mapset.MapSetPropertyValue;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,10 +54,7 @@ public class MapSetAssociationService {
 
     MapSetVersion msv = mapSetVersionRepository.load(mapSet, version);
     repository.retain(mapSet, msv.getId(), associations.stream().map(MapSetAssociation::getId).filter(Objects::nonNull).toList());
-    repository.batchUpsert(associations, mapSet, msv.getId());
-    if (PublicationStatus.draft.equals(msv.getStatus())) {
-      mapSetStatisticsService.calculate(msv.getMapSet(), msv.getVersion());
-    }
+    batchUpsert(associations, mapSet, version);
   }
 
   @Transactional
@@ -63,6 +63,10 @@ public class MapSetAssociationService {
 
     MapSetVersion msv = mapSetVersionRepository.load(mapSet, version);
     repository.batchUpsert(associations, mapSet, msv.getId());
+
+    Map<Long, List<MapSetPropertyValue>> propertyValues = associations.stream().collect(Collectors.toMap(MapSetAssociation::getId, MapSetAssociation::getPropertyValues));
+    mapSetPropertyValueService.batchUpsert(propertyValues, mapSet);
+
     if (PublicationStatus.draft.equals(msv.getStatus())) {
       mapSetStatisticsService.calculate(msv.getMapSet(), msv.getVersion());
     }
@@ -81,6 +85,9 @@ public class MapSetAssociationService {
 
     MapSetVersion msv = mapSetVersionRepository.load(mapSet, version);
     repository.cancel(ids);
+
+    ids.forEach(id -> mapSetPropertyValueService.save(List.of(), id, mapSet));
+
     if (PublicationStatus.draft.equals(msv.getStatus())) {
       mapSetStatisticsService.calculate(msv.getMapSet(), msv.getVersion());
     }
