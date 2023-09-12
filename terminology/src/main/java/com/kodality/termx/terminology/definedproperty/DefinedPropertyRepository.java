@@ -18,7 +18,9 @@ public class DefinedPropertyRepository extends BaseRepository {
     p.addColumnProcessor("description", PgBeanProcessor.fromJson());
   });
 
-  private final static String used = " exists (select 1 from terminology.entity_property ep where ep.sys_status = 'A' and ep.defined_entity_property_id = dep.id) used ";
+  private final static String used = " ( " +
+      "exists (select 1 from terminology.entity_property ep where ep.sys_status = 'A' and ep.defined_entity_property_id = dep.id) or " +
+      "exists (select 1 from terminology.map_set_property msp where msp.sys_status = 'A' and msp.defined_entity_property_id = dep.id) ) used ";
 
   public void save(DefinedProperty entityProperty) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
