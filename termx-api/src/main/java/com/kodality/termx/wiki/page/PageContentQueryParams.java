@@ -9,6 +9,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class PageContentQueryParams extends QueryParams {
+  private String ids;
   private String slugs;
   private String textContains;
   private String spaceIds;
