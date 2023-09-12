@@ -123,6 +123,7 @@ public class ValueSetVersionConceptService {
                 .filter(d -> c.getDisplay() == null || !d.getId().equals(c.getDisplay().getId())).toList());
           }
           c.setActive(calculatedActive(versions));
+          c.setStatus(versions.stream().findFirst().map(CodeSystemEntityVersion::getStatus).orElse(PublicationStatus.active));
           c.setAssociations(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getAssociations()))
               .flatMap(v -> v.getAssociations().stream()).collect(Collectors.toList()));
           c.setPropertyValues(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getPropertyValues())).flatMap(v -> v.getPropertyValues().stream())

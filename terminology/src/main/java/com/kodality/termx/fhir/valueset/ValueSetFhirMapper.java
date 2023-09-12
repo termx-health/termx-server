@@ -184,11 +184,11 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }
 
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = toFhir(valueSet, version, provenances);
-    fhirValueSet.setExpansion(toFhirExpansion(concepts, param));
+    fhirValueSet.setExpansion(toFhirExpansion(concepts, fhirValueSet.getCompose().getProperty(), param));
     return fhirValueSet;
   }
 
-  private static ValueSetExpansion toFhirExpansion(List<ValueSetVersionConcept> concepts, Parameters param) {
+  private static ValueSetExpansion toFhirExpansion(List<ValueSetVersionConcept> concepts, List<String> properties, Parameters param) {
     boolean flat = Optional.ofNullable(param).map(p -> p.findParameter("excludeNested")
         .map(pp -> pp.getValueBoolean() != null ? pp.getValueBoolean() : "true".equals(pp.getValueString())).orElse(false)).orElse(false);
 
@@ -200,9 +200,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     expansion.setParameter(toValueSetParameter(param));
 
     if (flat) {
-      expansion.setContains(concepts.stream().map(c -> toFhirExpansionContains(c, param)).collect(toList()));
+      expansion.setContains(concepts.stream().map(c -> toFhirExpansionContains(c, properties, param)).collect(toList()));
     } else {
-      expansion.setContains(getConceptsHierarchy(concepts, param));
+      expansion.setContains(getConceptsHierarchy(concepts, properties, param));
     }
     return expansion;
   }
@@ -223,7 +223,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     ).toList();
   }
 
-  private static ValueSetExpansionContains toFhirExpansionContains(ValueSetVersionConcept c, Parameters param) {
+  private static ValueSetExpansionContains toFhirExpansionContains(ValueSetVersionConcept c, List<String> allProperties, Parameters param) {
     boolean includeDesignations = Optional.ofNullable(param).map(
         p -> p.findParameter("includeDesignations").map(pr -> pr.getValueBoolean() != null && pr.getValueBoolean() || "true".equals(pr.getValueString()))
             .orElse(false)).orElse(false);
@@ -259,7 +259,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
           extension.setValueString(d.getName());
           return extension;
         }).toList() : null);
-    contains.setProperty(c.getPropertyValues() == null ? null :
+    contains.setProperty(c.getPropertyValues() == null ? new ArrayList<>() :
         c.getPropertyValues().stream().filter(p -> CollectionUtils.isEmpty(properties) || properties.contains(p.getEntityProperty())).map(p -> {
           ValueSetExpansionContainsProperty property = new ValueSetExpansionContainsProperty();
           property.setCode(p.getEntityProperty());
@@ -282,11 +282,17 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
             }
           }
           return property;
-        }).toList());
+        }).collect(toList()));
+    if (allProperties.contains("status") && (CollectionUtils.isEmpty(properties) || properties.contains("status"))) {
+      contains.getProperty().add(new ValueSetExpansionContainsProperty().setCode("status").setValueCode(PublicationStatus.getStatus(c.getStatus())));
+    }
+    if (allProperties.contains("parent") && (CollectionUtils.isEmpty(properties) || properties.contains("parent")) && c.getAssociations() != null) {
+      c.getAssociations().forEach(a -> contains.getProperty().add(new ValueSetExpansionContainsProperty().setCode("parent").setValueCode(a.getTargetCode())));
+    }
     return contains;
   }
 
-  private static List<ValueSetExpansionContains> getConceptsHierarchy(List<ValueSetVersionConcept> concepts, Parameters param) {
+  private static List<ValueSetExpansionContains> getConceptsHierarchy(List<ValueSetVersionConcept> concepts, List<String> properties, Parameters param) {
     Map<String, List<ValueSetVersionConcept>> targetCodeConcepts = concepts.stream()
         .filter(c -> !c.isEnumerated() && CollectionUtils.isNotEmpty(c.getAssociations()))
         .flatMap(c -> c.getAssociations().stream().filter(a -> a.getTargetCode() != null).map(a -> Pair.of(c, a)))
@@ -297,17 +303,17 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         c.getAssociations().stream().noneMatch(a -> codes.contains(a.getTargetCode()))).toList();
     return rootConcepts.stream()
         .map(c -> {
-          ValueSetExpansionContains contains = toFhirExpansionContains(c, param);
-          contains.setContains(getChildConcepts(targetCodeConcepts, c.getConcept().getCode(), param));
+          ValueSetExpansionContains contains = toFhirExpansionContains(c, properties, param);
+          contains.setContains(getChildConcepts(targetCodeConcepts, c.getConcept().getCode(), properties, param));
           return contains;
         }).toList();
   }
 
-  private static List<ValueSetExpansionContains> getChildConcepts(Map<String, List<ValueSetVersionConcept>> targetCodeConcepts, String targetCode, Parameters param) {
+  private static List<ValueSetExpansionContains> getChildConcepts(Map<String, List<ValueSetVersionConcept>> targetCodeConcepts, String targetCode, List<String> properties, Parameters param) {
     return targetCodeConcepts.getOrDefault(targetCode, List.of()).stream()
         .map(c -> {
-          ValueSetExpansionContains contains = toFhirExpansionContains(c, param);
-          contains.setContains(getChildConcepts(targetCodeConcepts, c.getConcept().getCode(), param));
+          ValueSetExpansionContains contains = toFhirExpansionContains(c, properties, param);
+          contains.setContains(getChildConcepts(targetCodeConcepts, c.getConcept().getCode(), properties, param));
           return contains;
         }).toList();
   }

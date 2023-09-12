@@ -23,6 +23,7 @@ public class ValueSetVersionConcept {
 
   private boolean enumerated; //calculated field
   private boolean active; //calculated field
+  private String status; //calculated field
   private List<CodeSystemAssociation> associations; //decorated field
   private List<EntityPropertyValue> propertyValues; //decorated field
 
