@@ -2,6 +2,7 @@ package com.kodality.termx.fileimporter.codesystem.utils;
 
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ApiError;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingCodeSystem;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingCodeSystemVersion;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingEntityPropertyValue;
@@ -22,6 +23,7 @@ import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
@@ -58,7 +60,7 @@ public class CodeSystemFileImportMapper {
     codeSystem.setUri(fpCodeSystem.getUri() != null ? fpCodeSystem.getUri() : codeSystem.getUri());
     codeSystem.setTitle(fpCodeSystem.getTitle() != null ? fpCodeSystem.getTitle() : codeSystem.getTitle());
     codeSystem.setDescription(fpCodeSystem.getDescription() != null ? fpCodeSystem.getDescription() : codeSystem.getDescription());
-    codeSystem.setVersions(List.of(existingCodeSystemVersion != null ? existingCodeSystemVersion : toCsVersion(fpVersion, fpCodeSystem.getId())));
+    codeSystem.setVersions(List.of(existingCodeSystemVersion != null ? existingCodeSystemVersion : toCsVersion(fpVersion, result.getEntities(), fpCodeSystem.getId())));
     codeSystem.setProperties(toCsProperties(result.getProperties()));
     codeSystem.setConcepts(result.getEntities().stream().map(e -> toCsConcept(codeSystem.getId(), e, result.getEntities())).toList());
     codeSystem.setContent(CodeSystemContent.complete);
@@ -66,12 +68,18 @@ public class CodeSystemFileImportMapper {
     return codeSystem;
   }
 
-  private static CodeSystemVersion toCsVersion(FileProcessingCodeSystemVersion fpVersion, String codeSystem) {
+  private static CodeSystemVersion toCsVersion(FileProcessingCodeSystemVersion fpVersion, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities, String codeSystem) {
+    List<String> langs = entities.stream().flatMap(e -> e.values().stream()
+        .flatMap(v -> v.stream().map(FileProcessingEntityPropertyValue::getLang))).filter(Objects::nonNull).distinct().toList();
+
     CodeSystemVersion version = new CodeSystemVersion();
     version.setCodeSystem(codeSystem);
     version.setVersion(fpVersion.getVersion());
     version.setStatus(PublicationStatus.draft);
     version.setReleaseDate(fpVersion.getReleaseDate());
+    version.setSupportedLanguages(langs);
+    version.setPreferredLanguage(langs.size() == 1 ? langs.get(0) :
+        langs.contains(SessionStore.require().getLang()) ? SessionStore.require().getLang() : null);
     return version;
   }
 
