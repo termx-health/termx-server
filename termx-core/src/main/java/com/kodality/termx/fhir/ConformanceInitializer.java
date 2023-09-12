@@ -13,52 +13,35 @@
 package com.kodality.termx.fhir;
 
 import com.kodality.commons.util.resource.ResourcesLocator;
-import com.kodality.kefhir.core.service.conformance.ConformanceResourceLoader;
-import com.kodality.kefhir.structure.service.ResourceFormatService;
+import com.kodality.kefhir.core.service.conformance.loader.ConformanceLoader;
+import com.kodality.kefhir.core.service.conformance.loader.ConformanceStaticLoader;
 import io.micronaut.context.annotation.Replaces;
 import io.micronaut.core.io.ResourceLoader;
-import java.util.ArrayList;
-import java.util.HashMap;
+import jakarta.inject.Singleton;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import javax.annotation.PostConstruct;
-import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.hl7.fhir.r5.model.Bundle;
 import org.hl7.fhir.r5.model.Resource;
 
-@Slf4j
 @Singleton
-@Replaces(ConformanceResourceLoader.class)
+@Replaces(ConformanceLoader.class)
 @RequiredArgsConstructor
-public class ConformanceInitializer implements ConformanceResourceLoader {
-  private final ResourceFormatService resourceFormatService;
-  private final Map<String, List<Resource>> resources = new HashMap<>();
-  private final ResourceLoader resourceLoader;
+public class ConformanceInitializer extends ConformanceStaticLoader {
   private final List<TermxGeneratedConformanceProvider> generators;
+  private final ResourceLoader resourceLoader;
 
-  @PostConstruct
-  public void init() {
-    resourceLoader.getResources("conformance").flatMap(url -> ResourcesLocator.readResources(url.toString() + "/**")).forEach(res -> {
-      Resource resource = this.resourceFormatService.parse(res.getContentString());
-      if (resource.getResourceType().name().equals("Bundle")) {
-        ((Bundle) resource).getEntry().forEach(e -> {
-          resources.computeIfAbsent(e.getResource().getResourceType().name(), (k) -> new ArrayList<>()).add(e.getResource());
-        });
-      } else {
-        resources.computeIfAbsent(resource.getResourceType().name(), (k) -> new ArrayList<>()).add(resource);
-      }
-    });
+  @Override
+  public List<String> getResources() {
+    return resourceLoader.getResources("conformance").flatMap(url -> ResourcesLocator.readResources(url.toString() + "/**")).map(
+        com.kodality.commons.util.resource.Resource::getContentString).toList();
   }
 
   @SuppressWarnings("unchecked")
   public <T extends Resource> List<T> load(String name) {
-    if (resources.containsKey(name)) {
-      return (List<T>) resources.get(name);
-    }
-    return (List<T>) generators.stream().map(g -> g.generate(name)).filter(Objects::nonNull).toList();
+      if (resources.containsKey(name)) {
+        return (List<T>) resources.get(name);
+      }
+      return (List<T>) generators.stream().map(g -> g.generate(name)).filter(Objects::nonNull).toList();
   }
 
   public interface TermxGeneratedConformanceProvider {

@@ -19,9 +19,9 @@ import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyKind;
-import com.kodality.termx.ts.property.PropertyReference;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import com.kodality.termx.ts.property.PropertyReference;
 import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
@@ -182,6 +182,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
                                                                          Map<Long, List<CodeSystemEntityVersion>> childMap,
                                                                          Map<Long, List<String>> parentMap) {
     List<CodeSystemConceptProperty> conceptProperties = new ArrayList<>();
+    if (properties == null) {
+      return conceptProperties;
+    }
 
     if (properties.stream().anyMatch(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName()))) {
       String code = properties.stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName())).findFirst().get().getName();
