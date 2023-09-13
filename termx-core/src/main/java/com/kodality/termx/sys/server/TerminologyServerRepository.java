@@ -4,9 +4,12 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.QueryResult;
-import io.micronaut.core.util.StringUtils;
+import java.util.Arrays;
+import java.util.List;
 import javax.inject.Singleton;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 public class TerminologyServerRepository extends BaseRepository {
@@ -47,11 +50,11 @@ public class TerminologyServerRepository extends BaseRepository {
 
   public QueryResult<TerminologyServer> query(TerminologyServerQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from sys.terminology_server ts where ts.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from sys.terminology_server ts");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from sys.terminology_server ts where ts.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select * from sys.terminology_server ts");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -59,16 +62,23 @@ public class TerminologyServerRepository extends BaseRepository {
   }
 
   private SqlBuilder filter(TerminologyServerQueryParams params) {
-    SqlBuilder sb = new SqlBuilder();
+    SqlBuilder sb = new SqlBuilder("where ts.sys_status = 'A'");
+    if (params.getSpaceId() != null) {
+      String sql = "and exists(select 1 from sys.space s where s.id = ? and ts.code in (select jsonb_array_elements_text(s.terminology_servers)) and s.sys_status = 'A')";
+      sb.append(sql, params.getSpaceId());
+    }
     if (StringUtils.isNotEmpty(params.getCodes())) {
       sb.and().in("ts.code", params.getCodes());
     }
-    if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and (ts.code ~* ? or cs.root_url ~* ? or exists (select 1 from jsonb_each_text(ts.names) where value ~* ?))",
-          params.getTextContains(), params.getTextContains(), params.getTextContains());
+    if (StringUtils.isNotEmpty(params.getKinds())) {
+      List<String> kinds = Arrays.stream(StringUtils.split(params.getKinds(), ",")).toList();
+      sb.and("ts.kind ??| ?::text[]", PgUtil.array(kinds));
     }
-    sb.appendIfTrue(params.isCurrentInstallation(),"and ts.current_installation is true");
-    sb.appendIfNotNull("and exists(select 1 from sys.space s where s.id = ? and ts.code in (select jsonb_array_elements_text(s.terminology_servers)) and s.sys_status = 'A')", params.getSpaceId());
+    if (StringUtils.isNotEmpty(params.getTextContains())) {
+      String sql = "and (ts.code ~* ? or cs.root_url ~* ? or exists (select 1 from jsonb_each_text(ts.names) where value ~* ?))";
+      sb.append(sql, params.getTextContains(), params.getTextContains(), params.getTextContains());
+    }
+    sb.appendIfTrue(params.isCurrentInstallation(), "and ts.current_installation is true");
     return sb;
   }
 

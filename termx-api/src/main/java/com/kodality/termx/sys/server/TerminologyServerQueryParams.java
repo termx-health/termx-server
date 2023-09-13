@@ -9,8 +9,9 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class TerminologyServerQueryParams extends QueryParams {
-  private String codes;
   private Long spaceId;
-  private boolean currentInstallation;
+  private String codes;
+  private String kinds;
   private String textContains;
+  private boolean currentInstallation;
 }
