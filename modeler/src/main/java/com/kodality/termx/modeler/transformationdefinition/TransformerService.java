@@ -137,7 +137,7 @@ public class TransformerService {
   private String getContent(TransformationDefinitionResource res) {
     return switch (res.getSource()) {
       case "static" -> res.getReference().getContent();
-      case "fhir" -> queryResource(res.getReference().getFhirServer(), res.getReference().getFhirResource());
+      case "url" -> queryResource(res.getReference().getResourceUrl());
       case "local" -> switch (res.getType()) {
         case "definition" -> structureDefinitionService.load(Long.valueOf(res.getReference().getLocalId())).orElseThrow().getContent();
         case "conceptmap" -> conceptMapFhirService.load(res.getReference().getLocalId()).getContent().getValue();
@@ -147,8 +147,8 @@ public class TransformerService {
     };
   }
 
-  private String queryResource(String fhirServerUrl, String resource) {
-    return httpClient.GET(fhirServerUrl + "/" + resource).thenApply(HttpResponse::body).join();
+  private String queryResource(String url) {
+    return httpClient.GET(url).thenApply(HttpResponse::body).join();
   }
 
   private <R extends Resource> R parse(String input) {

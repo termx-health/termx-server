@@ -36,8 +36,7 @@ public class TransformationDefinition {
   @Setter
   public static class TransformationDefinitionResourceReference {
     private String localId;
-    private String fhirServer;
-    private String fhirResource;
+    private String resourceUrl;
     private String content;
   }
 }
