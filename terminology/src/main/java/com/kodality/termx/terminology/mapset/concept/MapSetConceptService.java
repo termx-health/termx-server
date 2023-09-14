@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.mapset.concept;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.model.QueryResult.SearchResultMeta;
-import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptUtil;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationRepository;
@@ -19,7 +18,6 @@ import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersion.MapSetResourceReference;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,7 +48,7 @@ public class MapSetConceptService {
   private QueryResult<MapSetConcept> querySourceConcepts(MapSetVersion msv, MapSetConceptQueryParams params) {
     if ("code-system".equals(msv.getScope().getSourceType()) && CollectionUtils.isNotEmpty(msv.getScope().getSourceCodeSystems())) {
       String scs = msv.getScope().getSourceCodeSystems().stream().map(cs -> cs.getId() + "|" + cs.getVersion()).collect(Collectors.joining(","));
-      return queryCodeSystemConcepts(msv, scs, params);
+      return queryCodeSystemConcepts(msv, msv.getScope().getSourceCodeSystems().stream().map(MapSetResourceReference::getId).toList(), scs, params);
     }
     if ("value-set".equals(msv.getScope().getSourceType()) && msv.getScope().getSourceValueSet() != null) {
       return queryValueSetConcepts(msv, msv.getScope().getSourceValueSet(), params);
@@ -61,7 +59,7 @@ public class MapSetConceptService {
   private QueryResult<MapSetConcept> queryTargetConcepts(MapSetVersion msv, MapSetConceptQueryParams params) {
     if ("code-system".equals(msv.getScope().getTargetType()) && CollectionUtils.isNotEmpty(msv.getScope().getTargetCodeSystems())) {
       String tcs = msv.getScope().getTargetCodeSystems().stream().map(cs -> cs.getId() + "|" + cs.getVersion()).collect(Collectors.joining(","));
-      return queryCodeSystemConcepts(msv, tcs, params);
+      return queryCodeSystemConcepts(msv, msv.getScope().getTargetCodeSystems().stream().map(MapSetResourceReference::getId).toList(), tcs, params);
     }
     if ("value-set".equals(msv.getScope().getTargetType()) && msv.getScope().getTargetValueSet() != null) {
       return queryValueSetConcepts(msv, msv.getScope().getTargetValueSet(), params);
@@ -70,9 +68,9 @@ public class MapSetConceptService {
   }
 
 
-  private QueryResult<MapSetConcept> queryCodeSystemConcepts(MapSetVersion msv, String cs, MapSetConceptQueryParams params) {
+  private QueryResult<MapSetConcept> queryCodeSystemConcepts(MapSetVersion msv, List<String> codeSystems, String cs, MapSetConceptQueryParams params) {
 
-    ConceptQueryParams cp = new ConceptQueryParams().setCodeSystem(Arrays.stream(PipeUtil.parsePipe(cs)).findFirst().orElse(null)).setCodeSystemVersions(cs).setTextContains(params.getTextContains());
+    ConceptQueryParams cp = new ConceptQueryParams().setCodeSystem(String.join(",", codeSystems)).setCodeSystemVersions(cs).setTextContains(params.getTextContains());
     cp.setUnmapedInMapSetVersionId(params.getUnmapped() != null && params.getUnmapped() ? msv.getId() : null);
     cp.setVerifiedInMapSetVersionId(params.getVerified() != null && params.getVerified() ? msv.getId() : null);
     cp.setUnverifiedInMapSetVersionId(params.getVerified() != null && !params.getVerified() ? msv.getId() : null);
