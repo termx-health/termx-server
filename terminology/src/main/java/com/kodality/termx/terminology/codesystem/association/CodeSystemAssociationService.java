@@ -35,8 +35,14 @@ public class CodeSystemAssociationService {
 
   private final UserPermissionService userPermissionService;
 
-  public List<CodeSystemAssociation> loadAll(Long codeSystemEntityVersionId) {
-    return repository.loadAll(codeSystemEntityVersionId);
+  public List<CodeSystemAssociation> loadAll(Long sourceVersionId) {
+    return repository.loadAll(sourceVersionId);
+  }
+
+  public List<CodeSystemAssociation> loadReferences(String codeSystem, Long targetVersionId) {
+    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "view");
+
+    return repository.loadReferences(targetVersionId);
   }
 
   public Optional<CodeSystemAssociation> load(Long id) {
@@ -74,14 +80,6 @@ public class CodeSystemAssociationService {
     repository.retain(entries);
     codeSystemEntityService.batchSave(associations.values().stream().flatMap(Collection::stream).map(a -> a.setType(CodeSystemEntityType.association)).toList(), codeSystem);
     repository.save(entries.stream().flatMap(e -> e.getValue().stream().map(v -> Pair.of(e.getKey(), v))).toList(), codeSystem);
-  }
-
-
-  @Transactional
-  public void delete(Long id, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-    repository.delete(id);
-    conceptRefreshViewJob.refreshView();
   }
 
   public QueryResult<CodeSystemAssociation> query(CodeSystemAssociationQueryParams params) {

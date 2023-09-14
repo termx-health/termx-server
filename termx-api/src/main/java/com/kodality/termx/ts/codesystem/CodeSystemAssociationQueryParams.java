@@ -9,6 +9,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class CodeSystemAssociationQueryParams extends QueryParams {
-  private String codeSystemEntityVersionId;
+  private String sourceEntityVersionId;
+  private String targetEntityVersionId;
   private String associationType;
 }

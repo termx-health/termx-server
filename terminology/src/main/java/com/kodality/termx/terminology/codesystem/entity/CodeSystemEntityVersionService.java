@@ -116,16 +116,13 @@ public class CodeSystemEntityVersionService {
 
           DesignationQueryParams designationParams = new DesignationQueryParams().setCodeSystemEntityVersionId(versionIds);
           designationParams.setLimit(-1);
-          Map<Long, List<Designation>> designations =
-              designationService.query(designationParams).getData().stream().collect(Collectors.groupingBy(Designation::getCodeSystemEntityVersionId));
+          Map<Long, List<Designation>> designations = designationService.query(designationParams).getData().stream().collect(Collectors.groupingBy(Designation::getCodeSystemEntityVersionId));
           EntityPropertyValueQueryParams entityPropertyValueParams = new EntityPropertyValueQueryParams().setCodeSystemEntityVersionId(versionIds);
           entityPropertyValueParams.setLimit(-1);
-          Map<Long, List<EntityPropertyValue>> propertyValues = entityPropertyValueService.query(entityPropertyValueParams).getData().stream()
-              .collect(Collectors.groupingBy(EntityPropertyValue::getCodeSystemEntityVersionId));
-          CodeSystemAssociationQueryParams codeSystemAssociationParams = new CodeSystemAssociationQueryParams().setCodeSystemEntityVersionId(versionIds);
+          Map<Long, List<EntityPropertyValue>> propertyValues = entityPropertyValueService.query(entityPropertyValueParams).getData().stream().collect(Collectors.groupingBy(EntityPropertyValue::getCodeSystemEntityVersionId));
+          CodeSystemAssociationQueryParams codeSystemAssociationParams = new CodeSystemAssociationQueryParams().setSourceEntityVersionId(versionIds);
           codeSystemAssociationParams.setLimit(-1);
-          Map<Long, List<CodeSystemAssociation>> associations =
-              codeSystemAssociationService.query(codeSystemAssociationParams).getData().stream().collect(Collectors.groupingBy(CodeSystemAssociation::getSourceId));
+          Map<Long, List<CodeSystemAssociation>> associations = codeSystemAssociationService.query(codeSystemAssociationParams).getData().stream().collect(Collectors.groupingBy(CodeSystemAssociation::getSourceId));
 
           batch.forEach(v -> {
             v.setDesignations(designations.get(v.getId()));

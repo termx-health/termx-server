@@ -26,7 +26,9 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     bp.overrideColumnMapping("source_code_system_entity_version_id", "sourceId");
   });
 
-  private String from = " from terminology.code_system_association csa inner join terminology.code_system_entity_version csev on csev.sys_status = 'A' and csev.id = target_code_system_entity_version_id ";
+  private static final String select = "select csa.*, " +
+      "(select csev.code from terminology.code_system_entity_version csev where csev.sys_status = 'A' and csev.id = target_code_system_entity_version_id ) as target_code, " +
+      "(select csev.code from terminology.code_system_entity_version csev where csev.sys_status = 'A' and csev.id = source_code_system_entity_version_id ) as source_code ";
 
   public void save(CodeSystemAssociation association, Long codeSystemEntityVersionId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -43,13 +45,18 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public List<CodeSystemAssociation> loadAll(Long codeSystemEntityVersionId) {
-    String sql = "select csa.*, csev.code as target_code " + from + "where csa.sys_status = 'A' and csa.source_code_system_entity_version_id = ?";
-    return getBeans(sql, bp, codeSystemEntityVersionId);
+  public List<CodeSystemAssociation> loadAll(Long sourceVersionId) {
+    String sql = select + "from terminology.code_system_association csa where csa.sys_status = 'A' and csa.source_code_system_entity_version_id = ?";
+    return getBeans(sql, bp, sourceVersionId);
+  }
+
+  public List<CodeSystemAssociation> loadReferences(Long targetVersionId) {
+    String sql = select + "from terminology.code_system_association csa where csa.sys_status = 'A' and csa.target_code_system_entity_version_id = ?";
+    return getBeans(sql, bp, targetVersionId);
   }
 
   public CodeSystemAssociation load(Long id) {
-    String sql = "select csa.*, csev.code as target_code " + from + "where csa.sys_status = 'A' and csa.id = ?";
+    String sql = select + " from terminology.code_system_association csa where csa.sys_status = 'A' and csa.id = ?";
     return getBean(sql, bp, id);
   }
 
@@ -60,18 +67,13 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public void delete(Long id) {
-    SqlBuilder sb = new SqlBuilder("update terminology.code_system_association set sys_status = 'C' where id = ? and sys_status = 'A'", id);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
-  }
-
   public QueryResult<CodeSystemAssociation> query(CodeSystemAssociationQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1)" + from + "where csa.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_association csa where csa.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select csa.*, csev.code as target_code " + from + "where csa.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder(select + " from terminology.code_system_association csa where csa.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -80,8 +82,8 @@ public class CodeSystemAssociationRepository extends BaseRepository {
 
   private SqlBuilder filter(CodeSystemAssociationQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    if (StringUtils.isNotEmpty(params.getCodeSystemEntityVersionId())) {
-      sb.and().in("csa.source_code_system_entity_version_id", params.getCodeSystemEntityVersionId(), Long::valueOf);
+    if (StringUtils.isNotEmpty(params.getSourceEntityVersionId())) {
+      sb.and().in("csa.source_code_system_entity_version_id", params.getSourceEntityVersionId(), Long::valueOf);
     }
     if (StringUtils.isNotEmpty(params.getAssociationType())) {
       sb.and().in("csa.association_type", params.getAssociationType());

@@ -8,11 +8,13 @@ import com.kodality.termx.auth.ResourceId;
 import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.sys.provenance.Provenance.ProvenanceChange;
+import com.kodality.termx.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
@@ -51,6 +53,7 @@ public class CodeSystemController {
   private final EntityPropertyService entityPropertyService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemDuplicateService codeSystemDuplicateService;
+  private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final CodeSystemProvenanceService provenanceService;
 
@@ -318,6 +321,13 @@ public class CodeSystemController {
     provenanceService.create(CodeSystemProvenanceService.provenance("duplicate", newVersion).created());
     return HttpResponse.ok();
   }
+
+  @Authorized(Privilege.CS_VIEW)
+  @Get(uri = "/{codeSystem}/entity-versions/{id}/references")
+  public List<CodeSystemAssociation> getReferences(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
+    return codeSystemAssociationService.loadReferences(codeSystem, id);
+  }
+
 
   //----------------CodeSystem Property----------------
 

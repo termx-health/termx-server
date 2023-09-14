@@ -16,5 +16,6 @@ public class CodeSystemAssociation extends CodeSystemEntity {
   private Long sourceId;
   private Integer orderNumber;
 
+  private String sourceCode;
   private String targetCode;
 }

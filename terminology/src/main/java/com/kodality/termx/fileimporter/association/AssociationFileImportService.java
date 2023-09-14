@@ -61,7 +61,7 @@ public class AssociationFileImportService {
 
     // load persisted CS version associations
     CodeSystemAssociationQueryParams params = new CodeSystemAssociationQueryParams();
-    params.setCodeSystemEntityVersionId(String.valueOf(codeSystemVersionId));
+    params.setSourceEntityVersionId(String.valueOf(codeSystemVersionId));
     params.setAssociationType(req.getAssociationType());
     params.all();
     List<CodeSystemAssociation> versionAssociations = codeSystemAssociationService.query(params).getData();
