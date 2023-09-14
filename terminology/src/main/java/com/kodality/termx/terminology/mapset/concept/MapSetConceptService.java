@@ -2,6 +2,7 @@ package com.kodality.termx.terminology.mapset.concept;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.model.QueryResult.SearchResultMeta;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptUtil;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationRepository;
@@ -18,6 +19,7 @@ import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersion.MapSetResourceReference;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -70,7 +72,7 @@ public class MapSetConceptService {
 
   private QueryResult<MapSetConcept> queryCodeSystemConcepts(MapSetVersion msv, String cs, MapSetConceptQueryParams params) {
 
-    ConceptQueryParams cp = new ConceptQueryParams().setCodeSystemVersions(cs).setTextContains(params.getTextContains());
+    ConceptQueryParams cp = new ConceptQueryParams().setCodeSystem(Arrays.stream(PipeUtil.parsePipe(cs)).findFirst().orElse(null)).setCodeSystemVersions(cs).setTextContains(params.getTextContains());
     cp.setUnmapedInMapSetVersionId(params.getUnmapped() != null && params.getUnmapped() ? msv.getId() : null);
     cp.setVerifiedInMapSetVersionId(params.getVerified() != null && params.getVerified() ? msv.getId() : null);
     cp.setUnverifiedInMapSetVersionId(params.getVerified() != null && !params.getVerified() ? msv.getId() : null);

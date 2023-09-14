@@ -113,7 +113,7 @@ public class ConceptService {
   }
 
   public QueryResult<Concept> query(ConceptQueryParams params) {
-    for (CodeSystemExternalProvider provider: codeSystemProviders) {
+    for (CodeSystemExternalProvider provider : codeSystemProviders) {
       QueryResult<Concept> result = provider.searchConcepts(params.getCodeSystem(), params);
       if (CollectionUtils.isNotEmpty(result.getData())) {
         return result;
@@ -153,17 +153,21 @@ public class ConceptService {
 
   private List<Concept> decorate(List<Concept> concepts, String codeSystem, ConceptQueryParams p) {
     CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
+    params.setCodeSystemVersion(p.getCodeSystemVersion());
+    params.setCodeSystemVersionId(p.getCodeSystemVersionId());
+    params.setCodeSystemVersions(p.getCodeSystemVersions());
+    params.setCodeSystem(codeSystem);
+    params.all();
+
     List<String> csEntityIds = concepts.stream().map(CodeSystemEntity::getId).map(String::valueOf).toList();
 
     if (CollectionUtils.isNotEmpty(csEntityIds)) {
-      params.setCodeSystemEntityIds(String.join(",", csEntityIds));
-      params.setCodeSystemVersion(p.getCodeSystemVersion());
-      params.setCodeSystemVersionId(p.getCodeSystemVersionId());
-      params.setCodeSystemVersions(p.getCodeSystemVersions());
-      params.setCodeSystem(codeSystem);
-      params.all();
-      List<CodeSystemEntityVersion> versions = codeSystemEntityVersionService.query(params).getData();
-      concepts.forEach(c -> c.setVersions(versions.stream().filter(v -> v.getCode().equals(c.getCode())).collect(Collectors.toList())));
+      IntStream.range(0, (csEntityIds.size() + 1000 - 1) / 1000)
+          .mapToObj(i -> csEntityIds.subList(i * 1000, Math.min(csEntityIds.size(), (i + 1) * 1000))).forEach(batch -> {
+            params.setCodeSystemEntityIds(String.join(",", batch));
+            Map<String, List<CodeSystemEntityVersion>> versions = codeSystemEntityVersionService.query(params).getData().stream().collect(Collectors.groupingBy(CodeSystemEntityVersion::getCode));
+            concepts.forEach(c -> c.setVersions(versions.getOrDefault(c.getCode(), c.getVersions())));
+          });
     }
     return concepts;
   }

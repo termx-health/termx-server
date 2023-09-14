@@ -38,15 +38,6 @@ public class UcumCodeSystemProvider extends CodeSystemExternalProvider {
   }
 
   @Override
-  public List<CodeSystemEntityVersion> loadLastVersions(List<String> code) {
-    MeasurementUnitQueryParams ucumParams = new MeasurementUnitQueryParams();
-    ucumParams.setCode(String.join(",", code));
-    ucumParams.setLimit(code.size());
-    List<MeasurementUnit> units = measurementUnitService.query(ucumParams).getData();
-    return units.stream().map(ucumMapper::toConceptVersion).toList();
-  }
-
-  @Override
   public String getCodeSystemId() {
     return UCUM;
   }

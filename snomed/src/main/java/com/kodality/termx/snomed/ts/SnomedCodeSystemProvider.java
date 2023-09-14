@@ -5,7 +5,6 @@ import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.snomed.SnomedService;
 import com.kodality.termx.ts.CodeSystemExternalProvider;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
@@ -22,12 +21,6 @@ public class SnomedCodeSystemProvider extends CodeSystemExternalProvider {
   private final SnomedService snomedService;
 
   private static final String SNOMED = "snomed-ct";
-
-  @Override
-  public List<CodeSystemEntityVersion> loadLastVersions(List<String> codes) {
-    List<SnomedConcept> snomedConcepts = snomedService.loadConcepts(codes, true);
-    return snomedConcepts.stream().map(snomedMapper::toConceptVersion).toList();
-  }
 
   @Override
   public QueryResult<Concept> searchConcepts(ConceptQueryParams params) {
