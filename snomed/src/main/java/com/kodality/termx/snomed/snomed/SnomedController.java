@@ -8,6 +8,7 @@ import com.kodality.termx.snomed.Privilege;
 import com.kodality.termx.snomed.branch.SnomedBranch;
 import com.kodality.termx.snomed.branch.SnomedBranchRequest;
 import com.kodality.termx.snomed.client.SnowstormClient;
+import com.kodality.termx.snomed.codesystem.SnomedCodeSystem;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.concept.SnomedConceptTransactionRequest;
@@ -70,6 +71,29 @@ public class SnomedController {
   private final SnomedTransactionService transactionService;
   private final SnomedTranslationService translationService;
   private final ProvenanceService provenanceService;
+
+
+  //----------------CodeSystems----------------
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/codesystems")
+  public List<SnomedCodeSystem> loadCodeSystems() {
+    return snowstormClient.loadCodeSystems().join().getItems();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Post("/codesystems")
+  public HttpResponse<?> createCodeSystem(@Body SnomedCodeSystem codeSystem) {
+    snowstormClient.createCodeSystem(codeSystem).join();
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Delete("/codesystems/{shortName}")
+  public HttpResponse<?> deleteCodeSystem(@Parameter String shortName) {
+    snowstormClient.deleteCodeSystem(shortName).join();
+    return HttpResponse.ok();
+  }
 
   //----------------Branches----------------
 

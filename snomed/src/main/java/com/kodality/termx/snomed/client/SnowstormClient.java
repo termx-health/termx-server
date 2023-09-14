@@ -7,6 +7,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.http.BinaryHttpClient;
 import com.kodality.termx.snomed.branch.SnomedBranch;
 import com.kodality.termx.snomed.branch.SnomedBranchRequest;
+import com.kodality.termx.snomed.codesystem.SnomedCodeSystem;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.decriptionitem.SnomedDescriptionItemResponse;
@@ -44,6 +45,18 @@ public class SnowstormClient {
     client = clientProvider.apply(snomedUrl).getLeft();
     binaryHttpClient = clientProvider.apply(snomedUrl).getRight();
     branch = snomedBranch + "/";
+  }
+
+  public CompletableFuture<SnomedSearchResult<SnomedCodeSystem>> loadCodeSystems() {
+    return client.GET("codesystems", JsonUtil.getParametricType(SnomedSearchResult.class, SnomedCodeSystem.class));
+  }
+
+  public CompletableFuture<SnomedCodeSystem> createCodeSystem(SnomedCodeSystem codeSystem) {
+    return client.POST("codesystems", codeSystem, SnomedCodeSystem.class);
+  }
+
+  public CompletableFuture<HttpResponse<String>> deleteCodeSystem(String shortName) {
+    return client.DELETE("codesystems/" + shortName);
   }
 
   public CompletableFuture<List<SnomedBranch>> loadBranches() {
