@@ -1,6 +1,7 @@
 package com.kodality.termx.snomed.snomed;
 
 import com.kodality.termx.snomed.client.SnowstormClient;
+import com.kodality.termx.snomed.codesystem.SnomedCodeSystem;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslation;
@@ -118,5 +119,11 @@ public class SnomedService {
       e.printStackTrace();
     }
     return Map.of("jobId", jobId);
+  }
+
+  public List<SnomedCodeSystem> loadCodeSystems() {
+    List<SnomedCodeSystem> codeSystems = snowstormClient.loadCodeSystems().join().getItems();
+    codeSystems.forEach(cs -> cs.setVersions(snowstormClient.loadCodeSystemVersions(cs.getShortName()).join().getItems()));
+    return codeSystems;
   }
 }

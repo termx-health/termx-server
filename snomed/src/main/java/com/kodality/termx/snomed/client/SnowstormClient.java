@@ -8,6 +8,7 @@ import com.kodality.termx.http.BinaryHttpClient;
 import com.kodality.termx.snomed.branch.SnomedBranch;
 import com.kodality.termx.snomed.branch.SnomedBranchRequest;
 import com.kodality.termx.snomed.codesystem.SnomedCodeSystem;
+import com.kodality.termx.snomed.codesystem.SnomedCodeSystem.SnomedCodeSystemVersion;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.decriptionitem.SnomedDescriptionItemResponse;
@@ -49,6 +50,10 @@ public class SnowstormClient {
 
   public CompletableFuture<SnomedSearchResult<SnomedCodeSystem>> loadCodeSystems() {
     return client.GET("codesystems", JsonUtil.getParametricType(SnomedSearchResult.class, SnomedCodeSystem.class));
+  }
+
+  public CompletableFuture<SnomedSearchResult<SnomedCodeSystemVersion>> loadCodeSystemVersions(String shortName) {
+    return client.GET("codesystems/" + shortName + "/versions?showFutureVersions=true" , JsonUtil.getParametricType(SnomedSearchResult.class, SnomedCodeSystemVersion.class));
   }
 
   public CompletableFuture<SnomedCodeSystem> createCodeSystem(SnomedCodeSystem codeSystem) {
