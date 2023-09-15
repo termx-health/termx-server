@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.r5.context.ContextUtilities;
 import org.hl7.fhir.r5.elementmodel.Element;
@@ -192,16 +193,20 @@ public class TransformerService {
       List<StructureDefinition> definitions =
           definition.getResources().stream().filter(r -> r.getType().equals("definition")).map(x -> this.<StructureDefinition>parse(getContent(x))).toList();
       definitions.subList(0, definitions.size() - 1).forEach(source -> {
-        rows.add("uses \"" + source.getUrl() + "\" alias " + source.getType() + " as source");
+        rows.add("uses \"" + source.getUrl() + "\" alias " + getAlias(source.getType()) + " as source");
       });
       StructureDefinition target = definitions.get(definitions.size() - 1);
-      rows.add("uses \"" + target.getUrl() + "\" alias " + target.getType() + " as target");
+      rows.add("uses \"" + target.getUrl() + "\" alias " + getAlias(target.getType()) + " as target");
 
       rows.add("");
-      rows.add("group example(source src : " + definitions.get(0).getType() + ", target tgt : " + target.getType() + ") {");
+      rows.add("group example(source src : " + getAlias(definitions.get(0).getType()) + ", target tgt : " + getAlias(target.getType()) + ") {");
       rows.add("  ");
       rows.add("}");
     }
     return rows.stream().collect(Collectors.joining("\n"));
+  }
+
+  private String getAlias(String text){
+   return text.contains("/") ? StringUtils.substringAfterLast(text, "/") : text;
   }
 }
