@@ -78,7 +78,7 @@ public class SnomedController {
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/codesystems")
   public List<SnomedCodeSystem> loadCodeSystems() {
-    return snomedService.loadCodeSystems();
+    return snowstormClient.loadCodeSystems().join().getItems();
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
