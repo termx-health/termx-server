@@ -192,13 +192,13 @@ public class TransformerService {
       List<StructureDefinition> definitions =
           definition.getResources().stream().filter(r -> r.getType().equals("definition")).map(x -> this.<StructureDefinition>parse(getContent(x))).toList();
       definitions.subList(0, definitions.size() - 1).forEach(source -> {
-        rows.add("uses \"" + source.getUrl() + "\" alias " + source.getType() + " as source");
+        rows.add("uses \"" + source.getUrl() + "\" alias " + source.getName() + " as source");
       });
       StructureDefinition target = definitions.get(definitions.size() - 1);
-      rows.add("uses \"" + target.getUrl() + "\" alias " + target.getType() + " as target");
+      rows.add("uses \"" + target.getUrl() + "\" alias " + target.getName() + " as target");
 
       rows.add("");
-      rows.add("group example(source src : " + definitions.get(0).getType() + ", target tgt : " + target.getType() + ") {");
+      rows.add("group example(source src : " + definitions.get(0).getName() + ", target tgt : " + target.getName() + ") {");
       rows.add("  ");
       rows.add("}");
     }
