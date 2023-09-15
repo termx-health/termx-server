@@ -107,7 +107,7 @@ public abstract class BaseFhirMapper {
     }).toList();
   }
 
-  protected static Extension toFhirTranslationExtension(LocalizedName name, String language) {
+  protected static List<Extension> toFhirTranslationExtension(LocalizedName name, String language) {
     if (name == null) {
       return null;
     }
@@ -116,19 +116,14 @@ public abstract class BaseFhirMapper {
         .filter(l -> !l.equals(Optional.ofNullable(language).orElse(Language.en)))
         .filter(l -> StringUtils.isNotEmpty(name.get(l)))
         .map(l -> {
-          Extension lang = new Extension("lang").setValueCode(l);
-          Extension content = new Extension("content").setValueString(name.get(l));
-          Extension translation = new Extension("http://hl7.org/fhir/StructureDefinition/translation");
-          translation.setExtension(List.of(lang, content));
-          return translation;
+          return new Extension("http://hl7.org/fhir/StructureDefinition/translation")
+              .<Extension>addExtension(new Extension("lang").setValueCode(l))
+              .<Extension>addExtension(new Extension("content").setValueString(name.get(l)));
         }).toList();
 
     if (CollectionUtils.isEmpty(translations)) {
       return null;
     }
-
-    Extension extension = new Extension();
-    extension.setExtension(translations);
-    return extension;
+    return translations;
   }
 }

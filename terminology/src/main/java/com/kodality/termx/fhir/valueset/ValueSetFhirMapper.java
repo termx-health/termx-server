@@ -50,7 +50,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -77,7 +76,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   }
 
   public static String toFhirJson(ValueSet vs, ValueSetVersion vsv, List<Provenance> provenances) {
-    return addTranslationExtensions(FhirMapper.toJson(toFhir(vs, vsv, provenances)), vs, vsv);
+    return FhirMapper.toJson(toFhir(vs, vsv, provenances));
   }
 
   public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances) {
@@ -87,8 +86,11 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     fhirValueSet.setUrl(valueSet.getUri());
     fhirValueSet.setName(valueSet.getName());
     fhirValueSet.setTitle(toFhirName(valueSet.getTitle(), version.getPreferredLanguage()));
+    fhirValueSet.setPrimitiveExtensions("title", toFhirTranslationExtension(valueSet.getTitle(), version.getPreferredLanguage()));
     fhirValueSet.setDescription(toFhirName(valueSet.getDescription(), version.getPreferredLanguage()));
+    fhirValueSet.setPrimitiveExtensions("description", toFhirTranslationExtension(valueSet.getDescription(), version.getPreferredLanguage()));
     fhirValueSet.setPurpose(toFhirName(valueSet.getPurpose(), version.getPreferredLanguage()));
+    fhirValueSet.setPrimitiveExtensions("purpose", toFhirTranslationExtension(valueSet.getPurpose(), version.getPreferredLanguage()));
     fhirValueSet.setContact(toFhirContacts(valueSet.getContacts()));
     fhirValueSet.setIdentifier(toFhirIdentifiers(valueSet.getIdentifiers()));
     fhirValueSet.setText(toFhirText(valueSet.getNarrative()));
@@ -339,23 +341,6 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     });
     params.setDecorated(true);
     return params;
-  }
-
-  private static String addTranslationExtensions(String fhirJson, ValueSet vs, ValueSetVersion vsv) {
-    Map<String, Object> fhirVs = JsonUtil.fromJson(fhirJson, LinkedHashMap.class);
-    Extension titleExtension = toFhirTranslationExtension(vs.getTitle(), vsv.getPreferredLanguage());
-    if (titleExtension != null) {
-      fhirVs.put("_title", titleExtension);
-    }
-    Extension descriptionExtension = toFhirTranslationExtension(vs.getDescription(), vsv.getPreferredLanguage());
-    if (descriptionExtension != null) {
-      fhirVs.put("_description", descriptionExtension);
-    }
-    Extension purposeExtension = toFhirTranslationExtension(vs.getPurpose(), vsv.getPreferredLanguage());
-    if (purposeExtension != null) {
-      fhirVs.put("_purpose", purposeExtension);
-    }
-    return JsonUtil.toJson(fhirVs);
   }
 
   // -------------- FROM FHIR --------------

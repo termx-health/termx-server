@@ -22,7 +22,6 @@ import com.kodality.termx.ts.codesystem.EntityPropertyKind;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.termx.ts.property.PropertyReference;
-import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
@@ -38,7 +37,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -70,7 +68,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   }
 
   public static String toFhirJson(CodeSystem cs, CodeSystemVersion csv, List<Provenance> provenances) {
-    return addTranslationExtensions(FhirMapper.toJson(toFhir(cs, csv, provenances)), cs, csv);
+    return FhirMapper.toJson(toFhir(cs, csv, provenances));
   }
 
   public static com.kodality.zmei.fhir.resource.terminology.CodeSystem toFhir(CodeSystem codeSystem, CodeSystemVersion version, List<Provenance> provenances) {
@@ -81,8 +79,11 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setPublisher(codeSystem.getPublisher());
     fhirCodeSystem.setName(codeSystem.getName());
     fhirCodeSystem.setTitle(toFhirName(codeSystem.getTitle(), version.getPreferredLanguage()));
+    fhirCodeSystem.setPrimitiveExtensions("title", toFhirTranslationExtension(codeSystem.getTitle(), version.getPreferredLanguage()));
     fhirCodeSystem.setDescription(toFhirName(codeSystem.getDescription(), version.getPreferredLanguage()));
+    fhirCodeSystem.setPrimitiveExtensions("description", toFhirTranslationExtension(codeSystem.getDescription(), version.getPreferredLanguage()));
     fhirCodeSystem.setPurpose(toFhirName(codeSystem.getPurpose(), version.getPreferredLanguage()));
+    fhirCodeSystem.setPrimitiveExtensions("purpose", toFhirTranslationExtension(codeSystem.getPurpose(), version.getPreferredLanguage()));
     fhirCodeSystem.setText(toFhirText(codeSystem.getNarrative()));
     fhirCodeSystem.setExperimental(codeSystem.getExperimental() != null && codeSystem.getExperimental());
     fhirCodeSystem.setIdentifier(toFhirIdentifiers(codeSystem.getIdentifiers()));
@@ -233,23 +234,6 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     List<CodeSystemConcept> result = childMap.getOrDefault(targetId, List.of()).stream()
         .map(e -> toFhir(e, codeSystem, version, childMap, parentMap)).collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
-  }
-
-  private static String addTranslationExtensions(String fhirJson, CodeSystem cs, CodeSystemVersion csv) {
-    Map<String, Object> fhirCs = JsonUtil.fromJson(fhirJson, LinkedHashMap.class);
-    Extension titleExtension = toFhirTranslationExtension(cs.getTitle(), csv.getPreferredLanguage());
-    if (titleExtension != null) {
-      fhirCs.put("_title", titleExtension);
-    }
-    Extension descriptionExtension = toFhirTranslationExtension(cs.getDescription(), csv.getPreferredLanguage());
-    if (descriptionExtension != null) {
-      fhirCs.put("_description", descriptionExtension);
-    }
-    Extension purposeExtension = toFhirTranslationExtension(cs.getPurpose(), csv.getPreferredLanguage());
-    if (purposeExtension != null) {
-      fhirCs.put("_purpose", purposeExtension);
-    }
-    return JsonUtil.toJson(fhirCs);
   }
 
   // -------------- FROM FHIR --------------

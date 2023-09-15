@@ -8,7 +8,6 @@ import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
-import com.kodality.termx.terminology.valueset.ValueSetService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
@@ -29,7 +28,6 @@ import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersion.MapSetResourceReference;
 import com.kodality.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
-import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
@@ -47,7 +45,6 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -81,7 +78,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
   }
 
   public String toFhirJson(MapSet ms, MapSetVersion msv, List<Provenance> provenances) {
-    return addTranslationExtensions(FhirMapper.toJson(toFhir(ms, msv, provenances)), ms, msv);
+    return FhirMapper.toJson(toFhir(ms, msv, provenances));
   }
 
   public com.kodality.zmei.fhir.resource.terminology.ConceptMap toFhir(MapSet mapSet, MapSetVersion version, List<Provenance> provenances) {
@@ -92,8 +89,11 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     fhirConceptMap.setPublisher(mapSet.getPublisher());
     fhirConceptMap.setName(mapSet.getName());
     fhirConceptMap.setTitle(toFhirName(mapSet.getTitle(), version.getPreferredLanguage()));
+    fhirConceptMap.setPrimitiveExtensions("title", toFhirTranslationExtension(mapSet.getTitle(), version.getPreferredLanguage()));
     fhirConceptMap.setDescription(toFhirName(mapSet.getDescription(), version.getPreferredLanguage()));
+    fhirConceptMap.setPrimitiveExtensions("description", toFhirTranslationExtension(mapSet.getDescription(), version.getPreferredLanguage()));
     fhirConceptMap.setPurpose(toFhirName(mapSet.getPurpose(), version.getPreferredLanguage()));
+    fhirConceptMap.setPrimitiveExtensions("purpose", toFhirTranslationExtension(mapSet.getPurpose(), version.getPreferredLanguage()));
     fhirConceptMap.setText(toFhirText(mapSet.getNarrative()));
     fhirConceptMap.setExperimental(mapSet.getExperimental() != null && mapSet.getExperimental());
     fhirConceptMap.setIdentifier(toFhirIdentifiers(mapSet.getIdentifiers()));
@@ -191,23 +191,6 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
       }
       return fhir;
     }).toList();
-  }
-
-  private static String addTranslationExtensions(String fhirJson, MapSet ms, MapSetVersion msv) {
-    Map<String, Object> fhirMs = JsonUtil.fromJson(fhirJson, LinkedHashMap.class);
-    Extension titleExtension = toFhirTranslationExtension(ms.getTitle(), msv.getPreferredLanguage());
-    if (titleExtension != null) {
-      fhirMs.put("_title", titleExtension);
-    }
-    Extension descriptionExtension = toFhirTranslationExtension(ms.getDescription(), msv.getPreferredLanguage());
-    if (descriptionExtension != null) {
-      fhirMs.put("_description", descriptionExtension);
-    }
-    Extension purposeExtension = toFhirTranslationExtension(ms.getPurpose(), msv.getPreferredLanguage());
-    if (purposeExtension != null) {
-      fhirMs.put("_purpose", purposeExtension);
-    }
-    return JsonUtil.toJson(fhirMs);
   }
 
   // -------------- FROM FHIR --------------
