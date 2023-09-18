@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
+import com.kodality.termx.modeler.transformationdefinition.TransformationDefinitionQueryParams.Ordering;
 import java.util.Map;
 import javax.inject.Singleton;
 
@@ -17,7 +18,10 @@ public class TransformationDefinitionRepository extends BaseRepository {
     p.addColumnProcessor("mapping", PgBeanProcessor.fromJson());
   });
 
-  private final Map<String, String> orderMapping = Map.of("name", "td.name");
+  private final Map<String, String> orderMapping = Map.of(
+      Ordering.id, "td.id",
+      Ordering.name, "td.name"
+  );
 
   public void save(TransformationDefinition td) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
