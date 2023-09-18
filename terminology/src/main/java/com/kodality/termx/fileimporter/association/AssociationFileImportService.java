@@ -15,7 +15,10 @@ import com.kodality.termx.ts.codesystem.CodeSystemAssociationQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.univocity.parsers.common.processor.RowListProcessor;
+import com.univocity.parsers.csv.CsvWriter;
+import com.univocity.parsers.csv.CsvWriterSettings;
 import jakarta.inject.Singleton;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -129,5 +132,16 @@ public class AssociationFileImportService {
 
   private String getKey(CodeSystemAssociation ass) {
     return StringUtils.join(Arrays.asList(ass.getAssociationType(), ass.getTargetId(), ass.getSourceId()), "#");
+  }
+
+  public byte[] getTemplate() {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    CsvWriterSettings settings = new CsvWriterSettings();
+    settings.getFormat().setDelimiter(',');
+    CsvWriter writer = new CsvWriter(out, settings);
+
+    writer.writeHeaders(List.of("source", "target", "order"));
+    writer.writeRowsAndClose(List.of(List.of("source-concept-code", "associated-concept-code", "order-in-association")));
+    return out.toByteArray();
   }
 }

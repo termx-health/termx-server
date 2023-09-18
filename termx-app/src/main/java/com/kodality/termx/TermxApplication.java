@@ -74,6 +74,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         com.kodality.termx.ichiuz.IchiUzController.class
     }
 )
+@OpenAPIInclude(
+    tags = @Tag(name = "File importer"),
+    classes = {
+        com.kodality.termx.fileimporter.codesystem.CodeSystemFileImportController.class,
+        com.kodality.termx.fileimporter.valueset.ValueSetFileImportController.class,
+        com.kodality.termx.fileimporter.mapset.MapSetFileImportController.class,
+        com.kodality.termx.fileimporter.association.AssociationFileImportController.class,
+        com.kodality.termx.fileimporter.analyze.FileAnalysisController.class
+    }
+)
 @SecurityScheme(name = "openid",
     type = SecuritySchemeType.OAUTH2,
     scheme = "bearer",

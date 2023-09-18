@@ -10,8 +10,12 @@ import com.kodality.termx.utils.FileUtil;
 import com.kodality.termx.fileimporter.association.utils.AssociationFileImportRequest;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
+import io.micronaut.http.HttpHeaders;
+import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Part;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.multipart.CompletedFileUpload;
@@ -58,5 +62,14 @@ public class AssociationFileImportController {
     }));
 
     return jobLogResponse;
+  }
+
+  @Authorized(Privilege.CS_EDIT)
+  @Get(value = "/csv-template", produces = "application/csv")
+  public HttpResponse<?> getTemplate() {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(fileImporterService.getTemplate());
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=template.csv")
+        .contentType(MediaType.of("application/csv"));
   }
 }
