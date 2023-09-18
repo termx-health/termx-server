@@ -67,6 +67,12 @@ public class TransformationDefinitionController {
     return HttpResponse.noContent();
   }
 
+  @Authorized(Privilege.M_EDIT)
+  @Post(uri = "/{id}/duplicate")
+  public TransformationDefinition duplicate(@PathVariable Long id) {
+    return service.duplicate(id);
+  }
+
   @Post("{id}/transform")
   public TransformationResult transformInstance(@PathVariable Long id, @Body InstanceTransformationRequest req) {
     return transformerService.transform(req.source, load(id));
