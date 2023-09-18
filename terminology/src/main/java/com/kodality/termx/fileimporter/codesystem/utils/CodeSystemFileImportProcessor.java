@@ -7,6 +7,7 @@ import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportResu
 import com.kodality.termx.ts.codesystem.EntityPropertyKind;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.univocity.parsers.common.processor.RowListProcessor;
+import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -87,7 +88,7 @@ public class CodeSystemFileImportProcessor {
       }
 
       return entity;
-    }).toList();
+    }).filter(CollectionUtils::isNotEmpty).toList();
 
 
     var properties = importProperties.stream()
