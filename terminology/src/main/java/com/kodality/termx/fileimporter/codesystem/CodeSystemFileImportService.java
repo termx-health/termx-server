@@ -151,7 +151,8 @@ public class CodeSystemFileImportService {
         CodeSystemImportAction action = new CodeSystemImportAction()
             .setActivate(PublicationStatus.active.equals(mappedCsVersionStatus))
             .setGenerateValueSet(request.isGenerateValueSet())
-            .setCleanRun(request.isCleanRun());
+            .setCleanRun(request.isCleanRun())
+            .setCleanConceptRun(request.isCleanConceptRun());
         codeSystemImportService.importCodeSystem(copy, associationTypes, action);
       } catch (Exception e) {
         TransactionManager.rollback();
@@ -192,7 +193,8 @@ public class CodeSystemFileImportService {
     CodeSystemImportAction action = new CodeSystemImportAction()
         .setActivate(PublicationStatus.active.equals(mappedCsVersionStatus))
         .setGenerateValueSet(request.isGenerateValueSet())
-        .setCleanRun(request.isCleanRun());
+        .setCleanRun(request.isCleanRun())
+        .setCleanConceptRun(request.isCleanConceptRun());
     codeSystemImportService.importCodeSystem(mappedCodeSystem, associationTypes, action);
 
     if (PublicationStatus.retired.equals(mappedCsVersionStatus)) {

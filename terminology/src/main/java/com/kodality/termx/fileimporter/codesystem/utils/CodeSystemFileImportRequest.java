@@ -23,6 +23,7 @@ public class CodeSystemFileImportRequest {
   private boolean generateValueSet;
   private boolean dryRun;
   private boolean cleanRun;
+  private boolean cleanConceptRun;
 
 
   @Getter
