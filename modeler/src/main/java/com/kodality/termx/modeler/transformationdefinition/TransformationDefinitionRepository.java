@@ -46,7 +46,8 @@ public class TransformationDefinitionRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from modeler.transformation_definition td");
+      SqlBuilder sb = new SqlBuilder("select id, name").appendIfTrue(!params.isSummary(), ", resources, mapping, test_source");
+      sb.append(" from modeler.transformation_definition td");
       sb.append(filter(params));
       sb.append(order(params, orderMapping));
       sb.append(limit(params));
