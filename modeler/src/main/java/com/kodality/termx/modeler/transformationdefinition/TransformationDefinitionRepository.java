@@ -46,8 +46,9 @@ public class TransformationDefinitionRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select id, name").appendIfTrue(!params.isSummary(), ", resources, mapping, test_source");
-      sb.append(" from modeler.transformation_definition td");
+      SqlBuilder sb = new SqlBuilder("select id, name")
+          .appendIfTrue(!params.isSummary(), ", resources, mapping, test_source")
+          .append(" from modeler.transformation_definition td");
       sb.append(filter(params));
       sb.append(order(params, orderMapping));
       sb.append(limit(params));
@@ -57,6 +58,7 @@ public class TransformationDefinitionRepository extends BaseRepository {
 
   private SqlBuilder filter(TransformationDefinitionQueryParams params) {
     SqlBuilder sb = new SqlBuilder("where td.sys_status = 'A'");
+    sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("td.id", p, Long::valueOf));
     sb.appendIfNotNull("and td.name ilike '%' || ? || '%'", params.getNameContains());
     return sb;
   }

@@ -42,6 +42,7 @@ import org.hl7.fhir.validation.ValidationEngine.ValidationEngineBuilder;
 public class TransformerService {
   private final StructureDefinitionService structureDefinitionService;
   private final ConceptMapResourceStorage conceptMapFhirService;
+  private final TransformationDefinitionService structureMapService;
   private final ResourceLoader resourceLoader;
   private final HttpClient httpClient = new HttpClient();
   private ValidationEngine engine;
@@ -71,12 +72,10 @@ public class TransformerService {
     try {
       ValidationEngine eng = new ValidationEngine(engine);
 
-      for (TransformationDefinitionResource res : def.getResources()) {
-        try {
-          eng.getContext().cacheResource(parse(getContent(res)));
-        } catch (FHIRException e) {
-          return new TransformationResult().setError("Invalid resource " + res.getName() + ": " + e.getMessage());
-        }
+      try {
+        prepareResources(eng, def);
+      } catch (RuntimeException e) {
+        return new TransformationResult().setError(e.getMessage());
       }
 
       StructureMap sm;
@@ -111,6 +110,29 @@ public class TransformerService {
           .toList();
     } catch (IOException | FHIRException e) {
       return List.of();
+    }
+  }
+
+  private void prepareResources(ValidationEngine eng, TransformationDefinition def) {
+    for (TransformationDefinitionResource res : def.getResources()) {
+      if (res.getType().equals("mapping")) {
+        TransformationDefinition mapDef = structureMapService.load(Long.valueOf(res.getReference().getLocalId()));
+        prepareResources(eng, mapDef);
+
+        try {
+          StructureMap sm = getStructureMap(mapDef.getMapping());
+          prepareStructureMap(eng, sm);
+          eng.getContext().cacheResource(sm);
+        } catch (FHIRException e) {
+          throw new RuntimeException("Invalid import structure map: " + e.getMessage());
+        }
+      } else {
+        try {
+          eng.getContext().cacheResource(parse(getContent(res)));
+        } catch (FHIRException e) {
+          throw new RuntimeException("Invalid resource " + res.getName() + ": " + e.getMessage());
+        }
+      }
     }
   }
 
@@ -196,6 +218,20 @@ public class TransformerService {
       });
       StructureDefinition target = definitions.get(definitions.size() - 1);
       rows.add("uses \"" + target.getUrl() + "\" alias " + target.getName() + " as target");
+
+
+      List<TransformationDefinitionResource> mappingResources = definition.getResources().stream().filter(r -> r.getType().equals("mapping")).toList();
+      if (CollectionUtils.isNotEmpty(mappingResources)) {
+        rows.add("");
+        mappingResources.stream().map(res -> {
+          if (res.getSource().equals("local")) {
+            return getStructureMap(structureMapService.load(Long.valueOf(res.getReference().getLocalId())).getMapping());
+          }
+          return parse(queryResource(res.getReference().getResourceUrl()));
+        }).forEach(sm -> {
+          rows.add("imports \"" + sm.getUrl() + "\"");
+        });
+      }
 
       rows.add("");
       rows.add("group example(source src : " + definitions.get(0).getName() + ", target tgt : " + target.getName() + ") {");

@@ -9,6 +9,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class TransformationDefinitionQueryParams extends QueryParams {
+  private String ids;
   private String nameContains;
   private boolean summary;
 
