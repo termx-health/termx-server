@@ -162,3 +162,7 @@ update terminology.entity_property set description_temp = jsonb_strip_nulls(json
 alter table terminology.entity_property drop column description;
 alter table terminology.entity_property rename column description_temp to description;
 --
+
+--changeset kodality:entity_property-show_in_list
+alter table terminology.entity_property add column show_in_list boolean not null default true;
+--

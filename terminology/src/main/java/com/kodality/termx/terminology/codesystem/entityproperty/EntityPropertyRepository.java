@@ -37,6 +37,7 @@ public class EntityPropertyRepository extends BaseRepository {
     ssb.property("order_number", entityProperty.getOrderNumber());
     ssb.property("preferred", entityProperty.isPreferred());
     ssb.property("required", entityProperty.isRequired());
+    ssb.property("show_in_list", entityProperty.isShowInList());
     ssb.property("created", entityProperty.getCreated());
     ssb.jsonProperty("rule", entityProperty.getRule());
     ssb.property("defined_entity_property_id", entityProperty.getDefinedEntityPropertyId());

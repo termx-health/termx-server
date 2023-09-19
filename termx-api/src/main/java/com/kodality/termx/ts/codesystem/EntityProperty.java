@@ -19,6 +19,7 @@ public class EntityProperty extends PropertyReference {
   private Integer orderNumber;
   private boolean preferred;
   private boolean required;
+  private boolean showInList;
   private OffsetDateTime created;
 
   private Long definedEntityPropertyId;

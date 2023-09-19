@@ -47,6 +47,7 @@ public class CodeSystemRepository extends BaseRepository {
       "               'orderNumber', ep.order_number, " +
       "               'preferred', ep.preferred, " +
       "               'required', ep.required, " +
+      "               'showInList', ep.show_in_list, " +
       "               'rule', ep.rule, " +
       "               'created', ep.created, " +
       "               'definedEntityPropertyId', ep.defined_entity_property_id) as p " +
