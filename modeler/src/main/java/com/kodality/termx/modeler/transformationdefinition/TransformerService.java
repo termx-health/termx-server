@@ -72,10 +72,12 @@ public class TransformerService {
     try {
       ValidationEngine eng = new ValidationEngine(engine);
 
-      try {
-        prepareResources(eng, def);
-      } catch (RuntimeException e) {
-        return new TransformationResult().setError(e.getMessage());
+      for (TransformationDefinitionResource res : def.getResources()) {
+        try {
+          eng.getContext().cacheResource(parse(getContent(res)));
+        } catch (FHIRException e) {
+          return new TransformationResult().setError("Invalid resource " + res.getName() + ": " + e.getMessage());
+        }
       }
 
       StructureMap sm;
@@ -113,29 +115,6 @@ public class TransformerService {
     }
   }
 
-  private void prepareResources(ValidationEngine eng, TransformationDefinition def) {
-    for (TransformationDefinitionResource res : def.getResources()) {
-      if (res.getType().equals("mapping")) {
-        TransformationDefinition mapDef = structureMapService.load(Long.valueOf(res.getReference().getLocalId()));
-        prepareResources(eng, mapDef);
-
-        try {
-          StructureMap sm = getStructureMap(mapDef.getMapping());
-          prepareStructureMap(eng, sm);
-          eng.getContext().cacheResource(sm);
-        } catch (FHIRException e) {
-          throw new RuntimeException("Invalid import structure map: " + e.getMessage());
-        }
-      } else {
-        try {
-          eng.getContext().cacheResource(parse(getContent(res)));
-        } catch (FHIRException e) {
-          throw new RuntimeException("Invalid resource " + res.getName() + ": " + e.getMessage());
-        }
-      }
-    }
-  }
-
   private void prepareStructureMap(ValidationEngine eng, StructureMap sm) {
     // this should not be needed. ValidationEngine#getSourceResourceFromStructureMap searches for definition by alias, however alias is nullable. workaround.
     sm.getStructure().stream().filter(s -> s.getAlias() == null)
@@ -156,13 +135,21 @@ public class TransformerService {
     return parse(content);
   }
 
-  private String getContent(TransformationDefinitionResource res) {
+  public String getContent(TransformationDefinitionResource res) {
     return switch (res.getSource()) {
       case "static" -> res.getReference().getContent();
       case "url" -> queryResource(res.getReference().getResourceUrl());
       case "local" -> switch (res.getType()) {
         case "definition" -> structureDefinitionService.load(Long.valueOf(res.getReference().getLocalId())).orElseThrow().getContent();
         case "conceptmap" -> conceptMapFhirService.load(res.getReference().getLocalId()).getContent().getValue();
+        case "mapping" -> {
+          StructureMap structureMap = getStructureMap(structureMapService.load(Long.valueOf(res.getReference().getLocalId())).getMapping());
+          try {
+            yield new JsonParser().setOutputStyle(OutputStyle.PRETTY).composeString(structureMap);
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        }
         default -> throw new RuntimeException("unknown type: " + res.getType());
       };
       default -> throw new RuntimeException("unknown resource source " + res.getSource());
@@ -223,12 +210,7 @@ public class TransformerService {
       List<TransformationDefinitionResource> mappingResources = definition.getResources().stream().filter(r -> r.getType().equals("mapping")).toList();
       if (CollectionUtils.isNotEmpty(mappingResources)) {
         rows.add("");
-        mappingResources.stream().map(res -> {
-          if (res.getSource().equals("local")) {
-            return getStructureMap(structureMapService.load(Long.valueOf(res.getReference().getLocalId())).getMapping());
-          }
-          return parse(queryResource(res.getReference().getResourceUrl()));
-        }).forEach(sm -> {
+        mappingResources.stream().map(res -> this.<StructureMap>parse(getContent(res))).forEach(sm -> {
           rows.add("imports \"" + sm.getUrl() + "\"");
         });
       }

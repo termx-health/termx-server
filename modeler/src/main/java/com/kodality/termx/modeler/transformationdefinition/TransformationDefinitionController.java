@@ -97,6 +97,11 @@ public class TransformationDefinitionController {
         "]";
   }
 
+  @Post("/transform-resource-content")
+  public String transformResourceContent(@Body TransformationDefinitionResource res) {
+    return transformerService.getContent(res);
+  }
+
   @Post("/parse-fml")
   public ParseResponse parse(@Body ParseRequest req) {
     try {
