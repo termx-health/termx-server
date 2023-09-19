@@ -1,5 +1,6 @@
 package com.kodality.termx.fileimporter.codesystem.utils;
 
+import com.kodality.commons.model.Identifier;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ApiError;
 import com.kodality.termx.auth.SessionStore;
@@ -20,6 +21,7 @@ import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,8 @@ public class CodeSystemFileImportMapper {
   public static final String CONCEPT_PART_OF = "partOf";
   public static final String CONCEPT_GROUPED_BY = "groupedBy";
   public static final String CONCEPT_CLASSIFIED_WITH = "classifiedWith";
+  public static final String OID_SYSTEM = "urn:ietf:rfc:3986";
+  public static final String OID_PREFIX = "urn:oid:";
 
   private static final Map<String, String> associationMap = Map.of(
       "is-a", "is-a",
@@ -58,6 +62,8 @@ public class CodeSystemFileImportMapper {
     CodeSystem codeSystem = existingCodeSystem != null ? JsonUtil.fromJson(JsonUtil.toJson(existingCodeSystem), CodeSystem.class) : new CodeSystem();
     codeSystem.setId(fpCodeSystem.getId());
     codeSystem.setUri(fpCodeSystem.getUri() != null ? fpCodeSystem.getUri() : codeSystem.getUri());
+    codeSystem.setName(fpCodeSystem.getName() != null ? fpCodeSystem.getName() : codeSystem.getName());
+    codeSystem.setIdentifiers(fpCodeSystem.getOid() != null ? List.of(new Identifier(OID_SYSTEM, OID_PREFIX + fpCodeSystem.getOid())) : codeSystem.getIdentifiers());
     codeSystem.setTitle(fpCodeSystem.getTitle() != null ? fpCodeSystem.getTitle() : codeSystem.getTitle());
     codeSystem.setDescription(fpCodeSystem.getDescription() != null ? fpCodeSystem.getDescription() : codeSystem.getDescription());
     codeSystem.setVersions(List.of(existingCodeSystemVersion != null ? existingCodeSystemVersion : toCsVersion(fpVersion, result.getEntities(), fpCodeSystem.getId())));
@@ -74,9 +80,9 @@ public class CodeSystemFileImportMapper {
 
     CodeSystemVersion version = new CodeSystemVersion();
     version.setCodeSystem(codeSystem);
-    version.setVersion(fpVersion.getVersion());
+    version.setVersion(fpVersion.getNumber());
     version.setStatus(PublicationStatus.draft);
-    version.setReleaseDate(fpVersion.getReleaseDate());
+    version.setReleaseDate(fpVersion.getReleaseDate() == null ? LocalDate.now() : fpVersion.getReleaseDate());
     version.setSupportedLanguages(langs);
     version.setPreferredLanguage(langs.size() == 1 ? langs.get(0) :
         langs.contains(SessionStore.require().getLang()) ? SessionStore.require().getLang() : null);

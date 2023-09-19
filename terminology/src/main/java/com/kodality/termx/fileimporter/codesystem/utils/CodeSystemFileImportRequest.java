@@ -22,9 +22,10 @@ public class CodeSystemFileImportRequest {
   private List<FileProcessingProperty> properties;
   private boolean generateValueSet;
   private boolean dryRun;
-  private boolean cleanRun;
-  private boolean cleanConceptRun;
+  private boolean cleanVersion;
+  private boolean replaceConcept;
 
+  private String importClass;
 
   @Getter
   @Setter
@@ -35,7 +36,7 @@ public class CodeSystemFileImportRequest {
     private String propertyTypeFormat;
     private String propertyDelimiter;
     private boolean preferred;
-    private String lang;
+    private String language;
 
     public String getName() {
       return propertyName != null ? propertyName : columnName;
@@ -47,6 +48,8 @@ public class CodeSystemFileImportRequest {
   public static class FileProcessingCodeSystem {
     private String id;
     private String uri;
+    private String name;
+    private String oid;
     private LocalizedName title;
     private LocalizedName description;
   }
@@ -55,7 +58,7 @@ public class CodeSystemFileImportRequest {
   @Setter
   public static class FileProcessingCodeSystemVersion {
 //    private Long id;
-    private String version;
+    private String number;
     private String status;
     private LocalDate releaseDate;
   }

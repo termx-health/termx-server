@@ -3,7 +3,6 @@ package com.kodality.termx.fileimporter.codesystem;
 import com.kodality.commons.exception.ApiException;
 import com.kodality.commons.model.Issue;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.ApiError;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.auth.SessionStore;
@@ -44,7 +43,7 @@ public class CodeSystemFileImportController {
     CodeSystemFileImportRequest req = JsonUtil.fromJson(request.getValue(), CodeSystemFileImportRequest.class);
     byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
-    JobLogResponse jobLogResponse = importLogger.createJob("CS-FILE-IMPORT");
+    JobLogResponse jobLogResponse = importLogger.createJob(req.getImportClass() == null ? "CS-FILE-IMPORT" : req.getImportClass());
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Code system file import started");

@@ -95,6 +95,9 @@ public class CodeSystemImportService {
     if (action.isActivate()) {
       codeSystemVersionService.activate(codeSystem.getId(), codeSystemVersion.getVersion());
     }
+    if (action.isRetire()) {
+      codeSystemVersionService.retire(codeSystem.getId(), codeSystemVersion.getVersion());
+    }
 
     if (action.isGenerateValueSet()) {
       generateValueSet(codeSystem);

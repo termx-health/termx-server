@@ -120,18 +120,17 @@ public class CodeSystemFileImportService {
     log.info("Trying to load existing CodeSystem");
     CodeSystem existingCodeSystem = codeSystemService.load(reqCodeSystem.getId(), true).orElse(null);
     log.info("Trying to load existing CodeSystemVersion");
-    CodeSystemVersion existingCodeSystemVersion = findVersion(reqCodeSystem.getId(), reqVersion.getVersion()).orElse(null);
+    CodeSystemVersion existingCodeSystemVersion = findVersion(reqCodeSystem.getId(), reqVersion.getNumber()).orElse(null);
 
 
     // Mapping
     log.info("Mapping to CodeSystem");
     var mappedCodeSystem = toCodeSystem(reqCodeSystem, reqVersion, result, existingCodeSystem, existingCodeSystemVersion);
-    var mappedCsVersionStatus = mappedCodeSystem.getVersions().get(0).getStatus();
     var associationTypes = toAssociationTypes(result.getProperties());
 
-    if (request.isCleanRun() && existingCodeSystem != null) {
+    if (request.isCleanVersion() && existingCodeSystem != null) {
       log.info("Trying to clean CodeSystem version data");
-      cleanRun(existingCodeSystem, reqVersion.getVersion());
+      cleanRun(existingCodeSystem, reqVersion.getNumber());
     }
 
     // Validation
@@ -149,10 +148,11 @@ public class CodeSystemFileImportService {
       try {
         log.info("\tImporting CS copy");
         CodeSystemImportAction action = new CodeSystemImportAction()
-            .setActivate(PublicationStatus.active.equals(mappedCsVersionStatus))
+            .setActivate(PublicationStatus.active.equals(request.getVersion().getStatus()))
+            .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
             .setGenerateValueSet(request.isGenerateValueSet())
-            .setCleanRun(request.isCleanRun())
-            .setCleanConceptRun(request.isCleanConceptRun());
+            .setCleanRun(request.isCleanVersion())
+            .setCleanConceptRun(request.isReplaceConcept());
         codeSystemImportService.importCodeSystem(copy, associationTypes, action);
       } catch (Exception e) {
         TransactionManager.rollback();
@@ -191,15 +191,12 @@ public class CodeSystemFileImportService {
     // Setting null to prevent that.
     mappedCodeSystem.getVersions().forEach(cv -> cv.setId(null));
     CodeSystemImportAction action = new CodeSystemImportAction()
-        .setActivate(PublicationStatus.active.equals(mappedCsVersionStatus))
+        .setActivate(PublicationStatus.active.equals(request.getVersion().getStatus()))
+        .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
         .setGenerateValueSet(request.isGenerateValueSet())
-        .setCleanRun(request.isCleanRun())
-        .setCleanConceptRun(request.isCleanConceptRun());
+        .setCleanRun(request.isCleanVersion())
+        .setCleanConceptRun(request.isReplaceConcept());
     codeSystemImportService.importCodeSystem(mappedCodeSystem, associationTypes, action);
-
-    if (PublicationStatus.retired.equals(mappedCsVersionStatus)) {
-      retireVersion(mappedCodeSystem);
-    }
     return resp;
   }
 

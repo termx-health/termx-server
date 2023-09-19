@@ -3,8 +3,8 @@ micronaut:
     name: termx
   server:
     port: 8200
-    max-request-size: 524288000 #500MB
-    multipart.max-file-size: 524288000 #500MB
+    max-request-size: 629145600 #600MB
+    multipart.max-file-size: 629145600 #600MB
     thread-selection: auto
   router:
     static-resources:
