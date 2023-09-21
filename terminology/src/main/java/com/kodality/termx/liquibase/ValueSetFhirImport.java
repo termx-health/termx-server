@@ -21,7 +21,7 @@ public class ValueSetFhirImport extends AuthorizedFileReaderCustomChange {
 
     try {
       ValueSet vs = JsonUtil.fromJson(asString(content), ValueSet.class);
-      valueSetFhirImportService.importValueSet(vs, true);
+      valueSetFhirImportService.importValueSet(vs);
     } catch (Exception e) {
       log.error(e.getMessage());
     }

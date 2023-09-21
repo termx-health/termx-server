@@ -35,6 +35,7 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
 import lombok.Getter;
@@ -66,13 +67,9 @@ public class ValueSetController {
   }
 
   @Authorized(Privilege.VS_VIEW)
-  @Get(uri = "/{valueSet}")
-  public ValueSet getValueSet(@PathVariable @ResourceId String valueSet) {
-    ValueSet vs = valueSetService.load(valueSet);
-    if (vs == null) {
-      throw new NotFoundException("ValueSet not found: " + valueSet);
-    }
-    return vs;
+  @Get(uri = "/{valueSet}{?decorate}")
+  public ValueSet getValueSet(@PathVariable @ResourceId String valueSet, Optional<Boolean> decorate) {
+    return valueSetService.load(valueSet, decorate.orElse(false)).orElseThrow(() -> new NotFoundException("ValueSet not found: " + valueSet));
   }
 
   @Authorized(Privilege.CS_EDIT)

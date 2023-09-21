@@ -1,14 +1,18 @@
 package com.kodality.termx.fileimporter.valueset;
 
 import com.kodality.commons.exception.ApiException;
+import com.kodality.commons.model.Issue;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ApiError;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.auth.SessionStore;
-import com.kodality.termx.utils.FileUtil;
+import com.kodality.termx.fileimporter.valueset.utils.ValueSetFileImportRequest;
+import com.kodality.termx.fileimporter.valueset.utils.ValueSetFileImportResponse;
 import com.kodality.termx.sys.job.JobLogResponse;
+import com.kodality.termx.sys.job.logger.ImportLog;
 import com.kodality.termx.sys.job.logger.ImportLogger;
+import com.kodality.termx.utils.FileUtil;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
@@ -20,6 +24,7 @@ import io.reactivex.Flowable;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.reactivestreams.Publisher;
 
 @Slf4j
@@ -40,9 +45,15 @@ public class ValueSetFileImportController {
       try {
         log.info("Value set file import started");
         long start = System.currentTimeMillis();
-        fileImporterService.process(req, importFile);
+        ImportLog importLog = new ImportLog();
+        ValueSetFileImportResponse resp = req.getLink() != null
+            ? fileImporterService.process(req)
+            : fileImporterService.process(req, importFile);
+        if (CollectionUtils.isNotEmpty(resp.getErrors())) {
+          importLog.setErrors(resp.getErrors().stream().map(Issue::formattedMessage).distinct().toList());
+        }
         log.info("Value set file import took {} seconds", (System.currentTimeMillis() - start) / 1000);
-        importLogger.logImport(jobLogResponse.getJobId());
+        importLogger.logImport(jobLogResponse.getJobId(), importLog);
       } catch (ApiException e) {
         log.error("Error while importing value set file", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);

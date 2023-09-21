@@ -28,6 +28,6 @@ public class TerminologyServerValueSetProvider implements TerminologyServerResou
   public void syncFrom(String serverRootUrl, String resourceId) {
     FhirClient client = new FhirClient(serverRootUrl + "/fhir");
     ValueSet valueSet = client.<ValueSet>read("ValueSet", resourceId).join();
-    importService.importValueSet(valueSet, false);
+    importService.importValueSet(valueSet);
   }
 }

@@ -12,6 +12,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,10 @@ public class ValueSetService {
 
   public ValueSet load(String id) {
     return repository.load(id);
+  }
+
+  public Optional<ValueSet> load(String valueSet, boolean decorate) {
+    return Optional.ofNullable(repository.load(valueSet)).map(vs -> decorate ? decorate(vs) : vs);
   }
 
   @Transactional
@@ -61,11 +66,12 @@ public class ValueSetService {
     return valueSets;
   }
 
-  private void decorate(ValueSet valueSet) {
+  private ValueSet decorate(ValueSet valueSet) {
     ValueSetVersionQueryParams params = new ValueSetVersionQueryParams();
     params.setValueSet(valueSet.getId());
     params.all();
     valueSet.setVersions(valueSetVersionService.query(params).getData());
+    return valueSet;
   }
 
   @Transactional

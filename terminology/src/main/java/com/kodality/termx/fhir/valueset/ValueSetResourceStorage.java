@@ -61,8 +61,8 @@ public class ValueSetResourceStorage extends BaseFhirResourceStorage {
   public ResourceVersion save(ResourceId id, ResourceContent content) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet =
         FhirMapper.fromJson(content.getValue(), com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
-    ValueSet result = importService.importValueSet(valueSet, false);
-    return load(result.getId(), result.getVersions().get(0).getVersion());
+    importService.importValueSet(valueSet);
+    return load(valueSet.getId(), valueSet.getVersion());
   }
 
   @Override

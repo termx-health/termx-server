@@ -217,12 +217,6 @@ public class CodeSystemFileImportService {
     codeSystemVersionService.cancel(version.getId(), version.getCodeSystem());
   }
 
-  private void retireVersion(CodeSystem codeSystem) {
-    String csId = codeSystem.getId();
-    String latestVersion = codeSystem.getVersions().get(0).getVersion();
-    codeSystemVersionService.retire(csId, latestVersion);
-  }
-
   // validation
 
   private List<Issue> validate(CodeSystemFileImportRequest request, CodeSystem mappedCodeSystem, CodeSystem existingCodeSystem) {

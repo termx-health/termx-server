@@ -72,6 +72,8 @@ public enum ApiError {
   TE722("TE722", "At least 'concept-code' or 'hierarchical-concept' should be specified"),
   TE723("TE723", "Checked property is not specified."),
   TE724("TE724", "Concept status '{{status}}' not supported."),
+  TE725("TE725", "Exception during ValueSet import: {{exception}}"),
+  TE726("TE726", "If concepts provided, then code system should be specified."),
   TE801("TE801", "Association type is required, can't be deleted."),
   TE802("TE802", "Association type is used in code system '{{codeSystem}}' association, can't be deleted."),
   TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted."),
