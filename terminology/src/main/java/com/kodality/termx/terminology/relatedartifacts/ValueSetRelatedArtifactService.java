@@ -39,6 +39,7 @@ public class ValueSetRelatedArtifactService extends RelatedArtifactService {
     List<RelatedArtifact> artifacts = new ArrayList<>();
     artifacts.addAll(collectFromRules(id));
     artifacts.addAll(findPages(id));
+    artifacts.addAll(findSpaces(id));
     return artifacts;
   }
 
@@ -65,6 +66,11 @@ public class ValueSetRelatedArtifactService extends RelatedArtifactService {
         .getData().stream().collect(Collectors.toMap(Space::getId, Space::getCode));
 
     return pages.stream().map(p -> new RelatedArtifact().setId(spaces.get(p.getSpaceId()) + "|" + p.getSlug()).setType("Page")).collect(Collectors.toList());
+  }
+
+  private List<RelatedArtifact> findSpaces(String id) {
+    return spaceService.query(new SpaceQueryParams().setResource("value-set|" + id).all()).getData().stream().map(s ->
+        new RelatedArtifact().setId(s.getCode() + "|" + s.getId()).setType("Space")).toList();
   }
 
   public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
