@@ -40,7 +40,7 @@ public class ValueSetFileImportController {
     ValueSetFileImportRequest req = JsonUtil.fromJson(request.getValue(), ValueSetFileImportRequest.class);
     byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
-    JobLogResponse jobLogResponse = importLogger.createJob("VS-FILE-IMPORT");
+    JobLogResponse jobLogResponse = importLogger.createJob(req.getImportClass() == null ? "VS-FILE-IMPORT" : req.getImportClass());
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Value set file import started");
