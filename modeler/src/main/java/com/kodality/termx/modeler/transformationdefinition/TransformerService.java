@@ -1,7 +1,9 @@
 package com.kodality.termx.modeler.transformationdefinition;
 
 import com.kodality.commons.client.HttpClient;
+import com.kodality.commons.client.HttpClientError;
 import com.kodality.termx.fhir.conceptmap.ConceptMapResourceStorage;
+import com.kodality.termx.modeler.ApiError;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
 import io.micronaut.context.annotation.Value;
@@ -92,6 +94,10 @@ public class TransformerService {
       String result = transform(eng, source, sm.getUrl());
       return new TransformationResult().setResult(result);
     } catch (IOException | FHIRException e) {
+      if (e instanceof FHIRException err && err.getCause() instanceof NullPointerException) {
+        // fixme: is there better way to detect 'StructureDefinition.getSnapshot()" because "sd" is null' error
+        return new TransformationResult().setError("Transformation error: " + ApiError.MO102.getMessage());
+      }
       return new TransformationResult().setError("Transformation error: " + e.getMessage());
     }
   }
@@ -157,7 +163,14 @@ public class TransformerService {
   }
 
   private String queryResource(String url) {
-    return httpClient.GET(url).thenApply(HttpResponse::body).join();
+    return httpClient.GET(url).thenApply(HttpResponse::body).exceptionally(e -> {
+      if (e.getCause() instanceof HttpClientError err) {
+        if (300 <= err.getResponse().statusCode() && err.getResponse().statusCode() < 400) {
+          throw ApiError.MO101.toApiException();
+        }
+      }
+      throw new RuntimeException("Error occurred when querying resource", e.getCause());
+    }).join();
   }
 
   private <R extends Resource> R parse(String input) {
