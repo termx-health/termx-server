@@ -8,8 +8,8 @@ import lombok.Getter;
 
 @Getter
 public enum ApiError {
-  MO101("MO101", "Some non FHIR object can not be accessed by URL. Please validated URI-s of all included objects"),
-  MO102("MO102", "StructureDefinition is missing or invalid"),
+  MO101("MO101", "FHIR object is not accessible by the URL. Please validate URL(s)."),
+  MO102("MO102", "StructureDefinition is missing or invalid."),
   ;
 
   private String code;
