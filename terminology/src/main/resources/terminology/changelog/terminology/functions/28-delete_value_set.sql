@@ -9,6 +9,10 @@ $function$
 delete from terminology.value_set_version_concept
 where value_set_version_id in (select id from terminology.value_set_version where value_set = p_value_set);
 
+delete from terminology.value_set_snapshot
+where value_set = p_value_set or
+        value_set_version_id in (select id from terminology.value_set_version where value_set = p_value_set);
+
 delete from terminology.value_set_version_rule
 where value_set = p_value_set or
     value_set_version_id in (select id from terminology.value_set_version where value_set = p_value_set) or
