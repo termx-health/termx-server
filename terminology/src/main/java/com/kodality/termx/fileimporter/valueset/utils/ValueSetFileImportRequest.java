@@ -27,8 +27,8 @@ public class ValueSetFileImportRequest {
   @Getter
   @Setter
   public static class FileProcessingMapping {
-    private String codeColumnName;
-    private String displayColumnName;
+    private String code;
+    private String display;
   }
 
   @Getter

@@ -30,8 +30,8 @@ public class ValueSetFileImportProcessor {
       throw ApiError.TE726.toApiException();
     }
 
-    Integer codeIdx = headers.indexOf(request.getMapping().getCodeColumnName());
-    Integer displayIdx = request.getMapping().getDisplayColumnName() == null ? null : headers.indexOf(request.getMapping().getDisplayColumnName());
+    Integer codeIdx = headers.indexOf(request.getMapping().getCode());
+    Integer displayIdx = request.getMapping().getDisplay() == null ? null : headers.indexOf(request.getMapping().getDisplay());
     return rows.stream().map(r -> {
       if (r.length > (codeIdx + 1) && r[codeIdx] == null) {
         return null;

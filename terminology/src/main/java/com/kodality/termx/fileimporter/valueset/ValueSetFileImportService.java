@@ -29,6 +29,7 @@ import com.kodality.termx.ts.valueset.ValueSetImportAction;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import io.micronaut.core.util.CollectionUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -140,6 +141,9 @@ public class ValueSetFileImportService {
   private List<Issue> validate(ValueSetFileImportRequest request, ValueSetVersionRule existingRule, List<ValueSetVersionConcept> concepts) {
     List<Issue> issues = new ArrayList<>();
     log.info("Validating concepts");
+    if (CollectionUtils.isEmpty(concepts)) {
+      return issues;
+    }
 
     String csId = request.getVersion() != null && request.getVersion().getRule() != null && request.getVersion().getRule().getCodeSystem() != null ?
         request.getVersion().getRule().getCodeSystem() : existingRule != null ? existingRule.getCodeSystem() : null;
