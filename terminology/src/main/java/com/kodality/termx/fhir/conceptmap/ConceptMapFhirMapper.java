@@ -74,7 +74,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
   // -------------- TO FHIR --------------
 
   public static String toFhirId(MapSet mapSet, MapSetVersion version) {
-    return mapSet.getId() + "@" + version.getVersion();
+    return mapSet.getId() + "." + version.getVersion();
   }
 
   public String toFhirJson(MapSet ms, MapSetVersion msv, List<Provenance> provenances) {

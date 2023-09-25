@@ -1,5 +1,7 @@
 package com.kodality.termx.sys.space;
 
+import com.kodality.termx.github.GithubService.GithubContent;
+import java.util.List;
 import java.util.Map;
 
 public interface SpaceGithubDataHandler {
@@ -8,6 +10,11 @@ public interface SpaceGithubDataHandler {
 
   default String getDefaultDir() {
     return getName();
+  }
+
+  default List<GithubContent> getCurrentContent(Space space) {
+    String dir = space.getIntegration().getGithub().getDirs().get(getName());
+    return getContent(space.getId()).entrySet().stream().map(e -> new GithubContent().setPath(dir + "/" + e.getKey()).setContent(e.getValue())).toList();
   }
 
   //file name -> content

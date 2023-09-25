@@ -19,7 +19,4 @@ public class GithubController {
     String redirectUri = githubService.authorizeUser(state, code);
     return HttpResponse.redirect(URI.create(redirectUri));
   }
-
-  public record GithubState(boolean enabled){}
-
 }

@@ -7,7 +7,6 @@ import com.kodality.termx.github.GithubService.GithubContent;
 import com.kodality.termx.github.GithubService.GithubDiff;
 import com.kodality.termx.github.GithubService.GithubStatus;
 import io.micronaut.context.annotation.Requires;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,6 +24,7 @@ public class SpaceGithubService {
   private final SpaceService spaceService;
   private final GithubService githubService;
   private final List<SpaceGithubDataHandler> dataHandlers;
+  private final SpaceGithubDataImplementationGuideHandler igHandler;
 
   public Map<String, String> getProviders() {
     return dataHandlers.stream().collect(Collectors.toMap(SpaceGithubDataHandler::getName, SpaceGithubDataHandler::getDefaultDir));
@@ -43,10 +43,13 @@ public class SpaceGithubService {
     Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
 
-    return getHandlers(space).map(h -> {
-      String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
-      return githubService.status(repo, dir, getCurrentContent(space, h));
-    }).reduce(new GithubStatus(), (a, b) -> {
+    return Stream.concat(
+        Stream.of(githubService.status(repo, igHandler.getCurrentContent(space))),
+        getHandlers(space).map(h -> {
+          String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
+          return githubService.status(repo, dir, h.getCurrentContent(space));
+        })
+    ).reduce(new GithubStatus(), (a, b) -> {
       a.setSha(b.getSha());
       a.getFiles().putAll(b.getFiles());
       return a;
@@ -58,30 +61,32 @@ public class SpaceGithubService {
     String repo = space.getIntegration().getGithub().getRepo();
     Map<String, String> reverseDirs =
         space.getIntegration().getGithub().getDirs().entrySet().stream().collect(Collectors.toMap(Entry::getValue, Entry::getKey));
-    String path = StringUtils.substringBeforeLast(file, "/");
+    String path = file.contains("/") ? StringUtils.substringBeforeLast(file, "/") : "";
+    String name = file.contains("/") ? StringUtils.substringAfterLast(file, "/") : file;
     String type = reverseDirs.get(path);
-    SpaceGithubDataHandler h = dataHandlers.stream().filter(n -> n.getName().equals(type)).findFirst().orElseThrow();
-    String name = StringUtils.substringAfterLast(file, "/");
+    String currentContent = dataHandlers.stream().filter(n -> n.getName().equals(type)).findFirst().map(h -> h.getContent(spaceId).get(name))
+        .orElseGet(() -> igHandler.getContent(space).get(name));
     return new GithubDiff()
         .setLeft(githubService.getContent(repo, file).getContent())
-        .setRight(h.getContent(spaceId).get(name));
+        .setRight(currentContent);
   }
 
   public void push(Long spaceId, String message, List<String> files) {
     Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
 
-    List<GithubContent> allChanges = getHandlers(space).flatMap(h -> {
-          String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
-          Map<String, GithubContent> changes = getCurrentContent(space, h).stream().collect(Collectors.toMap(GithubContent::getPath, c -> c));
-          GithubStatus status = githubService.status(repo, dir, new ArrayList<>(changes.values()));
-          return Stream.concat(
-              status.getFiles().keySet().stream().filter(k -> List.of(GithubStatus.A, GithubStatus.M).contains(status.getFiles().get(k))).map(changes::get),
-              status.getFiles().keySet().stream().filter(k -> GithubStatus.D.equals(status.getFiles().get(k))).map(p -> new GithubContent().setPath(p))
-          );
-        })
-        .filter(c -> files == null || files.contains(c.getPath()))
-        .toList();
+    List<GithubContent> allChanges =
+        Stream.concat(
+            Stream.of(space).map(s -> {
+              List<GithubContent> gc = igHandler.getCurrentContent(space);
+              return collectChanges(gc, githubService.status(repo, gc));
+            }),
+            getHandlers(space).map(h -> {
+              String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
+              List<GithubContent> gc = h.getCurrentContent(space);
+              return collectChanges(gc, githubService.status(repo, dir, gc));
+            })
+        ).flatMap(x -> x).toList();
     if (allChanges.isEmpty()) {
       return; // nothing changed
     }
@@ -94,6 +99,14 @@ public class SpaceGithubService {
     githubService.commit(repo, c);
   }
 
+  private Stream<GithubContent> collectChanges(List<GithubContent> currentContent, GithubStatus status) {
+    Map<String, GithubContent> changes = currentContent.stream().collect(Collectors.toMap(GithubContent::getPath, c -> c));
+    return Stream.concat(
+        status.getFiles().keySet().stream().filter(k -> List.of(GithubStatus.A, GithubStatus.M).contains(status.getFiles().get(k))).map(changes::get),
+        status.getFiles().keySet().stream().filter(k -> GithubStatus.D.equals(status.getFiles().get(k))).map(p -> new GithubContent().setPath(p))
+    );
+  }
+
   @Transactional
   public void pull(Long spaceId, List<String> files) {
     Space space = loadSpace(spaceId);
@@ -101,7 +114,7 @@ public class SpaceGithubService {
 
     getHandlers(space).forEach(h -> {
       String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
-      List<GithubContent> changes = getCurrentContent(space, h);
+      List<GithubContent> changes = h.getCurrentContent(space);
       GithubStatus status = githubService.status(repo, dir, changes);
       Map<String, String> content = status.getFiles().keySet().stream()
           .filter(k -> List.of(GithubStatus.M, GithubStatus.A, GithubStatus.D).contains(status.getFiles().get(k)))
@@ -112,6 +125,30 @@ public class SpaceGithubService {
           ));
       h.saveContent(spaceId, content);
     });
+  }
+
+  public SpaceGithubIgStatus getIgStatus(Long spaceId) {
+    Space space = loadSpace(spaceId);
+    if (space.getIntegration().getGithub().getIg() == null) {
+      return new SpaceGithubIgStatus(true);
+    }
+    String repo = space.getIntegration().getGithub().getRepo();
+    return new SpaceGithubIgStatus(githubService.getContent(repo, "_genonce.sh") != null);
+  }
+
+  public void initIg(Long spaceId, String baseRepo) {
+    Space space = loadSpace(spaceId);
+    String repo = space.getIntegration().getGithub().getRepo();
+
+    List<GithubContent> contents = githubService.readFully(baseRepo).stream()
+        .filter(c -> !List.of("LICENSE", "README.md", "sushi-config.yaml").contains(c.getPath()))
+        .toList();
+    GithubCommit c = new GithubCommit();
+    c.setMessage("initialize ig from " + baseRepo);
+    c.setAuthorName(SessionStore.require().getUsername());
+    c.setAuthorEmail(SessionStore.require().getUsername() + "@termx"); // TODO email
+    c.setFiles(contents);
+    githubService.commit(repo, c);
   }
 
   private Space loadSpace(Long spaceId) {
@@ -129,11 +166,8 @@ public class SpaceGithubService {
     return dataHandlers.stream().filter(h -> space.getIntegration().getGithub().getDirs().containsKey(h.getName()));
   }
 
-  private List<GithubContent> getCurrentContent(Space space, SpaceGithubDataHandler h) {
-    String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
-    return h.getContent(space.getId()).entrySet().stream().map(e -> new GithubContent().setPath(dir + "/" + e.getKey()).setContent(e.getValue())).toList();
-  }
-
   public record SpaceGithubAuthResult(boolean isAuthenticated, String redirectUrl) {}
+
+  public record SpaceGithubIgStatus(boolean isInitialized) {}
 
 }

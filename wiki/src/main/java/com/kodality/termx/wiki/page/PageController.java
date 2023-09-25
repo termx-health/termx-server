@@ -20,6 +20,7 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
+import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.server.multipart.MultipartBody;
 import io.micronaut.http.server.types.files.StreamedFile;
 import io.micronaut.validation.Validated;
@@ -50,6 +51,12 @@ public class PageController {
   @Get("{?params*}")
   public QueryResult<Page> queryPages(PageQueryParams params) {
     return pageService.query(params);
+  }
+
+  @Authorized(Privilege.T_VIEW)
+  @Get("/tree")
+  public List<PageTreeItem> loadTree(@QueryValue Long spaceId) {
+    return pageService.loadTree(spaceId);
   }
 
   @Authorized(Privilege.T_EDIT)
@@ -129,7 +136,6 @@ public class PageController {
   public void deleteFile(@PathVariable Long id, @PathVariable String fileName) {
     attachmentService.deleteAttachmentContent(id, fileName);
   }
-
 
   @Getter
   @Setter

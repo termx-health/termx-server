@@ -5,7 +5,6 @@ import com.google.common.collect.Sets;
 import com.kodality.commons.cache.CacheManager;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.client.HttpClientError;
-import com.kodality.commons.stream.Collectors;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.MapUtil;
 import com.kodality.termx.auth.SessionStore;
@@ -23,6 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
@@ -31,6 +31,8 @@ import lombok.experimental.Accessors;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.base64.Base64;
+
+import static com.kodality.commons.stream.Collectors.toMap;
 
 @Requires(property = "github.client.id")
 @Singleton
@@ -152,27 +154,74 @@ public class GithubService {
   }
 
   public GithubContent getContent(String repo, String path) {
-    String resp = get("/repos/" + repo + "/contents/" + path);
-    GithubContent content = JsonUtil.fromJson(resp, GithubContent.class);
-    if ("base64".equals(JsonUtil.read(resp, "$.encoding"))) {
-      content.setContent(new String(Base64.decode(content.getContent().replaceAll("\n", ""))));
+    try {
+      String resp = get("/repos/" + repo + "/contents/" + path);
+      GithubContent content = JsonUtil.fromJson(resp, GithubContent.class);
+      if ("base64".equals(JsonUtil.read(resp, "$.encoding"))) {
+        content.setContent(new String(Base64.decode(content.getContent().replaceAll("\n", ""))));
+      }
+      return content;
+    } catch (HttpClientError e) {
+      if (e.getResponse().statusCode() == 404) {
+        return null;
+      }
+      throw e;
     }
-    return content;
+  }
+
+  public String getBlob(String url) {
+    try {
+      Map<String, Object> resp = JsonUtil.toMap(get(url));
+      if ("base64".equals(resp.get("encoding"))) {
+        return new String(Base64.decode(((String) resp.get("content")).replaceAll("\n", "")));
+      }
+      return (String) resp.get("content");
+    } catch (HttpClientError e) {
+      if (e.getResponse().statusCode() == 404) {
+        return null;
+      }
+      throw e;
+    }
+  }
+
+  public List<GithubContent> readFully(String repo) {
+    List<Map<String, Object>> branchesResp = JsonUtil.fromJson(get("/repos/" + repo + "/branches"), JsonUtil.getListType(Map.class));
+    Map<String, Object> branch = branchesResp.stream().filter(r -> List.of("master", "main").contains((String) r.get("name"))).findFirst()
+        .orElseGet(() -> branchesResp.get(0));
+    String sha = (String) ((Map) branch.get("commit")).get("sha");
+    Map<String, Object> treesResp = JsonUtil.toMap(get("/repos/" + repo + "/git/trees/" + sha + "?recursive=true"));
+    List<Map<String, Object>> tree = (List<Map<String, Object>>) treesResp.get("tree");
+    return tree.stream().filter(f -> f.get("type").equals("blob")).map(f -> {
+      String content = ((Long) f.get("size")) == 0 ? "" : getBlob((String) f.get("url"));
+      return new GithubContent().setPath((String) f.get("path")).setSha((String) f.get("sha")).setContent(content);
+    }).toList();
   }
 
   public String getLastCommitSha(String repo) {
     return JsonUtil.read(get("/repos/" + repo + "/branches/main"), "$.commit.sha");
   }
 
+
+  // #status(String repo, String dir, List<GithubContent> current) is more optimal.
+  public GithubStatus status(String repo, List<GithubContent> current) {
+    Map<String, GithubContent> githubContents =
+        current.stream().map(c -> getContent(repo, c.getPath())).filter(Objects::nonNull).collect(toMap(GithubContent::getPath, c -> c));
+    Map<String, GithubContent> localContents = current.stream().collect(toMap(GithubContent::getPath, c -> c));
+    return calculateStatus(repo, githubContents, localContents);
+  }
+
   //TODO: can seek only one dir currently.
   public GithubStatus status(String repo, String dir, List<GithubContent> current) {
-    Map<String, GithubContent> githubContents = listContents(repo, dir).stream().collect(Collectors.toMap(GithubContent::getPath, c -> c));
-    Map<String, GithubContent> localContents = current.stream().collect(Collectors.toMap(GithubContent::getPath, c -> c));
+    Map<String, GithubContent> githubContents = listContents(repo, dir).stream().collect(toMap(GithubContent::getPath, c -> c));
+    Map<String, GithubContent> localContents = current.stream().collect(toMap(GithubContent::getPath, c -> c));
+    return calculateStatus(repo, githubContents, localContents);
+  }
 
+  private GithubStatus calculateStatus(String repo, Map<String, GithubContent> githubContents, Map<String, GithubContent> localContents) {
     GithubStatus status = new GithubStatus();
     status.setSha(getLastCommitSha(repo));
     status.setFiles(Sets.union(localContents.keySet(), githubContents.keySet()).stream().collect(
-        Collectors.toMap(p -> p, p -> calculateStatus(githubContents.get(p), localContents.get(p)))
+        toMap(p -> p, p -> calculateStatus(githubContents.get(p), localContents.get(p)))
     ));
     return status;
   }
@@ -220,7 +269,7 @@ public class GithubService {
     if (token == null) {
       throw new IllegalAccessError("Token is missing");
     }
-    return http.builder(GITHUB_API + path).setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+    return http.builder(path.startsWith("http") ? path : GITHUB_API + path).setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
   }
 
   private String getUserToken(String user) {

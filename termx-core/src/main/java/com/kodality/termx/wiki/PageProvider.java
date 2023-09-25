@@ -8,4 +8,8 @@ public abstract class PageProvider {
   public List<PageContent> getRelatedPageContents(String resourceId, String resourceType) {
     return new ArrayList<>();
   }
+
+  public PageContent load(Long id) {
+    return null;
+  }
 }

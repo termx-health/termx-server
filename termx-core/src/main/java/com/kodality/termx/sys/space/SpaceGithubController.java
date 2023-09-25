@@ -6,6 +6,7 @@ import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.github.GithubService.GithubDiff;
 import com.kodality.termx.github.GithubService.GithubStatus;
 import com.kodality.termx.sys.space.SpaceGithubService.SpaceGithubAuthResult;
+import com.kodality.termx.sys.space.SpaceGithubService.SpaceGithubIgStatus;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -65,9 +66,24 @@ public class SpaceGithubController {
     return HttpResponse.ok();
   }
 
+  @Authorized(Privilege.P_EDIT)
+  @Post("/{id}/github/ig-initialize")
+  public HttpResponse<?> initIg(@Parameter Long id, @Body SpaceGithubIgInitRequest req) {
+    service().initIg(id, req.base);
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.P_VIEW)
+  @Get("/{id}/github/ig-status")
+  public SpaceGithubIgStatus getIgStatus(@Parameter Long id) {
+    return service().getIgStatus(id);
+  }
+
   public record SpaceGithubAuthRequest(String returnUrl) {}
 
   public record SpaceGithubCommitRequest(String message, List<String> files) {}
 
   public record SpaceGithubPullRequest(List<String> files) {}
+
+  public record SpaceGithubIgInitRequest(String base) {}
 }

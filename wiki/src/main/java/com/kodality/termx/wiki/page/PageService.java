@@ -1,10 +1,13 @@
 package com.kodality.termx.wiki.page;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.stream.Collectors;
 import com.kodality.termx.wiki.pagecontent.PageContentService;
 import com.kodality.termx.wiki.pagelink.PageLinkService;
 import com.kodality.termx.wiki.pagerelation.PageRelationService;
 import com.kodality.termx.wiki.pagetag.PageTagService;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import javax.inject.Singleton;
@@ -28,6 +31,13 @@ public class PageService {
     QueryResult<Page> pages = repository.query(params);
     pages.getData().forEach(this::decorate);
     return pages;
+  }
+
+  public List<PageTreeItem> loadTree(Long spaceId) {
+    List<PageTreeItem> flat = repository.loadTree(spaceId);
+    Map<Long, List<PageTreeItem>> map = flat.stream().collect(Collectors.groupingBy(PageTreeItem::getParentPageId));
+    flat.forEach(i -> i.setChildren(map.get(i.getPageId())));
+    return flat.stream().filter(i -> i.getParentPageId() == null).toList();
   }
 
   @Transactional
