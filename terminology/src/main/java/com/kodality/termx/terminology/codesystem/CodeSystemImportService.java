@@ -6,13 +6,11 @@ import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.association.AssociationTypeService;
 import com.kodality.termx.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
-import com.kodality.termx.terminology.definedproperty.DefinedPropertyService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
-import com.kodality.termx.terminology.valueset.ValueSetService;
-import com.kodality.termx.terminology.valueset.ValueSetVersionService;
-import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
+import com.kodality.termx.terminology.definedproperty.DefinedPropertyService;
+import com.kodality.termx.terminology.valueset.ValueSetImportService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.codesystem.CodeSystem;
@@ -23,14 +21,15 @@ import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemImportAction;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.codesystem.EntityProperty;
-import com.kodality.termx.ts.property.DefinedProperty;
-import com.kodality.termx.ts.property.DefinedPropertyQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
+import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import com.kodality.termx.ts.property.DefinedProperty;
+import com.kodality.termx.ts.property.DefinedPropertyQueryParams;
 import com.kodality.termx.ts.valueset.ValueSet;
+import com.kodality.termx.ts.valueset.ValueSetImportAction;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
@@ -70,9 +69,7 @@ public class CodeSystemImportService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
-  private final ValueSetService valueSetService;
-  private final ValueSetVersionService valueSetVersionService;
-  private final ValueSetVersionRuleService valueSetVersionRuleService;
+  private final ValueSetImportService valueSetImportService;
 
   private final UserPermissionService userPermissionService;
 
@@ -100,7 +97,7 @@ public class CodeSystemImportService {
     }
 
     if (action.isGenerateValueSet()) {
-      generateValueSet(codeSystem);
+      generateValueSet(codeSystem, action);
     }
 
     log.info("IMPORT FINISHED (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
@@ -296,31 +293,18 @@ public class CodeSystemImportService {
   }
 
   // VS
-  private void generateValueSet(CodeSystem codeSystem) {
-    log.info("Generating value set");
-    long start = System.currentTimeMillis();
-
-    ValueSet existingValueSet = valueSetService.load(codeSystem.getId());
-    ValueSet valueSet = toValueSet(codeSystem, existingValueSet);
-    valueSetService.save(valueSet);
-
-    ValueSetVersion valueSetVersion = toValueSetVersion(valueSet.getId(), codeSystem.getVersions().get(0));
-    Optional<ValueSetVersion> existingVSVersion = valueSetVersionService.load(valueSet.getId(), valueSetVersion.getVersion());
-    existingVSVersion.ifPresent(version -> valueSetVersion.setId(version.getId()));
-    if (existingVSVersion.isPresent() && !existingVSVersion.get().getStatus().equals(PublicationStatus.draft)) {
-      throw ApiError.TE104.toApiException(Map.of("version", codeSystem.getVersions().get(0).getVersion()));
-    }
-    valueSetVersionService.save(valueSetVersion);
-    valueSetVersionRuleService.save(valueSetVersion.getRuleSet().getRules(), valueSet.getId(), valueSetVersion.getVersion());
-
-    log.info("Value set generated (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
+  private void generateValueSet(CodeSystem codeSystem, CodeSystemImportAction csAction) {
+    ValueSet valueSet = toValueSet(codeSystem);
+    ValueSetImportAction action = new ValueSetImportAction().setActivate(csAction.isActivate()).setRetire(csAction.isRetire());
+    valueSetImportService.importValueSet(valueSet, action);
   }
 
-  public static ValueSet toValueSet(CodeSystem codeSystem, ValueSet existingValueSet) {
-    ValueSet valueSet = existingValueSet == null ? new ValueSet() : existingValueSet;
+  public static ValueSet toValueSet(CodeSystem codeSystem) {
+    ValueSet valueSet = new ValueSet();
     valueSet.setId(codeSystem.getId());
-    valueSet.setUri(codeSystem.getUri() == null ? valueSet.getUri() : codeSystem.getUri());
-    valueSet.setTitle(codeSystem.getTitle() == null ? valueSet.getTitle() : codeSystem.getTitle());
+    valueSet.setUri(codeSystem.getUri());
+    valueSet.setTitle(codeSystem.getTitle());
+    valueSet.setVersions(List.of(toValueSetVersion(codeSystem.getId(), codeSystem.getVersions().get(0))));
     return valueSet;
   }
 
