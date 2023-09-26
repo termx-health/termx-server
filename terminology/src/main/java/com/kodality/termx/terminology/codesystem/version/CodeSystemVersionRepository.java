@@ -157,6 +157,6 @@ public class CodeSystemVersionRepository extends BaseRepository {
 
   public void cancel(Long id) {
     SqlBuilder sb = new SqlBuilder("select * from terminology.cancel_code_system_version(?)", id);
-    jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
+    jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Boolean.class);
   }
 }
