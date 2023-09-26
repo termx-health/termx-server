@@ -123,9 +123,6 @@ public class ValueSetFileImportService {
         return resp;
       }
 
-      log.info("\tCancelling the _shadow versions");
-      copy.getVersions().forEach(vsv -> valueSetVersionService.cancel(vsv.getId(), vsv.getValueSet()));
-
       TransactionManager.rollback();
       return resp;
     }
