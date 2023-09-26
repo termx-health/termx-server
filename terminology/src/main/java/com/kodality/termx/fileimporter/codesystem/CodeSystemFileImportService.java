@@ -128,10 +128,6 @@ public class CodeSystemFileImportService {
     var mappedCodeSystem = toCodeSystem(reqCodeSystem, reqVersion, result, existingCodeSystem, existingCodeSystemVersion);
     var associationTypes = toAssociationTypes(result.getProperties());
 
-    if (request.isCleanVersion() && existingCodeSystem != null) {
-      log.info("Trying to clean CodeSystem version data");
-      cleanRun(existingCodeSystem, reqVersion.getNumber());
-    }
 
     // Validation
     List<Issue> validationErrors = validate(request, mappedCodeSystem, existingCodeSystem).stream().filter(distinctByKey(Issue::formattedMessage)).toList();
@@ -176,9 +172,6 @@ public class CodeSystemFileImportService {
       CodeSystemCompareResult compare = codeSystemCompareService.compare(sourceVersionId, targetVersionId);
       resp.setDiff(composeCompareSummary(compare));
 
-      log.info("\tCancelling the _shadow versions");
-      copy.getVersions().forEach(cv -> codeSystemVersionService.cancel(cv.getId(), cv.getCodeSystem()));
-
       TransactionManager.rollback();
       return resp;
     }
@@ -206,15 +199,6 @@ public class CodeSystemFileImportService {
     params.setCodeSystem(csId);
     params.setLimit(1);
     return codeSystemVersionService.query(params).findFirst();
-  }
-
-  private void cleanRun(CodeSystem cs, String versionCode) {
-    if (cs.getVersions().size() > 1 || cs.getVersions().size() == 1 && !PublicationStatus.draft.equals(cs.getVersions().get(0).getStatus())) {
-      throw new ApiClientException("Clean run is only available for code systems with one version in the status 'draft'.");
-    }
-
-    CodeSystemVersion version = findVersion(cs.getId(), versionCode).orElseThrow();
-    codeSystemVersionService.cancel(version.getId(), version.getCodeSystem());
   }
 
   // validation
