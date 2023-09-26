@@ -24,6 +24,8 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -37,7 +39,7 @@ import org.reactivestreams.Publisher;
 public class CodeSystemFileImportController {
   private final CodeSystemFileImportService fileImporterService;
   private final ImportLogger importLogger;
-
+  private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
   @Authorized(Privilege.CS_EDIT)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
@@ -46,7 +48,7 @@ public class CodeSystemFileImportController {
     CodeSystemFileImportRequest req = JsonUtil.fromJson(val, CodeSystemFileImportRequest.class);
     byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
-    JobLogResponse jobLogResponse = importLogger.createJob(req.getImportClass() == null ? "CS-FILE-IMPORT" : req.getImportClass());
+    JobLogResponse jobLogResponse = importLogger.createJob(req.getCodeSystem().getId(), req.getImportClass() == null ? "CS-FILE-IMPORT" : req.getImportClass());
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Code system file import started");
@@ -65,13 +67,13 @@ public class CodeSystemFileImportController {
         }
         importLogger.logImport(jobLogResponse.getJobId(), importLog);
       } catch (ApiException e) {
-        log.error("Error while importing code system file", e);
+        log.error("Error while importing code system file " +  req.getCodeSystem().getId(), e);
         importLogger.logImport(jobLogResponse.getJobId(), e);
       } catch (Exception e) {
-        log.error("Error while importing code system file", e);
+        log.error("Error while importing code system file " + req.getCodeSystem().getId(), e);
         importLogger.logImport(jobLogResponse.getJobId(), null, null, List.of(ExceptionUtils.getStackTrace(e)));
       }
-    }));
+    }), executorService);
     return jobLogResponse;
   }
 }

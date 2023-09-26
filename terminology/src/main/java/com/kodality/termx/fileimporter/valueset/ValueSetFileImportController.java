@@ -24,6 +24,8 @@ import io.reactivex.Flowable;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -35,6 +37,8 @@ import org.reactivestreams.Publisher;
 public class ValueSetFileImportController {
   private final ValueSetFileImportService fileImporterService;
   private final ImportLogger importLogger;
+  private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
 
   @Authorized(Privilege.CS_EDIT)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
@@ -43,7 +47,7 @@ public class ValueSetFileImportController {
     ValueSetFileImportRequest req = JsonUtil.fromJson(val, ValueSetFileImportRequest.class);
     byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
-    JobLogResponse jobLogResponse = importLogger.createJob(req.getImportClass() == null ? "VS-FILE-IMPORT" : req.getImportClass());
+    JobLogResponse jobLogResponse = importLogger.createJob(req.getValueSet().getId(), req.getImportClass() == null ? "VS-FILE-IMPORT" : req.getImportClass());
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Value set file import started");
@@ -64,7 +68,7 @@ public class ValueSetFileImportController {
         log.error("Error while importing value set file (TE700)", e);
         importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
       }
-    }));
+    }), executorService);
     return jobLogResponse;
   }
 }

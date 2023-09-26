@@ -68,7 +68,7 @@ public class LoincController {
         log.error("Error while importing LOINC", e);
         importLogger.logImport(jobLogResponse.getJobId(), e);
       } catch (Exception e) {
-        log.error("Error while importing code system file (TE700)", e);
+        log.error("Error while importing LOINC (TE700)", e);
         importLogger.logImport(jobLogResponse.getJobId(), ApiError.EI000.toApiException());
       }
     }));
