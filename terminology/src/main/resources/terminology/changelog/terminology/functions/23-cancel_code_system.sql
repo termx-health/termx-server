@@ -59,6 +59,5 @@ update terminology.code_system
 set sys_status = 'D'
 where id = p_code_system;
 
-select terminology.cancel_code_system(id) from terminology.code_system where base_code_system = p_code_system;
 $function$
 ;
