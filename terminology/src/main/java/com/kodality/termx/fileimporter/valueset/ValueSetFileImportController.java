@@ -21,6 +21,8 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.netty.handler.codec.http.multipart.MemoryAttribute;
 import io.reactivex.Flowable;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +39,8 @@ public class ValueSetFileImportController {
   @Authorized(Privilege.CS_EDIT)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
-    ValueSetFileImportRequest req = JsonUtil.fromJson(request.getValue(), ValueSetFileImportRequest.class);
+    String val = URLDecoder.decode(request.getValue(), StandardCharsets.UTF_8);
+    ValueSetFileImportRequest req = JsonUtil.fromJson(val, ValueSetFileImportRequest.class);
     byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
     JobLogResponse jobLogResponse = importLogger.createJob(req.getImportClass() == null ? "VS-FILE-IMPORT" : req.getImportClass());

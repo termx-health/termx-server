@@ -15,6 +15,7 @@ import com.kodality.termx.fileimporter.valueset.utils.ValueSetFileImportResponse
 import com.kodality.termx.http.BinaryHttpClient;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.valueset.ValueSetImportService;
 import com.kodality.termx.terminology.valueset.ValueSetService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
@@ -22,6 +23,7 @@ import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleServic
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemContent;
+import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.valueset.ValueSet;
@@ -53,6 +55,7 @@ public class ValueSetFileImportService {
   private final ValueSetFhirImportService valueSetFhirImportService;
   private final ValueSetImportService valueSetImportService;
   private final CodeSystemService codeSystemService;
+  private final CodeSystemVersionService codeSystemVersionService;
   private final ConceptService conceptService;
   private final Optional<FhirFshConverter> fhirFshConverter;
 
@@ -88,6 +91,8 @@ public class ValueSetFileImportService {
     ValueSetVersion existingValueSetVersion = findVersion(reqValueSet.getId(), reqVersion.getNumber()).orElse(null);
     log.info("Trying to load existing ValueSetRule");
     ValueSetVersionRule existingRule = valueSetVersionRuleService.load(reqVersion.getRule().getId()).orElse(null);
+
+    prepare(request);
 
     List<ValueSetVersionConcept> concepts = file == null ? null : ValueSetFileImportProcessor.process(request, existingRule, file);
 
@@ -136,6 +141,16 @@ public class ValueSetFileImportService {
         .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()));
     valueSetImportService.importValueSet(mappedValueSet, action);
     return resp;
+  }
+
+  private void prepare(ValueSetFileImportRequest request) {
+    if (request.getVersion().getRule() != null && request.getVersion().getRule().getCodeSystemUri() != null) {
+      CodeSystemVersion csv = codeSystemVersionService.loadLastVersionByUri(request.getVersion().getRule().getCodeSystemUri());
+      if (csv != null) {
+        request.getVersion().getRule().setCodeSystem(csv.getCodeSystem());
+        request.getVersion().getRule().setCodeSystemVersionId(csv.getId());
+      }
+    }
   }
 
   private List<Issue> validate(ValueSetFileImportRequest request, ValueSetVersionRule existingRule, List<ValueSetVersionConcept> concepts) {

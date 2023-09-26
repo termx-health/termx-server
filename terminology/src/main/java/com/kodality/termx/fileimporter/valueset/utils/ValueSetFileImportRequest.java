@@ -58,5 +58,7 @@ public class ValueSetFileImportRequest {
 
     private String codeSystem;
     private Long codeSystemVersionId;
+
+    private String codeSystemUri;
   }
 }
