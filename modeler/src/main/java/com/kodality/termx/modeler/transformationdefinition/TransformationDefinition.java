@@ -1,5 +1,6 @@
 package com.kodality.termx.modeler.transformationdefinition;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -19,6 +20,12 @@ public class TransformationDefinition {
   @NotNull
   private List<TransformationDefinitionResource> resources;
   private String testSource;
+
+  private OffsetDateTime createdAt;
+  private String createdBy;
+  private OffsetDateTime modifiedAt;
+  private String modifiedBy;
+
 
   @Getter
   @Setter

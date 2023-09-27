@@ -4,6 +4,8 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.modeler.Privilege;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
+import com.kodality.termx.sys.provenance.Provenance;
+import com.kodality.termx.sys.provenance.ProvenanceService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -31,6 +33,7 @@ import org.hl7.fhir.r5.utils.structuremap.StructureMapUtilities;
 public class TransformationDefinitionController {
   private final TransformationDefinitionService service;
   private final TransformerService transformerService;
+  private final ProvenanceService provenanceService;
 
   @Authorized(Privilege.M_VIEW)
   @Get(uri = "/{id}")
@@ -49,6 +52,7 @@ public class TransformationDefinitionController {
   public TransformationDefinition create(@Valid @Body TransformationDefinition def) {
     def.setId(null);
     service.save(def);
+    provenanceService.create(new Provenance("created", "TransformationDefinition", def.getId().toString()));
     return def;
   }
 
@@ -57,6 +61,7 @@ public class TransformationDefinitionController {
   public TransformationDefinition update(@PathVariable Long id, @Valid @Body TransformationDefinition def) {
     def.setId(id);
     service.save(def);
+    provenanceService.create(new Provenance("modified", "TransformationDefinition", def.getId().toString()));
     return def;
   }
 
@@ -64,6 +69,7 @@ public class TransformationDefinitionController {
   @Delete(uri = "/{id}")
   public HttpResponse<?> delete(@PathVariable Long id) {
     service.delete(id);
+    provenanceService.create(new Provenance("deleted", "TransformationDefinition", id.toString()));
     return HttpResponse.noContent();
   }
 

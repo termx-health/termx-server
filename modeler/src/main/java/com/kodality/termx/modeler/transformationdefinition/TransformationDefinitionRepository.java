@@ -20,7 +20,9 @@ public class TransformationDefinitionRepository extends BaseRepository {
 
   private final Map<String, String> orderMapping = Map.of(
       Ordering.id, "td.id",
-      Ordering.name, "td.name"
+      Ordering.name, "td.name",
+      Ordering.modified,
+      "(select date from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity in ('created', 'modified') order by id desc limit 1)"
   );
 
   public void save(TransformationDefinition td) {
@@ -48,6 +50,10 @@ public class TransformationDefinitionRepository extends BaseRepository {
     }, p -> {
       SqlBuilder sb = new SqlBuilder("select id, name")
           .appendIfTrue(!params.isSummary(), ", resources, mapping, test_source")
+          .append(", (select date from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='created' order by id desc limit 1) created_at")
+          .append(", (select author ->> 'id' from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='created' order by id desc limit 1) created_by")
+          .append(", (select date from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='modified' order by id desc limit 1) modified_at")
+          .append(", (select author ->> 'id' from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='modified' order by id desc limit 1) modified_by")
           .append(" from modeler.transformation_definition td");
       sb.append(filter(params));
       sb.append(order(params, orderMapping));

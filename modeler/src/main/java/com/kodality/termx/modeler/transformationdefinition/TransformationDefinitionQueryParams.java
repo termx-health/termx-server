@@ -16,5 +16,6 @@ public class TransformationDefinitionQueryParams extends QueryParams {
   public interface Ordering {
     String id = "id";
     String name = "name";
+    String modified = "modified";
   }
 }
