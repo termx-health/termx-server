@@ -10,6 +10,7 @@ import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
+import com.kodality.termx.ts.Permissions;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
@@ -98,10 +99,18 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     fhirValueSet.setExperimental(valueSet.getExperimental() != null && valueSet.getExperimental());
     fhirValueSet.setLastReviewDate(toFhirDate(provenances, "reviewed"));
     fhirValueSet.setApprovalDate(toFhirDate(provenances, "approved"));
-    fhirValueSet.setCopyright(valueSet.getCopyright() != null ? valueSet.getCopyright().getHolder() : null);
-    fhirValueSet.setCopyrightLabel(valueSet.getCopyright() != null ? valueSet.getCopyright().getStatement() : null);
-    fhirValueSet.setJurisdiction(valueSet.getCopyright() != null && valueSet.getCopyright().getJurisdiction() != null ?
-        List.of(new CodeableConcept().setText(valueSet.getCopyright().getJurisdiction())) : null);
+    if (valueSet.getCopyright() != null) {
+      fhirValueSet.setCopyright(valueSet.getCopyright().getHolder());
+      fhirValueSet.setCopyrightLabel(valueSet.getCopyright().getStatement());
+      fhirValueSet.setJurisdiction(valueSet.getCopyright().getJurisdiction() != null ?
+          List.of(new CodeableConcept().setText(valueSet.getCopyright().getJurisdiction())) : null);
+    }
+    if (valueSet.getPermissions() != null) {
+      fhirValueSet.setAuthor(valueSet.getPermissions().getAdmin() != null ? toFhirContacts(valueSet.getPermissions().getAdmin()) : null);
+      fhirValueSet.setEditor(valueSet.getPermissions().getEditor() != null ? toFhirContacts(valueSet.getPermissions().getEditor()) : null);
+      fhirValueSet.setReviewer(valueSet.getPermissions().getViewer() != null ? toFhirContacts(valueSet.getPermissions().getViewer()) : null);
+      fhirValueSet.setEndorser(valueSet.getPermissions().getEndorser() != null ? toFhirContacts(valueSet.getPermissions().getEndorser()) : null);
+    }
 
     fhirValueSet.setVersion(version.getVersion());
     fhirValueSet.setLanguage(version.getPreferredLanguage());
@@ -360,6 +369,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     vs.setVersions(List.of(fromFhirVersion(valueSet)));
     vs.setExperimental(valueSet.getExperimental());
     vs.setCopyright(new Copyright().setHolder(valueSet.getCopyright()).setStatement(valueSet.getCopyrightLabel()));
+    vs.setPermissions(new Permissions().setAdmin(fromFhirContactsName(valueSet.getAuthor()))
+        .setEditor(fromFhirContactsName(valueSet.getEditor()))
+        .setViewer(fromFhirContactsName(valueSet.getReviewer()))
+        .setEndorser(fromFhirContactsName(valueSet.getEndorser())));
     return vs;
   }
 

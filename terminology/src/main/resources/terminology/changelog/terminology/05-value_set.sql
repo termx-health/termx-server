@@ -189,6 +189,9 @@ alter table terminology.value_set add column settings jsonb;
 alter table terminology.value_set add column copyright jsonb;
 --
 
+--changeset kodality:value_set-permissions
+alter table terminology.value_set add column permissions jsonb;
+--
 
 --changeset kodality:value_set-name-to-text
 alter table terminology.value_set rename name to name_bak;

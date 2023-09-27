@@ -25,6 +25,7 @@ public class ValueSetRepository extends BaseRepository {
     bp.addColumnProcessor("purpose", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("settings", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("copyright", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("permissions", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
   });
@@ -41,6 +42,7 @@ public class ValueSetRepository extends BaseRepository {
     ssb.jsonProperty("identifiers", valueSet.getIdentifiers());
     ssb.jsonProperty("contacts", valueSet.getContacts());
     ssb.jsonProperty("copyright", valueSet.getCopyright());
+    ssb.jsonProperty("permissions", valueSet.getPermissions());
     ssb.property("narrative", valueSet.getNarrative());
     ssb.property("experimental", valueSet.getExperimental());
     ssb.jsonProperty("settings", valueSet.getSettings());

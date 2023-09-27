@@ -120,6 +120,12 @@ public class CodeSystemImportService {
       });
     }
 
+    if (codeSystem.getBaseCodeSystemUri() != null && codeSystem.getBaseCodeSystem() == null) {
+      Optional.ofNullable(codeSystemVersionService.loadLastVersionByUri(codeSystem.getBaseCodeSystemUri())).ifPresent(csv -> {
+        codeSystem.setBaseCodeSystem(csv.getCodeSystem());
+      });
+    }
+
     Optional<CodeSystem> existingCodeSystem = codeSystemService.load(codeSystem.getId());
     if (existingCodeSystem.isEmpty()) {
       log.info("Code system {} does not exist, creating new", codeSystem.getId());
@@ -305,6 +311,11 @@ public class CodeSystemImportService {
     valueSet.setUri(codeSystem.getUri());
     valueSet.setTitle(codeSystem.getTitle());
     valueSet.setVersions(List.of(toValueSetVersion(codeSystem.getId(), codeSystem.getVersions().get(0))));
+    valueSet.setContacts(codeSystem.getContacts());
+    valueSet.setIdentifiers(codeSystem.getIdentifiers());
+    valueSet.setPublisher(codeSystem.getPublisher());
+    valueSet.setCopyright(codeSystem.getCopyright());
+    valueSet.setPermissions(codeSystem.getPermissions());
     return valueSet;
   }
 
@@ -313,6 +324,8 @@ public class CodeSystemImportService {
     version.setValueSet(valueSet);
     version.setVersion(codeSystemVersion.getVersion());
     version.setStatus(PublicationStatus.draft);
+    version.setSupportedLanguages(codeSystemVersion.getSupportedLanguages());
+    version.setPreferredLanguage(codeSystemVersion.getPreferredLanguage());
     version.setReleaseDate(codeSystemVersion.getReleaseDate());
     version.setRuleSet(new ValueSetVersionRuleSet().setRules(List.of(
         new ValueSetVersionRule()

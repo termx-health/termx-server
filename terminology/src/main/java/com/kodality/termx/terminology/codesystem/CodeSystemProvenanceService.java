@@ -71,7 +71,7 @@ public class CodeSystemProvenanceService {
       Map<String, Object> map = JsonUtil.getObjectMapper().convertValue(cs, Map.class);
       map.put("properties", cs.getProperties() == null ? null : cs.getProperties().stream().collect(Collectors.toMap(EntityProperty::getName, x -> x)));
       map.put("identifiers", cs.getIdentifiers() == null ? null : cs.getIdentifiers().stream().collect(Collectors.toMap(Identifier::getSystem, x -> x)));
-      map.put("contacts", cs.getContacts() == null ? null : cs.getContacts().stream().collect(Collectors.toMap(ContactDetail::getName, x -> x)));
+      map.put("contacts", cs.getContacts() == null ? null : cs.getContacts().stream().collect(Collectors.toMap(x -> x.getName() == null ? "" : x.getName(), x -> x)));
       return map;
     };
     return ProvenanceUtil.diff(fn.apply(left), fn.apply(right));

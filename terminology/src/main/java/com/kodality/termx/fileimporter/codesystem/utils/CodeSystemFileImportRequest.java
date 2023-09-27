@@ -4,6 +4,7 @@ import com.kodality.commons.model.LocalizedName;
 import io.micronaut.core.annotation.Introspected;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -48,10 +49,14 @@ public class CodeSystemFileImportRequest {
   public static class FileProcessingCodeSystem {
     private String id;
     private String uri;
+    private String publisher;
     private String name;
     private String oid;
     private LocalizedName title;
     private LocalizedName description;
+    private Map<String, String> contact;
+    private String supplement;
+    private String endorser;
   }
 
   @Getter
@@ -60,6 +65,7 @@ public class CodeSystemFileImportRequest {
 //    private Long id;
     private String number;
     private String status;
+    private String language;
     private LocalDate releaseDate;
   }
 }

@@ -113,3 +113,7 @@ alter table terminology.code_system add column name text;
 update terminology.code_system set name = (select replace(n.value::text, '"'::text, ''::text) from jsonb_each(name_bak::jsonb) n limit 1 );
 alter table terminology.code_system drop column name_bak;
 --
+
+--changeset kodality:code_system-permissions
+alter table terminology.code_system add column permissions jsonb;
+--

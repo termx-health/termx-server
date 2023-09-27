@@ -9,6 +9,9 @@ import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportRequ
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingEntityPropertyValue;
 import com.kodality.termx.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingResponseProperty;
 import com.kodality.termx.ts.CaseSignificance;
+import com.kodality.termx.ts.ContactDetail;
+import com.kodality.termx.ts.ContactDetail.Telecom;
+import com.kodality.termx.ts.Permissions;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationKind;
 import com.kodality.termx.ts.association.AssociationType;
@@ -21,6 +24,7 @@ import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class CodeSystemFileImportMapper {
@@ -62,6 +65,7 @@ public class CodeSystemFileImportMapper {
     CodeSystem codeSystem = existingCodeSystem != null ? JsonUtil.fromJson(JsonUtil.toJson(existingCodeSystem), CodeSystem.class) : new CodeSystem();
     codeSystem.setId(fpCodeSystem.getId());
     codeSystem.setUri(fpCodeSystem.getUri() != null ? fpCodeSystem.getUri() : codeSystem.getUri());
+    codeSystem.setPublisher(fpCodeSystem.getPublisher() != null ? fpCodeSystem.getPublisher() : codeSystem.getPublisher());
     codeSystem.setName(fpCodeSystem.getName() != null ? fpCodeSystem.getName() : codeSystem.getName());
     codeSystem.setIdentifiers(fpCodeSystem.getOid() != null ? List.of(new Identifier(OID_SYSTEM, OID_PREFIX + fpCodeSystem.getOid())) : codeSystem.getIdentifiers());
     codeSystem.setTitle(fpCodeSystem.getTitle() != null ? fpCodeSystem.getTitle() : codeSystem.getTitle());
@@ -69,9 +73,19 @@ public class CodeSystemFileImportMapper {
     codeSystem.setVersions(List.of(existingCodeSystemVersion != null ? existingCodeSystemVersion : toCsVersion(fpVersion, result.getEntities(), fpCodeSystem.getId())));
     codeSystem.setProperties(toCsProperties(result.getProperties()));
     codeSystem.setConcepts(result.getEntities().stream().map(e -> toCsConcept(codeSystem.getId(), e, result.getEntities())).toList());
-    codeSystem.setContent(CodeSystemContent.complete);
+    codeSystem.setContent(fpCodeSystem.getSupplement() != null ? CodeSystemContent.supplement : CodeSystemContent.complete);
+    codeSystem.setBaseCodeSystemUri(fpCodeSystem.getSupplement());
     codeSystem.setHierarchyMeaning(toHierarchyMeaning(result.getProperties()).orElse(null));
+    codeSystem.setContacts(CollectionUtils.isNotEmpty(fpCodeSystem.getContact()) ? toContacts(fpCodeSystem.getContact()) : codeSystem.getContacts());
+    codeSystem.setPermissions(fpCodeSystem.getEndorser() != null ? new Permissions().setEndorser(fpCodeSystem.getEndorser()) : codeSystem.getPermissions());
     return codeSystem;
+  }
+
+  private static List<ContactDetail> toContacts(Map<String, String> contacts) {
+    return List.of(new ContactDetail().setTelecoms(contacts.entrySet().stream().map(c -> new Telecom()
+            .setValue(c.getValue())
+            .setSystem(c.getKey()))
+        .toList()));
   }
 
   private static CodeSystemVersion toCsVersion(FileProcessingCodeSystemVersion fpVersion, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities, String codeSystem) {
@@ -84,7 +98,7 @@ public class CodeSystemFileImportMapper {
     version.setStatus(PublicationStatus.draft);
     version.setReleaseDate(fpVersion.getReleaseDate() == null ? LocalDate.now() : fpVersion.getReleaseDate());
     version.setSupportedLanguages(langs);
-    version.setPreferredLanguage(langs.size() == 1 ? langs.get(0) :
+    version.setPreferredLanguage(fpVersion.getLanguage() != null ? fpVersion.getLanguage() : langs.size() == 1 ? langs.get(0) :
         langs.contains(SessionStore.require().getLang()) ? SessionStore.require().getLang() : null);
     return version;
   }

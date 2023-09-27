@@ -3,6 +3,7 @@ package com.kodality.termx.fileimporter.valueset.utils;
 import com.kodality.commons.model.LocalizedName;
 import io.micronaut.core.annotation.Introspected;
 import java.time.LocalDate;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -36,10 +37,12 @@ public class ValueSetFileImportRequest {
   public static class FileProcessingValueSet {
     private String id;
     private String uri;
+    private String publisher;
     private String name;
     private String oid;
     private LocalizedName title;
     private LocalizedName description;
+    private Map<String, String> contact;
   }
 
   @Getter
@@ -47,6 +50,7 @@ public class ValueSetFileImportRequest {
   public static class FileProcessingValueSetVersion {
     private String number;
     private String status;
+    private String language;
     private LocalDate releaseDate;
     private FileProcessingValueSetVersionRule rule;
   }

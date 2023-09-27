@@ -4,6 +4,7 @@ import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.Copyright;
+import com.kodality.termx.ts.Permissions;
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
 import lombok.Getter;
@@ -27,6 +28,7 @@ public class CodeSystem {
   private List<Identifier> identifiers;
   private List<ContactDetail> contacts;
   private Copyright copyright;
+  private Permissions permissions;
 
   private String hierarchyMeaning;
   private String content;

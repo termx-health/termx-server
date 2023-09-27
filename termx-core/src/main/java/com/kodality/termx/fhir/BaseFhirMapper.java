@@ -58,6 +58,10 @@ public abstract class BaseFhirMapper {
         .toList();
   }
 
+  protected static List<com.kodality.zmei.fhir.datatypes.ContactDetail> toFhirContacts(String name) {
+    return name == null ? null : List.of(new com.kodality.zmei.fhir.datatypes.ContactDetail().setName(name));
+  }
+
   protected static List<Identifier> toFhirIdentifiers(List<com.kodality.commons.model.Identifier> identifiers) {
     if (identifiers == null) {
       return null;
@@ -105,6 +109,13 @@ public abstract class BaseFhirMapper {
           .map(t -> new Telecom().setSystem(t.getSystem()).setUse(t.getUse()).setValue(t.getValue())).toList();
       return new ContactDetail().setName(d.getName()).setTelecoms(telecoms);
     }).toList();
+  }
+
+  protected static String fromFhirContactsName(List<com.kodality.zmei.fhir.datatypes.ContactDetail> details) {
+    if (CollectionUtils.isEmpty(details)) {
+      return null;
+    }
+    return details.get(0).getName();
   }
 
   protected static List<Extension> toFhirTranslationExtension(LocalizedName name, String language) {

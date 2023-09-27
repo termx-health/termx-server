@@ -24,8 +24,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -39,7 +37,6 @@ import org.reactivestreams.Publisher;
 public class CodeSystemFileImportController {
   private final CodeSystemFileImportService fileImporterService;
   private final ImportLogger importLogger;
-  private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
   @Authorized(Privilege.CS_EDIT)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
@@ -73,7 +70,7 @@ public class CodeSystemFileImportController {
         log.error("Error while importing code system file " + req.getCodeSystem().getId(), e);
         importLogger.logImport(jobLogResponse.getJobId(), null, null, List.of(ExceptionUtils.getStackTrace(e)));
       }
-    }), executorService);
+    }));
     return jobLogResponse;
   }
 }

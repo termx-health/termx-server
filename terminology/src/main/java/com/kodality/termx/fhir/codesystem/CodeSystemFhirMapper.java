@@ -9,6 +9,7 @@ import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
+import com.kodality.termx.ts.Permissions;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
@@ -90,15 +91,23 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setContact(toFhirContacts(codeSystem.getContacts()));
     fhirCodeSystem.setLastReviewDate(toFhirDate(provenances, "reviewed"));
     fhirCodeSystem.setApprovalDate(toFhirDate(provenances, "approved"));
-    fhirCodeSystem.setCopyright(codeSystem.getCopyright() != null ? codeSystem.getCopyright().getHolder() : null);
-    fhirCodeSystem.setCopyrightLabel(codeSystem.getCopyright() != null ? codeSystem.getCopyright().getStatement() : null);
-    fhirCodeSystem.setJurisdiction(codeSystem.getCopyright() != null && codeSystem.getCopyright().getJurisdiction() != null ?
-        List.of(new CodeableConcept().setText(codeSystem.getCopyright().getJurisdiction())) : null);
     fhirCodeSystem.setHierarchyMeaning(codeSystem.getHierarchyMeaning());
     fhirCodeSystem.setContent(codeSystem.getContent());
     fhirCodeSystem.setCaseSensitive(
         codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
     fhirCodeSystem.setSupplements(codeSystem.getBaseCodeSystemUri());
+    if (codeSystem.getCopyright() != null) {
+      fhirCodeSystem.setCopyright(codeSystem.getCopyright().getHolder());
+      fhirCodeSystem.setCopyrightLabel(codeSystem.getCopyright().getStatement());
+      fhirCodeSystem.setJurisdiction(codeSystem.getCopyright().getJurisdiction() != null ?
+          List.of(new CodeableConcept().setText(codeSystem.getCopyright().getJurisdiction())) : null);
+    }
+    if (codeSystem.getPermissions() != null) {
+      fhirCodeSystem.setAuthor(codeSystem.getPermissions().getAdmin() != null ? toFhirContacts(codeSystem.getPermissions().getAdmin()) : null);
+      fhirCodeSystem.setEditor(codeSystem.getPermissions().getEditor() != null ? toFhirContacts(codeSystem.getPermissions().getEditor()) : null);
+      fhirCodeSystem.setReviewer(codeSystem.getPermissions().getViewer() != null ? toFhirContacts(codeSystem.getPermissions().getViewer()) : null);
+      fhirCodeSystem.setEndorser(codeSystem.getPermissions().getEndorser() != null ? toFhirContacts(codeSystem.getPermissions().getEndorser()) : null);
+    }
 
     fhirCodeSystem.setVersion(version.getVersion());
     fhirCodeSystem.setLanguage(version.getPreferredLanguage());
@@ -252,6 +261,10 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     codeSystem.setIdentifiers(fromFhirIdentifiers(fhirCodeSystem.getIdentifier()));
     codeSystem.setContacts(fromFhirContacts(fhirCodeSystem.getContact()));
     codeSystem.setCopyright(new Copyright().setHolder(fhirCodeSystem.getCopyright()).setStatement(fhirCodeSystem.getCopyrightLabel()));
+    codeSystem.setPermissions(new Permissions().setAdmin(fromFhirContactsName(fhirCodeSystem.getAuthor()))
+        .setEditor(fromFhirContactsName(fhirCodeSystem.getEditor()))
+        .setViewer(fromFhirContactsName(fhirCodeSystem.getReviewer()))
+        .setEndorser(fromFhirContactsName(fhirCodeSystem.getEndorser())));
     codeSystem.setHierarchyMeaning(fhirCodeSystem.getHierarchyMeaning());
     codeSystem.setContent(fhirCodeSystem.getContent());
     codeSystem.setCaseSensitive(fhirCodeSystem.getCaseSensitive() != null && fhirCodeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :

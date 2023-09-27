@@ -37,8 +37,6 @@ import org.reactivestreams.Publisher;
 public class ValueSetFileImportController {
   private final ValueSetFileImportService fileImporterService;
   private final ImportLogger importLogger;
-  private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-
 
   @Authorized(Privilege.CS_EDIT)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
@@ -68,7 +66,7 @@ public class ValueSetFileImportController {
         log.error("Error while importing value set file (TE700)", e);
         importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
       }
-    }), executorService);
+    }));
     return jobLogResponse;
   }
 }
