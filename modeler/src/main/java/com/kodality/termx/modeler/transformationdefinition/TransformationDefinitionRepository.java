@@ -37,8 +37,21 @@ public class TransformationDefinitionRepository extends BaseRepository {
     td.setId(id);
   }
 
+
+  private SqlBuilder select() {
+    return select(false);
+  }
+
+  private SqlBuilder select(boolean isSummary) {
+    return new SqlBuilder("select id, name").appendIfTrue(!isSummary, ", resources, mapping, test_source")
+        .append(", (select date from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='created' order by id desc limit 1) created_at")
+        .append(", (select author ->> 'id' from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='created' order by id desc limit 1) created_by")
+        .append(", (select date from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='modified' order by id desc limit 1) modified_at")
+        .append(", (select author ->> 'id' from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='modified' order by id desc limit 1) modified_by");
+  }
+
   public TransformationDefinition load(Long id) {
-    SqlBuilder sb = new SqlBuilder("select * from modeler.transformation_definition where id = ? and sys_status = 'A'", id);
+    SqlBuilder sb = select().append("from modeler.transformation_definition td where id = ? and sys_status = 'A'", id);
     return getBean(sb.getSql(), bp, sb.getParams());
   }
 
@@ -48,13 +61,7 @@ public class TransformationDefinitionRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select id, name")
-          .appendIfTrue(!params.isSummary(), ", resources, mapping, test_source")
-          .append(", (select date from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='created' order by id desc limit 1) created_at")
-          .append(", (select author ->> 'id' from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='created' order by id desc limit 1) created_by")
-          .append(", (select date from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='modified' order by id desc limit 1) modified_at")
-          .append(", (select author ->> 'id' from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='modified' order by id desc limit 1) modified_by")
-          .append(" from modeler.transformation_definition td");
+      SqlBuilder sb = select(params.isSummary()).append(" from modeler.transformation_definition td");
       sb.append(filter(params));
       sb.append(order(params, orderMapping));
       sb.append(limit(params));
