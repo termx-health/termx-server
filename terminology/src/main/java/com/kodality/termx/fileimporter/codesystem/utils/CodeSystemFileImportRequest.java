@@ -66,6 +66,7 @@ public class CodeSystemFileImportRequest {
     private String number;
     private String status;
     private String language;
+    private String algorithm;
     private LocalDate releaseDate;
   }
 }

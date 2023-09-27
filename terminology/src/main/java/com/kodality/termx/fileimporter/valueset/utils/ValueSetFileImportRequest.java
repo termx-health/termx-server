@@ -43,6 +43,7 @@ public class ValueSetFileImportRequest {
     private LocalizedName title;
     private LocalizedName description;
     private Map<String, String> contact;
+    private String endorser;
   }
 
   @Getter
@@ -52,6 +53,7 @@ public class ValueSetFileImportRequest {
     private String status;
     private String language;
     private LocalDate releaseDate;
+    private String algorithm;
     private FileProcessingValueSetVersionRule rule;
   }
 

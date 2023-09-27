@@ -7,6 +7,7 @@ import com.kodality.termx.fileimporter.valueset.utils.ValueSetFileImportRequest.
 import com.kodality.termx.fileimporter.valueset.utils.ValueSetFileImportRequest.FileProcessingValueSetVersion;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.ContactDetail.Telecom;
+import com.kodality.termx.ts.Permissions;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.valueset.ValueSet;
@@ -36,6 +37,7 @@ public class ValueSetFileImportMapper {
     valueSet.setTitle(fpValueSet.getTitle() != null ? fpValueSet.getTitle() : valueSet.getTitle());
     valueSet.setDescription(fpValueSet.getDescription() != null ? fpValueSet.getDescription() : valueSet.getDescription());
     valueSet.setContacts(CollectionUtils.isNotEmpty(fpValueSet.getContact()) ? toContacts(fpValueSet.getContact()) : valueSet.getContacts());
+    valueSet.setPermissions(fpValueSet.getEndorser() != null ? new Permissions().setEndorser(fpValueSet.getEndorser()) : valueSet.getPermissions());
     valueSet.setVersions(List.of(toVsVersion(fpVersion, concepts, fpValueSet.getId(), existingValueSetVersion, existingRule)));
     return valueSet;
   }
@@ -55,6 +57,7 @@ public class ValueSetFileImportMapper {
     version.setVersion(fpVersion.getNumber());
     version.setStatus(PublicationStatus.draft);
     version.setReleaseDate(fpVersion.getReleaseDate() == null ? LocalDate.now() : fpVersion.getReleaseDate());
+    version.setAlgorithm(fpVersion.getAlgorithm());
     version.setPreferredLanguage(fpVersion.getLanguage() != null ? fpVersion.getLanguage() : SessionStore.require().getLang());
     version.setRuleSet(version.getRuleSet() == null ? new ValueSetVersionRuleSet() : version.getRuleSet());
     version.getRuleSet().setRules(existingRule != null ? List.of(existingRule) : List.of(new ValueSetVersionRule()

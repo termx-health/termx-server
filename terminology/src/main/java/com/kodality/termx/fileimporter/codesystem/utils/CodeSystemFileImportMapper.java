@@ -97,6 +97,7 @@ public class CodeSystemFileImportMapper {
     version.setVersion(fpVersion.getNumber());
     version.setStatus(PublicationStatus.draft);
     version.setReleaseDate(fpVersion.getReleaseDate() == null ? LocalDate.now() : fpVersion.getReleaseDate());
+    version.setAlgorithm(fpVersion.getAlgorithm());
     version.setSupportedLanguages(langs);
     version.setPreferredLanguage(fpVersion.getLanguage() != null ? fpVersion.getLanguage() : langs.size() == 1 ? langs.get(0) :
         langs.contains(SessionStore.require().getLang()) ? SessionStore.require().getLang() : null);
