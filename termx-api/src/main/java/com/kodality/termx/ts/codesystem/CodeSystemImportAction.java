@@ -13,4 +13,5 @@ public class CodeSystemImportAction {
   private boolean generateValueSet;
   private boolean cleanRun;
   private boolean cleanConceptRun;
+  private String spaceToAdd; // spaceCode|packageCode
 }

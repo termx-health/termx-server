@@ -148,7 +148,9 @@ public class CodeSystemFileImportService {
             .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
             .setGenerateValueSet(request.isGenerateValueSet())
             .setCleanRun(request.isCleanVersion())
-            .setCleanConceptRun(request.isReplaceConcept());
+            .setCleanConceptRun(request.isReplaceConcept())
+            .setSpaceToAdd(request.getSpace() != null && request.getSpacePackage() != null ?
+                String.join("|", request.getSpace(), request.getSpacePackage()) : null);
         codeSystemImportService.importCodeSystem(copy, associationTypes, action);
       } catch (Exception e) {
         TransactionManager.rollback();
@@ -188,7 +190,9 @@ public class CodeSystemFileImportService {
         .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
         .setGenerateValueSet(request.isGenerateValueSet())
         .setCleanRun(request.isCleanVersion())
-        .setCleanConceptRun(request.isReplaceConcept());
+        .setCleanConceptRun(request.isReplaceConcept())
+        .setSpaceToAdd(request.getSpace() != null && request.getSpacePackage() != null ?
+            String.join("|", request.getSpace(), request.getSpacePackage()) : null);
     codeSystemImportService.importCodeSystem(mappedCodeSystem, associationTypes, action);
     return resp;
   }

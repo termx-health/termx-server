@@ -51,4 +51,15 @@ public class PackageVersionRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder("update sys.package_version set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
+
+  public PackageVersion loadLastVersion(String spaceCode, String packageCode) {
+    SqlBuilder sb = new SqlBuilder("select pv.*");
+    sb.append(", (select jsonb_agg(t.r) from (select json_build_object('id', pvr.id, 'resourceId', pvr.resource_id, 'resourceType', pvr.resource_type, 'terminologyServer', pvr.terminology_server) as r ");
+    sb.append("from sys.package_version_resource pvr where pvr.version_id = pv.id and pvr.sys_status = 'A') t) as resources");
+    sb.append("from sys.package_version pv");
+    sb.append("inner join sys.package p on p.id = pv.package_id and p.sys_status = 'A'");
+    sb.append("inner join sys.space s on s.id = p.space_id and s.sys_status = 'A'");
+    sb.append("where s.code = ? and p.code = ? and pv.sys_status = 'A' order by pv.version", spaceCode, packageCode);
+    return getBean(sb.getSql(), bp, sb.getParams());
+  }
 }

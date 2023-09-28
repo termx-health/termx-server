@@ -25,6 +25,9 @@ public class ValueSetFileImportRequest {
 
   private String importClass;
 
+  private String space;
+  private String spacePackage;
+
   @Getter
   @Setter
   public static class FileProcessingMapping {

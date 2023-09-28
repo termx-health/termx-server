@@ -1,8 +1,13 @@
 package com.kodality.termx.terminology.codesystem;
 
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ApiError;
 import com.kodality.termx.auth.UserPermissionService;
+import com.kodality.termx.sys.spacepackage.PackageVersion;
+import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
+import com.kodality.termx.sys.spacepackage.resource.PackageResourceService;
+import com.kodality.termx.sys.spacepackage.version.PackageVersionService;
 import com.kodality.termx.terminology.association.AssociationTypeService;
 import com.kodality.termx.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
@@ -69,6 +74,9 @@ public class CodeSystemImportService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
+  private final PackageVersionService packageVersionService;
+  private final PackageResourceService packageResourceService;
+
   private final ValueSetImportService valueSetImportService;
 
   private final UserPermissionService userPermissionService;
@@ -94,6 +102,9 @@ public class CodeSystemImportService {
     }
     if (action.isRetire()) {
       codeSystemVersionService.retire(codeSystem.getId(), codeSystemVersion.getVersion());
+    }
+    if (StringUtils.isNotEmpty(action.getSpaceToAdd())){
+      addToSpace(codeSystem.getId(), action.getSpaceToAdd());
     }
 
     if (action.isGenerateValueSet()) {
@@ -301,7 +312,10 @@ public class CodeSystemImportService {
   // VS
   private void generateValueSet(CodeSystem codeSystem, CodeSystemImportAction csAction) {
     ValueSet valueSet = toValueSet(codeSystem);
-    ValueSetImportAction action = new ValueSetImportAction().setActivate(csAction.isActivate()).setRetire(csAction.isRetire());
+    ValueSetImportAction action = new ValueSetImportAction()
+        .setActivate(csAction.isActivate())
+        .setRetire(csAction.isRetire())
+        .setSpaceToAdd(csAction.getSpaceToAdd());
     valueSetImportService.importValueSet(valueSet, action);
   }
 
@@ -335,4 +349,19 @@ public class CodeSystemImportService {
     )));
     return version;
   }
+
+  private void addToSpace(String codeSystemId, String spaceToAdd) {
+    String[] spaceAndPackage = PipeUtil.parsePipe(spaceToAdd);
+    PackageVersion packageVersion = packageVersionService.loadLastVersion(spaceAndPackage[0], spaceAndPackage[1]);
+    if (packageVersion == null) {
+      throw ApiError.TE112.toApiException(Map.of("space", spaceAndPackage[0], "package", spaceAndPackage[1]));
+    }
+
+    List<PackageResource> resources = packageVersion.getResources() == null ? List.of() : packageVersion.getResources();
+    boolean exists = resources.stream().anyMatch(r -> r.getResourceType().equals("code-system") && r.getResourceId().equals(codeSystemId));
+    if (!exists) {
+      packageResourceService.save(packageVersion.getId(), new PackageResource().setResourceType("code-system").setResourceId(codeSystemId));
+    }
+  }
+
 }

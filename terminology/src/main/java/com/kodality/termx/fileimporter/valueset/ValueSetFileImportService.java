@@ -115,7 +115,9 @@ public class ValueSetFileImportService {
         log.info("\tImporting VS copy");
         ValueSetImportAction action = new ValueSetImportAction()
             .setActivate(PublicationStatus.active.equals(request.getVersion().getStatus()))
-            .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()));
+            .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
+            .setSpaceToAdd(request.getSpace() != null && request.getSpacePackage() != null ?
+                String.join("|", request.getSpace(), request.getSpacePackage()) : null);
         valueSetImportService.importValueSet(copy, action);
       } catch (Exception e) {
         TransactionManager.rollback();
@@ -135,7 +137,9 @@ public class ValueSetFileImportService {
     mappedValueSet.getVersions().forEach(cv -> cv.setId(null));
     ValueSetImportAction action = new ValueSetImportAction()
         .setActivate(PublicationStatus.active.equals(request.getVersion().getStatus()))
-        .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()));
+        .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
+        .setSpaceToAdd(request.getSpace() != null && request.getSpacePackage() != null ?
+            String.join("|", request.getSpace(), request.getSpacePackage()) : null);
     valueSetImportService.importValueSet(mappedValueSet, action);
     return resp;
   }

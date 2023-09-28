@@ -26,6 +26,9 @@ public class PackageVersionService {
   public PackageVersion load(Long packageId, String version) {
     return repository.load(packageId, version);
   }
+  public PackageVersion loadLastVersion(String spaceCode, String packageCode) {
+    return repository.loadLastVersion(spaceCode, packageCode);
+  }
 
   public List<PackageVersion> loadAll(Long packageId) {
     return repository.loadAll(packageId);

@@ -1,7 +1,12 @@
 package com.kodality.termx.terminology.valueset;
 
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ApiError;
 import com.kodality.termx.auth.UserPermissionService;
+import com.kodality.termx.sys.spacepackage.PackageVersion;
+import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
+import com.kodality.termx.sys.spacepackage.resource.PackageResourceService;
+import com.kodality.termx.sys.spacepackage.version.PackageVersionService;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
@@ -34,6 +39,9 @@ public class ValueSetImportService {
   private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
 
+  private final PackageVersionService packageVersionService;
+  private final PackageResourceService packageResourceService;
+
   private final UserPermissionService userPermissionService;
 
   @Transactional
@@ -53,6 +61,9 @@ public class ValueSetImportService {
     }
     if (action.isRetire()) {
       valueSetVersionService.retire(valueSet.getId(), valueSetVersion.getVersion());
+    }
+    if (StringUtils.isNotEmpty(action.getSpaceToAdd())) {
+      addToSpace(valueSet.getId(), action.getSpaceToAdd());
     }
     log.info("IMPORT FINISHED (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
     return valueSet;
@@ -107,5 +118,19 @@ public class ValueSetImportService {
         r.setValueSetVersion(valueSetVersion);
       }
     });
+  }
+
+  private void addToSpace(String valueSetId, String spaceToAdd) {
+    String[] spaceAndPackage = PipeUtil.parsePipe(spaceToAdd);
+    PackageVersion packageVersion = packageVersionService.loadLastVersion(spaceAndPackage[0], spaceAndPackage[1]);
+    if (packageVersion == null) {
+      throw ApiError.TE112.toApiException(Map.of("space", spaceAndPackage[0], "package", spaceAndPackage[1]));
+    }
+
+    List<PackageResource> resources = packageVersion.getResources() == null ? List.of() : packageVersion.getResources();
+    boolean exists = resources.stream().anyMatch(r -> r.getResourceType().equals("value-set") && r.getResourceId().equals(valueSetId));
+    if (!exists) {
+      packageResourceService.save(packageVersion.getId(), new PackageResource().setResourceType("value-set").setResourceId(valueSetId));
+    }
   }
 }
