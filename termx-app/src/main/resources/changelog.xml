@@ -11,6 +11,7 @@
   <include file="snomed/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="observation-definition/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="taskflow/changelog/changelog.xml" relativeToChangelogFile="false"/>
+  <include file="task-taskflow/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="modeler/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="bob/changelog/changelog.xml" relativeToChangelogFile="false"/>
 
