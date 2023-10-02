@@ -311,7 +311,7 @@ public class CodeSystemImportService {
 
   // VS
   private void generateValueSet(CodeSystem codeSystem, CodeSystemImportAction csAction) {
-    ValueSet valueSet = toValueSet(codeSystem);
+    ValueSet valueSet = toValueSet(codeSystem, csAction.getValueSetProperties());
     ValueSetImportAction action = new ValueSetImportAction()
         .setActivate(csAction.isActivate())
         .setRetire(csAction.isRetire())
@@ -319,12 +319,12 @@ public class CodeSystemImportService {
     valueSetImportService.importValueSet(valueSet, action);
   }
 
-  public static ValueSet toValueSet(CodeSystem codeSystem) {
+  public static ValueSet toValueSet(CodeSystem codeSystem, List<String> properties) {
     ValueSet valueSet = new ValueSet();
     valueSet.setId(codeSystem.getId());
     valueSet.setUri(codeSystem.getUri());
     valueSet.setTitle(codeSystem.getTitle());
-    valueSet.setVersions(List.of(toValueSetVersion(codeSystem.getId(), codeSystem.getVersions().get(0))));
+    valueSet.setVersions(List.of(toValueSetVersion(codeSystem.getId(), codeSystem.getVersions().get(0), properties)));
     valueSet.setContacts(codeSystem.getContacts());
     valueSet.setIdentifiers(codeSystem.getIdentifiers());
     valueSet.setPublisher(codeSystem.getPublisher());
@@ -333,7 +333,7 @@ public class CodeSystemImportService {
     return valueSet;
   }
 
-  public static ValueSetVersion toValueSetVersion(String valueSet, CodeSystemVersion codeSystemVersion) {
+  public static ValueSetVersion toValueSetVersion(String valueSet, CodeSystemVersion codeSystemVersion, List<String> properties) {
     ValueSetVersion version = new ValueSetVersion();
     version.setValueSet(valueSet);
     version.setVersion(codeSystemVersion.getVersion());
@@ -344,6 +344,7 @@ public class CodeSystemImportService {
     version.setRuleSet(new ValueSetVersionRuleSet().setRules(List.of(
         new ValueSetVersionRule()
             .setType(ValueSetVersionRuleType.include)
+            .setProperties(properties)
             .setCodeSystem(codeSystemVersion.getCodeSystem())
             .setCodeSystemVersion(codeSystemVersion)
     )));

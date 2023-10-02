@@ -1,12 +1,14 @@
 package com.kodality.termx.fileimporter.valueset.utils;
 
 import com.kodality.termx.ApiError;
+import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -32,17 +34,23 @@ public class ValueSetFileImportProcessor {
 
     Integer codeIdx = headers.indexOf(request.getMapping().getCode());
     Integer displayIdx = request.getMapping().getDisplay() == null ? null : headers.indexOf(request.getMapping().getDisplay());
-    return rows.stream().map(r -> {
-      if (r.length > (codeIdx + 1) && r[codeIdx] == null) {
-        return null;
-      }
-      ValueSetVersionConcept concept = new ValueSetVersionConcept();
-      concept.setConcept(new ValueSetVersionConceptValue().setCode(r[codeIdx]).setCodeSystem(cs));
-      if (displayIdx != null && r.length > (displayIdx + 1) && r[displayIdx] != null) {
-        concept.setDisplay(new Designation().setName(r[displayIdx]));
-      }
-      return concept;
-    }).filter(Objects::nonNull).toList();
+    Integer retirementDateIdx = request.getMapping().getRetirementDate() == null ? null : headers.indexOf(request.getMapping().getRetirementDate());
+    Integer statusIdx = request.getMapping().getStatus() == null ? null : headers.indexOf(request.getMapping().getStatus());
+    return rows.stream()
+        .filter(r ->
+            (retirementDateIdx == null || !StringUtils.isNotEmpty(r[retirementDateIdx]) &&
+                (statusIdx == null || !PublicationStatus.retired.equals(PublicationStatus.getStatus(r[statusIdx])))))
+        .map(r -> {
+          if (r.length > (codeIdx + 1) && r[codeIdx] == null) {
+            return null;
+          }
+          ValueSetVersionConcept concept = new ValueSetVersionConcept();
+          concept.setConcept(new ValueSetVersionConceptValue().setCode(r[codeIdx]).setCodeSystem(cs));
+          if (displayIdx != null && r.length > (displayIdx + 1) && r[displayIdx] != null) {
+            concept.setDisplay(new Designation().setName(r[displayIdx]));
+          }
+          return concept;
+        }).filter(Objects::nonNull).toList();
   }
 
   private static RowListProcessor getParser(String type, byte[] file) {

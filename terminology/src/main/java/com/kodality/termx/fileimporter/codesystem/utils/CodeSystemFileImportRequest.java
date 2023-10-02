@@ -21,7 +21,10 @@ public class CodeSystemFileImportRequest {
   private FileProcessingCodeSystemVersion version;
 
   private List<FileProcessingProperty> properties;
+
   private boolean generateValueSet;
+  private List<String> valueSetProperties;
+
   private boolean dryRun;
   private boolean cleanVersion;
   private boolean replaceConcept;

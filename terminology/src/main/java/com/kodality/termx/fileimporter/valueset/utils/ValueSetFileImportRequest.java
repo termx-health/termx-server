@@ -3,6 +3,7 @@ package com.kodality.termx.fileimporter.valueset.utils;
 import com.kodality.commons.model.LocalizedName;
 import io.micronaut.core.annotation.Introspected;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,6 +34,10 @@ public class ValueSetFileImportRequest {
   public static class FileProcessingMapping {
     private String code;
     private String display;
+
+    // only for validation
+    private String retirementDate;
+    private String status;
   }
 
   @Getter
@@ -67,6 +72,8 @@ public class ValueSetFileImportRequest {
 
     private String codeSystem;
     private Long codeSystemVersionId;
+
+    private List<String> properties;
 
     private String codeSystemUri;
   }

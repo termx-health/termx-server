@@ -147,6 +147,7 @@ public class CodeSystemFileImportService {
             .setActivate(PublicationStatus.active.equals(request.getVersion().getStatus()))
             .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
             .setGenerateValueSet(request.isGenerateValueSet())
+            .setValueSetProperties(request.getValueSetProperties())
             .setCleanRun(request.isCleanVersion())
             .setCleanConceptRun(request.isReplaceConcept())
             .setSpaceToAdd(request.getSpace() != null && request.getSpacePackage() != null ?
@@ -189,6 +190,7 @@ public class CodeSystemFileImportService {
         .setActivate(PublicationStatus.active.equals(request.getVersion().getStatus()))
         .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
         .setGenerateValueSet(request.isGenerateValueSet())
+        .setValueSetProperties(request.getValueSetProperties())
         .setCleanRun(request.isCleanVersion())
         .setCleanConceptRun(request.isReplaceConcept())
         .setSpaceToAdd(request.getSpace() != null && request.getSpacePackage() != null ?
