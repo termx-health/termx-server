@@ -61,7 +61,7 @@ public enum ApiError {
   TE709("TE709", "Concept code not found in provided CodeSystem. (Row nr {{rowNumber}})"),
   TE710("TE710", "Concept code not found in provided ValueSet. (Row nr {{rowNumber}})"),
   TE711("TE711", "File loading by link failed."),
-//  TE712("TE712", "Url and version not provided."),
+  TE712("TE712", "Mapped column '{{column}}' is not present in the file header."),
   TE713("TE713", "Property \"{{prop}}\" is missing value on row(s): {{ranges}}"),
   TE714("TE714", "Several concepts match the \"{{value}}\" value"),
   TE715("TE715", "Unknown reference \"{{code}}\" to \"{{codeSystem}}\""),

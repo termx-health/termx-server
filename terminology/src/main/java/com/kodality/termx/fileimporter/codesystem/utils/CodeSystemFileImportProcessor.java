@@ -67,7 +67,10 @@ public class CodeSystemFileImportProcessor {
       Map<String, List<FileProcessingEntityPropertyValue>> entity = new HashMap<>();
       for (FileProcessingProperty prop : importProperties) {
         int idx = headers.indexOf(prop.getColumnName());
-        if (r[idx] == null) {
+        if (idx == -1) {
+          throw ApiError.TE712.toApiException(Map.of("column", prop.getColumnName()));
+        }
+        if (idx >= r.length || r[idx] == null) {
           continue;
         }
 
