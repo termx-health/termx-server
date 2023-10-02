@@ -9,6 +9,7 @@ import com.kodality.termx.sys.spacepackage.resource.PackageResourceService;
 import com.kodality.termx.sys.spacepackage.version.PackageVersionService;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
+import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
@@ -18,6 +19,7 @@ import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetImportAction;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
@@ -38,6 +40,7 @@ public class ValueSetImportService {
   private final ValueSetVersionService valueSetVersionService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
+  private final ValueSetVersionConceptService valueSetVersionConceptService;
 
   private final PackageVersionService packageVersionService;
   private final PackageResourceService packageResourceService;
@@ -88,6 +91,7 @@ public class ValueSetImportService {
     log.info("Saving value set version {}", valueSetVersion.getVersion());
     valueSetVersionService.save(valueSetVersion);
     valueSetVersionRuleService.save(valueSetVersion.getRuleSet().getRules(), valueSetVersion.getValueSet(), valueSetVersion.getVersion());
+    valueSetVersionConceptService.expand(valueSetVersion.getValueSet(), valueSetVersion.getVersion());
   }
 
   private ValueSet prepare(ValueSet valueSet) {
