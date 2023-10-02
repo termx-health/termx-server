@@ -36,6 +36,7 @@ public enum ApiError {
   TE216("TE216", "Coding \"{{code}}\" is missing the \"codeSystem\" field"),
   TE217("TE217", "Unknown reference \"{{code}}\" to \"{{codeSystem}}\""),
   TE218("TE218", "Property '{{propertyName}}' is used, type can't be changed."),
+  TE219("TE219", "Concept '{{code}}' status and retirementDate are not correspondent. Status is active and retirementDate is specified."),
   TE301("TE301", "Version '{{version}}' of value set '{{valueSet}}' doesn't exist."),
   TE302("TE302", "Value set '{{valueSet}}' doesn't have active version."),
   TE303("TE303", "Value set is required, can't be deleted."),

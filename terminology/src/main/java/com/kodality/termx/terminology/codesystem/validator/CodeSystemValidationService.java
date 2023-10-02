@@ -6,6 +6,7 @@ import com.kodality.commons.util.MapUtil;
 import com.kodality.termx.ApiError;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
+import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -122,6 +124,10 @@ public class CodeSystemValidationService {
       }
     });
 
+    Optional<EntityPropertyValue> retirementDate = conceptVersion.getPropertyValues().stream().filter(pv -> "retirementDate".equals(pv.getEntityProperty())).findFirst();
+    if (retirementDate.isPresent() && retirementDate.get().getValue() != null && PublicationStatus.active.equals(conceptVersion.getStatus())) {
+      errs.add(ApiError.TE219.toIssue(MapUtil.toMap("code", conceptVersion.getCode())));
+    }
     return errs;
   }
 
