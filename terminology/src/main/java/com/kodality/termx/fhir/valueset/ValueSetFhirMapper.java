@@ -189,7 +189,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
 
   public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances,
                                                                             List<ValueSetVersionConcept> concepts, Parameters param) {
-    boolean active = Optional.ofNullable(param).map(p -> p.findParameter("activeOnly").map(ParametersParameter::getValueBoolean).orElse(false)).orElse(false);
+    boolean active = Optional.ofNullable(param).map(p -> p.findParameter("activeOnly")
+        .map(pp -> pp.getValueBoolean() != null ? pp.getValueBoolean() : "true".equals(pp.getValueString()))
+        .orElse(false)).orElse(false);
     if (active) {
       concepts = concepts.stream().filter(ValueSetVersionConcept::isActive).toList();
     }
