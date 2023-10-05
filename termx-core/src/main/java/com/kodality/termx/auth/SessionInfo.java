@@ -8,6 +8,7 @@ import java.util.function.Function;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.apache.commons.lang3.ArrayUtils;
 
 @Getter
 @Setter
@@ -42,12 +43,17 @@ public class SessionInfo {
   }
 
   private boolean privilegesMatch(String p1, String p2) {
-    String[] p1Parts = p1.split("\\.");
-    String[] p2Parts = p2.split("\\.");
+    String[] p1Parts = split(p1);
+    String[] p2Parts = split(p2);
     if (p1Parts.length != 3 && p2Parts.length != 3) {
       return false;
     }
     return match(p1Parts[0], p2Parts[0]) && match(p1Parts[1], p2Parts[1]) && match(p1Parts[2], p2Parts[2]);
+  }
+
+  private String[] split(String p) {
+    String[] parts = p.split("\\.");
+    return new String[]{String.join(".", ArrayUtils.subarray(parts, 0, parts.length - 2)), parts[parts.length - 2], parts[parts.length - 1]};
   }
 
   private boolean match(String p1, String p2) {
