@@ -1,7 +1,6 @@
 package com.kodality.termx.terminology.codesystem.designation;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.DesignationQueryParams;
 import java.util.List;
@@ -18,8 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class DesignationService {
   private final DesignationRepository repository;
 
-  private final UserPermissionService userPermissionService;
-
   public Optional<Designation> load(Long id) {
     return Optional.ofNullable(repository.load(id));
   }
@@ -33,33 +30,27 @@ public class DesignationService {
   }
 
   @Transactional
-  public void save(List<Designation> designations, Long codeSystemEntityVersionId, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
+  public void save(List<Designation> designations, Long codeSystemEntityVersionId) {
     repository.retain(designations, codeSystemEntityVersionId);
     if (designations != null) {
-      designations.forEach(designation -> save(designation, codeSystemEntityVersionId, codeSystem));
+      designations.forEach(designation -> save(designation, codeSystemEntityVersionId));
     }
   }
 
   @Transactional
-  public void batchUpsert(Map<Long, List<Designation>> designations, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
+  public void batchUpsert(Map<Long, List<Designation>> designations) {
     List<Entry<Long, List<Designation>>> entries = designations.entrySet().stream().toList();
     repository.retain(entries);
     repository.save(entries.stream().flatMap(e -> e.getValue().stream().map(v -> Pair.of(e.getKey(), v))).toList());
   }
 
   @Transactional
-  public void save(Designation designation, Long codeSystemEntityVersionId, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+  public void save(Designation designation, Long codeSystemEntityVersionId) {
     repository.save(designation, codeSystemEntityVersionId);
   }
 
   @Transactional
-  public void delete(Long propertyId, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+  public void delete(Long propertyId) {
     repository.delete(propertyId);
   }
 

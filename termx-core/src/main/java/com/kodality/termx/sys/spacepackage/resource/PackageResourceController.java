@@ -9,21 +9,15 @@ import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import io.micronaut.context.annotation.Parameter;
-import io.micronaut.core.annotation.Introspected;
 import io.micronaut.http.HttpResponse;
-import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
-import io.micronaut.http.annotation.Put;
+import io.micronaut.http.annotation.QueryValue;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -36,22 +30,16 @@ public class PackageResourceController {
 
   private static final String JOB_TYPE = "package-resource-sync";
 
-  @Authorized(Privilege.P_VIEW)
+  @Authorized(privilege = Privilege.S_VIEW)
   @Get("/{?params*}")
-  public List<PackageResource> loadAll(Map<String, String> params) {
-    return packageResourceService.loadAll(params.get("spaceCode"), params.get("packageCode"), params.get("version"));
+  public List<PackageResource> loadAll(@NotNull @QueryValue Long spaceId, @QueryValue String packageCode, @QueryValue String version) {
+    return packageResourceService.loadAll(spaceId, packageCode, version);
   }
 
-  @Authorized(Privilege.P_EDIT)
-  @Put("/{id}")
-  public PackageResource update(@Parameter Long id, @Valid @Body PackageResourceSaveRequest request) {
-    request.getResource().setId(id);
-    return packageResourceService.save(request.getVersionId(), request.getResource());
-  }
-
-  @Authorized(Privilege.P_EDIT)
+  @Authorized(privilege = Privilege.S_EDIT)
   @Post(value = "/{id}/sync")
   public HttpResponse<?> importResource(@Parameter Long id) {
+    //TODO: auth?
     JobLogResponse job = importLogger.createJob(JOB_TYPE);
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
@@ -69,15 +57,5 @@ public class PackageResourceController {
       }
     }));
     return HttpResponse.ok(job);
-  }
-
-  @Getter
-  @Setter
-  @Introspected
-  public static class PackageResourceSaveRequest {
-    @NotNull
-    private Long versionId;
-    @NotNull
-    private PackageResource resource;
   }
 }

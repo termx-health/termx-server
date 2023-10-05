@@ -61,10 +61,11 @@ public class ObservationDefinitionController {
   @Authorized(Privilege.OBS_DEF_VIEW)
   @Get("/{?params*}")
   public QueryResult<ObservationDefinition> search(ObservationDefinitionSearchParams params) {
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.OBS_DEF_VIEW, Long::valueOf));
     return observationDefinitionService.search(params);
   }
 
-  @Authorized(Privilege.OBS_DEF_EDIT)
+  @Authorized(privilege = Privilege.OBS_DEF_EDIT)
   @Post("/import")
   public JobLogResponse importDefinitions(@Body @Valid ObservationDefinitionImportRequest request) {
     JobLogResponse jobLogResponse = importLogger.createJob("OBS-DEF-IMPORT");

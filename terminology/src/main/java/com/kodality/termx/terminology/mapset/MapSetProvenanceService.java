@@ -8,6 +8,7 @@ import com.kodality.termx.terminology.mapset.version.MapSetVersionService;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetTransactionRequest;
 import com.kodality.termx.ts.mapset.MapSetVersion;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,15 @@ public class MapSetProvenanceService {
   private final ProvenanceService provenanceService;
   private final MapSetService mapSetService;
   private final MapSetVersionService mapSetVersionService;
+
+  public List<Provenance> find(String mapSet, String versionCode) {
+    if (versionCode == null) {
+      return provenanceService.find("MapSet|" + mapSet);
+    }
+    return mapSetVersionService.load(mapSet, versionCode).map(msv ->
+        provenanceService.find("MapSetVersion|" + msv.getId().toString())
+    ).orElse(List.of());
+  }
 
   public void create(Provenance p) {
     provenanceService.create(p);
@@ -48,7 +58,7 @@ public class MapSetProvenanceService {
     save.run();
     MapSetVersion after = mapSetVersionService.load(msId, version).orElseThrow();
     provenanceService.create(new Provenance(action, "MapSetVersion", after.getId().toString(), after.getVersion())
-            .created(before == null)
+        .created(before == null)
         .addContext("part-of", "MapSet", after.getMapSet())
         .setChanges(before == null ? null : diff(before, after))
     );

@@ -1,6 +1,7 @@
 package com.kodality.termx.observationdefintion;
 
 import com.kodality.commons.model.QueryParams;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -18,4 +19,6 @@ public class ObservationDefinitionSearchParams extends QueryParams {
 
   private boolean decorated;
   private boolean decoratedValue;
+
+  private List<Long> permittedIds;
 }

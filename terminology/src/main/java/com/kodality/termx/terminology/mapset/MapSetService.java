@@ -1,7 +1,6 @@
 package com.kodality.termx.terminology.mapset;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termx.terminology.mapset.property.MapSetPropertyService;
 import com.kodality.termx.terminology.mapset.version.MapSetVersionService;
@@ -26,8 +25,6 @@ public class MapSetService {
   private final MapSetPropertyService mapSetPropertyService;
   private final MapSetAssociationService mapSetAssociationService;
 
-  private final UserPermissionService userPermissionService;
-
   public Optional<MapSet> load(String id) {
     return load(id, false);
   }
@@ -39,7 +36,6 @@ public class MapSetService {
 
   @Transactional
   public void save(MapSet mapSet) {
-    userPermissionService.checkPermitted(mapSet.getId(), "MapSet", "edit");
     repository.save(mapSet);
     mapSetPropertyService.save(mapSet.getProperties(), mapSet.getId());
   }
@@ -47,9 +43,7 @@ public class MapSetService {
   @Transactional
   public void save(MapSetTransactionRequest request) {
     MapSet mapSet = request.getMapSet();
-    userPermissionService.checkPermitted(mapSet.getId(), "MapSet", "edit");
     repository.save(mapSet);
-
     mapSetPropertyService.save(request.getProperties(), mapSet.getId());
 
     if (request.getVersion() == null) {
@@ -86,13 +80,11 @@ public class MapSetService {
 
   @Transactional
   public void cancel(String mapSet) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "publish");
     repository.cancel(mapSet);
   }
 
   @Transactional
   public void changeId(String currentId, String newId) {
-    userPermissionService.checkPermitted(currentId, "MapSet", "edit");
     repository.changeId(currentId, newId);
   }
 }

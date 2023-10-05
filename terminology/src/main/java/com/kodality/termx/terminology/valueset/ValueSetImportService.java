@@ -2,7 +2,8 @@ package com.kodality.termx.terminology.valueset;
 
 import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.sys.spacepackage.PackageVersion;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import com.kodality.termx.sys.spacepackage.resource.PackageResourceService;
@@ -45,11 +46,9 @@ public class ValueSetImportService {
   private final PackageVersionService packageVersionService;
   private final PackageResourceService packageResourceService;
 
-  private final UserPermissionService userPermissionService;
-
   @Transactional
   public ValueSet importValueSet(ValueSet valueSet, ValueSetImportAction action) {
-    userPermissionService.checkPermitted(valueSet.getId(), "ValueSet", "edit");
+    SessionStore.require().checkPermitted(valueSet.getId(), Privilege.VS_EDIT);
 
     long start = System.currentTimeMillis();
     log.info("IMPORT STARTED : value set - {}", valueSet.getId());
@@ -87,7 +86,7 @@ public class ValueSetImportService {
     if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
       throw ApiError.TE104.toApiException(Map.of("version", valueSetVersion.getVersion()));
     }
-    existingVersion.ifPresent(v -> valueSetVersionService.cancel(v.getId(), v.getValueSet()));
+    existingVersion.ifPresent(v -> valueSetVersionService.cancel(v.getId()));
     log.info("Saving value set version {}", valueSetVersion.getVersion());
     valueSetVersionService.save(valueSetVersion);
     valueSetVersionRuleService.save(valueSetVersion.getRuleSet().getRules(), valueSetVersion.getValueSet(), valueSetVersion.getVersion());

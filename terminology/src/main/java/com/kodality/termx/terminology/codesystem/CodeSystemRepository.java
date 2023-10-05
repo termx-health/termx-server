@@ -110,9 +110,7 @@ public class CodeSystemRepository extends BaseRepository {
   private SqlBuilder filter(CodeSystemQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.append("where cs.sys_status = 'A'");
-    if (CollectionUtils.isNotEmpty(params.getPermittedIds())) {
-      sb.and().in("cs.id", params.getPermittedIds());
-    }
+    sb.and().in("cs.id", params.getPermittedIds());
     sb.appendIfNotNull("and cs.id = ?", params.getId());
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("cs.id", p));
     sb.appendIfNotNull("and cs.id ~* ?", params.getIdContains());

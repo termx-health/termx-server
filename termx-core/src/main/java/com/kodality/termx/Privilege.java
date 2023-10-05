@@ -1,6 +1,6 @@
 package com.kodality.termx;
 
 public interface Privilege {
-  String P_VIEW = "*.Project.view";
-  String P_EDIT = "*.Project.edit";
+  String S_VIEW = "Space.view";
+  String S_EDIT = "Space.edit";
 }

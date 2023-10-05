@@ -1,8 +1,8 @@
 package com.kodality.termx.terminology.codesystem.entity;
 
+import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptRefreshViewJob;
 import com.kodality.termx.terminology.codesystem.designation.DesignationService;
@@ -38,18 +38,21 @@ public class CodeSystemEntityVersionService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionRepository repository;
   private final ConceptRefreshViewJob conceptRefreshViewJob;
-  private final UserPermissionService userPermissionService;
+
+  public void validate(String codeSystem, Long versionId) {
+    if (!repository.exists(codeSystem, versionId)) {
+      throw new NotFoundException("CodeSystemEntityVersion", versionId);
+    }
+  }
 
   @Transactional
   public CodeSystemEntityVersion save(CodeSystemEntityVersion version, Long codeSystemEntityId) {
-    userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
-
     validate(version);
     prepare(version);
     repository.save(version, codeSystemEntityId);
 
-    designationService.save(version.getDesignations(), version.getId(), version.getCodeSystem());
-    entityPropertyValueService.save(version.getPropertyValues(), version.getId(), version.getCodeSystem());
+    designationService.save(version.getDesignations(), version.getId());
+    entityPropertyValueService.save(version.getPropertyValues(), version.getId());
     codeSystemAssociationService.save(prepareAssociations(version.getAssociations()), version.getId(), version.getCodeSystem());
     conceptRefreshViewJob.refreshView();
     return version;
@@ -57,7 +60,6 @@ public class CodeSystemEntityVersionService {
 
   @Transactional
   public void batchSave(Map<Long, List<CodeSystemEntityVersion>> versions, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
     versions.values().forEach(versionList -> versionList.forEach(v -> {
       validate(v);
       prepare(v);
@@ -71,10 +73,10 @@ public class CodeSystemEntityVersionService {
     Map<Long, List<Designation>> designations = versions.values().stream().flatMap(Collection::stream).collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getDesignations));
     Map<Long, List<EntityPropertyValue>> propertyValues = versions.values().stream().flatMap(Collection::stream).collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getPropertyValues));
     Map<Long, List<CodeSystemAssociation>> associations = versions.values().stream().flatMap(Collection::stream).collect(Collectors.toMap(CodeSystemEntityVersion::getId, ev -> prepareAssociations(ev.getAssociations())));
-    designationService.batchUpsert(designations, codeSystem);
+    designationService.batchUpsert(designations);
     log.info("Designations saved '{}' ({} sec)", designations.values().stream().flatMap(Collection::stream).toList().size(), (System.currentTimeMillis() - start) / 1000);
     start = System.currentTimeMillis();
-    entityPropertyValueService.batchUpsert(propertyValues, codeSystem);
+    entityPropertyValueService.batchUpsert(propertyValues);
     log.info("Properties saved '{}' ({} sec)", propertyValues.values().stream().flatMap(Collection::stream).toList().size(), (System.currentTimeMillis() - start) / 1000);
     start = System.currentTimeMillis();
     codeSystemAssociationService.batchUpsert(associations, codeSystem);
@@ -133,26 +135,23 @@ public class CodeSystemEntityVersionService {
     return versions;
   }
 
-  @Transactional
   public void activate(Long versionId) {
     CodeSystemEntityVersion currentVersion = repository.load(versionId);
     if (currentVersion == null) {
       throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
-    userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "publish");
     if (PublicationStatus.active.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' is already activated, skipping activation process.", versionId);
       return;
     }
-    repository.activate(versionId);
+    repository.activate(currentVersion.getCodeSystem(), List.of(versionId));
     conceptRefreshViewJob.refreshView();
   }
 
   @Transactional
-  public void activate(List<Long> versionIds, String codeSystem) {
+  public void activate(String codeSystem, List<Long> versionIds) {
     long start = System.currentTimeMillis();
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
-    repository.activate(versionIds);
+    repository.activate(codeSystem, versionIds);
     conceptRefreshViewJob.refreshView();
     log.info("Activated (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }
@@ -163,20 +162,18 @@ public class CodeSystemEntityVersionService {
     if (currentVersion == null) {
       throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
-    userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "publish");
     if (PublicationStatus.retired.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' is already retired, skipping retirement process.", versionId);
       return;
     }
-    repository.retire(versionId);
+    repository.retire(currentVersion.getCodeSystem(), List.of(versionId));
     conceptRefreshViewJob.refreshView();
   }
 
   @Transactional
-  public void retire(List<Long> versionIds, String codeSystem) {
+  public void retire(String codeSystem, List<Long> versionIds) {
     long start = System.currentTimeMillis();
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
-    repository.retire(versionIds);
+    repository.retire(codeSystem, versionIds);
     conceptRefreshViewJob.refreshView();
     log.info("Retired (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }
@@ -187,7 +184,6 @@ public class CodeSystemEntityVersionService {
     if (currentVersion == null) {
       throw ApiError.TE105.toApiException(Map.of("version", versionId));
     }
-    userPermissionService.checkPermitted(currentVersion.getCodeSystem(), "CodeSystem", "publish");
     if (PublicationStatus.draft.equals(currentVersion.getStatus())) {
       log.warn("Version '{}' is already draft, skipping retirement process.", versionId);
       return;
@@ -217,11 +213,9 @@ public class CodeSystemEntityVersionService {
   }
 
   @Transactional
-  public void cancel(Long id, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
-    designationService.save(List.of(), id, codeSystem);
-    entityPropertyValueService.save(List.of(), id, codeSystem);
+  public void cancel(String codeSystem, Long id) {
+    designationService.save(List.of(), id);
+    entityPropertyValueService.save(List.of(), id);
     codeSystemAssociationService.save(List.of(), id, codeSystem);
 
     repository.cancel(id);

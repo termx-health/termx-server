@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.codesystem.version;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
@@ -21,12 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CodeSystemVersionService {
   private final CodeSystemVersionRepository repository;
-  private final UserPermissionService userPermissionService;
 
   @Transactional
   public void save(CodeSystemVersion version) {
-    userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
-
     if (version.getId() == null) {
       version.setId(load(version.getCodeSystem(), version.getVersion()).map(CodeSystemVersionReference::getId).orElse(null));
     }
@@ -77,7 +73,6 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void activate(String codeSystem, String version) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
     CodeSystemVersion currentVersion = repository.load(codeSystem, version);
     if (currentVersion == null) {
       throw ApiError.TE202.toApiException(Map.of("version", version, "codeSystem", codeSystem));
@@ -91,8 +86,6 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void retire(String codeSystem, String version) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
-
     CodeSystemVersion currentVersion = repository.load(codeSystem, version);
     if (currentVersion == null) {
       throw ApiError.TE202.toApiException(Map.of("version", version, "codeSystem", codeSystem));
@@ -106,8 +99,6 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void saveAsDraft(String codeSystem, String version) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
-
     CodeSystemVersion currentVersion = repository.load(codeSystem, version);
     if (currentVersion == null) {
       throw ApiError.TE202.toApiException(Map.of("version", version, "codeSystem", codeSystem));
@@ -121,8 +112,6 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void save(List<CodeSystemVersion> versions, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     repository.retainVersions(versions, codeSystem);
     if (versions != null) {
       versions.forEach(this::save);
@@ -131,8 +120,6 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void linkEntityVersions(String codeSystem, String codeSystemVersion, List<Long> entityVersionIds) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     Long versionId = load(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId)
         .orElseThrow(() -> ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem)));
     linkEntityVersions(versionId, entityVersionIds);
@@ -140,8 +127,6 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void unlinkEntityVersions(String codeSystem, String codeSystemVersion, List<Long> entityVersionIds) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     Long versionId = load(codeSystem, codeSystemVersion).map(CodeSystemVersion::getId)
         .orElseThrow(() -> ApiError.TE202.toApiException(Map.of("version", codeSystemVersion, "codeSystem", codeSystem)));
     unlinkEntityVersions(versionId, entityVersionIds);
@@ -159,7 +144,6 @@ public class CodeSystemVersionService {
 
   @Transactional
   public void cancel(Long id, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
     repository.cancel(id);
   }
 }

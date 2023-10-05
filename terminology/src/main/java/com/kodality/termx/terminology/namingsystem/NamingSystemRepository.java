@@ -9,7 +9,6 @@ import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.namingsystem.NamingSystem;
 import com.kodality.termx.ts.namingsystem.NamingSystemQueryParams;
 import com.kodality.termx.ts.namingsystem.NamingSystemQueryParams.Ordering;
-import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,9 +61,7 @@ public class NamingSystemRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and id = ? ", params.getId());
     sb.appendIfNotNull("and id ~* ? ", params.getIdContains());
-    if (CollectionUtils.isNotEmpty(params.getPermittedIds())) {
-      sb.and().in("id", params.getPermittedIds());
-    }
+    sb.and().in("id", params.getPermittedIds());
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ns.names) where value = ?)", params.getName());
     sb.appendIfNotNull("and exists (select 1 from jsonb_each_text(ns.names) where value ~* ?)", params.getNameContains());
     sb.appendIfNotNull("and source = ? ", params.getSource());

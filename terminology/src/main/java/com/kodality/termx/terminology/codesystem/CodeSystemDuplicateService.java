@@ -1,7 +1,6 @@
 package com.kodality.termx.terminology.codesystem;
 
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
@@ -40,12 +39,8 @@ public class CodeSystemDuplicateService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
-  private final UserPermissionService userPermissionService;
-
   @Transactional
   public void duplicateCodeSystem(CodeSystem targetCodeSystem, String sourceCodeSystem) {
-    userPermissionService.checkPermitted(targetCodeSystem.getId(), "CodeSystem", "edit");
-
     CodeSystem sourceCs = codeSystemService.load(sourceCodeSystem, true).orElse(null);
     if (sourceCs == null) {
       throw ApiError.TE201.toApiException(Map.of("codeSystem", sourceCodeSystem));
@@ -81,18 +76,16 @@ public class CodeSystemDuplicateService {
     properties.forEach(p -> {
       Long sourceId = p.getId();
       p.setId(null);
-      entityPropertyService.save(p, targetCodeSystem.getId());
+      entityPropertyService.save(targetCodeSystem.getId(), p);
       propertyMap.put(sourceId, p.getId());
     });
-    entityPropertyService.save(properties, targetCodeSystem.getId());
+    entityPropertyService.save(targetCodeSystem.getId(), properties);
 
     duplicateConcepts(versions, sourceCodeSystem, null, targetCodeSystem.getId(), propertyMap);
   }
 
   @Transactional
   public CodeSystemVersion duplicateCodeSystemVersion(String targetVersionVersion, String targetCodeSystem, String sourceVersionVersion, String sourceCodeSystem) {
-    userPermissionService.checkPermitted(targetCodeSystem, "CodeSystem", "edit");
-
     CodeSystemVersion version = codeSystemVersionService.load(sourceCodeSystem, sourceVersionVersion).orElse(null);
     if (version == null) {
       throw ApiError.TE202.toApiException(Map.of("version", sourceVersionVersion, "codeSystem", sourceCodeSystem));
@@ -111,7 +104,7 @@ public class CodeSystemDuplicateService {
       propertyParams.all();
       List<EntityProperty> properties = entityPropertyService.query(propertyParams).getData();
       Map<Long, EntityProperty> propertiesToSave = properties.stream().collect(Collectors.toMap(EntityProperty::getId, p -> p));
-      entityPropertyService.save(propertiesToSave.values().stream().peek(p -> p.setId(null)).toList(), targetCodeSystem);
+      entityPropertyService.save(targetCodeSystem, propertiesToSave.values().stream().peek(p -> p.setId(null)).toList());
       propertyMap = propertiesToSave.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> e.getValue().getId()));
     }
 

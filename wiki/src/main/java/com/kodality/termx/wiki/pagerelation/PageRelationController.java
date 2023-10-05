@@ -15,9 +15,10 @@ public class PageRelationController {
 
   private final PageRelationService pageRelationService;
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(Privilege.W_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<PageRelation> queryPageRelations(PageRelationQueryParams params) {
+    //TODO auth
     return pageRelationService.query(params);
   }
 }

@@ -28,8 +28,9 @@ public class PackageVersionRepository extends BaseRepository {
     version.setId(id);
   }
 
-  public PackageVersion load(Long id) {
-    SqlBuilder sb = new SqlBuilder("select * from sys.package_version where id = ? and sys_status = 'A'", id);
+  public PackageVersion load(Long spaceId, Long packageId, Long versionId) {
+    SqlBuilder sb = new SqlBuilder("select * from sys.package_version pv where id = ? and sys_status = 'A'", versionId);
+    sb.append(" and exists (select 1 from sys.package p where p.id = pv.package_id and p.id = ? and p.space_id = ?)", packageId, spaceId);
     return getBean(sb.getSql(), bp, sb.getParams());
   }
 
@@ -38,23 +39,29 @@ public class PackageVersionRepository extends BaseRepository {
     return getBean(sb.getSql(), bp, sb.getParams());
   }
 
-  public List<PackageVersion> loadAll(Long packageId) {
+  public List<PackageVersion> loadAll(Long spaceId, Long packageId) {
     SqlBuilder sb = new SqlBuilder("select pv.*");
-    sb.append(", (select jsonb_agg(t.r) from (select json_build_object('id', pvr.id, 'resourceId', pvr.resource_id, 'resourceType', pvr.resource_type, 'terminologyServer', pvr.terminology_server) as r ");
+    sb.append(", (select jsonb_agg(t.r) from (select json_build_object(" +
+              "'id', pvr.id, 'resourceId', pvr.resource_id, 'resourceType', pvr.resource_type, 'terminologyServer', pvr.terminology_server" +
+              ") as r ");
     sb.append("from sys.package_version_resource pvr where pvr.version_id = pv.id and pvr.sys_status = 'A') t) as resources");
     sb.append("from sys.package_version pv");
-    sb.append("where package_id = ? and sys_status = 'A' order by version", packageId);
+    sb.append("where sys_status = 'A'");
+    sb.append("and exists (select 1 from sys.package p where p.id = pv.package_id and p.id = ? and p.space_id = ?)", packageId, spaceId);
+    sb.append("order by version");
     return getBeans(sb.getSql(), bp, sb.getParams());
   }
 
-  public void delete(Long id) {
-    SqlBuilder sb = new SqlBuilder("update sys.package_version set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+  public void delete(Long spaceId, Long packageId, Long versionId) {
+    SqlBuilder sb = new SqlBuilder("update sys.package_version pv set sys_status = 'C' where id = ? and sys_status = 'A'", versionId);
+    sb.append(" and exists (select 1 from sys.package p where p.id = pv.package_id and p.id = ? and p.space_id = ?)", packageId, spaceId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
   public PackageVersion loadLastVersion(String spaceCode, String packageCode) {
     SqlBuilder sb = new SqlBuilder("select pv.*");
-    sb.append(", (select jsonb_agg(t.r) from (select json_build_object('id', pvr.id, 'resourceId', pvr.resource_id, 'resourceType', pvr.resource_type, 'terminologyServer', pvr.terminology_server) as r ");
+    sb.append(
+        ", (select jsonb_agg(t.r) from (select json_build_object('id', pvr.id, 'resourceId', pvr.resource_id, 'resourceType', pvr.resource_type, 'terminologyServer', pvr.terminology_server) as r ");
     sb.append("from sys.package_version_resource pvr where pvr.version_id = pv.id and pvr.sys_status = 'A') t) as resources");
     sb.append("from sys.package_version pv");
     sb.append("inner join sys.package p on p.id = pv.package_id and p.sys_status = 'A'");

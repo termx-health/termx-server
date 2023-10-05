@@ -2,7 +2,8 @@ package com.kodality.termx.terminology.mapset;
 
 
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.terminology.association.AssociationTypeService;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termx.terminology.mapset.property.MapSetPropertyService;
@@ -37,11 +38,9 @@ public class MapSetImportService {
   private final MapSetAssociationService mapSetAssociationService;
   private final AssociationTypeService associationTypeService;
 
-  private final UserPermissionService userPermissionService;
-
   @Transactional
   public void importMapSet(MapSet mapSet, List<AssociationType> associationTypes, MapSetImportAction action) {
-    userPermissionService.checkPermitted(mapSet.getId(), "MapSet", "edit");
+    SessionStore.require().checkPermitted(mapSet.getId(), Privilege.MS_EDIT);
 
     long start = System.currentTimeMillis();
     log.info("IMPORT STARTED : map set - {}", mapSet.getId());
@@ -77,7 +76,7 @@ public class MapSetImportService {
 
     if (cleanRun && existingVersion.isPresent()) {
       log.info("Cancelling existing map set version {}", mapSetVersion.getVersion());
-      mapSetVersionService.cancel(existingVersion.get().getId(), existingVersion.get().getMapSet());
+      mapSetVersionService.cancel(existingVersion.get().getId());
     } else if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
       throw ApiError.TE104.toApiException(Map.of("version", mapSetVersion.getVersion()));
     } else if (existingVersion.isPresent() && existingVersion.get().getStatus().equals(PublicationStatus.draft) && mapSetVersion.getId() == null) {
@@ -88,8 +87,6 @@ public class MapSetImportService {
   }
 
   public List<MapSetProperty> saveProperties(List<MapSetProperty> properties, String mapSet) {
-    userPermissionService.checkPermitted(mapSet, "CodeSystem", "edit");
-
     List<MapSetProperty> existingProperties = mapSetPropertyService.query(new MapSetPropertyQueryParams().setMapSet(mapSet)).getData();
     List<MapSetProperty> mapSetProperties = new ArrayList<>(existingProperties);
     mapSetProperties.addAll(properties.stream().filter(p -> existingProperties.stream().noneMatch(ep -> ep.getName().equals(p.getName()))).toList());

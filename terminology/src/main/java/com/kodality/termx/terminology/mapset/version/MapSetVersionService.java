@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.mapset.version;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.valueset.ValueSetService;
 import com.kodality.termx.ts.PublicationStatus;
@@ -24,14 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MapSetVersionService {
   private final MapSetVersionRepository repository;
-  private final UserPermissionService userPermissionService;
   private final ValueSetService valueSetService;
   private final CodeSystemService codeSystemService;
 
   @Transactional
   public void save(MapSetVersion version) {
-    userPermissionService.checkPermitted(version.getMapSet(), "MapSet", "edit");
-
     if (version.getId() == null) {
       version.setId(load(version.getMapSet(), version.getVersion()).map(MapSetVersionReference::getId).orElse(null));
     }
@@ -84,8 +80,6 @@ public class MapSetVersionService {
 
   @Transactional
   public void activate(String mapSet, String version) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "publish");
-
     MapSetVersion currentVersion = repository.load(mapSet, version);
     if (currentVersion == null) {
       throw ApiError.TE401.toApiException(Map.of("version", version, "mapSet", mapSet));
@@ -99,8 +93,6 @@ public class MapSetVersionService {
 
   @Transactional
   public void retire(String mapSet, String version) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "publish");
-
     MapSetVersion currentVersion = repository.load(mapSet, version);
     if (currentVersion == null) {
       throw ApiError.TE401.toApiException(Map.of("version", version, "mapSet", mapSet));
@@ -114,8 +106,6 @@ public class MapSetVersionService {
 
   @Transactional
   public void saveAsDraft(String mapSet, String version) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "publish");
-
     MapSetVersion currentVersion = repository.load(mapSet, version);
     if (currentVersion == null) {
       throw ApiError.TE401.toApiException(Map.of("version", version, "mapSet", mapSet));
@@ -132,8 +122,7 @@ public class MapSetVersionService {
   }
 
   @Transactional
-  public void cancel(Long versionId, String mapSet) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "publish");
+  public void cancel(Long versionId) {
     repository.cancel(versionId);
   }
 }

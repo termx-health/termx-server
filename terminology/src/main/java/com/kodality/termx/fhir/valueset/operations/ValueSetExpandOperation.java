@@ -5,6 +5,8 @@ import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.valueset.ValueSetFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.sys.provenance.ProvenanceService;
@@ -50,6 +52,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     ValueSetQueryParams vsParams = new ValueSetQueryParams();
     vsParams.setId(vsId);
     vsParams.setLimit(1);
+    vsParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
     ValueSet valueSet = valueSetService.query(vsParams).findFirst()
         .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "value set not found: " + id.getResourceId()));
 
@@ -71,6 +74,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     ValueSetQueryParams vsParams = new ValueSetQueryParams();
     vsParams.setUri(url);
     vsParams.setLimit(1);
+    vsParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
     ValueSet valueSet = valueSetService.query(vsParams).findFirst()
         .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "value set not found: " + url));
 

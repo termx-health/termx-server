@@ -4,6 +4,7 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termx.ApiError;
+import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.valueset.ValueSetFhirImportService;
 import com.kodality.termx.sys.job.JobLogResponse;
@@ -45,7 +46,10 @@ public class ValueSetSyncOperation implements TypeOperationDefinition {
     if (resources.isEmpty()) {
       throw ApiError.TE106.toApiException();
     }
-
+    resources.forEach(res -> {
+      String id = res.findPart("id").map(ParametersParameter::getValueString).orElseThrow();
+      SessionStore.require().checkPermitted(id, Privilege.VS_EDIT);
+    });
 
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);
     CompletableFuture.runAsync(SessionStore.wrap(() -> {

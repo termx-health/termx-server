@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.valueset.ruleset;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
@@ -22,8 +21,6 @@ public class ValueSetVersionRuleService {
   private final ValueSetVersionRuleRepository repository;
   private final ValueSetVersionRuleSetService ruleSetService;
 
-  private final UserPermissionService userPermissionService;
-
   public Optional<ValueSetVersionRule> load(Long id) {
     return Optional.ofNullable(repository.load(id));
   }
@@ -34,8 +31,6 @@ public class ValueSetVersionRuleService {
 
   @Transactional
   public void save(List<ValueSetVersionRule> rules, String valueSet, String valueSetVersion) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
-
     ValueSetVersionRuleSet ruleSet = ruleSetService.load(valueSet, valueSetVersion).orElse(null);
     if (ruleSet == null) {
       ruleSet = ruleSetService.save(new ValueSetVersionRuleSet(), valueSet, valueSetVersion);
@@ -50,7 +45,6 @@ public class ValueSetVersionRuleService {
 
   @Transactional
   public void save(ValueSetVersionRule rule, String valueSet, String valueSetVersion) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
     validate(rule);
 
     Long ruleSetId = ruleSetService.load(valueSet, valueSetVersion).map(ValueSetVersionRuleSet::getId).orElse(null);
@@ -62,8 +56,7 @@ public class ValueSetVersionRuleService {
   }
 
   @Transactional
-  public void delete(Long id, String valueSet) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
+  public void delete(Long id) {
     repository.delete(id);
   }
 

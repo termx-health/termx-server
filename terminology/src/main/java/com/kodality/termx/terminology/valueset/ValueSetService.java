@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.valueset;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
@@ -24,8 +23,6 @@ public class ValueSetService {
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
 
-  private final UserPermissionService userPermissionService;
-
   public ValueSet load(String id) {
     return repository.load(id);
   }
@@ -36,14 +33,12 @@ public class ValueSetService {
 
   @Transactional
   public void save(ValueSet valueSet) {
-    userPermissionService.checkPermitted(valueSet.getId(), "ValueSet", "edit");
     repository.save(valueSet);
   }
 
   @Transactional
   public void save(ValueSetTransactionRequest request) {
     ValueSet valueSet = request.getValueSet();
-    userPermissionService.checkPermitted(valueSet.getId(), "ValueSet", "edit");
     repository.save(valueSet);
 
     ValueSetVersion version = request.getVersion();
@@ -76,7 +71,6 @@ public class ValueSetService {
 
   @Transactional
   public void cancel(String valueSet) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
     List<String> requiredCodeSystems = List.of("codesystem-content-mode", "concept-property-type", "contact-point-system", "contact-point-use",
         "filter-operator", "languages", "namingsystem-identifier-type", "namingsystem-type", "publication-status", "publisher");
     if (requiredCodeSystems.contains(valueSet)) {
@@ -87,7 +81,6 @@ public class ValueSetService {
 
   @Transactional
   public void changeId(String currentId, String newId) {
-    userPermissionService.checkPermitted(currentId, "ValueSet", "edit");
     repository.changeId(currentId, newId);
   }
 }

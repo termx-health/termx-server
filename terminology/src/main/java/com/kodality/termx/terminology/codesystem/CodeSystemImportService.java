@@ -3,7 +3,8 @@ package com.kodality.termx.terminology.codesystem;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.sys.spacepackage.PackageVersion;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import com.kodality.termx.sys.spacepackage.resource.PackageResourceService;
@@ -79,11 +80,9 @@ public class CodeSystemImportService {
 
   private final ValueSetImportService valueSetImportService;
 
-  private final UserPermissionService userPermissionService;
-
   @Transactional
   public CodeSystem importCodeSystem(CodeSystem codeSystem, List<AssociationType> associationTypes, CodeSystemImportAction action) {
-    userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
+    SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_EDIT);
 
     long start = System.currentTimeMillis();
     log.info("IMPORT STARTED : code system - {}", codeSystem.getId());
@@ -98,12 +97,14 @@ public class CodeSystemImportService {
     saveConcepts(codeSystem.getConcepts(), codeSystemVersion, entityProperties, action.isCleanConceptRun());
 
     if (action.isActivate()) {
+      SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_PUBLISH);
       codeSystemVersionService.activate(codeSystem.getId(), codeSystemVersion.getVersion());
     }
     if (action.isRetire()) {
+      SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_PUBLISH);
       codeSystemVersionService.retire(codeSystem.getId(), codeSystemVersion.getVersion());
     }
-    if (StringUtils.isNotEmpty(action.getSpaceToAdd())){
+    if (StringUtils.isNotEmpty(action.getSpaceToAdd())) {
       addToSpace(codeSystem.getId(), action.getSpaceToAdd());
     }
 
@@ -158,18 +159,19 @@ public class CodeSystemImportService {
   }
 
   public List<EntityProperty> saveProperties(List<EntityProperty> properties, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+    SessionStore.require().checkPermitted(codeSystem, Privilege.CS_EDIT);
 
     List<EntityProperty> existingProperties = entityPropertyService.query(new EntityPropertyQueryParams().setCodeSystem(codeSystem)).getData();
     List<EntityProperty> entityProperties = new ArrayList<>(existingProperties);
     entityProperties.addAll(properties.stream().filter(p -> existingProperties.stream().noneMatch(ep -> ep.getName().equals(p.getName()))).toList());
-    return entityPropertyService.save(entityProperties, codeSystem);
+    return entityPropertyService.save(codeSystem, entityProperties);
   }
 
   public void saveConcepts(List<Concept> concepts, CodeSystemVersion version, List<EntityProperty> entityProperties, boolean cleanRun) {
-    userPermissionService.checkPermitted(version.getCodeSystem(), "CodeSystem", "edit");
+    SessionStore.require().checkPermitted(version.getCodeSystem(), Privilege.CS_EDIT);
 
-    concepts = concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new)); //removes duplicate codes
+    concepts =
+        concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new)); //removes duplicate codes
     log.info("Creating '{}' concepts", concepts.size());
     long start = System.currentTimeMillis();
     conceptService.batchSave(concepts, version.getCodeSystem());
@@ -178,8 +180,11 @@ public class CodeSystemImportService {
 
     log.info("Creating '{}' concept versions", concepts.size());
     start = System.currentTimeMillis();
-    List<Long> activeConceptIds = concepts.stream().filter(c -> c.getVersions().get(0).getStatus() == null || PublicationStatus.active.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
-    List<Long> retiredConceptIds = concepts.stream().filter(c -> PublicationStatus.retired.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
+    List<Long> activeConceptIds =
+        concepts.stream().filter(c -> c.getVersions().get(0).getStatus() == null || PublicationStatus.active.equals(c.getVersions().get(0).getStatus()))
+            .map(CodeSystemEntity::getId).toList();
+    List<Long> retiredConceptIds =
+        concepts.stream().filter(c -> PublicationStatus.retired.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
     Map<Long, List<CodeSystemEntityVersion>> entityVersionMap = concepts.stream()
         .map(concept -> Pair.of(concept.getId(), prepareEntityVersion(concept.getVersions().get(0), entityProperties)))
         .collect(Collectors.toMap(Pair::getKey, p -> List.of(p.getValue())));
@@ -192,16 +197,19 @@ public class CodeSystemImportService {
     log.info("Activating entity versions and linking them with code system version");
     start = System.currentTimeMillis();
     List<Long> entityVersionIds = concepts.stream().map(concept -> concept.getVersions().get(0).getId()).toList();
-    List<Long> activeVersionIds = concepts.stream().filter(c -> activeConceptIds.contains(c.getId())).map(concept -> concept.getVersions().get(0).getId()).toList();
-    List<Long> retiredVersionIds = concepts.stream().filter(c -> retiredConceptIds.contains(c.getId())).map(concept -> concept.getVersions().get(0).getId()).toList();
-    codeSystemEntityVersionService.activate(activeVersionIds, version.getCodeSystem());
-    codeSystemEntityVersionService.retire(retiredVersionIds, version.getCodeSystem());
+    List<Long> activeVersionIds =
+        concepts.stream().filter(c -> activeConceptIds.contains(c.getId())).map(concept -> concept.getVersions().get(0).getId()).toList();
+    List<Long> retiredVersionIds =
+        concepts.stream().filter(c -> retiredConceptIds.contains(c.getId())).map(concept -> concept.getVersions().get(0).getId()).toList();
+    codeSystemEntityVersionService.activate(version.getCodeSystem(), activeVersionIds);
+    codeSystemEntityVersionService.retire(version.getCodeSystem(), retiredVersionIds);
     codeSystemVersionService.linkEntityVersions(version.getId(), entityVersionIds);
     log.info("Linkage created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
 
     log.info("Creating associations between code system entity versions");
     start = System.currentTimeMillis();
-    Map<Long, List<CodeSystemAssociation>> associations = entityVersionMap.values().stream().flatMap(Collection::stream).collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getAssociations));
+    Map<Long, List<CodeSystemAssociation>> associations = entityVersionMap.values().stream().flatMap(Collection::stream)
+        .collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getAssociations));
     prepareCodeSystemAssociations(associations, version.getId());
     codeSystemAssociationService.batchUpsert(associations, version.getCodeSystem());
     log.info("Associations created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
@@ -269,11 +277,15 @@ public class CodeSystemImportService {
               .setCodeSystemEntityIds(batch.stream().map(String::valueOf).collect(Collectors.joining(",")))
               .setStatus(String.join(",", PublicationStatus.active, PublicationStatus.draft))
               .all();
-          Map<Long, List<CodeSystemEntityVersion>> existingVersions = codeSystemEntityVersionService.query(params).getData().stream().collect(Collectors.groupingBy(CodeSystemEntityVersion::getCodeSystemEntityId));
+          Map<Long, List<CodeSystemEntityVersion>> existingVersions =
+              codeSystemEntityVersionService.query(params).getData().stream().collect(Collectors.groupingBy(CodeSystemEntityVersion::getCodeSystemEntityId));
           existingVersions.keySet().forEach(entityId -> {
-            Optional<CodeSystemEntityVersion> lastDraftVersion = existingVersions.get(entityId).stream().filter(v -> PublicationStatus.draft.equals(v.getStatus())).max(
-                Comparator.comparing(CodeSystemEntityVersion::getCreated));
-            Optional<CodeSystemEntityVersion> lastActiveVersion = existingVersions.get(entityId).stream().filter(v -> PublicationStatus.active.equals(v.getStatus())).max(Comparator.comparing(CodeSystemEntityVersion::getCreated));
+            Optional<CodeSystemEntityVersion> lastDraftVersion =
+                existingVersions.get(entityId).stream().filter(v -> PublicationStatus.draft.equals(v.getStatus())).max(
+                    Comparator.comparing(CodeSystemEntityVersion::getCreated));
+            Optional<CodeSystemEntityVersion> lastActiveVersion =
+                existingVersions.get(entityId).stream().filter(v -> PublicationStatus.active.equals(v.getStatus()))
+                    .max(Comparator.comparing(CodeSystemEntityVersion::getCreated));
             if (lastDraftVersion.isPresent()) {
               versions.put(entityId, mergeWithDraftVersion(versions.get(entityId), lastDraftVersion.get()));
             } else if (lastActiveVersion.isPresent()) {
@@ -283,7 +295,8 @@ public class CodeSystemImportService {
         });
   }
 
-  private List<CodeSystemEntityVersion> mergeWithActiveVersion(List<CodeSystemEntityVersion> newVersions, CodeSystemEntityVersion activeVersion, Long csVersionId) {
+  private List<CodeSystemEntityVersion> mergeWithActiveVersion(List<CodeSystemEntityVersion> newVersions, CodeSystemEntityVersion activeVersion,
+                                                               Long csVersionId) {
     codeSystemEntityVersionService.retire(activeVersion.getId());
     codeSystemVersionService.unlinkEntityVersions(csVersionId, List.of(activeVersion.getId()));
     return mergeVersions(newVersions, activeVersion);
@@ -298,13 +311,18 @@ public class CodeSystemImportService {
     targetVersions.forEach(v -> {
       v.setPropertyValues(Optional.ofNullable(v.getPropertyValues()).orElse(new ArrayList<>()));
       v.getPropertyValues().addAll(Optional.ofNullable(sourceVersion.getPropertyValues()).orElse(new ArrayList<>()).stream()
-          .filter(pv -> v.getPropertyValues().stream().noneMatch(pv1 -> pv.getEntityPropertyId().equals(pv1.getEntityPropertyId()) && (JsonUtil.toJson(pv.getValue()).equals(JsonUtil.toJson(pv1.getValue()))))).toList());
+          .filter(pv -> v.getPropertyValues().stream().noneMatch(
+              pv1 -> pv.getEntityPropertyId().equals(pv1.getEntityPropertyId()) && (JsonUtil.toJson(pv.getValue()).equals(JsonUtil.toJson(pv1.getValue())))))
+          .toList());
       v.setDesignations(Optional.ofNullable(v.getDesignations()).orElse(new ArrayList<>()));
       v.getDesignations().addAll(Optional.ofNullable(sourceVersion.getDesignations()).orElse(new ArrayList<>()).stream()
-          .filter(d -> v.getDesignations().stream().noneMatch(d1 -> d.getName().equals(d1.getName()) && d.getLanguage().equals(d1.getLanguage()) && d.getDesignationTypeId().equals(d1.getDesignationTypeId()))).toList());
+          .filter(d -> v.getDesignations().stream().noneMatch(
+              d1 -> d.getName().equals(d1.getName()) && d.getLanguage().equals(d1.getLanguage()) && d.getDesignationTypeId().equals(d1.getDesignationTypeId())))
+          .toList());
       v.setAssociations(Optional.ofNullable(v.getAssociations()).orElse(new ArrayList<>()));
       v.getAssociations().addAll(Optional.ofNullable(sourceVersion.getAssociations()).orElse(new ArrayList<>()).stream()
-          .filter(a -> v.getAssociations().stream().noneMatch(a1 -> a.getAssociationType().equals(a1.getAssociationType()) && a.getTargetCode().equals(a1.getTargetCode()))).toList());
+          .filter(a -> v.getAssociations().stream()
+              .noneMatch(a1 -> a.getAssociationType().equals(a1.getAssociationType()) && a.getTargetCode().equals(a1.getTargetCode()))).toList());
     });
     return targetVersions;
   }

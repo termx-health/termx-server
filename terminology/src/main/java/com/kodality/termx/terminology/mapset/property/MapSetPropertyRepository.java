@@ -7,7 +7,6 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ts.mapset.MapSetProperty;
 import com.kodality.termx.ts.mapset.MapSetPropertyQueryParams;
-import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +67,7 @@ public class MapSetPropertyRepository extends BaseRepository {
 
   private SqlBuilder filter(MapSetPropertyQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.and().in("msp.map_set", params.getPermittedMapSets());
     if (StringUtils.isNotEmpty(params.getIds())) {
       sb.and().in("msp.id", params.getIds(), Long::valueOf);
     }
@@ -75,9 +75,6 @@ public class MapSetPropertyRepository extends BaseRepository {
       sb.and().in("msp.name", params.getNames());
     }
     sb.appendIfNotNull("and msp.map_set = ?", params.getMapSet());
-    if (CollectionUtils.isNotEmpty(params.getPermittedMapSets())) {
-      sb.and().in("msp.map_set", params.getPermittedMapSets());
-    }
     return sb;
   }
 

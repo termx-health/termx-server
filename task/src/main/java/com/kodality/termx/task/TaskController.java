@@ -30,52 +30,52 @@ public class TaskController {
 
   // ----------- Tasks -----------
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.T_VIEW)
   @Get(uri = "/tasks{?params*}")
   public QueryResult<Task> queryTasks(TaskQueryParams params) {
     return taskProvider.queryTasks(params);
   }
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.T_VIEW)
   @Get(uri = "/tasks/{number}")
   public Task loadTask(@Parameter String number) {
     return taskProvider.loadTask(number);
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_EDIT)
   @Post("/tasks")
   public Task saveTask(@Body Task task) {
     task.setNumber(null);
     return taskProvider.saveTask(task);
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_EDIT)
   @Put("/tasks/{number}")
   public Task updateTask(@Parameter String number, @Body Task task) {
     task.setNumber(number);
     return taskProvider.saveTask(task);
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_EDIT)
   @Patch("/tasks/{number}")
   public Task patchTask(@Parameter String number, @Body PatchRequest request) {
     Task currentTask = taskProvider.loadTask(number);
     return taskProvider.saveTask(PatchUtil.mergeFields(request, currentTask));
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_EDIT)
   @Post("/tasks/{number}/activities")
   public TaskActivity createTaskActivity(@Parameter String number, @Valid @Body Map<String, String> body) {
     return taskProvider.createTaskActivity(number, body.get("note"));
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_EDIT)
   @Put("/tasks/{number}/activities/{id}")
   public TaskActivity createTaskActivity(@Parameter String number, @Parameter String id, @Valid @Body Map<String, String> body) {
     return taskProvider.updateTaskActivity(number, id, body.get("note"));
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_EDIT)
   @Delete("/tasks/{number}/activities/{id}")
   public HttpResponse<?> deleteTaskActivity(@Parameter String number, @Parameter String id) {
     taskProvider.cancelTaskActivity(number, id);
@@ -85,13 +85,13 @@ public class TaskController {
 
   // ----------- Projects -----------
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.T_VIEW)
   @Get(uri = "/projects")
   public List<CodeName> loadProjects() {
     return taskProvider.loadProjects();
   }
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.T_VIEW)
   @Get(uri = "/projects/{code}/workflows")
   public List<Workflow> loadProjectWorkflows(@Parameter String code) {
     return taskProvider.loadProjectWorkFlows(code);

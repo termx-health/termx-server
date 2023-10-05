@@ -1,6 +1,7 @@
 package com.kodality.termx.wiki.page;
 
 import com.kodality.commons.model.QueryParams;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -17,6 +18,8 @@ public class PageQueryParams extends QueryParams {
   private Long rootId;
   private String textContains;
   private String slugs;
+
+  private List<Long> permittedSpaceIds;
 
   public interface Ordering {
     String modified = "modified";

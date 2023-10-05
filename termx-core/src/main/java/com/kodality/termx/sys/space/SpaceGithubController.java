@@ -28,52 +28,52 @@ public class SpaceGithubController {
     return spaceGithubService.orElseThrow(() -> new ApiClientException("github not configured on the server"));
   }
 
-  @Authorized(Privilege.P_VIEW)
+  @Authorized(privilege = Privilege.S_VIEW)
   @Get("/github/providers")
   public Map<String, String> getProviders() {
     return service().getProviders();
   }
 
-  @Authorized(Privilege.P_VIEW)
+  @Authorized(Privilege.S_VIEW)
   @Post("/{id}/github/authenticate")
   public SpaceGithubAuthResult authenticate(@Parameter Long id, @Body SpaceGithubAuthRequest r) {
     return service().authenticate(id, r.returnUrl);
   }
 
-  @Authorized(Privilege.P_VIEW)
+  @Authorized(Privilege.S_VIEW)
   @Get("/{id}/github/status")
   public GithubStatus prepareFiles(@Parameter Long id) {
     return service().status(id);
   }
 
-  @Authorized(Privilege.P_VIEW)
+  @Authorized(Privilege.S_VIEW)
   @Get("/{id}/github/diff")
   public GithubDiff prepareFiles(@Parameter Long id, @QueryValue String file) {
     return service().diff(id, file);
   }
 
-  @Authorized(Privilege.P_EDIT)
+  @Authorized(Privilege.S_EDIT)
   @Post("/{id}/github/push")
   public HttpResponse<?> push(@Parameter Long id, @Body SpaceGithubCommitRequest req) {
     service().push(id, req.message, req.files);
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.P_EDIT)
+  @Authorized(Privilege.S_EDIT)
   @Post("/{id}/github/pull")
   public HttpResponse<?> pull(@Parameter Long id, @Body SpaceGithubPullRequest req) {
     service().pull(id, req.files);
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.P_EDIT)
+  @Authorized(Privilege.S_EDIT)
   @Post("/{id}/github/ig-initialize")
   public HttpResponse<?> initIg(@Parameter Long id, @Body SpaceGithubIgInitRequest req) {
     service().initIg(id, req.base);
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.P_VIEW)
+  @Authorized(Privilege.S_VIEW)
   @Get("/{id}/github/ig-status")
   public SpaceGithubIgStatus getIgStatus(@Parameter Long id) {
     return service().getIgStatus(id);

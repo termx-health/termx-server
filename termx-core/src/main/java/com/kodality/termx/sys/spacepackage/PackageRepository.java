@@ -23,8 +23,8 @@ public class PackageRepository extends BaseRepository {
     p.setId(id);
   }
 
-  public Package load(Long id) {
-    SqlBuilder sb = new SqlBuilder("select * from sys.package where id = ? and sys_status = 'A'", id);
+  public Package load(Long spaceId, Long id) {
+    SqlBuilder sb = new SqlBuilder("select * from sys.package where space_id = ? and id = ? and sys_status = 'A'", spaceId, id);
     return getBean(sb.getSql(), bp, sb.getParams());
   }
 
@@ -38,8 +38,8 @@ public class PackageRepository extends BaseRepository {
     return getBeans(sb.getSql(), bp, sb.getParams());
   }
 
-  public void delete(Long id) {
-    SqlBuilder sb = new SqlBuilder("update sys.package set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+  public void delete(Long spaceId, Long id) {
+    SqlBuilder sb = new SqlBuilder("update sys.package set sys_status = 'C' where space_id = ? and id = ? and sys_status = 'A'", spaceId, id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 }

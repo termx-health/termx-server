@@ -1,6 +1,5 @@
 package com.kodality.termx.terminology.valueset.ruleset;
 
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.valueset.ValueSetVersionRepository;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import java.util.Optional;
@@ -14,8 +13,6 @@ public class ValueSetVersionRuleSetService {
   private final ValueSetVersionRuleSetRepository repository;
   private final ValueSetVersionRepository valueSetVersionRepository;
   private final ValueSetVersionRuleRepository valueSetVersionRuleRepository;
-
-  private final UserPermissionService userPermissionService;
 
   public Optional<ValueSetVersionRuleSet> load(String valueSet, String valueSetVersion) {
     return Optional.ofNullable(repository.load(valueSet, valueSetVersion));
@@ -34,8 +31,6 @@ public class ValueSetVersionRuleSetService {
 
   @Transactional
   public ValueSetVersionRuleSet save(ValueSetVersionRuleSet ruleSet, String valueSet, String valueSetVersion) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "edit");
-
     Long versionId = valueSetVersionRepository.load(valueSet, valueSetVersion).getId();
     repository.save(ruleSet, versionId);
     return ruleSet;

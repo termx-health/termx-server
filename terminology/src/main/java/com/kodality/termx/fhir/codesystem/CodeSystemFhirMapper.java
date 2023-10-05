@@ -4,6 +4,8 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.ts.CaseSignificance;
@@ -197,7 +199,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     }
 
     if (properties.stream().anyMatch(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName()))) {
-      String code = properties.stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName())).findFirst().get().getName();
+      String code =
+          properties.stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName())).findFirst().get().getName();
       conceptProperties.addAll(parentMap.getOrDefault(entityVersion.getId(), List.of()).stream()
           .map(c -> new CodeSystemConceptProperty().setCode(code).setValueCode(c)).toList());
     }
@@ -280,13 +283,15 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (io.micronaut.core.util.CollectionUtils.isEmpty(fhirConcepts)) {
       return Map.of();
     }
-    return fhirConcepts.stream().filter(c -> c.getProperty() != null && c.getProperty().stream().anyMatch(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(p.getCode())))
-        .flatMap(c -> c.getProperty().stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(p.getCode())).map(p -> {
-          if (p.getCode().equals("child")) {
-            return Pair.of(p.getValueCode(), c.getCode());
-          }
-          return Pair.of(c.getCode(), p.getValueCode());
-        })).collect(Collectors.groupingBy(Pair::getKey, mapping(Pair::getValue, toList())));
+    return fhirConcepts.stream().filter(c -> c.getProperty() != null && c.getProperty().stream()
+            .anyMatch(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(p.getCode())))
+        .flatMap(c -> c.getProperty().stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(p.getCode()))
+            .map(p -> {
+              if (p.getCode().equals("child")) {
+                return Pair.of(p.getValueCode(), c.getCode());
+              }
+              return Pair.of(c.getCode(), p.getValueCode());
+            })).collect(Collectors.groupingBy(Pair::getKey, mapping(Pair::getValue, toList())));
   }
 
   private static List<CodeSystemVersion> fromFhirVersion(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
@@ -461,16 +466,17 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (propertyValues == null) {
       return new ArrayList<>();
     }
-    return propertyValues.stream().filter(v -> !List.of("status", "is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(v.getCode())).map(v -> {
-      EntityPropertyValue value = new EntityPropertyValue();
-      value.setValue(Stream.of(
-          v.getValueCode(), v.getValueCoding(),
-          v.getValueString(), v.getValueInteger(),
-          v.getValueBoolean(), v.getValueDateTime(), v.getValueDecimal()
-      ).filter(Objects::nonNull).findFirst().orElse(null));
-      value.setEntityProperty(v.getCode());
-      return value;
-    }).collect(Collectors.toList());
+    return propertyValues.stream().filter(v -> !List.of("status", "is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(v.getCode()))
+        .map(v -> {
+          EntityPropertyValue value = new EntityPropertyValue();
+          value.setValue(Stream.of(
+              v.getValueCode(), v.getValueCoding(),
+              v.getValueString(), v.getValueInteger(),
+              v.getValueBoolean(), v.getValueDateTime(), v.getValueDecimal()
+          ).filter(Objects::nonNull).findFirst().orElse(null));
+          value.setEntityProperty(v.getCode());
+          return value;
+        }).collect(Collectors.toList());
   }
 
   private static List<CodeSystemAssociation> fromFhirAssociations(CodeSystemConcept parent, List<String> parents,
@@ -518,6 +524,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     });
     params.setVersionsDecorated(true);
     params.setPropertiesDecorated(true);
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
     return params;
   }
 }

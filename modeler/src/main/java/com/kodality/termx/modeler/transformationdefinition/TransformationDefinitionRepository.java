@@ -71,6 +71,7 @@ public class TransformationDefinitionRepository extends BaseRepository {
 
   private SqlBuilder filter(TransformationDefinitionQueryParams params) {
     SqlBuilder sb = new SqlBuilder("where td.sys_status = 'A'");
+    sb.and().in("td.id", params.getPermittedIds());
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("td.id", p, Long::valueOf));
     sb.appendIfNotNull("and td.name ilike '%' || ? || '%'", params.getNameContains());
     return sb;

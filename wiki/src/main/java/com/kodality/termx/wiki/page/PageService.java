@@ -2,6 +2,7 @@ package com.kodality.termx.wiki.page;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.stream.Collectors;
+import com.kodality.termx.wiki.ApiError;
 import com.kodality.termx.wiki.pagecontent.PageContentService;
 import com.kodality.termx.wiki.pagelink.PageLinkService;
 import com.kodality.termx.wiki.pagerelation.PageRelationService;
@@ -51,6 +52,12 @@ public class PageService {
   public Page save(Page page) {
     if (page.getCode() == null) {
       page.setCode(UUID.randomUUID().toString());
+    }
+    if (page.getId() != null) {
+      Page current = repository.load(page.getId());
+      if (!current.getSpaceId().equals(page.getSpaceId())) {
+        throw ApiError.T001.toApiException();
+      }
     }
     repository.save(page);
     pageLinkService.saveSources(page.getLinks(), page.getId());

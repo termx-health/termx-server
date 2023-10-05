@@ -1,11 +1,10 @@
 package com.kodality.termx.terminology.codesystem.concept;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.codesystem.CodeSystemRepository;
-import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.CodeSystemExternalProvider;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemEntity;
@@ -42,12 +41,8 @@ public class ConceptService {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final List<CodeSystemExternalProvider> codeSystemProviders;
 
-  private final UserPermissionService userPermissionService;
-
   @Transactional
   public Concept save(Concept concept, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     concept.setType(CodeSystemEntityType.concept);
     concept.setCodeSystem(codeSystem);
 
@@ -63,8 +58,6 @@ public class ConceptService {
 
   @Transactional
   public List<Concept> batchSave(List<Concept> concepts, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     List<Concept> existingConcepts = new ArrayList<>();
 
     IntStream.range(0, (concepts.size() + 1000 - 1) / 1000)
@@ -184,16 +177,12 @@ public class ConceptService {
 
   @Transactional
   public void cancel(Long conceptId, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     codeSystemEntityService.cancel(conceptId);
     repository.cancel(conceptId);
   }
 
   @Transactional
   public void propagateProperties(String code, List<Long> targetConceptIds, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     List<EntityPropertyValue> propertyValues = load(codeSystem, code).orElseThrow()
         .getLastVersion().orElseThrow()
         .getPropertyValues().stream().peek(pv -> pv.setId(null)).toList();

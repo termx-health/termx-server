@@ -19,22 +19,22 @@ public class PackageVersionService {
     resourceService.save(version.getId(), version.getResources());
   }
 
-  public PackageVersion load(Long id) {
-    return repository.load(id);
+  public List<PackageVersion> loadAll(Long spaceId, Long packageId) {
+    return repository.loadAll(spaceId, packageId);
   }
 
-  public PackageVersion load(Long packageId, String version) {
-    return repository.load(packageId, version);
+  public PackageVersion load(Long spaceId, Long packageId, Long versionId) {
+    return repository.load(spaceId, packageId, versionId);
   }
   public PackageVersion loadLastVersion(String spaceCode, String packageCode) {
     return repository.loadLastVersion(spaceCode, packageCode);
   }
 
-  public List<PackageVersion> loadAll(Long packageId) {
-    return repository.loadAll(packageId);
+  public PackageVersion load(Long packageId, String version) {
+    return repository.load(packageId, version);
   }
 
-  public void delete(Long id) {
-    repository.delete(id);
+  public void delete(Long spaceId, Long packageId, Long versionId) {
+    repository.delete(spaceId, packageId, versionId);
   }
 }

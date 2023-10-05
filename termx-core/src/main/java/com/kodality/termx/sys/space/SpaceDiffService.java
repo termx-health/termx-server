@@ -7,7 +7,6 @@ import com.kodality.termx.sys.server.TerminologyServerService;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceRequest;
 import com.kodality.termx.sys.space.diff.SpaceDiff;
 import com.kodality.termx.sys.space.diff.SpaceDiff.SpaceDiffItem;
-import com.kodality.termx.sys.space.diff.SpaceDiffRequest;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import com.kodality.termx.sys.spacepackage.resource.PackageResourceService;
 import java.util.List;
@@ -21,17 +20,12 @@ public class SpaceDiffService {
   private final TerminologyServerService terminologyServerService;
   private final TerminologyServerResourceService terminologyServerResourceService;
 
-  public SpaceDiff findDiff(SpaceDiffRequest request) {
+  public SpaceDiff findDiff(Long spaceId, String packageCode, String version) {
     TerminologyServer currentServer = terminologyServerService.loadCurrentInstallation();
     if (currentServer == null) {
       throw ApiError.TC105.toApiException();
     }
-
-    if (request.getSpaceCode() == null && request.getPackageCode() == null && request.getVersion() == null) {
-      return new SpaceDiff();
-    }
-
-    List<PackageResource> resources = packageResourceService.loadAll(request.getSpaceCode(), request.getPackageCode(), request.getVersion());
+    List<PackageResource> resources = packageResourceService.loadAll(spaceId, packageCode, version);
     List<SpaceDiffItem> items = resources.stream().map(resource -> {
       SpaceDiffItem item = new SpaceDiffItem();
       item.setResourceId(resource.getResourceId());

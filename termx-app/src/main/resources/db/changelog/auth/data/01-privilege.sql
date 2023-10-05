@@ -27,5 +27,13 @@ with t(privilege_code, resource_type, actions) as (values
 select 1;
 --rollback select 1;
 
-
+--changeset kodality:guest_privileges
+with t (code, names) as (values
+  ('guest', '{"en": "Provides guest (anonymous) access"}')
+)
+   , e as (select t.*, (exists(select 1 from auth.privilege p where t.code = p.code)) as pexists from t)
+   , inserted as (insert into auth.privilege(code, names) select e.code, e.names::jsonb from e where e.pexists = false)
+   , updated as (update auth.privilege p set names = e.names::jsonb from e where e.pexists = true and e.code = p.code)
+select 1;
+--rollback select 1;
 

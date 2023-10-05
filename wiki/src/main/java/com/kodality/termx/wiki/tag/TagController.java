@@ -13,9 +13,10 @@ public class TagController {
 
   private final TagService tagService;
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(Privilege.W_VIEW)
   @Get
   public List<Tag> getAll() {
+    //TODO: auth
     return tagService.loadAll();
   }
 }

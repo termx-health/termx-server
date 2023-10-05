@@ -4,8 +4,7 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
-import com.kodality.termx.auth.ResourceId;
-import com.kodality.termx.auth.UserPermissionService;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.sys.provenance.Provenance.ProvenanceChange;
 import com.kodality.termx.terminology.codesystem.association.CodeSystemAssociationService;
@@ -26,7 +25,7 @@ import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.ConceptTransactionRequest;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
-import io.micronaut.core.annotation.Introspected;
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -35,6 +34,7 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
+import io.micronaut.http.annotation.QueryValue;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -57,20 +57,18 @@ public class CodeSystemController {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final CodeSystemProvenanceService provenanceService;
 
-  private final UserPermissionService userPermissionService;
-
   //----------------CodeSystem----------------
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<CodeSystem> queryCodeSystems(CodeSystemQueryParams params) {
-    params.setPermittedIds(userPermissionService.getPermittedResourceIds("CodeSystem", "view"));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
     return codeSystemService.query(params);
   }
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}{?decorate}")
-  public CodeSystem getCodeSystem(@PathVariable @ResourceId String codeSystem, Optional<Boolean> decorate) {
+  public CodeSystem getCodeSystem(@PathVariable String codeSystem, Optional<Boolean> decorate) {
     return codeSystemService.load(codeSystem, decorate.orElse(false)).orElseThrow(() -> new NotFoundException("CodeSystem not found: " + codeSystem));
   }
 
@@ -78,6 +76,7 @@ public class CodeSystemController {
   @Authorized(Privilege.CS_EDIT)
   @Post("/transaction")
   public HttpResponse<?> saveCodeSystemTransaction(@Body @Valid CodeSystemTransactionRequest request) {
+    SessionStore.require().checkPermitted(request.getCodeSystem().getId(), Privilege.CS_EDIT);
     provenanceService.provenanceCodeSystemTransactionRequest("save", request, () -> {
       codeSystemService.save(request);
     });
@@ -87,6 +86,7 @@ public class CodeSystemController {
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/duplicate")
   public HttpResponse<?> duplicateCodeSystem(@PathVariable String codeSystem, @Body @Valid CodeSystemDuplicateRequest request) {
+    SessionStore.require().checkPermitted(request.getCodeSystem(), Privilege.CS_EDIT);
     provenanceService.provenanceCodeSystem("duplicate", request.getCodeSystem(), () -> {
       CodeSystem targetCodeSystem = new CodeSystem().setId(request.getCodeSystem()).setUri(request.getCodeSystemUri());
       codeSystemDuplicateService.duplicateCodeSystem(targetCodeSystem, codeSystem);
@@ -105,7 +105,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_PUBLISH)
   @Delete(uri = "/{codeSystem}")
-  public HttpResponse<?> deleteCodeSystem(@PathVariable @ResourceId String codeSystem) {
+  public HttpResponse<?> deleteCodeSystem(@PathVariable String codeSystem) {
     codeSystemService.cancel(codeSystem);
     provenanceService.create(new Provenance("delete", "CodeSystem", codeSystem));
     return HttpResponse.ok();
@@ -115,21 +115,21 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/versions{?params*}")
-  public QueryResult<CodeSystemVersion> queryCodeSystemVersions(@PathVariable @ResourceId String codeSystem, CodeSystemVersionQueryParams params) {
-    params.setPermittedCodeSystems(userPermissionService.getPermittedResourceIds("CodeSystem", "view"));
+  public QueryResult<CodeSystemVersion> queryCodeSystemVersions(@PathVariable String codeSystem, CodeSystemVersionQueryParams params) {
+    params.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
     params.setCodeSystem(codeSystem);
     return codeSystemVersionService.query(params);
   }
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/versions/{version}")
-  public CodeSystemVersion getCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version) {
+  public CodeSystemVersion getCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version) {
     return codeSystemVersionService.load(codeSystem, version).orElseThrow(() -> new NotFoundException("CodeSystemVersion not found: " + codeSystem));
   }
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/versions")
-  public HttpResponse<?> createCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @Body @Valid CodeSystemVersion codeSystemVersion) {
+  public HttpResponse<?> createCodeSystemVersion(@PathVariable String codeSystem, @Body @Valid CodeSystemVersion codeSystemVersion) {
     codeSystemVersion.setId(null);
     codeSystemVersion.setCodeSystem(codeSystem);
     provenanceService.provenanceCodeSystemVersion("save", codeSystem, codeSystemVersion.getVersion(), () -> {
@@ -140,7 +140,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_EDIT)
   @Put(uri = "/{codeSystem}/versions/{version}")
-  public HttpResponse<?> updateCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version,
+  public HttpResponse<?> updateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version,
                                                  @Body @Valid CodeSystemVersion codeSystemVersion) {
     codeSystemVersion.setVersion(version);
     codeSystemVersion.setCodeSystem(codeSystem);
@@ -152,7 +152,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_PUBLISH)
   @Post(uri = "/{codeSystem}/versions/{version}/activate")
-  public HttpResponse<?> activateCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version) {
+  public HttpResponse<?> activateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version) {
     provenanceService.provenanceCodeSystemVersion("activate", codeSystem, version, () -> {
       codeSystemVersionService.activate(codeSystem, version);
     });
@@ -161,7 +161,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_PUBLISH)
   @Post(uri = "/{codeSystem}/versions/{version}/retire")
-  public HttpResponse<?> retireCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version) {
+  public HttpResponse<?> retireCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version) {
     provenanceService.provenanceCodeSystemVersion("retire", codeSystem, version, () -> {
       codeSystemVersionService.retire(codeSystem, version);
     });
@@ -170,7 +170,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_PUBLISH)
   @Post(uri = "/{codeSystem}/versions/{version}/draft")
-  public HttpResponse<?> saveAsDraftCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version) {
+  public HttpResponse<?> saveAsDraftCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version) {
     provenanceService.provenanceCodeSystemVersion("save", codeSystem, version, () -> {
       codeSystemVersionService.saveAsDraft(codeSystem, version);
     });
@@ -179,8 +179,9 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/versions/{version}/duplicate")
-  public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version,
+  public HttpResponse<?> duplicateCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version,
                                                     @Body @Valid CodeSystemVersionDuplicateRequest request) {
+    SessionStore.require().checkPermitted(request.getCodeSystem(), Privilege.CS_EDIT);
     provenanceService.provenanceCodeSystemVersion("duplicate", codeSystem, request.getVersion(), () -> {
       codeSystemDuplicateService.duplicateCodeSystemVersion(request.getVersion(), request.getCodeSystem(), version, codeSystem);
     });
@@ -189,7 +190,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_PUBLISH)
   @Delete(uri = "/{codeSystem}/versions/{version}")
-  public HttpResponse<?> deleteCodeSystemVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version) {
+  public HttpResponse<?> deleteCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version) {
     CodeSystemVersion csv = codeSystemVersionService.load(codeSystem, version).orElseThrow();
     codeSystemVersionService.cancel(csv.getId(), codeSystem);
     provenanceService.create(new Provenance("deleted", "CodeSystemVersion", csv.getId().toString(), csv.getVersion())
@@ -201,21 +202,20 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/concepts{?params*}")
-  public QueryResult<Concept> queryConcepts(@PathVariable @ResourceId String codeSystem, ConceptQueryParams params) {
-    params.setPermittedCodeSystems(userPermissionService.getPermittedResourceIds("CodeSystem", "view"));
+  public QueryResult<Concept> queryConcepts(@PathVariable String codeSystem, ConceptQueryParams params) {
     params.setCodeSystem(codeSystem);
     return conceptService.query(params);
   }
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/concepts/{code}")
-  public Concept getConcept(@PathVariable @ResourceId String codeSystem, @PathVariable String code) {
+  public Concept getConcept(@PathVariable String codeSystem, @PathVariable String code) {
     return conceptService.load(codeSystem, parseCode(code)).orElseThrow(() -> new NotFoundException("Concept not found: " + parseCode(code)));
   }
 
-  @Authorized(Privilege.CS_VIEW)
+  @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/concepts/{code}/propagate-properties")
-  public HttpResponse<?> propagateProperties(@PathVariable @ResourceId String codeSystem, @PathVariable String code,
+  public HttpResponse<?> propagateProperties(@PathVariable String codeSystem, @PathVariable String code,
                                              @Body @Valid CodeSystemConceptPropertyPropagationRequest request) {
     conceptService.propagateProperties(parseCode(code), request.getTargetConceptIds(), codeSystem);
     return HttpResponse.ok();
@@ -223,7 +223,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/concepts/transaction")
-  public HttpResponse<?> saveConceptTransaction(@PathVariable @ResourceId String codeSystem, @Body @Valid ConceptTransactionRequest request) {
+  public HttpResponse<?> saveConceptTransaction(@PathVariable String codeSystem, @Body @Valid ConceptTransactionRequest request) {
     request.setCodeSystem(codeSystem);
     request.setCodeSystemVersion(null);
     Concept concept = provenanceService.provenanceConceptTransaction("save", request, () -> conceptService.save(request));
@@ -232,13 +232,14 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/versions/{version}/concepts/{code}")
-  public Concept getConcept(@PathVariable @ResourceId String codeSystem, @PathVariable String version, @PathVariable String code) {
-    return conceptService.load(codeSystem, version, parseCode(code)).orElseThrow(() -> new NotFoundException("Concept not found: " + parseCode(code)));
+  public Concept getConcept(@PathVariable String codeSystem, @PathVariable String version, @PathVariable String code) {
+    return conceptService.load(codeSystem, version, parseCode(code))
+        .orElseThrow(() -> new NotFoundException("Concept not found: " + parseCode(code)));
   }
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/versions/{version}/concepts/transaction")
-  public HttpResponse<?> saveConceptTransaction(@PathVariable @ResourceId String codeSystem, @PathVariable String version,
+  public HttpResponse<?> saveConceptTransaction(@PathVariable String codeSystem, @PathVariable String version,
                                                 @Body @Valid ConceptTransactionRequest request) {
     request.setCodeSystem(codeSystem);
     request.setCodeSystemVersion(version);
@@ -248,7 +249,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/versions/{version}/concepts/link")
-  public HttpResponse<?> linkEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version,
+  public HttpResponse<?> linkEntityVersion(@PathVariable String codeSystem, @PathVariable String version,
                                            @Body CodeSystemEntityVersionLinkRequest request) {
     provenanceService.provenanceCodeSystemVersion("link", codeSystem, version, () -> {
       codeSystemVersionService.linkEntityVersions(codeSystem, version, request.getEntityVersionIds());
@@ -258,7 +259,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/versions/{version}/concepts/unlink")
-  public HttpResponse<?> unlinkEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable String version,
+  public HttpResponse<?> unlinkEntityVersion(@PathVariable String codeSystem, @PathVariable String version,
                                              @Body CodeSystemEntityVersionLinkRequest request) {
     provenanceService.provenanceCodeSystemVersion("unlink", codeSystem, version, () -> {
       codeSystemVersionService.unlinkEntityVersions(codeSystem, version, request.getEntityVersionIds());
@@ -270,15 +271,15 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/entity-versions{?params*}")
-  public QueryResult<CodeSystemEntityVersion> queryEntityVersions(@PathVariable @ResourceId String codeSystem, CodeSystemEntityVersionQueryParams params) {
-    params.setPermittedCodeSystems(userPermissionService.getPermittedResourceIds("CodeSystem", "view"));
+  public QueryResult<CodeSystemEntityVersion> queryEntityVersions(@PathVariable String codeSystem, CodeSystemEntityVersionQueryParams params) {
     params.setCodeSystem(codeSystem);
     return codeSystemEntityVersionService.query(params);
   }
 
   @Authorized(Privilege.CS_PUBLISH)
   @Post(uri = "/{codeSystem}/entity-versions/{id}/activate")
-  public HttpResponse<?> activateEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
+  public HttpResponse<?> activateEntityVersion(@PathVariable String codeSystem, @PathVariable Long id) {
+    codeSystemEntityVersionService.validate(codeSystem, id);
     provenanceService.provenanceEntityVersion("activate", id, () -> {
       codeSystemEntityVersionService.activate(id);
       return null;
@@ -288,7 +289,8 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_PUBLISH)
   @Post(uri = "/{codeSystem}/entity-versions/{id}/retire")
-  public HttpResponse<?> retireEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
+  public HttpResponse<?> retireEntityVersion(@PathVariable String codeSystem, @PathVariable Long id) {
+    codeSystemEntityVersionService.validate(codeSystem, id);
     provenanceService.provenanceEntityVersion("retire", id, () -> {
       codeSystemEntityVersionService.retire(id);
       return null;
@@ -298,7 +300,8 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_PUBLISH)
   @Post(uri = "/{codeSystem}/entity-versions/{id}/draft")
-  public HttpResponse<?> saveAsDraftEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
+  public HttpResponse<?> saveAsDraftEntityVersion(@PathVariable String codeSystem, @PathVariable Long id) {
+    codeSystemEntityVersionService.validate(codeSystem, id);
     provenanceService.provenanceEntityVersion("save", id, () -> {
       codeSystemEntityVersionService.saveAsDraft(id);
       return null;
@@ -308,8 +311,8 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_EDIT)
   @Delete(uri = "/{codeSystem}/entity-versions/{id}")
-  public HttpResponse<?> deleteEntityVersion(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
-    codeSystemEntityVersionService.cancel(id, codeSystem);
+  public HttpResponse<?> deleteEntityVersion(@PathVariable String codeSystem, @PathVariable Long id) {
+    codeSystemEntityVersionService.cancel(codeSystem, id);
     provenanceService.create(CodeSystemProvenanceService.provenance("delete", codeSystemEntityVersionService.load(id)));
     return HttpResponse.noContent();
   }
@@ -324,7 +327,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/entity-versions/{id}/references")
-  public List<CodeSystemAssociation> getReferences(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
+  public List<CodeSystemAssociation> getReferences(@PathVariable String codeSystem, @PathVariable Long id) {
     return codeSystemAssociationService.loadReferences(codeSystem, id);
   }
 
@@ -333,59 +336,66 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/entity-properties{?params*}")
-  public QueryResult<EntityProperty> queryEntityProperties(@PathVariable @ResourceId String codeSystem, EntityPropertyQueryParams params) {
-    params.setPermittedCodeSystems(userPermissionService.getPermittedResourceIds("CodeSystem", "view"));
+  public QueryResult<EntityProperty> queryEntityProperties(@PathVariable String codeSystem, EntityPropertyQueryParams params) {
     params.setCodeSystem(codeSystem);
     return entityPropertyService.query(params);
   }
 
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/entity-properties/{id}")
-  public EntityProperty getEntityProperty(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
-    return entityPropertyService.load(id).orElseThrow(() -> new NotFoundException("EntityProperty not found: " + id));
+  public EntityProperty getEntityProperty(@PathVariable String codeSystem, @PathVariable Long id) {
+    return entityPropertyService.load(codeSystem, id)
+        .orElseThrow(() -> new NotFoundException("EntityProperty not found: " + id));
   }
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/entity-properties")
-  public HttpResponse<?> createEntityProperty(@PathVariable @ResourceId String codeSystem, @Body @Valid EntityProperty property) {
+  public HttpResponse<?> createEntityProperty(@PathVariable String codeSystem, @Body @Valid EntityProperty property) {
     property.setId(null);
     provenanceService.provenanceCodeSystem("save", codeSystem, () -> {
-      entityPropertyService.save(property, codeSystem);
+      entityPropertyService.save(codeSystem, property);
     });
     return HttpResponse.created(property);
   }
 
   @Authorized(Privilege.CS_EDIT)
   @Put(uri = "/{codeSystem}/entity-properties/{id}")
-  public HttpResponse<?> updateEntityProperty(@PathVariable @ResourceId String codeSystem, @PathVariable Long id, @Body @Valid EntityProperty property) {
+  public HttpResponse<?> updateEntityProperty(@PathVariable String codeSystem, @PathVariable Long id, @Body @Valid EntityProperty property) {
     property.setId(id);
     provenanceService.provenanceCodeSystem("save", codeSystem, () -> {
-      entityPropertyService.save(property, codeSystem);
+      entityPropertyService.save(codeSystem, property);
     });
     return HttpResponse.created(property);
   }
 
   @Authorized(Privilege.CS_EDIT)
   @Delete(uri = "/{codeSystem}/entity-properties/{id}")
-  public HttpResponse<?> deleteEntityProperty(@PathVariable @ResourceId String codeSystem, @PathVariable Long id) {
+  public HttpResponse<?> deleteEntityProperty(@PathVariable String codeSystem, @PathVariable Long id) {
     provenanceService.provenanceCodeSystem("delete", codeSystem, () -> {
-      entityPropertyService.cancel(id, codeSystem);
+      entityPropertyService.cancel(codeSystem, id);
     });
     return HttpResponse.ok();
   }
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/entity-properties/{propertyId}/delete-usages")
-  public HttpResponse<?> deleteEntityPropertyUsages(@PathVariable @ResourceId String codeSystem, @PathVariable Long propertyId) {
+  public HttpResponse<?> deleteEntityPropertyUsages(@PathVariable String codeSystem, @PathVariable Long propertyId) {
     provenanceService.provenanceCodeSystem("delete-usages", codeSystem, () -> {
       entityPropertyService.deleteUsages(propertyId, codeSystem);
     });
     return HttpResponse.ok();
   }
 
+  //----------------Provenances----------------
+
+  @Authorized(Privilege.CS_VIEW)
+  @Get(uri = "/{codeSystem}/provenances")
+  public List<Provenance> queryProvenances(@PathVariable String codeSystem, @Nullable @QueryValue String version) {
+    return provenanceService.find(codeSystem, version);
+  }
+
   @Getter
   @Setter
-  @Introspected
   public static class CodeSystemDuplicateRequest {
     private String codeSystem;
     private String codeSystemUri;
@@ -393,7 +403,6 @@ public class CodeSystemController {
 
   @Getter
   @Setter
-  @Introspected
   public static class CodeSystemVersionDuplicateRequest {
     private String codeSystem;
     private String version;
@@ -401,14 +410,12 @@ public class CodeSystemController {
 
   @Getter
   @Setter
-  @Introspected
   public static class CodeSystemEntityVersionLinkRequest {
     private List<Long> entityVersionIds;
   }
 
   @Getter
   @Setter
-  @Introspected
   public static class CodeSystemConceptPropertyPropagationRequest {
     private List<Long> targetConceptIds;
   }

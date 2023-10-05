@@ -107,14 +107,12 @@ public class ConceptRepository extends BaseRepository {
   private SqlBuilder filter(ConceptQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.append("where c.sys_status = 'A'");
+    sb.and().in("c.code_system", params.getPermittedCodeSystems());
     if (StringUtils.isNotEmpty(params.getId())) {
       sb.and().in("c.id ", params.getId(), Long::valueOf);
     }
     if (StringUtils.isNotEmpty(params.getCodeSystem())) {
       sb.and().in("c.code_system ", params.getCodeSystem());
-    }
-    if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
-      sb.and().in("c.code_system", params.getPermittedCodeSystems());
     }
     sb.appendIfNotNull("and cs.uri = ?", params.getCodeSystemUri());
     sb.appendIfNotNull("and c.code ~* ?", params.getCodeContains());

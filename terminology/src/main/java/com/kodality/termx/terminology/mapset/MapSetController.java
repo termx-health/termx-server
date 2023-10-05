@@ -5,9 +5,7 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
-import com.kodality.termx.auth.ResourceId;
 import com.kodality.termx.auth.SessionStore;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
 import com.kodality.termx.sys.provenance.Provenance;
@@ -27,6 +25,7 @@ import com.kodality.termx.ts.mapset.MapSetQueryParams;
 import com.kodality.termx.ts.mapset.MapSetTransactionRequest;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -35,6 +34,7 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
+import io.micronaut.http.annotation.QueryValue;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,8 +56,6 @@ public class MapSetController {
   private final MapSetStatisticsService mapSetStatisticsService;
   private final MapSetProvenanceService provenanceService;
 
-  private final UserPermissionService userPermissionService;
-
   private final ImportLogger importLogger;
 
   //----------------MapSet----------------
@@ -65,26 +63,28 @@ public class MapSetController {
   @Authorized(Privilege.MS_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<MapSet> queryMapSets(MapSetQueryParams params) {
-    params.setPermittedIds(userPermissionService.getPermittedResourceIds("MapSet", "view"));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.MS_VIEW));
     return mapSetService.query(params);
   }
 
   @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}{?decorate}")
-  public MapSet getMapSet(@PathVariable @ResourceId String mapSet, Optional<Boolean> decorate) {
-    return mapSetService.load(mapSet, decorate.orElse(false)).orElseThrow(() -> new NotFoundException("MapSet not found: " + mapSet));
+  public MapSet getMapSet(@PathVariable String mapSet, Optional<Boolean> decorate) {
+    return mapSetService.load(mapSet, decorate.orElse(false))
+        .orElseThrow(() -> new NotFoundException("MapSet not found: " + mapSet));
   }
 
   @Authorized(Privilege.MS_EDIT)
   @Post("/transaction")
   public HttpResponse<?> saveMapSetTransaction(@Body @Valid MapSetTransactionRequest request) {
+    SessionStore.require().checkPermitted(request.getMapSet().getId(), Privilege.VS_EDIT);
     provenanceService.provenanceMapSetTransaction("save", request, () -> {
       mapSetService.save(request);
     });
     return HttpResponse.created(request.getMapSet());
   }
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/change-id")
   public HttpResponse<?> changeMapSetId(@PathVariable String mapSet, @Valid @Body Map<String, String> body) {
     String newId = body.get("id");
@@ -96,7 +96,7 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_PUBLISH)
   @Delete(uri = "/{mapSet}")
-  public HttpResponse<?> deleteMapSet(@PathVariable @ResourceId String mapSet) {
+  public HttpResponse<?> deleteMapSet(@PathVariable String mapSet) {
     mapSetService.cancel(mapSet);
     provenanceService.create(new Provenance("delete", "MapSet", mapSet));
     return HttpResponse.ok();
@@ -106,21 +106,21 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}/versions{?params*}")
-  public QueryResult<MapSetVersion> queryMapSetVersions(@PathVariable @ResourceId String mapSet, MapSetVersionQueryParams params) {
-    params.setPermittedMapSets(userPermissionService.getPermittedResourceIds("MapSet", "view"));
+  public QueryResult<MapSetVersion> queryMapSetVersions(@PathVariable String mapSet, MapSetVersionQueryParams params) {
     params.setMapSet(mapSet);
     return mapSetVersionService.query(params);
   }
 
   @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}/versions/{version}")
-  public MapSetVersion getMapSetVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
-    return mapSetVersionService.load(mapSet, version).orElseThrow(() -> new NotFoundException("Map set version not found: " + version));
+  public MapSetVersion getMapSetVersion(@PathVariable String mapSet, @PathVariable String version) {
+    return mapSetVersionService.load(mapSet, version)
+        .orElseThrow(() -> new NotFoundException("Map set version not found: " + version));
   }
 
   @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/versions")
-  public HttpResponse<?> createVersion(@PathVariable @ResourceId String mapSet, @Body @Valid MapSetVersion mapSetVersion) {
+  public HttpResponse<?> createVersion(@PathVariable String mapSet, @Body @Valid MapSetVersion mapSetVersion) {
     mapSetVersion.setId(null);
     mapSetVersion.setMapSet(mapSet);
     provenanceService.provenanceMapSetVersion("save", mapSet, mapSetVersion.getVersion(), () -> {
@@ -131,7 +131,7 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_EDIT)
   @Put(uri = "/{mapSet}/versions/{version}")
-  public HttpResponse<?> updateVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid MapSetVersion mapSetVersion) {
+  public HttpResponse<?> updateVersion(@PathVariable String mapSet, @PathVariable String version, @Body @Valid MapSetVersion mapSetVersion) {
     mapSetVersion.setVersion(version);
     mapSetVersion.setMapSet(mapSet);
     provenanceService.provenanceMapSetVersion("save", mapSet, mapSetVersion.getVersion(), () -> {
@@ -142,7 +142,7 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_PUBLISH)
   @Post(uri = "/{mapSet}/versions/{version}/activate")
-  public HttpResponse<?> activateVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
+  public HttpResponse<?> activateVersion(@PathVariable String mapSet, @PathVariable String version) {
     provenanceService.provenanceMapSetVersion("activate", mapSet, version, () -> {
       mapSetVersionService.activate(mapSet, version);
     });
@@ -151,7 +151,7 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_PUBLISH)
   @Post(uri = "/{mapSet}/versions/{version}/retire")
-  public HttpResponse<?> retireVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
+  public HttpResponse<?> retireVersion(@PathVariable String mapSet, @PathVariable String version) {
     provenanceService.provenanceMapSetVersion("retire", mapSet, version, () -> {
       mapSetVersionService.retire(mapSet, version);
     });
@@ -160,7 +160,7 @@ public class MapSetController {
 
   @Authorized(Privilege.CS_PUBLISH)
   @Post(uri = "/{mapSet}/versions/{version}/draft")
-  public HttpResponse<?> saveAsDraftMapSetVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
+  public HttpResponse<?> saveAsDraftMapSetVersion(@PathVariable String mapSet, @PathVariable String version) {
     provenanceService.provenanceMapSetVersion("save", mapSet, version, () -> {
       mapSetVersionService.saveAsDraft(mapSet, version);
     });
@@ -169,9 +169,9 @@ public class MapSetController {
 
   @Authorized(Privilege.CS_PUBLISH)
   @Delete(uri = "/{mapSet}/versions/{version}")
-  public HttpResponse<?> deleteMapSetVersion(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
+  public HttpResponse<?> deleteMapSetVersion(@PathVariable String mapSet, @PathVariable String version) {
     MapSetVersion msv = mapSetVersionService.load(mapSet, version).orElseThrow();
-    mapSetVersionService.cancel(msv.getId(), mapSet);
+    mapSetVersionService.cancel(msv.getId());
     provenanceService.create(new Provenance("deleted", "MapSetVersion", msv.getId().toString(), msv.getVersion())
         .addContext("part-of", "MapSet", msv.getMapSet()));
     return HttpResponse.ok();
@@ -182,9 +182,8 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_VIEW)
   @Post(uri = "/{mapSet}/versions/{version}/reload-statistics-async")
-  public JobLogResponse reloadStatisticsAsync(@PathVariable @ResourceId String mapSet, @PathVariable String version) {
+  public JobLogResponse reloadStatisticsAsync(@PathVariable String mapSet, @PathVariable String version) {
     JobLogResponse jobLogResponse = importLogger.createJob(mapSet, "map-set-statistics-reload");
-    userPermissionService.checkPermitted(mapSet, "MapSet", "view");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("MapSet '{}' statistics calculation started", mapSet);
@@ -208,7 +207,7 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}/versions/{version}/concepts{?params*}")
-  public QueryResult<MapSetConcept> queryMapSetConcepts(@PathVariable @ResourceId String mapSet, @PathVariable String version, MapSetConceptQueryParams params) {
+  public QueryResult<MapSetConcept> queryMapSetConcepts(@PathVariable String mapSet, @PathVariable String version, MapSetConceptQueryParams params) {
     return mapSetConceptService.query(mapSet, version, params);
   }
 
@@ -217,15 +216,14 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_VIEW)
   @Get(uri = "/{mapSet}/associations{?params*}")
-  public QueryResult<MapSetAssociation> queryAssociations(@PathVariable @ResourceId String mapSet, MapSetAssociationQueryParams params) {
-    params.setPermittedMapSets(userPermissionService.getPermittedResourceIds("MapSet", "view"));
+  public QueryResult<MapSetAssociation> queryAssociations(@PathVariable String mapSet, MapSetAssociationQueryParams params) {
     params.setMapSet(mapSet);
     return mapSetAssociationService.query(params);
   }
 
   @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/versions/{version}/associations")
-  public HttpResponse<?> createAssociation(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid MapSetAssociation association) {
+  public HttpResponse<?> createAssociation(@PathVariable String mapSet, @PathVariable String version, @Body @Valid MapSetAssociation association) {
     association.setId(null);
     provenanceService.provenanceMapSetVersion("create-association", mapSet, version, () -> {
       mapSetAssociationService.save(association, mapSet, version);
@@ -235,7 +233,7 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_EDIT)
   @Put(uri = "/{mapSet}/versions/{version}/associations/{id}")
-  public HttpResponse<?> updateAssociation(@PathVariable @ResourceId String mapSet, @PathVariable String version, @PathVariable Long id, @Body @Valid MapSetAssociation association) {
+  public HttpResponse<?> updateAssociation(@PathVariable String mapSet, @PathVariable String version, @PathVariable Long id, @Body @Valid MapSetAssociation association) {
     association.setId(id);
     provenanceService.provenanceMapSetVersion("update-association", mapSet, version, () -> {
       mapSetAssociationService.save(association, mapSet, version);
@@ -245,7 +243,7 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/versions/{version}/associations-batch")
-  public HttpResponse<?> saveAssociations(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid Map<String,List<MapSetAssociation>> associations) {
+  public HttpResponse<?> saveAssociations(@PathVariable String mapSet, @PathVariable String version, @Body @Valid Map<String,List<MapSetAssociation>> associations) {
     provenanceService.provenanceMapSetVersion("save-association-batch", mapSet, version, () -> {
       mapSetAssociationService.batchSave(associations.getOrDefault("batch", List.of()), mapSet, version);
     });
@@ -254,7 +252,7 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/versions/{version}/associations/verify")
-  public HttpResponse<?> verifyAssociations(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid Map<String, List<Long>> request) {
+  public HttpResponse<?> verifyAssociations(@PathVariable String mapSet, @PathVariable String version, @Body @Valid Map<String, List<Long>> request) {
     provenanceService.provenanceMapSetVersion("verify-association-batch", mapSet, version, () -> {
       mapSetAssociationService.verify(request.get("verifiedIds"), request.get("unVerifiedIds"), mapSet);
     });
@@ -263,18 +261,25 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/versions/{version}/associations/unmap")
-  public HttpResponse<?> unmapAssociations(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid Map<String, List<Long>> request) {
+  public HttpResponse<?> unmapAssociations(@PathVariable String mapSet, @PathVariable String version, @Body @Valid Map<String, List<Long>> request) {
     provenanceService.provenanceMapSetVersion("unmap-association-batch", mapSet, version, () -> {
       mapSetAssociationService.cancel(request.get("ids"), mapSet, version);
     });
     return HttpResponse.ok();
   }
 
+  //----------------Provenances----------------
+
+  @Authorized(Privilege.MS_VIEW)
+  @Get(uri = "/{mapSet}/provenances")
+  public List<Provenance> queryProvenances(@PathVariable String mapSet, @Nullable @QueryValue String version) {
+    return provenanceService.find(mapSet, version);
+  }
+
   @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/versions/{version}/associations/automap")
-  public JobLogResponse automapAssociations(@PathVariable @ResourceId String mapSet, @PathVariable String version, @Body @Valid MapSetAutomapRequest request) {
+  public JobLogResponse automapAssociations(@PathVariable String mapSet, @PathVariable String version, @Body @Valid MapSetAutomapRequest request) {
     JobLogResponse jobLogResponse = importLogger.createJob(mapSet, "map-set-automap");
-    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("MapSet '{}' automap started", mapSet);

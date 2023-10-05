@@ -6,10 +6,8 @@ import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
-import io.micronaut.core.util.CollectionUtils;
 import javax.inject.Singleton;
 
 @Singleton
@@ -100,9 +98,7 @@ public class ValueSetVersionRepository extends BaseRepository {
   private SqlBuilder filter(ValueSetVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and vsv.value_set = ?", params.getValueSet());
-    if (CollectionUtils.isNotEmpty(params.getPermittedValueSets())) {
-      sb.and().in("vsv.value_set", params.getPermittedValueSets());
-    }
+    sb.and().in("vsv.value_set", params.getPermittedValueSets());
     sb.appendIfNotNull("and exists (select 1 from terminology.value_set vs where vs.id = vsv.value_set and vs.uri = ? and vs.sys_status = 'A')", params.getValueSetUri());
     sb.appendIfNotNull("and vsv.version = ?", params.getVersion());
     sb.appendIfNotNull("and vsv.status = ?", params.getStatus());
@@ -111,19 +107,9 @@ public class ValueSetVersionRepository extends BaseRepository {
     return sb;
   }
 
-  public void activate(String valueSet, String version) {
+  public void saveStatus(String valueSet, String version, String status) {
     String sql = "update terminology.value_set_version set status = ? where value_set = ? and version = ? and sys_status = 'A' and status <> ?";
-    jdbcTemplate.update(sql, PublicationStatus.active, valueSet, version, PublicationStatus.active);
-  }
-
-  public void retire(String valueSet, String version) {
-    String sql = "update terminology.value_set_version set status = ? where value_set = ? and version = ? and sys_status = 'A' and status <> ?";
-    jdbcTemplate.update(sql, PublicationStatus.retired, valueSet, version, PublicationStatus.retired);
-  }
-
-  public void saveAsDraft(String valueSet, String version) {
-    String sql = "update terminology.value_set_version set status = ? where value_set = ? and version = ? and sys_status = 'A' and status <> ?";
-    jdbcTemplate.update(sql, PublicationStatus.draft, valueSet, version, PublicationStatus.draft);
+    jdbcTemplate.update(sql, status, valueSet, version, status);
   }
 
   public void saveExpirationDate(ValueSetVersion version) {

@@ -1,7 +1,6 @@
 package com.kodality.termx.terminology.mapset.association;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.mapset.association.propertyvalue.MapSetPropertyValueService;
 import com.kodality.termx.terminology.mapset.statistics.MapSetStatisticsService;
 import com.kodality.termx.terminology.mapset.version.MapSetVersionRepository;
@@ -26,16 +25,12 @@ public class MapSetAssociationService {
   private final MapSetVersionRepository mapSetVersionRepository;
   private final MapSetPropertyValueService mapSetPropertyValueService;
 
-  private final UserPermissionService userPermissionService;
-
   public QueryResult<MapSetAssociation> query(MapSetAssociationQueryParams params) {
     return repository.query(params);
   }
 
   @Transactional
   public MapSetAssociation save(MapSetAssociation association, String mapSet, String version) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
-
     MapSetVersion msv = mapSetVersionRepository.load(mapSet, version);
     association.setMapSet(mapSet);
     association.setMapSetVersion(msv);
@@ -50,8 +45,6 @@ public class MapSetAssociationService {
 
   @Transactional
   public void batchSave(List<MapSetAssociation> associations, String mapSet, String version) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
-
     MapSetVersion msv = mapSetVersionRepository.load(mapSet, version);
     repository.retain(mapSet, msv.getId(), associations.stream().map(MapSetAssociation::getId).filter(Objects::nonNull).toList());
     batchUpsert(associations, mapSet, version);
@@ -59,8 +52,6 @@ public class MapSetAssociationService {
 
   @Transactional
   public void batchUpsert(List<MapSetAssociation> associations, String mapSet, String version) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
-
     MapSetVersion msv = mapSetVersionRepository.load(mapSet, version);
     repository.batchUpsert(associations, mapSet, msv.getId());
 
@@ -74,15 +65,12 @@ public class MapSetAssociationService {
 
   @Transactional
   public void verify(List<Long> verifiedIds, List<Long> unVerifiedIds, String mapSet) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
     repository.verify(verifiedIds, true);
     repository.verify(unVerifiedIds, false);
   }
 
   @Transactional
   public void cancel(List<Long> ids, String mapSet, String version) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
-
     MapSetVersion msv = mapSetVersionRepository.load(mapSet, version);
     repository.cancel(ids);
 

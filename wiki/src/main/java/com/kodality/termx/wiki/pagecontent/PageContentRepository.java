@@ -61,6 +61,7 @@ public class PageContentRepository extends BaseRepository {
 
   private SqlBuilder filter(PageContentQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.and().in("pc.space_id", params.getPermittedSpaceIds());
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("pc.id", p, Long::valueOf));
     sb.appendIfNotNull(params.getSlugs(), (s, p) -> s.and().in("pc.slug", p));
     sb.appendIfNotNull(params.getSpaceIds(), (s, p) -> s.and().in("pc.space_id", p, Long::valueOf));

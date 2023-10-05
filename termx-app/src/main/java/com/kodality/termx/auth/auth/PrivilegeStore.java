@@ -50,7 +50,7 @@ public class PrivilegeStore {
   private List<String> calculate(PrivilegeResource resource) {
     String resourceType = resource.getResourceType();
     if (resourceType.equals("Admin")) {
-      return List.of("admin");
+      return List.of("*.*.*");
     }
     String id = resource.getResourceId();
     String type = resourceType;

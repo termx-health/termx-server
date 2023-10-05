@@ -1,5 +1,6 @@
 package com.kodality.termx.terminology.relatedartifacts;
 
+import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifact;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifactRequest;
 import io.micronaut.http.annotation.Body;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class RelatedArtifactController {
   private final List<RelatedArtifactService> services;
 
+  @Authorized("*.*.view")
   @Post()
   public List<RelatedArtifact> findRelatedArtifacts(@Valid @Body RelatedArtifactRequest request) {
     return services.stream().flatMap(s -> s.findRelatedArtifacts(request).stream()).toList();

@@ -8,6 +8,7 @@ import lombok.Getter;
 
 public enum ApiError {
   T000("T000", "Generated slug '{{slug}}' already exists, please change content name."),
+  T001("T001", "Cannot change pages space"),
   T021("T021", "Comment can be changed only by its author")
   ;
 

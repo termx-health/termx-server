@@ -1,7 +1,6 @@
 package com.kodality.termx.terminology.valueset;
 
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
@@ -14,14 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class ValueSetDuplicateService {
-  private final UserPermissionService userPermissionService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
 
   @Transactional
   public ValueSetVersion duplicateValueSetVersion(String targetVersionVersion, String targetValueSet, String sourceVersionVersion, String sourceValueSet) {
-    userPermissionService.checkPermitted(targetValueSet, "ValueSet", "edit");
-
     ValueSetVersion version = valueSetVersionService.load(sourceValueSet, sourceVersionVersion).orElseThrow(() ->
         ApiError.TE301.toApiException(Map.of("version", sourceVersionVersion, "valueSet", sourceValueSet)));
 

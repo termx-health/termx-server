@@ -14,6 +14,7 @@ public class UserController {
 
   @Get()
   public List<User> loadAll() {
+    //TODO: auth
     return userProvider.getUsers();
   }
 

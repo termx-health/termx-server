@@ -5,6 +5,8 @@ import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.conceptmap.ConceptMapFhirMapper;
 import com.kodality.termx.terminology.mapset.MapSetService;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
@@ -102,7 +104,13 @@ public class ConceptMapTranslateOperation implements InstanceOperationDefinition
       throw new FhirException(400, IssueType.INVALID, "If a target code is provided, a system must be provided.");
     }
 
-    MapSetQueryParams msParams = new MapSetQueryParams().setId(cmId).setUri(cmUrl).setVersionVersion(cmVersion).setVersionsDecorated(cmVersion != null).limit(1);
+    MapSetQueryParams msParams = new MapSetQueryParams()
+        .setId(cmId)
+        .setUri(cmUrl)
+        .setVersionVersion(cmVersion)
+        .setVersionsDecorated(cmVersion != null)
+        .setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.MS_VIEW))
+        .limit(1);
     MapSet mapSet = mapSetService.query(msParams).findFirst().orElse(null);
     if (mapSet == null) {
       return new Parameters().addParameter(new ParametersParameter("result").setValueBoolean(false));

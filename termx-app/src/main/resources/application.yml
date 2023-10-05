@@ -55,7 +55,6 @@ auth:
     jwks-url: ${OAUTH_JWKS_URL:fixme}
   public:
     endpoints:
-      - '/fhir'
       - '/fhir-swagger'
       - '/swagger'
       - '/github/cb'

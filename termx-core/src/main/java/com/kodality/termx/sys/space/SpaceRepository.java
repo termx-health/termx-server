@@ -59,6 +59,7 @@ public class SpaceRepository extends BaseRepository {
 
   private SqlBuilder filter(SpaceQueryParams params) {
     SqlBuilder sb = new SqlBuilder("where s.sys_status = 'A'");
+    sb.and().in("s.id", params.getPermittedIds());
     if (StringUtils.isNotEmpty(params.getIds())) {
       sb.and().in("id", params.getIds(), Long::valueOf);
     }

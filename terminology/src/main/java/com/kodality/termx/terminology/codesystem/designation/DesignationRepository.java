@@ -70,6 +70,7 @@ public class DesignationRepository extends BaseRepository {
 
   private SqlBuilder filter(DesignationQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.and().in("d.code_system", params.getPermittedCodeSystems());
     if (StringUtils.isNotEmpty(params.getId())) {
       sb.and().in("d.id", params.getId(), Long::valueOf);
     }

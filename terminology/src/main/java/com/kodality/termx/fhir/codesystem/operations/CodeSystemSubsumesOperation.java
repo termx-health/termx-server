@@ -5,9 +5,11 @@ import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirMapper;
-import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
@@ -98,6 +100,7 @@ public class CodeSystemSubsumesOperation implements InstanceOperationDefinition,
     conceptParams.setCode(code);
     conceptParams.setCodeSystemVersionId(codeSystemVersion.getId());
     conceptParams.setLimit(1);
+    conceptParams.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
     return conceptService.query(conceptParams).findFirst()
         .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "Concept '" + code + "' not found in " + codeSystemVersion.getCodeSystem()));
   }

@@ -9,7 +9,6 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
-import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -72,9 +71,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
     sb.appendIfNotNull("and csv.code_system = ?", params.getCodeSystem());
     sb.appendIfNotNull("and exists (select 1 from terminology.code_system cs where cs.id = csv.code_system and cs.uri = ? and cs.sys_status = 'A')",
         params.getCodeSystemUri());
-    if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
-      sb.and().in("csv.code_system", params.getPermittedCodeSystems());
-    }
+    sb.and().in("csv.code_system", params.getPermittedCodeSystems());
     sb.appendIfNotNull("and csv.version = ?", params.getVersion());
     sb.appendIfNotNull("and csv.status = ?", params.getStatus());
     sb.appendIfNotNull("and csv.release_date <= ?", params.getReleaseDateLe());

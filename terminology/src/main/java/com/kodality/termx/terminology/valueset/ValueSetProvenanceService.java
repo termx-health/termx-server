@@ -8,6 +8,7 @@ import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetTransactionRequest;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.inject.Singleton;
@@ -19,6 +20,15 @@ public class ValueSetProvenanceService {
   private final ProvenanceService provenanceService;
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
+
+  public List<Provenance> find(String valueSet, String versionCode) {
+    if (versionCode == null) {
+      return provenanceService.find("ValueSet|" + valueSet);
+    }
+    return valueSetVersionService.load(valueSet, versionCode).map(vsv ->
+        provenanceService.find("ValueSetVersion|" + vsv.getId().toString())
+    ).orElse(List.of());
+  }
 
   public void create(Provenance p) {
     provenanceService.create(p);

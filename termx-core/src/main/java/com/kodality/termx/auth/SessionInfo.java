@@ -1,13 +1,13 @@
 package com.kodality.termx.auth;
 
+import com.kodality.commons.exception.ForbiddenException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import org.apache.commons.lang3.ArrayUtils;
 
 @Getter
 @Setter
@@ -21,40 +21,56 @@ public class SessionInfo {
   private String provider;
   private Map<String, String> providerProperties;
 
-  public static final String ADMIN = "admin";
+
+  public void checkPermitted(String resourceId, String resourceType, String action) {
+    checkPermitted(resourceId, resourceType + "." + action);
+  }
+
+  public void checkPermitted(String resourceId, String permission) {
+    resourceId = resourceId == null ? "*" : resourceId;
+    if (!hasPrivilege(resourceId + "." + permission)) {
+      throw new ForbiddenException("forbidden");
+    }
+  }
+
+  public boolean hasPrivilege(String authPrivilege) {
+    return hasAnyPrivilege(List.of(authPrivilege));
+  }
 
   public boolean hasAnyPrivilege(List<String> authPrivileges) {
-    return hasAnyPrivilege(authPrivileges, Optional.empty());
+    return privileges != null && authPrivileges.stream().anyMatch(ap -> privileges.stream().anyMatch(up -> privilegesMatch(ap, up)));
   }
 
-  public boolean hasAnyPrivilege(List<String> authPrivileges, Optional<String> resourceId) {
-    return privileges != null &&
-           (privileges.contains(ADMIN) || authPrivileges.stream().anyMatch(ap -> privileges.stream().anyMatch(up -> privilegesMatch(ap, up, resourceId))));
-  }
-
-  private boolean privilegesMatch(String authPrivilege, String userPrivilege, Optional<String> resourceId) {
-    if (authPrivilege.equals(ADMIN)) {
-      return userPrivilege.equals(ADMIN);
-    }
-    String[] authParts = authPrivilege.split("\\.");
-    String[] upParts = userPrivilege.split("\\.");
-
-    if (authParts.length == 2 && authParts[0].equals("*")) { // handle special case like '*.view'
-      authParts = ArrayUtils.addAll(new String[]{"*"}, authParts);
-    }
-
-    if (upParts.length == 2 && upParts[0].equals("*")) { // handle special case like '*.view'
-      upParts = ArrayUtils.addAll(new String[]{"*"}, upParts);
-    }
-
-    if (upParts.length != 3 && authParts.length != 3) {
+  private boolean privilegesMatch(String p1, String p2) {
+    String[] p1Parts = p1.split("\\.");
+    String[] p2Parts = p2.split("\\.");
+    if (p1Parts.length != 3 && p2Parts.length != 3) {
       return false;
     }
-    return match(upParts[0], authParts[0]) && match(upParts[1], authParts[1]) && match(upParts[2], authParts[2]) && match(upParts[0], resourceId.orElse("*"));
+    return match(p1Parts[0], p2Parts[0]) && match(p1Parts[1], p2Parts[1]) && match(p1Parts[2], p2Parts[2]);
   }
 
-  private boolean match(String upPart, String apPart) {
-    return upPart.equals(apPart) || upPart.equals("*") || apPart.equals("*");
+  private boolean match(String p1, String p2) {
+    return p1.equals(p2) || p1.equals("*") || p2.equals("*");
+  }
+
+  public <T> List<T> getPermittedResourceIds(String privilege, Function<String, T> mapper) {
+    List<String> rids = getPermittedResourceIds(privilege);
+    return rids == null ? null : rids.stream().map(mapper).toList();
+  }
+
+  public List<String> getPermittedResourceIds(String privilege) {
+    String[] p = privilege.split("\\.");
+    return getPermittedResourceIds(p[0], p[1]);
+  }
+
+  public List<String> getPermittedResourceIds(String resourceType, String action) {
+    boolean allResourcesAccessible = getPrivileges().stream().anyMatch(p -> List.of("*.*.*", "*.*." + action, "*." + resourceType + "." + action).contains(p));
+    if (allResourcesAccessible) {
+      return null;
+    }
+    String suffix = "." + resourceType + "." + action;
+    return getPrivileges().stream().filter(p -> p.endsWith(suffix)).map(p -> p.replace(suffix, "")).toList();
   }
 
 }

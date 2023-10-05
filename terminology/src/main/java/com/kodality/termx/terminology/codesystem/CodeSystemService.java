@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.codesystem;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
@@ -31,22 +30,19 @@ public class CodeSystemService {
   private final EntityPropertyService entityPropertyService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetService valueSetService;
-  private final UserPermissionService userPermissionService;
 
   @Transactional
   public void save(CodeSystem codeSystem) {
-    userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
     repository.save(codeSystem);
-    entityPropertyService.save(codeSystem.getProperties(), codeSystem.getId());
+    entityPropertyService.save(codeSystem.getId(), codeSystem.getProperties());
   }
 
   @Transactional
   public void save(CodeSystemTransactionRequest request) {
     CodeSystem codeSystem = request.getCodeSystem();
-    userPermissionService.checkPermitted(codeSystem.getId(), "CodeSystem", "edit");
     repository.save(codeSystem);
 
-    entityPropertyService.save(request.getProperties(), codeSystem.getId());
+    entityPropertyService.save(codeSystem.getId(), request.getProperties());
 
     CodeSystemVersion version = request.getVersion();
     if (version != null) {
@@ -119,7 +115,6 @@ public class CodeSystemService {
 
   @Transactional
   public void cancel(String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "publish");
     List<String> requiredCodeSystems = List.of("codesystem-content-mode", "concept-property-type", "contact-point-system", "contact-point-use",
         "filter-operator", "namingsystem-identifier-type", "namingsystem-type", "publication-status", "publisher", "snomed-ct", "v3-ietf3066");
     if (requiredCodeSystems.contains(codeSystem)) {
@@ -130,7 +125,6 @@ public class CodeSystemService {
 
   @Transactional
   public void changeId(String currentId, String newId) {
-    userPermissionService.checkPermitted(currentId, "CodeSystem", "edit");
     repository.changeId(currentId, newId);
   }
 }

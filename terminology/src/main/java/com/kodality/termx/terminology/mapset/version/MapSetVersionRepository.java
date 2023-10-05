@@ -4,14 +4,10 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
-import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.mapset.MapSetEntityVersion;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
-import io.micronaut.core.util.CollectionUtils;
-import java.util.List;
 import javax.inject.Singleton;
 
 @Singleton
@@ -82,9 +78,7 @@ public class MapSetVersionRepository extends BaseRepository {
   private SqlBuilder filter(MapSetVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and msv.map_set = ?", params.getMapSet());
-    if (CollectionUtils.isNotEmpty(params.getPermittedMapSets())) {
-      sb.and().in("msv.map_set", params.getPermittedMapSets());
-    }
+    sb.and().in("msv.map_set", params.getPermittedMapSets());
     sb.appendIfNotNull("and msv.version = ?", params.getVersion());
     sb.appendIfNotNull("and msv.status = ?", params.getStatus());
     sb.appendIfNotNull("and msv.release_date <= ?", params.getReleaseDateLe());
