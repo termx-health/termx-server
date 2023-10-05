@@ -6,7 +6,6 @@ import java.util.Set;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 
 @Slf4j
 @Singleton
@@ -23,13 +22,10 @@ public class GuestSessionProvider extends SessionProvider {
   @Override
   public SessionInfo authenticate(HttpRequest<?> request) {
     Set<String> privileges = privilegeStore.getPrivileges(GUEST);
-    if (CollectionUtils.isNotEmpty(privileges)) {
-      SessionInfo info = new SessionInfo();
-      info.setPrivileges(privileges);
-      info.setUsername(GUEST);
-      return info;
-    }
-    return null;
+    SessionInfo info = new SessionInfo();
+    info.setPrivileges(privileges);
+    info.setUsername(GUEST);
+    return info;
   }
 
 }
