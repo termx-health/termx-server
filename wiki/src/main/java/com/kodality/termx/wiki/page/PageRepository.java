@@ -70,6 +70,7 @@ public class PageRepository extends BaseRepository {
 
   private SqlBuilder filter(PageQueryParams params) {
     SqlBuilder sb = new SqlBuilder("where p.sys_status = 'A'");
+    sb.and().in("space_id", params.getPermittedSpaceIds());
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("id", p, Long::valueOf));
     sb.appendIfNotNull(params.getIdsNe(), (s, p) -> s.and().notIn("id", p, Long::valueOf));
     sb.appendIfNotNull(params.getSpaceIds(), (s, p) -> s.and().in("space_id", p, Long::valueOf));

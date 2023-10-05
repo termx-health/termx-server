@@ -59,6 +59,11 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     return getBean(sql, bp, id);
   }
 
+  public boolean exists(String codeSystem, Long id) {
+    String sql = "select exists(select 1 from terminology.code_system_entity_version csev where csev.sys_status = 'A' and csev.code_system = ? and csev.id = ?)";
+    return jdbcTemplate.queryForObject(sql, Boolean.class, codeSystem, id);
+  }
+
   public QueryResult<CodeSystemEntityVersion> query(CodeSystemEntityVersionQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_entity_version csev ");
@@ -76,6 +81,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
   private SqlBuilder filter(CodeSystemEntityVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.append("where csev.sys_status = 'A'");
+    sb.and().in("csev.code_system", params.getPermittedCodeSystems());
     sb.appendIfNotNull("and csev.code_system_entity_id = ?", params.getCodeSystemEntityId());
     if (StringUtils.isNotEmpty(params.getCodeSystemEntityIds())) {
       sb.and().in("csev.code_system_entity_id ", params.getCodeSystemEntityIds(), Long::valueOf);
@@ -103,9 +109,6 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCodeSystem())) {
       sb.and().in("csev.code_system ", params.getCodeSystem());
     }
-    if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
-      sb.and().in("csev.code_system", params.getPermittedCodeSystems());
-    }
     if (params.getUnlinked() != null) {
       sb.append("and");
       sb.appendIfTrue(params.getUnlinked(), "not");
@@ -120,9 +123,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
       sb.append("and exists (select 1 from terminology.code_system_version csv " +
           "inner join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A' " +
           "where evcsvm.code_system_entity_version_id = csev.id and csv.version = ? and csv.sys_status = 'A'", params.getCodeSystemVersion());
-      if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
-        sb.and().in("csv.code_system", params.getPermittedCodeSystems());
-      }
+      sb.and().in("csv.code_system", params.getPermittedCodeSystems());
       if (StringUtils.isNotEmpty(params.getCodeSystemVersions())) {
         sb.append(checkCodeSystemVersions(params.getCodeSystemVersions()));
       }
@@ -142,19 +143,15 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     return sb.toPrettyString();
   }
 
-  public void activate(Long versionId) {
-    String sql = "update terminology.code_system_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
-    jdbcTemplate.update(sql, PublicationStatus.active, versionId, PublicationStatus.active);
-  }
-
-  public void activate(List<Long> versionIds) {
-    String query = "update terminology.code_system_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
+  public void activate(String codeSystem, List<Long> versionIds) {
+    String query = "update terminology.code_system_entity_version set status = ? where id = ? and code_system = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override
       public void setValues(PreparedStatement ps, int i) throws SQLException {
         ps.setString(1, PublicationStatus.active);
         ps.setLong(2, versionIds.get(i));
-        ps.setString(3, PublicationStatus.active);
+        ps.setString(3, codeSystem);
+        ps.setString(4, PublicationStatus.active);
       }
 
       @Override
@@ -164,19 +161,15 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     });
   }
 
-  public void retire(Long versionId) {
-    String sql = "update terminology.code_system_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
-    jdbcTemplate.update(sql, PublicationStatus.retired, versionId, PublicationStatus.retired);
-  }
-
-  public void retire(List<Long> versionIds) {
-    String query = "update terminology.code_system_entity_version set status = ? where id = ? and sys_status = 'A' and status <> ?";
+  public void retire(String codeSystem, List<Long> versionIds) {
+    String query = "update terminology.code_system_entity_version set status = ? where id = ? and code_system = ? and sys_status = 'A' and status <> ?";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override
       public void setValues(PreparedStatement ps, int i) throws SQLException {
         ps.setString(1, PublicationStatus.retired);
         ps.setLong(2, versionIds.get(i));
-        ps.setString(3, PublicationStatus.retired);
+        ps.setString(3, codeSystem);
+        ps.setString(4, PublicationStatus.retired);
       }
 
       @Override

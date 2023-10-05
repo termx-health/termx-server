@@ -5,6 +5,8 @@ import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.valueset.ValueSetFhirMapper;
 import com.kodality.termx.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.terminology.valueset.concept.ValueSetVersionConceptService;
@@ -77,6 +79,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   public Parameters run(ValueSetVersion vsVersion, Parameters req) {
+    SessionStore.require().checkPermitted(vsVersion.getValueSet(), Privilege.VS_VIEW);
     String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
     String system = findSystem(req);
     String version = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);

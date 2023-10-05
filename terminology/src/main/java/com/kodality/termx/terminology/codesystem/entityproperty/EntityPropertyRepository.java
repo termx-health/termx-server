@@ -7,7 +7,6 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
-import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +21,8 @@ public class EntityPropertyRepository extends BaseRepository {
 
   private final Map<String, String> orderMapping = Map.of("order-number", "ep.order_number");
 
-  String from = " from terminology.entity_property ep left join terminology.code_system_supplement css on css.target_id = ep.id and css.target_type = 'EntityProperty' ";
+  String from = " from terminology.entity_property ep " +
+                " left join terminology.code_system_supplement css on css.target_id = ep.id and css.target_type = 'EntityProperty' ";
 
   public void save(EntityProperty entityProperty, String codeSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -47,14 +47,14 @@ public class EntityPropertyRepository extends BaseRepository {
     entityProperty.setId(id);
   }
 
-  public EntityProperty load(Long id) {
-    String sql ="select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A' and ep.id = ?";
-    return getBean(sql, bp, id);
+  public EntityProperty load(String codeSystem, Long id) {
+    String sql ="select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A' and and ep.code_system = ? ep.id = ?";
+    return getBean(sql, bp, codeSystem, id);
   }
 
-  public EntityProperty load(String name, String codeSystem) {
-    String sql ="select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A' and ep.name = ? and ep.code_system = ?";
-    return getBean(sql, bp, name, codeSystem);
+  public EntityProperty load(String codeSystem, String name) {
+    String sql ="select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A' and ep.code_system = ? and ep.name = ?";
+    return getBean(sql, bp, codeSystem, name);
   }
 
   public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {
@@ -73,6 +73,7 @@ public class EntityPropertyRepository extends BaseRepository {
 
   private SqlBuilder filter(EntityPropertyQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.and().in("ep.code_system", params.getPermittedCodeSystems());
     if (StringUtils.isNotEmpty(params.getIds())) {
       sb.and().in("ep.id", params.getIds(), Long::valueOf);
     }
@@ -80,21 +81,18 @@ public class EntityPropertyRepository extends BaseRepository {
       sb.and().in("ep.name", params.getNames());
     }
     sb.appendIfNotNull("and ep.code_system = ?", params.getCodeSystem());
-    if (CollectionUtils.isNotEmpty(params.getPermittedCodeSystems())) {
-      sb.and().in("ep.code_system", params.getPermittedCodeSystems());
-    }
     return sb;
   }
 
-  public void retain(List<EntityProperty> properties, String codeSystem) {
+  public void retain(String codeSystem, List<EntityProperty> properties) {
     SqlBuilder sb = new SqlBuilder("update terminology.entity_property set sys_status = 'C'");
     sb.append(" where code_system = ? and sys_status = 'A'", codeSystem);
     sb.andNotIn("id", properties, EntityProperty::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public void cancel(Long id) {
-    SqlBuilder sb = new SqlBuilder("update terminology.entity_property set sys_status = 'C' where id = ? and sys_status = 'A'", id);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  public void cancel(String codeSystem, Long id) {
+    String sql = "update terminology.entity_property set sys_status = 'C' where code_system = ? and id = ? and sys_status = 'A'";
+    jdbcTemplate.update(sql, codeSystem, id);
   }
 }

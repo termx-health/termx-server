@@ -1,7 +1,6 @@
 package com.kodality.termx.sys.server;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceRequest;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceResponse;
@@ -20,33 +19,33 @@ public class TerminologyServerController {
   private final TerminologyServerService terminologyServerService;
   private final TerminologyServerResourceService terminologyServerResourceService;
 
-  @Authorized(Privilege.P_EDIT)
+  @Authorized("TerminologyServer.edit")
   @Post
   public TerminologyServer create(@Valid @Body TerminologyServer ts) {
     ts.setId(null);
     return terminologyServerService.save(ts);
   }
 
-  @Authorized(Privilege.P_EDIT)
+  @Authorized("TerminologyServer.edit")
   @Put("/{id}")
   public TerminologyServer update(@Parameter Long id, @Valid @Body TerminologyServer ts) {
     ts.setId(id);
     return terminologyServerService.save(ts);
   }
 
-  @Authorized(Privilege.P_VIEW)
+  @Authorized("TerminologyServer.edit")
   @Get("/{id}")
   public TerminologyServer load(@Parameter Long id) {
     return terminologyServerService.load(id);
   }
 
-  @Authorized(Privilege.P_VIEW)
+  @Authorized("TerminologyServer.edit")
   @Get("/{?params*}")
   public QueryResult<TerminologyServer> search(TerminologyServerQueryParams params) {
     return terminologyServerService.query(params);
   }
 
-  @Authorized(Privilege.P_VIEW)
+  @Authorized("TerminologyServer.edit")
   @Post("/resource")
   public TerminologyServerResourceResponse getResource(@Valid @Body TerminologyServerResourceRequest request) {
     return terminologyServerResourceService.getResource(request);

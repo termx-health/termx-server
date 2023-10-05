@@ -10,9 +10,25 @@ import static java.lang.annotation.ElementType.TYPE;
 
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ TYPE, METHOD })
+@Target({TYPE, METHOD})
 public @interface Authorized {
+  String ANY = "*";
 
-  String[] value();
+  /**
+   * automagical:
+   * given full privilege string resource.type.action will be taken as is
+   * given type.action, resource will be first request parameter or '*' if no parameters.
+   * resource can also be {parameter}
+   */
+  String[] value() default {};
 
+  /**
+   * can also be a {parameter}
+   */
+  String resource() default ANY;
+
+  /**
+   * resource() + . + privilege()
+   */
+  String privilege() default "";
 }

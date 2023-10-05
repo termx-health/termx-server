@@ -1,7 +1,6 @@
 package com.kodality.termx.terminology.association;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.association.AssociationTypeQueryParams;
 import java.util.List;
@@ -15,12 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AssociationTypeService {
   private final AssociationTypeRepository repository;
-  private final UserPermissionService userPermissionService;
 
   @Transactional
   public AssociationType save(AssociationType associationType) {
-    userPermissionService.checkPermitted(associationType.getCode(), "AssociationType", "edit");
-
     repository.save(associationType);
     return associationType;
   }
@@ -45,7 +41,6 @@ public class AssociationTypeService {
 
   @Transactional
   public void cancel(String code) {
-    userPermissionService.checkPermitted(code, "AssociationType", "publish");
     repository.cancel(code);
   }
 }

@@ -99,15 +99,13 @@ public class MapSetAssociationRepository extends BaseRepository {
 
   private SqlBuilder filter(MapSetAssociationQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
+    sb.and().in("msa.map_set", params.getPermittedMapSets());
     sb.appendIfNotNull("and msa.id = ?", params.getId());
     sb.appendIfNotNull("and msa.map_set = ?", params.getMapSet());
     sb.appendIfNotNull("and msa.map_set_version_id = ?", params.getMapSetVersionId());
     sb.appendIfNotNull(
         "and exists(select 1 from terminology.map_set_version msv where msv.id = msa.map_set_version_id and msv.sys_status = 'A' and msv.version = ?)",
         params.getMapSetVersion());
-    if (CollectionUtils.isNotEmpty(params.getPermittedMapSets())) {
-      sb.and().in("msa.map_set", params.getPermittedMapSets());
-    }
     if (StringUtils.isNotEmpty(params.getRelationships())) {
       sb.and().in("msa.relationship", params.getRelationships());
     }

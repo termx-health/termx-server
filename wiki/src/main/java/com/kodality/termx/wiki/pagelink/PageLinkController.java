@@ -2,6 +2,7 @@ package com.kodality.termx.wiki.pagelink;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.wiki.Privilege;
 import com.kodality.termx.wiki.page.PageLink;
 import com.kodality.termx.wiki.page.PageLinkMoveRequest;
@@ -19,15 +20,17 @@ import lombok.RequiredArgsConstructor;
 public class PageLinkController {
   private final PageLinkService pageLinkService;
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(Privilege.W_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<PageLink> queryPages(PageLinkQueryParams params) {
+    params.setPermittedSpaceIds(SessionStore.require().getPermittedResourceIds(Privilege.W_VIEW, Long::valueOf));
     return pageLinkService.query(params);
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.W_EDIT)
   @Post(uri = "/{id}/move")
   public List<PageLink> movePage(@PathVariable Long id, @Body PageLinkMoveRequest req) {
+    //TODO: auth
     return pageLinkService.moveLink(id, req);
   }
 }

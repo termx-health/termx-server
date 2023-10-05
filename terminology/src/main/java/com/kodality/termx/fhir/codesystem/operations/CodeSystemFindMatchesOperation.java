@@ -5,6 +5,8 @@ import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.ts.PublicationStatus;
@@ -57,6 +59,7 @@ public class CodeSystemFindMatchesOperation implements InstanceOperationDefiniti
     ConceptQueryParams conceptParams = new ConceptQueryParams();
     conceptParams.setCodeSystem(csId);
     conceptParams.setCodeSystemVersion(versionNumber);
+    conceptParams.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
     if (exact) {
       conceptParams.setPropertyValues(String.join(";", properties));
     } else {
@@ -86,6 +89,7 @@ public class CodeSystemFindMatchesOperation implements InstanceOperationDefiniti
     ConceptQueryParams conceptParams = new ConceptQueryParams();
     conceptParams.setCodeSystemUri(system);
     conceptParams.setCodeSystemVersion(version);
+    conceptParams.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
     if (exact) {
       conceptParams.setPropertyValues(String.join(";", properties));
     } else {

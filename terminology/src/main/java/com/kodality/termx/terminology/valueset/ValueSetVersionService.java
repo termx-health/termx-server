@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.valueset;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleSetService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
@@ -24,12 +23,8 @@ public class ValueSetVersionService {
   private final ValueSetVersionRepository repository;
   private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
 
-  private final UserPermissionService userPermissionService;
-
   @Transactional
   public void save(ValueSetVersion version) {
-    userPermissionService.checkPermitted(version.getValueSet(), "ValueSet", "edit");
-
     if (version.getId() == null) {
       version.setId(load(version.getValueSet(), version.getVersion()).map(ValueSetVersionReference::getId).orElse(null));
     }
@@ -76,8 +71,6 @@ public class ValueSetVersionService {
 
   @Transactional
   public void activate(String valueSet, String version) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
-
     ValueSetVersion currentVersion = repository.load(valueSet, version);
     if (currentVersion == null) {
       throw ApiError.TE401.toApiException(Map.of("version", version, "valueSet", valueSet));
@@ -86,13 +79,11 @@ public class ValueSetVersionService {
       log.warn("Version '{}' of valueSet '{}' is already activated, skipping activation process.", version, valueSet);
       return;
     }
-    repository.activate(valueSet, version);
+    repository.saveStatus(valueSet, version, PublicationStatus.active);
   }
 
   @Transactional
   public void retire(String valueSet, String version) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
-
     ValueSetVersion currentVersion = repository.load(valueSet, version);
     if (currentVersion == null) {
       throw ApiError.TE301.toApiException(Map.of("version", version, "valueSet", valueSet));
@@ -101,13 +92,11 @@ public class ValueSetVersionService {
       log.warn("Version '{}' of valueSet '{}' is already retired, skipping retirement process.", version, valueSet);
       return;
     }
-    repository.retire(valueSet, version);
+    repository.saveStatus(valueSet, version, PublicationStatus.retired);
   }
 
   @Transactional
   public void saveAsDraft(String valueSet, String version) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
-
     ValueSetVersion currentVersion = repository.load(valueSet, version);
     if (currentVersion == null) {
       throw ApiError.TE301.toApiException(Map.of("version", version, "valueSet", valueSet));
@@ -116,7 +105,7 @@ public class ValueSetVersionService {
       log.warn("Version '{}' of valueSet '{}' is already draft, skipping retirement process.", version, valueSet);
       return;
     }
-    repository.saveAsDraft(valueSet, version);
+    repository.saveStatus(valueSet, version, PublicationStatus.draft);
   }
 
   public ValueSetVersion loadLastVersionByUri(String uri) {
@@ -124,8 +113,7 @@ public class ValueSetVersionService {
   }
 
   @Transactional
-  public void cancel(Long id, String valueSet) {
-    userPermissionService.checkPermitted(valueSet, "ValueSet", "publish");
+  public void cancel(Long id) {
     repository.cancel(id);
   }
 }

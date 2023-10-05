@@ -1,5 +1,6 @@
 package com.kodality.termx.sys.provenance;
 
+import com.kodality.termx.auth.Authorized;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.QueryValue;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 public class ProvenanceController {
   private final ProvenanceService service;
 
+  @Authorized("Provenance.view")
   @Get()
   public List<Provenance> query(@QueryValue String target) {
     return service.find(target);

@@ -5,10 +5,12 @@ import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
-import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
+import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
@@ -100,6 +102,7 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     cp.setCode(code);
     cp.setCodeSystem(csId);
     cp.setCodeSystemVersionId(versionId);
+    cp.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
 
     Concept concept = conceptService.query(cp).findFirst().orElse(null);
     if (concept == null) {

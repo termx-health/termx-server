@@ -1,6 +1,9 @@
 package com.kodality.termx.modeler;
 
 public interface Privilege {
-  String M_VIEW = "*.Modeler.view";
-  String M_EDIT = "*.Modeler.edit";
+  String SD_VIEW = "StructureDefinition.view";
+  String SD_EDIT = "StructureDefinition.edit";
+
+  String TD_VIEW = "TransformationDefinition.view";
+  String TD_EDIT = "TransformationDefinition.edit";
 }

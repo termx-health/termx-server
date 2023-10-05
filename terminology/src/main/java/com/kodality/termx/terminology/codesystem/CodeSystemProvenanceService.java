@@ -9,7 +9,6 @@ import com.kodality.termx.sys.provenance.ProvenanceUtil;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionRepository;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
-import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
@@ -39,6 +38,15 @@ public class CodeSystemProvenanceService {
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final CodeSystemEntityVersionRepository codeSystemEntityVersionRepository;
+
+  public List<Provenance> find(String codeSystem, String versionCode) {
+    if (versionCode == null) {
+      return provenanceService.find("CodeSystem|" + codeSystem);
+    }
+    return codeSystemVersionService.load(codeSystem, versionCode).map(csv ->
+        provenanceService.find("CodeSystemVersion|" + csv.getId().toString())
+    ).orElse(List.of());
+  }
 
   public void create(Provenance p) {
     provenanceService.create(p);
@@ -71,7 +79,8 @@ public class CodeSystemProvenanceService {
       Map<String, Object> map = JsonUtil.getObjectMapper().convertValue(cs, Map.class);
       map.put("properties", cs.getProperties() == null ? null : cs.getProperties().stream().collect(Collectors.toMap(EntityProperty::getName, x -> x)));
       map.put("identifiers", cs.getIdentifiers() == null ? null : cs.getIdentifiers().stream().collect(Collectors.toMap(Identifier::getSystem, x -> x)));
-      map.put("contacts", cs.getContacts() == null ? null : cs.getContacts().stream().collect(Collectors.toMap(x -> x.getName() == null ? "" : x.getName(), x -> x)));
+      map.put("contacts",
+          cs.getContacts() == null ? null : cs.getContacts().stream().collect(Collectors.toMap(x -> x.getName() == null ? "" : x.getName(), x -> x)));
       return map;
     };
     return ProvenanceUtil.diff(fn.apply(left), fn.apply(right));

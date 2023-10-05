@@ -12,7 +12,6 @@ import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetProperty;
 import com.kodality.termx.ts.mapset.MapSetQueryParams;
 import com.kodality.termx.ts.mapset.MapSetQueryParams.Ordering;
-import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
@@ -99,9 +98,7 @@ public class MapSetRepository extends BaseRepository {
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("ms.id", p));
     sb.appendIfNotNull("and ms.id ~* ?", params.getIdContains());
     sb.appendIfNotNull("and ms.publisher = ?", params.getPublisher());
-    if (CollectionUtils.isNotEmpty(params.getPermittedIds())) {
-      sb.and().in("ms.id", params.getPermittedIds());
-    }
+    sb.and().in("ms.id", params.getPermittedIds());
     sb.appendIfNotNull("and ms.uri = ?", params.getUri());
     sb.appendIfNotNull("and ms.uri ~* ?", params.getUriContains());
     sb.appendIfNotNull("and terminology.jsonb_search(ms.description) like '%`' || terminology.search_translate(?) || '`%'", params.getDescription());

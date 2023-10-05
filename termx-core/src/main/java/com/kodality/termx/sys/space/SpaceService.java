@@ -2,7 +2,6 @@ package com.kodality.termx.sys.space;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.sys.space.Space.SpaceIntegration;
 import java.util.HashSet;
 import java.util.List;
@@ -15,11 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SpaceService {
   private final SpaceRepository repository;
-  private final UserPermissionService userPermissionService;
 
   @Transactional
   public Space save(Space space) {
-    userPermissionService.checkPermitted(space.getCode(), "Space", "edit");
     prepare(space);
     repository.save(space);
     return space;

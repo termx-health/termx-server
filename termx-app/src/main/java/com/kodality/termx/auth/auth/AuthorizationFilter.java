@@ -1,11 +1,10 @@
 package com.kodality.termx.auth.auth;
 
 import com.kodality.termx.auth.Authorized;
-import com.kodality.termx.auth.ResourceId;
 import com.kodality.termx.auth.SessionInfo;
 import com.kodality.termx.auth.SessionStore;
-import io.micronaut.core.annotation.AnnotationMetadata;
-import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.context.annotation.Value;
+import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.http.HttpAttributes;
 import io.micronaut.http.HttpMethod;
 import io.micronaut.http.HttpRequest;
@@ -20,14 +19,20 @@ import io.micronaut.web.router.RouteMatch;
 import io.reactivex.Flowable;
 import io.reactivex.schedulers.Schedulers;
 import java.util.Arrays;
-import java.util.Optional;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringSubstitutor;
 import org.reactivestreams.Publisher;
 
 @Filter("/**")
 @RequiredArgsConstructor
 public class AuthorizationFilter implements HttpServerFilter {
-
+  @Value("${auth.public.endpoints:[]}")
+  private List<String> publicEndpoints;
+  private static final List<String> DEFAULT_PUBLIC = Arrays.asList("/health", "/info", "/public", "/metrics", "/prometheus");
 
   @Override
   public int getOrder() {
@@ -40,27 +45,59 @@ public class AuthorizationFilter implements HttpServerFilter {
       if (allowed) {
         return chain.proceed(request);
       }
-      return Flowable.just(new NettyHttpResponseFactory().status(HttpStatus.FORBIDDEN).body("authorization"));
+      return Flowable.just(new NettyHttpResponseFactory().status(HttpStatus.FORBIDDEN).body("forbidden"));
     }).subscribeOn(Schedulers.io());
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"rawtypes", "unchecked"})
   private boolean checkPermissions(HttpRequest<?> request) {
     if (request.getMethod() == HttpMethod.OPTIONS) {
       return true;
     }
-    Optional<SessionInfo> sessionInfo = request.getAttribute(SessionStore.KEY, SessionInfo.class);
-    RouteMatch route = request.getAttribute(HttpAttributes.ROUTE_MATCH, RouteMatch.class).orElse(null);
-    if (!(route instanceof MethodBasedRouteMatch methodRoute) || !methodRoute.hasAnnotation(Authorized.class)) {
+
+    if (Stream.concat(DEFAULT_PUBLIC.stream(), publicEndpoints.stream()).anyMatch(prefix -> startsWith(request.getPath(), prefix))) {
       return true;
     }
-    if (sessionInfo.isEmpty() || CollectionUtils.isEmpty(sessionInfo.get().getPrivileges())) {
-      return false;
+
+    if (startsWith(request.getPath(), "/fhir")) {
+      return true; //checked elsewhere
     }
 
-    AnnotationMetadata annotationMetadata = methodRoute.getAnnotationMetadata();
-    return methodRoute.getValue(Authorized.class, String[].class).map(authPrivileges ->
-        sessionInfo.get().hasAnyPrivilege(Arrays.asList(authPrivileges), annotationMetadata.stringValue(ResourceId.class))
-    ).orElse(false);
+    RouteMatch route = request.getAttribute(HttpAttributes.ROUTE_MATCH, RouteMatch.class).orElse(null);
+    if (route == null) {
+      return true; //let 404 handle it
+    }
+
+    if (route instanceof MethodBasedRouteMatch methodRoute && methodRoute.hasAnnotation(Authorized.class)) {
+      Map<String, Object> routeParams = methodRoute.getVariableValues();
+      List<String> requiredPrivileges = getPrivileges(methodRoute.getAnnotation(Authorized.class)).stream().map(p -> {
+        if (StringUtils.countMatches(p, '.' ) == 1) {
+          // take first param as resource, if present. * otherwise
+          p = (routeParams.size() > 0 ? routeParams.values().iterator().next() : '*' ) + "." + p;
+        }
+        p = StringSubstitutor.replace(p, routeParams, "{", "}");
+        return p;
+      }).toList();
+      if (requiredPrivileges.isEmpty()) {
+        return true;
+      }
+      return request.getAttribute(SessionStore.KEY, SessionInfo.class).orElseThrow().hasAnyPrivilege(requiredPrivileges);
+    }
+
+    return false;
+  }
+
+  private List<String> getPrivileges(AnnotationValue<Authorized> aa) {
+    if (aa == null) {
+      return List.of();
+    }
+    if (aa.getValues().get("privilege") != null) {
+      return List.of(aa.get("resource", String.class).orElseThrow() + "." + aa.getValues().get("privilege"));
+    }
+    return List.of(aa.get("value", String[].class).orElse(new String[]{}));
+  }
+
+  private boolean startsWith(String path, String prefix) {
+    return path.equals(prefix) || path.startsWith(prefix + "/");
   }
 }

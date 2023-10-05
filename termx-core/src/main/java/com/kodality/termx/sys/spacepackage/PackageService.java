@@ -26,8 +26,8 @@ public class PackageService {
     return p;
   }
 
-  public Package load(Long id) {
-    return repository.load(id);
+  public Package load(Long spaceId, Long id) {
+    return repository.load(spaceId, id);
   }
 
   public Package load(Long spaceId, String code) {
@@ -38,7 +38,7 @@ public class PackageService {
     return repository.loadAll(spaceId);
   }
 
-  public void delete(Long id) {
-    repository.delete(id);
+  public void delete(Long spaceId, Long id) {
+    repository.delete(spaceId, id);
   }
 }

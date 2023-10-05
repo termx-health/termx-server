@@ -63,6 +63,12 @@ public class PageLinkRepository extends BaseRepository {
       sb.append("exists(select 1 from wiki.page p where pl.target_id = p.id").and().in("p.space_id", params.getSpaceIds(), Long::valueOf).append(")");
       sb.append(")");
     }
+    if (params.getPermittedSpaceIds() != null) {
+      sb.append("and (");
+      sb.append("exists(select 1 from wiki.page p where pl.source_id = p.id").and().in("p.space_id", params.getPermittedSpaceIds()).append(") and");
+      sb.append("exists(select 1 from wiki.page p where pl.target_id = p.id").and().in("p.space_id", params.getPermittedSpaceIds()).append(")");
+      sb.append(")");
+    }
     return sb;
   }
 
@@ -72,11 +78,13 @@ public class PageLinkRepository extends BaseRepository {
   }
 
   public List<PageLink> loadTargets(Long sourceId) {
-    return getBeans("select * from wiki.page_link pl where pl.sys_status = 'A' and pl.source_id != pl.target_id and pl.source_id = ? order by order_number", bp, sourceId);
+    return getBeans("select * from wiki.page_link pl where pl.sys_status = 'A' and pl.source_id != pl.target_id and pl.source_id = ? order by order_number", bp,
+        sourceId);
   }
 
   public List<PageLink> loadSources(Long targetId) {
-    return getBeans("select * from wiki.page_link pl where pl.sys_status = 'A' and pl.source_id != pl.target_id and pl.target_id = ? order by order_number", bp, targetId);
+    return getBeans("select * from wiki.page_link pl where pl.sys_status = 'A' and pl.source_id != pl.target_id and pl.target_id = ? order by order_number", bp,
+        targetId);
   }
 
 

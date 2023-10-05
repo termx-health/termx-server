@@ -4,8 +4,7 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
-import com.kodality.termx.auth.ResourceId;
-import com.kodality.termx.auth.UserPermissionService;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.association.AssociationTypeQueryParams;
 import io.micronaut.http.HttpResponse;
@@ -23,32 +22,32 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AssociationTypeController {
   private final AssociationTypeService associationTypeService;
-  private final UserPermissionService userPermissionService;
   private final AssociationTypeDeleteService associationTypeDeleteService;
 
   @Authorized(Privilege.AT_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<AssociationType> queryAssociationTypes(AssociationTypeQueryParams params) {
-    params.setPermittedCodes(userPermissionService.getPermittedResourceIds("AssociationType", "view"));
+    params.setPermittedCodes(SessionStore.require().getPermittedResourceIds(Privilege.AT_VIEW));
     return associationTypeService.query(params);
   }
 
   @Authorized(Privilege.AT_VIEW)
   @Get(uri = "/{code}")
-  public AssociationType getAssociationType(@PathVariable @ResourceId String code) {
+  public AssociationType getAssociationType(@PathVariable String code) {
     return associationTypeService.load(code).orElseThrow(() -> new NotFoundException("Association type not found: " + code));
   }
 
   @Authorized(Privilege.AT_EDIT)
   @Post
   public HttpResponse<?> createAssociationType(@Body @Valid AssociationType associationType) {
+    SessionStore.require().checkPermitted(associationType.getCode(), Privilege.AT_EDIT);
     associationTypeService.save(associationType);
     return HttpResponse.created(associationType);
   }
 
   @Authorized(Privilege.AT_EDIT)
   @Put("/{code}")
-  public HttpResponse<?> updateAssociationType(@PathVariable @ResourceId String code, @Body @Valid AssociationType associationType) {
+  public HttpResponse<?> updateAssociationType(@PathVariable String code, @Body @Valid AssociationType associationType) {
     associationType.setCode(code);
     associationTypeService.save(associationType);
     return HttpResponse.ok();
@@ -56,7 +55,7 @@ public class AssociationTypeController {
 
   @Authorized(Privilege.AT_PUBLISH)
   @Delete(uri = "/{code}")
-  public HttpResponse<?> deleteAssociationType(@PathVariable @ResourceId String code) {
+  public HttpResponse<?> deleteAssociationType(@PathVariable String code) {
     associationTypeDeleteService.delete(code);
     return HttpResponse.ok();
   }

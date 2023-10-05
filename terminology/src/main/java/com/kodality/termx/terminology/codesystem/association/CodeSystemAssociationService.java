@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.codesystem.association;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.codesystem.concept.ConceptRefreshViewJob;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityService;
 import com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionRepository;
@@ -33,16 +32,12 @@ public class CodeSystemAssociationService {
   private final ConceptRefreshViewJob conceptRefreshViewJob;
   private final CodeSystemEntityVersionRepository codeSystemEntityVersionRepository;
 
-  private final UserPermissionService userPermissionService;
-
   public List<CodeSystemAssociation> loadAll(Long sourceVersionId) {
     return repository.loadAll(sourceVersionId);
   }
 
   public List<CodeSystemAssociation> loadReferences(String codeSystem, Long targetVersionId) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "view");
-
-    return repository.loadReferences(targetVersionId);
+    return repository.loadReferences(codeSystem, targetVersionId);
   }
 
   public Optional<CodeSystemAssociation> load(Long id) {
@@ -51,8 +46,6 @@ public class CodeSystemAssociationService {
 
   @Transactional
   public void save(List<CodeSystemAssociation> associations, Long codeSystemEntityVersionId, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     repository.retain(associations, codeSystemEntityVersionId);
     if (associations != null) {
       associations.forEach(association -> save(association, codeSystemEntityVersionId, codeSystem));
@@ -61,7 +54,6 @@ public class CodeSystemAssociationService {
 
   @Transactional
   public void save(CodeSystemAssociation association, Long codeSystemEntityVersionId, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
     validate(association, codeSystemEntityVersionId);
 
     association.setCodeSystem(codeSystem);
@@ -73,8 +65,6 @@ public class CodeSystemAssociationService {
 
   @Transactional
   public void batchUpsert(Map<Long, List<CodeSystemAssociation>> associations, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     List<Entry<Long, List<CodeSystemAssociation>>> entries = associations.entrySet().stream().toList();
     validate(entries);
     repository.retain(entries);

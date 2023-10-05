@@ -1,7 +1,6 @@
 package com.kodality.termx.terminology.codesystem.entitypropertyvalue;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.termx.ts.codesystem.EntityPropertyValueQueryParams;
 import java.util.List;
@@ -18,8 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class EntityPropertyValueService {
   private final EntityPropertyValueRepository repository;
 
-  private final UserPermissionService userPermissionService;
-
   public List<EntityPropertyValue> loadAll(Long codeSystemEntityVersionId) {
     return repository.loadAll(codeSystemEntityVersionId);
   }
@@ -29,33 +26,27 @@ public class EntityPropertyValueService {
   }
 
   @Transactional
-  public void save(List<EntityPropertyValue> values, Long codeSystemEntityVersionId, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
+  public void save(List<EntityPropertyValue> values, Long codeSystemEntityVersionId) {
     repository.retain(values, codeSystemEntityVersionId);
     if (values != null) {
-      values.forEach(value -> save(value, codeSystemEntityVersionId, codeSystem));
+      values.forEach(value -> save(value, codeSystemEntityVersionId));
     }
   }
 
   @Transactional
-  public void batchUpsert(Map<Long, List<EntityPropertyValue>> values, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
+  public void batchUpsert(Map<Long, List<EntityPropertyValue>> values) {
     List<Entry<Long, List<EntityPropertyValue>>> entries = values.entrySet().stream().toList();
     repository.retain(entries);
     repository.save(entries.stream().flatMap(e -> e.getValue().stream().map(v -> Pair.of(e.getKey(), v))).toList());
   }
 
   @Transactional
-  public void save(EntityPropertyValue value, Long codeSystemEntityVersionId, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+  public void save(EntityPropertyValue value, Long codeSystemEntityVersionId) {
     repository.save(value, codeSystemEntityVersionId);
   }
 
   @Transactional
-  public void delete(Long propertyId, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
+  public void delete(Long propertyId) {
     repository.delete(propertyId);
   }
 

@@ -4,6 +4,7 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.micronaut.rest.MultipartBodyReader;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.sys.provenance.ProvenanceService;
 import com.kodality.termx.wiki.Privilege;
@@ -27,6 +28,7 @@ import io.micronaut.validation.Validated;
 import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -41,44 +43,51 @@ public class PageController {
   private final PageLinkService linkService;
   private final ProvenanceService provenanceService;
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.W_VIEW)
   @Get("/{id}")
   public Page getPage(@PathVariable Long id) {
-    return pageService.load(id).orElseThrow(() -> new NotFoundException("Page not found: " + id));
+    Page page = pageService.load(id).orElseThrow(() -> new NotFoundException("Page not found: " + id));
+    SessionStore.require().checkPermitted(page.getSpaceId().toString(), Privilege.W_VIEW);
+    return page;
   }
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(Privilege.W_VIEW)
   @Get("{?params*}")
   public QueryResult<Page> queryPages(PageQueryParams params) {
+    params.setPermittedSpaceIds(SessionStore.require().getPermittedResourceIds(Privilege.W_VIEW, Long::valueOf));
     return pageService.query(params);
   }
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(Privilege.W_VIEW)
   @Get("/tree")
-  public List<PageTreeItem> loadTree(@QueryValue Long spaceId) {
+  public List<PageTreeItem> loadTree(@NotNull @QueryValue Long spaceId) {
     return pageService.loadTree(spaceId);
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.W_EDIT)
   @Post
-  public HttpResponse<?> savePage(@Body @Valid PageRequest request) {
+  public HttpResponse<?> createPage(@Body @Valid PageRequest request) {
+    SessionStore.require().checkPermitted(request.getPage().getSpaceId().toString(), Privilege.W_EDIT);
+    request.getPage().setId(null);
     Page page = pageService.save(request.getPage(), request.getContent());
     provenanceService.create(new Provenance("created", "Page", page.getId().toString()));
     return HttpResponse.created(page);
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.W_EDIT)
   @Put("/{id}")
   public HttpResponse<?> updatePage(@PathVariable Long id, @Body @Valid PageRequest request) {
+    SessionStore.require().checkPermitted(request.getPage().getSpaceId().toString(), Privilege.W_EDIT);
     request.getPage().setId(id);
     Page page = pageService.save(request.getPage(), request.getContent());
     provenanceService.create(new Provenance("modified", "Page", page.getId().toString()));
     return HttpResponse.created(page);
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.W_EDIT)
   @Delete("/{id}")
   public HttpResponse<?> deletePage(@PathVariable Long id) {
+    validate(id, Privilege.W_EDIT);
     pageService.cancel(id);
     provenanceService.create(new Provenance("deleted", "Page", id.toString()));
     return HttpResponse.ok();
@@ -87,42 +96,47 @@ public class PageController {
 
   /* Content */
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.W_EDIT)
   @Post("/{id}/contents")
   public HttpResponse<?> savePageContent(@PathVariable Long id, @Body PageContent content) {
+    validate(id, Privilege.W_EDIT);
     contentService.save(content, id);
     provenanceService.create(new Provenance("modified", "Page", id.toString()));
     return HttpResponse.created(content);
   }
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.W_EDIT)
   @Put("/{id}/contents/{contentId}")
   public HttpResponse<?> updatePageContent(@PathVariable Long id, @PathVariable Long contentId, @Body PageContent content) {
+    validate(id, Privilege.W_EDIT);
     content.setId(contentId);
     contentService.save(content, id);
     provenanceService.create(new Provenance("modified", "Page", id.toString()));
     return HttpResponse.created(content);
   }
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.W_VIEW)
   @Get("/{id}/path")
   public List<Long> getPath(@PathVariable Long id) {
+    validate(id, Privilege.W_VIEW);
     return linkService.getPath(id);
   }
 
 
   /* Files */
 
-  @Authorized(Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.W_EDIT)
   @Post(value = "/{id}/files", consumes = MediaType.MULTIPART_FORM_DATA)
   public Map<String, PageAttachment> uploadFiles(@PathVariable Long id, @Body MultipartBody partz) {
+    validate(id, Privilege.W_EDIT);
     MultipartBodyReader.MultipartBody body = MultipartBodyReader.readMultipart(partz);
     return attachmentService.saveAttachments(id, body.getAttachments());
   }
 
-  @Authorized(Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.W_VIEW)
   @Get("/{id}/files")
   public List<PageAttachment> getFiles(@PathVariable Long id) {
+    validate(id, Privilege.W_VIEW);
     return attachmentService.getAttachments(id);
   }
 
@@ -132,15 +146,24 @@ public class PageController {
     return attachmentService.getAttachmentContent(id, fileName);
   }
 
+  @Authorized(privilege = Privilege.W_EDIT)
   @Delete("/{id}/files/{fileName}")
   public void deleteFile(@PathVariable Long id, @PathVariable String fileName) {
+    validate(id, Privilege.W_EDIT);
     attachmentService.deleteAttachmentContent(id, fileName);
+  }
+
+  private void validate(Long id, String privilege) {
+    Page page = pageService.load(id).orElseThrow(() -> new NotFoundException("Page not found: " + id));
+    SessionStore.require().checkPermitted(page.getSpaceId().toString(), privilege);
   }
 
   @Getter
   @Setter
   public static class PageRequest {
+    @Valid
     private Page page;
+    @Valid
     private PageContent content;
   }
 }

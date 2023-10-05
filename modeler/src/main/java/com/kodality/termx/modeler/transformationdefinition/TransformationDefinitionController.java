@@ -2,6 +2,7 @@ package com.kodality.termx.modeler.transformationdefinition;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.modeler.Privilege;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
 import com.kodality.termx.sys.provenance.Provenance;
@@ -35,19 +36,20 @@ public class TransformationDefinitionController {
   private final TransformerService transformerService;
   private final ProvenanceService provenanceService;
 
-  @Authorized(Privilege.M_VIEW)
+  @Authorized(Privilege.TD_VIEW)
   @Get(uri = "/{id}")
   public TransformationDefinition load(@PathVariable Long id) {
     return service.load(id);
   }
 
-  @Authorized(Privilege.M_VIEW)
+  @Authorized(Privilege.TD_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<TransformationDefinition> search(TransformationDefinitionQueryParams params) {
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.TD_VIEW, Long::valueOf));
     return service.search(params);
   }
 
-  @Authorized(Privilege.M_EDIT)
+  @Authorized(Privilege.TD_EDIT)
   @Post
   public TransformationDefinition create(@Valid @Body TransformationDefinition def) {
     def.setId(null);
@@ -56,7 +58,7 @@ public class TransformationDefinitionController {
     return def;
   }
 
-  @Authorized(Privilege.M_EDIT)
+  @Authorized(Privilege.TD_EDIT)
   @Put(uri = "/{id}")
   public TransformationDefinition update(@PathVariable Long id, @Valid @Body TransformationDefinition def) {
     def.setId(id);
@@ -65,7 +67,7 @@ public class TransformationDefinitionController {
     return def;
   }
 
-  @Authorized(Privilege.M_EDIT)
+  @Authorized(Privilege.TD_EDIT)
   @Delete(uri = "/{id}")
   public HttpResponse<?> delete(@PathVariable Long id) {
     service.delete(id);
@@ -73,41 +75,46 @@ public class TransformationDefinitionController {
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.M_EDIT)
+  @Authorized(Privilege.TD_EDIT)
   @Post(uri = "/{id}/duplicate")
   public TransformationDefinition duplicate(@PathVariable Long id) {
     return service.duplicate(id);
   }
 
+  @Authorized(Privilege.TD_VIEW)
   @Post("{id}/transform")
   public TransformationResult transformInstance(@PathVariable Long id, @Body InstanceTransformationRequest req) {
     return transformerService.transform(req.source, load(id));
   }
 
+  @Authorized
   @Post("/transform")
   public TransformationResult transform(@Body TransformationRequest req) {
     return transformerService.transform(req.source, req.definition);
   }
 
+  @Authorized
   @Post("/transform-resources")
   public String transformResources(@Body List<TransformationDefinitionResource> resources) {
     List<StructureDefinition> defs = transformerService.transformDefinitionResource(resources);
     return "[" +
-        defs.stream().map(r -> {
-          try {
-            return new JsonParser().setOutputStyle(OutputStyle.PRETTY).composeString(r);
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        }).collect(Collectors.joining(",")) +
-        "]";
+           defs.stream().map(r -> {
+             try {
+               return new JsonParser().setOutputStyle(OutputStyle.PRETTY).composeString(r);
+             } catch (IOException e) {
+               throw new RuntimeException(e);
+             }
+           }).collect(Collectors.joining(",")) +
+           "]";
   }
 
+  @Authorized
   @Post("/transform-resource-content")
   public String transformResourceContent(@Body TransformationDefinitionResource res) {
     return transformerService.getContent(res);
   }
 
+  @Authorized
   @Post("/parse-fml")
   public ParseResponse parse(@Body ParseRequest req) {
     try {
@@ -117,11 +124,13 @@ public class TransformationDefinitionController {
     }
   }
 
+  @Authorized
   @Post("/compose-fml")
   public FmlComposeResult composeFml(@Body TransformationDefinition definition) {
     return new FmlComposeResult(transformerService.composeFml(definition));
   }
 
+  @Authorized
   @Post("/generate-fml")
   public FmlGenerateResult generateFml(@Body FmlGenerateRequest req) {
     try {
@@ -132,7 +141,7 @@ public class TransformationDefinitionController {
     }
   }
 
-  @Authorized(Privilege.M_VIEW)
+  @Authorized(privilege = Privilege.TD_VIEW)
   @Get(uri = "/base-resources")
   public String loadBaseResources() {
     try {
@@ -141,7 +150,6 @@ public class TransformationDefinitionController {
       throw new RuntimeException(e);
     }
   }
-
 
   public record TransformationRequest(TransformationDefinition definition, String source) {}
 

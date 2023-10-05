@@ -26,8 +26,8 @@ public class PackageResourceService {
     return resource;
   }
 
-  public List<PackageResource> loadAll(String spaceCode, String packageCode, String version) {
-    return repository.loadAll(spaceCode, packageCode, version);
+  public List<PackageResource> loadAll(Long spaceId, String packageCode, String version) {
+    return repository.loadAll(spaceId, packageCode, version);
   }
 
   public PackageResource load(Long id) {

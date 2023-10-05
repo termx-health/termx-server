@@ -9,12 +9,7 @@ import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
 import com.kodality.termx.sys.space.diff.SpaceDiff;
-import com.kodality.termx.sys.space.diff.SpaceDiffRequest;
-import com.kodality.termx.sys.space.overview.SpaceOverviewRequest;
 import com.kodality.termx.sys.space.overview.SpaceOverviewResponse;
-import com.kodality.termx.sys.spacepackage.Package;
-import com.kodality.termx.sys.spacepackage.PackageService;
-import com.kodality.termx.sys.spacepackage.PackageTransactionRequest;
 import com.kodality.termx.utils.FileUtil;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.core.annotation.Nullable;
@@ -25,9 +20,9 @@ import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
+import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.reactivex.Flowable;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +34,6 @@ import org.reactivestreams.Publisher;
 @RequiredArgsConstructor
 public class SpaceController {
   private final SpaceService spaceService;
-  private final PackageService packageService;
   private final SpaceDiffService diffService;
   private final SpaceImportService importService;
   private final SpaceOverviewService overviewService;
@@ -47,59 +41,49 @@ public class SpaceController {
   private final ImportLogger importLogger;
   private static final String JOB_TYPE = "space-import";
 
-  @Authorized(Privilege.P_EDIT)
+  @Authorized(privilege = Privilege.S_EDIT)
   @Post()
   public Space create(@Valid @Body Space p) {
     p.setId(null);
     return spaceService.save(p);
   }
 
-  @Authorized(Privilege.P_EDIT)
+  @Authorized(Privilege.S_EDIT)
   @Put("{id}")
   public Space update(@Parameter Long id, @Valid @Body Space p) {
     p.setId(id);
     return spaceService.save(p);
   }
 
-  @Authorized(Privilege.P_VIEW)
+  @Authorized(Privilege.S_VIEW)
   @Get("{id}")
   public Space load(@Parameter Long id) {
     return spaceService.load(id);
   }
 
-  @Authorized(Privilege.P_VIEW)
+  @Authorized(Privilege.S_VIEW)
   @Get("/{?params*}")
   public QueryResult<Space> search(SpaceQueryParams params) {
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.S_VIEW, Long::valueOf));
     return spaceService.query(params);
   }
 
-  @Authorized(Privilege.P_VIEW)
-  @Get("/{id}/packages")
-  public List<Package> loadPackages(@Parameter Long id) {
-    return packageService.loadAll(id);
+  @Authorized(Privilege.S_VIEW)
+  @Get("/{id}/overview")
+  public SpaceOverviewResponse overview(@Parameter Long id, @QueryValue String packageCode, @QueryValue String version) {
+    return overviewService.compose(id, packageCode, version);
   }
 
-  @Authorized(Privilege.P_EDIT)
-  @Post("/{id}/packages")
-  public Package savePackage(@Parameter Long id, @Body PackageTransactionRequest request) {
-    return packageService.save(request, id);
+  @Authorized(Privilege.S_VIEW)
+  @Get("/{id}/diff")
+  public SpaceDiff diff(@Parameter Long id, @QueryValue String packageCode, @QueryValue String version) {
+    return diffService.findDiff(id, packageCode, version);
   }
 
-  @Authorized(Privilege.P_VIEW)
-  @Post("/overview")
-  public SpaceOverviewResponse overview(@Valid @Body SpaceOverviewRequest request) {
-    return overviewService.compose(request);
-  }
-
-  @Authorized(Privilege.P_VIEW)
-  @Post("/diff")
-  public SpaceDiff diff(@Valid @Body SpaceDiffRequest request) {
-    return diffService.findDiff(request);
-  }
-
-  @Authorized(Privilege.P_EDIT)
+  @Authorized(privilege = Privilege.S_EDIT)
   @Post(value = "/sync", consumes = MediaType.MULTIPART_FORM_DATA)
   public HttpResponse<?> importSpace(@Nullable Publisher<CompletedFileUpload> file) {
+    //TODO: auth?
     JobLogResponse job = importLogger.createJob(JOB_TYPE);
     if (file == null) {
       return HttpResponse.badRequest();

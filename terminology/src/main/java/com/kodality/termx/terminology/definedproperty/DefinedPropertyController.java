@@ -4,7 +4,6 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
-import com.kodality.termx.auth.ResourceId;
 import com.kodality.termx.ts.property.DefinedProperty;
 import com.kodality.termx.ts.property.DefinedPropertyQueryParams;
 import io.micronaut.http.HttpResponse;
@@ -22,19 +21,19 @@ import lombok.RequiredArgsConstructor;
 public class DefinedPropertyController {
   private final DefinedPropertyService service;
 
-  @Authorized(Privilege.CS_VIEW)
+  @Authorized(privilege = Privilege.CS_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<DefinedProperty> query(DefinedPropertyQueryParams params) {
     return service.query(params);
   }
 
-  @Authorized(Privilege.CS_VIEW)
+  @Authorized(privilege = Privilege.CS_VIEW)
   @Get(uri = "/{id}")
   public DefinedProperty load(@PathVariable Long id) {
     return service.load(id).orElseThrow(() -> new NotFoundException("Defined entity property not found: " + id));
   }
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(privilege = Privilege.CS_EDIT)
   @Post
   public HttpResponse<?> create(@Body @Valid DefinedProperty entityProperty) {
     entityProperty.setId(null);
@@ -42,9 +41,9 @@ public class DefinedPropertyController {
     return HttpResponse.created(entityProperty);
   }
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(privilege = Privilege.CS_EDIT)
   @Put("/{id}")
-  public HttpResponse<?> update(@PathVariable @ResourceId Long id, @Body @Valid DefinedProperty entityProperty) {
+  public HttpResponse<?> update(@PathVariable Long id, @Body @Valid DefinedProperty entityProperty) {
     entityProperty.setId(id);
     service.save(entityProperty);
     return HttpResponse.ok();

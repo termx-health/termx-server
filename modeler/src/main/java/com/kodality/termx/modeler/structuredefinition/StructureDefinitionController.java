@@ -3,6 +3,7 @@ package com.kodality.termx.modeler.structuredefinition;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.modeler.Privilege;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
@@ -19,32 +20,34 @@ import lombok.RequiredArgsConstructor;
 public class StructureDefinitionController {
   private final StructureDefinitionService service;
 
-  @Authorized(Privilege.M_VIEW)
+  @Authorized(Privilege.SD_VIEW)
   @Get(uri = "/{id}")
   public StructureDefinition getStructureDefinition(@PathVariable Long id) {
     return service.load(id).orElseThrow(() -> new NotFoundException("Structure definition not found: " + id));
   }
 
-  @Authorized(Privilege.M_VIEW)
+  @Authorized(Privilege.SD_VIEW)
   @Get(uri = "{?params*}")
   public QueryResult<StructureDefinition> queryStructureDefinitions(StructureDefinitionQueryParams params) {
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.SD_VIEW, Long::valueOf));
     return service.query(params);
   }
 
-  @Authorized(Privilege.M_EDIT)
+  @Authorized(Privilege.SD_EDIT)
   @Post
   public HttpResponse<?> saveStructureDefinition(@Body StructureDefinition structureDefinition) {
+    structureDefinition.setId(null);
     return HttpResponse.created(service.save(structureDefinition));
   }
 
-  @Authorized(Privilege.M_EDIT)
+  @Authorized(Privilege.SD_EDIT)
   @Put(uri = "/{id}")
-  public HttpResponse<?> updateStructureDefinition(@PathVariable Long id,@Body StructureDefinition structureDefinition) {
+  public HttpResponse<?> updateStructureDefinition(@PathVariable Long id, @Body StructureDefinition structureDefinition) {
     structureDefinition.setId(id);
     return HttpResponse.created(service.save(structureDefinition));
   }
 
-  @Authorized(Privilege.M_EDIT)
+  @Authorized(Privilege.SD_EDIT)
   @Delete(uri = "/{id}")
   public HttpResponse<?> deleteStructureDefinition(@PathVariable Long id) {
     service.cancel(id);

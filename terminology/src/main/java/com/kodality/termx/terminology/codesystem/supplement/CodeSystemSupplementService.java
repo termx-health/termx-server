@@ -1,6 +1,5 @@
 package com.kodality.termx.terminology.codesystem.supplement;
 
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.terminology.codesystem.designation.DesignationService;
 import com.kodality.termx.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.codesystem.entitypropertyvalue.EntityPropertyValueService;
@@ -24,8 +23,6 @@ public class CodeSystemSupplementService {
   private final EntityPropertyService entityPropertyService;
   private final EntityPropertyValueService entityPropertyValueService;
 
-  private final UserPermissionService userPermissionService;
-
   public List<CodeSystemSupplement> getSupplements(String codeSystem) {
     return repository.getSupplements(codeSystem);
   }
@@ -36,11 +33,9 @@ public class CodeSystemSupplementService {
 
   @Transactional
   public void save(CodeSystemSupplement supplement, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     if (supplement.getTargetType().equals(CodeSystemSupplementType.property)) {
       EntityProperty property = (EntityProperty) supplement.getTarget();
-      entityPropertyService.save(property, codeSystem);
+      entityPropertyService.save(codeSystem, property);
       supplement.setTarget(property);
     }
     supplement.setCodeSystem(codeSystem);
@@ -50,16 +45,14 @@ public class CodeSystemSupplementService {
 
   @Transactional
   public void save(CodeSystemSupplement supplement, Long codeSystemEntityVersionId, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     if (supplement.getTargetType().equals(CodeSystemSupplementType.propertyValue)) {
       EntityPropertyValue propertyValue = (EntityPropertyValue) supplement.getTarget();
-      entityPropertyValueService.save(propertyValue, codeSystemEntityVersionId, supplement.getCodeSystem());
+      entityPropertyValueService.save(propertyValue, codeSystemEntityVersionId);
       supplement.setTarget(propertyValue);
     }
     if (supplement.getTargetType().equals(CodeSystemSupplementType.designation)) {
       Designation designation = (Designation) supplement.getTarget();
-      designationService.save(designation, codeSystemEntityVersionId, supplement.getCodeSystem());
+      designationService.save(designation, codeSystemEntityVersionId);
       supplement.setTarget(designation);
     }
     supplement.setCodeSystem(codeSystem);
@@ -69,7 +62,7 @@ public class CodeSystemSupplementService {
 
   private CodeSystemSupplement decorate(CodeSystemSupplement supplement) {
     if (CodeSystemSupplementType.property.equals(supplement.getTargetType())) {
-      supplement.setTarget(entityPropertyService.load(((EntityProperty) supplement.getTarget()).getId()).orElse(null));
+      supplement.setTarget(entityPropertyService.load(supplement.getCodeSystem(), ((EntityProperty) supplement.getTarget()).getId()).orElse(null));
     }
     if (CodeSystemSupplementType.propertyValue.equals(supplement.getTargetType())) {
       supplement.setTarget(entityPropertyValueService.load(((EntityPropertyValue) supplement.getTarget()).getId()).orElse(null));

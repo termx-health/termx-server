@@ -2,7 +2,6 @@ package com.kodality.termx.sys.server;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,11 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TerminologyServerService {
   private final TerminologyServerRepository repository;
-  private final UserPermissionService userPermissionService;
 
   @Transactional
   public TerminologyServer save(TerminologyServer server) {
-    userPermissionService.checkPermitted(server.getCode(), "TerminologyServer", "edit");
     validate(server);
     repository.save(server);
     return server;

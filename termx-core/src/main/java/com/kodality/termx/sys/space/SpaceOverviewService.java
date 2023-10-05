@@ -6,7 +6,6 @@ import com.kodality.termx.sys.server.TerminologyServer;
 import com.kodality.termx.sys.server.TerminologyServerService;
 import com.kodality.termx.sys.space.overview.SpaceOverview;
 import com.kodality.termx.sys.space.overview.SpaceOverview.SpaceOverviewPackage;
-import com.kodality.termx.sys.space.overview.SpaceOverviewRequest;
 import com.kodality.termx.sys.space.overview.SpaceOverviewResponse;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import com.kodality.termx.sys.spacepackage.resource.PackageResourceService;
@@ -23,17 +22,19 @@ import static java.util.stream.Collectors.toList;
 @Singleton
 @RequiredArgsConstructor
 public class SpaceOverviewService {
+  private final SpaceService spaceService;
   private final PackageResourceService packageResourceService;
   private final TerminologyServerService terminologyServerService;
 
-  public SpaceOverviewResponse compose(SpaceOverviewRequest request) {
+  public SpaceOverviewResponse compose(Long spaceId, String packageCode, String version) {
+    Space space = spaceService.load(spaceId);
     SpaceOverview overview = new SpaceOverview();
-    overview.setCode(request.getSpaceCode());
-    if (request.getPackageCode() != null) {
-      overview.setPack(new SpaceOverviewPackage().setCode(request.getPackageCode()).setVersion(request.getVersion()));
+    overview.setCode(space.getCode());
+    if (packageCode != null) {
+      overview.setPack(new SpaceOverviewPackage().setCode(packageCode).setVersion(version));
     }
 
-    List<PackageResource> resources = packageResourceService.loadAll(request.getSpaceCode(), request.getPackageCode(), request.getVersion());
+    List<PackageResource> resources = packageResourceService.loadAll(spaceId, packageCode, version);
     overview.setCodeSystem(getResourceIds(resources, "code-system"));
     overview.setValueSet(getResourceIds(resources, "value-set"));
     overview.setMapSet(getResourceIds(resources, "map-set"));

@@ -64,7 +64,7 @@ public class SpaceGithubDataValueSetFhirHandler implements SpaceGithubDataHandle
       String version = ids[1];
       if (c == null) {
         valueSetVersionService.load(vsId, version).ifPresent(vsv -> {
-          valueSetVersionService.cancel(vsv.getId(), vsv.getValueSet());
+          valueSetVersionService.cancel(vsv.getId());
         });
         return;
       }

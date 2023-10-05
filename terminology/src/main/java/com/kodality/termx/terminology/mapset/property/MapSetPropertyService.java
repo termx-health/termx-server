@@ -2,7 +2,6 @@ package com.kodality.termx.terminology.mapset.property;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
-import com.kodality.termx.auth.UserPermissionService;
 import com.kodality.termx.ts.mapset.MapSetProperty;
 import com.kodality.termx.ts.mapset.MapSetPropertyQueryParams;
 import java.time.OffsetDateTime;
@@ -17,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MapSetPropertyService {
   private final MapSetPropertyRepository repository;
-  private final UserPermissionService userPermissionService;
 
   public Optional<MapSetProperty> load(Long id) {
     return Optional.ofNullable(repository.load(id));
@@ -41,8 +39,6 @@ public class MapSetPropertyService {
 
   @Transactional
   public List<MapSetProperty> save(List<MapSetProperty> properties, String codeSystem) {
-    userPermissionService.checkPermitted(codeSystem, "CodeSystem", "edit");
-
     validate(properties, codeSystem);
 
     repository.retain(properties, codeSystem);
@@ -70,8 +66,6 @@ public class MapSetPropertyService {
 
   @Transactional
   public MapSetProperty save(MapSetProperty property, String mapSet) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
-
     property.setCreated(property.getCreated() == null ? OffsetDateTime.now() : property.getCreated());
     repository.save(property, mapSet);
     return property;
@@ -79,8 +73,6 @@ public class MapSetPropertyService {
 
   @Transactional
   public void cancel(Long id, String mapSet) {
-    userPermissionService.checkPermitted(mapSet, "MapSet", "edit");
-
     if (checkPropertyUsed(id)) {
       throw ApiError.TE203.toApiException();
     }

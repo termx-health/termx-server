@@ -11,7 +11,6 @@ import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams.Ordering;
-import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
@@ -86,9 +85,7 @@ public class ValueSetRepository extends BaseRepository {
     sb.appendIfNotNull("and vs.id = ?", params.getId());
     sb.appendIfNotNull("and vs.id ~* ?", params.getIdContains());
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("vs.id", p));
-    if (CollectionUtils.isNotEmpty(params.getPermittedIds())) {
-      sb.and().in("vs.id", params.getPermittedIds());
-    }
+    sb.and().in("vs.id", params.getPermittedIds());
     sb.appendIfNotNull("and vs.uri = ?", params.getUri());
     sb.appendIfNotNull("and vs.uri ~* ?", params.getUriContains());
     sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%`' || terminology.search_translate(?) || '`%'", params.getDescription());

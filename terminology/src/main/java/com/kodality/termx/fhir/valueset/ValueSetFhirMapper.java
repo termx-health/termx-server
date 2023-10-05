@@ -4,6 +4,8 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
@@ -351,6 +353,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       }
     });
     params.setDecorated(true);
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
     return params;
   }
 

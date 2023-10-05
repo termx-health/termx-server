@@ -4,6 +4,8 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.sys.provenance.Provenance;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
@@ -357,6 +359,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
       }
     });
     params.setVersionsDecorated(true);
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.MS_VIEW));
     return params;
   }
 }

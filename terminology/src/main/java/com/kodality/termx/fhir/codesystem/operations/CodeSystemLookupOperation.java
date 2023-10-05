@@ -5,6 +5,8 @@ import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
@@ -76,6 +78,7 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
         .setVersionReleaseDateGe(date)
         .setVersionExpirationDateLe(date)
         .setVersionsDecorated(true).setConceptsDecorated(true).setPropertiesDecorated(true)
+        .setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW))
         .limit(1);
     CodeSystem cs = codeSystemService.query(csParams).findFirst()
         .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "Concept not found"));

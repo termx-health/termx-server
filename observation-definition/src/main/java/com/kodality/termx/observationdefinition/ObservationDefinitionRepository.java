@@ -75,6 +75,7 @@ public class ObservationDefinitionRepository extends BaseRepository {
   private SqlBuilder filter(ObservationDefinitionSearchParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.append("where od.sys_status = 'A'");
+    sb.and().in("od.id", params.getPermittedIds());
     if (StringUtils.isNotEmpty(params.getCodes())) {
       sb.and("(")
           .in("od.code", params.getCodes())

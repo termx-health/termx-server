@@ -50,9 +50,10 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     return getBeans(sql, bp, sourceVersionId);
   }
 
-  public List<CodeSystemAssociation> loadReferences(Long targetVersionId) {
-    String sql = select + "from terminology.code_system_association csa where csa.sys_status = 'A' and csa.target_code_system_entity_version_id = ?";
-    return getBeans(sql, bp, targetVersionId);
+  public List<CodeSystemAssociation> loadReferences(String codeSystem, Long targetVersionId) {
+    String sql = select + "from terminology.code_system_association csa where csa.sys_status = 'A'" +
+                 " and code_system = ? and csa.target_code_system_entity_version_id = ?";
+    return getBeans(sql, bp, codeSystem, targetVersionId);
   }
 
   public CodeSystemAssociation load(Long id) {
