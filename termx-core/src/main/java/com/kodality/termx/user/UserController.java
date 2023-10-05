@@ -1,5 +1,6 @@
 package com.kodality.termx.user;
 
+import com.kodality.termx.auth.Authorized;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.validation.Validated;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
   private final UserProvider userProvider;
 
+  @Authorized("*.Users.view")
   @Get()
   public List<User> loadAll() {
     //TODO: auth
