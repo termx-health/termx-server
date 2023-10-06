@@ -1,6 +1,8 @@
 package com.kodality.termx.terminology.mapset;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.ApiError;
+import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termx.terminology.mapset.property.MapSetPropertyService;
 import com.kodality.termx.terminology.mapset.version.MapSetVersionService;
@@ -12,6 +14,7 @@ import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,7 @@ public class MapSetService {
 
   @Transactional
   public void save(MapSet mapSet) {
+    validateId(mapSet.getId());
     repository.save(mapSet);
     mapSetPropertyService.save(mapSet.getProperties(), mapSet.getId());
   }
@@ -43,6 +47,7 @@ public class MapSetService {
   @Transactional
   public void save(MapSetTransactionRequest request) {
     MapSet mapSet = request.getMapSet();
+    validateId(mapSet.getId());
     repository.save(mapSet);
     mapSetPropertyService.save(request.getProperties(), mapSet.getId());
 
@@ -85,6 +90,13 @@ public class MapSetService {
 
   @Transactional
   public void changeId(String currentId, String newId) {
+    validateId(newId);
     repository.changeId(currentId, newId);
+  }
+
+  private void validateId(String id) {
+    if (id.contains(BaseFhirMapper.SEPARATOR)) {
+      throw ApiError.TE113.toApiException(Map.of("symbols", BaseFhirMapper.SEPARATOR));
+    }
   }
 }

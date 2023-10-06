@@ -2,6 +2,7 @@ package com.kodality.termx.terminology.valueset;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
+import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
@@ -11,6 +12,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -33,12 +35,14 @@ public class ValueSetService {
 
   @Transactional
   public void save(ValueSet valueSet) {
+    validateId(valueSet.getId());
     repository.save(valueSet);
   }
 
   @Transactional
   public void save(ValueSetTransactionRequest request) {
     ValueSet valueSet = request.getValueSet();
+    validateId(valueSet.getId());
     repository.save(valueSet);
 
     ValueSetVersion version = request.getVersion();
@@ -81,6 +85,13 @@ public class ValueSetService {
 
   @Transactional
   public void changeId(String currentId, String newId) {
+    validateId(newId);
     repository.changeId(currentId, newId);
+  }
+
+  private void validateId(String id) {
+    if (id.contains(BaseFhirMapper.SEPARATOR)) {
+      throw ApiError.TE113.toApiException(Map.of("symbols", BaseFhirMapper.SEPARATOR));
+    }
   }
 }

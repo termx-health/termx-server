@@ -2,6 +2,7 @@ package com.kodality.termx.terminology.codesystem;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
+import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.codesystem.version.CodeSystemVersionService;
@@ -18,6 +19,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersionRuleType;
 import jakarta.inject.Singleton;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,7 @@ public class CodeSystemService {
 
   @Transactional
   public void save(CodeSystem codeSystem) {
+    validateId(codeSystem.getId());
     repository.save(codeSystem);
     entityPropertyService.save(codeSystem.getId(), codeSystem.getProperties());
   }
@@ -40,6 +43,7 @@ public class CodeSystemService {
   @Transactional
   public void save(CodeSystemTransactionRequest request) {
     CodeSystem codeSystem = request.getCodeSystem();
+    validateId(codeSystem.getId());
     repository.save(codeSystem);
 
     entityPropertyService.save(codeSystem.getId(), request.getProperties());
@@ -125,6 +129,13 @@ public class CodeSystemService {
 
   @Transactional
   public void changeId(String currentId, String newId) {
+    validateId(newId);
     repository.changeId(currentId, newId);
+  }
+
+  private void validateId(String id) {
+    if (id.contains(BaseFhirMapper.SEPARATOR)) {
+      throw ApiError.TE113.toApiException(Map.of("symbols", BaseFhirMapper.SEPARATOR));
+    }
   }
 }

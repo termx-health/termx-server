@@ -67,7 +67,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   // -------------- TO FHIR --------------
 
   public static String toFhirId(CodeSystem cs, CodeSystemVersion csv) {
-    return cs.getId() + "." + csv.getVersion();
+    return cs.getId() + BaseFhirMapper.SEPARATOR + csv.getVersion();
   }
 
   public static String toFhirJson(CodeSystem cs, CodeSystemVersion csv, List<Provenance> provenances) {

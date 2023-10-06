@@ -19,6 +19,7 @@ public enum ApiError {
   TE110("TE110", "Code system '{{cs}}' does not exist."),
   TE111("TE111", "Value set '{{vs}}' does not exist."),
   TE112("TE112", "Package version not found for space '{{space}}' and package '{{package}}'."),
+  TE113("TE113", "Id is not allowed to contain '{{symbols}}'"),
   TE201("TE201", "Code system '{{codeSystem}}' not found."),
   TE202("TE202", "Version '{{version}}' of code system '{{codeSystem}}' doesn't exist."),
   TE203("TE203", "Property '{{propertyName}}' is used, can't be deleted."),

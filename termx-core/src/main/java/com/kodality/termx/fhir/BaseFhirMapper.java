@@ -22,14 +22,15 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public abstract class BaseFhirMapper {
+  public static final String SEPARATOR = "--";
 
   public static String[] parseCompositeId(String id) {
     id = URLDecoder.decode(id, StandardCharsets.UTF_8);
-    if (!id.contains(".")) {
+    if (!id.contains(SEPARATOR)) {
       return new String[]{id, null};
     }
-    String one = StringUtils.substringBefore(id, ".");
-    String two = StringUtils.substringAfter(id, ".");
+    String one = StringUtils.substringBefore(id, SEPARATOR);
+    String two = StringUtils.substringAfter(id, SEPARATOR);
     return new String[]{one, StringUtils.isEmpty(two) ? null : two};
   }
 

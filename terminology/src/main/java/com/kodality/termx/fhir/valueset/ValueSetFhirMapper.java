@@ -75,7 +75,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   // -------------- TO FHIR --------------
 
   public static String toFhirId(ValueSet vs, ValueSetVersion vsv) {
-    return vs.getId() + "." + vsv.getVersion();
+    return vs.getId() + BaseFhirMapper.SEPARATOR + vsv.getVersion();
   }
 
   public static String toFhirJson(ValueSet vs, ValueSetVersion vsv, List<Provenance> provenances) {
