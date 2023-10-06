@@ -16,7 +16,23 @@ public class TerminologyServer {
   private String code;
   private LocalizedName names;
   private String rootUrl;
+  private List<TerminologyServerHeader> headers;
+  private TerminologyServerAuthConfig authConfig;
   private List<String> kind;
   private boolean active;
   private boolean currentInstallation;
+
+  @Getter
+  @Setter
+  public static class TerminologyServerHeader{
+    private String key;
+    private String value;
+  }
+  @Getter
+  @Setter
+  public static class TerminologyServerAuthConfig {
+    private String accessTokenUrl;
+    private String clientId;
+    private String clientSecret;
+  }
 }

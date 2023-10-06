@@ -30,6 +30,6 @@ public class PackageResourceSyncService {
         .findFirst()
         .orElseThrow(ApiError.TC102::toApiException);
 
-    provider.syncFrom(server.getRootUrl(), resource.getResourceId());
+    provider.syncFrom(server.getId(), resource.getResourceId());
   }
 }

@@ -20,9 +20,9 @@ public class TerminologyServerResourceService {
     TerminologyServerResourceProvider provider = resourceProviders.stream()
         .filter(p -> p.getType().equals(request.getResourceType()))
         .findFirst()
-        .orElseThrow(ApiError.TC102::toApiException);
+        .orElseThrow(() -> ApiError.TC102.toApiException());
 
-    Object resource = provider.getResource(server.getRootUrl(), request.getResourceId());
+    Object resource = provider.getResource(server.getId(), request.getResourceId());
     return new TerminologyServerResourceResponse().setResource(JsonUtil.toPrettyJson(resource));
   }
 }

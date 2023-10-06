@@ -27,3 +27,12 @@ alter table sys.terminology_server add column kind jsonb;
 update sys.terminology_server set kind = '["terminology"]'::jsonb;
 alter table sys.terminology_server alter column kind set not null;
 --
+
+--changeset kodality:terminology_server-headers
+alter table sys.terminology_server add column headers jsonb;
+--
+
+--changeset kodality:terminology_server-auth
+alter table sys.terminology_server add column auth_config jsonb;
+--
+

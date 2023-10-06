@@ -43,6 +43,7 @@ public class TransformationDefinition {
   @Setter
   public static class TransformationDefinitionResourceReference {
     private String localId;
+    private Long resourceServerId;
     private String resourceUrl;
     private String content;
   }

@@ -6,6 +6,8 @@ import com.kodality.termx.fhir.conceptmap.ConceptMapResourceStorage;
 import com.kodality.termx.modeler.ApiError;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
+import com.kodality.termx.sys.server.TerminologyServerHttpClientService;
+import com.kodality.termx.sys.server.TerminologyServerService;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.io.ResourceLoader;
 import jakarta.inject.Singleton;
@@ -46,6 +48,8 @@ public class TransformerService {
   private final ConceptMapResourceStorage conceptMapFhirService;
   private final TransformationDefinitionService structureMapService;
   private final ResourceLoader resourceLoader;
+  private final TerminologyServerService terminologyServerService;
+  private final TerminologyServerHttpClientService httpClientService;
   private final HttpClient httpClient = new HttpClient();
   private ValidationEngine engine;
   @Value("${micronaut.server.port}")
@@ -144,7 +148,7 @@ public class TransformerService {
   public String getContent(TransformationDefinitionResource res) {
     return switch (res.getSource()) {
       case "static" -> res.getReference().getContent();
-      case "url" -> queryResource(res.getReference().getResourceUrl());
+      case "url" -> queryResource(res.getReference().getResourceUrl(), res.getReference().getResourceServerId());
       case "local" -> switch (res.getType()) {
         case "definition" -> structureDefinitionService.load(Long.valueOf(res.getReference().getLocalId())).orElseThrow().getContent();
         case "conceptmap" -> conceptMapFhirService.load(res.getReference().getLocalId()).getContent().getValue();
@@ -162,8 +166,9 @@ public class TransformerService {
     };
   }
 
-  private String queryResource(String url) {
-    return httpClient.GET(url).thenApply(HttpResponse::body).exceptionally(e -> {
+  private String queryResource(String path, Long serverId) {
+    HttpClient client = serverId == null ? httpClient : httpClientService.getHttpClient(serverId).join();
+    return client.GET(path).thenApply(HttpResponse::body).exceptionally(e -> {
       if (e.getCause() instanceof HttpClientError err) {
         if (300 <= err.getResponse().statusCode() && err.getResponse().statusCode() < 400) {
           throw ApiError.MO101.toApiException();

@@ -6,6 +6,8 @@ import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
+import com.kodality.termx.sys.server.TerminologyServer.TerminologyServerHeader;
 import java.util.Arrays;
 import java.util.List;
 import javax.inject.Singleton;
@@ -16,6 +18,8 @@ public class TerminologyServerRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(TerminologyServer.class, bp -> {
     bp.addColumnProcessor("names", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("kind", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("headers", PgBeanProcessor.fromJson(JsonUtil.getListType(TerminologyServerHeader.class)));
+    bp.addColumnProcessor("auth_config", PgBeanProcessor.fromJson());
   });
 
   public void save(TerminologyServer server) {
@@ -25,6 +29,8 @@ public class TerminologyServerRepository extends BaseRepository {
     ssb.jsonProperty("names", server.getNames());
     ssb.jsonProperty("kind", server.getKind());
     ssb.property("root_url", server.getRootUrl());
+    ssb.jsonProperty("headers", server.getHeaders());
+    ssb.jsonProperty("auth_config", server.getAuthConfig());
     ssb.property("active", server.isActive());
     ssb.property("current_installation", server.isCurrentInstallation());
 
