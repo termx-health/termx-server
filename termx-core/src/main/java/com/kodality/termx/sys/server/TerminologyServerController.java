@@ -2,6 +2,7 @@ package com.kodality.termx.sys.server;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceRequest;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceResponse;
 import io.micronaut.context.annotation.Parameter;
@@ -46,10 +47,22 @@ public class TerminologyServerController {
     return serverService.load(id);
   }
 
-  @Authorized("TerminologyServer.edit")
+  @Authorized()
   @Get("/{?params*}")
   public QueryResult<TerminologyServer> search(TerminologyServerQueryParams params) {
-    return serverService.query(params);
+    QueryResult<TerminologyServer> query = serverService.query(params);
+    if (!SessionStore.require().hasPrivilege("TerminologyServer.edit")) {
+      return query.map(s -> new TerminologyServer()
+          .setId(s.getId())
+          .setCode(s.getCode())
+          .setNames(s.getNames())
+          .setRootUrl(s.getRootUrl())
+          .setKind(s.getKind())
+          .setActive(s.isActive())
+          .setCurrentInstallation(s.isCurrentInstallation())
+      );
+    }
+    return query;
   }
 
   @Authorized("TerminologyServer.edit")
