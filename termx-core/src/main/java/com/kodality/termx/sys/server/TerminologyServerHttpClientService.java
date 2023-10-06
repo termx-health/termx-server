@@ -16,7 +16,7 @@ public class TerminologyServerHttpClientService {
 
   public TerminologyServerHttpClientService(TerminologyServerService serverService) {
     this.serverService = serverService;
-    cache.initCache("http-client", 25, 600);
+    cache.initCache("http-client", 25, 60);
   }
 
   public CompletableFuture<ServerHttpClientConfig> getConfig(Long serverId) {
