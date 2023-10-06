@@ -4,7 +4,7 @@ import com.kodality.termx.fhir.conceptmap.ConceptMapFhirImportService;
 import com.kodality.termx.sys.ResourceType;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceProvider;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceSyncProvider;
-import com.kodality.termx.terminology.TerminologyServerFhirClientService;
+import com.kodality.termx.terminology.FhirServerHttpClientService;
 import com.kodality.termx.ts.mapset.MapSetImportAction;
 import com.kodality.zmei.fhir.client.FhirClient;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 @Singleton
 @RequiredArgsConstructor
 public class TerminologyServerConceptMapProvider implements TerminologyServerResourceProvider, TerminologyServerResourceSyncProvider {
-  private final TerminologyServerFhirClientService fhirClientService;
+  private final FhirServerHttpClientService fhirClientService;
   private final ConceptMapFhirImportService importService;
 
   @Override
@@ -24,13 +24,13 @@ public class TerminologyServerConceptMapProvider implements TerminologyServerRes
 
   @Override
   public Object getResource(Long serverId, String resourceId) {
-    FhirClient client = fhirClientService.getFhirClient(serverId).join();
+    FhirClient client = fhirClientService.getHttpClient(serverId);
     return client.read("ConceptMap", resourceId).join();
   }
 
   @Override
   public void syncFrom(Long serverId, String resourceId) {
-    FhirClient client = fhirClientService.getFhirClient(serverId).join();
+    FhirClient client = fhirClientService.getHttpClient(serverId);
     ConceptMap conceptMap = client.<ConceptMap>read("ConceptMap", resourceId).join();
     importService.importMapSet(conceptMap, new MapSetImportAction());
   }

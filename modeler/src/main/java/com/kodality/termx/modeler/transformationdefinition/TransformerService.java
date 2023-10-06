@@ -6,8 +6,7 @@ import com.kodality.termx.fhir.conceptmap.ConceptMapResourceStorage;
 import com.kodality.termx.modeler.ApiError;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
-import com.kodality.termx.sys.server.TerminologyServerHttpClientService;
-import com.kodality.termx.sys.server.TerminologyServerService;
+import com.kodality.termx.sys.server.httpclient.TerminologyServerHttpClientService;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.io.ResourceLoader;
 import jakarta.inject.Singleton;
@@ -48,7 +47,6 @@ public class TransformerService {
   private final ConceptMapResourceStorage conceptMapFhirService;
   private final TransformationDefinitionService structureMapService;
   private final ResourceLoader resourceLoader;
-  private final TerminologyServerService terminologyServerService;
   private final TerminologyServerHttpClientService httpClientService;
   private final HttpClient httpClient = new HttpClient();
   private ValidationEngine engine;
@@ -167,7 +165,7 @@ public class TransformerService {
   }
 
   private String queryResource(String path, Long serverId) {
-    HttpClient client = serverId == null ? httpClient : httpClientService.getHttpClient(serverId).join();
+    HttpClient client = serverId == null ? httpClient : httpClientService.getHttpClient(serverId);
     return client.GET(path).thenApply(HttpResponse::body).exceptionally(e -> {
       if (e.getCause() instanceof HttpClientError err) {
         if (300 <= err.getResponse().statusCode() && err.getResponse().statusCode() < 400) {

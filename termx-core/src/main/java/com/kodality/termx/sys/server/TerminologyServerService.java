@@ -2,6 +2,8 @@ package com.kodality.termx.sys.server;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ApiError;
+import com.kodality.termx.sys.server.httpclient.ServerHttpClientProvider;
+import java.util.List;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,11 +12,17 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TerminologyServerService {
   private final TerminologyServerRepository repository;
+  private final List<ServerHttpClientProvider> httpClientServices;
+
+  public List<String> getKinds() {
+    return httpClientServices.stream().map(ServerHttpClientProvider::getKind).distinct().toList();
+  }
 
   @Transactional
   public TerminologyServer save(TerminologyServer server) {
     validate(server);
     repository.save(server);
+    httpClientServices.forEach(hc -> hc.afterServerSave(server.getId()));
     return server;
   }
 
@@ -42,5 +50,4 @@ public class TerminologyServerService {
       }
     }
   }
-
 }
