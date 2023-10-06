@@ -13,6 +13,7 @@ public class PrivilegeResource {
   private Long id;
   private String resourceType;
   private String resourceId;
+  private String resourceName;
   private PrivilegeResourceActions actions;
 
   @Getter

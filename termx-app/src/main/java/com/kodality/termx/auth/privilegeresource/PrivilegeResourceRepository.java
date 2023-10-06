@@ -27,7 +27,11 @@ public class PrivilegeResourceRepository extends BaseRepository {
   }
 
   public List<PrivilegeResource> load(Long privilegeId) {
-    String sql = "select * from auth.privilege_resource where privilege_id = ? and sys_status = 'A'";
+    String sql = " select pr.*," +
+                 " (case" +
+                 "   when pr.resource_type IN ('Space', 'Wiki') then (select s.code from sys.space s where s.id = pr.resource_id::bigint) " +
+                 " else null end) as resource_name " +
+                 " from auth.privilege_resource pr where privilege_id = ? and sys_status = 'A'";
     return getBeans(sql, bp, privilegeId);
   }
 
