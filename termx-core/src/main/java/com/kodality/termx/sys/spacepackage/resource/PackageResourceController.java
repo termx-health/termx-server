@@ -10,14 +10,19 @@ import com.kodality.termx.sys.job.logger.ImportLogger;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.Put;
 import io.micronaut.http.annotation.QueryValue;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,6 +40,15 @@ public class PackageResourceController {
   public List<PackageResource> loadAll(@NotNull @QueryValue Long spaceId, @QueryValue String packageCode, @QueryValue String version) {
     return packageResourceService.loadAll(spaceId, packageCode, version);
   }
+
+
+  @Authorized(privilege = Privilege.S_EDIT) //TODO: fix this
+  @Put("/{id}")
+  public PackageResource update(@Parameter Long id, @Valid @Body PackageResourceSaveRequest request) {
+    request.getResource().setId(id);
+    return packageResourceService.save(request.getVersionId(), request.getResource());
+  }
+
 
   @Authorized(privilege = Privilege.S_EDIT)
   @Post(value = "/{id}/sync")
@@ -58,4 +72,14 @@ public class PackageResourceController {
     }));
     return HttpResponse.ok(job);
   }
+
+  @Getter
+  @Setter
+  public static class PackageResourceSaveRequest {
+    @NotNull
+    private Long versionId;
+    @NotNull
+    private PackageResource resource;
+  }
+
 }
