@@ -311,7 +311,7 @@ public class TransformerService {
       case "date" -> LocalDate.now();
       case "time" -> LocalTime.now();
       case "boolean" -> new Random().nextBoolean();
-      case "integer", "integer64", "unsignedInt", "positiveInt" -> new Random().nextInt();
+      case "integer", "integer64", "unsignedInt", "positiveInt" -> Math.abs(new Random().nextInt());
       case "decimal" -> new Random().nextFloat();
 
       case "BackboneElement" -> new LinkedHashMap<>();
@@ -328,7 +328,7 @@ public class TransformerService {
       case "Age" -> new Age().setValue(randomBigDecimal());
       case "Duration" -> new Duration().setValue(randomBigDecimal());
 
-      case "Reference" -> new Reference("Resource/" + new Random().nextInt());
+      case "Reference" -> new Reference("Resource/" + RandomStringUtils.randomNumeric(6));
       case "CodeableReference" -> new CodeableReference().setConcept(CodeableConcept.fromCodes(randomString()));
       default -> null;
     };
