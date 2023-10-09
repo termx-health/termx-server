@@ -1,6 +1,8 @@
 package com.kodality.termx.fileimporter.analyze;
 
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termx.Privilege;
+import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.utils.FileUtil;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.MediaType;
@@ -20,6 +22,7 @@ import org.reactivestreams.Publisher;
 public class FileAnalysisController {
   private final FileAnalysisService fileAnalysisService;
 
+  @Authorized(privilege = Privilege.CS_EDIT)
   @Post(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA)
   public FileAnalysisResponse analyze(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
     FileAnalysisRequest req = JsonUtil.fromJson(request.getValue(), FileAnalysisRequest.class);

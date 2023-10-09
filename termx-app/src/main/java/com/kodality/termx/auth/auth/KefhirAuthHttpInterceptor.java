@@ -18,8 +18,8 @@ import com.kodality.kefhir.rest.filter.KefhirRequestExecutionInterceptor;
 import com.kodality.kefhir.rest.model.KefhirRequest;
 import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.fhir.BaseFhirMapper;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -39,18 +39,22 @@ public class KefhirAuthHttpInterceptor implements KefhirRequestExecutionIntercep
     String interaction = request.getOperation().getInteraction();
     String type = request.getType();
     String id = BaseFhirMapper.parseCompositeId(StringUtils.substringBefore(request.getPath(), "/"))[0];
-    if (List.of(InteractionType.SEARCHTYPE).contains(interaction)) {
+    if (Objects.equals(InteractionType.SEARCHTYPE, interaction)) {
       return;
     }
-    if (List.of(InteractionType.READ).contains(interaction) &&
+    if (Objects.equals(InteractionType.READ, interaction) &&
         !SessionStore.require().hasPrivilege(id + "." + resourcePrivileges.get(type) + ".view")) {
       throw new FhirException(403, IssueType.FORBIDDEN, id + "." + type + "." + interaction + " not allowed");
     }
-    if (List.of(InteractionType.CREATE, InteractionType.UPDATE).contains(interaction)
+    if (Objects.equals(InteractionType.CREATE, interaction)
+        && !SessionStore.require().hasPrivilege("*." + resourcePrivileges.get(type) + ".edit")) {
+      throw new FhirException(403, IssueType.FORBIDDEN, id + "." + type + "." + interaction + " not allowed");
+    }
+    if (Objects.equals(InteractionType.UPDATE, interaction)
         && !SessionStore.require().hasPrivilege(id + "." + resourcePrivileges.get(type) + ".edit")) {
       throw new FhirException(403, IssueType.FORBIDDEN, id + "." + type + "." + interaction + " not allowed");
     }
-    if (List.of(InteractionType.OPERATION).contains(interaction) && request.getPath().contains("/") /* instance operation */) {
+    if (Objects.equals(InteractionType.OPERATION, interaction) && request.getPath().contains("/") /* instance operation */) {
       //check at least view privilege for instance operations. everything else  manually in operation implementation
       if (!SessionStore.require().hasPrivilege(id + "." + resourcePrivileges.get(type) + ".view")) {
         throw new FhirException(403, IssueType.FORBIDDEN, request.getPath() + "." + type + " not allowed");
