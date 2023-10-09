@@ -284,12 +284,13 @@ public class TransformerService {
       String[] path = StringUtils.substringBeforeLast(el.getPath(), ".").split("\\.");
       Map<String, Object> parent = resource;
       for (String p : path) {
-        parent = (Map<String, Object>) parent.computeIfAbsent(p, x -> new LinkedHashMap<>());
+        Object v = parent.computeIfAbsent(p, x -> new LinkedHashMap<>());
+        parent = (Map<String, Object>) (v instanceof List l ? l.get(0) : v);
       }
       String name = StringUtils.substringAfterLast(el.getPath(), ".");
       Object value = generateValue(name, el);
       if (value != null) {
-        parent.put(name, value);
+        parent.put(name, "*".equals(el.getMax()) ? List.of(value) : value);
       }
     });
     return FhirMapper.toJson(resource.get(definition.getName()), true);
