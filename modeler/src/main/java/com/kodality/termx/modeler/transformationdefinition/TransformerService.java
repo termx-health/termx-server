@@ -11,6 +11,7 @@ import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.Address;
 import com.kodality.zmei.fhir.datatypes.Age;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
+import com.kodality.zmei.fhir.datatypes.CodeableReference;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Duration;
@@ -19,6 +20,7 @@ import com.kodality.zmei.fhir.datatypes.Identifier;
 import com.kodality.zmei.fhir.datatypes.Period;
 import com.kodality.zmei.fhir.datatypes.Quantity;
 import com.kodality.zmei.fhir.datatypes.Range;
+import com.kodality.zmei.fhir.datatypes.Reference;
 import com.kodality.zmei.fhir.datatypes.Timing;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.io.ResourceLoader;
@@ -324,6 +326,9 @@ public class TransformerService {
       case "Coding" -> new Coding().setCode(randomString());
       case "Age" -> new Age().setValue(randomBigDecimal());
       case "Duration" -> new Duration().setValue(randomBigDecimal());
+
+      case "Reference" -> new Reference("Resource/" + new Random().nextInt());
+      case "CodeableReference" -> new CodeableReference().setConcept(CodeableConcept.fromCodes(randomString()));
       default -> null;
     };
   }
