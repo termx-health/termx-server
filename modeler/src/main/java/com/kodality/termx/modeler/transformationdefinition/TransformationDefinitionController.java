@@ -142,6 +142,12 @@ public class TransformationDefinitionController {
   }
 
   @Authorized(privilege = Privilege.TD_VIEW)
+  @Post("/generate-input")
+  public GenerateInputResponse generateInput(@Body GenerateInputRequest req) {
+    return new GenerateInputResponse(transformerService.generateObject(req.resource));
+  }
+
+  @Authorized(privilege = Privilege.TD_VIEW)
   @Get(uri = "/base-resources")
   public String loadBaseResources() {
     try {
@@ -164,4 +170,8 @@ public class TransformationDefinitionController {
   public record ParseRequest(String fml) {}
 
   public record ParseResponse(String json, String error) {}
+
+  public record GenerateInputRequest(TransformationDefinitionResource resource) {}
+
+  public record GenerateInputResponse(String resource) {}
 }

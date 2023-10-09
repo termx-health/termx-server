@@ -7,19 +7,42 @@ import com.kodality.termx.modeler.ApiError;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
 import com.kodality.termx.sys.server.httpclient.TerminologyServerHttpClientService;
+import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.datatypes.Address;
+import com.kodality.zmei.fhir.datatypes.Age;
+import com.kodality.zmei.fhir.datatypes.CodeableConcept;
+import com.kodality.zmei.fhir.datatypes.Coding;
+import com.kodality.zmei.fhir.datatypes.ContactPoint;
+import com.kodality.zmei.fhir.datatypes.Duration;
+import com.kodality.zmei.fhir.datatypes.HumanName;
+import com.kodality.zmei.fhir.datatypes.Identifier;
+import com.kodality.zmei.fhir.datatypes.Period;
+import com.kodality.zmei.fhir.datatypes.Quantity;
+import com.kodality.zmei.fhir.datatypes.Range;
+import com.kodality.zmei.fhir.datatypes.Timing;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.io.ResourceLoader;
 import jakarta.inject.Singleton;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.r5.context.ContextUtilities;
 import org.hl7.fhir.r5.elementmodel.Element;
@@ -28,6 +51,7 @@ import org.hl7.fhir.r5.formats.IParser.OutputStyle;
 import org.hl7.fhir.r5.formats.JsonParser;
 import org.hl7.fhir.r5.formats.XmlParser;
 import org.hl7.fhir.r5.model.Bundle;
+import org.hl7.fhir.r5.model.ElementDefinition;
 import org.hl7.fhir.r5.model.Narrative.NarrativeStatus;
 import org.hl7.fhir.r5.model.Resource;
 import org.hl7.fhir.r5.model.StructureDefinition;
@@ -237,5 +261,81 @@ public class TransformerService {
       rows.add("}");
     }
     return rows.stream().collect(Collectors.joining("\n"));
+  }
+
+  public String generateObject(TransformationDefinitionResource resource) {
+    return generateObject(getContent(resource));
+  }
+
+  public String generateObject(String definition) {
+    return generateObject(parse(definition));
+  }
+
+  public String generateObject(StructureDefinition definition) {
+    if (!definition.hasSnapshot()) {
+      ContextUtilities cu = new ContextUtilities(engine.getContext());
+      cu.generateSnapshot(definition, definition.getKind() != null && definition.getKind() == StructureDefinitionKind.LOGICAL);
+    }
+    Map<String, Object> resource = new LinkedHashMap<>();
+    resource.put(definition.getName(), new LinkedHashMap<>(Map.of("resourceType", definition.getName())));
+    definition.getSnapshot().getElement().forEach(el -> {
+      String[] path = StringUtils.substringBeforeLast(el.getPath(), ".").split("\\.");
+      Map<String, Object> parent = resource;
+      for (String p : path) {
+        parent = (Map<String, Object>) parent.computeIfAbsent(p, x -> new LinkedHashMap<>());
+      }
+      String name = StringUtils.substringAfterLast(el.getPath(), ".");
+      Object value = generateValue(name, el);
+      if (value != null) {
+        parent.put(name, value);
+      }
+    });
+    return FhirMapper.toJson(resource.get(definition.getName()), true);
+  }
+
+
+  private Object generateValue(String name, ElementDefinition el) {
+    if (CollectionUtils.isEmpty(el.getType())) {
+      return null;
+    }
+    String code = el.getType().get(0).getCode();
+    return switch (code) {
+      case "string", "code", "id", "markdown" -> name + "-" + randomString();
+      case "oid" -> "urn:oid:" + UUID.randomUUID();
+      case "uri", "uuid" -> "urn:uuid:" + UUID.randomUUID();
+      case "url" -> "http://" + name + "-" + randomString();
+      case "dateTime", "instant" -> OffsetDateTime.now();
+      case "date" -> LocalDate.now();
+      case "time" -> LocalTime.now();
+      case "boolean" -> new Random().nextBoolean();
+      case "integer", "integer64", "unsignedInt", "positiveInt" -> new Random().nextInt();
+      case "decimal" -> new Random().nextFloat();
+
+      case "BackboneElement" -> new LinkedHashMap<>();
+      case "Identifier" -> new Identifier().setValue(randomString(16));
+      case "HumanName" -> new HumanName().setGiven(List.of(randomString())).setFamily(randomString());
+      case "Address" -> new Address().setText(randomString() + " " + randomString() + " " + randomString());
+      case "ContactPoint" -> new ContactPoint().setValue(randomString());
+      case "Timing" -> new Timing();
+      case "Quantity" -> new Quantity().setValue(randomBigDecimal());
+      case "Range" -> new Range().setLow(new Quantity().setValue(randomBigDecimal())).setHigh(new Quantity().setValue(randomBigDecimal()));
+      case "Period" -> new Period().setStart(OffsetDateTime.now()).setEnd(OffsetDateTime.now());
+      case "CodeableConcept" -> CodeableConcept.fromCodes(randomString());
+      case "Coding" -> new Coding().setCode(randomString());
+      case "Age" -> new Age().setValue(randomBigDecimal());
+      case "Duration" -> new Duration().setValue(randomBigDecimal());
+      default -> null;
+    };
+  }
+
+  private static BigDecimal randomBigDecimal() {
+    return new BigDecimal(Float.toString(new Random().nextFloat()));
+  }
+
+  private static String randomString() {
+    return randomString(8);
+  }
+  private static String randomString(int count) {
+    return RandomStringUtils.random(count, "qwertyuiopasdfghjklzxcvbnm");
   }
 }
