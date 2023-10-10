@@ -45,7 +45,7 @@ public class PageService {
   public Page save(Page page, PageContent content) {
     page = save(page);
     pageContentService.save(content, page.getId());
-    return page;
+    return load(page.getId()).orElse(null);
   }
 
   @Transactional
