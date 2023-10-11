@@ -8,11 +8,11 @@ import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
-import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import io.micronaut.http.annotation.QueryValue;
@@ -44,7 +44,7 @@ public class PackageResourceController {
 
   @Authorized(privilege = Privilege.S_EDIT) //TODO: fix this
   @Put("/{id}")
-  public PackageResource update(@Parameter Long id, @Valid @Body PackageResourceSaveRequest request) {
+  public PackageResource update(@PathVariable Long id, @Valid @Body PackageResourceSaveRequest request) {
     request.getResource().setId(id);
     return packageResourceService.save(request.getVersionId(), request.getResource());
   }
@@ -52,7 +52,7 @@ public class PackageResourceController {
 
   @Authorized(privilege = Privilege.S_EDIT)
   @Post(value = "/{id}/sync")
-  public HttpResponse<?> importResource(@Parameter Long id) {
+  public HttpResponse<?> importResource(@PathVariable Long id) {
     //TODO: auth?
     JobLogResponse job = importLogger.createJob(JOB_TYPE);
     CompletableFuture.runAsync(SessionStore.wrap(() -> {

@@ -5,10 +5,10 @@ import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.auth.SessionStore;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceRequest;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceResponse;
-import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import java.util.List;
@@ -36,14 +36,14 @@ public class TerminologyServerController {
 
   @Authorized("TerminologyServer.edit")
   @Put("/{id}")
-  public TerminologyServer update(@Parameter Long id, @Valid @Body TerminologyServer ts) {
+  public TerminologyServer update(@PathVariable Long id, @Valid @Body TerminologyServer ts) {
     ts.setId(id);
     return serverService.save(ts);
   }
 
   @Authorized("TerminologyServer.edit")
   @Get("/{id}")
-  public TerminologyServer load(@Parameter Long id) {
+  public TerminologyServer load(@PathVariable Long id) {
     return serverService.load(id);
   }
 

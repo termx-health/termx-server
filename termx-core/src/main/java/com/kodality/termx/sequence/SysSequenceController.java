@@ -2,10 +2,10 @@ package com.kodality.termx.sequence;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Authorized;
-import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import io.micronaut.validation.Validated;
@@ -28,7 +28,7 @@ public class SysSequenceController {
 
   @Authorized("Sequence.view")
   @Get("/{id}")
-  public SysSequence load(@Parameter Long id) {
+  public SysSequence load(@PathVariable Long id) {
     return sysSequenceService.load(id);
   }
 
@@ -41,7 +41,7 @@ public class SysSequenceController {
 
   @Authorized("Sequence.edit")
   @Put("/{id}")
-  public SysSequence update(@Parameter Long id, @Body @Valid SysSequence sequence) {
+  public SysSequence update(@PathVariable Long id, @Body @Valid SysSequence sequence) {
     sequence.setId(id);
     return load(sysSequenceService.save(sequence));
   }

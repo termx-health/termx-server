@@ -12,10 +12,10 @@ import com.kodality.termx.observationdefintion.ObservationDefinitionImportReques
 import com.kodality.termx.observationdefintion.ObservationDefinitionSearchParams;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.job.logger.ImportLogger;
-import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +42,7 @@ public class ObservationDefinitionController {
 
   @Authorized(Privilege.OBS_DEF_EDIT)
   @Put("/{id}")
-  public ObservationDefinition update(@Parameter Long id, @Body @Valid ObservationDefinition def) {
+  public ObservationDefinition update(@PathVariable Long id, @Body @Valid ObservationDefinition def) {
     def.setId(id);
     observationDefinitionService.save(def);
     return load(def.getId());
@@ -50,7 +50,7 @@ public class ObservationDefinitionController {
 
   @Authorized(Privilege.OBS_DEF_VIEW)
   @Get("/{id}")
-  public ObservationDefinition load(@Parameter Long id) {
+  public ObservationDefinition load(@PathVariable Long id) {
     ObservationDefinition def = observationDefinitionService.load(id);
     if (def == null) {
       throw new NotFoundException("Observation definition", id);

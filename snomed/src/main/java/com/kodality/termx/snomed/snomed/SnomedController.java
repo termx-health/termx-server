@@ -90,7 +90,7 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Delete("/codesystems/{shortName}")
-  public HttpResponse<?> deleteCodeSystem(@Parameter String shortName) {
+  public HttpResponse<?> deleteCodeSystem(@PathVariable String shortName) {
     snowstormClient.deleteCodeSystem(shortName).join();
     return HttpResponse.ok();
   }
@@ -105,7 +105,7 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/branches/{path}")
-  public SnomedBranch loadBranch(@Parameter String path) {
+  public SnomedBranch loadBranch(@PathVariable String path) {
     return snowstormClient.loadBranch(parsePath(path)).join();
   }
 
@@ -117,13 +117,13 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Put("/branches/{path}")
-  public SnomedBranch updateBranch(@Parameter String path, @Body SnomedBranchRequest request) {
+  public SnomedBranch updateBranch(@PathVariable String path, @Body SnomedBranchRequest request) {
     return snowstormClient.updateBranch(parsePath(path), request).join();
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Delete("/branches/{path}")
-  public HttpResponse<?> deleteBranch(@Parameter String path) {
+  public HttpResponse<?> deleteBranch(@PathVariable String path) {
     snowstormClient.deleteBranch(parsePath(path)).join();
     return HttpResponse.ok();
   }
@@ -137,14 +137,14 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Post("/branches/{path}/unlock")
-  public HttpResponse<?> unlockBranch(@Parameter String path) {
+  public HttpResponse<?> unlockBranch(@PathVariable String path) {
     snowstormClient.unlockBranch(parsePath(path)).join();
     return HttpResponse.ok();
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Post("/branches/{path}/integrity-check")
-  public Object branchIntegrityCheck(@Parameter String path) {
+  public Object branchIntegrityCheck(@PathVariable String path) {
     return snowstormClient.branchIntegrityCheck(parsePath(path)).join();
   }
 
@@ -159,13 +159,13 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/exports/{jobId}")
-  public SnomedExportJob loadExportJob(@Parameter String jobId) {
+  public SnomedExportJob loadExportJob(@PathVariable String jobId) {
     return snowstormClient.loadExportJob(jobId).join();
   }
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get(value = "/exports/{jobId}/archive", produces = "application/zip")
-  public HttpResponse<?> getRF2File(@Parameter String jobId) {
+  public HttpResponse<?> getRF2File(@PathVariable String jobId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(snowstormClient.getRF2File(jobId));
     return response
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=snomed_translations.zip")
@@ -182,7 +182,7 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/imports/{jobId}")
-  public SnomedImportJob loadImportJob(@Parameter String jobId) {
+  public SnomedImportJob loadImportJob(@PathVariable String jobId) {
     return snowstormClient.loadImportJob(jobId).join();
   }
 
@@ -190,13 +190,13 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/concepts/{conceptId}")
-  public SnomedConcept loadConcept(@Parameter String conceptId) {
+  public SnomedConcept loadConcept(@PathVariable String conceptId) {
     return snowstormClient.loadConcept(conceptId).join();
   }
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/concepts/{conceptId}/children")
-  public List<SnomedConcept> findConceptChildren(@Parameter String conceptId) {
+  public List<SnomedConcept> findConceptChildren(@PathVariable String conceptId) {
     List<SnomedConcept> concepts = snowstormClient.findConceptChildren(conceptId).join();
     AsyncHelper futures = new AsyncHelper();
     concepts.forEach(concept -> futures.add(snowstormClient.loadConcept(concept.getConceptId()).thenApply(c -> concept.setDescriptions(c.getDescriptions()))));
@@ -234,7 +234,7 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Post("/branches/{path}/concepts/transaction")
-  public HttpResponse<?> conceptTransaction(@Parameter String path, @Body SnomedConceptTransactionRequest request) {
+  public HttpResponse<?> conceptTransaction(@PathVariable String path, @Body SnomedConceptTransactionRequest request) {
     transactionService.transaction(parsePath(path), request);
     return HttpResponse.ok();
   }
@@ -260,14 +260,14 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/branches/{path}/descriptions{?params*}")
-  public SnomedSearchResult<SnomedDescription> findDescriptions(@Parameter String path, SnomedDescriptionSearchParams params) {
+  public SnomedSearchResult<SnomedDescription> findDescriptions(@PathVariable String path, SnomedDescriptionSearchParams params) {
     path += "/";
     return snomedService.searchDescriptions(parsePath(path), params);
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Delete("/branches/{path}/descriptions/{descriptionId}")
-  public HttpResponse<?> deleteDescription(@Parameter String path, @Parameter String descriptionId) {
+  public HttpResponse<?> deleteDescription(@PathVariable String path, @PathVariable String descriptionId) {
     path += "/";
     snowstormClient.deleteDescription(parsePath(path), descriptionId).join();
     return HttpResponse.ok();
@@ -298,19 +298,19 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/translations/{id}")
-  public SnomedTranslation loadTranslation(@Parameter Long id) {
+  public SnomedTranslation loadTranslation(@PathVariable Long id) {
     return translationService.load(id);
   }
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/concepts/{conceptId}/translations")
-  public List<SnomedTranslation> loadTranslations(@Parameter String conceptId) {
+  public List<SnomedTranslation> loadTranslations(@PathVariable String conceptId) {
     return translationService.load(conceptId);
   }
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Post("/concepts/{conceptId}/translations")
-  public HttpResponse<?> saveTranslations(@Parameter String conceptId, @Body List<SnomedTranslation> translations) {
+  public HttpResponse<?> saveTranslations(@PathVariable String conceptId, @Body List<SnomedTranslation> translations) {
     provenanceTranslations("snomed-translations-save", conceptId, () -> {
       translationService.save(conceptId, translations);
     });

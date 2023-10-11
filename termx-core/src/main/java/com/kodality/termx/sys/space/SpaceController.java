@@ -11,13 +11,13 @@ import com.kodality.termx.sys.job.logger.ImportLogger;
 import com.kodality.termx.sys.space.diff.SpaceDiff;
 import com.kodality.termx.sys.space.overview.SpaceOverviewResponse;
 import com.kodality.termx.utils.FileUtil;
-import io.micronaut.context.annotation.Parameter;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import io.micronaut.http.annotation.QueryValue;
@@ -50,14 +50,14 @@ public class SpaceController {
 
   @Authorized(Privilege.S_EDIT)
   @Put("{id}")
-  public Space update(@Parameter Long id, @Valid @Body Space p) {
+  public Space update(@PathVariable Long id, @Valid @Body Space p) {
     p.setId(id);
     return spaceService.save(p);
   }
 
   @Authorized(Privilege.S_VIEW)
   @Get("{id}")
-  public Space load(@Parameter Long id) {
+  public Space load(@PathVariable Long id) {
     return spaceService.load(id);
   }
 
@@ -70,13 +70,13 @@ public class SpaceController {
 
   @Authorized(Privilege.S_VIEW)
   @Get("/{id}/overview")
-  public SpaceOverviewResponse overview(@Parameter Long id, @QueryValue String packageCode, @QueryValue String version) {
+  public SpaceOverviewResponse overview(@PathVariable Long id, @QueryValue String packageCode, @QueryValue String version) {
     return overviewService.compose(id, packageCode, version);
   }
 
   @Authorized(Privilege.S_VIEW)
   @Get("/{id}/diff")
-  public SpaceDiff diff(@Parameter Long id, @QueryValue String packageCode, @QueryValue String version) {
+  public SpaceDiff diff(@PathVariable Long id, @QueryValue String packageCode, @QueryValue String version) {
     return diffService.findDiff(id, packageCode, version);
   }
 

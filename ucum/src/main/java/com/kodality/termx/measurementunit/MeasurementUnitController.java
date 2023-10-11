@@ -7,10 +7,10 @@ import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.measurementunit.converter.MeasurementUnitConverter;
 import com.kodality.termx.ucum.MeasurementUnit;
 import com.kodality.termx.ucum.MeasurementUnitQueryParams;
-import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import io.micronaut.http.annotation.QueryValue;
@@ -42,7 +42,7 @@ public class MeasurementUnitController {
 
   @Authorized(Privilege.UCUM_VIEW)
   @Get("/{id}")
-  public MeasurementUnit load(@Parameter Long id) {
+  public MeasurementUnit load(@PathVariable Long id) {
     return measurementUnitService.load(id);
   }
 
@@ -56,7 +56,7 @@ public class MeasurementUnitController {
 
   @Authorized(Privilege.UCUM_EDIT)
   @Put("/{id}")
-  public MeasurementUnit update(@Parameter Long id, @Valid @Body MeasurementUnit unit) {
+  public MeasurementUnit update(@PathVariable Long id, @Valid @Body MeasurementUnit unit) {
     unit.setId(id);
     measurementUnitService.save(unit);
     return unit;

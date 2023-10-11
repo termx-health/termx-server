@@ -7,13 +7,13 @@ import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.task.Task.TaskActivity;
 import com.kodality.termx.utils.PatchUtil;
 import com.kodality.termx.utils.PatchUtil.PatchRequest;
-import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Patch;
+import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import io.micronaut.validation.Validated;
@@ -38,7 +38,7 @@ public class TaskController {
 
   @Authorized(privilege = Privilege.T_VIEW)
   @Get(uri = "/tasks/{number}")
-  public Task loadTask(@Parameter String number) {
+  public Task loadTask(@PathVariable String number) {
     return taskProvider.loadTask(number);
   }
 
@@ -51,33 +51,33 @@ public class TaskController {
 
   @Authorized(privilege = Privilege.T_EDIT)
   @Put("/tasks/{number}")
-  public Task updateTask(@Parameter String number, @Body Task task) {
+  public Task updateTask(@PathVariable String number, @Body Task task) {
     task.setNumber(number);
     return taskProvider.saveTask(task);
   }
 
   @Authorized(privilege = Privilege.T_EDIT)
   @Patch("/tasks/{number}")
-  public Task patchTask(@Parameter String number, @Body PatchRequest request) {
+  public Task patchTask(@PathVariable String number, @Body PatchRequest request) {
     Task currentTask = taskProvider.loadTask(number);
     return taskProvider.saveTask(PatchUtil.mergeFields(request, currentTask));
   }
 
   @Authorized(privilege = Privilege.T_EDIT)
   @Post("/tasks/{number}/activities")
-  public TaskActivity createTaskActivity(@Parameter String number, @Valid @Body Map<String, String> body) {
+  public TaskActivity createTaskActivity(@PathVariable String number, @Valid @Body Map<String, String> body) {
     return taskProvider.createTaskActivity(number, body.get("note"));
   }
 
   @Authorized(privilege = Privilege.T_EDIT)
   @Put("/tasks/{number}/activities/{id}")
-  public TaskActivity createTaskActivity(@Parameter String number, @Parameter String id, @Valid @Body Map<String, String> body) {
+  public TaskActivity createTaskActivity(@PathVariable String number, @PathVariable String id, @Valid @Body Map<String, String> body) {
     return taskProvider.updateTaskActivity(number, id, body.get("note"));
   }
 
   @Authorized(privilege = Privilege.T_EDIT)
   @Delete("/tasks/{number}/activities/{id}")
-  public HttpResponse<?> deleteTaskActivity(@Parameter String number, @Parameter String id) {
+  public HttpResponse<?> deleteTaskActivity(@PathVariable String number, @PathVariable String id) {
     taskProvider.cancelTaskActivity(number, id);
     return HttpResponse.ok();
   }
@@ -93,7 +93,7 @@ public class TaskController {
 
   @Authorized(privilege = Privilege.T_VIEW)
   @Get(uri = "/projects/{code}/workflows")
-  public List<Workflow> loadProjectWorkflows(@Parameter String code) {
+  public List<Workflow> loadProjectWorkflows(@PathVariable String code) {
     return taskProvider.loadProjectWorkFlows(code);
   }
 }

@@ -3,7 +3,6 @@ package com.kodality.termx.sys.spacepackage;
 import com.kodality.termx.Privilege;
 import com.kodality.termx.auth.Authorized;
 import com.kodality.termx.sys.spacepackage.version.PackageVersionService;
-import io.micronaut.context.annotation.Parameter;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -22,44 +21,44 @@ public class PackageController {
 
   @Authorized(Privilege.S_VIEW)
   @Get()
-  public List<Package> loadPackages(@Parameter Long spaceId) {
+  public List<Package> loadPackages(@PathVariable Long spaceId) {
     return packageService.loadAll(spaceId);
   }
 
   @Authorized(Privilege.S_EDIT)
   @Post()
-  public Package savePackage(@Parameter Long spaceId, @Body PackageTransactionRequest request) {
+  public Package savePackage(@PathVariable Long spaceId, @Body PackageTransactionRequest request) {
     return packageService.save(request, spaceId);
   }
 
   @Authorized(Privilege.S_VIEW)
   @Get("/{id}")
-  public Package load(@Parameter Long spaceId, @Parameter Long id) {
+  public Package load(@PathVariable Long spaceId, @PathVariable Long id) {
     return packageService.load(spaceId, id);
   }
 
   @Authorized(Privilege.S_VIEW)
   @Get("/{id}/versions")
-  public List<PackageVersion> loadVersions(@Parameter Long spaceId, @Parameter Long id) {
+  public List<PackageVersion> loadVersions(@PathVariable Long spaceId, @PathVariable Long id) {
     return packageVersionService.loadAll(spaceId, id);
   }
 
   @Authorized(Privilege.S_VIEW)
   @Get("/{id}/versions/{versionId}")
-  public PackageVersion loadVersion(@Parameter Long spaceId, @Parameter Long id, @Parameter Long versionId) {
+  public PackageVersion loadVersion(@PathVariable Long spaceId, @PathVariable Long id, @PathVariable Long versionId) {
     return packageVersionService.load(spaceId, id, versionId);
   }
 
   @Authorized(Privilege.S_EDIT)
   @Delete("/{id}")
-  public HttpResponse<?> delete(@Parameter Long spaceId, @PathVariable Long id) {
+  public HttpResponse<?> delete(@PathVariable Long spaceId, @PathVariable Long id) {
     packageService.delete(spaceId, id);
     return HttpResponse.ok();
   }
 
   @Authorized(Privilege.S_EDIT)
   @Delete("/{id}/versions/{versionId}")
-  public HttpResponse<?> deleteVersion(@Parameter Long spaceId, @Parameter Long id, @Parameter Long versionId) {
+  public HttpResponse<?> deleteVersion(@PathVariable Long spaceId, @PathVariable Long id, @PathVariable Long versionId) {
     packageVersionService.delete(spaceId, id, versionId);
     return HttpResponse.ok();
   }
