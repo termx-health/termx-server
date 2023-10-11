@@ -27,7 +27,7 @@ public class PackageController {
   }
 
   @Authorized(Privilege.S_EDIT)
-  @Post("/{id}/packages")
+  @Post()
   public Package savePackage(@Parameter Long spaceId, @Body PackageTransactionRequest request) {
     return packageService.save(request, spaceId);
   }
