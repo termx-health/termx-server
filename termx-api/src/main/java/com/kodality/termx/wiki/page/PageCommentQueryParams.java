@@ -13,6 +13,7 @@ public class PageCommentQueryParams extends QueryParams {
   private String ids;
   private String parentIds;
   private String pageContentIds;
+  private String pageIds;
   private String statuses;
   private String statusesNe;
   private String contentContains;

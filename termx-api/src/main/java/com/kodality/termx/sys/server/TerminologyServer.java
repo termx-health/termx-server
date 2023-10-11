@@ -24,15 +24,27 @@ public class TerminologyServer {
 
   @Getter
   @Setter
-  public static class TerminologyServerHeader{
+  public static class TerminologyServerHeader {
     private String key;
     private String value;
   }
+
   @Getter
   @Setter
   public static class TerminologyServerAuthConfig {
     private String accessTokenUrl;
     private String clientId;
     private String clientSecret;
+  }
+
+  public TerminologyServer publicView() {
+    return new TerminologyServer()
+        .setId(this.id)
+        .setCode(this.code)
+        .setNames(this.names)
+        .setRootUrl(this.rootUrl)
+        .setKind(this.kind)
+        .setActive(this.active)
+        .setCurrentInstallation(this.currentInstallation);
   }
 }

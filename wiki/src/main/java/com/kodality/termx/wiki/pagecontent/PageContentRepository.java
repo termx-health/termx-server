@@ -16,36 +16,6 @@ import javax.inject.Singleton;
 public class PageContentRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(PageContent.class);
 
-  public void save(PageContent content, Long pageId) {
-    SaveSqlBuilder ssb = new SaveSqlBuilder();
-    ssb.property("id", content.getId());
-    ssb.property("page_id", pageId);
-    ssb.property("space_id", content.getSpaceId());
-    ssb.property("name", content.getName());
-    ssb.property("slug", content.getSlug());
-    ssb.property("lang", content.getLang());
-    ssb.property("content", content.getContent());
-    ssb.property("content_type", content.getContentType());
-    SqlBuilder sb = ssb.buildSave("wiki.page_content", "id");
-    Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
-    content.setId(id);
-  }
-
-  public PageContent load(Long id) {
-    String sql = "select * from wiki.page_content where sys_status = 'A' and id = ?";
-    return getBean(sql, bp, id);
-  }
-
-  public List<PageContent> loadAll(Long pageId) {
-    String sql = "select * from wiki.page_content where sys_status = 'A' and page_id = ?";
-    return getBeans(sql, bp, pageId);
-  }
-
-  public void delete(Long pageId) {
-    String sql = "update wiki.page_content set sys_status = 'C' where sys_status = 'A' and id = ?";
-    jdbcTemplate.update(sql, pageId);
-  }
-
   public QueryResult<PageContent> query(PageContentQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from wiki.page_content pc where pc.sys_status = 'A' ");
@@ -70,7 +40,7 @@ public class PageContentRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getRelations())) {
       String[] relations = params.getRelations().split(",");
       sb.and("( 1<>1");
-      for (String relation: relations) {
+      for (String relation : relations) {
         String[] r = PipeUtil.parsePipe(relation);
         sb.or("exists (select 1 from wiki.page_relation pr where pr.type = ? and pr.target = ? and pr.sys_status = 'A' and pr.content_id = pc.id)", r[0], r[1]);
       }
@@ -79,4 +49,38 @@ public class PageContentRepository extends BaseRepository {
     return sb;
   }
 
+  public List<PageContent> loadAll(Long pageId) {
+    String sql = "select * from wiki.page_content where sys_status = 'A' and page_id = ?";
+    return getBeans(sql, bp, pageId);
+  }
+
+  public PageContent load(Long id) {
+    String sql = "select * from wiki.page_content where sys_status = 'A' and id = ?";
+    return getBean(sql, bp, id);
+  }
+
+  public void save(PageContent content, Long pageId) {
+    SaveSqlBuilder ssb = new SaveSqlBuilder();
+    ssb.property("id", content.getId());
+    ssb.property("page_id", pageId);
+    ssb.property("space_id", content.getSpaceId());
+    ssb.property("name", content.getName());
+    ssb.property("slug", content.getSlug());
+    ssb.property("lang", content.getLang());
+    ssb.property("content", content.getContent());
+    ssb.property("content_type", content.getContentType());
+    SqlBuilder sb = ssb.buildSave("wiki.page_content", "id");
+    Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
+    content.setId(id);
+  }
+
+  public void delete(Long id) {
+    String sql = "update wiki.page_content set sys_status = 'C' where sys_status = 'A' and id = ?";
+    jdbcTemplate.update(sql, id);
+  }
+
+  public void deleteByPage(Long pageId) {
+    String sql = "update wiki.page_content set sys_status = 'C' where sys_status = 'A' and page_id = ?";
+    jdbcTemplate.update(sql, pageId);
+  }
 }

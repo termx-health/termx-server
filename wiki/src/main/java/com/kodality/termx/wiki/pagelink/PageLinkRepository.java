@@ -87,6 +87,25 @@ public class PageLinkRepository extends BaseRepository {
         targetId);
   }
 
+  public List<PageLink> loadDescendants(Long sourceId) {
+    return getBeans("""
+        with flat as (
+            select * from wiki.page_link pl where pl.sys_status = 'A'
+        ),
+        t as (
+            with recursive rec as (
+                select f.id, f.source_id, f.target_id
+                    from flat f where f.target_id = ?
+                union all
+                select f.id, f.source_id, f.target_id
+                    from flat f join rec r on f.source_id = r.target_id and f.source_id != f.target_id
+            )
+            select * from rec
+        )
+        select * from t
+        """, bp, sourceId);
+  }
+
 
   public void save(PageLink link) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -99,7 +118,9 @@ public class PageLinkRepository extends BaseRepository {
     link.setId(id);
   }
 
+
   public void retainRoots(List<PageLink> links) {
+    System.out.println("retainRoots");
     SqlBuilder sb = new SqlBuilder("update wiki.page_link set sys_status = 'C'");
     sb.append("where sys_status = 'A' and source_id = target_id");
     sb.andNotIn("id", links, PageLink::getId);
@@ -107,6 +128,7 @@ public class PageLinkRepository extends BaseRepository {
   }
 
   public void retainBySourceId(Long sourceId, List<PageLink> links) {
+    System.out.println("retainBySourceId");
     SqlBuilder sb = new SqlBuilder("update wiki.page_link set sys_status = 'C'");
     sb.append("where sys_status = 'A' and source_id != target_id and source_id = ?", sourceId);
     sb.andNotIn("id", links, PageLink::getId);
@@ -114,9 +136,17 @@ public class PageLinkRepository extends BaseRepository {
   }
 
   public void retainByTargetId(List<PageLink> links, Long targetId) {
+    System.out.println("retainByTargetId");
     SqlBuilder sb = new SqlBuilder("update wiki.page_link set sys_status = 'C'");
     sb.append("where sys_status = 'A' and target_id = ?", targetId);
     sb.andNotIn("id", links, PageLink::getId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
+
+  public void close(List<Long> ids) {
+    System.out.println("close");
+    SqlBuilder sb = new SqlBuilder("update wiki.page_link set sys_status = 'C' where sys_status = 'A'").and().in("id", ids);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 

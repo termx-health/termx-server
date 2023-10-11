@@ -26,30 +26,6 @@ public class PageRelationRepository extends BaseRepository {
         left join wiki.page_content pc on pc.id = pr.content_id
       """;
 
-  public void save(PageRelation relation, Long pageId, Long contentId) {
-    SaveSqlBuilder ssb = new SaveSqlBuilder();
-    ssb.property("id", relation.getId());
-    ssb.property("page_id", pageId);
-    ssb.property("content_id", contentId);
-    ssb.property("target", relation.getTarget());
-    ssb.property("type", relation.getType());
-    SqlBuilder sb = ssb.buildSave("wiki.page_relation", "id");
-    Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
-    relation.setId(id);
-  }
-
-  public List<PageRelation> loadAll(Long pageId) {
-    String sql = select + "where pr.sys_status = 'A' and pr.page_id = ?";
-    return getBeans(sql, bp, pageId);
-  }
-
-  public void retain(List<PageRelation> relations, Long pageId, Long contentId) {
-    SqlBuilder sb = new SqlBuilder("update wiki.page_relation set sys_status = 'C'");
-    sb.append(" where page_id = ? and content_id = ? and sys_status = 'A'", pageId, contentId);
-    sb.andNotIn("id", relations, PageRelation::getId);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
-  }
-
   public QueryResult<PageRelation> query(PageRelationQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from wiki.page_relation pr");
@@ -70,5 +46,34 @@ public class PageRelationRepository extends BaseRepository {
       sb.and().in("pr.target", params.getTarget());
     }
     return sb;
+  }
+
+  public List<PageRelation> loadAll(Long pageId) {
+    String sql = select + "where pr.sys_status = 'A' and pr.page_id = ?";
+    return getBeans(sql, bp, pageId);
+  }
+
+  public void save(PageRelation relation, Long pageId, Long contentId) {
+    SaveSqlBuilder ssb = new SaveSqlBuilder();
+    ssb.property("id", relation.getId());
+    ssb.property("page_id", pageId);
+    ssb.property("content_id", contentId);
+    ssb.property("target", relation.getTarget());
+    ssb.property("type", relation.getType());
+    SqlBuilder sb = ssb.buildSave("wiki.page_relation", "id");
+    Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
+    relation.setId(id);
+  }
+
+  public void retain(List<PageRelation> relations, Long pageId, Long contentId) {
+    SqlBuilder sb = new SqlBuilder("update wiki.page_relation set sys_status = 'C'");
+    sb.append(" where page_id = ? and content_id = ? and sys_status = 'A'", pageId, contentId);
+    sb.andNotIn("id", relations, PageRelation::getId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
+  public void deleteByPage(Long pageId) {
+    String sql = "update wiki.page_relation set sys_status = 'C' where sys_status = 'A' and page_id = ?";
+    jdbcTemplate.update(sql, pageId);
   }
 }

@@ -88,7 +88,7 @@ public class PageController {
   @Delete("/{id}")
   public HttpResponse<?> deletePage(@PathVariable Long id) {
     validate(id, Privilege.W_EDIT);
-    pageService.cancel(id);
+    pageService.delete(id);
     provenanceService.create(new Provenance("deleted", "Page", id.toString()));
     return HttpResponse.ok();
   }

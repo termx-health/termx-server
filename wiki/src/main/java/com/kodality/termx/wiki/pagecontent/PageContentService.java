@@ -63,16 +63,11 @@ public class PageContentService {
     repository.delete(id);
   }
 
-  private void validate(PageContent c) {
-    PageContentQueryParams params = new PageContentQueryParams();
-    params.setSlugs(c.getSlug());
-    params.setSpaceIds(c.getSpaceId().toString());
-    params.setLimit(1);
-    Optional<PageContent> sameSlugContent = repository.query(params).findFirst();
-    if (sameSlugContent.isPresent() && !sameSlugContent.get().getId().equals(c.getId())) {
-      throw ApiError.T000.toApiException(Map.of("slug", c.getSlug()));
-    }
+  @Transactional
+  public void deleteByPage(Long pageId) {
+    repository.deleteByPage(pageId);
   }
+
 
   private PageContent prepare(PageContent c, Long pageId) {
     Page page = pageRepository.load(pageId);
@@ -91,6 +86,17 @@ public class PageContentService {
       }
     }
     return c;
+  }
+
+  private void validate(PageContent c) {
+    PageContentQueryParams params = new PageContentQueryParams();
+    params.setSlugs(c.getSlug());
+    params.setSpaceIds(c.getSpaceId().toString());
+    params.setLimit(1);
+    Optional<PageContent> sameSlugContent = repository.query(params).findFirst();
+    if (sameSlugContent.isPresent() && !sameSlugContent.get().getId().equals(c.getId())) {
+      throw ApiError.T000.toApiException(Map.of("slug", c.getSlug()));
+    }
   }
 
   private void recalculateComments(PageContent current, PageContent persisted) {

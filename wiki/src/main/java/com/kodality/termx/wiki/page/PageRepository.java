@@ -86,7 +86,7 @@ public class PageRepository extends BaseRepository {
     return sb;
   }
 
-  public void cancel(Long id) {
+  public void delete(Long id) {
     SqlBuilder sb = new SqlBuilder("update wiki.page set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }

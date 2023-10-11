@@ -27,6 +27,11 @@ public class PageTagService {
     }
   }
 
+  @Transactional
+  public void deleteByPage(Long pageId) {
+    repository.deleteByPage(pageId);
+  }
+
   private PageTag prepare(PageTag pageTag) {
     if (pageTag.getTag().getId() == null) {
       tagService.save(pageTag.getTag());

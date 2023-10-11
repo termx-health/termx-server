@@ -13,8 +13,12 @@ import javax.inject.Singleton;
 public class PageTagRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(PageTag.class, bp -> {
     bp.addColumnProcessor("tag_id", "tag", (rs, index, propType) -> new Tag().setId(rs.getLong("tag_id")));
-   });
+  });
 
+  public List<PageTag> loadAll(Long pageId) {
+    String sql = "select * from wiki.page_tag where sys_status = 'A' and page_id = ?";
+    return getBeans(sql, bp, pageId);
+  }
 
   public void save(PageTag tag, Long pageId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -26,16 +30,16 @@ public class PageTagRepository extends BaseRepository {
     tag.setId(id);
   }
 
-  public List<PageTag> loadAll(Long pageId) {
-    String sql = "select * from wiki.page_tag where sys_status = 'A' and page_id = ?";
-    return getBeans(sql, bp, pageId);
-  }
-
   public void retain(List<PageTag> tags, Long pageId) {
     SqlBuilder sb = new SqlBuilder("update wiki.page_tag set sys_status = 'C'");
     sb.append(" where page_id = ? and sys_status = 'A'", pageId);
     sb.andNotIn("id", tags, PageTag::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
+  public void deleteByPage(Long pageId) {
+    String sql = "update wiki.page_tag set sys_status = 'C' where sys_status = 'A' and page_id = ?";
+    jdbcTemplate.update(sql, pageId);
   }
 }
 

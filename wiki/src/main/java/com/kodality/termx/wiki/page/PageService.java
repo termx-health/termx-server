@@ -3,6 +3,7 @@ package com.kodality.termx.wiki.page;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.stream.Collectors;
 import com.kodality.termx.wiki.ApiError;
+import com.kodality.termx.wiki.pagecomment.PageCommentService;
 import com.kodality.termx.wiki.pagecontent.PageContentService;
 import com.kodality.termx.wiki.pagelink.PageLinkService;
 import com.kodality.termx.wiki.pagerelation.PageRelationService;
@@ -13,6 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.ListUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
@@ -23,6 +25,7 @@ public class PageService {
   private final PageLinkService pageLinkService;
   private final PageContentService pageContentService;
   private final PageRelationService pageRelationService;
+  private final PageCommentService pageCommentService;
 
   public Optional<Page> load(Long id) {
     return Optional.ofNullable(repository.load(id)).map(this::decorate);
@@ -66,9 +69,22 @@ public class PageService {
   }
 
   @Transactional
-  public void cancel(Long id) {
-    repository.cancel(id);
+  public void delete(Long pageId) {
+    pageLinkService.loadDescendants(pageId).forEach(l -> {
+      Long id = l.getTargetId();
+
+      List<PageLink> sourceLinks = pageLinkService.loadSources(id);
+      List<Long> linkIdsToClose = ListUtils.union(sourceLinks.stream().map(PageLink::getId).toList(), List.of(l.getId()));
+      pageLinkService.closeLinks(linkIdsToClose);
+
+      pageContentService.deleteByPage(id);
+      pageRelationService.deleteByPage(id);
+      pageTagService.deleteByPage(id);
+      pageCommentService.deleteByPage(id);
+      repository.delete(id);
+    });
   }
+
 
   private Page decorate(Page page) {
     page.setContents(pageContentService.loadAll(page.getId()));

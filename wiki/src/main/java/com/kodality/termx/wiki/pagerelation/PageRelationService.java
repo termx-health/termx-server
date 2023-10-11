@@ -22,12 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class PageRelationService {
   private final PageRelationRepository repository;
 
-  public List<PageRelation> loadAll(Long pageId) {
-    return repository.loadAll(pageId);
-  }
-
   public QueryResult<PageRelation> query(PageRelationQueryParams params) {
     return repository.query(params);
+  }
+
+  public List<PageRelation> loadAll(Long pageId) {
+    return repository.loadAll(pageId);
   }
 
   @Transactional
@@ -37,6 +37,11 @@ public class PageRelationService {
     if (CollectionUtils.isNotEmpty(relations)) {
       relations.forEach(r -> repository.save(r, pageId, content.getId()));
     }
+  }
+
+  @Transactional
+  public void deleteByPage(Long pageId) {
+    repository.deleteByPage(pageId);
   }
 
 

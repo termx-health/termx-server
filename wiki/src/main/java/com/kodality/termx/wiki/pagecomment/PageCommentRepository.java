@@ -34,11 +34,11 @@ public class PageCommentRepository extends BaseRepository {
 
   public QueryResult<PageComment> query(PageCommentQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from wiki.page_comment pc where pc.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder("select count(1) from wiki.page_comment pc inner join wiki.page_content content on content.id = pc.page_content_id where pc.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder(select + "from wiki.page_comment pc where pc.sys_status = 'A' ");
+      SqlBuilder sb = new SqlBuilder(select + "from wiki.page_comment pc inner join wiki.page_content content on content.id = pc.page_content_id where pc.sys_status = 'A' ");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -50,6 +50,7 @@ public class PageCommentRepository extends BaseRepository {
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("pc.id", p, Long::valueOf));
     sb.appendIfNotNull(params.getParentIds(), (s, p) -> s.and().in("pc.parent_id", p, Long::valueOf));
     sb.appendIfNotNull(params.getPageContentIds(), (s, p) -> s.and().in("pc.page_content_id", p, Long::valueOf));
+    sb.appendIfNotNull(params.getPageIds(), (s, p) -> s.and().in("content.page_id", p, Long::valueOf));
     sb.appendIfNotNull(params.getStatuses(), (s, p) -> s.and().in("pc.status", p));
     sb.appendIfNotNull(params.getStatusesNe(), (s, p) -> s.and().notIn("pc.status", p));
     sb.appendIfNotNull(params.getContentContains(), (s, p) -> s.and("pc.content ~* ?", p));

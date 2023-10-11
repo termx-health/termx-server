@@ -54,10 +54,30 @@ public class PageCommentService {
     return c;
   }
 
+  private PageComment internalSave(PageComment comment) {
+    if (comment.getStatus() == null) {
+      comment.setStatus("active");
+    }
+    Long id = commentRepository.save(comment);
+    comment.setId(id);
+    return comment;
+  }
+
+
   @Transactional
   public void delete(Long id) {
     validateAuthor(id);
+    internalDelete(id);
+  }
 
+  @Transactional
+  public void deleteByPage(Long pageId) {
+    query(new PageCommentQueryParams().setPageIds(pageId.toString()).all()).getData().forEach(comment -> {
+      internalDelete(comment.getId());
+    });
+  }
+
+  private void internalDelete(Long id) {
     PageComment c = commentRepository.load(id);
     provenanceService.create(new Provenance("deleted", "PageComment", id.toString()));
     commentRepository.delete(id);
@@ -68,15 +88,6 @@ public class PageCommentService {
     });
 
     interceptor.afterCommentDelete(c);
-  }
-
-  private PageComment internalSave(PageComment comment) {
-    if (comment.getStatus() == null) {
-      comment.setStatus("active");
-    }
-    Long id = commentRepository.save(comment);
-    comment.setId(id);
-    return comment;
   }
 
 

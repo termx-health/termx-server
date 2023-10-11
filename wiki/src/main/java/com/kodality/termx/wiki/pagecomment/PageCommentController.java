@@ -33,14 +33,14 @@ public class PageCommentController {
     return commentService.query(params);
   }
 
-  @Authorized(Privilege.W_VIEW)
+  @Authorized(Privilege.W_EDIT)
   @Post
   public HttpResponse<?> create(@Body @Valid PageComment comment) {
     comment.setId(null);
     return HttpResponse.created(commentService.create(comment));
   }
 
-  @Authorized(privilege = Privilege.W_VIEW)
+  @Authorized(privilege = Privilege.W_EDIT)
   @Put("/{id}")
   public HttpResponse<?> update(@PathVariable Long id, @Body @Valid PageComment comment) {
     SessionStore.require().checkPermitted(pageContentService.load(comment.getPageContentId()).getSpaceId().toString(), Privilege.W_VIEW);

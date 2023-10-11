@@ -35,6 +35,10 @@ public class PageLinkService {
     return repository.loadSources(targetId);
   }
 
+  public List<PageLink> loadDescendants(Long sourceId) {
+    return repository.loadDescendants(sourceId);
+  }
+
 
   @Transactional
   public void saveRoots(List<PageLink> links) {
@@ -80,6 +84,12 @@ public class PageLinkService {
     repository.refreshClosureView();
   }
 
+  @Transactional
+  public void closeLinks(List<Long> linkIds) {
+    repository.close(linkIds);
+    repository.refreshClosureView();
+  }
+
 
   @Transactional
   public List<PageLink> moveLink(Long linkId, PageLinkMoveRequest req) {
@@ -97,7 +107,7 @@ public class PageLinkService {
     throw new RuntimeException("couldn't match the page link move request's arguments");
   }
 
-  public List<PageLink> moveToParent(Long linkId, Long parentLinkId) {
+  private List<PageLink> moveToParent(Long linkId, Long parentLinkId) {
     PageLink link = repository.load(linkId);
     repository.close(linkId);
 
@@ -113,15 +123,15 @@ public class PageLinkService {
     return children;
   }
 
-  public List<PageLink> moveBefore(Long pageId, Long siblingPageId) {
+  private List<PageLink> moveBefore(Long pageId, Long siblingPageId) {
     return moveSibling(pageId, siblingPageId, false);
   }
 
-  public List<PageLink> moveAfter(Long pageId, Long siblingPageId) {
+  private List<PageLink> moveAfter(Long pageId, Long siblingPageId) {
     return moveSibling(pageId, siblingPageId, true);
   }
 
-  public List<PageLink> moveSibling(Long linkId, Long siblingLinkId, boolean after) {
+  private List<PageLink> moveSibling(Long linkId, Long siblingLinkId, boolean after) {
     PageLink link = repository.load(linkId);
     PageLink siblingLink = repository.load(siblingLinkId);
 
@@ -162,6 +172,7 @@ public class PageLinkService {
     }
     return children;
   }
+
 
   private boolean isRoot(PageLink link) {
     return Objects.equals(link.getSourceId(), link.getTargetId());

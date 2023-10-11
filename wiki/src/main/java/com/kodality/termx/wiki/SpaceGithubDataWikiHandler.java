@@ -88,7 +88,7 @@ public class SpaceGithubDataWikiHandler implements SpaceGithubDataHandler {
       });
       currentPages.keySet().stream().filter(s -> !newPageCodes.contains(s)).toList().forEach(s -> {
         log.info("deleting page " + s);
-        pageService.cancel(currentPages.get(s).getId());
+        pageService.delete(currentPages.get(s).getId());
         currentPages.remove(s);
       });
       saveTree(spaceId, null, pages, currentPages, currentContents);

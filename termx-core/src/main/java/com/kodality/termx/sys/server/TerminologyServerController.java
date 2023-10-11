@@ -52,15 +52,7 @@ public class TerminologyServerController {
   public QueryResult<TerminologyServer> search(TerminologyServerQueryParams params) {
     QueryResult<TerminologyServer> query = serverService.query(params);
     if (!SessionStore.require().hasPrivilege("TerminologyServer.edit")) {
-      return query.map(s -> new TerminologyServer()
-          .setId(s.getId())
-          .setCode(s.getCode())
-          .setNames(s.getNames())
-          .setRootUrl(s.getRootUrl())
-          .setKind(s.getKind())
-          .setActive(s.isActive())
-          .setCurrentInstallation(s.isCurrentInstallation())
-      );
+      return query.map(TerminologyServer::publicView);
     }
     return query;
   }
