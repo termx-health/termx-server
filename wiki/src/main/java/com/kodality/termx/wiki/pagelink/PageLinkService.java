@@ -65,14 +65,18 @@ public class PageLinkService {
   public void saveSources(List<PageLink> sourceLinks, Long targetId) {
     // NB: order number DOES NOT get set automatically
     sourceLinks.forEach(l -> l.setTargetId(targetId));
-    if (sourceLinks.isEmpty() && !hasRootLink(targetId)) {
+
+    List<Long> roots = repository.loadRoots().stream().map(PageLink::getTargetId).toList();
+    Optional<PageLink> rootLink = sourceLinks.stream().filter(rl -> roots.contains(rl.getTargetId())).findFirst();
+    if (rootLink.isPresent()) {
+      rootLink.get().setId(null);
+    } else if (sourceLinks.isEmpty()) {
       sourceLinks.add(new PageLink().setSourceId(targetId).setTargetId(targetId).setOrderNumber(0));
     }
 
     repository.retainByTargetId(sourceLinks, targetId);
-    if (CollectionUtils.isNotEmpty(sourceLinks)) {
-      sourceLinks.forEach(repository::save);
-    }
+    sourceLinks.forEach(repository::save);
+
     repository.refreshClosureView();
   }
 
@@ -161,9 +165,5 @@ public class PageLinkService {
 
   private boolean isRoot(PageLink link) {
     return Objects.equals(link.getSourceId(), link.getTargetId());
-  }
-
-  private boolean hasRootLink(Long pageId) {
-    return repository.loadRoots().stream().anyMatch(rl -> rl.getTargetId().equals(pageId));
   }
 }
