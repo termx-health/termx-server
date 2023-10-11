@@ -141,7 +141,7 @@ public class SpaceGithubService {
     String repo = space.getIntegration().getGithub().getRepo();
 
     List<GithubContent> contents = githubService.readFully(baseRepo).stream()
-        .filter(c -> !List.of("LICENSE", "README.md", "sushi-config.yaml").contains(c.getPath()))
+        .filter(c -> !List.of("LICENSE", "README.md", "sushi-config.yaml", "input/includes/menu.xml").contains(c.getPath()))
         .toList();
     GithubCommit c = new GithubCommit();
     c.setMessage("initialize ig from " + baseRepo);
