@@ -37,7 +37,7 @@ public class SpaceGithubDataCodeSystemFshHandler implements SpaceGithubDataHandl
 
   @Override
   public String getDefaultDir() {
-    return "vocabulary/codesystem-fsh";
+    return "input/fsh/code-systems";
   }
 
   @Override

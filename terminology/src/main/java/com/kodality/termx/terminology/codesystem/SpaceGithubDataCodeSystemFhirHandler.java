@@ -38,7 +38,7 @@ public class SpaceGithubDataCodeSystemFhirHandler implements SpaceGithubDataHand
 
   @Override
   public String getDefaultDir() {
-    return "vocabulary/codesystem-fhir";
+    return "input/vocabulary/code-systems";
   }
 
   @Override

@@ -44,7 +44,7 @@ public class SpaceGithubDataImplementationGuideHandler {
       parts.add("pages:");
       ig.getPageContents().stream().map(pages::get).forEach(pc -> {
         parts.add("  " + pc.getSlug() + ".md:");
-        parts.add("    " + pc.getName());
+        parts.add("    title: " + pc.getName());
       });
     }
     if (CollectionUtils.isNotEmpty(ig.getMenu())) {

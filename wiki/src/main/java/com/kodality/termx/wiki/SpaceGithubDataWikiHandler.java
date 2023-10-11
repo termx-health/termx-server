@@ -40,6 +40,11 @@ public class SpaceGithubDataWikiHandler implements SpaceGithubDataHandler {
   }
 
   @Override
+  public String getDefaultDir() {
+    return "input/pagecontent";
+  }
+
+  @Override
   public Map<String, String> getContent(Long spaceId) {
     Map<Long, PageLink> links = pageLinkService.query(new PageLinkQueryParams().setSpaceIds(spaceId.toString()).all()).getData().stream()
         .collect(Collectors.toMap(PageLink::getTargetId, l -> l));

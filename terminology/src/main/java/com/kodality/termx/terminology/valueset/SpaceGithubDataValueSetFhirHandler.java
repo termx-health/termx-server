@@ -34,7 +34,7 @@ public class SpaceGithubDataValueSetFhirHandler implements SpaceGithubDataHandle
 
   @Override
   public String getDefaultDir() {
-    return "vocabulary/valueset-fhir";
+    return "input/vocabulary/value-sets";
   }
 
   @Override

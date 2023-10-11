@@ -33,7 +33,7 @@ public class SpaceGithubDataValueSetFshHandler implements SpaceGithubDataHandler
 
   @Override
   public String getDefaultDir() {
-    return "vocabulary/valueset-fsh";
+    return "input/fsh/value-sets";
   }
 
   @Override
