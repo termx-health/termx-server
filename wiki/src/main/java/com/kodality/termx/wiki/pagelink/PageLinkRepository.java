@@ -120,7 +120,6 @@ public class PageLinkRepository extends BaseRepository {
 
 
   public void retainRoots(List<PageLink> links) {
-    System.out.println("retainRoots");
     SqlBuilder sb = new SqlBuilder("update wiki.page_link set sys_status = 'C'");
     sb.append("where sys_status = 'A' and source_id = target_id");
     sb.andNotIn("id", links, PageLink::getId);
@@ -128,7 +127,6 @@ public class PageLinkRepository extends BaseRepository {
   }
 
   public void retainBySourceId(Long sourceId, List<PageLink> links) {
-    System.out.println("retainBySourceId");
     SqlBuilder sb = new SqlBuilder("update wiki.page_link set sys_status = 'C'");
     sb.append("where sys_status = 'A' and source_id != target_id and source_id = ?", sourceId);
     sb.andNotIn("id", links, PageLink::getId);
@@ -136,7 +134,6 @@ public class PageLinkRepository extends BaseRepository {
   }
 
   public void retainByTargetId(List<PageLink> links, Long targetId) {
-    System.out.println("retainByTargetId");
     SqlBuilder sb = new SqlBuilder("update wiki.page_link set sys_status = 'C'");
     sb.append("where sys_status = 'A' and target_id = ?", targetId);
     sb.andNotIn("id", links, PageLink::getId);
@@ -145,7 +142,6 @@ public class PageLinkRepository extends BaseRepository {
 
 
   public void close(List<Long> ids) {
-    System.out.println("close");
     SqlBuilder sb = new SqlBuilder("update wiki.page_link set sys_status = 'C' where sys_status = 'A'").and().in("id", ids);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
