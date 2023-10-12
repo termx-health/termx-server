@@ -5,4 +5,5 @@ public interface PageRelationType {
   String vs = "vs";
   String ms = "ms";
   String concept = "concept";
+  String page = "page";
 }

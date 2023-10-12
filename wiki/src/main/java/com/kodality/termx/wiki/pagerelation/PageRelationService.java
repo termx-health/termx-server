@@ -10,6 +10,7 @@ import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class PageRelationService {
+  private final Optional<PageRelationServiceConfig> config;
   private final PageRelationRepository repository;
 
   public QueryResult<PageRelation> query(PageRelationQueryParams params) {
@@ -54,7 +56,7 @@ public class PageRelationService {
 
   private List<PageRelation> parseRelationLinks(PageContent content) {
     String regex = "\\[(.*?)]\\((.*?)\\)"; // [label](uri)
-    List<String> allowedTypes = List.of("cs", "vs", "ms", "concept", "page");
+    List<String> allowedTypes = getConfig().getAllowedPageRelationTypes();
 
     return MatcherUtil.findAllMatches(content.getContent(), regex).stream().map(m -> {
       Matcher matcher = Pattern.compile(regex).matcher(m);
@@ -79,7 +81,7 @@ public class PageRelationService {
 
   private List<PageRelation> parseRelationInsertions(PageContent content) {
     String regex = "\\{\\{(.*):(.*)}}"; // {{system:value}}
-    List<String> allowedSystems = List.of("def");
+    List<String> allowedSystems = getConfig().getAllowedPageRelationSystems();
 
     return MatcherUtil.findAllMatches(content.getContent(), regex).stream().map(m -> {
       Matcher matcher = Pattern.compile(regex).matcher(m);
@@ -114,5 +116,9 @@ public class PageRelationService {
 
       ext.setId(persistedId);
     }).toList();
+  }
+
+  private PageRelationServiceConfig getConfig() {
+    return config.orElseGet(() -> new PageRelationServiceConfig() {});
   }
 }
