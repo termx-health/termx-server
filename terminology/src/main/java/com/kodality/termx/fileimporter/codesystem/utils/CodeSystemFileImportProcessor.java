@@ -49,6 +49,9 @@ public class CodeSystemFileImportProcessor {
     if (importProperties.stream().noneMatch(p -> DESIGNATION_PROPERTY_TYPE.equals(p.getPropertyType()))) {
       throw ApiError.TE721.toApiException();
     }
+    if (importProperties.stream().anyMatch(p -> DESIGNATION_PROPERTY_TYPE.equals(p.getPropertyType()) && StringUtils.isEmpty(p.getLanguage()))) {
+      throw ApiError.TE728.toApiException();
+    }
     importProperties.stream().filter(p -> p.getPropertyType() == null).findFirst().ifPresent(p -> {
       throw ApiError.TE706.toApiException(Map.of("propertyName", p.getName()));
     });
