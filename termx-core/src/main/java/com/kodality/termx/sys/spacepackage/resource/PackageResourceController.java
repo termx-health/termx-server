@@ -18,6 +18,7 @@ import io.micronaut.http.annotation.Put;
 import io.micronaut.http.annotation.QueryValue;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
@@ -37,7 +38,7 @@ public class PackageResourceController {
 
   @Authorized(privilege = Privilege.S_VIEW)
   @Get("/{?params*}")
-  public List<PackageResource> loadAll(@NotNull @QueryValue Long spaceId, @QueryValue String packageCode, @QueryValue String version) {
+  public List<PackageResource> loadAll(@NotNull @QueryValue Long spaceId, @Nullable @QueryValue String packageCode, @Nullable @QueryValue String version) {
     return packageResourceService.loadAll(spaceId, packageCode, version);
   }
 
