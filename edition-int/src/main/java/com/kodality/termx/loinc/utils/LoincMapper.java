@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class LoincMapper {
-  private static final String IS_A = "is-a";
+  private static final String PART_OF = "part-of";
   private static final String DISPLAY = "display";
   private static final String KEY_WORDS = "key-words";
 
@@ -118,7 +118,7 @@ public class LoincMapper {
       return List.of();
     }
     return c.getAssociations().stream().map(a -> new CodeSystemAssociation()
-        .setAssociationType(IS_A)
+        .setAssociationType(PART_OF)
         .setStatus(PublicationStatus.active)
         .setOrderNumber(a.getOrder())
         .setTargetCode(a.getTargetCode())).toList();
