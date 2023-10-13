@@ -122,14 +122,15 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         version.getEntities() == null ? List.of() :
             version.getEntities().stream().filter(e -> e.getAssociations() != null)
                 .flatMap(e -> e.getAssociations().stream().map(a -> Pair.of(a, e)))
-                .filter(p -> codeSystem.getHierarchyMeaning() == null || codeSystem.getHierarchyMeaning().equals(p.getKey().getAssociationType())).toList();
+                .filter(p -> codeSystem.getHierarchyMeaning() != null && codeSystem.getHierarchyMeaning().equals(p.getKey().getAssociationType())).toList();
     Map<Long, List<CodeSystemEntityVersion>> childMap =
         entitiesWithAssociations.stream().collect(Collectors.groupingBy(e -> e.getKey().getTargetId(), mapping(Pair::getValue, toList())));
     Map<Long, List<String>> parentMap =
         entitiesWithAssociations.stream().collect(Collectors.groupingBy(e -> e.getKey().getSourceId(), mapping(p -> p.getKey().getTargetCode(), toList())));
 
     fhirCodeSystem.setConcept(version.getEntities() == null ? null : version.getEntities().stream()
-        .filter(e -> codeSystem.getHierarchyMeaning() == null || CollectionUtils.isEmpty(e.getAssociations()))
+        .filter(e -> codeSystem.getHierarchyMeaning() == null || e.getAssociations() == null ||
+            e.getAssociations().stream().noneMatch(a -> a.getAssociationType().equals(codeSystem.getHierarchyMeaning())))
         .map(e -> toFhir(e, codeSystem, version, childMap, parentMap))
         .sorted(Comparator.comparing(CodeSystemConcept::getCode))
         .collect(Collectors.toList()));
@@ -141,7 +142,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     CodeSystemConcept concept = new CodeSystemConcept();
     concept.setCode(e.getCode());
     setDesignations(concept, e.getDesignations(), version.getPreferredLanguage());
-    concept.setProperty(toFhirConceptProperties(e, codeSystem.getProperties(), childMap, parentMap));
+    concept.setProperty(toFhirConceptProperties(e, codeSystem, childMap, parentMap));
     if (codeSystem.getHierarchyMeaning() != null) {
       concept.setConcept(toFhirConcepts(childMap, parentMap, e.getId(), codeSystem, version));
     }
@@ -190,19 +191,23 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     ).sorted(Comparator.comparing(CodeSystemProperty::getCode)).toList();
   }
 
-  private static List<CodeSystemConceptProperty> toFhirConceptProperties(CodeSystemEntityVersion entityVersion, List<EntityProperty> properties,
+  private static List<CodeSystemConceptProperty> toFhirConceptProperties(CodeSystemEntityVersion entityVersion, CodeSystem codeSystem,
                                                                          Map<Long, List<CodeSystemEntityVersion>> childMap,
                                                                          Map<Long, List<String>> parentMap) {
+    List<EntityProperty> properties = codeSystem.getProperties();
+
     List<CodeSystemConceptProperty> conceptProperties = new ArrayList<>();
     if (properties == null) {
       return conceptProperties;
     }
 
     if (properties.stream().anyMatch(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName()))) {
-      String code =
-          properties.stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName())).findFirst().get().getName();
+      String code = properties.stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName())).findFirst().get().getName();
       conceptProperties.addAll(parentMap.getOrDefault(entityVersion.getId(), List.of()).stream()
           .map(c -> new CodeSystemConceptProperty().setCode(code).setValueCode(c)).toList());
+      conceptProperties.addAll(Optional.ofNullable(entityVersion.getAssociations()).orElse(List.of()).stream()
+          .filter(a -> !a.getAssociationType().equals(codeSystem.getHierarchyMeaning()))
+          .map(a -> new CodeSystemConceptProperty().setCode(code).setValueCode(a.getTargetCode())).toList());
     }
     if (properties.stream().anyMatch(p -> "child".equals(p.getName()))) {
       conceptProperties.addAll(childMap.getOrDefault(entityVersion.getId(), List.of()).stream()

@@ -11,9 +11,11 @@ import com.kodality.termx.fhir.BaseFhirMapper;
 import com.kodality.termx.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
+import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.other.Parameters;
@@ -97,7 +99,7 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
       );
     });
     cs.getProperties().stream().filter(p -> CollectionUtils.isEmpty(properties) || properties.contains(p.getName())).forEach(p -> {
-      findPropertyValues(cs, p.getId()).forEach(pv -> resp.addParameter(new ParametersParameter("property")
+      findPropertyValues(cs, p).forEach(pv -> resp.addParameter(new ParametersParameter("property")
           .addPart(new ParametersParameter("code").setValueString(p.getName()))
           .addPart(new ParametersParameter("description").setValueString(BaseFhirMapper.toFhirName(p.getDescription(), req.getLanguage())))
           .addPart(toParameter(p.getType(), pv))
@@ -106,23 +108,28 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
     return resp;
   }
 
-  private static Stream<EntityPropertyValue> findPropertyValues(CodeSystem cs, Long propertyId) {
-    if (cs.getConcepts() == null || cs.getConcepts().size() == 0 ||
-        cs.getConcepts().get(0).getVersions() == null || cs.getConcepts().get(0).getVersions().size() == 0 ||
-        cs.getConcepts().get(0).getVersions().get(0).getPropertyValues() == null) {
+  private static Stream<Object> findPropertyValues(CodeSystem cs, EntityProperty p) {
+    if (cs.getConcepts() == null || cs.getConcepts().isEmpty() ||
+        cs.getConcepts().get(0).getVersions() == null || cs.getConcepts().get(0).getVersions().isEmpty()) {
       return Stream.of();
     }
-    return cs.getConcepts().get(0).getVersions().get(0).getPropertyValues().stream().filter(pv -> pv.getEntityPropertyId().equals(propertyId));
+    Stream<Object> propertyValues = cs.getConcepts().get(0).getVersions().get(0).getPropertyValues() == null ? Stream.of() :
+        cs.getConcepts().get(0).getVersions().get(0).getPropertyValues().stream()
+        .filter(pv -> pv.getEntityPropertyId().equals(p.getId())).map(EntityPropertyValue::getValue);
+    Stream<Object> associationValues = cs.getConcepts().get(0).getVersions().get(0).getAssociations() == null ||
+        !List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName()) ? Stream.of() :
+        cs.getConcepts().get(0).getVersions().get(0).getAssociations().stream().map(CodeSystemAssociation::getTargetCode);
+    return Stream.concat(propertyValues, associationValues);
   }
 
-  private static ParametersParameter toParameter(String type, EntityPropertyValue pv) {
+  private static ParametersParameter toParameter(String type, Object value) {
     ParametersParameter result = new ParametersParameter("value");
     switch (type) {
-      case "code" -> result.setValueCode((String) pv.getValue());
-      case "string" -> result.setValueString((String) pv.getValue());
-      case "boolean" -> result.setValueBoolean((Boolean) pv.getValue());
-      case "dateTime" -> result.setValueDateTime((OffsetDateTime) pv.getValue());
-      case "decimal" -> result.setValueDecimal((BigDecimal) pv.getValue());
+      case "code" -> result.setValueCode((String) value);
+      case "string" -> result.setValueString((String) value);
+      case "boolean" -> result.setValueBoolean((Boolean) value);
+      case "dateTime" -> result.setValueDateTime((OffsetDateTime) value);
+      case "decimal" -> result.setValueDecimal((BigDecimal) value);
 //            //TODO value type coding
     }
     return result;
