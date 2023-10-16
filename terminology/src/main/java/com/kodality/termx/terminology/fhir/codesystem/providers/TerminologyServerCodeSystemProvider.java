@@ -33,6 +33,6 @@ public class TerminologyServerCodeSystemProvider implements TerminologyServerRes
     FhirClient targetClient = fhirClientService.getHttpClient(targetServerId);
 
     CodeSystem codeSystem = sourceClient.<CodeSystem>read("CodeSystem", resourceId).join();
-    targetClient.update(resourceId, codeSystem).join();
+    targetClient.update(codeSystem.getId(), codeSystem).join();
   }
 }
