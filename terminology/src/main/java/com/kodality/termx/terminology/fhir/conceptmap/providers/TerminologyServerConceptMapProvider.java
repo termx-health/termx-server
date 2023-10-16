@@ -33,14 +33,6 @@ public class TerminologyServerConceptMapProvider implements TerminologyServerRes
     FhirClient targetClient = fhirClientService.getHttpClient(targetServerId);
 
     ConceptMap conceptMap = sourceClient.<ConceptMap>read("ConceptMap", resourceId).join();
-
-    try {
-      targetClient.<ConceptMap>read("ConceptMap", resourceId).join();
-      targetClient.update(resourceId, conceptMap).join();
-    } catch (CompletionException e)  {
-      if (e.getCause() instanceof FhirClientError && ((FhirClientError) e.getCause()).getResponse().statusCode() == 404) {
-        targetClient.create(conceptMap).join();
-      }
-    }
+    targetClient.update(conceptMap.getId(), conceptMap).join();
   }
 }

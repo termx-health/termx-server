@@ -33,14 +33,6 @@ public class TerminologyServerValueSetProvider implements TerminologyServerResou
     FhirClient targetClient = fhirClientService.getHttpClient(targetServerId);
 
     ValueSet valueSet = sourceClient.<ValueSet>read("ValueSet", resourceId).join();
-
-    try {
-      targetClient.<ValueSet>read("ValueSet", resourceId).join();
-      targetClient.update(resourceId, valueSet).join();
-    } catch (CompletionException e)  {
-      if (e.getCause() instanceof FhirClientError && ((FhirClientError) e.getCause()).getResponse().statusCode() == 404) {
-        targetClient.create(valueSet).join();
-      }
-    }
+    targetClient.update(valueSet.getId(), valueSet).join();
   }
 }
