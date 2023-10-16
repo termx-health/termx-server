@@ -72,13 +72,13 @@ public class SpaceController {
 
   @Authorized(Privilege.S_VIEW)
   @Get("/{id}/overview")
-  public SpaceOverviewResponse overview(@PathVariable Long id, @QueryValue String packageCode, @QueryValue String version) {
+  public SpaceOverviewResponse overview(@PathVariable Long id, @Nullable @QueryValue String packageCode, @Nullable @QueryValue String version) {
     return overviewService.compose(id, packageCode, version);
   }
 
   @Authorized(Privilege.S_VIEW)
   @Get("/{id}/diff")
-  public SpaceDiff diff(@PathVariable Long id, @QueryValue String packageCode, @QueryValue String version) {
+  public SpaceDiff diff(@PathVariable Long id, @Nullable @QueryValue String packageCode, @Nullable @QueryValue String version) {
     return diffService.findDiff(id, packageCode, version);
   }
 
