@@ -40,6 +40,8 @@ public class TerminologyServerCodeSystemProvider implements TerminologyServerRes
     } catch (CompletionException e)  {
       if (e.getCause() instanceof FhirClientError && ((FhirClientError) e.getCause()).getResponse().statusCode() == 404) {
         targetClient.create(codeSystem).join();
+      } else {
+        throw e;
       }
     }
   }
