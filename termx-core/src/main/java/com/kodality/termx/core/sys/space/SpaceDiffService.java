@@ -50,6 +50,6 @@ public class SpaceDiffService {
     request.setServerCode(resource.getTerminologyServer());
     String comparable = terminologyServerResourceService.getResource(request).getResource();
 
-    return current.equals(comparable);
+    return current != null && current.equals(comparable);
   }
 }
