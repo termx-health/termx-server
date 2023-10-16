@@ -9,6 +9,7 @@ import com.kodality.termx.snomed.branch.SnomedBranch;
 import com.kodality.termx.snomed.branch.SnomedBranchRequest;
 import com.kodality.termx.snomed.client.SnowstormClient;
 import com.kodality.termx.snomed.codesystem.SnomedCodeSystem;
+import com.kodality.termx.snomed.codesystem.SnomedCodeSystemUpgradeRequest;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.concept.SnomedConceptTransactionRequest;
@@ -83,13 +84,20 @@ public class SnomedController {
   @Authorized(Privilege.SNOMED_EDIT)
   @Get("/codesystems/{shortName}")
   public SnomedCodeSystem loadCodeSystem(@PathVariable String shortName) {
-    return snowstormClient.loadCodeSystem(shortName).join();
+    return snomedService.loadCodeSystem(shortName);
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Post("/codesystems")
   public HttpResponse<?> createCodeSystem(@Body SnomedCodeSystem codeSystem) {
     snowstormClient.createCodeSystem(codeSystem).join();
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Post("/codesystems/{shortName}/upgrade")
+  public HttpResponse<?> upgradeCodeSystem(@PathVariable String shortName, @Body SnomedCodeSystemUpgradeRequest request) {
+    snowstormClient.upgradeCodeSystem(shortName, request).join();
     return HttpResponse.ok();
   }
 

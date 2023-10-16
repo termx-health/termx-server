@@ -126,4 +126,10 @@ public class SnomedService {
     codeSystems.forEach(cs -> cs.setVersions(snowstormClient.loadCodeSystemVersions(cs.getShortName()).join().getItems()));
     return codeSystems;
   }
+
+  public SnomedCodeSystem loadCodeSystem(String shortName) {
+    SnomedCodeSystem codeSystem = snowstormClient.loadCodeSystem(shortName).join();
+    codeSystem.setVersions(snowstormClient.loadCodeSystemVersions(codeSystem.getShortName()).join().getItems());
+    return codeSystem;
+  }
 }
