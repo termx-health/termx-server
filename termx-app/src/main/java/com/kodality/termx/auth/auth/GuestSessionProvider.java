@@ -1,6 +1,6 @@
 package com.kodality.termx.auth.auth;
 
-import com.kodality.termx.auth.SessionInfo;
+import com.kodality.termx.core.auth.SessionInfo;
 import io.micronaut.http.HttpRequest;
 import java.util.Set;
 import javax.inject.Singleton;

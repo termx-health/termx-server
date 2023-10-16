@@ -1,8 +1,8 @@
 package com.kodality.termx
 
 import com.kodality.commons.model.LocalizedName
-import com.kodality.termx.atcest.utils.AtcEst
-import com.kodality.termx.atcest.utils.AtcEstMapper
+import com.kodality.termx.editionest.atcest.utils.AtcEst
+import com.kodality.termx.editionest.atcest.utils.AtcEstMapper
 import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration
 import spock.lang.Specification
 

@@ -1,7 +1,7 @@
 package com.kodality.termx.auth.auth;
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.auth.SessionInfo;
+import com.kodality.termx.core.auth.SessionInfo;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.http.HttpRequest;

@@ -2,14 +2,14 @@ package com.kodality.termx.terminology.fhir
 
 import com.kodality.commons.util.JsonUtil
 import com.kodality.termx.TermxIntegTest
-import com.kodality.termx.auth.SessionInfo
-import com.kodality.termx.auth.SessionStore
-import com.kodality.termx.fhir.codesystem.CodeSystemFhirImportService
-import com.kodality.termx.fhir.valueset.ValueSetFhirImportService
-import com.kodality.termx.fhir.valueset.operations.ValueSetExpandOperation
-import com.kodality.termx.fhir.valueset.operations.ValueSetValidateCodeOperation
-import com.kodality.termx.terminology.codesystem.CodeSystemService
-import com.kodality.termx.terminology.valueset.ValueSetService
+import com.kodality.termx.core.auth.SessionInfo
+import com.kodality.termx.core.auth.SessionStore
+import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirImportService
+import com.kodality.termx.terminology.fhir.valueset.ValueSetFhirImportService
+import com.kodality.termx.terminology.fhir.valueset.operations.ValueSetExpandOperation
+import com.kodality.termx.terminology.fhir.valueset.operations.ValueSetValidateCodeOperation
+import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService
+import com.kodality.termx.terminology.terminology.valueset.ValueSetService
 import com.kodality.zmei.fhir.FhirMapper
 import com.kodality.zmei.fhir.resource.Resource
 import com.kodality.zmei.fhir.resource.other.Parameters
@@ -20,8 +20,6 @@ import jakarta.inject.Inject
 import org.apache.commons.lang3.tuple.Pair
 import spock.lang.Shared
 import spock.lang.Unroll
-
-import java.util.stream.Collectors
 
 @Slf4j
 @MicronautTest(transactional = true)

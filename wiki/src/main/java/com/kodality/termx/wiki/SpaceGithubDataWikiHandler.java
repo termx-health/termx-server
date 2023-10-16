@@ -2,7 +2,7 @@ package com.kodality.termx.wiki;
 
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.sys.space.SpaceGithubDataHandler;
+import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
 import com.kodality.termx.wiki.SpaceGithubDataWikiHandler.SpaceGithubPage.SpaceGithubPageContent;
 import com.kodality.termx.wiki.page.Page;
 import com.kodality.termx.wiki.page.PageContent;

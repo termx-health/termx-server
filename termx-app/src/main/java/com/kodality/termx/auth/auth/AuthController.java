@@ -1,7 +1,7 @@
 package com.kodality.termx.auth.auth;
 
-import com.kodality.termx.auth.Authorized;
-import com.kodality.termx.auth.SessionStore;
+import com.kodality.termx.core.auth.Authorized;
+import com.kodality.termx.core.auth.SessionStore;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import java.util.Collection;

@@ -2,7 +2,7 @@ package com.kodality.termx.wiki.pagerelation;
 
 import com.kodality.commons.model.CodeName;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.utils.MatcherUtil;
+import com.kodality.termx.core.utils.MatcherUtil;
 import com.kodality.termx.wiki.page.PageContent;
 import com.kodality.termx.wiki.page.PageRelation;
 import com.kodality.termx.wiki.page.PageRelationQueryParams;

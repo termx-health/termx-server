@@ -3,7 +3,7 @@ package com.kodality.termx.snomed.snomed;
 
 import com.kodality.commons.util.AsyncHelper;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.snomed.Privilege;
 import com.kodality.termx.snomed.branch.SnomedBranch;
 import com.kodality.termx.snomed.branch.SnomedBranchRequest;
@@ -29,12 +29,11 @@ import com.kodality.termx.snomed.snomed.csv.SnomedConceptCsvService;
 import com.kodality.termx.snomed.snomed.rf2.SnomedRF2Service;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
-import com.kodality.termx.sys.lorque.LorqueProcessService;
-import com.kodality.termx.sys.provenance.Provenance;
-import com.kodality.termx.sys.provenance.ProvenanceService;
-import com.kodality.termx.sys.provenance.ProvenanceUtil;
-import com.kodality.termx.utils.FileUtil;
-import io.micronaut.context.annotation.Parameter;
+import com.kodality.termx.core.sys.lorque.LorqueProcessService;
+import com.kodality.termx.core.sys.provenance.Provenance;
+import com.kodality.termx.core.sys.provenance.ProvenanceService;
+import com.kodality.termx.core.sys.provenance.ProvenanceUtil;
+import com.kodality.termx.core.utils.FileUtil;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
@@ -82,9 +81,22 @@ public class SnomedController {
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
+  @Get("/codesystems/{shortName}")
+  public SnomedCodeSystem loadCodeSystem(@PathVariable String shortName) {
+    return snowstormClient.loadCodeSystem(shortName).join();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
   @Post("/codesystems")
   public HttpResponse<?> createCodeSystem(@Body SnomedCodeSystem codeSystem) {
     snowstormClient.createCodeSystem(codeSystem).join();
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Put("/codesystems/{shortName}")
+  public HttpResponse<?> createCodeSystem(@PathVariable String shortName, @Body SnomedCodeSystem codeSystem) {
+    snowstormClient.updateCodeSystem(shortName, codeSystem).join();
     return HttpResponse.ok();
   }
 

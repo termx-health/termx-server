@@ -6,14 +6,14 @@
 
   <changeSet id="snomed-module" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="snomed/changelog/data/codesystem/snomed-module.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="concept-status" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="snomed/changelog/data/codesystem/concept-status.json"/>
     </customChange>
   </changeSet>

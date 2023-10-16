@@ -13,8 +13,8 @@ import com.kodality.taskflow.task.activity.TaskActivityService;
 import com.kodality.taskflow.workflow.Workflow;
 import com.kodality.taskflow.workflow.WorkflowSearchParams;
 import com.kodality.taskflow.workflow.WorkflowService;
-import com.kodality.termx.task.TaskProvider;
-import com.kodality.termx.task.TaskQueryParams;
+import com.kodality.termx.task.task.TaskProvider;
+import com.kodality.termx.task.task.TaskQueryParams;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Map;
@@ -32,21 +32,21 @@ public class TaskFlowTaskProvider extends TaskProvider {
   private final TaskMapper mapper;
 
   @Override
-  public QueryResult<com.kodality.termx.task.Task> queryTasks(TaskQueryParams params) {
+  public QueryResult<com.kodality.termx.task.task.Task> queryTasks(TaskQueryParams params) {
     QueryResult<Task> result = taskService.search(mapper.map(params));
 
     List<String> workflowIds = result.getData().stream().map(Task::getWorkflowId).distinct().map(String::valueOf).toList();
     WorkflowSearchParams wfParams = new WorkflowSearchParams().setIds(String.join(",", workflowIds)).limit(workflowIds.size());
     Map<Long, String> workflows = workflowService.search(wfParams).getData().stream().collect(Collectors.toMap(Workflow::getId, Workflow::getTaskType));
 
-    QueryResult<com.kodality.termx.task.Task> termxResult = new QueryResult<>();
+    QueryResult<com.kodality.termx.task.task.Task> termxResult = new QueryResult<>();
     termxResult.setMeta(result.getMeta());
     termxResult.setData(result.getData().stream().map(task -> mapper.map(task).setWorkflow(workflows.get(task.getWorkflowId()))).toList());
     return termxResult;
   }
 
   @Override
-  public com.kodality.termx.task.Task loadTask(String number) {
+  public com.kodality.termx.task.task.Task loadTask(String number) {
     Task task = taskService.load(number);
     List<TaskActivity> activities = taskActivityService.search(new TaskActivitySearchParams().setTaskIds(task.getId().toString()).setSort(List.of(Ordering.updated)));
     Project project = projectService.load(task.getProjectId());
@@ -58,7 +58,7 @@ public class TaskFlowTaskProvider extends TaskProvider {
   }
 
   @Override
-  public com.kodality.termx.task.Task saveTask(com.kodality.termx.task.Task termxTask) {
+  public com.kodality.termx.task.task.Task saveTask(com.kodality.termx.task.task.Task termxTask) {
     Task task = mapper.map(termxTask);
     if (task.getNumber() != null) {
       Task existingTask = taskService.load(task.getNumber());
@@ -72,7 +72,7 @@ public class TaskFlowTaskProvider extends TaskProvider {
   }
 
   @Override
-  public com.kodality.termx.task.Task.TaskActivity createTaskActivity(String number, String note) {
+  public com.kodality.termx.task.task.Task.TaskActivity createTaskActivity(String number, String note) {
     Long taskId = taskService.load(number).getId();
     TaskActivity ta = new TaskActivity();
     ta.setTaskId(taskId);
@@ -81,7 +81,7 @@ public class TaskFlowTaskProvider extends TaskProvider {
   }
 
   @Override
-  public com.kodality.termx.task.Task.TaskActivity updateTaskActivity(String number, String activityId, String note) {
+  public com.kodality.termx.task.task.Task.TaskActivity updateTaskActivity(String number, String activityId, String note) {
     Long taskId = taskService.load(number).getId();
     TaskActivity ta = taskActivityService.load(Long.valueOf(activityId));
     ta.setTaskId(taskId);
@@ -100,7 +100,7 @@ public class TaskFlowTaskProvider extends TaskProvider {
   }
 
   @Override
-  public List<com.kodality.termx.task.Workflow> loadProjectWorkFlows(String code) {
+  public List<com.kodality.termx.task.task.Workflow> loadProjectWorkFlows(String code) {
     WorkflowSearchParams params = new WorkflowSearchParams().all();
     params.setProjectCodes(code);
     return workflowService.search(params).getData().stream().map(mapper::map).toList();

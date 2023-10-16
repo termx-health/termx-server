@@ -1,8 +1,8 @@
 package com.kodality.termx.wiki.pagecomment;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.Authorized;
-import com.kodality.termx.auth.SessionStore;
+import com.kodality.termx.core.auth.Authorized;
+import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.wiki.Privilege;
 import com.kodality.termx.wiki.page.PageComment;
 import com.kodality.termx.wiki.page.PageCommentQueryParams;

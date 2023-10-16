@@ -8,7 +8,7 @@ import com.kodality.termx.snomed.concept.SnomedTranslation;
 import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.description.SnomedDescription;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationRepository;
-import com.kodality.termx.ts.CodeSystemProvider;
+import com.kodality.termx.core.ts.CodeSystemProvider;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;

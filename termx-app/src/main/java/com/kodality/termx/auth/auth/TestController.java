@@ -1,6 +1,6 @@
 package com.kodality.termx.auth.auth;
 
-import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.core.auth.Authorized;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;

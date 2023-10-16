@@ -1,5 +1,7 @@
 package com.kodality.termx.user;
 
+import com.kodality.termx.core.user.User;
+import com.kodality.termx.core.user.UserProvider;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;

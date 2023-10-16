@@ -2,13 +2,13 @@ package com.kodality.termx
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import com.kodality.commons.model.LocalizedName
-import com.kodality.termx.icd10.utils.Icd10
-import com.kodality.termx.icd10.utils.Icd10Mapper
+import com.kodality.termx.editionint.icd10.utils.Icd10
+import com.kodality.termx.editionint.icd10.utils.Icd10Mapper
 import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration
 import com.kodality.termx.ts.codesystem.CodeSystemImportRequest
-import com.kodality.termx.utils.MatcherUtil
-import com.kodality.termx.utils.ResourceUtil
-import com.kodality.termx.utils.XmlMapperUtil
+import com.kodality.termx.core.utils.MatcherUtil
+import com.kodality.termx.core.utils.ResourceUtil
+import com.kodality.termx.core.utils.XmlMapperUtil
 import spock.lang.Shared
 import spock.lang.Specification
 

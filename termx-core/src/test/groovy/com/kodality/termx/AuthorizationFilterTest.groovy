@@ -1,6 +1,6 @@
 package com.kodality.termx
 
-import com.kodality.termx.auth.SessionInfo
+import com.kodality.termx.core.auth.SessionInfo
 import spock.lang.Specification
 
 class AuthorizationFilterTest extends Specification {

@@ -7,16 +7,16 @@ import com.kodality.taskflow.task.TaskSearchParams;
 import com.kodality.taskflow.task.activity.TaskActivity;
 import com.kodality.taskflow.user.TaskflowUser;
 import com.kodality.taskflow.workflow.Workflow;
-import com.kodality.termx.task.Task.TaskActivity.TaskActivityContextItem;
-import com.kodality.termx.task.TaskQueryParams;
-import com.kodality.termx.task.Workflow.WorkflowTransition;
+import com.kodality.termx.task.task.Task.TaskActivity.TaskActivityContextItem;
+import com.kodality.termx.task.task.TaskQueryParams;
+import com.kodality.termx.task.task.Workflow.WorkflowTransition;
 import jakarta.inject.Singleton;
 import java.util.Map.Entry;
 
 @Singleton
 public class TaskMapper {
 
-  public Task map(com.kodality.termx.task.Task termxTask) {
+  public Task map(com.kodality.termx.task.task.Task termxTask) {
     Task task = new Task();
     task.setNumber(termxTask.getNumber());
     task.setType(termxTask.getType());
@@ -36,8 +36,8 @@ public class TaskMapper {
     return task;
   }
 
-  public com.kodality.termx.task.Task map(Task task) {
-    com.kodality.termx.task.Task termxTask = new com.kodality.termx.task.Task();
+  public com.kodality.termx.task.task.Task map(Task task) {
+    com.kodality.termx.task.task.Task termxTask = new com.kodality.termx.task.task.Task();
     termxTask.setNumber(task.getNumber());
     termxTask.setType(task.getType());
     termxTask.setStatus(task.getStatus());
@@ -51,7 +51,7 @@ public class TaskMapper {
     termxTask.setContent(task.getContent());
     if (task.getContext() != null) {
       termxTask.setContext(task.getContext().stream()
-          .map(c -> new com.kodality.termx.task.Task.TaskContextItem().setId(c.getId()).setType(c.getType())).toList());
+          .map(c -> new com.kodality.termx.task.task.Task.TaskContextItem().setId(c.getId()).setType(c.getType())).toList());
     }
     return termxTask;
   }
@@ -78,13 +78,13 @@ public class TaskMapper {
     return searchParams;
   }
 
-  public com.kodality.termx.task.Task.TaskActivity map(TaskActivity activity) {
-    com.kodality.termx.task.Task.TaskActivity termxActivity = new com.kodality.termx.task.Task.TaskActivity();
+  public com.kodality.termx.task.task.Task.TaskActivity map(TaskActivity activity) {
+    com.kodality.termx.task.task.Task.TaskActivity termxActivity = new com.kodality.termx.task.task.Task.TaskActivity();
     termxActivity.setId(activity.getId().toString());
     termxActivity.setNote(activity.getNote());
     if (activity.getTransition() != null) {
       termxActivity.setTransition(activity.getTransition().entrySet().stream().collect(Collectors.toMap(Entry::getKey, o -> {
-        var tat = new com.kodality.termx.task.Task.TaskActivity.TaskActivityTransition();
+        var tat = new com.kodality.termx.task.task.Task.TaskActivity.TaskActivityTransition();
         tat.setFrom(o.getValue().getFrom());
         tat.setTo(o.getValue().getTo());
         return tat;
@@ -98,8 +98,8 @@ public class TaskMapper {
     return termxActivity;
   }
 
-  public com.kodality.termx.task.Workflow map(Workflow workflow) {
-    com.kodality.termx.task.Workflow termxWorkflow = new com.kodality.termx.task.Workflow();
+  public com.kodality.termx.task.task.Workflow map(Workflow workflow) {
+    com.kodality.termx.task.task.Workflow termxWorkflow = new com.kodality.termx.task.task.Workflow();
     termxWorkflow.setCode(workflow.getTaskType());
     termxWorkflow.setTransitions(workflow.getTransitions().stream().map(t -> new WorkflowTransition().setFrom(t.getFrom()).setTo(t.getTo())).toList());
     return termxWorkflow;

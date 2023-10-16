@@ -6,119 +6,119 @@
 
   <changeSet id="snomed-ct" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/snomed-ct.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="ucum" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/ucum.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="publication-status" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/publication-status.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="codesystem-content-mode" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/codesystem-content-mode.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="v3-ietf3066" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/v3-ietf3066.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="concept-property-type" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/concept-property-type.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="contact-point-system" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/contact-point-system.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="contact-point-use" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/contact-point-use.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="filter-operator" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/filter-operator.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="namingsystem-identifier-type" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/namingsystem-identifier-type.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="namingsystem-type" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/namingsystem-type.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="orpha-classification-level" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/orpha-classification-level.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="orpha-disorder-type" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/orpha-disorder-type.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="orpha-flag-value" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/orpha-flag-value.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="orpha-total-status" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/orpha-total-status.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="publisher" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/publisher.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="version-algorithm" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.CodeSystemFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/version-algorithm.json"/>
     </customChange>
   </changeSet>

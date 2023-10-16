@@ -6,14 +6,14 @@
 
   <changeSet id="request-priority" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.ValueSetFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="task-taskflow/changelog/data/valueset/request-priority.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="task-status" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.ValueSetFhirImport">
+    <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="task-taskflow/changelog/data/valueset/task-status.json"/>
     </customChange>
   </changeSet>

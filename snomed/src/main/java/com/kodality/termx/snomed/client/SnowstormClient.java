@@ -4,7 +4,7 @@ package com.kodality.termx.snomed.client;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.client.MultipartBodyPublisher;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.http.BinaryHttpClient;
+import com.kodality.termx.core.http.BinaryHttpClient;
 import com.kodality.termx.snomed.branch.SnomedBranch;
 import com.kodality.termx.snomed.branch.SnomedBranchRequest;
 import com.kodality.termx.snomed.codesystem.SnomedCodeSystem;
@@ -52,12 +52,20 @@ public class SnowstormClient {
     return client.GET("codesystems", JsonUtil.getParametricType(SnomedSearchResult.class, SnomedCodeSystem.class));
   }
 
+  public CompletableFuture<SnomedCodeSystem> loadCodeSystem(String shortName) {
+    return client.GET("codesystems/" + shortName, SnomedCodeSystem.class);
+  }
+
   public CompletableFuture<SnomedSearchResult<SnomedCodeSystemVersion>> loadCodeSystemVersions(String shortName) {
     return client.GET("codesystems/" + shortName + "/versions?showFutureVersions=true" , JsonUtil.getParametricType(SnomedSearchResult.class, SnomedCodeSystemVersion.class));
   }
 
   public CompletableFuture<SnomedCodeSystem> createCodeSystem(SnomedCodeSystem codeSystem) {
     return client.POST("codesystems", codeSystem, SnomedCodeSystem.class);
+  }
+
+  public CompletableFuture<SnomedCodeSystem> updateCodeSystem(String shortName, SnomedCodeSystem codeSystem) {
+    return client.PUT("codesystems/" + shortName, codeSystem, SnomedCodeSystem.class);
   }
 
   public CompletableFuture<HttpResponse<String>> deleteCodeSystem(String shortName) {

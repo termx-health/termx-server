@@ -1,6 +1,6 @@
 package com.kodality.termx.wiki.tag;
 
-import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.wiki.Privilege;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;

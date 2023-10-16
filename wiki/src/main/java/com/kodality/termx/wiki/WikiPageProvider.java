@@ -1,6 +1,7 @@
 package com.kodality.termx.wiki;
 
 
+import com.kodality.termx.core.wiki.PageProvider;
 import com.kodality.termx.wiki.page.PageContent;
 import com.kodality.termx.wiki.page.PageContentQueryParams;
 import com.kodality.termx.wiki.pagecontent.PageContentService;

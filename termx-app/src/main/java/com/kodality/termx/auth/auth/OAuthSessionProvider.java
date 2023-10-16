@@ -11,7 +11,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.kodality.commons.cache.CacheManager;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.auth.SessionInfo;
+import com.kodality.termx.core.auth.SessionInfo;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.cookie.Cookie;

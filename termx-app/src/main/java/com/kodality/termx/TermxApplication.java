@@ -1,5 +1,7 @@
 package com.kodality.termx;
 
+import com.kodality.termx.observationdefinition.observationdefinition.ObservationDefinitionController;
+import com.kodality.termx.ucum.measurementunit.MeasurementUnitController;
 import io.micronaut.openapi.annotation.OpenAPIInclude;
 import io.micronaut.runtime.Micronaut;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -25,13 +27,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @OpenAPIInclude(
     tags = @Tag(name = "Terminology"),
     classes = {
-        com.kodality.termx.terminology.codesystem.CodeSystemController.class,
-        com.kodality.termx.terminology.codesystem.concept.ConceptController.class,
-        com.kodality.termx.terminology.codesystem.designation.DesignationController.class,
-        com.kodality.termx.terminology.codesystem.entity.CodeSystemEntityVersionController.class,
-        com.kodality.termx.terminology.valueset.ValueSetController.class,
-        com.kodality.termx.terminology.valueset.ValueSetVersionController.class,
-        com.kodality.termx.terminology.mapset.MapSetController.class
+        com.kodality.termx.terminology.terminology.codesystem.CodeSystemController.class,
+        com.kodality.termx.terminology.terminology.codesystem.concept.ConceptController.class,
+        com.kodality.termx.terminology.terminology.codesystem.designation.DesignationController.class,
+        com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionController.class,
+        com.kodality.termx.terminology.terminology.valueset.ValueSetController.class,
+        com.kodality.termx.terminology.terminology.valueset.ValueSetVersionController.class,
+        com.kodality.termx.terminology.terminology.mapset.MapSetController.class
     }
 )
 @OpenAPIInclude(
@@ -46,7 +48,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 )
 @OpenAPIInclude(
     tags = @Tag(name = "Observation definition"),
-    classes = {com.kodality.termx.observationdefinition.ObservationDefinitionController.class}
+    classes = {ObservationDefinitionController.class}
 )
 @OpenAPIInclude(
     tags = @Tag(name = "Modeler"),
@@ -60,28 +62,28 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 )
 @OpenAPIInclude(
     tags = @Tag(name = "UCUM"),
-    classes = {com.kodality.termx.measurementunit.MeasurementUnitController.class}
+    classes = {MeasurementUnitController.class}
 )
 @OpenAPIInclude(
     tags = @Tag(name = "Editions"),
     classes = {
-        com.kodality.termx.atc.AtcController.class,
-        com.kodality.termx.icd10.Icd10Controller.class,
-        com.kodality.termx.loinc.LoincController.class,
-        com.kodality.termx.orphanet.OrphanetController.class,
-        com.kodality.termx.atcest.AtcEstController.class,
-        com.kodality.termx.icd10est.Icd10EstController.class,
-        com.kodality.termx.ichiuz.IchiUzController.class
+        com.kodality.termx.editionint.atc.AtcController.class,
+        com.kodality.termx.editionint.icd10.Icd10Controller.class,
+        com.kodality.termx.editionint.loinc.LoincController.class,
+        com.kodality.termx.editionint.orphanet.OrphanetController.class,
+        com.kodality.termx.editionest.atcest.AtcEstController.class,
+        com.kodality.termx.editionest.icd10est.Icd10EstController.class,
+        com.kodality.termx.editionuzb.ichiuz.IchiUzController.class
     }
 )
 @OpenAPIInclude(
     tags = @Tag(name = "File importer"),
     classes = {
-        com.kodality.termx.fileimporter.codesystem.CodeSystemFileImportController.class,
-        com.kodality.termx.fileimporter.valueset.ValueSetFileImportController.class,
-        com.kodality.termx.fileimporter.mapset.MapSetFileImportController.class,
-        com.kodality.termx.fileimporter.association.AssociationFileImportController.class,
-        com.kodality.termx.fileimporter.analyze.FileAnalysisController.class
+        com.kodality.termx.terminology.fileimporter.codesystem.CodeSystemFileImportController.class,
+        com.kodality.termx.terminology.fileimporter.valueset.ValueSetFileImportController.class,
+        com.kodality.termx.terminology.fileimporter.mapset.MapSetFileImportController.class,
+        com.kodality.termx.terminology.fileimporter.association.AssociationFileImportController.class,
+        com.kodality.termx.terminology.fileimporter.analyze.FileAnalysisController.class
     }
 )
 @SecurityScheme(name = "openid",

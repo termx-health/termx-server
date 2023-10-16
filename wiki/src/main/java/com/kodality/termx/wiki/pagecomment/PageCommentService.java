@@ -1,9 +1,9 @@
 package com.kodality.termx.wiki.pagecomment;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.SessionStore;
-import com.kodality.termx.sys.provenance.Provenance;
-import com.kodality.termx.sys.provenance.ProvenanceService;
+import com.kodality.termx.core.auth.SessionStore;
+import com.kodality.termx.core.sys.provenance.Provenance;
+import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.wiki.ApiError;
 import com.kodality.termx.wiki.page.PageComment;
 import com.kodality.termx.wiki.page.PageCommentQueryParams;

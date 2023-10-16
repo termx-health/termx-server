@@ -1,13 +1,12 @@
 package com.kodality.termx.snomed.snomed.csv;
 
-import com.kodality.termx.auth.SessionStore;
+import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.description.SnomedDescription;
-import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
 import com.kodality.termx.snomed.snomed.SnomedService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
-import com.kodality.termx.sys.lorque.LorqueProcessService;
+import com.kodality.termx.core.sys.lorque.LorqueProcessService;
 import com.kodality.termx.sys.lorque.ProcessResult;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;

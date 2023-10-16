@@ -1,17 +1,16 @@
 package com.kodality.termx.snomed.snomed.rf2;
 
-import com.kodality.termx.auth.SessionStore;
+import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
-import com.kodality.termx.sys.lorque.LorqueProcessService;
+import com.kodality.termx.core.sys.lorque.LorqueProcessService;
 import com.kodality.termx.sys.lorque.ProcessResult;
 import com.kodality.termx.snomed.concept.SnomedConcept;
-import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslation;
 import com.kodality.termx.snomed.snomed.SnomedService;
-import com.kodality.termx.ts.CodeSystemProvider;
+import com.kodality.termx.core.ts.CodeSystemProvider;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;

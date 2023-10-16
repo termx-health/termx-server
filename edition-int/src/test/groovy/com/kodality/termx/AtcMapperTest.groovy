@@ -1,7 +1,7 @@
 package com.kodality.termx
 
 import com.kodality.commons.model.LocalizedName
-import com.kodality.termx.atc.utils.AtcMapper
+import com.kodality.termx.editionint.atc.utils.AtcMapper
 import com.kodality.termx.ts.Language
 import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration
 import spock.lang.Specification

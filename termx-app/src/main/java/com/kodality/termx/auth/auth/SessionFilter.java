@@ -1,7 +1,7 @@
 package com.kodality.termx.auth.auth;
 
-import com.kodality.termx.auth.SessionInfo;
-import com.kodality.termx.auth.SessionStore;
+import com.kodality.termx.core.auth.SessionInfo;
+import com.kodality.termx.core.auth.SessionStore;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpStatus;

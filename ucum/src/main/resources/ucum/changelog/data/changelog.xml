@@ -6,14 +6,14 @@
 
   <changeSet id="measurement-unit" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.MeasurementUnitTsvImport">
+    <customChange class="com.kodality.termx.ucum.liquibase.MeasurementUnitTsvImport">
       <param name="files" value="ucum/changelog/data/measurement-unit.tsv"/>
     </customChange>
   </changeSet>
 
   <changeSet id="measurement-unit-supplement" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.liquibase.MeasurementUnitImport">
+    <customChange class="com.kodality.termx.ucum.liquibase.MeasurementUnitImport">
       <param name="files" value="ucum/changelog/data/measurement-unit-supplement.json"/>
     </customChange>
   </changeSet>

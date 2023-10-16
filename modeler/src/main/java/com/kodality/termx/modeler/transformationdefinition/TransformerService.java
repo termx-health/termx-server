@@ -2,11 +2,11 @@ package com.kodality.termx.modeler.transformationdefinition;
 
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.client.HttpClientError;
-import com.kodality.termx.fhir.conceptmap.ConceptMapResourceStorage;
+import com.kodality.termx.terminology.fhir.conceptmap.ConceptMapResourceStorage;
 import com.kodality.termx.modeler.ApiError;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
-import com.kodality.termx.sys.server.httpclient.TerminologyServerHttpClientService;
+import com.kodality.termx.core.sys.server.httpclient.TerminologyServerHttpClientService;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.Address;
 import com.kodality.zmei.fhir.datatypes.Age;

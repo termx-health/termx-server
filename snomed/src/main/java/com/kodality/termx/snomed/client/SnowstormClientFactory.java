@@ -1,7 +1,7 @@
 package com.kodality.termx.snomed.client;
 
 import com.kodality.commons.client.HttpClient;
-import com.kodality.termx.http.BinaryHttpClient;
+import com.kodality.termx.core.http.BinaryHttpClient;
 import io.micronaut.context.annotation.Bean;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Requires;

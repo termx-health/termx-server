@@ -1,7 +1,7 @@
 package com.kodality.termx.wiki.pagerelation;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.wiki.Privilege;
 import com.kodality.termx.wiki.page.PageRelation;
 import com.kodality.termx.wiki.page.PageRelationQueryParams;

@@ -1,8 +1,8 @@
 package com.kodality.termx.auth.auth;
 
-import com.kodality.termx.auth.Authorized;
-import com.kodality.termx.auth.SessionInfo;
-import com.kodality.termx.auth.SessionStore;
+import com.kodality.termx.core.auth.Authorized;
+import com.kodality.termx.core.auth.SessionInfo;
+import com.kodality.termx.core.auth.SessionStore;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.http.HttpAttributes;

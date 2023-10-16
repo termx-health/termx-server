@@ -2,8 +2,8 @@ package com.kodality.termx.modeler.structuredefinition;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.Authorized;
-import com.kodality.termx.auth.SessionStore;
+import com.kodality.termx.core.auth.Authorized;
+import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.modeler.Privilege;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;

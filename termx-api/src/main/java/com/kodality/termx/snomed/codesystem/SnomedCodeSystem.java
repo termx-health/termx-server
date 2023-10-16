@@ -23,6 +23,7 @@ public class SnomedCodeSystem {
   public static class SnomedCodeSystemVersion {
     private String shortName;
     private OffsetDateTime importDate;
+    private String dependantVersionEffectiveTime;
     private String parentBranchPath;
     private String version;
     private String description;

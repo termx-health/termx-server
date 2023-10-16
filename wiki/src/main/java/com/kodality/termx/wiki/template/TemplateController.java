@@ -2,7 +2,7 @@ package com.kodality.termx.wiki.template;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.Authorized;
+import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.wiki.Privilege;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;

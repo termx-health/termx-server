@@ -2,7 +2,7 @@ package com.kodality.termx.wiki.pagecontent;
 
 import com.github.slugify.Slugify;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.utils.TextUtil;
+import com.kodality.termx.core.utils.TextUtil;
 import com.kodality.termx.wiki.ApiError;
 import com.kodality.termx.wiki.page.Page;
 import com.kodality.termx.wiki.page.PageComment;
