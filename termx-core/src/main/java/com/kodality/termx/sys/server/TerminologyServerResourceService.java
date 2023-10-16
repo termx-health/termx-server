@@ -5,7 +5,9 @@ import com.kodality.termx.ApiError;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceProvider;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceRequest;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceResponse;
+import com.kodality.zmei.fhir.client.FhirClientError;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
@@ -20,9 +22,17 @@ public class TerminologyServerResourceService {
     TerminologyServerResourceProvider provider = resourceProviders.stream()
         .filter(p -> p.getType().equals(request.getResourceType()))
         .findFirst()
-        .orElseThrow(() -> ApiError.TC102.toApiException());
+        .orElseThrow(ApiError.TC102::toApiException);
 
-    Object resource = provider.getResource(server.getId(), request.getResourceId());
-    return new TerminologyServerResourceResponse().setResource(JsonUtil.toPrettyJson(resource));
+    TerminologyServerResourceResponse response = new TerminologyServerResourceResponse();
+    try {
+      Object resource = provider.getResource(server.getId(), request.getResourceId());
+      response.setResource(JsonUtil.toPrettyJson(resource));
+    } catch (CompletionException e) {
+      if (!(e.getCause() instanceof FhirClientError) || 404 != ((FhirClientError) e.getCause()).getResponse().statusCode()) {
+        throw e;
+      }
+    }
+    return response;
   }
 }

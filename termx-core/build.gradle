@@ -31,6 +31,7 @@ dependencies {
 
     implementation("com.kodality.kefhir:kefhir-core:${kefhirVersion}") { changing = true }
     implementation("com.kodality.zmei:zmei-fhir:${rootProject.zmeiVersion}") { changing = true }
+    implementation("com.kodality.zmei:zmei-fhir-client:${rootProject.zmeiVersion}") { changing = true }
     implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}") { changing = true }
 
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${rootProject.jacksonVersion}")
