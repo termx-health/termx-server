@@ -53,14 +53,14 @@ public class PackageResourceController {
 
   @Authorized(privilege = Privilege.S_EDIT)
   @Post(value = "/{id}/sync")
-  public HttpResponse<?> importResource(@PathVariable Long id) {
+  public HttpResponse<?> importResource(@PathVariable Long id, @Valid @Body PackageResourceSyncRequest request) {
     //TODO: auth?
     JobLogResponse job = importLogger.createJob(JOB_TYPE);
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Package resource sync started");
         long start = System.currentTimeMillis();
-        packageResourceSyncService.sync(id);
+        packageResourceSyncService.sync(id, request.getType());
         log.info("Package resource sync took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
         importLogger.logImport(job.getJobId());
       } catch (ApiClientException e) {
@@ -81,6 +81,13 @@ public class PackageResourceController {
     private Long versionId;
     @NotNull
     private PackageResource resource;
+  }
+
+  @Getter
+  @Setter
+  public static class PackageResourceSyncRequest {
+    @NotNull
+    private String type;
   }
 
 }

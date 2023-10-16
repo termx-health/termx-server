@@ -1,20 +1,20 @@
 package com.kodality.termx.terminology.fhir.valueset.providers;
 
-import com.kodality.termx.terminology.fhir.valueset.ValueSetFhirImportService;
 import com.kodality.termx.sys.ResourceType;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceProvider;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceSyncProvider;
 import com.kodality.termx.terminology.terminology.FhirServerHttpClientService;
 import com.kodality.zmei.fhir.client.FhirClient;
+import com.kodality.zmei.fhir.client.FhirClientError;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet;
 import jakarta.inject.Singleton;
+import java.util.concurrent.CompletionException;
 import lombok.RequiredArgsConstructor;
 
 @Singleton
 @RequiredArgsConstructor
 public class TerminologyServerValueSetProvider implements TerminologyServerResourceProvider, TerminologyServerResourceSyncProvider {
   private final FhirServerHttpClientService fhirClientService;
-  private final ValueSetFhirImportService importService;
 
   @Override
   public String getType() {
@@ -28,9 +28,19 @@ public class TerminologyServerValueSetProvider implements TerminologyServerResou
   }
 
   @Override
-  public void syncFrom(Long serverId, String resourceId) {
-    FhirClient client = fhirClientService.getHttpClient(serverId);
-    ValueSet valueSet = client.<ValueSet>read("ValueSet", resourceId).join();
-    importService.importValueSet(valueSet);
+  public void sync(Long sourceServerId, Long targetServerId, String resourceId) {
+    FhirClient sourceClient = fhirClientService.getHttpClient(sourceServerId);
+    FhirClient targetClient = fhirClientService.getHttpClient(targetServerId);
+
+    ValueSet valueSet = sourceClient.<ValueSet>read("ValueSet", resourceId).join();
+
+    try {
+      targetClient.<ValueSet>read("ValueSet", resourceId).join();
+      targetClient.update(resourceId, valueSet).join();
+    } catch (CompletionException e)  {
+      if (e.getCause() instanceof FhirClientError && ((FhirClientError) e.getCause()).getResponse().statusCode() == 404) {
+        targetClient.create(valueSet).join();
+      }
+    }
   }
 }

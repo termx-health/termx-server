@@ -1,20 +1,20 @@
 package com.kodality.termx.terminology.fhir.codesystem.providers;
 
-import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirImportService;
 import com.kodality.termx.sys.ResourceType;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceProvider;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceSyncProvider;
 import com.kodality.termx.terminology.terminology.FhirServerHttpClientService;
 import com.kodality.zmei.fhir.client.FhirClient;
+import com.kodality.zmei.fhir.client.FhirClientError;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import jakarta.inject.Singleton;
+import java.util.concurrent.CompletionException;
 import lombok.RequiredArgsConstructor;
 
 @Singleton
 @RequiredArgsConstructor
 public class TerminologyServerCodeSystemProvider implements TerminologyServerResourceProvider, TerminologyServerResourceSyncProvider {
   private final FhirServerHttpClientService fhirClientService;
-  private final CodeSystemFhirImportService importService;
 
   @Override
   public String getType() {
@@ -28,9 +28,19 @@ public class TerminologyServerCodeSystemProvider implements TerminologyServerRes
   }
 
   @Override
-  public void syncFrom(Long serverId, String resourceId) {
-    FhirClient client = fhirClientService.getHttpClient(serverId);
-    CodeSystem codeSystem = client.<CodeSystem>read("CodeSystem", resourceId).join();
-    importService.importCodeSystem(codeSystem);
+  public void sync(Long sourceServerId, Long targetServerId, String resourceId) {
+    FhirClient sourceClient = fhirClientService.getHttpClient(sourceServerId);
+    FhirClient targetClient = fhirClientService.getHttpClient(targetServerId);
+
+    CodeSystem codeSystem = sourceClient.<CodeSystem>read("CodeSystem", resourceId).join();
+
+    try {
+      targetClient.<CodeSystem>read("CodeSystem", resourceId).join();
+      targetClient.update(resourceId, codeSystem).join();
+    } catch (CompletionException e)  {
+      if (e.getCause() instanceof FhirClientError && ((FhirClientError) e.getCause()).getResponse().statusCode() == 404) {
+        targetClient.create(codeSystem).join();
+      }
+    }
   }
 }
