@@ -50,11 +50,14 @@ public class SpaceDiffService {
         .setResourceType(resource.getResourceType())
         .setServerCode(currentServer.getCode());
     Map<String, Object> current = JsonUtil.fromJson(terminologyServerResourceService.getResource(request).getResource(), JsonUtil.getMapType(Object.class));
+    if (current == null) {
+      return false;
+    }
 
+    request.setResourceId((String) current.get("id"));
     request.setServerCode(resource.getTerminologyServer());
     Map<String, Object> comparable = JsonUtil.fromJson(terminologyServerResourceService.getResource(request).getResource(), JsonUtil.getMapType(Object.class));
-
-    if (current == null || comparable == null) {
+    if (comparable == null) {
       return false;
     }
 
