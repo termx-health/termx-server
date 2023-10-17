@@ -9,4 +9,6 @@
 
     <include file="01-init-user.sql" relativeToChangelogFile="true"/>
     <include file="modeler/changelog.xml" relativeToChangelogFile="true"/>
+
+    <include file="data/changelog.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
