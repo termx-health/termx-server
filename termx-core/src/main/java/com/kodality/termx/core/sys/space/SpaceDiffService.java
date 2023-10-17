@@ -1,5 +1,6 @@
 package com.kodality.termx.core.sys.space;
 
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.core.ApiError;
 import com.kodality.termx.sys.server.TerminologyServer;
 import com.kodality.termx.core.sys.server.TerminologyServerResourceService;
@@ -10,6 +11,7 @@ import com.kodality.termx.sys.space.diff.SpaceDiff.SpaceDiffItem;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import com.kodality.termx.core.sys.spacepackage.resource.PackageResourceService;
 import java.util.List;
+import java.util.Map;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
@@ -45,11 +47,17 @@ public class SpaceDiffService {
         .setResourceId(resource.getResourceId())
         .setResourceType(resource.getResourceType())
         .setServerCode(currentServer.getCode());
-    String current = terminologyServerResourceService.getResource(request).getResource();
+    Map<String, Object> current = JsonUtil.fromJson(terminologyServerResourceService.getResource(request).getResource(), JsonUtil.getMapType(Object.class));
 
     request.setServerCode(resource.getTerminologyServer());
-    String comparable = terminologyServerResourceService.getResource(request).getResource();
+    Map<String, Object> comparable = JsonUtil.fromJson(terminologyServerResourceService.getResource(request).getResource(), JsonUtil.getMapType(Object.class));
 
-    return current != null && current.equals(comparable);
+    if (current == null || comparable == null) {
+      return false;
+    }
+
+    current.remove("meta");
+    comparable.remove("meta");
+    return JsonUtil.toJson(current).equals(JsonUtil.toJson(comparable));
   }
 }
