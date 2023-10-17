@@ -14,9 +14,7 @@ import java.util.List;
 import java.util.Map;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Singleton
 @RequiredArgsConstructor
 public class SpaceDiffService {
@@ -63,11 +61,6 @@ public class SpaceDiffService {
 
     current.remove("meta");
     comparable.remove("meta");
-
-    log.info("Comparing two resources");
-    log.info("Resource from current installation: \n" + JsonUtil.toJson(current));
-    log.info("Resource from external server: \n" + JsonUtil.toJson(comparable));
-
     return JsonUtil.toJson(current).equals(JsonUtil.toJson(comparable));
   }
 }
