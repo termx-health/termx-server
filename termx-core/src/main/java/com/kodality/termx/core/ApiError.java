@@ -13,7 +13,8 @@ public enum ApiError {
   TC104("TC104", "Package or package version not specified."),
   TC105("TC105", "Terminology server for current installation is not defined."),
   TC106("TC106", "Import failed"),
-  TC107("TC107", "Space Github directories must be unique");
+  TC107("TC107", "Space Github directories must be unique"),
+  TC108("TC108", "Space code '{{code}}' is already used.");
 
   @Getter
   private String code;

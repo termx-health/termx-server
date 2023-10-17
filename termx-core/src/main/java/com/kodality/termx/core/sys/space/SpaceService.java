@@ -7,6 +7,7 @@ import com.kodality.termx.sys.space.Space.SpaceIntegration;
 import com.kodality.termx.sys.space.SpaceQueryParams;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -19,9 +20,17 @@ public class SpaceService {
 
   @Transactional
   public Space save(Space space) {
+    validate(space);
     prepare(space);
     repository.save(space);
     return space;
+  }
+
+  private void validate(Space space) {
+    Space currentSpace = repository.load(space.getCode());
+    if (currentSpace != null && !currentSpace.getId().equals(space.getId())) {
+      throw ApiError.TC108.toApiException(Map.of("code", space.getCode()));
+    }
   }
 
   private void prepare(Space space) {
