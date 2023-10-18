@@ -5,6 +5,7 @@ import com.kodality.commons.util.AsyncHelper;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.snomed.Privilege;
+import com.kodality.termx.snomed.branch.SnomedAuthoringStatsResponse;
 import com.kodality.termx.snomed.branch.SnomedBranch;
 import com.kodality.termx.snomed.branch.SnomedBranchRequest;
 import com.kodality.termx.snomed.client.SnowstormClient;
@@ -12,7 +13,6 @@ import com.kodality.termx.snomed.codesystem.SnomedCodeSystem;
 import com.kodality.termx.snomed.codesystem.SnomedCodeSystemUpgradeRequest;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
-import com.kodality.termx.snomed.concept.SnomedConceptTransactionRequest;
 import com.kodality.termx.snomed.concept.SnomedTranslation;
 import com.kodality.termx.snomed.decriptionitem.SnomedDescriptionItemResponse;
 import com.kodality.termx.snomed.decriptionitem.SnomedDescriptionItemSearchParams;
@@ -28,6 +28,7 @@ import com.kodality.termx.snomed.rf2.SnomedImportRequest;
 import com.kodality.termx.snomed.search.SnomedSearchResult;
 import com.kodality.termx.snomed.snomed.csv.SnomedConceptCsvService;
 import com.kodality.termx.snomed.snomed.rf2.SnomedRF2Service;
+import com.kodality.termx.snomed.snomed.translation.SnomedTranslationActionService;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.core.sys.lorque.LorqueProcessService;
@@ -35,6 +36,7 @@ import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.core.sys.provenance.ProvenanceUtil;
 import com.kodality.termx.core.utils.FileUtil;
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
@@ -68,8 +70,8 @@ public class SnomedController {
   private final SnomedRF2Service snomedRF2Service;
   private final SnomedConceptCsvService snomedConceptCsvService;
   private final LorqueProcessService lorqueProcessService;
-  private final SnomedTransactionService transactionService;
   private final SnomedTranslationService translationService;
+  private final SnomedTranslationActionService translationActionService;
   private final ProvenanceService provenanceService;
 
 
@@ -168,6 +170,36 @@ public class SnomedController {
     return snowstormClient.branchIntegrityCheck(parsePath(path)).join();
   }
 
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/{path}/authoring-stats/changed-fully-specified-names")
+  public List<SnomedAuthoringStatsResponse> getChangedFsn(@PathVariable String path) {
+    return snowstormClient.getChangedFsn(parsePath(path)).join();
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/{path}/authoring-stats/new-descriptions")
+  public List<SnomedAuthoringStatsResponse> getNewDescriptions(@PathVariable String path) {
+    return snowstormClient.getNewDescriptions(parsePath(path)).join();
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/{path}/authoring-stats/new-synonyms-on-existing-concepts")
+  public List<SnomedAuthoringStatsResponse> getNewSynonyms(@PathVariable String path) {
+    return snowstormClient.getNewSynonyms(parsePath(path)).join();
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/{path}/authoring-stats/inactivated-synonyms")
+  public List<SnomedAuthoringStatsResponse> getInactivatedSynonyms(@PathVariable String path) {
+    return snowstormClient.getInactivatedSynonyms(parsePath(path)).join();
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/{path}/authoring-stats/reactivated-synonyms")
+  public List<SnomedAuthoringStatsResponse> getReactivatedSynonyms(@PathVariable String path) {
+    return snowstormClient.getReactivatedSynonyms(parsePath(path)).join();
+  }
+
 
   //----------------RF2----------------
 
@@ -251,14 +283,6 @@ public class SnomedController {
         .contentType(MediaType.of("application/csv"));
   }
 
-
-  @Authorized(Privilege.SNOMED_VIEW)
-  @Post("/branches/{path}/concepts/transaction")
-  public HttpResponse<?> conceptTransaction(@PathVariable String path, @Body SnomedConceptTransactionRequest request) {
-    transactionService.transaction(parsePath(path), request);
-    return HttpResponse.ok();
-  }
-
   //----------------Descriptions----------------
 
   @Authorized(Privilege.SNOMED_VIEW)
@@ -276,13 +300,6 @@ public class SnomedController {
     futures.joinAll();
 
     return response;
-  }
-
-  @Authorized(Privilege.SNOMED_VIEW)
-  @Get("/branches/{path}/descriptions{?params*}")
-  public SnomedSearchResult<SnomedDescription> findDescriptions(@PathVariable String path, SnomedDescriptionSearchParams params) {
-    path += "/";
-    return snomedService.searchDescriptions(parsePath(path), params);
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
@@ -312,14 +329,23 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/translations")
-  public List<SnomedTranslation> queryTranslations(@QueryValue Boolean active, @QueryValue Boolean unlinked) {
-    return translationService.loadAll(active, unlinked);
+  public List<SnomedTranslation> queryTranslations(@QueryValue @Nullable Boolean active,
+                                                   @QueryValue @Nullable Boolean unlinked,
+                                                   @QueryValue @Nullable String branch) {
+    return translationService.loadAll(active, unlinked, branch);
   }
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/translations/{id}")
   public SnomedTranslation loadTranslation(@PathVariable Long id) {
     return translationService.load(id);
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Post("/translations/{id}/add-to-branch")
+  public HttpResponse<?> addTranslationToBranch(@PathVariable Long id) {
+    translationActionService.addToBranch(id);
+    return HttpResponse.ok();
   }
 
   @Authorized(Privilege.SNOMED_VIEW)

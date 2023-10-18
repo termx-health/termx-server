@@ -23,14 +23,14 @@ public class TaskFlowSnomedInterceptor extends SnomedInterceptor {
 
   @Override
   public void afterTranslationSave(String conceptId, SnomedTranslation t) {
-    List<SnomedDescription> snomedDescriptions = snomedService.searchDescriptions(new SnomedDescriptionSearchParams().setConceptId(conceptId).setAll(true));
+    List<SnomedDescription> snomedDescriptions = snomedService.searchDescriptions(t.getBranch(), new SnomedDescriptionSearchParams().setConceptId(conceptId).setAll(true));
     Task task = new Task();
     task.setTitle(String.format("%s concept translation validation", conceptId));
     task.setContent(String.format("Concept [%s](concept:snomed-ct|%s) \n\n" +
         snomedDescriptions.stream().map(d -> d.getLang() + ": " + d.getTerm()).collect(Collectors.joining("\n")) +
-            "\n\nModule: %s \nLanguage: %s \nTerm: %s \nType: %s \nAcceptability: %s",
+            "\n\nModule: %s \nBranch: %s \nLanguage: %s \nTerm: %s \nType: %s \nAcceptability: %s",
         conceptId, conceptId,
-        t.getModule(), t.getLanguage(), t.getTerm(), t.getType(), t.getAcceptability()));
+        t.getModule(), t.getBranch(), t.getLanguage(), t.getTerm(), t.getType(), t.getAcceptability()));
     task.setContext(List.of(new TaskContextItem().setId(t.getId()).setType(TASK_CTX_TYPE)));
     taskFlowService.createTask(task, TASK_WORKFLOW);
   }

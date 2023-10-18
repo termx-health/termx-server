@@ -70,22 +70,30 @@ public class SnomedService {
   }
 
   public List<SnomedDescription> loadDescriptions(List<String> conceptIds) {
+    return loadDescriptions(null, conceptIds);
+  }
+
+  public List<SnomedDescription> loadDescriptions(String branch, List<String> conceptIds) {
     List<SnomedDescription> descriptions = new ArrayList<>();
     IntStream.range(0, (conceptIds.size() + MAX_CONCEPT_COUNT - 1) / MAX_CONCEPT_COUNT)
         .mapToObj(i -> conceptIds.subList(i * MAX_CONCEPT_COUNT, Math.min(conceptIds.size(), (i + 1) * MAX_CONCEPT_COUNT))).forEach(batch -> {
           SnomedDescriptionSearchParams params = new SnomedDescriptionSearchParams();
           params.setConceptIds(batch);
           params.setAll(true);
-          descriptions.addAll(searchDescriptions(params));
+          descriptions.addAll(searchDescriptions(branch, params));
         });
     return descriptions;
   }
 
   public List<SnomedDescription> searchDescriptions(SnomedDescriptionSearchParams params) {
+    return searchDescriptions(null, params);
+  }
+
+  public List<SnomedDescription> searchDescriptions(String branch, SnomedDescriptionSearchParams params) {
     if (params.isAll()) {
 
       params.setLimit(1);
-      SnomedSearchResult<SnomedDescription> result = snowstormClient.queryDescriptions(params).join();
+      SnomedSearchResult<SnomedDescription> result = snowstormClient.queryDescriptions(branch, params).join();
       Integer total = result.getTotal();
 
       List<SnomedDescription> snomedDescriptions = new ArrayList<>();
@@ -93,21 +101,12 @@ public class SnomedService {
       for (int i = 0; i < bound; i++) {
         params.setLimit(MAX_COUNT);
         params.setSearchAfter(i == 0 ? null : result.getSearchAfter());
-        result = snowstormClient.queryDescriptions(params).join();
+        result = snowstormClient.queryDescriptions(branch, params).join();
         snomedDescriptions.addAll(result.getItems());
       }
       return snomedDescriptions;
     }
-    return snowstormClient.queryDescriptions(params).join().getItems();
-  }
-
-  public SnomedSearchResult<SnomedDescription> searchDescriptions(String path, SnomedDescriptionSearchParams params) {
-    SnomedSearchResult<SnomedDescription> descriptions = snowstormClient.queryDescriptions(path, params).join();
-    String descriptionIds = descriptions.getItems().stream().map(SnomedDescription::getDescriptionId).collect(Collectors.joining(","));
-
-    List<SnomedTranslation> translations = translationRepository.query(new SnomedTranslationSearchParams().setDescriptionIds(descriptionIds).all()).getData();
-    descriptions.getItems().forEach(d -> d.setLocal(translations.stream().anyMatch(t -> t.getDescriptionId().equals(d.getDescriptionId()))));
-    return descriptions;
+    return snowstormClient.queryDescriptions(branch, params).join().getItems();
   }
 
   @Transactional

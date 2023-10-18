@@ -12,4 +12,5 @@ public class SnomedTranslationSearchParams extends QueryParams {
   private String ids;
   private String descriptionIds;
   private String status;
+  private String branch;
 }

@@ -5,7 +5,6 @@ import com.kodality.termx.snomed.concept.SnomedTranslation;
 import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
 import com.kodality.termx.snomed.description.SnomedDescription;
-import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
 import com.kodality.termx.snomed.snomed.SnomedInterceptor;
 import com.kodality.termx.snomed.snomed.SnomedService;
 import io.micronaut.core.util.CollectionUtils;
@@ -34,14 +33,16 @@ public class SnomedTranslationService {
     return repository.load(id);
   }
 
-  public List<SnomedTranslation> loadAll(boolean onlyActive, boolean unlinked) {
-    SnomedTranslationSearchParams params = new SnomedTranslationSearchParams().setStatus(onlyActive ? SnomedTranslationStatus.active : null).all();
+  public List<SnomedTranslation> loadAll(boolean onlyActive, boolean unlinked, String branch) {
+    SnomedTranslationSearchParams params =
+        new SnomedTranslationSearchParams().setStatus(onlyActive ? SnomedTranslationStatus.active : null).setBranch(branch).all();
     List<SnomedTranslation> translations = query(params).getData();
 
     if (CollectionUtils.isNotEmpty(translations) && unlinked) {
       List<String> conceptIds = translations.stream().map(SnomedTranslation::getConceptId).distinct().toList();
-      List<SnomedDescription> snomedDescriptions = snomedService.loadDescriptions(conceptIds);
-      translations = translations.stream().filter(t -> snomedDescriptions.stream().noneMatch(sd -> sd.getDescriptionId().equals(t.getDescriptionId()))).toList();
+      List<SnomedDescription> snomedDescriptions = snomedService.loadDescriptions(branch, conceptIds);
+      translations =
+          translations.stream().filter(t -> snomedDescriptions.stream().noneMatch(sd -> sd.getDescriptionId().equals(t.getDescriptionId()))).toList();
     }
     return translations;
   }

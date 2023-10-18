@@ -3,6 +3,7 @@ package com.kodality.termx.snomed.snomed.rf2;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
+import com.kodality.termx.snomed.description.SnomedDescriptionType;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.core.sys.lorque.LorqueProcessService;
@@ -45,8 +46,6 @@ public class SnomedRF2Service {
   public static final String PRIMITIVE = "900000000000074008";
   public static final String FULLY_DEFINED = "900000000000073002";
 
-  public static final String SYNONYM = "900000000000013009";
-  public static final String FULLY_SPECIFIED_NAME = "900000000000003001";
   public static final String CASE_INSENSITIVE = "900000000000448009";
   public static final String PREFERRED = "900000000000548007";
   public static final String ACCEPTABLE = "900000000000549004";
@@ -135,7 +134,7 @@ public class SnomedRF2Service {
       sb.append(getPropertyValue(modules.get(translation.getModule()), "refsetId")).append("\t");
       sb.append(translation.getConceptId()).append("\t");
       sb.append(translation.getLanguage()).append("\t");
-      sb.append(("fully-specified-name".equals(translation.getType()) ? FULLY_SPECIFIED_NAME : SYNONYM)).append("\t");
+      sb.append(("fully-specified-name".equals(translation.getType()) ? SnomedDescriptionType.fsn : SnomedDescriptionType.synonym)).append("\t");
       sb.append(translation.getTerm()).append("\t");
       sb.append(CASE_INSENSITIVE).append("\t").append("\n");
     });

@@ -5,6 +5,7 @@ import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.client.MultipartBodyPublisher;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.core.http.BinaryHttpClient;
+import com.kodality.termx.snomed.branch.SnomedAuthoringStatsResponse;
 import com.kodality.termx.snomed.branch.SnomedBranch;
 import com.kodality.termx.snomed.branch.SnomedBranchRequest;
 import com.kodality.termx.snomed.codesystem.SnomedCodeSystem;
@@ -113,6 +114,26 @@ public class SnowstormClient {
     return client.POST(path + "/integrity-check", null, Object.class);
   }
 
+  public CompletableFuture<List<SnomedAuthoringStatsResponse>> getChangedFsn(String path) {
+    return client.GET(path + "/authoring-stats/changed-fully-specified-names", JsonUtil.getListType(SnomedAuthoringStatsResponse.class));
+  }
+
+  public CompletableFuture<List<SnomedAuthoringStatsResponse>> getNewDescriptions(String path) {
+    return client.GET(path + "/authoring-stats/new-descriptions", JsonUtil.getListType(SnomedAuthoringStatsResponse.class));
+  }
+
+  public CompletableFuture<List<SnomedAuthoringStatsResponse>> getNewSynonyms(String path) {
+    return client.GET(path + "/authoring-stats/new-synonyms-on-existing-concepts", JsonUtil.getListType(SnomedAuthoringStatsResponse.class));
+  }
+
+  public CompletableFuture<List<SnomedAuthoringStatsResponse>> getInactivatedSynonyms(String path) {
+    return client.GET(path + "/authoring-stats/inactivated-synonyms", JsonUtil.getListType(SnomedAuthoringStatsResponse.class));
+  }
+
+  public CompletableFuture<List<SnomedAuthoringStatsResponse>> getReactivatedSynonyms(String path) {
+    return client.GET(path + "/authoring-stats/reactivated-synonyms", JsonUtil.getListType(SnomedAuthoringStatsResponse.class));
+  }
+
   public CompletableFuture<String> createExportJob(SnomedExportRequest request) {
     return client.POST("exports", request).thenApply(resp -> resp.headers().firstValue("location").map(l -> {
       String[] location = l.split("/");
@@ -178,13 +199,9 @@ public class SnowstormClient {
     return client.DELETE(path + "descriptions/" + descriptionId);
   }
 
-  public CompletableFuture<SnomedSearchResult<SnomedDescription>> queryDescriptions(SnomedDescriptionSearchParams params) {
-    return queryDescriptions(branch, params);
-  }
-
   public CompletableFuture<SnomedSearchResult<SnomedDescription>> queryDescriptions(String path, SnomedDescriptionSearchParams params) {
     String query = "?" + HttpClient.toQueryParams(params);
-    return client.GET(path + "descriptions" + query, JsonUtil.getParametricType(SnomedSearchResult.class, SnomedDescription.class));
+    return client.GET(preparePath(path) + "descriptions" + query, JsonUtil.getParametricType(SnomedSearchResult.class, SnomedDescription.class));
   }
 
   public CompletableFuture<SnomedRefsetResponse> findRefsets(SnomedRefsetSearchParams params) {
@@ -195,5 +212,16 @@ public class SnowstormClient {
   public CompletableFuture<SnomedRefsetMemberResponse> findRefsetMembers(SnomedRefsetSearchParams params) {
     String query = "?" + HttpClient.toQueryParams(params);
     return client.GET(branch + "members" + query, SnomedRefsetMemberResponse.class);
+  }
+
+
+  private String preparePath(String path) {
+    if (path == null) {
+      return branch;
+    }
+    if (!path.endsWith("/")){
+      path += "/";
+    }
+    return path;
   }
 }

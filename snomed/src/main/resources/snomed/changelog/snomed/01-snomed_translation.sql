@@ -24,3 +24,7 @@ create index snomed_translation_concept_idx on snomed.snomed_translation (concep
 
 select core.create_table_metadata('snomed.snomed_translation');
 --rollback drop table if exists snomed.snomed_translation;
+
+--changeset kodality:snomed_translation-branch
+alter table snomed.snomed_translation add column branch text;
+--

@@ -22,6 +22,7 @@ public class SnomedTranslationRepository extends BaseRepository {
     ssb.property("description_id", translation.getDescriptionId());
     ssb.property("concept_id", conceptId);
     ssb.property("module", translation.getModule());
+    ssb.property("branch", translation.getBranch());
     ssb.property("language", translation.getLanguage());
     ssb.property("term", translation.getTerm());
     ssb.property("type", translation.getType());
@@ -89,6 +90,7 @@ public class SnomedTranslationRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.append("where st.sys_status = 'A'");
     sb.appendIfNotNull("and status = ?", params.getStatus());
+    sb.appendIfNotNull("and branch = ?", params.getBranch());
     if (StringUtils.isNotEmpty(params.getIds())) {
       sb.and().in("id", params.getIds(), Long::valueOf);
     }

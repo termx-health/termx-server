@@ -4,7 +4,7 @@ import com.kodality.taskflow.api.TaskStatusChangeInterceptor;
 import com.kodality.taskflow.task.Task;
 import com.kodality.taskflow.task.Task.TaskStatus;
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
-import com.kodality.termx.snomed.snomed.translation.SnomedTranslationRepository;
+import com.kodality.termx.snomed.snomed.translation.SnomedTranslationActionService;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Singleton;
@@ -15,7 +15,7 @@ import static java.util.Map.entry;
 @Singleton
 @RequiredArgsConstructor
 public class SnomedTaskStatusChangeInterceptor extends TaskStatusChangeInterceptor {
-  private final SnomedTranslationRepository translationService;
+  private final SnomedTranslationActionService translationService;
   private static final Map<String, String> statusMap = Map.ofEntries(
       entry(TaskStatus.requested, SnomedTranslationStatus.proposed),
       entry(TaskStatus.accepted, SnomedTranslationStatus.active),
@@ -28,7 +28,12 @@ public class SnomedTaskStatusChangeInterceptor extends TaskStatusChangeIntercept
     }
     task.getContext().stream().filter(ctx -> TaskFlowSnomedInterceptor.TASK_CTX_TYPE.equals(ctx.getType())).forEach(ctx -> {
       Optional<String> status = Optional.ofNullable(statusMap.get(task.getStatus()));
-      status.ifPresent(s -> translationService.updateStatus((Long) ctx.getId(), s));
+      status.ifPresent(s -> {
+        translationService.updateStatus((Long) ctx.getId(), s);
+        if (SnomedTranslationStatus.active.equals(s)) {
+          translationService.addToBranch((Long) ctx.getId());
+        }
+      });
     });
   }
 }

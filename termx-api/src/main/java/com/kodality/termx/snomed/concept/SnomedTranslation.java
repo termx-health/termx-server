@@ -12,6 +12,7 @@ public class SnomedTranslation {
   private String descriptionId;
   private String conceptId;
   private String module;
+  private String branch;
   private String language;
   private String term;
   private String type;
