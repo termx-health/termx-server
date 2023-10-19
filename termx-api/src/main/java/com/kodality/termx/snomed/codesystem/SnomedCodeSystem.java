@@ -13,6 +13,7 @@ public class SnomedCodeSystem {
   private String name;
   private String shortName;
   private String branchPath;
+  private boolean dailyBuildAvailable;
   private Map<String, String> languages;
   private SnomedCodeSystemVersion latestVersion;
   private List<SnomedCodeSystemVersion> versions;
