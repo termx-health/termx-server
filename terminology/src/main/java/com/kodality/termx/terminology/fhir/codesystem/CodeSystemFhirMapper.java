@@ -15,6 +15,7 @@ import com.kodality.termx.ts.Permissions;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
+import com.kodality.termx.ts.codesystem.CodeSystemContent;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
@@ -95,8 +96,10 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setApprovalDate(toFhirDate(provenances, "approved"));
     fhirCodeSystem.setHierarchyMeaning(codeSystem.getHierarchyMeaning());
     fhirCodeSystem.setContent(codeSystem.getContent());
-    fhirCodeSystem.setCaseSensitive(
-        codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
+    if (!CodeSystemContent.supplement.equals(fhirCodeSystem.getContent())) {
+      fhirCodeSystem.setCaseSensitive(
+          codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
+    }
     fhirCodeSystem.setSupplements(codeSystem.getBaseCodeSystemUri());
     if (codeSystem.getCopyright() != null) {
       fhirCodeSystem.setCopyright(codeSystem.getCopyright().getHolder());
