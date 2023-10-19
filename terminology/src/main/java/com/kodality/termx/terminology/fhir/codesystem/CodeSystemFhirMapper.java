@@ -94,11 +94,11 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setContact(toFhirContacts(codeSystem.getContacts()));
     fhirCodeSystem.setLastReviewDate(toFhirDate(provenances, "reviewed"));
     fhirCodeSystem.setApprovalDate(toFhirDate(provenances, "approved"));
-    fhirCodeSystem.setHierarchyMeaning(codeSystem.getHierarchyMeaning());
     fhirCodeSystem.setContent(codeSystem.getContent());
     if (!CodeSystemContent.supplement.equals(fhirCodeSystem.getContent())) {
       fhirCodeSystem.setCaseSensitive(
           codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
+      fhirCodeSystem.setHierarchyMeaning(codeSystem.getHierarchyMeaning());
     }
     fhirCodeSystem.setSupplements(codeSystem.getBaseCodeSystemUri());
     if (codeSystem.getCopyright() != null) {
