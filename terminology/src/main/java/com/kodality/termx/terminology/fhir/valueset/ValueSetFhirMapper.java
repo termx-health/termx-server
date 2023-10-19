@@ -46,6 +46,7 @@ import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionPar
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -133,7 +134,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       compose.setLockedDate(ruleSet.getLockedDate().toLocalDate());
     }
     compose.setProperty(ruleSet.getRules() == null ? List.of() :
-        ruleSet.getRules().stream().flatMap(r -> Optional.ofNullable(r.getProperties()).orElse(List.of()).stream()).toList());
+        ruleSet.getRules().stream().flatMap(r -> Optional.ofNullable(r.getProperties()).orElse(List.of()).stream()).filter(StringUtils::isNotEmpty).toList());
     compose.setInclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.include));
     compose.setExclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.exclude));
     return compose;
