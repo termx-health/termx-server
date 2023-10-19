@@ -39,7 +39,7 @@ public class EntityPropertyValueRepository extends BaseRepository {
   }
 
   public List<EntityPropertyValue> loadAll(Long codeSystemEntityVersionId) {
-    String sql = select + from + "where epv.sys_status = 'A' and epv.code_system_entity_version_id = ?";
+    String sql = select + from + "where epv.sys_status = 'A' and epv.code_system_entity_version_id = ? order by ep.order_number";
     return getBeans(sql, bp, codeSystemEntityVersionId);
   }
 
@@ -68,6 +68,7 @@ public class EntityPropertyValueRepository extends BaseRepository {
     }, p -> {
       SqlBuilder sb = new SqlBuilder(select + from + "where epv.sys_status = 'A'");
       sb.append(filter(params));
+      sb.append("order by ep.order_number");
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
