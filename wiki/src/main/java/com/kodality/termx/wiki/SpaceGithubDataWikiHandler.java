@@ -151,7 +151,7 @@ public class SpaceGithubDataWikiHandler implements SpaceGithubDataHandler {
             cc.setName(c.name);
             cc.setContentType(c.ct);
             log.info("saving " + cc.getSlug());
-            pageContentService.save(cc, pageId);
+            cc = pageContentService.save(cc, pageId);
             currentContents.put(cc.getSlug(), cc);
           }
         });
