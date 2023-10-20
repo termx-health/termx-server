@@ -93,6 +93,13 @@ public class PageController {
     return HttpResponse.ok();
   }
 
+  @Authorized(privilege = Privilege.W_VIEW)
+  @Get("/{id}/path")
+  public List<Long> getPath(@PathVariable Long id) {
+    validate(id, Privilege.W_VIEW);
+    return linkService.getPath(id);
+  }
+
 
   /* Content */
 
@@ -100,26 +107,27 @@ public class PageController {
   @Post("/{id}/contents")
   public HttpResponse<?> savePageContent(@PathVariable Long id, @Body PageContent content) {
     validate(id, Privilege.W_EDIT);
-    contentService.save(content, id);
+    PageContent persisted = contentService.save(content, id);
     provenanceService.create(new Provenance("modified", "Page", id.toString()));
-    return HttpResponse.created(content);
+    return HttpResponse.created(persisted);
   }
 
   @Authorized(privilege = Privilege.W_EDIT)
   @Put("/{id}/contents/{contentId}")
   public HttpResponse<?> updatePageContent(@PathVariable Long id, @PathVariable Long contentId, @Body PageContent content) {
     validate(id, Privilege.W_EDIT);
-    content.setId(contentId);
-    contentService.save(content, id);
+    PageContent persisted = contentService.save(content.setId(contentId), id);
     provenanceService.create(new Provenance("modified", "Page", id.toString()));
-    return HttpResponse.created(content);
+    return HttpResponse.created(persisted);
   }
 
   @Authorized(privilege = Privilege.W_VIEW)
-  @Get("/{id}/path")
-  public List<Long> getPath(@PathVariable Long id) {
+  @Get("/{id}/contents/{contentId}/history{?params*}")
+  public QueryResult<PageContentHistoryItem> queryPageContentHistory(@PathVariable Long id, @PathVariable Long contentId, PageContentHistoryQueryParams params) {
     validate(id, Privilege.W_VIEW);
-    return linkService.getPath(id);
+    params.setPermittedPageIds(List.of(id));
+    params.setPermittedPageContentIds(List.of(contentId));
+    return contentService.queryHistory(params);
   }
 
 
@@ -152,6 +160,7 @@ public class PageController {
     validate(id, Privilege.W_EDIT);
     attachmentService.deleteAttachmentContent(id, fileName);
   }
+
 
   private void validate(Long id, String privilege) {
     Page page = pageService.load(id).orElseThrow(() -> new NotFoundException("Page not found: " + id));

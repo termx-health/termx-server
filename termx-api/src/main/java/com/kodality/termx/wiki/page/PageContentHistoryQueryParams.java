@@ -9,15 +9,12 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class PageContentQueryParams extends QueryParams {
+public class PageContentHistoryQueryParams extends QueryParams {
   private String ids;
-  private String slugs;
-  private String textContains;
-  private String spaceIds;
-  private String relations; //targetType|targetId1,targetType|targetId2
-  private String langs;
+  private boolean summary;
 
-  private List<Long> permittedSpaceIds;
+  private List<Long> permittedPageIds;
+  private List<Long> permittedPageContentIds;
 
   public interface Ordering {
     String modified = "modified";

@@ -8,10 +8,12 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class PageContent {
+public class PageContentHistoryItem {
   private Long id;
+  private Long pageContentId;
   private Long pageId;
   private Long spaceId;
+
   private String name;
   private String slug;
   private String lang;

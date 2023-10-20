@@ -2,6 +2,8 @@ package com.kodality.termx.wiki.pagecontent;
 
 import com.github.slugify.Slugify;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.core.sys.provenance.Provenance;
+import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.core.utils.TextUtil;
 import com.kodality.termx.wiki.ApiError;
 import com.kodality.termx.wiki.page.Page;
@@ -9,6 +11,8 @@ import com.kodality.termx.wiki.page.PageComment;
 import com.kodality.termx.wiki.page.PageCommentQueryParams;
 import com.kodality.termx.wiki.page.PageCommentStatus;
 import com.kodality.termx.wiki.page.PageContent;
+import com.kodality.termx.wiki.page.PageContentHistoryItem;
+import com.kodality.termx.wiki.page.PageContentHistoryQueryParams;
 import com.kodality.termx.wiki.page.PageContentQueryParams;
 import com.kodality.termx.wiki.page.PageRepository;
 import com.kodality.termx.wiki.pagecomment.PageCommentService;
@@ -29,13 +33,15 @@ public class PageContentService {
   private final PageRelationService pageRelationService;
   private final PageCommentService pageCommentService;
   private final TemplateContentService templateContentService;
-
-  public PageContent load(Long contentId) {
-    return repository.load(contentId);
-  }
+  private final ProvenanceService provenanceService;
+  private final PageContentHistoryRepository historyRepository;
 
   public List<PageContent> loadAll(Long pageId) {
     return repository.loadAll(pageId);
+  }
+
+  public PageContent load(Long contentId) {
+    return repository.load(contentId);
   }
 
   public QueryResult<PageContent> query(PageContentQueryParams params) {
@@ -43,29 +49,47 @@ public class PageContentService {
   }
 
   @Transactional
-  public void save(PageContent c, Long pageId) {
+  public PageContent save(PageContent c, Long pageId) {
     PageContent content = prepare(c, pageId);
     validate(content);
 
-    PageContent persisted = load(c.getId());
+    PageContent persisted = load(content.getId());
     if (persisted != null) {
-      recalculateComments(c, persisted);
+      recalculateComments(persisted, content);
     }
 
-    repository.save(content, pageId);
+    Long contentId = repository.save(content, pageId);
+    provenanceService.create(persisted != null
+        ? new Provenance("modified", "PageContent", contentId.toString())
+        : new Provenance("created", "PageContent", contentId.toString()));
+    content.setId(contentId);
     pageRelationService.save(content, pageId);
+
+    PageContent saved = load(contentId);
+    historyRepository.persist(saved);
+
+    return saved;
   }
 
   @Transactional
-  public void delete(Long id) {
+  public void delete(Long contentId) {
     //TODO: validate child links empty?
-    Long pageId = load(id).getPageId();
-    repository.delete(id);
+    Long pageId = load(contentId).getPageId();
+
+    provenanceService.create(new Provenance("deleted", "PageContent", contentId.toString()));
+    repository.delete(contentId);
   }
 
   @Transactional
   public void deleteByPage(Long pageId) {
-    repository.deleteByPage(pageId);
+    for (PageContent content : loadAll(pageId)) {
+      delete(content.getId());
+    }
+  }
+
+
+  public QueryResult<PageContentHistoryItem> queryHistory(PageContentHistoryQueryParams params) {
+    return historyRepository.query(params);
   }
 
 
@@ -99,7 +123,7 @@ public class PageContentService {
     }
   }
 
-  private void recalculateComments(PageContent current, PageContent persisted) {
+  private void recalculateComments(PageContent persisted, PageContent current) {
     PageCommentQueryParams q = new PageCommentQueryParams();
     q.setPageContentIds(current.getId().toString());
     q.setStatuses(PageCommentStatus.active);
