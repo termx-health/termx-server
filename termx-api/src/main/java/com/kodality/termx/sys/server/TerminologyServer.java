@@ -37,6 +37,16 @@ public class TerminologyServer {
     private String clientSecret;
   }
 
+  public TerminologyServer maskSensitiveData() {
+    if (this.getHeaders() != null) {
+      this.getHeaders().stream().filter(h -> h.getKey().equals("Authorization")).forEach(h -> h.setValue(null));
+    }
+    if (this.getAuthConfig() != null) {
+      this.getAuthConfig().setClientSecret(null);
+    }
+    return this;
+  }
+
   public TerminologyServer publicView() {
     return new TerminologyServer()
         .setId(this.id)

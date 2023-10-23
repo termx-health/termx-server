@@ -14,7 +14,8 @@ public enum ApiError {
   TC105("TC105", "Terminology server for current installation is not defined."),
   TC106("TC106", "Import failed"),
   TC107("TC107", "Space Github directories must be unique"),
-  TC108("TC108", "Space code '{{code}}' is already used.");
+  TC108("TC108", "Space code '{{code}}' is already used."),
+  TC109("TC109", "Server cannot contain multiple '{{name}}' headers");
 
   @Getter
   private String code;

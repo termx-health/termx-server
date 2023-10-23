@@ -33,20 +33,20 @@ public class TerminologyServerController {
   @Post
   public TerminologyServer create(@Valid @Body TerminologyServer ts) {
     ts.setId(null);
-    return serverService.save(ts);
+    return serverService.save(ts).maskSensitiveData();
   }
 
   @Authorized("TerminologyServer.edit")
   @Put("/{id}")
   public TerminologyServer update(@PathVariable Long id, @Valid @Body TerminologyServer ts) {
     ts.setId(id);
-    return serverService.save(ts);
+    return serverService.save(ts).maskSensitiveData();
   }
 
   @Authorized("TerminologyServer.edit")
   @Get("/{id}")
   public TerminologyServer load(@PathVariable Long id) {
-    return serverService.load(id);
+    return serverService.load(id).maskSensitiveData();
   }
 
   @Authorized()
@@ -54,7 +54,7 @@ public class TerminologyServerController {
   public QueryResult<TerminologyServer> search(TerminologyServerQueryParams params) {
     QueryResult<TerminologyServer> query = serverService.query(params);
     if (!SessionStore.require().hasPrivilege("TerminologyServer.edit")) {
-      return query.map(TerminologyServer::publicView);
+      return query.map(TerminologyServer::publicView).map(TerminologyServer::maskSensitiveData);
     }
     return query;
   }
