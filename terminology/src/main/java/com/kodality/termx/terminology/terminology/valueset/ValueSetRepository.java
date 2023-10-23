@@ -85,7 +85,7 @@ public class ValueSetRepository extends BaseRepository {
     sb.appendIfNotNull("and vs.id = ?", params.getId());
     sb.appendIfNotNull("and vs.id ~* ?", params.getIdContains());
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("vs.id", p));
-    sb.and().in("vs.id", params.getPermittedIds());
+    sb.appendIfNotNull(params.getPermittedIds(), (s, p) -> s.and().in("vs.id", p));
     sb.appendIfNotNull("and vs.uri = ?", params.getUri());
     sb.appendIfNotNull("and vs.uri ~* ?", params.getUriContains());
     sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%`' || terminology.search_translate(?) || '`%'", params.getDescription());
