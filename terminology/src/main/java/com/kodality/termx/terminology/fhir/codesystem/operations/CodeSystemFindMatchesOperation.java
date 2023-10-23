@@ -48,7 +48,7 @@ public class CodeSystemFindMatchesOperation implements InstanceOperationDefiniti
 
     Parameters req = FhirMapper.fromJson(params.getValue(), Parameters.class);
     boolean exact = req.findParameter("exact").map(ParametersParameter::getValueBoolean).orElse(false);
-    List<String> properties = req.getParameter().stream().filter(p -> "property".equals(p.getName()))
+    List<String> properties = req.getParameter().stream().filter(p -> "property".equals(p.getName())).filter(p -> p.getPart("code") != null)
         .map(p -> p.getPart("code").getValueCode() + p.findPart("value").map(pp -> "|" + pp.getValueString()).orElse(""))
         .toList();
 
@@ -75,7 +75,7 @@ public class CodeSystemFindMatchesOperation implements InstanceOperationDefiniti
     String system = req.findParameter("system").map(ParametersParameter::getValueString).orElse(null);
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
     boolean exact = req.findParameter("exact").map(ParametersParameter::getValueBoolean).orElse(false);
-    List<String> properties = req.getParameter().stream().filter(p -> "property".equals(p.getName()))
+    List<String> properties = req.getParameter().stream().filter(p -> "property".equals(p.getName())).filter(p -> p.getPart("code") != null)
         .map(p -> p.getPart("code").getValueCode() + p.findPart("value").map(pp -> "|" + pp.getValueString()).orElse(""))
         .toList();
 
