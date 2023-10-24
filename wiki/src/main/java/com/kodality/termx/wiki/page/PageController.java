@@ -151,6 +151,7 @@ public class PageController {
   @Authorized(privilege = Privilege.W_VIEW)
   @Get("/{id}/files/{fileName}")
   public StreamedFile getFile(@PathVariable Long id, @PathVariable String fileName) {
+    validate(id, Privilege.W_VIEW);
     return attachmentService.getAttachmentContent(id, fileName);
   }
 
