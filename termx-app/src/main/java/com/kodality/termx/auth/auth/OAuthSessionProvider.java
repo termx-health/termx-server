@@ -52,14 +52,14 @@ public class OAuthSessionProvider extends SessionProvider {
     return request.getHeaders()
         .getFirst(AUTHORIZATION)
         .filter(auth -> auth.startsWith(BEARER))
+        .map(auth -> StringUtils.trim(StringUtils.substringAfter(auth, BEARER)))
         .or(() -> request.getCookies().findCookie(OAUTH_TOKEN_COOKIE).map(Cookie::getValue))
         .map(this::getSessionInfo)
         .orElse(null);
   }
 
-  private SessionInfo getSessionInfo(String auth) {
+  private SessionInfo getSessionInfo(String token) {
     try {
-      String token = StringUtils.trim(StringUtils.substringAfter(auth, BEARER));
       DecodedJWT jwt = JWT.decode(token);
       Jwk jwk = getJwks().get(jwt.getKeyId());
       if (jwk == null) {

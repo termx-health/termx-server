@@ -148,9 +148,9 @@ public class PageController {
     return attachmentService.getAttachments(id);
   }
 
-  @Get("/static/{id}/files/{fileName}")
+  @Authorized(privilege = Privilege.W_VIEW)
+  @Get("/{id}/files/{fileName}")
   public StreamedFile getFile(@PathVariable Long id, @PathVariable String fileName) {
-    // todo: make it public? should generate temporary files? something else?
     return attachmentService.getAttachmentContent(id, fileName);
   }
 
