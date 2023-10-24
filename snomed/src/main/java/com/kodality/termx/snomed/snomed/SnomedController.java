@@ -104,6 +104,13 @@ public class SnomedController {
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
+  @Post("/codesystems/{shortName}/new-authoring-cycle")
+  public HttpResponse<?> startNewAuthoringCycle(@PathVariable String shortName) {
+    snowstormClient.startNewAuthoringCycle(shortName).join();
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
   @Put("/codesystems/{shortName}")
   public HttpResponse<?> createCodeSystem(@PathVariable String shortName, @Body SnomedCodeSystem codeSystem) {
     snowstormClient.updateCodeSystem(shortName, codeSystem).join();
