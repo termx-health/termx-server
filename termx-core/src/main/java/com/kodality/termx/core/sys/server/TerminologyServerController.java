@@ -56,7 +56,7 @@ public class TerminologyServerController {
     if (!SessionStore.require().hasPrivilege("TerminologyServer.edit")) {
       return query.map(TerminologyServer::publicView).map(TerminologyServer::maskSensitiveData);
     }
-    return query;
+    return query.map(TerminologyServer::maskSensitiveData);
   }
 
   @Authorized("TerminologyServer.edit")
