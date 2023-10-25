@@ -27,7 +27,7 @@ public class SnomedTranslationActionService {
   }
 
   public void addToBranch(Long id) {
-    Map<String, String> modules = loadModules();
+    Map<String, Map<String, String>> modules = loadModules();
 
     SnomedTranslation translation = repository.load(id);
     if (translation == null || translation.getBranch() == null) {
@@ -37,7 +37,8 @@ public class SnomedTranslationActionService {
     concept.getDescriptions().add(new SnomedDescription()
         .setDescriptionId(translation.getDescriptionId())
         .setConceptId(translation.getConceptId())
-        .setModuleId(modules.get(translation.getModule()))
+        .setModuleId(modules.get(translation.getModule()).get("moduleId"))
+        .setAcceptabilityMap(Map.of(modules.get(translation.getModule()).get("refsetId"), translation.getAcceptability().toUpperCase()))
         .setLang(translation.getLanguage())
         .setTerm(translation.getTerm())
         .setTypeId(("fully-specified-name".equals(translation.getType()) ? SnomedDescriptionType.fsn : SnomedDescriptionType.synonym))
@@ -46,11 +47,13 @@ public class SnomedTranslationActionService {
     snowstormClient.updateConcept(translation.getBranch() + "/", concept).join();
   }
 
-  private Map<String, String> loadModules() {
+  private Map<String, Map<String, String>> loadModules() {
     ConceptQueryParams params = new ConceptQueryParams().setCodeSystem("snomed-module").limit(-1);
     return codeSystemProvider.searchConcepts(params).getData().stream().collect(Collectors.toMap(Concept::getCode, c -> {
       Optional<CodeSystemEntityVersion> version = c.getLastVersion();
-      return version.flatMap(v -> v.getPropertyValue("moduleId")).map(String::valueOf).orElse("");
+      String moduleId = version.flatMap(v -> v.getPropertyValue("moduleId")).map(String::valueOf).orElse("");
+      String refsetId = version.flatMap(v -> v.getPropertyValue("refsetId")).map(String::valueOf).orElse("");
+      return Map.of("moduleId", moduleId, "refsetId", refsetId);
     }));
   }
 }
