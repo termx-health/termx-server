@@ -10,6 +10,7 @@ import com.kodality.termx.snomed.branch.SnomedBranch;
 import com.kodality.termx.snomed.branch.SnomedBranchRequest;
 import com.kodality.termx.snomed.client.SnowstormClient;
 import com.kodality.termx.snomed.codesystem.SnomedCodeSystem;
+import com.kodality.termx.snomed.codesystem.SnomedCodeSystem.SnomedCodeSystemVersion;
 import com.kodality.termx.snomed.codesystem.SnomedCodeSystemUpgradeRequest;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
@@ -104,13 +105,6 @@ public class SnomedController {
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
-  @Post("/codesystems/{shortName}/new-authoring-cycle")
-  public HttpResponse<?> startNewAuthoringCycle(@PathVariable String shortName) {
-    snowstormClient.startNewAuthoringCycle(shortName).join();
-    return HttpResponse.ok();
-  }
-
-  @Authorized(Privilege.SNOMED_EDIT)
   @Put("/codesystems/{shortName}")
   public HttpResponse<?> createCodeSystem(@PathVariable String shortName, @Body SnomedCodeSystem codeSystem) {
     snowstormClient.updateCodeSystem(shortName, codeSystem).join();
@@ -121,6 +115,14 @@ public class SnomedController {
   @Delete("/codesystems/{shortName}")
   public HttpResponse<?> deleteCodeSystem(@PathVariable String shortName) {
     snowstormClient.deleteCodeSystem(shortName).join();
+    return HttpResponse.ok();
+  }
+
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Post("/codesystems/{shortName}/versions")
+  public HttpResponse<?> createCodeSystemVersion(@PathVariable String shortName, @Body SnomedCodeSystemVersion version) {
+    snowstormClient.createCodeSystemVersion(shortName, version).join();
     return HttpResponse.ok();
   }
 

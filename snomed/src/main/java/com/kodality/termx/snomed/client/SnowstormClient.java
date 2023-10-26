@@ -70,16 +70,16 @@ public class SnowstormClient {
     return client.POST("codesystems/" + shortName + "/upgrade", request, Object.class);
   }
 
-  public CompletableFuture<Object> startNewAuthoringCycle(String shortName) {
-    return client.POST("codesystems/" + shortName + "/new-authoring-cycle", null, Object.class);
-  }
-
   public CompletableFuture<SnomedCodeSystem> updateCodeSystem(String shortName, SnomedCodeSystem codeSystem) {
     return client.PUT("codesystems/" + shortName, codeSystem, SnomedCodeSystem.class);
   }
 
   public CompletableFuture<HttpResponse<String>> deleteCodeSystem(String shortName) {
     return client.DELETE("codesystems/" + shortName);
+  }
+
+  public CompletableFuture<Object> createCodeSystemVersion(String shortName, SnomedCodeSystemVersion version) {
+    return client.POST("codesystems/" + shortName + "/versions", version, Object.class);
   }
 
   public CompletableFuture<List<SnomedBranch>> loadBranches() {

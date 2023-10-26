@@ -28,7 +28,7 @@ public class SnomedCodeSystem {
     private String dependantVersionEffectiveTime;
     private String parentBranchPath;
     private String version;
-    private String effectiveDate;
+    private Long effectiveDate;
     private String description;
     private String branchPath;
   }
