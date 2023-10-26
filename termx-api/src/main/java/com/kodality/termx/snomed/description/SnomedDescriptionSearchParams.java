@@ -12,6 +12,7 @@ import lombok.experimental.Accessors;
 public class SnomedDescriptionSearchParams extends QueryParams {
   private String conceptId;
   private List<String> conceptIds;
+  private List<String> descriptionIds;
 
   private String searchAfter;
 

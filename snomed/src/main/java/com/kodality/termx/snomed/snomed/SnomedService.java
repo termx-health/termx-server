@@ -133,6 +133,14 @@ public class SnomedService {
     SnomedDescription description = snowstormClient.loadDescription(branch, descriptionId).join();
     SnomedConcept concept = snowstormClient.loadConcept(branch, description.getConceptId()).join();
     concept.setDescriptions(concept.getDescriptions().stream().filter(d -> !descriptionId.equals(d.getDescriptionId())).toList());
-    snowstormClient.updateConcept(branch, concept);
+    snowstormClient.updateConcept(branch, concept).join();
+  }
+
+  public void reactivateDescription(String branch, String descriptionId) {
+    SnomedDescription description = snowstormClient.loadDescription(branch, descriptionId).join();
+    SnomedConcept concept = snowstormClient.loadConcept(branch, description.getConceptId()).join();
+    concept.getDescriptions().stream().filter(d -> descriptionId.equals(d.getDescriptionId())).findFirst().ifPresentOrElse(d -> d.setActive(true),
+        () -> concept.getDescriptions().add(description.setActive(true)));
+    snowstormClient.updateConcept(branch, concept).join();
   }
 }

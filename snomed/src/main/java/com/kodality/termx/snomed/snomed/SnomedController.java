@@ -320,6 +320,14 @@ public class SnomedController {
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
+  @Post("/branches/{path}/descriptions/{descriptionId}/reactivate")
+  public HttpResponse<?> reactivateDescription(@PathVariable String path, @PathVariable String descriptionId) {
+    path += "/";
+    snomedService.reactivateDescription(parsePath(path), descriptionId);
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
   @Delete("/branches/{path}/descriptions/{descriptionId}")
   public HttpResponse<?> deleteDescription(@PathVariable String path, @PathVariable String descriptionId) {
     path += "/";
