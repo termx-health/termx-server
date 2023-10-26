@@ -208,6 +208,10 @@ public class SnowstormClient {
     return client.GET(preparePath(path) + "descriptions" + query, JsonUtil.getParametricType(SnomedSearchResult.class, SnomedDescription.class));
   }
 
+  public CompletableFuture<SnomedDescription> loadDescription(String path, String descriptionId) {
+    return client.GET(preparePath(path) + "descriptions/" + descriptionId, SnomedDescription.class);
+  }
+
   public CompletableFuture<SnomedRefsetResponse> findRefsets(SnomedRefsetSearchParams params) {
     String query = "?" + HttpClient.toQueryParams(params);
     return client.GET("browser/" + branch + "members" + query, SnomedRefsetResponse.class);

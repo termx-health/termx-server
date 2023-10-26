@@ -4,8 +4,6 @@ import com.kodality.termx.snomed.client.SnowstormClient;
 import com.kodality.termx.snomed.codesystem.SnomedCodeSystem;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
-import com.kodality.termx.snomed.concept.SnomedTranslation;
-import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.description.SnomedDescription;
 import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
 import com.kodality.termx.snomed.rf2.SnomedImportRequest;
@@ -16,7 +14,6 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -130,5 +127,12 @@ public class SnomedService {
     SnomedCodeSystem codeSystem = snowstormClient.loadCodeSystem(shortName).join();
     codeSystem.setVersions(snowstormClient.loadCodeSystemVersions(codeSystem.getShortName()).join().getItems());
     return codeSystem;
+  }
+
+  public void deactivateDescription(String branch, String descriptionId) {
+    SnomedDescription description = snowstormClient.loadDescription(branch, descriptionId).join();
+    SnomedConcept concept = snowstormClient.loadConcept(branch, description.getConceptId()).join();
+    concept.setDescriptions(concept.getDescriptions().stream().filter(d -> !descriptionId.equals(d.getDescriptionId())).toList());
+    snowstormClient.updateConcept(branch, concept);
   }
 }
