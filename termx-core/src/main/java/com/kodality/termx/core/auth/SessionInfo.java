@@ -71,6 +71,9 @@ public class SessionInfo {
   }
 
   public List<String> getPermittedResourceIds(String resourceType, String action) {
+    if (getPrivileges() == null) {
+      return List.of();
+    }
     boolean allResourcesAccessible = getPrivileges().stream().anyMatch(p -> List.of("*.*.*", "*.*." + action, "*." + resourceType + "." + action).contains(p));
     if (allResourcesAccessible) {
       return null;
