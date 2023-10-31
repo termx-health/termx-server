@@ -22,22 +22,25 @@ build:
   only:
     - branches
 
-build_docker:
-  stage: build
+release snapshot:
+  stage: release
   script:
     - ./gradlew clean assemble
+    - ./gradlew publish
+
     - cd termx-app
     - docker build -t docker.kodality.com/termx-server:latest --build-arg BUILD_TIME=$BUILD_TIME .
     - docker push docker.kodality.com/termx-server:latest
   only:
     - main
 
-release:
+release tag:
   stage: release
   script:
     - export APP_VERSION="$CI_COMMIT_REF_NAME"
 
     - ./gradlew clean assemble
+    - ./gradlew publish -Pversion="$APP_VERSION"
 
     - cd termx-app
     - docker build -t docker.kodality.com/termx-server:$APP_VERSION --build-arg APP_VERSION=$APP_VERSION .
@@ -47,19 +50,3 @@ release:
   except:
     - branches
 
-release snapshot:
-  stage: release
-  script:
-    - ./gradlew publish
-  only:
-    - main
-
-release tag:
-  stage: release
-  script:
-    - export APP_VERSION="$CI_COMMIT_REF_NAME"
-    - ./gradlew publish -Pversion="$APP_VERSION"
-  only:
-    - /^\d*\.\d*$/
-  except:
-    - branches
