@@ -40,7 +40,7 @@ release tag:
   script:
     - export APP_VERSION="$CI_COMMIT_REF_NAME"
 
-    - ./gradlew clean assemble
+    - ./gradlew clean assemble -Pversion="$APP_VERSION"
     - ./gradlew publish -Pversion="$APP_VERSION"
 
     - cd termx-app

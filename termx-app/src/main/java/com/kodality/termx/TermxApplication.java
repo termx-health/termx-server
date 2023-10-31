@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
     tags = @Tag(name = "Terminology"),
     classes = {
         com.kodality.termx.terminology.terminology.codesystem.CodeSystemController.class,
+        com.kodality.termx.terminology.terminology.codesystem.compare.CodeSystemCompareController.class,
         com.kodality.termx.terminology.terminology.codesystem.concept.ConceptController.class,
         com.kodality.termx.terminology.terminology.codesystem.designation.DesignationController.class,
         com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionController.class,
