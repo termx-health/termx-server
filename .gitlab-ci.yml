@@ -25,11 +25,12 @@ build:
 release snapshot:
   stage: release
   script:
+    - export APP_VERSION=$(cat gradle.properties | sed -n 's/version=\(.*\)/\1/p')
     - ./gradlew clean assemble
     - ./gradlew publish
 
     - cd termx-app
-    - docker build -t docker.kodality.com/termx-server:latest --build-arg BUILD_TIME=$BUILD_TIME .
+    - docker build -t docker.kodality.com/termx-server:latest --build-arg APP_VERSION=$APP_VERSION --build-arg BUILD_TIME=$BUILD_TIME .
     - docker push docker.kodality.com/termx-server:latest
   only:
     - main
