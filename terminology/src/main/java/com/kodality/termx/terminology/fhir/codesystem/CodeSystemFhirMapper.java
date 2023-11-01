@@ -265,26 +265,6 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
   }
 
-  public static Parameters toFhir(CodeSystemCompareResult result) {
-    Parameters parameters = new Parameters();
-    if (CollectionUtils.isNotEmpty(result.getAdded())) {
-      ParametersParameter p = new ParametersParameter("added");
-      result.getAdded().forEach(a -> p.addPart(new ParametersParameter("code").setValueCode(a)));
-      parameters.addParameter(p);
-    }
-    if (CollectionUtils.isNotEmpty(result.getDeleted())) {
-      ParametersParameter p = new ParametersParameter("deleted");
-      result.getDeleted().forEach(d -> p.addPart(new ParametersParameter("code").setValueCode(d)));
-      parameters.addParameter(p);
-    }
-    if (CollectionUtils.isNotEmpty(result.getChanged())) {
-      ParametersParameter p = new ParametersParameter("changed");
-      result.getChanged().forEach(c -> p.addPart(new ParametersParameter("code").setValueCode(c.getCode())));
-      parameters.addParameter(p);
-    }
-    return parameters;
-  }
-
   // -------------- FROM FHIR --------------
 
   public static CodeSystem fromFhirCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
