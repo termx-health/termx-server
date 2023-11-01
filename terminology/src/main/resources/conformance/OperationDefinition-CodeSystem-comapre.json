@@ -1,0 +1,104 @@
+{
+  "id": "CodeSystem-compare",
+  "url": "http://hl7.org/fhir/OperationDefinition/CodeSystem-compare",
+  "code": "compare",
+  "date": "2023-03-26T15:21:02+11:00",
+  "kind": "operation",
+  "name": "Compare",
+  "type": true,
+  "title": "Finding differences between two code system versions",
+  "status": "draft",
+  "system": false,
+  "version": "5.0.0",
+  "instance": true,
+  "resource": [
+    "CodeSystem"
+  ],
+  "parameter": [
+    {
+      "max": "1",
+      "min": 1,
+      "use": "in",
+      "name": "system",
+      "type": "uri",
+      "documentation": "The system in which composition is to be performed. This must be provided unless the operation is invoked on a code system instance",
+      "scope": [
+        "type"
+      ]
+    },
+    {
+      "max": "1",
+      "min": 1,
+      "use": "in",
+      "name": "versionA",
+      "type": "string",
+      "documentation": "The version A of the system ",
+      "scope": [
+        "type"
+      ]
+    },
+    {
+      "max": "1",
+      "min": 1,
+      "use": "in",
+      "name": "versionB",
+      "type": "string",
+      "documentation": "The version B of the system ",
+      "scope": [
+        "type"
+      ]
+    },
+    {
+      "max": "*",
+      "min": 0,
+      "use": "out",
+      "name": "added",
+      "part": [
+        {
+          "max": "*",
+          "min": 1,
+          "use": "out",
+          "name": "code",
+          "type": "Coding",
+          "documentation": "A code that was added"
+        }
+      ]
+    },
+    {
+      "max": "*",
+      "min": 0,
+      "use": "out",
+      "name": "deleted",
+      "part": [
+        {
+          "max": "*",
+          "min": 1,
+          "use": "out",
+          "name": "code",
+          "type": "Coding",
+          "documentation": "A code that was deleted"
+        }
+      ]
+    },
+    {
+      "max": "*",
+      "min": 0,
+      "use": "out",
+      "name": "changed",
+      "part": [
+        {
+          "max": "*",
+          "min": 1,
+          "use": "out",
+          "name": "code",
+          "type": "Coding",
+          "documentation": "A code that was changed"
+        }
+      ]
+    }
+  ],
+  "publisher": "TermX",
+  "affectsState": false,
+  "experimental": false,
+  "resourceType": "OperationDefinition"
+}
