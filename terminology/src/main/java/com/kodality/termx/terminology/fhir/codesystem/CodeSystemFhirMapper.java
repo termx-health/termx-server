@@ -219,6 +219,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (properties.stream().anyMatch(p -> "status".equals(p.getName()))) {
       conceptProperties.add(new CodeSystemConceptProperty().setCode("status").setValueCode(entityVersion.getStatus()));
     }
+    if (properties.stream().anyMatch(p -> "modifiedAt".equals(p.getName()))) {
+      conceptProperties.add(new CodeSystemConceptProperty().setCode("modifiedAt").setValueDateTime(entityVersion.getSysModifiedAt()));
+    }
+    if (properties.stream().anyMatch(p -> "modifiedBy".equals(p.getName()))) {
+      conceptProperties.add(new CodeSystemConceptProperty().setCode("modifiedBy").setValueString(entityVersion.getSysModifiedBy()));
+    }
     if (CollectionUtils.isNotEmpty(entityVersion.getPropertyValues())) {
       Map<Long, EntityProperty> entityProperties = properties.stream().collect(Collectors.toMap(PropertyReference::getId, ep -> ep));
       conceptProperties.addAll(entityVersion.getPropertyValues().stream().map(pv -> {
