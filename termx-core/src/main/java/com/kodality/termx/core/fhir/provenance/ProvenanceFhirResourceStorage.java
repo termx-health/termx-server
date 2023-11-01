@@ -7,7 +7,7 @@ import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.kefhir.core.model.search.SearchResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import com.kodality.termx.core.fhir.BaseFhirMapper;
-import com.kodality.termx.core.fhir.BaseFhirResourceStorage;
+import com.kodality.termx.core.fhir.BaseFhirResourceHandler;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import jakarta.inject.Singleton;
@@ -19,11 +19,16 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Singleton
 @RequiredArgsConstructor
-public class ProvenanceFhirResourceStorage extends BaseFhirResourceStorage {
+public class ProvenanceFhirResourceStorage extends BaseFhirResourceHandler {
   private final ProvenanceService provenanceService;
 
   @Override
   public String getResourceType() {
+    return "Provenance";
+  }
+
+  @Override
+  public String getPrivilegeName() {
     return "Provenance";
   }
 

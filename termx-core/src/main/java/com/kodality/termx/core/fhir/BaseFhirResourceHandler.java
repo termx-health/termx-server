@@ -11,10 +11,12 @@ import com.kodality.kefhir.core.model.search.SearchResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import java.util.List;
 
-public abstract class BaseFhirResourceStorage implements ResourceStorage, ResourceSearchHandler {
+public abstract class BaseFhirResourceHandler implements ResourceStorage, ResourceSearchHandler {
   public abstract ResourceVersion load(String id);
 
   public abstract String getResourceType();
+
+  public abstract String getPrivilegeName();
 
   @Override
   public List<ResourceVersion> load(List<ResourceId> ids) {

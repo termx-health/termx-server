@@ -1,8 +1,5 @@
-package com.kodality.termx.auth.auth;
+package com.kodality.termx.core.auth;
 
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionInfo;
-import com.kodality.termx.core.auth.SessionStore;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.http.HttpAttributes;
@@ -34,6 +31,10 @@ public class AuthorizationFilter implements HttpServerFilter {
   private List<String> publicEndpoints;
   private static final List<String> DEFAULT_PUBLIC = Arrays.asList("/health", "/info", "/public", "/metrics", "/prometheus");
 
+  public void addPublicEndpoint(String path) {
+    this.publicEndpoints.add(path);
+  }
+
   @Override
   public int getOrder() {
     return 2;
@@ -57,10 +58,6 @@ public class AuthorizationFilter implements HttpServerFilter {
 
     if (Stream.concat(DEFAULT_PUBLIC.stream(), publicEndpoints.stream()).anyMatch(prefix -> startsWith(request.getPath(), prefix))) {
       return true;
-    }
-
-    if (startsWith(request.getPath(), "/fhir")) {
-      return true; //checked elsewhere
     }
 
     RouteMatch route = request.getAttribute(HttpAttributes.ROUTE_MATCH, RouteMatch.class).orElse(null);

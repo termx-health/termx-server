@@ -8,7 +8,7 @@ import com.kodality.kefhir.core.model.VersionId;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.kefhir.core.model.search.SearchResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
-import com.kodality.termx.core.fhir.BaseFhirResourceStorage;
+import com.kodality.termx.core.fhir.BaseFhirResourceHandler;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
@@ -24,7 +24,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Singleton
 @RequiredArgsConstructor
-public class ValueSetResourceStorage extends BaseFhirResourceStorage {
+public class ValueSetResourceStorage extends BaseFhirResourceHandler {
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetFhirImportService importService;
@@ -32,6 +32,11 @@ public class ValueSetResourceStorage extends BaseFhirResourceStorage {
 
   @Override
   public String getResourceType() {
+    return "ValueSet";
+  }
+
+  @Override
+  public String getPrivilegeName() {
     return "ValueSet";
   }
 

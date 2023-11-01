@@ -2,7 +2,6 @@ package com.kodality.termx.core.auth;
 
 import com.kodality.commons.exception.ForbiddenException;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import lombok.Getter;
@@ -18,10 +17,6 @@ public class SessionInfo {
   private String username;
   private Set<String> privileges;
   private String lang;
-
-  private String provider;
-  private Map<String, String> providerProperties;
-
 
   public void checkPermitted(String resourceId, String resourceType, String action) {
     checkPermitted(resourceId, resourceType + "." + action);

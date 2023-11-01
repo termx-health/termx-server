@@ -10,16 +10,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.kodality.termx.auth.auth;
+package com.kodality.termx.core.fhir;
 
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.InteractionType;
 import com.kodality.kefhir.rest.filter.KefhirRequestExecutionInterceptor;
 import com.kodality.kefhir.rest.model.KefhirRequest;
+import com.kodality.termx.core.auth.AuthorizationFilter;
 import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.core.fhir.BaseFhirMapper;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -28,11 +30,12 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 @RequiredArgsConstructor
 @Singleton
 public class KefhirAuthHttpInterceptor implements KefhirRequestExecutionInterceptor {
-  private static final Map<String, String> resourcePrivileges = Map.of(
-      "CodeSystem", "CodeSystem",
-      "ValueSet", "ValueSet",
-      "ConceptMap", "MapSet"
-  );
+  private final Map<String, String> resourcePrivileges;
+
+  public KefhirAuthHttpInterceptor(List<BaseFhirResourceHandler> storages, AuthorizationFilter authorizationFilter) {
+    resourcePrivileges = storages.stream().collect(Collectors.toMap(BaseFhirResourceHandler::getResourceType, BaseFhirResourceHandler::getPrivilegeName));
+    authorizationFilter.addPublicEndpoint("/fhir"); // do not use default authorization.
+  }
 
   @Override
   public void beforeExecute(KefhirRequest request) {

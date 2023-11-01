@@ -7,10 +7,10 @@ import com.kodality.kefhir.core.model.VersionId;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.kefhir.core.model.search.SearchResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
-import com.kodality.termx.core.fhir.BaseFhirResourceStorage;
-import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
+import com.kodality.termx.core.fhir.BaseFhirResourceHandler;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
+import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.terminology.terminology.mapset.MapSetService;
 import com.kodality.termx.terminology.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termx.terminology.terminology.mapset.version.MapSetVersionService;
@@ -26,7 +26,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Singleton
 @RequiredArgsConstructor
-public class ConceptMapResourceStorage extends BaseFhirResourceStorage {
+public class ConceptMapResourceStorage extends BaseFhirResourceHandler {
   private final MapSetService mapSetService;
   private final MapSetVersionService mapSetVersionService;
   private final MapSetAssociationService mapSetAssociationService;
@@ -36,6 +36,11 @@ public class ConceptMapResourceStorage extends BaseFhirResourceStorage {
   @Override
   public String getResourceType() {
     return "ConceptMap";
+  }
+
+  @Override
+  public String getPrivilegeName() {
+    return "MapSet";
   }
 
   @Override

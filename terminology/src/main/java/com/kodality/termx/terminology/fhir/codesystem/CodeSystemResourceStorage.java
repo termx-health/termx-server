@@ -8,13 +8,13 @@ import com.kodality.kefhir.core.model.VersionId;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.kefhir.core.model.search.SearchResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
-import com.kodality.termx.core.fhir.BaseFhirResourceStorage;
+import com.kodality.termx.core.fhir.BaseFhirResourceHandler;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemImportService;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
-import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationKind;
 import com.kodality.termx.ts.association.AssociationType;
@@ -34,7 +34,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 @Slf4j
 @Singleton
 @RequiredArgsConstructor
-public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
+public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
@@ -43,6 +43,11 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
 
   @Override
   public String getResourceType() {
+    return "CodeSystem";
+  }
+
+  @Override
+  public String getPrivilegeName() {
     return "CodeSystem";
   }
 

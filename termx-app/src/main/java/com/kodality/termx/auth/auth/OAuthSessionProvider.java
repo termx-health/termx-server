@@ -73,7 +73,7 @@ public class OAuthSessionProvider extends SessionProvider {
       String payload = new String(Base64.getUrlDecoder().decode(jwt.getPayload()));
       Map<String, Object> map = JsonUtil.toMap(payload);
       SessionInfo info = new SessionInfo();
-      info.setPrivileges(privilegeStore.getPrivileges( (List<String>) map.get("roles")));
+      info.setPrivileges(privilegeStore.getPrivileges((List<String>) map.get("roles")));
       info.setUsername((String) map.get("preferred_username"));
       return info;
     } catch (SignatureVerificationException | JwkException | JWTDecodeException e) {

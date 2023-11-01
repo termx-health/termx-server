@@ -30,6 +30,7 @@ dependencies {
     implementation("com.github.slugify:slugify:3.0.2")
 
     implementation("com.kodality.kefhir:kefhir-core:${kefhirVersion}") { changing = true }
+    compileOnly("com.kodality.kefhir:fhir-rest:${kefhirVersion}") { changing = true }
     implementation("com.kodality.zmei:zmei-fhir:${rootProject.zmeiVersion}") { changing = true }
     implementation("com.kodality.zmei:zmei-fhir-client:${rootProject.zmeiVersion}") { changing = true }
     implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}") { changing = true }
