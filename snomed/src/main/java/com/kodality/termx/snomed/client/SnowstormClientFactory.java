@@ -29,23 +29,37 @@ public class SnowstormClientFactory {
   private Optional<String> snowstormPassword;
 
   @Bean
+  public SnowstormInitClient getSnowstormInitClient() {
+    return new SnowstormInitClient(snowstormUrl, snowstormBranch.orElse("MAIN"), baseUrl -> new HttpClient(baseUrl) {
+      @Override
+      public Builder builder(String path) {
+        return SnowstormClientFactory.builder(super.builder(path), snowstormUser, snowstormPassword, Optional.empty());
+      }
+    });
+  }
+
+  @Bean
   public SnowstormClient getSnowstormClient() {
+    SnowstormInitClient initClient = getSnowstormInitClient();
     return new SnowstormClient(snowstormUrl, snowstormBranch.orElse("MAIN"), baseUrl -> Pair.of(new HttpClient(baseUrl) {
       @Override
       public Builder builder(String path) {
-        return SnowstormClientFactory.builder(super.builder(path), snowstormUser, snowstormPassword);
+        return SnowstormClientFactory.builder(super.builder(path), snowstormUser, snowstormPassword, Optional.ofNullable(initClient.languages));
       }
     }, new BinaryHttpClient(baseUrl) {
       @Override
       public Builder builder(String path) {
-        return SnowstormClientFactory.builder(super.builder(path), snowstormUser, snowstormPassword);
+        return SnowstormClientFactory.builder(super.builder(path), snowstormUser, snowstormPassword, Optional.ofNullable(initClient.languages));
       }
     }));
   }
 
-  private static Builder builder(Builder builder, Optional<String> snowstormUser, Optional<String> snowstormPassword) {
+  private static Builder builder(Builder builder, Optional<String> snowstormUser, Optional<String> snowstormPassword, Optional<String> languages) {
     if (snowstormUser.isPresent() && snowstormPassword.isPresent()) {
       builder.setHeader(HttpHeaders.AUTHORIZATION, basicAuth(snowstormUser.get(), snowstormPassword.get()));
+    }
+    if (languages.isPresent() && snowstormPassword.isPresent()) {
+      builder.setHeader(HttpHeaders.ACCEPT_LANGUAGE, languages.get());
     }
     return builder;
   }

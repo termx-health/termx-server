@@ -23,7 +23,9 @@ public class CodeSystemVersionRepository extends BaseRepository {
   });
 
   private final static String select = "select csv.*, " +
-      "(select count(1) from terminology.entity_version_code_system_version_membership evcsvm where evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A') as concepts_total ";
+      "(select count(1) from terminology.entity_version_code_system_version_membership evcsvm, terminology.code_system_entity_version csev " +
+      "                 where evcsvm.code_system_version_id = csv.id and evcsvm.code_system_entity_version_id = csev.id and evcsvm.sys_status = 'A' and csev.sys_status = 'A') " +
+      "as concepts_total ";
 
   public void save(CodeSystemVersion version) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
