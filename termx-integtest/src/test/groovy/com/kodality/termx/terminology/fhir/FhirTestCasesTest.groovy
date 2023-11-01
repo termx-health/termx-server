@@ -45,7 +45,7 @@ class FhirTestCasesTest extends TermxIntegTest {
 
   void setup() {
     def sessionInfo = new SessionInfo();
-    sessionInfo.privileges = ['admin']
+    sessionInfo.privileges = ['*.*.*']
     SessionStore.setLocal(sessionInfo)
   }
 
