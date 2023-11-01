@@ -260,6 +260,10 @@
             {
               "name": "validate-code",
               "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-validate-code"
+            },
+            {
+              "name": "compare",
+              "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-compare"
             }
           ]
         },

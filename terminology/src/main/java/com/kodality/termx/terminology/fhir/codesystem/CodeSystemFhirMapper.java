@@ -8,6 +8,7 @@ import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.fhir.BaseFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
+import com.kodality.termx.terminology.terminology.codesystem.compare.CodeSystemCompareResult;
 import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
@@ -29,6 +30,8 @@ import com.kodality.termx.ts.property.PropertyReference;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
+import com.kodality.zmei.fhir.resource.other.Parameters;
+import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptDesignation;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
@@ -260,6 +263,26 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     List<CodeSystemConcept> result = childMap.getOrDefault(targetId, List.of()).stream()
         .map(e -> toFhir(e, codeSystem, version, childMap, parentMap)).collect(Collectors.toList());
     return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
+  }
+
+  public static Parameters toFhir(CodeSystemCompareResult result) {
+    Parameters parameters = new Parameters();
+    if (CollectionUtils.isNotEmpty(result.getAdded())) {
+      ParametersParameter p = new ParametersParameter("added");
+      result.getAdded().forEach(a -> p.addPart(new ParametersParameter("code").setValueCode(a)));
+      parameters.addParameter(p);
+    }
+    if (CollectionUtils.isNotEmpty(result.getDeleted())) {
+      ParametersParameter p = new ParametersParameter("deleted");
+      result.getDeleted().forEach(d -> p.addPart(new ParametersParameter("code").setValueCode(d)));
+      parameters.addParameter(p);
+    }
+    if (CollectionUtils.isNotEmpty(result.getChanged())) {
+      ParametersParameter p = new ParametersParameter("changed");
+      result.getChanged().forEach(c -> p.addPart(new ParametersParameter("code").setValueCode(c.getCode())));
+      parameters.addParameter(p);
+    }
+    return parameters;
   }
 
   // -------------- FROM FHIR --------------
