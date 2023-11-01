@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset kodality:concept-defined-properties-3
+--changeset kodality:concept-defined-properties-4
 with t (name, kind, type, uri, description) as (values ('status', 'property', 'code', 'http://hl7.org/fhir/concept-properties#status', '{"en": "Status"}'::jsonb),
                                                  ('inactive', 'property', 'boolean', 'http://hl7.org/fhir/concept-properties#inactive', '{"en": "Inactive"}'::jsonb),
                                                  ('effectiveDate', 'property', 'dateTime', 'http://hl7.org/fhir/concept-properties#effectiveDate', '{"en": "Effective Date"}'::jsonb),
@@ -22,8 +22,10 @@ with t (name, kind, type, uri, description) as (values ('status', 'property', 'c
                                                  ('conceptOrder', 'property', 'integer', 'http://hl7.org/fhir/StructureDefinition/codesystem-conceptOrder', '{"en": "Concept Order"}'::jsonb),
 
                                                  ('display', 'designation', 'string', 'http://terminology.hl7.org/CodeSystem/designation-usage|display', '{"en": "Display"}'::jsonb),
-                                                 ('definition', 'designation', 'string', null, '{"en": "Definition"}'::jsonb)
+                                                 ('definition', 'designation', 'string', null, '{"en": "Definition"}'::jsonb),
 
+                                                 ('modifiedAt', 'property', 'dateTime', 'http://termx.health/CodeSystem/concept-properties#sys-modiefied-at', '{"en": "Modified at"}'::jsonb),
+                                                 ('modifiedBy', 'property', 'string', 'http://termx.health/CodeSystem/concept-properties#sys-modiefied-by', '{"en": "Modified by"}'::jsonb)
 )
    , e as (select t.*, (exists(select 1 from terminology.defined_entity_property dep where t.name = dep.name)) as pexists from t)
    , inserted as (insert into terminology.defined_entity_property(name, kind, type, uri, description) select e.name, e.kind, e.type, e.uri, e.description from e where e.pexists = false)

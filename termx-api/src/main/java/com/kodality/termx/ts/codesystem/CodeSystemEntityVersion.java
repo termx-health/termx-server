@@ -28,6 +28,8 @@ public class CodeSystemEntityVersion {
   private List<CodeSystemVersionReference> versions;
 
   private Long codeSystemEntityId;
+  private String sysModifiedBy;
+  private OffsetDateTime sysModifiedAt;
 
   @JsonIgnore
   public Optional<Object> getPropertyValue(String propertyName){
