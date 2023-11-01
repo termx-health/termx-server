@@ -8,7 +8,6 @@ import com.kodality.termx.snomed.description.SnomedDescription;
 import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
 import com.kodality.termx.snomed.rf2.SnomedImportRequest;
 import com.kodality.termx.snomed.search.SnomedSearchResult;
-import com.kodality.termx.snomed.snomed.translation.SnomedTranslationRepository;
 import jakarta.inject.Singleton;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -24,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SnomedService {
   private final SnowstormClient snowstormClient;
-  private final SnomedTranslationRepository translationRepository;
 
   private static final int MAX_COUNT = 9999;
   private static final int MAX_CONCEPT_COUNT = 300;
