@@ -2,17 +2,18 @@ package com.kodality.termx.terminology.terminology.valueset;
 
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.terminology.fhir.valueset.ValueSetFhirImportService;
-import com.kodality.termx.terminology.fhir.valueset.ValueSetFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
+import com.kodality.termx.terminology.fhir.valueset.ValueSetFhirImportService;
+import com.kodality.termx.terminology.fhir.valueset.ValueSetFhirMapper;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +39,7 @@ public class SpaceGithubDataValueSetFhirHandler implements SpaceGithubDataHandle
   }
 
   @Override
-  public Map<String, String> getContent(Long spaceId) {
+  public Map<String, SpaceGithubData> getContent(Long spaceId) {
     List<ValueSet> valueSets = valueSetService.query(new ValueSetQueryParams().setSpaceId(spaceId).all()).getData();
     Map<String, String> result = new LinkedHashMap<>();
     valueSets.forEach(vs -> {
@@ -50,7 +51,7 @@ public class SpaceGithubDataValueSetFhirHandler implements SpaceGithubDataHandle
         result.put(fhirId + ".json", prettyJson);
       });
     });
-    return result;
+    return result.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> new SpaceGithubData(e.getValue())));
   }
 
   @Override

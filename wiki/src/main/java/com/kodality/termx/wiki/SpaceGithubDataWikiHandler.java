@@ -45,7 +45,7 @@ public class SpaceGithubDataWikiHandler implements SpaceGithubDataHandler {
   }
 
   @Override
-  public Map<String, String> getContent(Long spaceId) {
+  public Map<String, SpaceGithubData> getContent(Long spaceId) {
     Map<Long, PageLink> links = pageLinkService.query(new PageLinkQueryParams().setSpaceIds(spaceId.toString()).all()).getData().stream()
         .collect(Collectors.toMap(PageLink::getTargetId, l -> l));
     List<Page> pages = pageService.query(new PageQueryParams().setSpaceIds(spaceId.toString()).all()).getData();
@@ -56,7 +56,8 @@ public class SpaceGithubDataWikiHandler implements SpaceGithubDataHandler {
     Map<String, String> result = new HashMap<>();
     result.put("pages.json", JsonUtil.toPrettyJson(pagesTree.isEmpty() ? List.of() : buildPages(0L, pagesTree)));
     result.putAll(pages.stream().flatMap(p -> p.getContents().stream()).collect(Collectors.toMap(p -> p.getSlug() + ".md", PageContent::getContent)));
-    return result;
+
+    return result.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> new SpaceGithubData(e.getValue())));
   }
 
   private List<SpaceGithubPage> buildPages(Long parent, Map<Long, List<Page>> allPages) {

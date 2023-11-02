@@ -2,11 +2,11 @@ package com.kodality.termx.terminology.terminology.codesystem;
 
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirImportService;
-import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
+import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirImportService;
+import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.codesystem.CodeSystem;
@@ -42,9 +42,9 @@ public class SpaceGithubDataCodeSystemFhirHandler implements SpaceGithubDataHand
   }
 
   @Override
-  public Map<String, String> getContent(Long spaceId) {
+  public Map<String, SpaceGithubData> getContent(Long spaceId) {
     List<CodeSystem> codeSystems = codeSystemService.query(new CodeSystemQueryParams().setSpaceId(spaceId).all()).getData();
-    Map<String, String> result = new LinkedHashMap<>();
+    Map<String, SpaceGithubData> result = new LinkedHashMap<>();
     codeSystems.forEach(cs -> {
       codeSystemVersionService.query(new CodeSystemVersionQueryParams().setCodeSystem(cs.getId())).getData().forEach(csv -> {
         List<Provenance> provenances = provenanceService.find("CodeSystemVersion|" + csv.getId());
@@ -54,7 +54,7 @@ public class SpaceGithubDataCodeSystemFhirHandler implements SpaceGithubDataHand
         String json = CodeSystemFhirMapper.toFhirJson(cs, csv, provenances);
         String prettyJson = JsonUtil.toPrettyJson(JsonUtil.toMap(json));
         String fhirId = CodeSystemFhirMapper.toFhirId(cs, csv);
-        result.put(fhirId + ".json", prettyJson);
+        result.put(fhirId + ".json", new SpaceGithubData(prettyJson));
       });
     });
     return result;
