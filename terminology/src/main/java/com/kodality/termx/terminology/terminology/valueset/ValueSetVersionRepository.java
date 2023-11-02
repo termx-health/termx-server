@@ -84,11 +84,23 @@ public class ValueSetVersionRepository extends BaseRepository {
 
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.value_set_version vsv where vsv.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.value_set_version vsv " +
+          "inner join terminology.value_set vs on vs.id = vsv.value_set and vs.sys_status = 'A' " +
+          "left join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A' " +
+          "left join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' " +
+          "left join terminology.code_system cs on cs.id = vsvr.code_system and cs.sys_status = 'A' " +
+          "left join terminology.value_set_snapshot vss on vsv.id = vss.value_set_version_id and vss.sys_status = 'A' " +
+          "where vsv.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder(select + "from terminology.value_set_version vsv where vsv.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder(select + "from terminology.value_set_version vsv " +
+          "inner join terminology.value_set vs on vs.id = vsv.value_set and vs.sys_status = 'A' " +
+          "left join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A' " +
+          "left join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' " +
+          "left join terminology.code_system cs on cs.id = vsvr.code_system and cs.sys_status = 'A' " +
+          "left join terminology.value_set_snapshot vss on vsv.id = vss.value_set_version_id and vss.sys_status = 'A' " +
+          "where vsv.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -98,8 +110,14 @@ public class ValueSetVersionRepository extends BaseRepository {
   private SqlBuilder filter(ValueSetVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and vsv.value_set = ?", params.getValueSet());
-    sb.and().in("vsv.value_set", params.getPermittedValueSets());
-    sb.appendIfNotNull("and exists (select 1 from terminology.value_set vs where vs.id = vsv.value_set and vs.uri = ? and vs.sys_status = 'A')", params.getValueSetUri());
+    sb.and().in("vs.id", params.getPermittedValueSets());
+    sb.appendIfNotNull("and vs.uri = ?", params.getValueSetUri());
+    sb.appendIfNotNull("and vs.name = ?", params.getValueSetName());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getValueSetTitle());
+    sb.appendIfNotNull("and vs.publisher = ?", params.getValueSetPublisher());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%' || terminology.search_translate(?) || '%'", params.getValueSetDescriptionContains());
+    sb.appendIfNotNull("and vsvr.type = 'include' and cs.uri = ?", params.getCodeSystemUri());
+    sb.appendIfNotNull("and exists (select 1 from jsonb_array_elements(vss.expansion::jsonb) exp where (exp -> 'concept' ->> 'code') = ?)", params.getConceptCode());
     sb.appendIfNotNull("and vsv.version = ?", params.getVersion());
     sb.appendIfNotNull("and vsv.status = ?", params.getStatus());
     sb.appendIfNotNull("and (vsv.release_date is null or vsv.release_date <= ?)", params.getReleaseDateLe());

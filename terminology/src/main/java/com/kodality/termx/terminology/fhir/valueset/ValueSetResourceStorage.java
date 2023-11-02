@@ -72,9 +72,10 @@ public class ValueSetResourceStorage extends BaseFhirResourceStorage {
 
   @Override
   public SearchResult search(SearchCriterion criteria) {
-    QueryResult<ValueSet> result = valueSetService.query(ValueSetFhirMapper.fromFhir(criteria));
-    return new SearchResult(result.getMeta().getTotal(),
-        result.getData().stream().flatMap(cs -> cs.getVersions().stream().map(csv -> toFhir(cs, csv))).toList());
+    QueryResult<ValueSet> vsResult = valueSetService.query(ValueSetFhirMapper.fromFhir(criteria));
+    QueryResult<ValueSetVersion> vsvResult = valueSetVersionService.query(ValueSetFhirMapper.fromFhirVSVersionParams(criteria).limit(0));
+    return new SearchResult(vsvResult.getMeta().getTotal(),
+        vsResult.getData().stream().flatMap(vs -> vs.getVersions().stream().map(vsv -> toFhir(vs, vsv))).toList());
   }
 
   private ResourceVersion toFhir(ValueSet vs, ValueSetVersion vsv) {
