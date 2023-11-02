@@ -78,7 +78,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
     sb.and().in("cs.code_system", params.getPermittedCodeSystems());
     sb.appendIfNotNull("and cs.uri = ?", params.getCodeSystemUri());
     sb.appendIfNotNull("and cs.name = ?", params.getCodeSystemName());
-    sb.appendIfNotNull("and cs.title = ?", params.getCodeSystemTitle());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getCodeSystemTitle());
     sb.appendIfNotNull("and cs.publisher = ?", params.getCodeSystemPublisher());
     sb.appendIfNotNull("and cs.content = ?", params.getCodeSystemContent());
     sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%' || terminology.search_translate(?) || '%'", params.getCodeSystemDescriptionContains());

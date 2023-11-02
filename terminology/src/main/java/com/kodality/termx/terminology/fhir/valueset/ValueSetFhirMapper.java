@@ -23,6 +23,7 @@ import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
+import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
@@ -355,6 +356,29 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     });
     params.setDecorated(true);
     params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
+    return params;
+  }
+
+  public static ValueSetVersionQueryParams fromFhirVSVersionParams(SearchCriterion fhir) {
+    ValueSetVersionQueryParams params = new ValueSetVersionQueryParams();
+    getSimpleParams(fhir).forEach((k, v) -> {
+      switch (k) {
+        case SearchCriterion._COUNT -> params.setLimit(fhir.getCount());
+        case SearchCriterion._PAGE -> params.setOffset(getOffset(fhir));
+        case "_id" -> params.setValueSet(v);
+        case "version" -> params.setVersion(v);
+        case "url" -> params.setValueSetUri(v);
+        case "name" -> params.setValueSetName(v);
+        case "title" -> params.setValueSetTitle(v);
+        case "status" -> params.setStatus(v);
+        case "reference" -> params.setCodeSystemUri(v);
+        case "publisher" -> params.setValueSetPublisher(v);
+        case "description" -> params.setValueSetDescriptionContains(v);
+        case "code" -> params.setConceptCode(v);
+        default -> throw new ApiClientException("Search by '" + k + "' not supported");
+      }
+    });
+    params.setPermittedValueSets(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
     return params;
   }
 
