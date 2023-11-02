@@ -1,10 +1,10 @@
-package com.kodality.termx.taskflow;
+package com.kodality.termx.snomed.task;
 
-import com.kodality.taskflow.api.TaskStatusChangeInterceptor;
-import com.kodality.taskflow.task.Task;
-import com.kodality.taskflow.task.Task.TaskStatus;
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationActionService;
+import com.kodality.termx.task.Task;
+import com.kodality.termx.task.TaskStatus;
+import com.kodality.termx.task.api.TaskStatusChangeInterceptor;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Singleton;
@@ -14,7 +14,7 @@ import static java.util.Map.entry;
 
 @Singleton
 @RequiredArgsConstructor
-public class SnomedTaskStatusChangeInterceptor extends TaskStatusChangeInterceptor {
+public class SnomedTaskStatusChangeInterceptor implements TaskStatusChangeInterceptor {
   private final SnomedTranslationActionService translationService;
   private static final Map<String, String> statusMap = Map.ofEntries(
       entry(TaskStatus.requested, SnomedTranslationStatus.proposed),

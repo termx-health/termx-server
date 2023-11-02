@@ -1,4 +1,4 @@
-package com.kodality.termx.task.task;
+package com.kodality.termx.task;
 
 public interface TaskType {
   String version_review = "version-review";

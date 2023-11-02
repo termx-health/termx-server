@@ -1,11 +1,9 @@
-package com.kodality.termx.taskflow;
+package com.kodality.termx.terminology.task;
 
-import com.kodality.taskflow.api.TaskStatusChangeInterceptor;
-import com.kodality.taskflow.task.Task;
-import com.kodality.taskflow.task.Task.TaskStatus;
-import com.kodality.taskflow.workflow.Workflow;
-import com.kodality.taskflow.workflow.WorkflowService;
-import com.kodality.termx.task.task.TaskType;
+import com.kodality.termx.task.Task;
+import com.kodality.termx.task.TaskStatus;
+import com.kodality.termx.task.TaskType;
+import com.kodality.termx.task.api.TaskStatusChangeInterceptor;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemProvenanceService;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
@@ -18,8 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
 @RequiredArgsConstructor
-public class CodeSystemTaskStatusChangeInterceptor extends TaskStatusChangeInterceptor {
-  private final WorkflowService workflowService;
+public class CodeSystemTaskStatusChangeInterceptor implements TaskStatusChangeInterceptor {
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final CodeSystemProvenanceService provenanceService;
@@ -29,23 +26,22 @@ public class CodeSystemTaskStatusChangeInterceptor extends TaskStatusChangeInter
   @Override
   @Transactional
   public void afterStatusChange(Task task, String previousStatus) {
-    if (task == null || task.getWorkflowId() == null || task.getContext() == null || !TaskStatus.accepted.equals(task.getStatus())) {
+    if (task == null || task.getWorkflow() == null || task.getContext() == null || !TaskStatus.accepted.equals(task.getStatus())) {
       return;
     }
-    Workflow workflow = workflowService.load(task.getWorkflowId());
     Optional<Long> csVersionId = task.getContext().stream().filter(ctx -> CS_VERSION.equals(ctx.getType())).findFirst().map(t -> (Long) t.getId());
     Optional<Long> csEntityVersionId = task.getContext().stream().filter(ctx -> CS_ENTITY_VERSION.equals(ctx.getType())).findFirst().map(t -> (Long) t.getId());
 
-    if (workflow.getTaskType().equals(TaskType.version_review) && csVersionId.isPresent()) {
+    if (task.getWorkflow().equals(TaskType.version_review) && csVersionId.isPresent()) {
       CodeSystemVersion csv = codeSystemVersionService.load(csVersionId.get());
-      provenanceService.provenanceCodeSystemVersion("reviewed",csv.getCodeSystem(), csv.getVersion(), () -> {});
+      provenanceService.provenanceCodeSystemVersion("reviewed", csv.getCodeSystem(), csv.getVersion(), () -> {});
     }
-    if (workflow.getTaskType().equals(TaskType.version_approval) && csVersionId.isPresent()) {
+    if (task.getWorkflow().equals(TaskType.version_approval) && csVersionId.isPresent()) {
       CodeSystemVersion csv = codeSystemVersionService.load(csVersionId.get());
       provenanceService.provenanceCodeSystemVersion("approved", csv.getCodeSystem(), csv.getVersion(),
           () -> codeSystemVersionService.activate(csv.getCodeSystem(), csv.getVersion()));
     }
-    if (workflow.getTaskType().equals(TaskType.concept_approval) && csEntityVersionId.isPresent()) {
+    if (task.getWorkflow().equals(TaskType.concept_approval) && csEntityVersionId.isPresent()) {
       createConceptProvenance(csVersionId.orElse(null), csEntityVersionId.get());
     }
   }

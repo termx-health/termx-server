@@ -15,3 +15,10 @@ github:
     id: 'Iv1.b0be484dcc3c28ae'
     secret: 'bffd5a32dcf31667974c09c429f690f057d4182f'
   app-name: termx-dev-local-publisher
+
+
+keycloak:
+  url: https://auth.kodality.dev/admin/realms/terminology
+  sso-url: https://auth.kodality.dev/realms/terminology/protocol/openid-connect
+  client-id: term-service
+  client-secret: xxx

@@ -6,6 +6,8 @@ dependencies {
 
     implementation project(':termx-api')
     implementation project(':termx-core')
+    implementation project(':task')
+    implementation project(':bob')
 
     implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}")

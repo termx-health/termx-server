@@ -1,4 +1,4 @@
-package com.kodality.termx.task.task;
+package com.kodality.termx.task;
 
 import java.util.List;
 import lombok.Getter;

@@ -1,10 +1,12 @@
-package com.kodality.termx.wiki;
+package com.kodality.termx.wiki.task;
 
-import com.kodality.taskflow.task.Task;
-import com.kodality.taskflow.task.Task.TaskContextItem;
-import com.kodality.taskflow.task.activity.TaskActivity;
-import com.kodality.taskflow.task.activity.TaskActivity.TaskActivityContextItem;
-import com.kodality.termx.taskflow.TaskFlowService;
+import com.kodality.termx.task.Task;
+import com.kodality.termx.task.Task.TaskActivity;
+import com.kodality.termx.task.Task.TaskActivity.TaskActivityContextItem;
+import com.kodality.termx.task.Task.TaskContextItem;
+import com.kodality.termx.task.TaskPriority;
+import com.kodality.termx.task.TaskService;
+import com.kodality.termx.task.TaskStatus;
 import com.kodality.termx.wiki.page.PageComment;
 import com.kodality.termx.wiki.page.PageCommentStatus;
 import com.kodality.termx.wiki.page.PageContent;
@@ -20,15 +22,12 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
-import static com.kodality.termx.taskflow.TaskFlowService.activityContextString;
-import static com.kodality.termx.taskflow.TaskFlowService.contextString;
-
 
 @Singleton
 @RequiredArgsConstructor
 public class WikiPageCommentTaskFlowInterceptor
     implements PageCommentCreateInterceptor, PageCommentUpdateInterceptor, PageCommentDeleteInterceptor, PageCommentStatusChangeInterceptor {
-  private final TaskFlowService taskFlowService;
+  private final TaskService taskService;
   private final Provider<PageContentService> pageContentService;
 
   public static final String TASK_CTX_TYPE = "page-comment";
@@ -48,18 +47,20 @@ public class WikiPageCommentTaskFlowInterceptor
     if (comment.getParentId() != null) {
       // reply
       TaskContextItem ctx = new TaskContextItem().setId(comment.getParentId()).setType(TASK_CTX_TYPE);
-      Task parentTask = taskFlowService.findTasks(contextString(List.of(ctx))).stream().findFirst().orElseThrow();
-
-      TaskActivity activity = new TaskActivity();
-      activity.setTaskId(parentTask.getId());
-      activity.setContext(getActivityContext(comment));
-      activity.setNote(String.format("User %s response to comment:\n%s", comment.getCreatedBy(), formatQuote(comment.getComment())));
-      taskFlowService.createTaskActivity(activity);
+      Task parentTask = taskService.findTasks(TaskService.contextString(List.of(ctx))).stream().findFirst().orElseThrow();
+      taskService.saveTaskActivity(parentTask.getNumber(),
+          String.format("User %s response to comment:\n%s", comment.getCreatedBy(), formatQuote(comment.getComment())),
+          getActivityContext(comment));
       return;
     }
 
     PageContent pageContent = pageContentService.get().load(comment.getPageContentId());
-    Task task = new Task();
+    Task task = taskService.findTasks(TaskService.contextString(getContext(comment))).stream().findFirst()
+        .orElseGet(() -> new Task()
+            .setStatus(TaskStatus.requested)
+            .setPriority(TaskPriority.routine)
+        );
+    task.setWorkflow(TASK_WORKFLOW);
     task.setTitle(String.format("%s was commented", pageContent.getName()));
     task.setContent(String.format(
         "User %s says on the page [%s](page:%s/%s):\n%s\n\non text:\n%s",
@@ -67,7 +68,7 @@ public class WikiPageCommentTaskFlowInterceptor
         formatQuote(comment.getComment()), formatQuote(comment.getText())
     ));
     task.setContext(getContext(comment));
-    taskFlowService.createTask(task, TASK_WORKFLOW);
+    taskService.saveTask(task);
   }
 
 
@@ -75,24 +76,23 @@ public class WikiPageCommentTaskFlowInterceptor
   public void afterCommentDelete(PageComment comment) {
     if (comment.getParentId() != null) {
       // reply
-      List<TaskActivityContextItem> ctx = getActivityContext(comment);
-      TaskActivity activity = taskFlowService.findActivities(activityContextString(ctx)).stream().findFirst().orElseThrow();
-      taskFlowService.cancelTaskActivity(activity.getId());
+      Task parentTask = taskService.findTasks(TASK_CTX_TYPE + "|" + comment.getParentId()).stream().findFirst().orElseThrow();
+      TaskActivity activity = taskService.findActivities(TaskService.activityContextString(getActivityContext(comment))).stream().findFirst().orElseThrow();
+      taskService.cancelTaskActivity(parentTask.getNumber(), activity.getId());
       return;
     }
 
     List<TaskContextItem> ctx = getContext(comment);
-    taskFlowService.cancelTasks(contextString(ctx));
+    taskService.cancelTasks(TaskService.contextString(ctx));
   }
 
   @Override
   public void afterStatusChange(PageComment comment) {
     List<TaskContextItem> ctx = getContext(comment);
     if (PageCommentStatus.resolved.equals(comment.getStatus())) {
-      taskFlowService.completeTasks(contextString(ctx));
+      taskService.completeTasks(TaskService.contextString(ctx));
     }
   }
-
 
   private List<TaskContextItem> getContext(PageComment comment) {
     return List.of(new TaskContextItem().setId(comment.getId()).setType(TASK_CTX_TYPE));

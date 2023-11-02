@@ -1,4 +1,4 @@
-package com.kodality.termx.task.task;
+package com.kodality.termx.task;
 
 import com.kodality.commons.model.CodeName;
 import io.micronaut.core.annotation.Introspected;

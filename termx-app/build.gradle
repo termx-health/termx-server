@@ -18,7 +18,6 @@ dependencies {
   implementation project(':wiki')
   implementation project(':task-taskflow')
   implementation project(':modeler')
-  implementation project(':bob')
 
   implementation project(':edition-int')
   implementation project(':edition-est')
