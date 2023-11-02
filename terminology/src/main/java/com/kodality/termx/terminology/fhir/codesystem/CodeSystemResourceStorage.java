@@ -95,9 +95,10 @@ public class CodeSystemResourceStorage extends BaseFhirResourceStorage {
 
   @Override
   public SearchResult search(SearchCriterion criteria) {
-    QueryResult<CodeSystem> result = codeSystemService.query(CodeSystemFhirMapper.fromFhir(criteria));
+    QueryResult<CodeSystem> csResult = codeSystemService.query(CodeSystemFhirMapper.fromFhir(criteria));
+    QueryResult<CodeSystemVersion> csvResult = codeSystemVersionService.query(CodeSystemFhirMapper.fromFhirCSVersionParams(criteria).limit(0));
     String code = criteria.getRawParams().containsKey("code") ? criteria.getRawParams().get("code").get(0) : null;
-    return new SearchResult(result.getMeta().getTotal(), result.getData().stream().flatMap(cs -> cs.getVersions().stream().map(csv -> {
+    return new SearchResult(csvResult.getMeta().getTotal(), csResult.getData().stream().flatMap(cs -> cs.getVersions().stream().map(csv -> {
       csv.setEntities(loadEntities(csv, code, false));
       return toFhir(cs, csv);
     })).toList());

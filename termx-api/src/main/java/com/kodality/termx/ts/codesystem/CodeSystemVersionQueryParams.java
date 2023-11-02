@@ -13,6 +13,12 @@ import lombok.experimental.Accessors;
 public class CodeSystemVersionQueryParams extends QueryParams {
   private String codeSystem;
   private String codeSystemUri;
+  private String codeSystemName;
+  private String codeSystemTitle;
+  private String codeSystemPublisher;
+  private String codeSystemContent;
+  private String codeSystemDescriptionContains;
+  private String conceptCode;
   private List<String> permittedCodeSystems;
   private String version;
   private String status;

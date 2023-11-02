@@ -20,6 +20,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemContent;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
+import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
@@ -542,6 +543,29 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     params.setVersionsDecorated(true);
     params.setPropertiesDecorated(true);
     params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
+    return params;
+  }
+
+  public static CodeSystemVersionQueryParams fromFhirCSVersionParams(SearchCriterion fhir) {
+    CodeSystemVersionQueryParams params = new CodeSystemVersionQueryParams();
+    getSimpleParams(fhir).forEach((k, v) -> {
+      switch (k) {
+        case SearchCriterion._COUNT -> params.setLimit(fhir.getCount());
+        case SearchCriterion._PAGE -> params.setOffset(getOffset(fhir));
+        case "_id" -> params.setCodeSystem(v);
+        case "system", "url" -> params.setCodeSystemUri(v);
+        case "version" -> params.setVersion(v);
+        case "name" -> params.setCodeSystemName(v);
+        case "title" -> params.setCodeSystemTitle(v);
+        case "status" -> params.setStatus(v);
+        case "publisher" -> params.setCodeSystemPublisher(v);
+        case "description" -> params.setCodeSystemDescriptionContains(v);
+        case "content-mode" -> params.setCodeSystemContent(v);
+        case "code" -> params.setConceptCode(v);
+        default -> throw new ApiClientException("Search by '" + k + "' not supported");
+      }
+    });
+    params.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
     return params;
   }
 }

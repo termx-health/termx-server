@@ -189,15 +189,6 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public List<CodeSystemEntityVersion> loadLastVersions(String codeSystem, List<String> codes) {
-    SqlBuilder sb = new SqlBuilder("select distinct on (csev.code) csev.* from terminology.code_system_entity_version csev where sys_status = 'A'");
-    sb.append("and code_system = ?", codeSystem);
-    sb.append("and (status = 'active' or status = 'draft')");
-    sb.and().in("code", codes);
-    sb.append("order by code, created desc");
-    return getBeans(sb.getSql(), bp, sb.getParams());
-  }
-
   public void batchUpsert(Map<Long, List<CodeSystemEntityVersion>> versions) {
     List<Pair<Long, CodeSystemEntityVersion>> versionsToInsert =
         versions.entrySet().stream().flatMap(es -> es.getValue().stream().map(v -> Pair.of(es.getKey(), v))).filter(e -> e.getValue().getId() == null).toList();
