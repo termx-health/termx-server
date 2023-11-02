@@ -99,10 +99,25 @@ public class CodeSystemCompareOperation implements InstanceOperationDefinition, 
       pp.addPart(new ParametersParameter("description").setValueString(diff.getDescription()));
     }
     if (diff.getDesignations() != null) {
-      diff.getDesignations().forEach(d -> pp.addPart(new ParametersParameter("designation").setValueString(d)));
+      diff.getDesignations().forEach(d -> pp.addPart(toFhir(d, "designation")));
     }
     if (diff.getProperties() != null) {
-      diff.getProperties().forEach(p -> pp.addPart(new ParametersParameter("property").setValueString(p)));
+      diff.getProperties().forEach(p -> pp.addPart(toFhir(p, "property")));
+    }
+    return pp;
+  }
+
+  private static ParametersParameter toFhir(String property, String name) {
+    ParametersParameter pp = new ParametersParameter(name);
+    String[] props = property.split("\\|");
+    if (props.length == 3) {
+      pp.addPart(new ParametersParameter("property").setValueString(props[0]));
+      pp.addPart(new ParametersParameter("language").setValueString(props[1]));
+      pp.setValueString(props[2]);
+    }
+    if (props.length == 2) {
+      pp.addPart(new ParametersParameter("property").setValueString(props[0]));
+      pp.setValueString(props[1]);
     }
     return pp;
   }
