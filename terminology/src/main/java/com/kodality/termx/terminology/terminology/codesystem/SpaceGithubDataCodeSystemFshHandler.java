@@ -1,11 +1,11 @@
 package com.kodality.termx.terminology.terminology.codesystem;
 
 
-import com.kodality.termx.terminology.fhir.FhirFshConverter;
-import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
+import com.kodality.termx.terminology.fhir.FhirFshConverter;
+import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.codesystem.CodeSystem;
@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +42,7 @@ public class SpaceGithubDataCodeSystemFshHandler implements SpaceGithubDataHandl
   }
 
   @Override
-  public Map<String, String> getContent(Long spaceId) {
+  public Map<String, SpaceGithubData> getContent(Long spaceId) {
     List<CodeSystem> codeSystems = codeSystemService.query(new CodeSystemQueryParams().setSpaceId(spaceId).all()).getData();
     Map<String, String> result = new LinkedHashMap<>();
     codeSystems.forEach(cs -> {
@@ -55,7 +56,7 @@ public class SpaceGithubDataCodeSystemFshHandler implements SpaceGithubDataHandl
         fhirFshConverter.ifPresent(c -> result.put(fhirId + ".fsh", c.toFsh(json).join()));
       });
     });
-    return result;
+    return result.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> new SpaceGithubData(e.getValue())));
   }
 
   @Override

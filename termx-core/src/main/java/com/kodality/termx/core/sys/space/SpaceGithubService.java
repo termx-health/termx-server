@@ -60,13 +60,24 @@ public class SpaceGithubService {
   public GithubDiff diff(Long spaceId, String file) {
     Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
+
     Map<String, String> reverseDirs =
         space.getIntegration().getGithub().getDirs().entrySet().stream().collect(Collectors.toMap(Entry::getValue, Entry::getKey));
-    String path = file.contains("/") ? StringUtils.substringBeforeLast(file, "/") : "";
-    String name = file.contains("/") ? StringUtils.substringAfterLast(file, "/") : file;
-    String type = reverseDirs.get(path);
-    String currentContent = dataHandlers.stream().filter(n -> n.getName().equals(type)).findFirst().map(h -> h.getContent(spaceId).get(name))
-        .orElseGet(() -> igHandler.getContent(space).get(name));
+
+    // file may be folder, so try to match handler by longest dir
+    String handlerType = reverseDirs.keySet().stream()
+        .sorted((o1, o2) -> o2.length() - o1.length())
+        .filter(file::startsWith)
+        .map(reverseDirs::get)
+        .findFirst()
+        .orElse(null);
+
+    String currentContent = dataHandlers.stream()
+        .filter(n -> n.getName().equals(handlerType))
+        .findFirst()
+        .map(h -> h.getCurrentContent(space).stream().collect(Collectors.toMap(GithubContent::getPath, GithubContent::getContent)).get(file))
+        .orElseGet(() -> igHandler.getContent(space).get(file));
+
     return new GithubDiff()
         .setLeft(githubService.getContent(repo, file).getContent())
         .setRight(currentContent);
@@ -76,8 +87,7 @@ public class SpaceGithubService {
     Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
 
-    List<GithubContent> allChanges =
-        Stream.concat(
+    List<GithubContent> allChanges = Stream.concat(
             Stream.of(space).map(s -> {
               List<GithubContent> gc = igHandler.getCurrentContent(space);
               return collectChanges(gc, githubService.status(repo, gc));
@@ -87,7 +97,10 @@ public class SpaceGithubService {
               List<GithubContent> gc = h.getCurrentContent(space);
               return collectChanges(gc, githubService.status(repo, dir, gc));
             })
-        ).flatMap(x -> x).toList();
+        )
+        .flatMap(x -> x)
+        .filter(c -> files == null || files.contains(c.getPath()))
+        .toList();
     if (allChanges.isEmpty()) {
       return; // nothing changed
     }
