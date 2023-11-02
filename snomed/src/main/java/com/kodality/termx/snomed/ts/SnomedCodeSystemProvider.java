@@ -8,6 +8,7 @@ import com.kodality.termx.core.ts.CodeSystemExternalProvider;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
+import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.Arrays;
 import java.util.List;
@@ -44,8 +45,10 @@ public class SnomedCodeSystemProvider extends CodeSystemExternalProvider {
   }
 
   private List<Concept> searchConcepts(SnomedConceptSearchParams params) {
-    List<SnomedConcept> result = snomedService.searchConcepts(params);
-    return result.stream().map(snomedMapper::toConcept).toList();
+    if (CollectionUtils.isNotEmpty(params.getConceptIds()) && params.getTerm() == null) {
+      return snomedService.loadConcepts(params.getConceptIds()).stream().map(snomedMapper::toConcept).toList();
+    }
+    return snomedService.searchConcepts(params).stream().map(snomedMapper::toConcept).toList();
   }
 
   @Override
