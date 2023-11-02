@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -244,8 +247,20 @@ public class GithubService {
     // absolute path -> tree, finds git tree for every unique path in local
     Map<String, GithubTreeItem> githubTree = localContents.keySet().stream()
         .map(p -> {
-          GithubTree tree = getTree(repo, StringUtils.join(MAIN_BRANCH, ":", p));
-          return getTreeAbsoluteBlobs(p, tree);
+          try {
+            GithubTree tree = getTree(repo, StringUtils.join(MAIN_BRANCH, ":", p));
+            return getTreeAbsoluteBlobs(p, tree);
+          } catch (HttpClientError e) {
+            // means 'p' is a file, either 'file.md' or 'folder/subfolder/file.md'
+            String path = p.contains("/") ? StringUtils.substringBeforeLast(p, "/") : "";
+            String name = p.contains("/") ? StringUtils.substringAfterLast(p, "/") : p;
+
+            GithubTree tree = getTree(repo, StringUtils.join(MAIN_BRANCH, ":", path));
+            return tree.getTree().stream()
+                .filter(t -> t.getPath().equals(name))
+                .peek(t -> t.setPath(Stream.of(path, t.getPath()).filter(Predicate.not(String::isEmpty)).collect(Collectors.joining("/"))))
+                .toList();
+          }
         })
         .flatMap(Collection::stream)
         .collect(toMap(GithubTreeItem::getPath, c -> c));
