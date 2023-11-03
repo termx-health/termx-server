@@ -37,3 +37,8 @@ with t (code, names) as (values
 select 1;
 --rollback select 1;
 
+--changeset kodality:guest-as-admin
+--preconditions onFail:MARK_RAN onError:HALT
+--precondition-sql-check expectedResult:'dev' select core.get_setting('core.env');
+insert into auth.privilege_resource(privilege_id, resource_type) select id, 'Admin' from auth.privilege p where p.code = 'guest'
+--
