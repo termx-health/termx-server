@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,6 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
-import org.postgresql.shaded.com.ongres.scram.common.bouncycastle.base64.Base64;
 
 import static com.kodality.commons.stream.Collectors.toMap;
 
@@ -177,7 +177,7 @@ public class GithubService {
       String resp = get("/repos/" + repo + "/contents/" + path);
       GithubContent content = JsonUtil.fromJson(resp, GithubContent.class);
       if ("base64".equals(JsonUtil.read(resp, "$.encoding"))) {
-        content.setContent(new String(Base64.decode(content.getContent().replaceAll("\n", ""))));
+        content.setContent(new String(Base64.getDecoder().decode(content.getContent().replaceAll("\n", ""))));
       }
       return content;
     } catch (HttpClientError e) {
@@ -205,7 +205,7 @@ public class GithubService {
     try {
       Map<String, Object> resp = JsonUtil.toMap(get(url));
       if ("base64".equals(resp.get("encoding"))) {
-        return new String(Base64.decode(((String) resp.get("content")).replaceAll("\n", "")));
+        return new String(Base64.getDecoder().decode(((String) resp.get("content")).replaceAll("\n", "")));
       }
       return (String) resp.get("content");
     } catch (HttpClientError e) {
@@ -315,7 +315,7 @@ public class GithubService {
 
   private String calculateSha(GithubContent content) {
     if (content.getEncoding().equals(GithubContentEncoding.base64)) {
-      return calculateSha(Base64.decode(content.getContent()));
+      return calculateSha(Base64.getDecoder().decode(content.getContent()));
     }
     return calculateSha(content.getContent());
   }
