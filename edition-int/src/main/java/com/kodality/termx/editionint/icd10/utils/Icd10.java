@@ -1,10 +1,13 @@
 package com.kodality.termx.editionint.icd10.utils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText;
+import com.kodality.termx.core.utils.SimpleDateDeserializer;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -16,15 +19,42 @@ import lombok.ToString;
 @JacksonXmlRootElement(localName = "ClaML")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Icd10 {
+  @JacksonXmlProperty(localName = "Title")
+  @JacksonXmlElementWrapper(useWrapping = false)
+  private Title title;
+
   @JacksonXmlProperty(localName = "Class")
   @JacksonXmlElementWrapper(useWrapping = false)
   private List<Class> classes;
+
+  public void setTitle(Title title) {
+    this.title = title;
+  }
 
   public void setClasses(List<Class> classes) {
     if (this.classes == null) {
       this.classes = new ArrayList<>();
     }
     this.classes.addAll(classes);
+  }
+
+  @Getter
+  @Setter
+  @ToString
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class Title {
+    @JacksonXmlProperty(localName = "date", isAttribute = true)
+    @JsonDeserialize(using = SimpleDateDeserializer.class)
+    private LocalDate date;
+
+    @JacksonXmlProperty(localName = "name", isAttribute = true)
+    private String name;
+
+    @JacksonXmlProperty(localName = "version", isAttribute = true)
+    private String version;
+
+    @JacksonXmlText
+    private String value;
   }
 
   @Getter
