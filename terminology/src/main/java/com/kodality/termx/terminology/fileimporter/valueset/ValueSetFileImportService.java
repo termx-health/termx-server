@@ -69,9 +69,11 @@ public class ValueSetFileImportService {
   public ValueSetFileImportResponse process(ValueSetFileImportRequest request, byte[] file) {
     if ("json".equals(request.getType())) {
       valueSetFhirImportService.importValueSet(new String(file, StandardCharsets.UTF_8), request.getValueSet().getId());
+      return new ValueSetFileImportResponse();
     } else if ("fsh".equals(request.getType())) {
       String json = fhirFshConverter.orElseThrow(ApiError.TE806::toApiException).toFhir(new String(file, StandardCharsets.UTF_8)).join();
       valueSetFhirImportService.importValueSet(json, request.getValueSet().getId());
+      return new ValueSetFileImportResponse();
     }
 
     return save(request, file);
