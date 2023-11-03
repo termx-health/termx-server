@@ -12,7 +12,7 @@ include 'termx-app'
 include 'termx-core'
 include 'termx-integtest'
 
-include 'gatling'
+//include 'gatling'
 
 include 'task'
 include 'task-taskflow'
