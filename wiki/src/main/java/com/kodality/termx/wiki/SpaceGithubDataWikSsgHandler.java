@@ -1,6 +1,7 @@
 package com.kodality.termx.wiki;
 
 
+import com.kodality.commons.model.LocalizedName;
 import com.kodality.termx.core.github.GithubService.GithubContent.GithubContentEncoding;
 import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
 import com.kodality.termx.core.sys.space.SpaceService;
@@ -16,6 +17,7 @@ import com.kodality.termx.wiki.page.PageQueryParams;
 import com.kodality.termx.wiki.page.PageService;
 import com.kodality.termx.wiki.pageattachment.PageAttachmentService;
 import com.kodality.termx.wiki.pagelink.PageLinkService;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.server.types.files.StreamedFile;
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -24,6 +26,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +44,9 @@ public class SpaceGithubDataWikSsgHandler implements SpaceGithubDataHandler {
   private final PageService pageService;
   private final PageAttachmentService pageAttachmentService;
   private final PageLinkService pageLinkService;
+
+  @Value("${termx.web-url}")
+  private Optional<String> termxWebUrl;
 
   @Override
   public String getName() {
@@ -73,7 +79,7 @@ public class SpaceGithubDataWikSsgHandler implements SpaceGithubDataHandler {
     }).toList();
 
     Map<String, SpaceGithubData> result = new HashMap<>();
-    result.put("space.json", new SpaceGithubData(toPrettyJson(space)));
+    result.put("space.json", new SpaceGithubData(toPrettyJson(new SsgSpaceIndex(termxWebUrl.orElse(null), space.getCode(), space.getNames()))));
     result.put("pages.json", new SpaceGithubData(toPrettyJson(composePagesIndex(pages, links))));
     result.putAll(contents.stream().collect(Collectors.toMap(
         p -> "pages/" + p.getSlug() + (p.getContentType().equals("html") ? ".html" : ".md"),
@@ -120,4 +126,6 @@ public class SpaceGithubDataWikSsgHandler implements SpaceGithubDataHandler {
 
     protected record SpaceGithubPageAttachment(Long pageId, String name, String base64) {}
   }
+
+  protected record SsgSpaceIndex(String web, String code, LocalizedName names) {}
 }
