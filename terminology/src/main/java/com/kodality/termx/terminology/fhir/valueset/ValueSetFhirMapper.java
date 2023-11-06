@@ -4,11 +4,11 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
-import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.fhir.BaseFhirMapper;
-import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
+import com.kodality.termx.terminology.Privilege;
+import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
@@ -20,6 +20,7 @@ import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
+import com.kodality.termx.ts.valueset.ValueSetSnapshot;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
@@ -254,7 +255,8 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     ValueSetExpansionContains contains = new ValueSetExpansionContains();
     contains.setCode(c.getConcept().getCode());
     contains.setSystem(c.getConcept().getBaseCodeSystemUri() != null ? c.getConcept().getBaseCodeSystemUri() : c.getConcept().getCodeSystemUri());
-    contains.setVersion(c.getConcept().getBaseCodeSystemUri() == null && c.getConcept().getCodeSystemVersions() != null ? c.getConcept().getCodeSystemVersions().stream().findFirst().orElse(null) : null);
+    contains.setVersion(c.getConcept().getBaseCodeSystemUri() == null && c.getConcept().getCodeSystemVersions() != null ?
+        c.getConcept().getCodeSystemVersions().stream().findFirst().orElse(null) : null);
     contains.setInactive(!c.isActive() ? true : null);
     contains.setDisplay(c.getDisplay() == null || (lang != null && !c.getDisplay().getLanguage().startsWith(lang)) ? null : c.getDisplay().getName());
     contains.setDesignation(CollectionUtils.isNotEmpty(c.getAdditionalDesignations()) && includeDesignations ? c.getAdditionalDesignations().stream()
@@ -326,7 +328,8 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         }).toList();
   }
 
-  private static List<ValueSetExpansionContains> getChildConcepts(Map<String, List<ValueSetVersionConcept>> targetCodeConcepts, String targetCode, List<String> properties, Parameters param) {
+  private static List<ValueSetExpansionContains> getChildConcepts(Map<String, List<ValueSetVersionConcept>> targetCodeConcepts, String targetCode,
+                                                                  List<String> properties, Parameters param) {
     return targetCodeConcepts.getOrDefault(targetCode, List.of()).stream()
         .map(c -> {
           ValueSetExpansionContains contains = toFhirExpansionContains(c, properties, param);
@@ -406,6 +409,19 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return vs;
   }
 
+  private static ValueSetSnapshot fromFhirExpansion(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
+    ValueSetExpansion expansion = valueSet.getExpansion();
+    if (expansion == null) {
+      return null;
+    }
+    return new ValueSetSnapshot().setExpansion(expansion.getContains().stream().map(c -> new ValueSetVersionConcept()
+        .setConcept(new ValueSetVersionConceptValue().setCode(c.getCode()).setCodeSystemUri(c.getSystem()))
+        .setDisplay(new Designation().setName(c.getDisplay()).setLanguage(Optional.ofNullable(valueSet.getLanguage()).orElse(Language.en)))
+        .setAdditionalDesignations(Optional.ofNullable(c.getDesignation()).orElse(List.of()).stream().map(d -> new Designation().setName(d.getValue()).setLanguage(d.getLanguage())).toList())
+        .setActive(c.getInactive() == null || !c.getInactive())
+    ).toList());
+  }
+
   private static ValueSetVersion fromFhirVersion(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     ValueSetVersion version = new ValueSetVersion();
     version.setValueSet(valueSet.getId());
@@ -414,6 +430,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     version.setPreferredLanguage(valueSet.getLanguage());
     version.setReleaseDate(valueSet.getDate() == null ? LocalDate.now() : LocalDate.from(valueSet.getDate()));
     version.setRuleSet(fromFhirCompose(valueSet));
+    version.setSnapshot(fromFhirExpansion(valueSet));
     return version;
   }
 
