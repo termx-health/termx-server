@@ -80,7 +80,7 @@ public class EntityPropertyRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getNames())) {
       sb.and().in("ep.name", params.getNames());
     }
-    sb.appendIfNotNull("and ep.code_system = ?", params.getCodeSystem());
+    sb.and().in("ep.code_system", params.getCodeSystem());
     return sb;
   }
 

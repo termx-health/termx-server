@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset kodality:concept-defined-properties-4
+--changeset kodality:concept-defined-properties-5
 with t (name, kind, type, uri, description) as (values ('status', 'property', 'code', 'http://hl7.org/fhir/concept-properties#status', '{"en": "Status"}'::jsonb),
                                                  ('inactive', 'property', 'boolean', 'http://hl7.org/fhir/concept-properties#inactive', '{"en": "Inactive"}'::jsonb),
                                                  ('effectiveDate', 'property', 'dateTime', 'http://hl7.org/fhir/concept-properties#effectiveDate', '{"en": "Effective Date"}'::jsonb),
@@ -12,7 +12,7 @@ with t (name, kind, type, uri, description) as (values ('status', 'property', 'c
                                                  ('partOf', 'property', 'code', 'http://hl7.org/fhir/concept-properties#partOf', '{"en": "Part Of"}'::jsonb),
                                                  ('groupedBy', 'property', 'code', null, '{"en": "Grouped By"}'::jsonb),
                                                  ('classifiedWith', 'property', 'code', null, '{"en": "Classified With"}'::jsonb),
-                                                 ('synonym', 'property', 'code', 'http://hl7.org/fhir/concept-properties#synonym', '{"en": "Synonym"}'::jsonb),
+                                                 ('synonym', 'property', 'string', 'http://hl7.org/fhir/concept-properties#synonym', '{"en": "Synonym"}'::jsonb),
                                                  ('comment', 'property', 'string', 'http://hl7.org/fhir/concept-properties#comment', '{"en": "Comment"}'::jsonb),
                                                  ('itemWeight', 'property', 'decimal', 'http://hl7.org/fhir/concept-properties#itemWeight', '{"en": "Item Weight"}'::jsonb),
 
