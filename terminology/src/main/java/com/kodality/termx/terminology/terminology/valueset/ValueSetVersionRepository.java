@@ -19,7 +19,7 @@ public class ValueSetVersionRepository extends BaseRepository {
     bp.addColumnProcessor("snapshot", PgBeanProcessor.fromJson());
   });
 
-  private final static String select = "select vsv.*, " +
+  private final static String select = "select distinct on (vsv.id) vsv.*, " +
       "(select json_build_object(" +
       "   'id', vss.id, " +
       "   'valueSet', vss.value_set, " +
@@ -84,7 +84,7 @@ public class ValueSetVersionRepository extends BaseRepository {
 
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.value_set_version vsv " +
+      SqlBuilder sb = new SqlBuilder("select count(distinct(vsv.id)) from terminology.value_set_version vsv " +
           "inner join terminology.value_set vs on vs.id = vsv.value_set and vs.sys_status = 'A' " +
           "left join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A' " +
           "left join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' " +
