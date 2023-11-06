@@ -30,8 +30,7 @@ release snapshot:
     - ./gradlew publish
 
     - cd termx-app
-    - docker buildx build --platform linux/amd64,linux/arm64 -t docker.kodality.com/termx-server:latest --build-arg APP_VERSION=$APP_VERSION --build-arg BUILD_TIME=$BUILD_TIME .
-    - docker push docker.kodality.com/termx-server:latest
+    - docker buildx build --platform linux/amd64,linux/arm64 -t docker.kodality.com/termx-server:latest --build-arg APP_VERSION=$APP_VERSION --build-arg BUILD_TIME=$BUILD_TIME --push .
   only:
     - main
 
@@ -44,8 +43,7 @@ release tag:
     - ./gradlew publish -Pversion="$APP_VERSION"
 
     - cd termx-app
-    - docker buildx build --platform linux/amd64,linux/arm64 -t docker.kodality.com/termx-server:$APP_VERSION --build-arg APP_VERSION=$APP_VERSION .
-    - docker push docker.kodality.com/termx-server:$APP_VERSION
+    - docker buildx build --platform linux/amd64,linux/arm64 -t docker.kodality.com/termx-server:$APP_VERSION --build-arg APP_VERSION=$APP_VERSION --push .
   only:
     - /^\d*\.\d*\.\d*$/
   except:
