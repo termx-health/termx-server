@@ -1,0 +1,26 @@
+dependencies {
+    annotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
+    annotationProcessor "io.micronaut:micronaut-inject-java"
+    annotationProcessor "io.micronaut.openapi:micronaut-openapi"
+    annotationProcessor "io.micronaut.spring:micronaut-spring-annotation"
+
+    implementation project(':termx-api')
+    implementation project(':termx-core')
+
+    implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
+    implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}")
+    implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
+    implementation("com.kodality.commons:commons-cache:${rootProject.commonsVersion}")
+    implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}")
+    implementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
+
+    implementation "org.apache.commons:commons-io:1.3.2"
+
+    api platform("io.micronaut:micronaut-bom:$micronautVersion")
+    implementation("io.micronaut.spring:micronaut-spring")
+    implementation("io.micronaut:micronaut-validation")
+    implementation("io.micronaut.beanvalidation:micronaut-hibernate-validator")
+    implementation("io.micronaut:micronaut-management")
+    implementation("io.micronaut:micronaut-http-server")
+    implementation("io.reactivex.rxjava2:rxjava:2.2.21")
+}

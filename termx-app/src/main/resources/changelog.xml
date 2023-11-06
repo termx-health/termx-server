@@ -18,6 +18,7 @@
   <include file="task-taskflow/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="modeler/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="bob/changelog/changelog.xml" relativeToChangelogFile="false"/>
+  <include file="implementation-guide/changelog/changelog.xml" relativeToChangelogFile="false"/>
 
   <include file="db/changelog/changelog.xml" relativeToChangelogFile="false"/>
 
