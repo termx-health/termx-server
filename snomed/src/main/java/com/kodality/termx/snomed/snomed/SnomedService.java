@@ -25,7 +25,7 @@ public class SnomedService {
   private final SnowstormClient snowstormClient;
 
   private static final int MAX_COUNT = 9999;
-  private static final int MAX_CONCEPT_COUNT = 300;
+  private static final int MAX_CONCEPT_COUNT = 100;
 
   public List<SnomedConcept> loadConcepts(List<String> ids) {
     return loadConcepts(ids, null);
