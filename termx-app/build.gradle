@@ -41,19 +41,20 @@ dependencies {
   implementation("io.micronaut:micronaut-validation")
   implementation("io.micronaut:micronaut-management")
   implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
-  implementation("io.micronaut.openapi:micronaut-openapi:3.2.0")
+  implementation("io.micronaut.openapi:micronaut-openapi")
+  implementation 'org.liquibase:liquibase-core:4.24.0' //rewrite micronauts liquibase version to a fresher one
 
   implementation("com.fasterxml.jackson.core:jackson-core:${rootProject.jacksonVersion}")
-  implementation("io.reactivex.rxjava2:rxjava:2.2.21")
+  implementation("com.fasterxml.jackson.core:jackson-databind:${rootProject.jacksonVersion}")
+  implementation("io.reactivex.rxjava3:rxjava:3.1.8")
   implementation("io.swagger.core.v3:swagger-annotations")
   implementation("com.auth0:java-jwt:4.0.0")
-  implementation('com.auth0:jwks-rsa:0.21.2')
-  implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
+  implementation('com.auth0:jwks-rsa:0.22.1')
 
-  runtimeOnly "ch.qos.logback:logback-classic:1.4.5"
+  runtimeOnly "ch.qos.logback:logback-classic:1.4.11"
 
-  testCompileOnly("org.projectlombok:lombok:1.18.26")
-  testAnnotationProcessor("org.projectlombok:lombok:1.18.22")
+  testCompileOnly("org.projectlombok:lombok:1.18.30")
+  testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
   testImplementation("io.micronaut.test:micronaut-test-spock:3.9.2")
   testImplementation("org.spockframework:spock-core:2.3-groovy-3.0") {
     exclude group: "org.codehaus.groovy", module: "groovy-all"
@@ -63,7 +64,7 @@ dependencies {
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.testcontainers:spock")
   testImplementation("org.testcontainers:testcontainers")
-  testImplementation("commons-io:commons-io:2.11.0")
+  testImplementation("commons-io:commons-io:2.15.0")
 }
 
 application {

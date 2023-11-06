@@ -54,7 +54,7 @@ import io.micronaut.http.annotation.Put;
 import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.netty.handler.codec.http.multipart.MemoryAttribute;
-import io.reactivex.Flowable;
+import io.reactivex.rxjava3.core.Flowable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

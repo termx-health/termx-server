@@ -11,7 +11,7 @@ import io.micronaut.http.annotation.Part;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.netty.handler.codec.http.multipart.MemoryAttribute;
-import io.reactivex.Flowable;
+import io.reactivex.rxjava3.core.Flowable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;

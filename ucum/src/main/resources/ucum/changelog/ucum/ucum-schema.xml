@@ -17,7 +17,7 @@
 		</sql>
 	</changeSet>
 
-	<changeSet id="default_privileges__ucum__viewer" author="">
+	<changeSet id="default_privileges__ucum__viewer" author="kodality">
 	  <validCheckSum>ANY</validCheckSum>
 	  <preConditions onFail="CONTINUE">
         <changeLogPropertyDefined property="viewer-username"/>
