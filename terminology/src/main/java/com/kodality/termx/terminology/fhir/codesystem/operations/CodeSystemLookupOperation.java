@@ -1,5 +1,7 @@
 package com.kodality.termx.terminology.fhir.codesystem.operations;
 
+import com.kodality.commons.util.DateUtil;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.api.resource.InstanceOperationDefinition;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
@@ -16,8 +18,10 @@ import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
+import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import jakarta.inject.Singleton;
@@ -125,12 +129,22 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
   private static ParametersParameter toParameter(String type, Object value) {
     ParametersParameter result = new ParametersParameter("value");
     switch (type) {
-      case "code" -> result.setValueCode((String) value);
-      case "string" -> result.setValueString((String) value);
-      case "boolean" -> result.setValueBoolean((Boolean) value);
-      case "dateTime" -> result.setValueDateTime((OffsetDateTime) value);
-      case "decimal" -> result.setValueDecimal((BigDecimal) value);
-//            //TODO value type coding
+      case EntityPropertyType.code -> result.setValueCode((String) value);
+      case EntityPropertyType.string -> result.setValueString((String) value);
+      case EntityPropertyType.bool -> result.setValueBoolean((Boolean) value);
+      case EntityPropertyType.decimal -> result.setValueDecimal(new BigDecimal(String.valueOf(value)));
+      case EntityPropertyType.integer -> result.setValueInteger(Integer.valueOf(String.valueOf(value)));
+      case EntityPropertyType.coding -> {
+        Concept concept = JsonUtil.getObjectMapper().convertValue(value, Concept.class);
+        result.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
+      }
+      case EntityPropertyType.dateTime -> {
+        if (value instanceof OffsetDateTime) {
+          result.setValueDateTime((OffsetDateTime) value);
+        } else {
+          result.setValueDateTime(DateUtil.parseOffsetDateTime((String) value));
+        }
+      }
     }
     return result;
   }
