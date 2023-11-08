@@ -107,21 +107,21 @@ public class ValueSetVersionConceptService {
         .filter(distinctByKey(PropertyReference::getName))
         .collect(Collectors.toMap(PropertyReference::getName, p -> p));
 
-    Map<String, List<ValueSetVersionConcept>> groupedConcepts = concepts.stream().collect(Collectors.groupingBy(c -> c.getConcept().getCode()));
+    Map<String, List<ValueSetVersionConcept>> groupedConcepts = concepts.stream().collect(Collectors.groupingBy(c -> c.getConcept().getCodeSystem() + c.getConcept().getCode()));
 
     List<String> versionIds = concepts.stream().map(c -> c.getConcept().getConceptVersionId()).filter(Objects::nonNull).distinct().map(String::valueOf).toList();
     CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
     params.setIds(String.join(",", versionIds));
     params.limit(versionIds.size());
     List<CodeSystemEntityVersion> entityVersions = codeSystemEntityVersionService.query(params).getData();
-    Map<String, List<CodeSystemEntityVersion>> groupedVersions = entityVersions.stream().collect(Collectors.groupingBy(CodeSystemEntityVersion::getCode));
+    Map<String, List<CodeSystemEntityVersion>> groupedVersions = entityVersions.stream().collect(Collectors.groupingBy(v -> v.getCodeSystem() + v.getCode()));
 
-    List<ValueSetVersionConcept> res = groupedConcepts.keySet().stream().map(code -> groupedConcepts.get(code).stream()
+    List<ValueSetVersionConcept> res = groupedConcepts.keySet().stream().map(key -> groupedConcepts.get(key).stream()
             .filter(ValueSetVersionConcept::isEnumerated).findFirst()
-            .orElse(groupedConcepts.get(code).stream().findFirst().orElse(null)))
+            .orElse(groupedConcepts.get(key).stream().findFirst().orElse(null)))
         .filter(Objects::nonNull)
         .peek(c -> {
-          List<CodeSystemEntityVersion> versions = Optional.ofNullable(groupedVersions.get(c.getConcept().getCode())).orElse(new ArrayList<>());
+          List<CodeSystemEntityVersion> versions = Optional.ofNullable(groupedVersions.get(c.getConcept().getCodeSystem() + c.getConcept().getCode())).orElse(new ArrayList<>());
 
           List<String> preferredLanguages = version.getPreferredLanguage() != null ? List.of(version.getPreferredLanguage()) :
               versions.stream().flatMap(v -> v.getVersions().stream().map(CodeSystemVersionReference::getPreferredLanguage)).filter(Objects::nonNull).toList();
