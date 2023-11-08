@@ -1,4 +1,4 @@
-package com.kodality.termx.implementationguide;
+package com.kodality.termx.implementationguide.ig;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
@@ -7,7 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.implementationguide.ImplementationGuideQueryParams.Ordering;
+import com.kodality.termx.implementationguide.ig.ImplementationGuideQueryParams.Ordering;
 import com.kodality.termx.ts.ContactDetail;
 import io.micronaut.core.util.StringUtils;
 import java.util.HashMap;

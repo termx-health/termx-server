@@ -1,4 +1,4 @@
-package com.kodality.termx.implementationguide;
+package com.kodality.termx.implementationguide.ig.version;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -9,8 +9,8 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ImplementationGuideVersion {
   private Long id;
-  private String version;
   private String implementationGuide;
+  private String version;
   private String status;
   private String fhirVersion;
   private String githubUrl;

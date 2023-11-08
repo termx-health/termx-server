@@ -1,4 +1,4 @@
-package com.kodality.termx.implementationguide;
+package com.kodality.termx.implementationguide.ig;
 
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.validation.Validated;

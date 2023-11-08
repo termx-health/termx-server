@@ -1,4 +1,4 @@
-package com.kodality.termx.implementationguide;
+package com.kodality.termx.implementationguide.ig;
 
 import com.kodality.commons.model.QueryParams;
 import lombok.Getter;
