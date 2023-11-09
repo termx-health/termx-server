@@ -115,13 +115,13 @@ public class LoincAnswerListMapper {
 
   private static List<CodeSystemAssociation> mapAssociations(LoincAnswerList answerList) {
     if (answerList.getAnswerLists() == null) {
-      return List.of();
+      return new ArrayList<>();
     }
     return answerList.getAnswerLists().stream().map(a -> new CodeSystemAssociation()
         .setAssociationType(IS_A)
         .setStatus(PublicationStatus.active)
         .setOrderNumber(a.getValue())
-        .setTargetCode(a.getKey())).toList();
+        .setTargetCode(a.getKey())).collect(Collectors.toList());
   }
 
   public static MapSetTransactionRequest toRequest(LoincImportRequest request, List<Pair<String, String>> mappings) {

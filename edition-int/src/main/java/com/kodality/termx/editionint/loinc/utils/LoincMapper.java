@@ -115,13 +115,13 @@ public class LoincMapper {
 
   private static List<CodeSystemAssociation> mapAssociations(LoincConcept c) {
     if (c.getAssociations() == null) {
-      return List.of();
+      return new ArrayList<>();
     }
     return c.getAssociations().stream().map(a -> new CodeSystemAssociation()
         .setAssociationType(PART_OF)
         .setStatus(PublicationStatus.active)
         .setOrderNumber(a.getOrder())
-        .setTargetCode(a.getTargetCode())).toList();
+        .setTargetCode(a.getTargetCode())).collect(Collectors.toList());
   }
 
 }
