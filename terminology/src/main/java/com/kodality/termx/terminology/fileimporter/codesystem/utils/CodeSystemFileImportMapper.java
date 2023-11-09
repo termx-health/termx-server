@@ -207,7 +207,7 @@ public class CodeSystemFileImportMapper {
         association.setTargetCode(p);
         association.setStatus(PublicationStatus.active);
         return association;
-      }).toList();
+      }).collect(Collectors.toList());
     }
 
     return entity.keySet().stream().filter(key -> List.of(CONCEPT_IS_A, CONCEPT_PARENT, CONCEPT_PART_OF, CONCEPT_GROUPED_BY, CONCEPT_CLASSIFIED_WITH).contains(key)).flatMap(key -> {

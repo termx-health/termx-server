@@ -55,7 +55,7 @@ public class MapSetAssociationService {
     MapSetVersion msv = mapSetVersionRepository.load(mapSet, version);
     repository.batchUpsert(associations, mapSet, msv.getId());
 
-    Map<Long, List<MapSetPropertyValue>> propertyValues = associations.stream().collect(Collectors.toMap(MapSetAssociation::getId, MapSetAssociation::getPropertyValues));
+    Map<Long, List<MapSetPropertyValue>> propertyValues = associations.stream().filter(ms -> ms.getPropertyValues() != null).collect(Collectors.toMap(MapSetAssociation::getId, MapSetAssociation::getPropertyValues));
     mapSetPropertyValueService.batchUpsert(propertyValues, mapSet);
 
     if (PublicationStatus.draft.equals(msv.getStatus())) {
