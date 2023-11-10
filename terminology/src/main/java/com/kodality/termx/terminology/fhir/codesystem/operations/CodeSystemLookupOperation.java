@@ -94,9 +94,11 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
         .setValueString(cs.getId()));
     resp.addParameter(new ParametersParameter().setName("version")
         .setValueString(CollectionUtils.isEmpty(cs.getVersions()) ? null : cs.getVersions().get(0).getVersion()));
-    resp.addParameter(new ParametersParameter().setName("display")
-        .setValueString(getDesignations(cs).filter(Designation::isPreferred).findFirst().map(Designation::getName).orElse(null)));
-    getDesignations(cs).filter(d -> !d.isPreferred()).forEach(d -> {
+
+    String preferredLanguage = CollectionUtils.isEmpty(cs.getVersions()) ? null : cs.getVersions().get(0).getPreferredLanguage();
+    Designation display = getDesignations(cs).filter(d -> d.getDesignationType().equals("display") && (preferredLanguage == null || preferredLanguage.equals(d.getLanguage()))).findFirst().orElse(null);
+    resp.addParameter(new ParametersParameter().setName("display").setValueString(display != null ? display.getName() : null));
+    getDesignations(cs).filter(d -> display == null || !d.getId().equals(display.getId())).forEach(d -> {
       resp.addParameter(new ParametersParameter("designation")
           .addPart(new ParametersParameter("use").setValueCoding(new Coding(d.getDesignationType())))
           .addPart(new ParametersParameter("value").setValueString(d.getName()))
