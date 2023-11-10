@@ -21,8 +21,6 @@ public class EntityPropertyRepository extends BaseRepository {
 
   private final Map<String, String> orderMapping = Map.of("order-number", "ep.order_number");
 
-  String from = " from terminology.entity_property ep " +
-                " left join terminology.code_system_supplement css on css.target_id = ep.id and css.target_type = 'EntityProperty' ";
 
   public void save(EntityProperty entityProperty, String codeSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -48,22 +46,22 @@ public class EntityPropertyRepository extends BaseRepository {
   }
 
   public EntityProperty load(String codeSystem, Long id) {
-    String sql ="select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A' and and ep.code_system = ? ep.id = ?";
+    String sql ="select * from terminology.entity_property ep where ep.sys_status = 'A' and ep.code_system = ? and ep.id = ?";
     return getBean(sql, bp, codeSystem, id);
   }
 
   public EntityProperty load(String codeSystem, String name) {
-    String sql ="select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A' and ep.code_system = ? and ep.name = ?";
+    String sql ="select * from terminology.entity_property ep where ep.sys_status = 'A' and ep.code_system = ? and ep.name = ?";
     return getBean(sql, bp, codeSystem, name);
   }
 
   public QueryResult<EntityProperty> query(EntityPropertyQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1)" + from + "where ep.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.entity_property ep where ep.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select ep.*, css.id supplement_id" + from + "where ep.sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select * from terminology.entity_property ep where ep.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(order(params, orderMapping));
       sb.append(limit(params));
@@ -80,7 +78,7 @@ public class EntityPropertyRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getNames())) {
       sb.and().in("ep.name", params.getNames());
     }
-    sb.appendIfNotNull("and ep.code_system = ?", params.getCodeSystem());
+    sb.and().in("ep.code_system", params.getCodeSystem());
     return sb;
   }
 

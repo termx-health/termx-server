@@ -51,7 +51,7 @@ dependencies {
   implementation("com.auth0:java-jwt:4.0.0")
   implementation('com.auth0:jwks-rsa:0.22.1')
 
-  runtimeOnly "ch.qos.logback:logback-classic:1.4.11"
+  runtimeOnly "ch.qos.logback:logback-classic:1.4.7"
 
   testCompileOnly("org.projectlombok:lombok:1.18.30")
   testAnnotationProcessor("org.projectlombok:lombok:1.18.30")

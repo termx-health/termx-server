@@ -201,8 +201,8 @@ public class ConceptService {
             version.setId(null);
             version.setStatus(PublicationStatus.draft);
             version.setCreated(null);
-            version.setDesignations(version.getDesignations().stream().peek(d -> d.setId(null)).toList());
-            version.setAssociations(version.getAssociations().stream().peek(a -> a.setId(null)).toList());
+            version.setDesignations(version.getDesignations().stream().peek(d -> d.setId(null)).collect(Collectors.toList()));
+            version.setAssociations(version.getAssociations().stream().peek(a -> a.setId(null)).collect(Collectors.toList()));
           }
           version.setPropertyValues(propertyValues);
           return Pair.of(c.getId(), version);

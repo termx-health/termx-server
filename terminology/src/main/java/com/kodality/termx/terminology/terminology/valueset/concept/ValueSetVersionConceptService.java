@@ -3,6 +3,7 @@ package com.kodality.termx.terminology.terminology.valueset.concept;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptUtil;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionRepository;
 import com.kodality.termx.terminology.terminology.valueset.snapshot.ValueSetSnapshotService;
 import com.kodality.termx.ts.PublicationStatus;
@@ -11,10 +12,15 @@ import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.codesystem.Designation;
+import com.kodality.termx.ts.codesystem.EntityProperty;
+import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
+import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import com.kodality.termx.ts.property.PropertyReference;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
+import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.time.OffsetDateTime;
@@ -23,6 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +46,7 @@ public class ValueSetVersionConceptService {
   private final ValueSetVersionRepository valueSetVersionRepository;
   private final ValueSetSnapshotService valueSetSnapshotService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+  private final EntityPropertyService entityPropertyService;
 
   private static final String DEPRECATION_DATE = "deprecationDate";
   private static final String INACTIVE = "inactive";
@@ -87,26 +98,32 @@ public class ValueSetVersionConceptService {
 
   public List<ValueSetVersionConcept> decorate(List<ValueSetVersionConcept> concepts, ValueSetVersion version, String preferredLanguage) {
     List<String> supportedLanguages = Optional.ofNullable(version.getSupportedLanguages()).orElse(List.of());
+
     List<String> supportedProperties = version.getRuleSet() != null ? Optional.ofNullable(version.getRuleSet().getRules()).orElse(List.of()).stream()
         .filter(r -> r.getProperties() != null).flatMap(r -> r.getProperties().stream()).toList() : List.of();
+    Map<String, EntityProperty> properties = entityPropertyService.query(new EntityPropertyQueryParams()
+            .setCodeSystem(version.getRuleSet().getRules().stream().map(ValueSetVersionRule::getCodeSystem).collect(Collectors.joining(","))))
+        .getData().stream().filter(p -> CollectionUtils.isEmpty(supportedProperties) || supportedProperties.contains(p.getName()))
+        .filter(distinctByKey(PropertyReference::getName))
+        .collect(Collectors.toMap(PropertyReference::getName, p -> p));
 
-    Map<String, List<ValueSetVersionConcept>> groupedConcepts = concepts.stream().collect(Collectors.groupingBy(c -> c.getConcept().getCode()));
+    Map<String, List<ValueSetVersionConcept>> groupedConcepts = concepts.stream().collect(Collectors.groupingBy(c -> c.getConcept().getCodeSystem() + c.getConcept().getCode()));
 
     List<String> versionIds = concepts.stream().map(c -> c.getConcept().getConceptVersionId()).filter(Objects::nonNull).distinct().map(String::valueOf).toList();
     CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
     params.setIds(String.join(",", versionIds));
     params.limit(versionIds.size());
     List<CodeSystemEntityVersion> entityVersions = codeSystemEntityVersionService.query(params).getData();
-    Map<String, List<CodeSystemEntityVersion>> groupedVersions = entityVersions.stream().collect(Collectors.groupingBy(CodeSystemEntityVersion::getCode));
+    Map<String, List<CodeSystemEntityVersion>> groupedVersions = entityVersions.stream().collect(Collectors.groupingBy(v -> v.getCodeSystem() + v.getCode()));
 
-    List<ValueSetVersionConcept> res = groupedConcepts.keySet().stream().map(code -> groupedConcepts.get(code).stream()
+    List<ValueSetVersionConcept> res = groupedConcepts.keySet().stream().map(key -> groupedConcepts.get(key).stream()
             .filter(ValueSetVersionConcept::isEnumerated).findFirst()
-            .orElse(groupedConcepts.get(code).stream().findFirst().orElse(null)))
+            .orElse(groupedConcepts.get(key).stream().findFirst().orElse(null)))
         .filter(Objects::nonNull)
         .peek(c -> {
-          List<CodeSystemEntityVersion> versions = Optional.ofNullable(groupedVersions.get(c.getConcept().getCode())).orElse(new ArrayList<>());
+          List<CodeSystemEntityVersion> versions = Optional.ofNullable(groupedVersions.get(c.getConcept().getCodeSystem() + c.getConcept().getCode())).orElse(new ArrayList<>());
 
-          List<String> preferredLanguages = version.getPreferredLanguage() != null ?  List.of(version.getPreferredLanguage()) :
+          List<String> preferredLanguages = version.getPreferredLanguage() != null ? List.of(version.getPreferredLanguage()) :
               versions.stream().flatMap(v -> v.getVersions().stream().map(CodeSystemVersionReference::getPreferredLanguage)).filter(Objects::nonNull).toList();
           List<String> csVersions = versions.stream().flatMap(v -> v.getVersions().stream().map(CodeSystemVersionReference::getVersion)).toList();
           c.getConcept().setCodeSystemVersions(csVersions);
@@ -127,16 +144,30 @@ public class ValueSetVersionConceptService {
           c.setAssociations(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getAssociations()))
               .flatMap(v -> v.getAssociations().stream()).collect(Collectors.toList()));
           c.setPropertyValues(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getPropertyValues())).flatMap(v -> v.getPropertyValues().stream())
-              .filter(p -> CollectionUtils.isEmpty(supportedProperties) || supportedProperties.contains(p.getEntityProperty())).collect(Collectors.toList()));
+              .filter(p -> properties.containsKey(p.getEntityProperty())).collect(Collectors.toList()));
+          if (properties.containsKey("modifiedAt")) {
+            c.getPropertyValues().add(new EntityPropertyValue()
+                .setValue(versions.stream().findFirst().map(CodeSystemEntityVersion::getSysModifiedAt).orElse(null))
+                .setEntityProperty("modifiedAt")
+                .setEntityPropertyType(properties.get("modifiedAt").getType()));
+          }
+          if (properties.containsKey("modifiedBy")) {
+            c.getPropertyValues().add(new EntityPropertyValue()
+                .setValue(versions.stream().findFirst().map(CodeSystemEntityVersion::getSysModifiedBy).orElse(null))
+                .setEntityProperty("modifiedBy")
+                .setEntityPropertyType(properties.get("modifiedBy").getType()));
+          }
         }).collect(Collectors.toList());
     return res;
   }
 
   private boolean calculatedActive(List<CodeSystemEntityVersion> versions) {
     boolean inactive = versions.stream().anyMatch(v -> v.getPropertyValues() != null &&
-        v.getPropertyValues().stream().anyMatch(pv -> pv.getEntityProperty().equals(INACTIVE) && EntityPropertyType.bool.equals(pv.getEntityPropertyType()) && (boolean) pv.getValue()));
+        v.getPropertyValues().stream()
+            .anyMatch(pv -> pv.getEntityProperty().equals(INACTIVE) && EntityPropertyType.bool.equals(pv.getEntityPropertyType()) && (boolean) pv.getValue()));
     boolean status = versions.stream().anyMatch(v -> v.getPropertyValues() != null &&
-        v.getPropertyValues().stream().anyMatch(pv -> pv.getEntityProperty().equals(STATUS) && EntityPropertyType.string.equals(pv.getEntityPropertyType()) && List.of("deprecated", "retired").contains((String) pv.getValue())));
+        v.getPropertyValues().stream().anyMatch(pv -> pv.getEntityProperty().equals(STATUS) && EntityPropertyType.string.equals(pv.getEntityPropertyType()) &&
+            List.of("deprecated", "retired").contains((String) pv.getValue())));
     boolean retired = dateIsAfter(versions, RETIREMENT_DATE);
     boolean deprecated = dateIsAfter(versions, DEPRECATION_DATE);
     boolean noActiveVersion = CollectionUtils.isNotEmpty(versions) && versions.stream().noneMatch(v -> PublicationStatus.active.equals(v.getStatus()));
@@ -156,5 +187,10 @@ public class ValueSetVersionConceptService {
       return null;
     }
     return Optional.ofNullable(vsVersion).map(v -> valueSetVersionRepository.load(vs, v)).orElse(valueSetVersionRepository.loadLastVersion(vs));
+  }
+
+  public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+    Set<Object> seen = ConcurrentHashMap.newKeySet();
+    return t -> seen.add(keyExtractor.apply(t));
   }
 }

@@ -12,6 +12,7 @@ import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleService;
+import com.kodality.termx.terminology.terminology.valueset.snapshot.ValueSetSnapshotService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
@@ -19,16 +20,20 @@ import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetImportAction;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
+import com.kodality.termx.ts.valueset.ValueSetSnapshot;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.sf.saxon.expr.Component.M;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -41,6 +46,7 @@ public class ValueSetImportService {
   private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final ValueSetSnapshotService valueSetSnapshotService;
 
   private final PackageVersionService packageVersionService;
   private final PackageResourceService packageResourceService;
@@ -55,7 +61,7 @@ public class ValueSetImportService {
 
     saveValueSet(valueSet);
     ValueSetVersion valueSetVersion = valueSet.getVersions().get(0);
-    saveValueSetVersion(valueSetVersion);
+    saveValueSetVersion(valueSetVersion, valueSetVersion.getSnapshot());
 
     if (action.isActivate()) {
       valueSetVersionService.activate(valueSet.getId(), valueSetVersion.getVersion());
@@ -80,6 +86,10 @@ public class ValueSetImportService {
   }
 
   private void saveValueSetVersion(ValueSetVersion valueSetVersion) {
+   saveValueSetVersion(valueSetVersion, null);
+  }
+
+  private void saveValueSetVersion(ValueSetVersion valueSetVersion, ValueSetSnapshot snapshot) {
     Optional<ValueSetVersion> existingVersion = valueSetVersionService.load(valueSetVersion.getValueSet(), valueSetVersion.getVersion());
 
     if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
@@ -89,12 +99,19 @@ public class ValueSetImportService {
     log.info("Saving value set version {}", valueSetVersion.getVersion());
     valueSetVersionService.save(valueSetVersion);
     valueSetVersionRuleService.save(valueSetVersion.getRuleSet().getRules(), valueSetVersion.getValueSet(), valueSetVersion.getVersion());
-    valueSetVersionConceptService.expand(valueSetVersion.getValueSet(), valueSetVersion.getVersion());
+    if (snapshot == null) {
+      valueSetVersionConceptService.expand(valueSetVersion.getValueSet(), valueSetVersion.getVersion());
+    } else {
+      valueSetSnapshotService.createSnapshot(valueSetVersion.getValueSet(), valueSetVersion.getId(), snapshot.getExpansion());
+    }
   }
 
   private ValueSet prepare(ValueSet valueSet) {
     if (CollectionUtils.isNotEmpty(valueSet.getVersions()) && valueSet.getVersions().get(0) != null && valueSet.getVersions().get(0).getRuleSet() != null) {
       prepareRules(valueSet.getVersions().get(0).getRuleSet().getRules());
+    }
+    if (CollectionUtils.isNotEmpty(valueSet.getVersions()) && valueSet.getVersions().get(0) != null && valueSet.getVersions().get(0).getSnapshot() != null) {
+      prepareSnapshot(valueSet.getVersions().get(0).getSnapshot().getExpansion());
     }
     return valueSet;
   }
@@ -120,6 +137,17 @@ public class ValueSetImportService {
         r.setValueSetVersion(valueSetVersion);
       }
     });
+  }
+
+  private void prepareSnapshot(List<ValueSetVersionConcept> concepts) {
+    if (CollectionUtils.isEmpty(concepts)) {
+      return;
+    }
+    String uri = concepts.stream().filter(c -> c.getConcept().getCodeSystemUri() != null && c.getConcept().getCodeSystem() == null)
+        .map(c -> c.getConcept().getCodeSystemUri()).distinct().collect(Collectors.joining(","));
+    Map<String, CodeSystem> codeSystems = codeSystemService.query(new CodeSystemQueryParams().setUri(uri).limit(uri.split(",").length)).getData().stream().collect(Collectors.toMap(CodeSystem::getUri, cs -> cs));
+    concepts.stream().filter(c -> c.getConcept().getCodeSystemUri() != null && c.getConcept().getCodeSystem() == null)
+        .forEach(c -> c.getConcept().setCodeSystem(codeSystems.getOrDefault(c.getConcept().getCodeSystemUri(), new CodeSystem()).getId()));
   }
 
   private void addToSpace(String valueSetId, String spaceToAdd) {
