@@ -7,8 +7,10 @@ import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
 import com.kodality.termx.snomed.description.SnomedDescription;
 import com.kodality.termx.snomed.snomed.SnomedInterceptor;
 import com.kodality.termx.snomed.snomed.SnomedService;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.routines.checkdigit.CheckDigitException;
@@ -22,8 +24,10 @@ public class SnomedTranslationService {
   private final SnomedTranslationRepository repository;
   private final SnomedInterceptor snomedInterceptor;
 
+  @Value("${snowstorm.namespace}")
+  private Optional<String> snowstormNamespace;
+
   public static final String DESCRIPTION_PARTITION_IDENTIFIER = "11";
-  public static final String NAMESPACE_IDENTIFIER = "1000265";
 
   public List<SnomedTranslation> load(String conceptId) {
     return repository.load(conceptId);
@@ -82,8 +86,9 @@ public class SnomedTranslationService {
   }
 
   private String composeSCTID(Long id) throws CheckDigitException {
+    String namespace = snowstormNamespace.orElseThrow(() -> new RuntimeException("snowstorm namespace identifier is not configured"));
     VerhoeffCheckDigit verhoeffCheckDigit = new VerhoeffCheckDigit();
-    String checkDigit = verhoeffCheckDigit.calculate(id + NAMESPACE_IDENTIFIER + DESCRIPTION_PARTITION_IDENTIFIER);
-    return id + NAMESPACE_IDENTIFIER + DESCRIPTION_PARTITION_IDENTIFIER + checkDigit;
+    String checkDigit = verhoeffCheckDigit.calculate(id + namespace + DESCRIPTION_PARTITION_IDENTIFIER);
+    return id + snowstormNamespace.get() + DESCRIPTION_PARTITION_IDENTIFIER + checkDigit;
   }
 }

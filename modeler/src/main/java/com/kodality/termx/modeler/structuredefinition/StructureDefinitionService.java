@@ -1,6 +1,8 @@
 package com.kodality.termx.modeler.structuredefinition;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.core.utils.ObjectUtil;
 import jakarta.inject.Singleton;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,13 @@ public class StructureDefinitionService {
 
   @Transactional
   public StructureDefinition save(StructureDefinition structureDefinition) {
+    if ("json".equals(structureDefinition.getContentFormat())) {
+      try {
+        structureDefinition.setContent(ObjectUtil.removeEmptyAttributes(structureDefinition.getContent()));
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    }
     repository.save(structureDefinition);
     return load(structureDefinition.getId()).orElse(null);
   }
