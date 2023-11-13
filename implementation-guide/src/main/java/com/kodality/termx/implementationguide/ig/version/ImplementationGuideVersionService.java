@@ -1,5 +1,6 @@
 package com.kodality.termx.implementationguide.ig.version;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.implementationguide.ApiError;
 import com.kodality.termx.ts.PublicationStatus;
 import java.util.Map;
@@ -12,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ImplementationGuideVersionService {
   private final ImplementationGuideVersionRepository repository;
+
+  public QueryResult<ImplementationGuideVersion> query(ImplementationGuideVersionQueryParams params) {
+    return repository.query(params);
+  }
 
   @Transactional
   public void save(ImplementationGuideVersion version) {

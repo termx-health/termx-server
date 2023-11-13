@@ -66,7 +66,7 @@ public class ImplementationGuideRepository extends BaseRepository {
 
   private SqlBuilder filter(ImplementationGuideQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.and().in("ig.id", params.getPermittedIds());
+    sb.appendIfNotNull(params.getPermittedIds(), (s, p) -> s.and().in("ig.id", p));
     sb.and().in("ig.id", params.getIds());
     sb.and().in("ig.uri", params.getUris());
     sb.appendIfNotNull("and ig.publisher = ?", params.getPublisher());

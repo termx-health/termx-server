@@ -1,6 +1,7 @@
 package com.kodality.termx.implementationguide.ig;
 
 import com.kodality.commons.model.QueryParams;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -10,10 +11,11 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ImplementationGuideQueryParams extends QueryParams {
   private String ids;
-  private String permittedIds;
   private String uris;
   private String publisher;
   private String textContains;
+
+  private List<String> permittedIds;
 
 
   public interface Ordering {

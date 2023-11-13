@@ -4,6 +4,7 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.QueryResult;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
@@ -32,5 +33,29 @@ public class ImplementationGuideVersionRepository extends BaseRepository {
   public ImplementationGuideVersion load(String ig, String version) {
     String sql = "select * from sys.implementation_guide_version igv where igv.sys_status = 'A' and igv.implementation_guide = ? and igv.version = ?";
     return getBean(sql, bp, ig, version);
+  }
+
+  public QueryResult<ImplementationGuideVersion> query(ImplementationGuideVersionQueryParams params) {
+    return query(params, p -> {
+      SqlBuilder sb = new SqlBuilder("select count(1) from sys.implementation_guide_version igv " +
+          "inner join sys.implementation_guide ig on ig.id = igv.implementation_guide and ig.sys_status = 'A' " +
+          "where igv.sys_status = 'A'");
+      sb.append(filter(params));
+      return queryForObject(sb.getSql(), Integer.class, sb.getParams());
+    }, p -> {
+      SqlBuilder sb = new SqlBuilder("select igv.* from sys.implementation_guide_version igv " +
+          "inner join sys.implementation_guide ig on ig.id = igv.implementation_guide and ig.sys_status = 'A' " +
+          "where igv.sys_status = 'A'");
+      sb.append(filter(params));
+      sb.append(limit(params));
+      return getBeans(sb.getSql(), bp, sb.getParams());
+    });
+  }
+
+  private SqlBuilder filter(ImplementationGuideVersionQueryParams params) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.and().in("ig.id", params.getImplementationGuideIds());
+    sb.and().in("cs.code_system", params.getPermittedImplementationGuideIds());
+    return sb;
   }
 }
