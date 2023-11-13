@@ -48,7 +48,7 @@ Pass **Bearer token** `yupi` in request Authorization header.
 Snowstorm server serves SNOMED terminology and may be installed if you need SNOMED. 
 Check Snowstorm installation and configuration [documentation](https://wiki.kodality.dev/terminology-server/snowstorm).
 
-After installation add properties `snowstorm.url`, `snowstorm.user`, `snowstorm.password` to `application.yml` file.
+After installation add properties `snowstorm.url`, `snowstorm.user`, `snowstorm.password`, `snowstorm.namespace` to `application.yml` file.
 
 
 ## MinIO
