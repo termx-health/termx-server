@@ -85,4 +85,15 @@ public class ImplementationGuideRepository extends BaseRepository {
     ));
     return sortMap;
   }
+
+  public void changeId(String currentId, String newId) {
+    SqlBuilder sb = new SqlBuilder("select * from sys.change_implementation_guide_id(?,?)", currentId, newId);
+    jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
+  }
+
+  public void cancel(String ig) {
+    SqlBuilder sb = new SqlBuilder("select * from sys.cancel_implementation_guide(?)", ig);
+    jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
+  }
+
 }

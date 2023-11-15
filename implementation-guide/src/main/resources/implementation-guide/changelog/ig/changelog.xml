@@ -4,4 +4,10 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
     <include file="01-implementation_guide.sql" relativeToChangelogFile="true"/>
+
+
+    <changeSet dbms="PostgreSQL" id="functions" runOnChange="true" author="kodality">
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/00-change_implementation_guide_id.sql" />
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/20-cancel_implementation_guide.sql" />
+    </changeSet>
 </databaseChangeLog>

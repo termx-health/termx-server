@@ -8,7 +8,11 @@ import lombok.Getter;
 
 public enum ApiError {
   IG101("IG101", "Could not create not draft version."),
-  IG102("IG102", "Version '{{version}}' already exists.");
+  IG102("IG102", "Version '{{version}}' already exists."),
+  IG103("IG103", "Id is not allowed to contain '{{symbols}}'"),
+  IG104("IG104", "Version '{{version}}' of implementation guide '{{ig}}' doesn't exist.");
+
+
 
   @Getter
   private String code;

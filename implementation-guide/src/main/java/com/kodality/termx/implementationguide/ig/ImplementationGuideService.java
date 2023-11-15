@@ -1,8 +1,11 @@
 package com.kodality.termx.implementationguide.ig;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.core.fhir.BaseFhirMapper;
+import com.kodality.termx.implementationguide.ApiError;
 import com.kodality.termx.implementationguide.ig.version.ImplementationGuideVersion;
 import com.kodality.termx.implementationguide.ig.version.ImplementationGuideVersionService;
+import java.util.Map;
 import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,23 @@ public class ImplementationGuideService {
     if (version != null) {
       version.setImplementationGuide(ig.getId());
       versionService.save(version);
+    }
+  }
+
+  @Transactional
+  public void cancel(String ig) {
+    repository.cancel(ig);
+  }
+
+  @Transactional
+  public void changeId(String currentId, String newId) {
+    validateId(newId);
+    repository.changeId(currentId, newId);
+  }
+
+  private void validateId(String id) {
+    if (id.contains(BaseFhirMapper.SEPARATOR)) {
+      throw ApiError.IG103.toApiException(Map.of("symbols", BaseFhirMapper.SEPARATOR));
     }
   }
 }

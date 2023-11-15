@@ -36,16 +36,16 @@ public class ImplementationGuideProvenanceService {
   }
 
   public void provenanceImplementationGuideTransactionRequest(String action, ImplementationGuideTransactionRequest request, Runnable save) {
-    provenanceCodeSystem(action, request.getImplementationGuide().getId(), () -> {
+    provenanceImplementationGuide(action, request.getImplementationGuide().getId(), () -> {
       if (request.getVersion() != null) {
-        provenanceCodeSystemVersion(action, request.getImplementationGuide().getId(), request.getVersion().getVersion(), save);
+        provenanceImplementationGuideVersion(action, request.getImplementationGuide().getId(), request.getVersion().getVersion(), save);
         return;
       }
       save.run();
     });
   }
 
-  public void provenanceCodeSystem(String action, String igId, Runnable save) {
+  public void provenanceImplementationGuide(String action, String igId, Runnable save) {
     ImplementationGuide before = igService.load(igId).orElse(null);
     save.run();
     ImplementationGuide after = igService.load(igId).orElseThrow();
@@ -66,7 +66,7 @@ public class ImplementationGuideProvenanceService {
     return ProvenanceUtil.diff(fn.apply(left), fn.apply(right));
   }
 
-  public void provenanceCodeSystemVersion(String activity, String csId, String version, Runnable save) {
+  public void provenanceImplementationGuideVersion(String activity, String csId, String version, Runnable save) {
     ImplementationGuideVersion before = igVersionService.load(csId, version).orElse(null);
     save.run();
     ImplementationGuideVersion after = igVersionService.load(csId, version).orElseThrow();
