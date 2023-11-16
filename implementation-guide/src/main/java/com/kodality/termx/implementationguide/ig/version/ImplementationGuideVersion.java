@@ -1,6 +1,7 @@
 package com.kodality.termx.implementationguide.ig.version;
 
 import com.kodality.termx.implementationguide.ig.version.group.ImplementationGuideGroup;
+import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,6 +21,7 @@ public class ImplementationGuideVersion {
   private String emptyGithubUrl;
   private String template;
   private String algorithm;
+  private OffsetDateTime date;
   private List<ImplementationGuideVersionDependsOn> dependsOn;
   private List<ImplementationGuideGroup> groups;
 

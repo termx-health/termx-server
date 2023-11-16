@@ -79,7 +79,7 @@ create table sys.implementation_guide_resource (
     implementation_guide_version_id bigint                    not null,
     type                            text                      not null,
     reference                       text                      not null,
-    version                         text                      not null,
+    version                         text,
     name                            text,
     group_id                        bigint                    not null,
     sys_created_at                  timestamp                 not null,

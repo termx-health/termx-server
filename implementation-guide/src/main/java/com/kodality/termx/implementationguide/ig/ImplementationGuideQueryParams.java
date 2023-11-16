@@ -15,6 +15,8 @@ public class ImplementationGuideQueryParams extends QueryParams {
   private String publisher;
   private String textContains;
 
+  private boolean decorated;
+
   private List<String> permittedIds;
 
 

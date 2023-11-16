@@ -12,7 +12,6 @@ import com.kodality.termx.implementationguide.ig.version.ImplementationGuideVers
 import com.kodality.termx.implementationguide.ig.version.ImplementationGuideVersionService;
 import com.kodality.termx.implementationguide.ig.version.group.ImplementationGuideGroup;
 import com.kodality.termx.implementationguide.ig.version.resource.ImplementationGuideResource;
-import com.kodality.termx.implementationguide.ig.version.resource.ImplementationGuideResourceService;
 import com.kodality.termx.ts.PublicationStatus;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
@@ -36,7 +35,6 @@ import lombok.RequiredArgsConstructor;
 public class ImplementationGuideController {
   private final ImplementationGuideService igService;
   private final ImplementationGuideVersionService igVersionService;
-  private final ImplementationGuideResourceService igResourceService;
   private final ImplementationGuideProvenanceService provenanceService;
 
   @Authorized(Privilege.IG_VIEW)

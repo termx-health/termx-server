@@ -24,7 +24,8 @@ public class ImplementationGuideVersionRepository extends BaseRepository {
       "               'id', igg.id, " +
       "               'name', igg.name, " +
       "               'description', igg.description) as g " +
-      "from sys.implementation_guide_group igg where igg.implementation_guide_version_id = igv.id and igg.sys_status = 'A') igg) as groups ";
+      "from sys.implementation_guide_group igg where igg.implementation_guide_version_id = igv.id and igg.sys_status = 'A') igg) as groups, " +
+      "(select date from sys.provenance where target ->> 'type' = 'ImplementationGuideVersion' and target ->> 'id' = igv.id::text order by id desc limit 1) as date ";
 
   public void save(ImplementationGuideVersion version) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
