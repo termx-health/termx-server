@@ -6,8 +6,9 @@ import com.kodality.termx.core.github.GithubService.GithubContent.GithubContentE
 import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
 import com.kodality.termx.core.sys.space.SpaceService;
 import com.kodality.termx.sys.space.Space;
-import com.kodality.termx.wiki.SpaceGithubDataWikSsgHandler.SpaceGithubPage.SpaceGithubPageAttachment;
-import com.kodality.termx.wiki.SpaceGithubDataWikSsgHandler.SpaceGithubPage.SpaceGithubPageContent;
+import com.kodality.termx.wiki.SpaceGithubDataWikiSsgHandler.SpaceGithubPage.SpaceGithubPageAttachment;
+import com.kodality.termx.wiki.SpaceGithubDataWikiSsgHandler.SpaceGithubPage.SpaceGithubPageContent;
+import com.kodality.termx.wiki.SpaceGithubDataWikiSsgHandler.SpaceGithubPage.SpaceGithubPageRelatedResource;
 import com.kodality.termx.wiki.page.Page;
 import com.kodality.termx.wiki.page.Page.PageAttachment;
 import com.kodality.termx.wiki.page.PageContent;
@@ -39,11 +40,12 @@ import static com.kodality.commons.util.JsonUtil.toPrettyJson;
 @Slf4j
 @Singleton
 @RequiredArgsConstructor
-public class SpaceGithubDataWikSsgHandler implements SpaceGithubDataHandler {
+public class SpaceGithubDataWikiSsgHandler implements SpaceGithubDataHandler {
   private final SpaceService spaceService;
   private final PageService pageService;
   private final PageAttachmentService pageAttachmentService;
   private final PageLinkService pageLinkService;
+  private final List<WikiPageRelatedResourceProvider> resourceProviders;
 
   @Value("${termx.web-url}")
   private Optional<String> termxWebUrl;
@@ -78,6 +80,19 @@ public class SpaceGithubDataWikSsgHandler implements SpaceGithubDataHandler {
       });
     }).toList();
 
+    List<SpaceGithubPageRelatedResource> relatedResources = pages.stream()
+        .flatMap(p -> p.getRelations().stream())
+        .map(rel -> {
+          return resourceProviders.stream()
+              .filter(rp -> rp.getRelationType().equals(rel.getType())).findFirst()
+              .flatMap(rp -> {
+                return rp.getContent(rel.getTarget()).map(c -> new SpaceGithubPageRelatedResource(rp.gerResourceName(), rel.getTarget(), c, "json"));
+              });
+        })
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .toList();
+
     Map<String, SpaceGithubData> result = new HashMap<>();
     result.put("space.json", new SpaceGithubData(toPrettyJson(new SsgSpaceIndex(termxWebUrl.orElse(null), space.getCode(), space.getNames()))));
     result.put("pages.json", new SpaceGithubData(toPrettyJson(composePagesIndex(pages, links))));
@@ -87,6 +102,9 @@ public class SpaceGithubDataWikSsgHandler implements SpaceGithubDataHandler {
     result.putAll(attachments.stream().collect(Collectors.toMap(
         a -> "attachments/" + a.pageId() + "/" + a.name(),
         o -> new SpaceGithubData(o.base64(), GithubContentEncoding.base64))));
+    result.putAll(relatedResources.stream().collect(Collectors.toMap(
+        r -> "resources/" + r.resourceType() + "/" + r.name() + "." + r.contentType(),
+        r -> new SpaceGithubData(r.content))));
     return result;
   }
 
@@ -125,6 +143,8 @@ public class SpaceGithubDataWikSsgHandler implements SpaceGithubDataHandler {
     protected record SpaceGithubPageContent(String name, String slug, String lang, String contentType, OffsetDateTime modifiedAt) {}
 
     protected record SpaceGithubPageAttachment(Long pageId, String name, String base64) {}
+
+    protected record SpaceGithubPageRelatedResource(String resourceType, String name, String content, String contentType) {}
   }
 
   protected record SsgSpaceIndex(String web, String code, LocalizedName names) {}
