@@ -13,6 +13,7 @@ import lombok.experimental.Accessors;
 public class MapSetVersionQueryParams extends QueryParams {
   private String mapSet;
   private List<String> permittedMapSets;
+  private String ids;
   private String version;
   private String status;
   private String scopeSourceCodeSystem;

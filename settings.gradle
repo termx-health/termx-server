@@ -21,6 +21,7 @@ include 'observation-definition'
 include 'terminology'
 include 'modeler'
 include 'bob'
+include 'implementation-guide'
 
 include 'snomed'
 include 'ucum'

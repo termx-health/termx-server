@@ -82,6 +82,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
     sb.appendIfNotNull("and cs.publisher = ?", params.getCodeSystemPublisher());
     sb.appendIfNotNull("and cs.content = ?", params.getCodeSystemContent());
     sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%' || terminology.search_translate(?) || '%'", params.getCodeSystemDescriptionContains());
+    sb.and().in("csv.id", params.getIds(), Long::valueOf);
     sb.appendIfNotNull("and csv.version = ?", params.getVersion());
     sb.appendIfNotNull("and csv.status = ?", params.getStatus());
     sb.appendIfNotNull("and csv.release_date <= ?", params.getReleaseDateLe());
