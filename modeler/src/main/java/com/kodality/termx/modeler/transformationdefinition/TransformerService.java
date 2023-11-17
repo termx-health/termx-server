@@ -2,11 +2,12 @@ package com.kodality.termx.modeler.transformationdefinition;
 
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.client.HttpClientError;
-import com.kodality.termx.terminology.fhir.conceptmap.ConceptMapResourceStorage;
+import com.kodality.termx.core.sys.server.httpclient.TerminologyServerHttpClientService;
 import com.kodality.termx.modeler.ApiError;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
-import com.kodality.termx.core.sys.server.httpclient.TerminologyServerHttpClientService;
+import com.kodality.termx.terminology.fhir.FhirFshConverter;
+import com.kodality.termx.terminology.fhir.conceptmap.ConceptMapResourceStorage;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.Address;
 import com.kodality.zmei.fhir.datatypes.Age;
@@ -74,6 +75,7 @@ public class TransformerService {
   private final TransformationDefinitionService structureMapService;
   private final ResourceLoader resourceLoader;
   private final TerminologyServerHttpClientService httpClientService;
+  private final FhirFshConverter fshConverter;
   private final HttpClient httpClient = new HttpClient();
   private ValidationEngine engine;
   @Value("${micronaut.server.port}")
@@ -174,7 +176,13 @@ public class TransformerService {
       case "static" -> res.getReference().getContent();
       case "url" -> queryResource(res.getReference().getResourceUrl(), res.getReference().getResourceServerId());
       case "local" -> switch (res.getType()) {
-        case "definition" -> structureDefinitionService.load(Long.valueOf(res.getReference().getLocalId())).orElseThrow().getContent();
+        case "definition" -> {
+          var sd = structureDefinitionService.load(Long.valueOf(res.getReference().getLocalId())).orElseThrow();
+          if ("fsh".equals(sd.getContentFormat())) {
+            yield fshConverter.toFhir(sd.getContent()).join();
+          }
+          yield sd.getContent();
+        }
         case "conceptmap" -> conceptMapFhirService.load(res.getReference().getLocalId()).getContent().getValue();
         case "mapping" -> {
           StructureMap structureMap = getStructureMap(structureMapService.load(Long.valueOf(res.getReference().getLocalId())).getMapping());
@@ -341,6 +349,7 @@ public class TransformerService {
   private static String randomString() {
     return randomString(8);
   }
+
   private static String randomString(int count) {
     return RandomStringUtils.random(count, "qwertyuiopasdfghjklzxcvbnm");
   }
