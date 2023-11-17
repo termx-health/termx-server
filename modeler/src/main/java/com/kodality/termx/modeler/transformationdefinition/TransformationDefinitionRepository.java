@@ -74,6 +74,7 @@ public class TransformationDefinitionRepository extends BaseRepository {
     sb.and().in("td.id", params.getPermittedIds());
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("td.id", p, Long::valueOf));
     sb.appendIfNotNull("and td.name ilike '%' || ? || '%'", params.getNameContains());
+    sb.appendIfNotNull("and td.name = ? ", params.getName());
     return sb;
   }
 

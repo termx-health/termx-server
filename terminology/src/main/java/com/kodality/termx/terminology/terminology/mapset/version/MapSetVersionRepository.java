@@ -79,6 +79,7 @@ public class MapSetVersionRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     sb.appendIfNotNull("and msv.map_set = ?", params.getMapSet());
     sb.and().in("msv.map_set", params.getPermittedMapSets());
+    sb.and().in("msv.id", params.getIds(), Long::valueOf);
     sb.appendIfNotNull("and msv.version = ?", params.getVersion());
     sb.appendIfNotNull("and msv.status = ?", params.getStatus());
     sb.appendIfNotNull("and msv.release_date <= ?", params.getReleaseDateLe());

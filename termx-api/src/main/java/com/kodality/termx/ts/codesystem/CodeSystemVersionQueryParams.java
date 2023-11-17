@@ -20,6 +20,7 @@ public class CodeSystemVersionQueryParams extends QueryParams {
   private String codeSystemDescriptionContains;
   private String conceptCode;
   private List<String> permittedCodeSystems;
+  private String ids;
   private String version;
   private String status;
   private LocalDate releaseDateLe;

@@ -1,4 +1,4 @@
-package com.kodality.termx.modeler.transformationdefinition;
+package com.kodality.termx.implementationguide.ig;
 
 import com.kodality.commons.model.QueryParams;
 import java.util.List;
@@ -9,17 +9,20 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class TransformationDefinitionQueryParams extends QueryParams {
+public class ImplementationGuideQueryParams extends QueryParams {
   private String ids;
-  private String name;
-  private String nameContains;
-  private boolean summary;
+  private String uris;
+  private String publisher;
+  private String textContains;
 
-  private List<Long> permittedIds;
+  private boolean decorated;
+
+  private List<String> permittedIds;
+
 
   public interface Ordering {
     String id = "id";
+    String uri = "uri";
     String name = "name";
-    String modified = "modified";
   }
 }

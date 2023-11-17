@@ -10,6 +10,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class StructureDefinitionQueryParams extends QueryParams {
+  private String ids;
   private String code;
   private String textContains;
 
