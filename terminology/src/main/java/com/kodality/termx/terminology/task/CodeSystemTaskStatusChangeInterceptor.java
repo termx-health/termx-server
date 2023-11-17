@@ -21,7 +21,7 @@ public class CodeSystemTaskStatusChangeInterceptor implements TaskStatusChangeIn
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final CodeSystemProvenanceService provenanceService;
   public static final String CS_VERSION = "code-system-version";
-  public static final String CS_ENTITY_VERSION = "code-system-entity-version";
+  public static final String CS_ENTITY_VERSION = "concept-version";
 
   @Override
   @Transactional
