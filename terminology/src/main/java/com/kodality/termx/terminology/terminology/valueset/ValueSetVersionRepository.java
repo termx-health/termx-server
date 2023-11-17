@@ -118,6 +118,7 @@ public class ValueSetVersionRepository extends BaseRepository {
     sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%' || terminology.search_translate(?) || '%'", params.getValueSetDescriptionContains());
     sb.appendIfNotNull("and vsvr.type = 'include' and cs.uri = ?", params.getCodeSystemUri());
     sb.appendIfNotNull("and exists (select 1 from jsonb_array_elements(vss.expansion::jsonb) exp where (exp -> 'concept' ->> 'code') = ?)", params.getConceptCode());
+    sb.and().in("vsv.id", params.getIds(), Long::valueOf);
     sb.appendIfNotNull("and vsv.version = ?", params.getVersion());
     sb.appendIfNotNull("and vsv.status = ?", params.getStatus());
     sb.appendIfNotNull("and (vsv.release_date is null or vsv.release_date <= ?)", params.getReleaseDateLe());

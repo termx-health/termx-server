@@ -20,6 +20,7 @@ public class ValueSetVersionQueryParams extends QueryParams {
   private List<String> permittedValueSets;
   private String codeSystemUri;
   private String conceptCode;
+  private String ids;
   private String version;
   private String status;
   private LocalDate releaseDateLe;
