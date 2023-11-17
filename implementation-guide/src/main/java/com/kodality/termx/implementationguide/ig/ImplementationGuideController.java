@@ -11,6 +11,7 @@ import com.kodality.termx.implementationguide.ig.version.ImplementationGuideVers
 import com.kodality.termx.implementationguide.ig.version.ImplementationGuideVersionQueryParams;
 import com.kodality.termx.implementationguide.ig.version.ImplementationGuideVersionService;
 import com.kodality.termx.implementationguide.ig.version.group.ImplementationGuideGroup;
+import com.kodality.termx.implementationguide.ig.version.page.ImplementationGuidePage;
 import com.kodality.termx.implementationguide.ig.version.resource.ImplementationGuideResource;
 import com.kodality.termx.ts.PublicationStatus;
 import io.micronaut.core.annotation.Nullable;
@@ -149,6 +150,19 @@ public class ImplementationGuideController {
   @Post("/{ig}/versions/{version}/resources")
   public HttpResponse<?> saveVersionResources(@PathVariable String ig, @PathVariable String version, @Body List<ImplementationGuideResource> resources) {
     provenanceService.provenanceImplementationGuideVersion("save-resources", ig, version, () -> igVersionService.saveResources(ig, version, resources));
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.IG_EDIT)
+  @Get("/{ig}/versions/{version}/pages")
+  public List<ImplementationGuidePage> loadVersionPages(@PathVariable String ig, @PathVariable String version) {
+    return igVersionService.loadPages(ig, version);
+  }
+
+  @Authorized(Privilege.IG_EDIT)
+  @Post("/{ig}/versions/{version}/pages")
+  public HttpResponse<?> saveVersionPages(@PathVariable String ig, @PathVariable String version, @Body List<ImplementationGuidePage> pages) {
+    provenanceService.provenanceImplementationGuideVersion("save-resources", ig, version, () -> igVersionService.savePages(ig, version, pages));
     return HttpResponse.ok();
   }
 

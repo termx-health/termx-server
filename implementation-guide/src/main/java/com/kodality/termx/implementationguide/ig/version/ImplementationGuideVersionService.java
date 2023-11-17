@@ -4,6 +4,8 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.implementationguide.ApiError;
 import com.kodality.termx.implementationguide.ig.version.group.ImplementationGuideGroup;
 import com.kodality.termx.implementationguide.ig.version.group.ImplementationGuideGroupService;
+import com.kodality.termx.implementationguide.ig.version.page.ImplementationGuidePage;
+import com.kodality.termx.implementationguide.ig.version.page.ImplementationGuidePageService;
 import com.kodality.termx.implementationguide.ig.version.resource.ImplementationGuideResource;
 import com.kodality.termx.implementationguide.ig.version.resource.ImplementationGuideResourceService;
 import com.kodality.termx.ts.PublicationStatus;
@@ -22,6 +24,7 @@ public class ImplementationGuideVersionService {
   private final ImplementationGuideVersionRepository repository;
   private final ImplementationGuideGroupService implementationGuideGroupService;
   private final ImplementationGuideResourceService implementationGuideResourceService;
+  private final ImplementationGuidePageService implementationGuidePageService;
 
   public QueryResult<ImplementationGuideVersion> query(ImplementationGuideVersionQueryParams params) {
     return repository.query(params);
@@ -73,6 +76,18 @@ public class ImplementationGuideVersionService {
   public void saveResources(String ig, String version, List<ImplementationGuideResource> resources) {
     ImplementationGuideVersion igVersion = load(ig, version).orElseThrow(() -> ApiError.IG104.toApiException(Map.of("version", version, "ig", ig)));
     implementationGuideResourceService.save(ig, igVersion.getId(), resources);
+  }
+
+  public List<ImplementationGuidePage> loadPages(String ig, String version) {
+    ImplementationGuideVersion igVersion = load(ig, version).orElseThrow(() -> ApiError.IG104.toApiException(Map.of("version", version, "ig", ig)));
+    return implementationGuidePageService.loadAll(igVersion.getId());
+  }
+
+
+  @Transactional
+  public void savePages(String ig, String version, List<ImplementationGuidePage> pages) {
+    ImplementationGuideVersion igVersion = load(ig, version).orElseThrow(() -> ApiError.IG104.toApiException(Map.of("version", version, "ig", ig)));
+    implementationGuidePageService.save(ig, igVersion.getId(), pages);
   }
 
 }

@@ -47,6 +47,7 @@ public class StructureDefinitionRepository extends BaseRepository {
   private SqlBuilder filter(StructureDefinitionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.and().in("sd.id", params.getPermittedIds());
+    sb.and().in("sd.id", params.getIds());
     sb.appendIfNotNull("and sd.code = ?", params.getCode());
     sb.appendIfNotNull("and terminology.text_search(sd.code, sd.url) like '%' || terminology.search_translate(?) || '%'", params.getTextContains());
     return sb;
