@@ -28,6 +28,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -82,6 +86,7 @@ public class SpaceGithubDataWikiSsgHandler implements SpaceGithubDataHandler {
 
     List<SpaceGithubPageRelatedResource> relatedResources = pages.stream()
         .flatMap(p -> p.getRelations().stream())
+        .filter(distinctByKey(rel -> rel.getType() + "#" + rel.getTarget()))
         .map(rel -> {
           return resourceProviders.stream()
               .filter(rp -> rp.getRelationType().equals(rel.getType())).findFirst()
@@ -148,4 +153,9 @@ public class SpaceGithubDataWikiSsgHandler implements SpaceGithubDataHandler {
   }
 
   protected record SsgSpaceIndex(String web, String code, LocalizedName names) {}
+
+  public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+    Set<Object> seen = ConcurrentHashMap.newKeySet();
+    return t -> seen.add(keyExtractor.apply(t));
+  }
 }
