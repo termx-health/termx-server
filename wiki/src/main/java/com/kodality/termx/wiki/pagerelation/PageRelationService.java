@@ -80,7 +80,7 @@ public class PageRelationService {
   }
 
   private List<PageRelation> parseRelationInsertions(PageContent content) {
-    String regex = "\\{\\{(.*):(?:(.*?);.*|(.*))}}"; // {{system:value}}
+    String regex = "\\{\\{(.*):(?:(.*?);.*|(.*))}}"; // {{system:value}} | {{system:value;...}}
     List<String> allowedSystems = getConfig().getAllowedPageRelationSystems();
 
     return MatcherUtil.findAllMatches(content.getContent(), regex).stream().map(m -> {

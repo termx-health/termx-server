@@ -19,6 +19,6 @@ public class WikiPageRelationServiceConfig implements PageRelationServiceConfig 
 
   @Override
   public List<String> getAllowedPageRelationSystems() {
-    return List.of("def", "csc");
+    return List.of("def", "csc", "vsc");
   }
 }
