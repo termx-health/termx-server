@@ -80,7 +80,7 @@ public class PageRelationService {
   }
 
   private List<PageRelation> parseRelationInsertions(PageContent content) {
-    String regex = "\\{\\{(.*):(.*)}}"; // {{system:value}}
+    String regex = "\\{\\{(.*):(?:(.*?);.*|(.*))}}"; // {{system:value}}
     List<String> allowedSystems = getConfig().getAllowedPageRelationSystems();
 
     return MatcherUtil.findAllMatches(content.getContent(), regex).stream().map(m -> {
@@ -89,14 +89,15 @@ public class PageRelationService {
         return null;
       }
       String system = matcher.group(1);
-      String value = matcher.group(2);
+      String value = matcher.group(3);
+      String valueFlb = matcher.group(2);
       if (!allowedSystems.contains(system)) {
         return null;
       }
       return new PageRelation()
           .setContent(new CodeName(content.getId()))
           .setType(system)
-          .setTarget(value);
+          .setTarget(value != null ? value : valueFlb);
     }).filter(Objects::nonNull).toList();
   }
 
