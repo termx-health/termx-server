@@ -22,6 +22,7 @@ public class MapSetFileProcessingMapper {
     ms.setTitle(req.getMapSet().getTitle() == null ? ms.getTitle() : req.getMapSet().getTitle());
     ms.setDescription(req.getMapSet().getDescription() == null ? ms.getDescription() : req.getMapSet().getDescription());
     ms.setVersions(List.of(mapVersion(req, rows, existingMapSetVersion)));
+    ms.setProperties(new ArrayList<>());
     return ms;
   }
 
