@@ -1,5 +1,6 @@
 package com.kodality.termx.terminology.fileimporter.mapset;
 
+import com.kodality.commons.model.Issue;
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.fhir.FhirFshConverter;
 import com.kodality.termx.terminology.fhir.conceptmap.ConceptMapFhirImportService;
@@ -14,12 +15,17 @@ import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetImportAction;
 import com.kodality.termx.ts.mapset.MapSetVersion;
+import com.kodality.termx.ts.mapset.MapSetVersion.MapSetResourceReference;
+import com.kodality.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -36,20 +42,13 @@ public class MapSetFileImportService {
   private final ConceptMapFhirImportService fhirImportService;
   private final Optional<FhirFshConverter> fhirFshConverter;
 
-  private final List<String> VALID_HEADERS = List.of(
-      "sourceCodeSystem", "sourceVersion", "sourceCode",
-      "targetCodeSystem", "targetVersion", "targetCode",
-      "equivalence", "comment",
-      "dependsOnProperty", "dependsOnSystem", "dependsOnValue"
-  );
-
   public void process(MapSetFileImportRequest req, byte[] file) {
     MapSetImportAction action = new MapSetImportAction();
     action.setActivate(req.getMapSetVersion() != null && PublicationStatus.active.equals(req.getMapSetVersion().getStatus()));
     action.setCleanRun(req.isCleanRun());
     action.setCleanAssociationRun(req.isCleanAssociationRun());
 
-    if (req.getUrl() != null ) {
+    if (req.getUrl() != null) {
       fhirImportService.importMapSetFromUrl(req.getUrl(), req.getMapSet().getId(), action);
       return;
     }
@@ -63,7 +62,111 @@ public class MapSetFileImportService {
     }
 
     List<MapSetFileImportRow> rows = parseRows(file);
+    prepare(req, rows);
     save(req, rows, action);
+  }
+
+  private void prepare(MapSetFileImportRequest req, List<MapSetFileImportRow> rows) {
+    List<Issue> issues = new ArrayList<>();
+    MapSetVersionScope scope = req.getMapSetVersion().getScope();
+
+    String sourceType = scope.getSourceType();
+    // source code
+    if (rows.stream().anyMatch(r -> r.getSourceCode() == null)) {
+      issues.add(ApiError.TE729.toIssue(Map.of("property", "sourceCode")));
+    }
+    // source CodeSystem
+    if (rows.stream().anyMatch(r -> r.getSourceCodeSystem() == null)) {
+      switch (sourceType) {
+        case "code-system" -> {
+          if (scope.getSourceCodeSystems().size() != 1) {
+            issues.add(ApiError.TE733.toIssue(Map.of("property", "sourceCodeSystem")));
+          } else {
+            rows.forEach(r -> r.setSourceCodeSystem(scope.getSourceCodeSystems().get(0).getId()));
+          }
+        }
+        case "value-set" -> {
+          issues.add(ApiError.TE731.toIssue(Map.of("property", "sourceCodeSystem")));
+        }
+        case "external-canonical-uri" -> {
+          if (scope.getTargetValueSet().getUri() == null) {
+            issues.add(ApiError.TE732.toIssue(Map.of("property", "sourceCodeSystem")));
+          } else {
+            rows.forEach(r -> r.setSourceCodeSystem(scope.getTargetValueSet().getUri()));
+          }
+        }
+        default -> {
+          issues.add(ApiError.TE734.toIssue(Map.of("property", "sourceCodeSystem")));
+        }
+      }
+    }
+    // source CodeSystem version
+    if (rows.stream().anyMatch(r -> r.getSourceVersion() == null)) {
+      if ("code-system".equals(sourceType)) {
+        List<String> distinctVersions = scope.getSourceCodeSystems().stream().map(MapSetResourceReference::getVersion).filter(Objects::nonNull).distinct().toList();
+        if (distinctVersions.size() != 1) {
+          issues.add(ApiError.TE733.toIssue(Map.of("property", "sourceVersion")));
+        } else {
+          rows.forEach(r -> r.setSourceVersion(distinctVersions.get(0)));
+        }
+      } else {
+        issues.add(ApiError.TE736.toIssue(Map.of("property", "sourceVersion")));
+      }
+    }
+
+
+    String targetType = scope.getTargetType();
+    // target code
+    if (rows.stream().anyMatch(r -> r.getTargetCode() == null)) {
+      issues.add(ApiError.TE729.toIssue(Map.of("property", "targetCode")));
+    }
+    // target CodeSystem
+    if (rows.stream().anyMatch(r -> r.getTargetCodeSystem() == null)) {
+      switch (targetType) {
+        case "code-system" -> {
+          if (scope.getTargetCodeSystems().size() != 1) {
+            issues.add(ApiError.TE733.toIssue(Map.of("property", "targetCodeSystem")));
+          } else {
+            rows.forEach(r -> r.setTargetCodeSystem(scope.getTargetCodeSystems().get(0).getId()));
+          }
+        }
+        case "value-set" -> {
+          issues.add(ApiError.TE731.toIssue(Map.of("property", "targetCodeSystem")));
+        }
+        case "external-canonical-uri" -> {
+          if (scope.getTargetValueSet().getUri() == null) {
+            issues.add(ApiError.TE732.toIssue(Map.of("property", "targetCodeSystem")));
+          } else {
+            rows.forEach(r -> r.setTargetCodeSystem(scope.getTargetValueSet().getUri()));
+          }
+        }
+        default -> {
+          issues.add(ApiError.TE735.toIssue(Map.of("property", "targetCodeSystem")));
+        }
+      }
+    }
+    // target CodeSystem version
+    if (rows.stream().anyMatch(r -> r.getTargetVersion() == null)) {
+      if ("code-system".equals(targetType)) {
+        List<String> distinctVersions = scope.getTargetCodeSystems().stream().map(MapSetResourceReference::getVersion).filter(Objects::nonNull).distinct().toList();
+        if (distinctVersions.size() != 1) {
+          issues.add(ApiError.TE733.toIssue(Map.of("property", "targetVersion")));
+        } else {
+          rows.forEach(r -> r.setTargetVersion(distinctVersions.get(0)));
+        }
+      } else {
+        issues.add(ApiError.TE737.toIssue(Map.of("property", "targetVersion")));
+      }
+    }
+
+    // equivalence
+    if (rows.stream().anyMatch(r -> r.getEquivalence() == null)) {
+      issues.add(ApiError.TE729.toIssue(Map.of("property", "equivalence")));
+    }
+
+    if (!issues.isEmpty()) {
+      throw ApiError.TE700.toApiException().setIssues(issues);
+    }
   }
 
   private void save(MapSetFileImportRequest req, List<MapSetFileImportRow> rows, MapSetImportAction action) {
@@ -81,6 +184,7 @@ public class MapSetFileImportService {
     List<String> headers = Arrays.asList(parser.getHeaders());
     List<String[]> rows = parser.getRows();
 
+    Set<String> VALID_HEADERS = Set.of("sourceCode", "targetCode", "equivalence");
     if (!headers.containsAll(VALID_HEADERS)) {
       String missingHeaders = VALID_HEADERS.stream().filter(h -> !headers.contains(h)).collect(Collectors.joining(", "));
       throw ApiError.TE708.toApiException(Map.of("headers", missingHeaders));
@@ -88,21 +192,25 @@ public class MapSetFileImportService {
 
     return rows.stream().map(r -> {
       MapSetFileImportRow row = new MapSetFileImportRow();
-      row.setSourceCodeSystem(r[headers.indexOf("sourceCodeSystem")]);
-      row.setSourceVersion(r[headers.indexOf("sourceVersion")]);
-      row.setSourceCode(r[headers.indexOf("sourceCode")]);
+      row.setSourceCodeSystem(getRowValue(headers, r, "sourceCodeSystem"));
+      row.setSourceVersion(getRowValue(headers, r, "sourceVersion"));
+      row.setSourceCode(getRowValue(headers, r, "sourceCode"));
 
-      row.setTargetCodeSystem(r[headers.indexOf("targetCodeSystem")]);
-      row.setTargetVersion(r[headers.indexOf("targetVersion")]);
-      row.setTargetCode(r[headers.indexOf("targetCode")]);
+      row.setTargetCodeSystem(getRowValue(headers, r, "targetCodeSystem"));
+      row.setTargetVersion(getRowValue(headers, r, "targetVersion"));
+      row.setTargetCode(getRowValue(headers, r, "targetCode"));
 
-      row.setEquivalence(r[headers.indexOf("equivalence")]);
-      row.setComment(r[headers.indexOf("comment")]);
+      row.setEquivalence(getRowValue(headers, r, "equivalence"));
+      row.setComment(getRowValue(headers, r, "comment"));
 
-      row.setDependsOnProperty(r[headers.indexOf("dependsOnProperty")]);
-      row.setDependsOnSystem(r[headers.indexOf("dependsOnSystem")]);
-      row.setDependsOnValue(r[headers.indexOf("dependsOnValue")]);
+      row.setDependsOnProperty(getRowValue(headers, r, "dependsOnProperty"));
+      row.setDependsOnSystem(getRowValue(headers, r, "dependsOnSystem"));
+      row.setDependsOnValue(getRowValue(headers, r, "dependsOnValue"));
       return row;
     }).toList();
+  }
+
+  private static String getRowValue(List<String> headers, String[] r, String header) {
+    return headers.contains(header) ? r[headers.indexOf(header)] : null;
   }
 }
