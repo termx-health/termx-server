@@ -235,8 +235,8 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Post(value = "/imports", consumes = MediaType.MULTIPART_FORM_DATA)
-  public Map<String, String> createImportJob(Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
-    SnomedImportRequest req = JsonUtil.fromJson(request.getValue(), SnomedImportRequest.class);
+  public Map<String, String> createImportJob(Publisher<CompletedFileUpload> file, @Part("request") String request) {
+    SnomedImportRequest req = JsonUtil.fromJson(request, SnomedImportRequest.class);
     byte[] importFile = FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet());
     return snomedService.importRF2File(req, importFile);
   }

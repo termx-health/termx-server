@@ -37,8 +37,8 @@ public class AssociationFileImportController {
 
   @Authorized(Privilege.CS_EDIT)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
-  public JobLogResponse process(Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
-    AssociationFileImportRequest req = JsonUtil.fromJson(request.getValue(), AssociationFileImportRequest.class);
+  public JobLogResponse process(Publisher<CompletedFileUpload> file, @Part("request") String request) {
+    AssociationFileImportRequest req = JsonUtil.fromJson(request, AssociationFileImportRequest.class);
     byte[] importFile = FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet());
 
     JobLogResponse jobLogResponse = importLogger.createJob("ASSOCIATION-FILE-IMPORT");

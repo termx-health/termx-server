@@ -43,8 +43,8 @@ public class LoincController {
       @Nullable Publisher<CompletedFileUpload> answerListLinkFile,
       @Nullable Publisher<CompletedFileUpload> translationsFile,
       @Nullable Publisher<CompletedFileUpload> orderObservationFile,
-      @Part("request") MemoryAttribute request) {
-    LoincImportRequest req = JsonUtil.fromJson(request.getValue(), LoincImportRequest.class);
+      @Part("request") String request) {
+    LoincImportRequest req = JsonUtil.fromJson(request, LoincImportRequest.class);
     List<Pair<String, byte[]>> files = List.of(
         Pair.of("parts", partsFile != null ? FileUtil.readBytes(Flowable.fromPublisher(partsFile).firstOrError().blockingGet()) : null),
         Pair.of("terminology", terminologyFile != null ? FileUtil.readBytes(Flowable.fromPublisher(terminologyFile).firstOrError().blockingGet()) : null),

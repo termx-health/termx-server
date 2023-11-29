@@ -31,8 +31,8 @@ public class MapSetFileImportController {
 
   @Authorized(Privilege.MS_VIEW)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
-  public JobLogResponse process(Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
-    MapSetFileImportRequest req = JsonUtil.fromJson(request.getValue(), MapSetFileImportRequest.class);
+  public JobLogResponse process(Publisher<CompletedFileUpload> file, @Part("request") String request) {
+    MapSetFileImportRequest req = JsonUtil.fromJson(request, MapSetFileImportRequest.class);
     byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
     JobLogResponse jobLogResponse = importLogger.createJob( "MS-FILE-IMPORT");

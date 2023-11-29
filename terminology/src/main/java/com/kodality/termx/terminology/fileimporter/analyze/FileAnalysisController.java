@@ -24,8 +24,8 @@ public class FileAnalysisController {
 
   @Authorized(privilege = Privilege.CS_EDIT)
   @Post(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA)
-  public FileAnalysisResponse analyze(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
-    FileAnalysisRequest req = JsonUtil.fromJson(request.getValue(), FileAnalysisRequest.class);
+  public FileAnalysisResponse analyze(@Nullable Publisher<CompletedFileUpload> file, @Part("request") String request) {
+    FileAnalysisRequest req = JsonUtil.fromJson(request, FileAnalysisRequest.class);
 
     return file != null
         ? fileAnalysisService.analyze(req, FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()))

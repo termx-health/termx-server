@@ -40,8 +40,8 @@ public class CodeSystemFileImportController {
 
   @Authorized(Privilege.CS_EDIT)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
-  public JobLogResponse process(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
-    String val = URLDecoder.decode(request.getValue(), StandardCharsets.UTF_8);
+  public JobLogResponse process(@Nullable Publisher<CompletedFileUpload> file, @Part("request") String request) {
+    String val = URLDecoder.decode(request, StandardCharsets.UTF_8);
     CodeSystemFileImportRequest req = JsonUtil.fromJson(val, CodeSystemFileImportRequest.class);
     byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 

@@ -36,8 +36,8 @@ public class OrphanetController {
 
   @Authorized(Privilege.CS_EDIT)
   @Post(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA)
-  public JobLogResponse importIcd10(@Nullable Publisher<CompletedFileUpload> file, @Part("request") MemoryAttribute request) {
-    CodeSystemImportConfiguration configuration = JsonUtil.fromJson(request.getValue(), CodeSystemImportConfiguration.class);
+  public JobLogResponse importIcd10(@Nullable Publisher<CompletedFileUpload> file, @Part("request") String request) {
+    CodeSystemImportConfiguration configuration = JsonUtil.fromJson(request, CodeSystemImportConfiguration.class);
     byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getPublisher(), JOB_TYPE);
