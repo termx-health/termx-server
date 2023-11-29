@@ -36,12 +36,12 @@ class Icd10EstMapperTest extends Specification {
 
   def configuration = new CodeSystemImportConfiguration(
       uri: 'https://pub.e-tervis.ee/classifications/RHK-10/8',
-      source: 'Ministry of Social Affairs of Estonia',
+      publisher: 'Ministry of Social Affairs of Estonia',
       version: '8',
       validFrom: LocalDate.of(2022, 1, 1),
       codeSystem: 'icd-10-est',
       codeSystemName: new LocalizedName(Map.of("et", "RHK-10")),
-      codeSystemDescription: 'RHK-10 on rahvusvaheline haiguste ja nendega seotud terviseprobleemide statistiline klassifikatsioon, mille sisu haldaja on Sotsiaalministeerium. Täiendus- ja muudatusettepanekud edastada info@sm.ee.'
+      codeSystemDescription: new LocalizedName(["et": 'RHK-10 on rahvusvaheline haiguste ja nendega seotud terviseprobleemide statistiline klassifikatsioon, mille sisu haldaja on Sotsiaalministeerium. Täiendus- ja muudatusettepanekud edastada info@sm.ee.'])
   )
 
   def "Should create concept components"() {

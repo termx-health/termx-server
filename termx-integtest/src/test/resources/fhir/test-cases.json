@@ -498,7 +498,7 @@
         "operation" : "expand",
         "request" : "big/expand-fifty-fifty-limit-parameters.json",
         "response" : "big/expand-fifty-fifty-limit-valueset.json"
-      }       
+      }
     ]
   },{
     "name" : "other",
@@ -522,7 +522,7 @@
         "operation" : "validate-code",
         "request" : "other/validation-dual-filter-out-request-parameters.json",
         "response" : "other/validation-dual-filter-out-response-parameters.json"
-      }     
+      }
     ]
   },{
     "name" : "errors",

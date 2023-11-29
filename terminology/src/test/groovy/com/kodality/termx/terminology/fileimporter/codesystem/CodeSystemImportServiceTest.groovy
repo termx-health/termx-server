@@ -1,6 +1,7 @@
 package com.kodality.termx.terminology.fileimporter.codesystem
 
 import com.kodality.commons.model.QueryResult
+import com.kodality.termx.terminology.fhir.FhirFshConverter
 import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirImportService
 import com.kodality.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportRequest
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemImportService
@@ -45,10 +46,8 @@ class CodeSystemImportServiceTest extends Specification {
       codeSystemValidationService,
       codeSystemVersionService,
       conceptService,
-      valueSetService,
       valueSetVersionConceptService,
-      valueSetVersionRuleService,
-      valueSetVersionService,
+      Optional.empty()
   )
 
   EntityProperty entityProperty(String code, String name) {
@@ -106,8 +105,8 @@ class CodeSystemImportServiceTest extends Specification {
         new Concept(code: 'test', versions: [
             new CodeSystemEntityVersion(codeSystem: 'overlord', code: 'test', designations: [], propertyValues: [
                 new EntityPropertyValue(entityProperty: ep.name, value: [code: 'code-1']),
-                new EntityPropertyValue(entityProperty: ep.name, value: [code: 'Concept 2']),
-                new EntityPropertyValue(entityProperty: ep.name, value: [code: 'Concept 3']),
+                new EntityPropertyValue(entityProperty: ep.name, value: [code: 'code-2']),
+                new EntityPropertyValue(entityProperty: ep.name, value: [code: 'code-3']),
             ])
         ])
     ])
@@ -119,11 +118,11 @@ class CodeSystemImportServiceTest extends Specification {
     codeSystemValidationService.validateConcepts(_, _) >> []
     valueSetVersionConceptService.expand(ep.rule.valueSet, _) >> [
         new ValueSetVersionConcept(
-            concept: new Concept(code: 'code-1', codeSystem: 'cs-1', versions: [version('#')])),
+            concept: new ValueSetVersionConcept.ValueSetVersionConceptValue(code: 'code-1', codeSystem: 'cs-1')),
         new ValueSetVersionConcept(
-            concept: new Concept(code: 'code-2', codeSystem: 'cs-1', versions: [version('Concept 2')])),
+            concept: new ValueSetVersionConcept.ValueSetVersionConceptValue(code: 'code-2', codeSystem: 'cs-1')),
         new ValueSetVersionConcept(
-            concept: new Concept(code: 'code-3', codeSystem: 'cs-2', versions: [version('#')]),
+            concept: new ValueSetVersionConcept.ValueSetVersionConceptValue(code: 'code-3', codeSystem: 'cs-2'),
             additionalDesignations: [new Designation(designationType: 'display', name: 'Concept 3')]),
     ]
 

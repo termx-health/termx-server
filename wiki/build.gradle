@@ -1,6 +1,4 @@
 dependencies {
-    annotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
-    annotationProcessor "io.micronaut:micronaut-inject-java"
     annotationProcessor "io.micronaut.openapi:micronaut-openapi"
     annotationProcessor "io.micronaut.spring:micronaut-spring-annotation"
 
@@ -21,9 +19,8 @@ dependencies {
     implementation 'commons-io:commons-io:2.15.0'
     implementation("com.github.slugify:slugify:3.0.6")
 
-    api platform("io.micronaut:micronaut-bom:$micronautVersion")
     implementation("io.micronaut.spring:micronaut-spring")
-    implementation("io.micronaut:micronaut-validation")
+    implementation("io.micronaut.validation:micronaut-validation")
     implementation("io.micronaut.beanvalidation:micronaut-hibernate-validator")
     implementation("io.micronaut:micronaut-management")
     implementation("io.micronaut:micronaut-http-server")
@@ -34,6 +31,3 @@ dependencies {
     }
 }
 
-test {
-    useJUnitPlatform()
-}

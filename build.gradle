@@ -1,6 +1,9 @@
 plugins {
   id 'maven-publish'
-  id("org.owasp.dependencycheck") version "8.4.2"
+  id 'org.owasp.dependencycheck' version "8.4.2"
+  id 'io.micronaut.minimal.library' version "4.1.2"
+  id 'io.micronaut.minimal.application' version "4.1.2"
+  id "com.github.johnrengelman.shadow" version "7.0.0" apply false
 }
 
 group "com.kodality.termx"
@@ -31,8 +34,8 @@ allprojects {
   }
 
   java {
-    sourceCompatibility = JavaVersion.toVersion("17")
-    targetCompatibility = JavaVersion.toVersion("17")
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
     withSourcesJar()
   }
 
@@ -44,6 +47,15 @@ allprojects {
 
 subprojects { Project project ->
   apply plugin: "maven-publish"
+  apply plugin: "io.micronaut.minimal.library"
+
+  micronaut {
+    testRuntime("spock2")
+    processing {
+      incremental(true)
+      annotations("com.kodality.termx.*")
+    }
+  }
 
   publishing {
     publications {

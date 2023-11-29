@@ -495,6 +495,7 @@ public class CodeSystemFileImportService {
       MiniConcept mc = new MiniConcept();
       mc.setCode(c.getCode());
       mc.setCodeSystem(c.getCodeSystem());
+      mc.setDesignations(List.of());
       if (c.getVersions() != null) {
         mc.setDesignations(c.getVersions().stream().flatMap(v -> v.getDesignations() == null ? Stream.empty() : v.getDesignations().stream()).toList());
       }
@@ -505,6 +506,7 @@ public class CodeSystemFileImportService {
       MiniConcept mc = new MiniConcept();
       mc.setCode(c.getCode());
       mc.setCodeSystem(c.getCodeSystem());
+      mc.setDesignations(List.of());
       return mc;
     }
   }

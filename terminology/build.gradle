@@ -1,6 +1,4 @@
 dependencies {
-    annotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
-    annotationProcessor "io.micronaut:micronaut-inject-java"
     annotationProcessor "io.micronaut.openapi:micronaut-openapi"
     annotationProcessor "io.micronaut.spring:micronaut-spring-annotation"
 
@@ -19,7 +17,7 @@ dependencies {
     implementation 'commons-io:commons-io:2.15.0'
 
     implementation("io.micronaut.spring:micronaut-spring")
-    implementation("io.micronaut:micronaut-validation")
+    implementation("io.micronaut.validation:micronaut-validation")
     implementation("io.micronaut.beanvalidation:micronaut-hibernate-validator")
     implementation("io.micronaut:micronaut-management")
     implementation("io.micronaut:micronaut-http-server")
@@ -31,13 +29,11 @@ dependencies {
     api("com.kodality.zmei:zmei-fhir-client:${rootProject.zmeiVersion}") { changing = true }
     api("com.kodality.zmei:zmei-fhir-jackson:${rootProject.zmeiVersion}") { changing = true }
 
-    testImplementation "io.micronaut.test:micronaut-test-spock"
     testImplementation("org.spockframework:spock-core") {
         exclude group: "org.codehaus.groovy", module: "groovy-all"
     }
-}
-
-test {
-    useJUnitPlatform()
+    testImplementation("io.micronaut.test:micronaut-test-spock")
+    testRuntimeOnly("net.bytebuddy:byte-buddy:1.14.7")
+    testRuntimeOnly("org.objenesis:objenesis:3.3")
 }
 
