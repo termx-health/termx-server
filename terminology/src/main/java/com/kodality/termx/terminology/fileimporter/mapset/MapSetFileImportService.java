@@ -68,7 +68,12 @@ public class MapSetFileImportService {
 
   private void prepare(MapSetFileImportRequest req, List<MapSetFileImportRow> rows) {
     List<Issue> issues = new ArrayList<>();
-    MapSetVersionScope scope = req.getMapSetVersion().getScope();
+    MapSetVersionScope scope;
+    if (req.getMapSetVersion().getScope() != null) {
+      scope = req.getMapSetVersion().getScope();
+    } else {
+      scope = mapSetVersionService.load(req.getMapSet().getId(), req.getMapSetVersion().getVersion()).map(MapSetVersion::getScope).orElseThrow();
+    }
 
     String sourceType = scope.getSourceType();
     // source code

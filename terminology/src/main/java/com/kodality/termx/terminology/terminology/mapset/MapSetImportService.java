@@ -1,9 +1,9 @@
 package com.kodality.termx.terminology.terminology.mapset;
 
 
+import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.Privilege;
-import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.terminology.terminology.association.AssociationTypeService;
 import com.kodality.termx.terminology.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termx.terminology.terminology.mapset.property.MapSetPropertyService;
@@ -77,6 +77,7 @@ public class MapSetImportService {
     if (cleanRun && existingVersion.isPresent()) {
       log.info("Cancelling existing map set version {}", mapSetVersion.getVersion());
       mapSetVersionService.cancel(existingVersion.get().getId());
+      mapSetVersion.setId(null);
     } else if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
       throw ApiError.TE104.toApiException(Map.of("version", mapSetVersion.getVersion()));
     } else if (existingVersion.isPresent() && existingVersion.get().getStatus().equals(PublicationStatus.draft) && mapSetVersion.getId() == null) {
