@@ -1,11 +1,10 @@
 plugins {
-  id("com.github.johnrengelman.shadow") version "7.1.0"
-  id("application")
+  id("io.micronaut.minimal.library") apply false
+  id("io.micronaut.minimal.application")
+  id("com.github.johnrengelman.shadow")
 }
 
 dependencies {
-  annotationProcessor platform("io.micronaut:micronaut-bom:$micronautVersion")
-  annotationProcessor "io.micronaut:micronaut-inject-java"
   annotationProcessor "io.micronaut.openapi:micronaut-openapi"
   annotationProcessor "io.micronaut.spring:micronaut-spring-annotation"
 
@@ -33,12 +32,12 @@ dependencies {
   implementation("com.kodality.kefhir:validation-profile:${kefhirVersion}") { changing = true }
   implementation("com.kodality.kefhir:openapi:${kefhirVersion}") { changing = true }
 
-  implementation platform("io.micronaut:micronaut-bom:$micronautVersion")
   implementation("io.micronaut:micronaut-runtime")
   implementation("io.micronaut:micronaut-http-server-netty")
   implementation("io.micronaut.liquibase:micronaut-liquibase")
   implementation("io.micronaut.spring:micronaut-spring")
-  implementation("io.micronaut:micronaut-validation")
+  implementation("io.micronaut.data:micronaut-data-spring-jdbc")
+  implementation("io.micronaut.validation:micronaut-validation")
   implementation("io.micronaut:micronaut-management")
   implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
   implementation("io.micronaut.openapi:micronaut-openapi")
@@ -51,6 +50,7 @@ dependencies {
   implementation("com.auth0:java-jwt:4.0.0")
   implementation('com.auth0:jwks-rsa:0.22.1')
 
+  runtimeOnly 'io.micronaut:micronaut-jackson-databind'
   runtimeOnly "ch.qos.logback:logback-classic:1.4.7"
 
   testCompileOnly("org.projectlombok:lombok:1.18.30")
@@ -59,7 +59,7 @@ dependencies {
   testImplementation("org.spockframework:spock-core:2.3-groovy-3.0") {
     exclude group: "org.codehaus.groovy", module: "groovy-all"
   }
-  testImplementation("org.codehaus.groovy:groovy-sql:3.0.16")
+//  testImplementation("org.codehaus.groovy:groovy-sql:3.0.16")
   testImplementation("org.apache.commons:commons-lang3:3.12.0")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.testcontainers:spock")
@@ -69,6 +69,10 @@ dependencies {
 
 application {
   mainClass.set("com.kodality.termx.TermxApplication")
+}
+
+micronaut {
+  runtime("netty")
 }
 
 shadowJar {
@@ -87,6 +91,3 @@ run {
   }
 }
 
-test {
-  useJUnitPlatform()
-}

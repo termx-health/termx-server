@@ -20,12 +20,12 @@ class AtcEstMapperTest extends Specification {
 
   def configuration = new CodeSystemImportConfiguration(
       uri: 'https://ravimiregister.ee',
-      source: 'Ravimiregister',
+      publisher: 'Ravimiregister',
       version: '2022',
       validFrom: LocalDate.of(2022, 1, 1),
       codeSystem: 'atc-est',
       codeSystemName: new LocalizedName(Map.of("et", "ATC est")),
-      codeSystemDescription: 'Eesti ATC (Anatomical Therapeutic Chemical Classification System)'
+      codeSystemDescription: new LocalizedName(["et": 'Eesti ATC (Anatomical Therapeutic Chemical Classification System)'])
   )
 
   def "should map ATC concepts"() {

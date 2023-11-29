@@ -11,9 +11,9 @@ import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.EachBean;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Replaces;
+import jakarta.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 import lombok.extern.slf4j.Slf4j;
 

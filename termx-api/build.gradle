@@ -1,6 +1,4 @@
 dependencies {
-  annotationProcessor("io.micronaut:micronaut-inject-java:${rootProject.micronautVersion}")
-
   api("com.kodality.commons:commons-util:${rootProject.commonsVersion}") { changing = true }
   api("com.kodality.commons:commons-model:${rootProject.commonsVersion}") { changing = true }
   api("io.micronaut:micronaut-core:${rootProject.micronautVersion}")
