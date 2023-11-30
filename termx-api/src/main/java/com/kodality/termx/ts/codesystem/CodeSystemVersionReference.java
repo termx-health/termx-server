@@ -1,5 +1,6 @@
 package com.kodality.termx.ts.codesystem;
 
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -12,4 +13,5 @@ public class CodeSystemVersionReference {
   private String version;
   private String status;
   private String preferredLanguage;
+  private LocalDate releaseDate;
 }
