@@ -98,13 +98,13 @@ public class MapSetImportService {
     log.info("Creating '{}' associations", associations.size());
     prepare(associations, properties);
     long start = System.currentTimeMillis();
-    if (!cleanRun) {
-      mapSetAssociationService.batchUpsert(associations, version.getMapSet(), version.getVersion());
-    } else {
+    if (cleanRun) {
       List<MapSetAssociation> existing = new ArrayList<>(mapSetAssociationService.query(new MapSetAssociationQueryParams().setMapSetVersionId(version.getId()).all()).getData());
       List<String> existingKeys = existing.stream().map(this::getAssociationGroupingKey).toList();
       existing.addAll(associations.stream().filter(a -> !existingKeys.contains(getAssociationGroupingKey(a))).toList());
       mapSetAssociationService.batchSave(existing, version.getMapSet(), version.getVersion());
+    } else {
+      mapSetAssociationService.batchUpsert(associations, version.getMapSet(), version.getVersion());
     }
     log.info("Associations created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }

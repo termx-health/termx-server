@@ -207,9 +207,10 @@ public class ConceptRepository extends BaseRepository {
                 "union select c2.code, c_t2.code parent " + from2 + " inner join concept_codes rec on c_s2.code = rec.code) select code from concept_codes)");
       }
     }
-    sb.appendIfNotNull("and (msa.map_set_version_id <> ? or msa.map_set_version_id is null)", params.getUnmapedInMapSetVersionId());
-    sb.appendIfNotNull("and msa.map_set_version_id = ? and msa.verified = true", params.getVerifiedInMapSetVersionId());
-    sb.appendIfNotNull("and msa.map_set_version_id = ? and msa.verified = false", params.getUnverifiedInMapSetVersionId());
+    String msaBase = "select 1 from terminology.map_set_association msa where msa.sys_status = 'A' and msa.source_code_system = c.code_system and msa.source_code = c.code ";
+    sb.appendIfNotNull("and not exists(" + msaBase + "and msa.map_set_version_id = ?)", params.getUnmapedInMapSetVersionId());
+    sb.appendIfNotNull("and exists(" + msaBase + "and msa.map_set_version_id = ? and msa.verified = true)", params.getVerifiedInMapSetVersionId());
+    sb.appendIfNotNull("and exists(" + msaBase + "and msa.map_set_version_id = ? and msa.verified = false)", params.getUnverifiedInMapSetVersionId());
     return sb;
   }
 
@@ -371,9 +372,6 @@ public class ConceptRepository extends BaseRepository {
       join +=
           "left join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_entity_version_id = csev.id  and evcsvm.sys_status = 'A' " +
               "left join terminology.code_system_version csv on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A' ";
-    }
-    if (CollectionUtils.isNotEmpty(Stream.of(params.getUnmapedInMapSetVersionId(), params.getVerifiedInMapSetVersionId()).toList())) {
-      join += "left join terminology.map_set_association msa on msa.source_code = c.code and msa.source_code_system = c.code_system and msa.sys_status = 'A' ";
     }
     return join;
   }
