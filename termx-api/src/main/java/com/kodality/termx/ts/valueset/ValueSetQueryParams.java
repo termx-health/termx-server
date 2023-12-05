@@ -14,6 +14,7 @@ public class ValueSetQueryParams extends QueryParams {
   private String ids;
   private String idContains;
   private List<String> permittedIds;
+  private String publisher;
   private String uri;
   private String uriContains;
   private String name;
