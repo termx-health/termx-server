@@ -3,7 +3,7 @@ package com.kodality.termx.user;
 import com.kodality.commons.oauth.OAuthTokenClient;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Value;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Requires(property = "keycloak.sso-url")
 @Singleton

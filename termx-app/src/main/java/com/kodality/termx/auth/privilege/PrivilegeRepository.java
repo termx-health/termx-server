@@ -8,6 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Privilege;
 import com.kodality.termx.auth.PrivilegeQueryParams;
 import io.micronaut.core.util.StringUtils;
+import java.util.Map;
 import javax.inject.Singleton;
 
 @Singleton
@@ -40,8 +41,9 @@ public class PrivilegeRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from auth.privilege csev where sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select * from auth.privilege where sys_status = 'A'");
       sb.append(filter(params));
+      sb.append(order(params, Map.of("code", "code")));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
