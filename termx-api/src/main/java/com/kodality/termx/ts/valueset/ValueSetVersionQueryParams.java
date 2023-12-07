@@ -14,6 +14,7 @@ public class ValueSetVersionQueryParams extends QueryParams {
   private String valueSet;
   private String valueSetUri;
   private String valueSetName;
+  private String valueSetNameContains;
   private String valueSetTitle;
   private String valueSetPublisher;
   private String valueSetDescriptionContains;
