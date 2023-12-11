@@ -41,7 +41,7 @@ public class ValueSetFileImportController {
   public JobLogResponse process(@Nullable Publisher<CompletedFileUpload> file, @Part("request") String request) {
     String val = URLDecoder.decode(request, StandardCharsets.UTF_8);
     ValueSetFileImportRequest req = JsonUtil.fromJson(val, ValueSetFileImportRequest.class);
-    byte[] importFile = file != null ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
+    byte[] importFile = file != null && !Flowable.fromPublisher(file).isEmpty().blockingGet() ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
 
     JobLogResponse jobLogResponse = importLogger.createJob(req.getValueSet().getId(), req.getImportClass() == null ? "VS-FILE-IMPORT" : req.getImportClass());
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
