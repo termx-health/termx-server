@@ -18,6 +18,9 @@ import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersion.MapSetResourceReference;
 import com.kodality.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
 import com.univocity.parsers.common.processor.RowListProcessor;
+import com.univocity.parsers.csv.CsvWriter;
+import com.univocity.parsers.csv.CsvWriterSettings;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,7 +111,8 @@ public class MapSetFileImportService {
     // source CodeSystem version
     if (rows.stream().anyMatch(r -> r.getSourceVersion() == null)) {
       if ("code-system".equals(sourceType)) {
-        List<String> distinctVersions = scope.getSourceCodeSystems().stream().map(MapSetResourceReference::getVersion).filter(Objects::nonNull).distinct().toList();
+        List<String> distinctVersions =
+            scope.getSourceCodeSystems().stream().map(MapSetResourceReference::getVersion).filter(Objects::nonNull).distinct().toList();
         if (distinctVersions.size() != 1) {
           issues.add(ApiError.TE733.toIssue(Map.of("property", "sourceVersion")));
         } else {
@@ -153,7 +157,8 @@ public class MapSetFileImportService {
     // target CodeSystem version
     if (rows.stream().anyMatch(r -> r.getTargetVersion() == null)) {
       if ("code-system".equals(targetType)) {
-        List<String> distinctVersions = scope.getTargetCodeSystems().stream().map(MapSetResourceReference::getVersion).filter(Objects::nonNull).distinct().toList();
+        List<String> distinctVersions =
+            scope.getTargetCodeSystems().stream().map(MapSetResourceReference::getVersion).filter(Objects::nonNull).distinct().toList();
         if (distinctVersions.size() != 1) {
           issues.add(ApiError.TE733.toIssue(Map.of("property", "targetVersion")));
         } else {
@@ -217,5 +222,21 @@ public class MapSetFileImportService {
 
   private static String getRowValue(List<String> headers, String[] r, String header) {
     return headers.contains(header) ? r[headers.indexOf(header)] : null;
+  }
+
+  public byte[] getTemplate() {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    CsvWriterSettings settings = new CsvWriterSettings();
+    settings.getFormat().setDelimiter(',');
+    CsvWriter writer = new CsvWriter(out, settings);
+
+    writer.writeHeaders(List.of("sourceCode", "targetCode", "equivalence", "targetCodeSystem", "targetVersion", "sourceCodeSystem", "sourceVersion", "comment",
+        "dependsOnProperty", "dependsOnSystem", "dependsOnValue"));
+    writer.writeRowsAndClose(List.of(
+        List.of("concept11", "concept21", "source-is-narrower-than-target"),
+        List.of("concept12", "concept22", "equivalent"),
+        List.of("concept13", "concept23", "source-is-narrower-than-target", "", "", "", "", "comment")
+    ));
+    return out.toByteArray();
   }
 }

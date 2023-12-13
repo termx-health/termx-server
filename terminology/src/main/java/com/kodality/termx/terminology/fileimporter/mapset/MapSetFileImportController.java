@@ -10,12 +10,15 @@ import com.kodality.termx.terminology.fileimporter.mapset.utils.MapSetFileImport
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.core.sys.job.logger.ImportLogger;
 import com.kodality.termx.core.utils.FileUtil;
+import io.micronaut.http.HttpHeaders;
+import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Part;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.multipart.CompletedFileUpload;
-import io.netty.handler.codec.http.multipart.MemoryAttribute;
 import io.reactivex.rxjava3.core.Flowable;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
@@ -52,5 +55,14 @@ public class MapSetFileImportController {
       }
     }));
     return jobLogResponse;
+  }
+
+  @Authorized(Privilege.CS_EDIT)
+  @Get(value = "/csv-template", produces = "application/csv")
+  public HttpResponse<?> getTemplate() {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(importService.getTemplate());
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=template.csv")
+        .contentType(MediaType.of("application/csv"));
   }
 }
