@@ -30,6 +30,7 @@ import com.kodality.termx.snomed.search.SnomedSearchResult;
 import com.kodality.termx.snomed.snomed.csv.SnomedConceptCsvService;
 import com.kodality.termx.snomed.snomed.rf2.SnomedRF2Service;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationActionService;
+import com.kodality.termx.snomed.snomed.translation.SnomedTranslationProvenanceService;
 import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.core.sys.lorque.LorqueProcessService;
@@ -73,7 +74,7 @@ public class SnomedController {
   private final LorqueProcessService lorqueProcessService;
   private final SnomedTranslationService translationService;
   private final SnomedTranslationActionService translationActionService;
-  private final ProvenanceService provenanceService;
+  private final SnomedTranslationProvenanceService provenanceService;
 
 
   //----------------CodeSystems----------------
@@ -384,9 +385,7 @@ public class SnomedController {
   @Authorized(Privilege.SNOMED_VIEW)
   @Post("/concepts/{conceptId}/translations")
   public HttpResponse<?> saveTranslations(@PathVariable String conceptId, @Body List<SnomedTranslation> translations) {
-    provenanceTranslations("snomed-translations-save", conceptId, () -> {
-      translationService.save(conceptId, translations);
-    });
+    provenanceService.provenanceTranslations("snomed-translations-save", conceptId, () -> translationService.save(conceptId, translations));
     return HttpResponse.ok();
   }
 
@@ -406,13 +405,12 @@ public class SnomedController {
         .contentType(MediaType.of("application/zip"));
   }
 
-  private void provenanceTranslations(String action, String conceptId, Runnable save) {
-    List<SnomedTranslation> before = translationService.load(conceptId);
-    save.run();
-    List<SnomedTranslation> after = translationService.load(conceptId);
-    provenanceService.create(new Provenance(action, "CodeSystem", "snomed-ct").setChanges(
-        ProvenanceUtil.diff(Map.of("snomed." + conceptId, before), Map.of("snomed." + conceptId, after))
-    ));
+  //----------------Provenances----------------
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get(uri = "/concepts/{conceptId}/provenances")
+  public List<Provenance> queryProvenances(@PathVariable String conceptId) {
+    return provenanceService.find(conceptId);
   }
 
   private String parsePath(String path) {

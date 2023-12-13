@@ -81,6 +81,18 @@ public class Provenance {
     return this;
   }
 
+  public Provenance deleted(boolean deleted) {
+    if (deleted) {
+      deleted();
+    }
+    return this;
+  }
+
+  public Provenance deleted() {
+    this.addMessage("result", "deleted");
+    return this;
+  }
+
   @Getter
   @Setter
   @Accessors(chain = true)

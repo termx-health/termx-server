@@ -1,5 +1,8 @@
 package com.kodality.termx.snomed.snomed.translation;
 
+import com.kodality.termx.core.sys.provenance.Provenance;
+import com.kodality.termx.core.sys.provenance.ProvenanceService;
+import com.kodality.termx.core.sys.provenance.ProvenanceUtil;
 import com.kodality.termx.core.ts.CodeSystemProvider;
 import com.kodality.termx.snomed.client.SnowstormClient;
 import com.kodality.termx.snomed.concept.SnomedConcept;
@@ -21,9 +24,19 @@ public class SnomedTranslationActionService {
   private final SnowstormClient snowstormClient;
   private final SnomedTranslationRepository repository;
   private final CodeSystemProvider codeSystemProvider;
+  private final ProvenanceService provenanceService;
+
 
   public void updateStatus(Long id, String status) {
+    SnomedTranslation before = repository.load(id);
     repository.updateStatus(id, status);
+    SnomedTranslation after = repository.load(id);
+
+    Provenance provenance = new Provenance("status-change", "Concept", before.getConceptId()).addContext("part-of", "CodeSystem", "snomed-ct");
+    provenance.setChanges(ProvenanceUtil.diff(
+        Map.of("description." + before.getDescriptionId(), before),
+        Map.of("description." + after.getDescriptionId(), after)));
+    provenanceService.create(provenance);
   }
 
   public void addToBranch(Long id) {
