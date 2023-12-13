@@ -43,16 +43,18 @@ public class CodeSystemFileImportController {
   public JobLogResponse process(@Nullable Publisher<CompletedFileUpload> file, @Part("request") String request) {
     String val = URLDecoder.decode(request, StandardCharsets.UTF_8);
     CodeSystemFileImportRequest req = JsonUtil.fromJson(val, CodeSystemFileImportRequest.class);
-    byte[] importFile = file != null && !Flowable.fromPublisher(file).isEmpty().blockingGet() ? FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()) : null;
+
+    CompletedFileUpload fileUpload = file != null ? Flowable.fromPublisher(file).firstElement().blockingGet() : null;
+    byte[] importFile = fileUpload != null ? FileUtil.readBytes(fileUpload) : null;
 
     JobLogResponse jobLogResponse = importLogger.createJob(req.getCodeSystem().getId(), req.getImportClass() == null ? "CS-FILE-IMPORT" : req.getImportClass());
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
         log.info("Code system file import started");
         long start = System.currentTimeMillis();
-        CodeSystemFileImportResponse resp = importFile != null
-            ? fileImporterService.process(req, importFile)
-            : fileImporterService.process(req);
+        CodeSystemFileImportResponse resp = req.getLink() != null
+            ? fileImporterService.process(req)
+            : fileImporterService.process(req, importFile);
 
         log.info("Code system file import took {} seconds", (System.currentTimeMillis() - start) / 1000);
         ImportLog importLog = new ImportLog();
