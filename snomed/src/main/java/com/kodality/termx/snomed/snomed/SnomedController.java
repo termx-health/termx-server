@@ -143,12 +143,14 @@ public class SnomedController {
   @Authorized(Privilege.SNOMED_EDIT)
   @Post("/branches")
   public SnomedBranch createBranch(@Body SnomedBranchRequest request) {
+    snomedService.validateBranchName(request.getName());
     return snowstormClient.createBranch(request).join();
   }
 
   @Authorized(Privilege.SNOMED_EDIT)
   @Put("/branches/{path}")
   public SnomedBranch updateBranch(@PathVariable String path, @Body SnomedBranchRequest request) {
+    snomedService.validateBranchName(request.getName());
     return snowstormClient.updateBranch(parsePath(path), request).join();
   }
 

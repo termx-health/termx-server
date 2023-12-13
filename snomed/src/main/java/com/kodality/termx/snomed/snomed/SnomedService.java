@@ -1,5 +1,6 @@
 package com.kodality.termx.snomed.snomed;
 
+import com.kodality.termx.snomed.ApiError;
 import com.kodality.termx.snomed.client.SnowstormClient;
 import com.kodality.termx.snomed.codesystem.SnomedCodeSystem;
 import com.kodality.termx.snomed.concept.SnomedConcept;
@@ -8,11 +9,13 @@ import com.kodality.termx.snomed.description.SnomedDescription;
 import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
 import com.kodality.termx.snomed.rf2.SnomedImportRequest;
 import com.kodality.termx.snomed.search.SnomedSearchResult;
+import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,7 @@ public class SnomedService {
 
   private static final int MAX_COUNT = 9999;
   private static final int MAX_CONCEPT_COUNT = 100;
+  private final Pattern BRANCH_REGEX = Pattern.compile("^[A-Z0-9/-]+$");
 
   public List<SnomedConcept> loadConcepts(List<String> ids) {
     return loadConcepts(ids, null);
@@ -140,5 +144,14 @@ public class SnomedService {
     concept.getDescriptions().stream().filter(d -> descriptionId.equals(d.getDescriptionId())).findFirst().ifPresentOrElse(d -> d.setActive(true),
         () -> concept.getDescriptions().add(description.setActive(true)));
     snowstormClient.updateConcept(branch, concept).join();
+  }
+
+  public void validateBranchName(String name) {
+    if (StringUtils.isEmpty(name)) {
+      throw ApiError.SN101.toApiException();
+    }
+    if (!BRANCH_REGEX.matcher(name).matches()) {
+      throw ApiError.SN102.toApiException();
+    }
   }
 }

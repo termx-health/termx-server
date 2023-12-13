@@ -23,7 +23,7 @@ public class SnomedRefsetResponse {
     private String moduleId;
     private String refsetId;
     private String referencedComponentId;
-    private SnomedConcept referencedComponent;
+    private Map<String, Object> referencedComponent;
     private SnomedRefsetAdditionalFields additionalFields;
 
     @Getter
