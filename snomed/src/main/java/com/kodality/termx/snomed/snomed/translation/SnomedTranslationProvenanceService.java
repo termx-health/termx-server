@@ -27,38 +27,28 @@ public class SnomedTranslationProvenanceService {
     List<SnomedTranslation> after = translationService.load(conceptId);
 
     List<SnomedTranslation> created = after.stream().filter(a -> before.stream().noneMatch(b -> b.getId().equals(a.getId()))).toList();
-    before.forEach(b -> provenanceTranslation(action, conceptId, b.getDescriptionId(), b,
-        after.stream().filter(a -> b.getId().equals(a.getId())).findFirst().orElse(null)));
-    created.forEach(c -> provenanceTranslation(action, conceptId, c.getDescriptionId(), null, c));
+    before.forEach(b -> provenanceTranslation(action, conceptId, b, after.stream().filter(a -> b.getId().equals(a.getId())).findFirst().orElse(null)));
+    created.forEach(c -> provenanceTranslation(action, conceptId, null, c));
   }
 
-  public void provenanceTranslation(String action, String conceptId, String descriptionId, SnomedTranslation before, SnomedTranslation after) {
+  public void provenanceTranslation(String action, String conceptId, SnomedTranslation before, SnomedTranslation after) {
     Provenance provenance = new Provenance(action, "Concept", conceptId).addContext("part-of", "CodeSystem", "snomed-ct");
     if (before == null) {
-      provenance.addMessage("description." + descriptionId, "created");
+      provenance.addMessage("description." + after.getDescriptionId(), String.format("created (term: %s)", after.getTerm()));
       provenanceService.create(provenance);
       return;
     }
     if (after == null) {
-      provenance.addMessage("description." + descriptionId, "deleted");
+      provenance.addMessage("description." + before.getDescriptionId(), String.format("deleted (term: %s)", before.getTerm()));
       provenanceService.create(provenance);
       return;
     }
-    Map<String, ProvenanceChange> changes = ProvenanceUtil.diff(Map.of("description." + descriptionId, before), Map.of("description." + descriptionId, after));
+    Map<String, ProvenanceChange> changes = ProvenanceUtil.diff(
+        Map.of("description." + before.getDescriptionId(), before),
+        Map.of("description." + after.getDescriptionId(), after));
     if (CollectionUtils.isNotEmpty(changes)) {
       provenance.setChanges(changes);
       provenanceService.create(provenance);
     }
-  }
-
-  public void provenanceTranslation(String action, Long id, Runnable save) {
-    SnomedTranslation before = translationService.load(id);
-    save.run();
-    SnomedTranslation after = translationService.load(id);
-    Provenance provenance = new Provenance(action, "Concept", before.getConceptId()).addContext("part-of", "CodeSystem", "snomed-ct");
-    provenance.setChanges(ProvenanceUtil.diff(
-        Map.of("description." + before.getDescriptionId(), before),
-        Map.of("description." + after.getDescriptionId(), after)));
-    provenanceService.create(provenance);
   }
 }
