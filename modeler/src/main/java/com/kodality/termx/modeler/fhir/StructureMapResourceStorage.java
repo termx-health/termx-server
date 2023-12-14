@@ -66,7 +66,7 @@ public class StructureMapResourceStorage extends BaseFhirResourceHandler {
 
   @Override
   public String getPrivilegeName() {
-    return "StructureMap";
+    return "TransformationDefinition";
   }
 
 
@@ -168,7 +168,7 @@ public class StructureMapResourceStorage extends BaseFhirResourceHandler {
       QueryResult<TransformationDefinition> resp =
           transformationDefinitionService.search(new TransformationDefinitionQueryParams().setFhirIds(id.getResourceId()).limit(2));
       if (resp.getData().size() != 1) {
-        throw new FhirException(400, IssueType.NOTSUPPORTED, "StructureMap " + id.getResourceId() + " matches multiple!");
+        throw new FhirException(400, IssueType.INVALID, "Matched multiple StructureMap resource by ID \"" + id.getResourceId() + "\"");
       } else {
         td.setId(resp.getData().get(0).getId());
       }

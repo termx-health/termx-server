@@ -1,5 +1,6 @@
 package com.kodality.termx.modeler.fhir;
 
+import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.api.resource.InstanceOperationDefinition;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
@@ -36,6 +37,7 @@ public class StructureMapTransformOperation implements InstanceOperationDefiniti
     return "transform";
   }
 
+
   @Override
   public ResourceContent run(ResourceId id, ResourceContent resourceContent) {
     // @see com.kodality.zmei.fhir.resource.other.Parameters
@@ -46,10 +48,13 @@ public class StructureMapTransformOperation implements InstanceOperationDefiniti
 
     var params = new TransformationDefinitionQueryParams();
     params.setFhirIds(id.getResourceId());
-    params.limit(1);
-    TransformationDefinition internalDefinition = transformationDefinitionService.search(params).findFirst().orElseThrow();
+    params.limit(2);
+    QueryResult<TransformationDefinition> resp = transformationDefinitionService.search(params);
+    if (resp.getData().size() > 1) {
+      throw new FhirException(400, IssueType.INVALID, "Matched multiple StructureMap resources");
+    }
 
-    TransformationResult transformation = transformerService.transform(FhirMapper.toJson(instance), internalDefinition);
+    TransformationResult transformation = transformerService.transform(FhirMapper.toJson(instance), resp.findFirst().orElseThrow());
     return new ResourceContent(transformation.getResult(), "json");
   }
 
@@ -76,8 +81,12 @@ public class StructureMapTransformOperation implements InstanceOperationDefiniti
     } else if (source != null) {
       var params = new TransformationDefinitionQueryParams();
       params.setFhirUrls(source); // NB! can match multiple definitions, but using the first one
-      params.limit(1);
-      internalDefinition = transformationDefinitionService.search(params).findFirst().orElseThrow();
+      params.limit(2);
+      QueryResult<TransformationDefinition> resp = transformationDefinitionService.search(params);
+      if (resp.getData().size() > 1) {
+        throw new FhirException(400, IssueType.INVALID, "Matched multiple StructureMap resources");
+      }
+      internalDefinition = resp.findFirst().orElseThrow();
     }
 
     if (internalDefinition == null) {
