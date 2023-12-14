@@ -226,7 +226,9 @@ public class StructureMapResourceStorage extends BaseFhirResourceHandler {
       });
 
       List<String> ids = SessionStore.require().getPermittedResourceIds(Privilege.TD_VIEW);
-      params.setPermittedIds(ids != null ? ids.stream().map(Long::valueOf).toList() : List.of());
+      if (ids != null) {
+        params.setPermittedIds(ids.stream().map(Long::valueOf).toList());
+      }
       return params;
     }
   }
