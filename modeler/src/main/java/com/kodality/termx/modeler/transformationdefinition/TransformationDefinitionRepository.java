@@ -16,6 +16,7 @@ public class TransformationDefinitionRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(TransformationDefinition.class, p -> {
     p.addColumnProcessor("resources", PgBeanProcessor.fromJson(JsonUtil.getListType(TransformationDefinitionResource.class)));
     p.addColumnProcessor("mapping", PgBeanProcessor.fromJson());
+    p.addColumnProcessor("fhir_resource", PgBeanProcessor.fromJson());
   });
 
   private final Map<String, String> orderMapping = Map.of(
@@ -31,6 +32,7 @@ public class TransformationDefinitionRepository extends BaseRepository {
     ssb.property("name", td.getName());
     ssb.jsonProperty("resources", td.getResources());
     ssb.jsonProperty("mapping", td.getMapping());
+    ssb.jsonProperty("fhir_resource", td.getFhirResource());
     ssb.property("test_source", td.getTestSource());
     SqlBuilder sb = ssb.buildSave("modeler.transformation_definition", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
@@ -43,7 +45,7 @@ public class TransformationDefinitionRepository extends BaseRepository {
   }
 
   private SqlBuilder select(boolean isSummary) {
-    return new SqlBuilder("select id, name").appendIfTrue(!isSummary, ", resources, mapping, test_source")
+    return new SqlBuilder("select id, name").appendIfTrue(!isSummary, ", resources, mapping, fhir_resource, test_source")
         .append(", (select date from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='created' order by id desc limit 1) created_at")
         .append(", (select author ->> 'id' from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='created' order by id desc limit 1) created_by")
         .append(", (select date from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='modified' order by id desc limit 1) modified_at")
@@ -75,6 +77,13 @@ public class TransformationDefinitionRepository extends BaseRepository {
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("td.id", p, Long::valueOf));
     sb.appendIfNotNull("and td.name ilike '%' || ? || '%'", params.getNameContains());
     sb.appendIfNotNull("and td.name = ? ", params.getName());
+
+    sb.appendIfNotNull(params.getFhirExists(), (s, p) -> s.and(p ? "td.fhir_resource is not null" : "td.fhir_resource is null"));
+    sb.appendIfNotNull(params.getFhirIds(), (s, p) -> s.and().in("td.fhir_resource ->> 'id'", p));
+    sb.appendIfNotNull(params.getFhirUrls(), (s, p) -> s.and().in("td.fhir_resource ->> 'url'", p));
+    sb.appendIfNotNull(params.getFhirDescriptionContains(), (s, p) -> s.and("td.fhir_resource ->> 'description' ilike '%' || ? || '%'", p));
+    sb.appendIfNotNull(params.getFhirTitleContains(), (s, p) -> s.and("td.fhir_resource ->> 'title' ilike '%' || ? || '%'", p));
+    sb.appendIfNotNull(params.getFhirStatuses(), (s, p) -> s.and().in("td.fhir_resource ->> 'status'", p));
     return sb;
   }
 
@@ -83,4 +92,9 @@ public class TransformationDefinitionRepository extends BaseRepository {
     jdbcTemplate.update(sql, id);
   }
 
+
+  public void updateFhirResource(Long id, Object fhirResource) {
+    String sql = "update modeler.transformation_definition set fhir_resource = core.jsonb_trunc(?::jsonb) where id = ? and sys_status = 'A'";
+    jdbcTemplate.update(sql, JsonUtil.toJson(fhirResource), id);
+  }
 }

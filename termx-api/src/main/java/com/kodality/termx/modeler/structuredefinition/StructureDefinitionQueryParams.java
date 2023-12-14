@@ -13,6 +13,7 @@ public class StructureDefinitionQueryParams extends QueryParams {
   private String ids;
   private String code;
   private String textContains;
+  private String urls;
 
   private List<Long> permittedIds;
 }

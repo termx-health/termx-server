@@ -25,7 +25,6 @@ import com.kodality.zmei.fhir.datatypes.Reference;
 import com.kodality.zmei.fhir.datatypes.Timing;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.io.ResourceLoader;
-import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -67,12 +66,19 @@ import org.hl7.fhir.utilities.xhtml.XhtmlNode;
 import org.hl7.fhir.validation.ValidationEngine;
 import org.hl7.fhir.validation.ValidationEngine.ValidationEngineBuilder;
 
+import static com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource.TransformationDefinitionResourceSource.local;
+import static com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource.TransformationDefinitionResourceSource.statik;
+import static com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource.TransformationDefinitionResourceSource.url;
+import static com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource.TransformationDefinitionResourceType.conceptMap;
+import static com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource.TransformationDefinitionResourceType.definition;
+import static com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource.TransformationDefinitionResourceType.mapping;
+
 @RequiredArgsConstructor
 @Singleton
 public class TransformerService {
   private final StructureDefinitionService structureDefinitionService;
   private final ConceptMapResourceStorage conceptMapFhirService;
-  private final TransformationDefinitionService structureMapService;
+  private final TransformationDefinitionRepository structureMapRepository;
   private final ResourceLoader resourceLoader;
   private final TerminologyServerHttpClientService httpClientService;
   private final FhirFshConverter fshConverter;
@@ -81,15 +87,18 @@ public class TransformerService {
   @Value("${micronaut.server.port}")
   private String port;
 
-  @PostConstruct
-  public void init() {
-    try {
-      engine = new ValidationEngineBuilder().fromNothing();
-      engine.connectToTSServer("http://localhost:" + port + "/fhir", null, FhirPublication.R5);
-      loadBaseResources().getEntry().forEach(e -> engine.getContext().cacheResource(e.getResource()));
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+  private synchronized ValidationEngine getEngine() {
+    if (engine == null) {
+      try {
+        engine = new ValidationEngineBuilder().fromNothing();
+        engine.connectToTSServer("http://localhost:" + port + "/fhir", null, FhirPublication.R5);
+        loadBaseResources().getEntry().forEach(e -> engine.getContext().cacheResource(e.getResource()));
+        return engine;
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
     }
+    return engine;
   }
 
   public Bundle loadBaseResources() {
@@ -102,7 +111,7 @@ public class TransformerService {
 
   public TransformationResult transform(String source, TransformationDefinition def) {
     try {
-      ValidationEngine eng = new ValidationEngine(engine);
+      ValidationEngine eng = new ValidationEngine(getEngine());
 
       for (TransformationDefinitionResource res : def.getResources()) {
         try {
@@ -132,9 +141,9 @@ public class TransformerService {
     }
   }
 
-  public List<StructureDefinition> transformDefinitionResource(List<TransformationDefinitionResource> resources) {
+  public List<StructureDefinition> transformResources(List<TransformationDefinitionResource> resources) {
     try {
-      ValidationEngine eng = new ValidationEngine(engine);
+      ValidationEngine eng = new ValidationEngine(getEngine());
       ContextUtilities cu = new ContextUtilities(eng.getContext());
 
       return resources.stream()
@@ -147,8 +156,18 @@ public class TransformerService {
           })
           .toList();
     } catch (IOException | FHIRException e) {
-      return List.of();
+      throw new RuntimeException(e.getMessage(), e);
     }
+  }
+
+  private String transform(ValidationEngine eng, String input, String mapUri) throws IOException {
+    FhirFormat format = input.startsWith("<") ? FhirFormat.XML : FhirFormat.JSON;
+    Element transformed = eng.transform(input.getBytes(StandardCharsets.UTF_8), format, mapUri);
+    ByteArrayOutputStream boas = new ByteArrayOutputStream();
+    new org.hl7.fhir.r5.elementmodel.JsonParser(eng.getContext()).compose(transformed, boas, OutputStyle.PRETTY, null);
+    String result = boas.toString(StandardCharsets.UTF_8);
+    boas.close();
+    return result;
   }
 
   private void prepareStructureMap(ValidationEngine eng, StructureMap sm) {
@@ -163,7 +182,8 @@ public class TransformerService {
         .forEach(sd -> cu.generateSnapshot(sd, sd.getKind() != null && sd.getKind() == StructureDefinitionKind.LOGICAL));
   }
 
-  private StructureMap getStructureMap(TransformationDefinitionResource res) {
+
+  public StructureMap getStructureMap(TransformationDefinitionResource res) {
     String content = getContent(res);
     if (content.startsWith("///")) { //XXX not sure if this is what defines Fhir Mapping Language
       return parseFml(content);
@@ -172,20 +192,21 @@ public class TransformerService {
   }
 
   public String getContent(TransformationDefinitionResource res) {
+
     return switch (res.getSource()) {
-      case "static" -> res.getReference().getContent();
-      case "url" -> queryResource(res.getReference().getResourceUrl(), res.getReference().getResourceServerId());
-      case "local" -> switch (res.getType()) {
-        case "definition" -> {
+      case statik -> res.getReference().getContent();
+      case url -> queryResource(res.getReference().getResourceUrl(), res.getReference().getResourceServerId());
+      case local -> switch (res.getType()) {
+        case definition -> {
           var sd = structureDefinitionService.load(Long.valueOf(res.getReference().getLocalId())).orElseThrow();
           if ("fsh".equals(sd.getContentFormat())) {
             yield fshConverter.toFhir(sd.getContent()).join();
           }
           yield sd.getContent();
         }
-        case "conceptmap" -> conceptMapFhirService.load(res.getReference().getLocalId()).getContent().getValue();
-        case "mapping" -> {
-          StructureMap structureMap = getStructureMap(structureMapService.load(Long.valueOf(res.getReference().getLocalId())).getMapping());
+        case conceptMap -> conceptMapFhirService.load(res.getReference().getLocalId()).getContent().getValue();
+        case mapping -> {
+          StructureMap structureMap = getStructureMap(structureMapRepository.load(Long.valueOf(res.getReference().getLocalId())).getMapping());
           try {
             yield new JsonParser().setOutputStyle(OutputStyle.PRETTY).composeString(structureMap);
           } catch (IOException e) {
@@ -210,7 +231,7 @@ public class TransformerService {
     }).join();
   }
 
-  private <R extends Resource> R parse(String input) {
+  public <R extends Resource> R parse(String input) {
     try {
       if (input.startsWith("<")) {
         return (R) new XmlParser().parse(input);
@@ -222,22 +243,12 @@ public class TransformerService {
   }
 
   public StructureMap parseFml(String content) {
-    StructureMap map = new StructureMapUtilities(engine.getContext()).parse(content, "map");
+    StructureMap map = new StructureMapUtilities(getEngine().getContext()).parse(content, "map");
     map.getText().setStatus(NarrativeStatus.GENERATED);
     map.getText().setDiv(new XhtmlNode(NodeType.Element, "div"));
     String render = StructureMapUtilities.render(map);
     map.getText().getDiv().addTag("pre").addText(render);
     return map;
-  }
-
-  private String transform(ValidationEngine eng, String input, String mapUri) throws IOException {
-    FhirFormat format = input.startsWith("<") ? FhirFormat.XML : FhirFormat.JSON;
-    Element transformed = eng.transform(input.getBytes(StandardCharsets.UTF_8), format, mapUri);
-    ByteArrayOutputStream boas = new ByteArrayOutputStream();
-    new org.hl7.fhir.r5.elementmodel.JsonParser(eng.getContext()).compose(transformed, boas, OutputStyle.PRETTY, null);
-    String result = boas.toString(StandardCharsets.UTF_8);
-    boas.close();
-    return result;
   }
 
   public String composeFml(TransformationDefinition definition) {
@@ -273,6 +284,7 @@ public class TransformerService {
     return rows.stream().collect(Collectors.joining("\n"));
   }
 
+
   public String generateObject(TransformationDefinitionResource resource) {
     return generateObject(getContent(resource));
   }
@@ -283,7 +295,7 @@ public class TransformerService {
 
   public String generateObject(StructureDefinition definition) {
     if (!definition.hasSnapshot()) {
-      ContextUtilities cu = new ContextUtilities(engine.getContext());
+      ContextUtilities cu = new ContextUtilities(getEngine().getContext());
       cu.generateSnapshot(definition, definition.getKind() != null && definition.getKind() == StructureDefinitionKind.LOGICAL);
     }
     Map<String, Object> resource = new LinkedHashMap<>();
@@ -303,7 +315,6 @@ public class TransformerService {
     });
     return FhirMapper.toJson(resource.get(definition.getName()), true);
   }
-
 
   private Object generateValue(String name, ElementDefinition el) {
     if (CollectionUtils.isEmpty(el.getType())) {

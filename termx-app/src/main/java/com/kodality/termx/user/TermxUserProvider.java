@@ -9,6 +9,7 @@ import com.kodality.termx.core.user.UserProvider;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class TermxUserProvider extends UserProvider implements PrivilegeDataHandler {
@@ -19,7 +20,7 @@ public class TermxUserProvider extends UserProvider implements PrivilegeDataHand
   public TermxUserProvider(Optional<OAuthUserHttpClient> authUserHttpClient, PrivilegeStore privilegeStore) {
     this.authUserHttpClient = authUserHttpClient;
     this.privilegeStore = privilegeStore;
-    cache.initCache("users", 1, 600);
+    cache.initCache("users", 1, TimeUnit.MINUTES.toSeconds(10));
   }
 
   @Override

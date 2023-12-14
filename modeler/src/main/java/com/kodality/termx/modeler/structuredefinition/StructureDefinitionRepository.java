@@ -50,6 +50,7 @@ public class StructureDefinitionRepository extends BaseRepository {
     sb.and().in("sd.id", params.getIds(), Long::valueOf);
     sb.appendIfNotNull("and sd.code = ?", params.getCode());
     sb.appendIfNotNull("and terminology.text_search(sd.code, sd.url) like '%' || terminology.search_translate(?) || '%'", params.getTextContains());
+    sb.appendIfNotNull(params.getUrls(), (s, p) -> s.and().in("sd.url", p));
     return sb;
   }
 

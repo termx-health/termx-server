@@ -1,5 +1,6 @@
 package com.kodality.termx.modeler.transformationdefinition;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.OffsetDateTime;
 import java.util.List;
 import javax.validation.Valid;
@@ -16,6 +17,8 @@ public class TransformationDefinition {
   @Valid
   @NotNull
   private TransformationDefinitionResource mapping;
+  @JsonIgnore
+  private Object fhirResource;
   @Valid
   @NotNull
   private List<TransformationDefinitionResource> resources;
@@ -37,6 +40,18 @@ public class TransformationDefinition {
     private String source;
     @NotNull
     private TransformationDefinitionResourceReference reference;
+
+    public interface TransformationDefinitionResourceType {
+      String conceptMap = "conceptmap";
+      String mapping = "mapping";
+      String definition = "definition";
+    }
+
+    public interface TransformationDefinitionResourceSource {
+      String local = "local";
+      String statik = "static";
+      String url = "url";
+    }
   }
 
   @Getter
