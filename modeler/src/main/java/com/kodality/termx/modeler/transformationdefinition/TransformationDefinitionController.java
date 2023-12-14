@@ -3,10 +3,10 @@ package com.kodality.termx.modeler.transformationdefinition;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.modeler.Privilege;
-import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
+import com.kodality.termx.modeler.Privilege;
+import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -96,7 +96,7 @@ public class TransformationDefinitionController {
   @Authorized
   @Post("/transform-resources")
   public String transformResources(@Body List<TransformationDefinitionResource> resources) {
-    List<StructureDefinition> defs = transformerService.transformDefinitionResource(resources);
+    List<StructureDefinition> defs = transformerService.transformResources(resources);
     return "[" +
            defs.stream().map(r -> {
              try {

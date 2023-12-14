@@ -343,19 +343,90 @@
             }
           ],
           "operation": [
-          {
-            "name": "closure",
-            "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-closure"
-          },
-          {
-            "name": "sync",
-            "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-sync"
-          },
-          {
-            "name": "translate",
-            "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-translate"
-          }
-        ]
+            {
+              "name": "closure",
+              "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-closure"
+            },
+            {
+              "name": "sync",
+              "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-sync"
+            },
+            {
+              "name": "translate",
+              "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-translate"
+            }
+          ]
+        },
+        {
+          "type": "StructureMap",
+          "profile": "http://hl7.org/fhir/StructureDefinition/StructureMap",
+          "interaction": [
+            {
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+                  "valueCode": "SHALL"
+                }
+              ],
+              "code": "read",
+              "documentation": "Read allows clients to get the logical definitions of the structure maps"
+            },
+            {
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/capabilitystatement-expectation",
+                  "valueCode": "SHALL"
+                }
+              ],
+              "code": "search-type",
+              "documentation": "Search allows clients to find structure maps on the server"
+            },
+            {
+              "code": "create",
+              "documentation": "Create allows client to import structure maps on the server"
+            }
+          ],
+          "searchParam": [
+            {
+              "name": "_count",
+              "type": "number"
+            },
+            {
+              "name": "_page",
+              "type": "number"
+            },
+            {
+              "name": "_id",
+              "type": "string",
+              "documentation": "The ID of the resource"
+            },
+            {
+              "name": "url",
+              "definition": "http://hl7.org/fhir/SearchParameter/CanonicalResource-url",
+              "type": "uri"
+            },
+            {
+              "name": "description",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-description",
+              "type": "string"
+            },
+            {
+              "name": "title",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-title",
+              "type": "string"
+            },
+            {
+              "name": "status",
+              "definition": "http://hl7.org/fhir/SearchParameter/ConceptMap-status",
+              "type": "token"
+            }
+          ],
+          "operation": [
+            {
+              "name": "transform",
+              "definition": "http://hl7.org/fhir/OperationDefinition/StructureMap-transform"
+            }
+          ]
         },
         {
           "type": "Provenance",

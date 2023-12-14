@@ -13,8 +13,16 @@ public class TransformationDefinitionQueryParams extends QueryParams {
   private String ids;
   private String name;
   private String nameContains;
-  private boolean summary;
 
+  // queries using transformation_definition.fhir_resource
+  private Boolean fhirExists;
+  private String fhirIds;
+  private String fhirUrls;
+  private String fhirDescriptionContains;
+  private String fhirTitleContains;
+  private String fhirStatuses;
+
+  private boolean summary;
   private List<Long> permittedIds;
 
   public interface Ordering {

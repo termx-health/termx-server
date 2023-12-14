@@ -44,3 +44,8 @@ with
     )
 update modeler.transformation_definition td set mapping = (select modified_def from modified_mappings where id  = td.id) where td.id in (select id from modified_mappings);
 --
+
+
+--changeset modeler:transformation_definition-mapping_fhir_definition
+alter table modeler.transformation_definition add column fhir_resource jsonb;
+--
