@@ -40,6 +40,7 @@ import com.kodality.termx.core.sys.provenance.ProvenanceUtil;
 import com.kodality.termx.core.utils.FileUtil;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
@@ -254,13 +255,23 @@ public class SnomedController {
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/concepts/{conceptId}")
-  public SnomedConcept loadConcept(@PathVariable String conceptId) {
+  public SnomedConcept loadConcept(@PathVariable String conceptId, @QueryValue @Nullable String branch) {
+    if (StringUtils.isNotEmpty(branch)) {
+      return snowstormClient.loadConcept(branch + "/", conceptId).join();
+    }
     return snowstormClient.loadConcept(conceptId).join();
   }
 
   @Authorized(Privilege.SNOMED_VIEW)
   @Get("/concepts/{conceptId}/children")
-  public List<SnomedConcept> findConceptChildren(@PathVariable String conceptId) {
+  public List<SnomedConcept> findConceptChildren(@PathVariable String conceptId, @QueryValue @Nullable String branch) {
+    if (StringUtils.isNotEmpty(branch)) {
+      List<SnomedConcept> concepts = snowstormClient.findConceptChildren(branch + "/", conceptId).join();
+      AsyncHelper futures = new AsyncHelper();
+      concepts.forEach(concept -> futures.add(snowstormClient.loadConcept(branch + "/", concept.getConceptId()).thenApply(c -> concept.setDescriptions(c.getDescriptions()))));
+      futures.joinAll();
+      return concepts;
+    }
     List<SnomedConcept> concepts = snowstormClient.findConceptChildren(conceptId).join();
     AsyncHelper futures = new AsyncHelper();
     concepts.forEach(concept -> futures.add(snowstormClient.loadConcept(concept.getConceptId()).thenApply(c -> concept.setDescriptions(c.getDescriptions()))));
@@ -273,7 +284,7 @@ public class SnomedController {
   public SnomedSearchResult<SnomedConcept> findConcepts(SnomedConceptSearchParams params) {
     SnomedSearchResult<SnomedConcept> concepts = snowstormClient.queryConcepts(params).join();
 
-    Map<String, List<SnomedDescription>> descriptions = getDescriptions(concepts.getItems().stream().map(SnomedConcept::getConceptId).toList());
+    Map<String, List<SnomedDescription>> descriptions = getDescriptions(concepts.getItems().stream().map(SnomedConcept::getConceptId).toList(), params.getBranch());
     concepts.getItems().forEach(c -> c.setDescriptions(descriptions.get(c.getConceptId())));
 
     return concepts;
@@ -417,13 +428,13 @@ public class SnomedController {
     return path.replace("--", "/");
   }
 
-  private Map<String, List<SnomedDescription>> getDescriptions(List<String> conceptIds) {
+  private Map<String, List<SnomedDescription>> getDescriptions(List<String> conceptIds, String branch) {
     if (CollectionUtils.isEmpty(conceptIds)) {
       return Map.of();
     }
     SnomedDescriptionSearchParams descriptionParams = new SnomedDescriptionSearchParams();
     descriptionParams.setConceptIds(conceptIds);
     descriptionParams.setAll(true);
-    return snomedService.searchDescriptions(descriptionParams).stream().collect(Collectors.groupingBy(SnomedDescription::getConceptId));
+    return snomedService.searchDescriptions(branch, descriptionParams).stream().collect(Collectors.groupingBy(SnomedDescription::getConceptId));
   }
 }

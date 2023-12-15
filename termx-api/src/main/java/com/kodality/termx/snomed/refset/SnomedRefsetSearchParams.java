@@ -12,4 +12,6 @@ public class SnomedRefsetSearchParams extends QueryParams {
   private String referenceSet;
   private Boolean active;
   private String referencedComponentId;
+
+  private String branch;
 }

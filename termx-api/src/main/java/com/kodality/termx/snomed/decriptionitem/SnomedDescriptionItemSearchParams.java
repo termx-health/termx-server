@@ -15,4 +15,6 @@ public class SnomedDescriptionItemSearchParams {
   private Boolean conceptActive;
   private Boolean groupByConcept;
   private Long limit;
+
+  private String branch;
 }

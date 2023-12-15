@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class SnowstormClient {
@@ -187,16 +188,22 @@ public class SnowstormClient {
 
   public CompletableFuture<SnomedSearchResult<SnomedConcept>> queryConcepts(SnomedConceptSearchParams params) {
     String query = "?" + HttpClient.toQueryParams(params);
-    return client.GET(branch + "concepts" + query, JsonUtil.getParametricType(SnomedSearchResult.class, SnomedConcept.class));
+    String b = StringUtils.isEmpty(params.getBranch()) ? branch : params.getBranch() + "/";
+    return client.GET(b + "concepts" + query, JsonUtil.getParametricType(SnomedSearchResult.class, SnomedConcept.class));
   }
 
   public CompletableFuture<List<SnomedConcept>> findConceptChildren(String conceptId) {
-    return client.GET("browser/" + branch + "concepts/" + conceptId + "/children", JsonUtil.getListType(SnomedConcept.class));
+    return findConceptChildren(branch, conceptId);
+  }
+
+  public CompletableFuture<List<SnomedConcept>> findConceptChildren(String path, String conceptId) {
+    return client.GET("browser/" + path + "concepts/" + conceptId + "/children", JsonUtil.getListType(SnomedConcept.class));
   }
 
   public CompletableFuture<SnomedDescriptionItemResponse> findConceptDescriptions(SnomedDescriptionItemSearchParams params) {
     String query = "?" + HttpClient.toQueryParams(params);
-    return client.GET("browser/" + branch + "descriptions" + query, SnomedDescriptionItemResponse.class);
+    String b = StringUtils.isEmpty(params.getBranch()) ? branch : params.getBranch() + "/";
+    return client.GET("browser/" + b + "descriptions" + query, SnomedDescriptionItemResponse.class);
   }
 
   public CompletableFuture<HttpResponse<String>> deleteDescription(String path, String descriptionId) {
@@ -214,12 +221,14 @@ public class SnowstormClient {
 
   public CompletableFuture<SnomedRefsetResponse> findRefsets(SnomedRefsetSearchParams params) {
     String query = "?" + HttpClient.toQueryParams(params);
-    return client.GET("browser/" + branch + "members" + query, SnomedRefsetResponse.class);
+    String b = StringUtils.isEmpty(params.getBranch()) ? branch : params.getBranch() + "/";
+    return client.GET("browser/" + b + "members" + query, SnomedRefsetResponse.class);
   }
 
   public CompletableFuture<SnomedRefsetMemberResponse> findRefsetMembers(SnomedRefsetSearchParams params) {
     String query = "?" + HttpClient.toQueryParams(params);
-    return client.GET(branch + "members" + query, SnomedRefsetMemberResponse.class);
+    String b = StringUtils.isEmpty(params.getBranch()) ? branch : params.getBranch() + "/";
+    return client.GET(b + "members" + query, SnomedRefsetMemberResponse.class);
   }
 
 
