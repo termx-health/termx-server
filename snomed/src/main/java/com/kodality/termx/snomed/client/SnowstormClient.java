@@ -25,6 +25,7 @@ import com.kodality.termx.snomed.rf2.SnomedExportRequest;
 import com.kodality.termx.snomed.rf2.SnomedImportJob;
 import com.kodality.termx.snomed.rf2.SnomedImportRequest;
 import com.kodality.termx.snomed.search.SnomedSearchResult;
+import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
@@ -179,7 +180,9 @@ public class SnowstormClient {
   }
 
   public CompletableFuture<SnomedConcept> loadConcept(String path, String conceptId) {
-    return client.GET("browser/" + path + "concepts/" + conceptId, SnomedConcept.class);
+    HttpRequest request = client.builder("browser/" + path + "concepts/" + conceptId).GET()
+        .setHeader(HttpHeaders.ACCEPT_LANGUAGE, getLanguages(path)).build();
+    return client.executeAsync(request).thenApply(resp -> JsonUtil.fromJson(resp.body(), SnomedConcept.class));
   }
 
   public CompletableFuture<HttpResponse<String>> updateConcept(String path, SnomedConcept concept) {
@@ -189,7 +192,10 @@ public class SnowstormClient {
   public CompletableFuture<SnomedSearchResult<SnomedConcept>> queryConcepts(SnomedConceptSearchParams params) {
     String query = "?" + HttpClient.toQueryParams(params);
     String b = StringUtils.isEmpty(params.getBranch()) ? branch : params.getBranch() + "/";
-    return client.GET(b + "concepts" + query, JsonUtil.getParametricType(SnomedSearchResult.class, SnomedConcept.class));
+
+    HttpRequest request = client.builder(b + "concepts" + query).GET()
+        .setHeader(HttpHeaders.ACCEPT_LANGUAGE, getLanguages(b)).build();
+    return client.executeAsync(request).thenApply(resp -> JsonUtil.fromJson(resp.body(), JsonUtil.getParametricType(SnomedSearchResult.class, SnomedConcept.class)));
   }
 
   public CompletableFuture<List<SnomedConcept>> findConceptChildren(String conceptId) {
@@ -197,7 +203,9 @@ public class SnowstormClient {
   }
 
   public CompletableFuture<List<SnomedConcept>> findConceptChildren(String path, String conceptId) {
-    return client.GET("browser/" + path + "concepts/" + conceptId + "/children", JsonUtil.getListType(SnomedConcept.class));
+    HttpRequest request = client.builder("browser/" + path + "concepts/" + conceptId + "/children").GET()
+        .setHeader(HttpHeaders.ACCEPT_LANGUAGE, getLanguages(path)).build();
+    return client.executeAsync(request).thenApply(resp -> JsonUtil.fromJson(resp.body(), JsonUtil.getListType(SnomedConcept.class)));
   }
 
   public CompletableFuture<SnomedDescriptionItemResponse> findConceptDescriptions(SnomedDescriptionItemSearchParams params) {
@@ -222,13 +230,19 @@ public class SnowstormClient {
   public CompletableFuture<SnomedRefsetResponse> findRefsets(SnomedRefsetSearchParams params) {
     String query = "?" + HttpClient.toQueryParams(params);
     String b = StringUtils.isEmpty(params.getBranch()) ? branch : params.getBranch() + "/";
-    return client.GET("browser/" + b + "members" + query, SnomedRefsetResponse.class);
+
+    HttpRequest request = client.builder("browser/" + b + "members" + query).GET()
+        .setHeader(HttpHeaders.ACCEPT_LANGUAGE, getLanguages(b)).build();
+    return client.executeAsync(request).thenApply(resp -> JsonUtil.fromJson(resp.body(), SnomedRefsetResponse.class));
   }
 
   public CompletableFuture<SnomedRefsetMemberResponse> findRefsetMembers(SnomedRefsetSearchParams params) {
     String query = "?" + HttpClient.toQueryParams(params);
     String b = StringUtils.isEmpty(params.getBranch()) ? branch : params.getBranch() + "/";
-    return client.GET(b + "members" + query, SnomedRefsetMemberResponse.class);
+
+    HttpRequest request = client.builder(b + "members" + query).GET()
+        .setHeader(HttpHeaders.ACCEPT_LANGUAGE, getLanguages(b)).build();
+    return client.executeAsync(request).thenApply(resp -> JsonUtil.fromJson(resp.body(), SnomedRefsetMemberResponse.class));
   }
 
 
@@ -240,5 +254,12 @@ public class SnowstormClient {
       path += "/";
     }
     return path;
+  }
+
+  public String getLanguages(String branch) {
+    if (branch.startsWith("MAIN/") && branch.split("/").length > 1) {
+      return String.join(",", loadCodeSystem(branch.split("/")[1]).join().getLanguages().keySet());
+    }
+    return "en";
   }
 }
