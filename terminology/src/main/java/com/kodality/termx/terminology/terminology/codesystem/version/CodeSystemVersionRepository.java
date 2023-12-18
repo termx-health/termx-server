@@ -128,7 +128,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
     List<Long> existingEntityVersionIds = jdbcTemplate.queryForList("select code_system_entity_version_id from terminology.entity_version_code_system_version_membership " +
         "where code_system_version_id = ? and sys_status = 'A'", Long.class, codeSystemVersionId);
 
-    List<Long> newEntityVersionIds = entityVersionIds.stream().filter(id -> !existingEntityVersionIds.contains(id)).toList();
+    List<Long> newEntityVersionIds = entityVersionIds.stream().filter(id -> !existingEntityVersionIds.contains(id) && id != null).toList();
     String query = "insert into terminology.entity_version_code_system_version_membership (code_system_entity_version_id, code_system_version_id) select ?,? ";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
