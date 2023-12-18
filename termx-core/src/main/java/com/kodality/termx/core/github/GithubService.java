@@ -22,8 +22,8 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collection;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,8 +49,6 @@ public class GithubService {
   private final HttpClient http;
   private final CacheManager cacheManager;
   private final ObjectMapper objectMapper;
-
-  private static final String MAIN_BRANCH = "main";
 
   @Value("${github.client.id}")
   private String clientId;
@@ -123,11 +121,21 @@ public class GithubService {
     return installedOn.contains(group);
   }
 
+  public List<String> listBranches(String repo) {
+    List<Map<String, Object>> branchesResp = JsonUtil.fromJson(get("/repos/" + repo + "/branches"), JsonUtil.getListType(Map.class));
+    return branchesResp.stream().map(r -> (String) r.get("name")).toList();
+  }
 
-  public void commit(String repo, GithubCommit c) {
+  public void commit(String repo, String branch, GithubCommit c) {
     String base = "/repos/" + repo + "/git";
     if (c.getLastCommitSha() == null) {
-      c.setLastCommitSha(getLastCommitSha(repo));
+      c.setLastCommitSha(getLastCommitSha(repo, branch));
+    }
+    if (c.getLastCommitSha() == null) {
+      c.setLastCommitSha(getLastCommitSha(repo, getMainBranch(repo)));
+    }
+    if (!listBranches(repo).contains(branch)) {
+      createBranch(repo, branch, c.getLastCommitSha());
     }
 
     // commit files with content
@@ -157,24 +165,28 @@ public class GithubService {
     );
     String commitSha = JsonUtil.read(post(base + "/commits", commit), "$.sha");
 
-    patch("/repos/" + repo + "/git/refs/heads/" + MAIN_BRANCH, Map.of("sha", commitSha));
+    patch("/repos/" + repo + "/git/refs/heads/" + branch, Map.of("sha", commitSha));
   }
 
-  public List<GithubContent> getContents(String repo, String path) {
-    try {
-      String a = get("/repos/" + repo + "/contents/" + path);
-      return JsonUtil.fromJson(a, JsonUtil.getListType(GithubContent.class));
-    } catch (HttpClientError e) {
-      if (e.getResponse().statusCode() == 404) {
-        return List.of();
-      }
-      throw e;
-    }
+  public void createBranch(String repo, String branch, String sha) {
+    post("/repos/" + repo + "/git/refs", Map.of("ref", "refs/heads/" + branch, "sha", sha));
   }
 
-  public GithubContent getContent(String repo, String path) {
+//  public List<GithubContent> getContents(String repo, String path) {
+//    try {
+//      String a = get("/repos/" + repo + "/contents/" + path);
+//      return JsonUtil.fromJson(a, JsonUtil.getListType(GithubContent.class));
+//    } catch (HttpClientError e) {
+//      if (e.getResponse().statusCode() == 404) {
+//        return List.of();
+//      }
+//      throw e;
+//    }
+//  }
+
+  public GithubContent getContent(String repo, String branch, String path) {
     try {
-      String resp = get("/repos/" + repo + "/contents/" + path);
+      String resp = get("/repos/" + repo + "/contents/" + path + "?ref="+branch);
       GithubContent content = JsonUtil.fromJson(resp, GithubContent.class);
       if ("base64".equals(JsonUtil.read(resp, "$.encoding"))) {
         content.setContent(new String(Base64.getDecoder().decode(content.getContent().replaceAll("\n", ""))));
@@ -188,10 +200,11 @@ public class GithubService {
     }
   }
 
-  public GithubTree getTree(String repo, String path) {
+  public GithubTree getTree(String repo, String branch, String path) {
+    String p = path == null ? branch : StringUtils.join(branch, ":", path);
     try {
       // The limit for the tree array is 100,000 entries with a maximum size of 7 MB when using the recursive parameter.
-      String resp = get("/repos/" + repo + "/git/trees/" + path + "?recursive=true");
+      String resp = get("/repos/" + repo + "/git/trees/" + p + "?recursive=true");
       return JsonUtil.fromJson(resp, GithubTree.class);
     } catch (HttpClientError e) {
       if (e.getResponse().statusCode() == 404) {
@@ -218,44 +231,44 @@ public class GithubService {
 
   public List<GithubContent> readFully(String repo) {
     String mainBranch = getMainBranch(repo);
-    GithubTree treesResp = getTree(repo, mainBranch);
+    GithubTree treesResp = getTree(repo, mainBranch, null);
     return treesResp.getTree().stream().filter(t -> GithubTreeType.blob.equals(t.getType())).map(t -> {
       String content = t.getSize() == 0 ? "" : getBlob(t.getUrl());
       return new GithubContent().setPath(t.getPath()).setSha(t.getSha()).setContent(content);
     }).toList();
   }
 
-  public String getLastCommitSha(String repo) {
-    return JsonUtil.read(get("/repos/" + repo + "/branches/" + MAIN_BRANCH), "$.commit.sha");
+  public String getLastCommitSha(String repo, String branch) {
+    try {
+      return JsonUtil.read(get("/repos/" + repo + "/branches/" + branch), "$.commit.sha");
+    } catch (HttpClientError e) {
+      if (e.getResponse().statusCode() == 404) {
+        return null;
+      }
+      throw e;
+    }
   }
 
   private String getMainBranch(String repo) {
-    List<Map<String, Object>> branchesResp = JsonUtil.fromJson(get("/repos/" + repo + "/branches"), JsonUtil.getListType(Map.class));
-    Map<String, Object> branch = branchesResp.stream()
-        .filter(r -> List.of("master", MAIN_BRANCH).contains((String) r.get("name")))
-        .findFirst()
-        .orElseGet(() -> branchesResp.get(0));
-    return (String) branch.get("name");
+    return JsonUtil.read(get("/repos/" + repo), "$.default_branch");
   }
 
-
-  // #status(String repo, String dir, List<GithubContent> current) is more optimal.
-  public GithubStatus status(String repo, List<GithubContent> local) {
+  // #status(String repo, String branch, String dir, List<GithubContent> current) is more optimal.
+  public GithubStatus status(String repo, String branch, List<GithubContent> local) {
     // absolute path -> content
     Map<String, GithubContent> localContents = local.stream().collect(toMap(GithubContent::getPath, c -> c));
 
     // absolute path -> tree, finds git tree for every unique path in local
-    Map<String, GithubTreeItem> githubTree = localContents.keySet().stream()
-        .map(p -> {
+    Map<String, GithubTreeItem> githubTree = localContents.keySet().stream().map(p -> {
           try {
-            GithubTree tree = getTree(repo, StringUtils.join(MAIN_BRANCH, ":", p));
+            GithubTree tree = getTree(repo, branch, p);
             return getTreeAbsoluteBlobs(p, tree);
           } catch (HttpClientError e) {
             // means 'p' is a file, either 'file.md' or 'folder/subfolder/file.md'
             String path = p.contains("/") ? StringUtils.substringBeforeLast(p, "/") : "";
             String name = p.contains("/") ? StringUtils.substringAfterLast(p, "/") : p;
 
-            GithubTree tree = getTree(repo, StringUtils.join(MAIN_BRANCH, ":", path));
+            GithubTree tree = getTree(repo, branch, path);
             return tree.getTree().stream()
                 .filter(t -> t.getPath().equals(name))
                 .peek(t -> t.setPath(Stream.of(path, t.getPath()).filter(Predicate.not(String::isEmpty)).collect(Collectors.joining("/"))))
@@ -265,19 +278,19 @@ public class GithubService {
         .flatMap(Collection::stream)
         .collect(toMap(GithubTreeItem::getPath, c -> c));
 
-    return calculateBlobStatus(repo, githubTree, localContents);
+    return calculateBlobStatus(repo, branch, githubTree, localContents);
   }
 
-  public GithubStatus status(String repo, String dir, List<GithubContent> local) {
+  public GithubStatus status(String repo, String branch, String dir, List<GithubContent> local) {
     // recursive tree, relative to 'dir'
-    GithubTree treeResp = getTree(repo, StringUtils.join(MAIN_BRANCH, ":", dir));
+    GithubTree treeResp = getTree(repo, branch, dir);
 
     // absolute path -> tree
     Map<String, GithubTreeItem> githubTree = getTreeAbsoluteBlobs(dir, treeResp).stream().collect(toMap(GithubTreeItem::getPath, c -> c));
     // absolute path -> content
     Map<String, GithubContent> localContents = local.stream().collect(toMap(GithubContent::getPath, c -> c));
 
-    return calculateBlobStatus(repo, githubTree, localContents);
+    return calculateBlobStatus(repo, branch, githubTree, localContents);
   }
 
   private List<GithubTreeItem> getTreeAbsoluteBlobs(String dir, GithubTree tree) {
@@ -290,11 +303,11 @@ public class GithubService {
         .toList();
   }
 
-  private GithubStatus calculateBlobStatus(String repo, Map<String, GithubTreeItem> githubTree, Map<String, GithubContent> localContents) {
+  private GithubStatus calculateBlobStatus(String repo, String branch, Map<String, GithubTreeItem> githubTree, Map<String, GithubContent> localContents) {
     // absolute paths
     SetView<String> uniquePaths = Sets.union(localContents.keySet(), githubTree.keySet());
     return new GithubStatus()
-        .setSha(getLastCommitSha(repo))
+        .setSha(getLastCommitSha(repo, branch))
         .setFiles(uniquePaths.stream().collect(toMap(p -> p, p -> {
           return calculateBlobStatus(githubTree.get(p), localContents.get(p));
         })));

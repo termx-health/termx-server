@@ -1,19 +1,17 @@
-package com.kodality.termx.terminology.terminology.valueset;
+package com.kodality.termx.terminology.terminology.valueset.providers;
 
 
-import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.core.sys.provenance.Provenance;
-import com.kodality.termx.core.sys.provenance.ProvenanceService;
+import com.kodality.termx.core.github.ResourceContentProvider.ResourceContent;
 import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
 import com.kodality.termx.terminology.fhir.valueset.ValueSetFhirImportService;
 import com.kodality.termx.terminology.fhir.valueset.ValueSetFhirMapper;
+import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
+import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +21,9 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @RequiredArgsConstructor
 public class SpaceGithubDataValueSetFhirHandler implements SpaceGithubDataHandler {
+  private final ResourceContentValueSetVersionFhirProvider resourceContentProvider;
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
-  private final ProvenanceService provenanceService;
   private final ValueSetFhirImportService valueSetFhirImportService;
 
   @Override
@@ -39,19 +37,13 @@ public class SpaceGithubDataValueSetFhirHandler implements SpaceGithubDataHandle
   }
 
   @Override
-  public Map<String, SpaceGithubData> getContent(Long spaceId) {
+  public List<ResourceContent> getContent(Long spaceId) {
     List<ValueSet> valueSets = valueSetService.query(new ValueSetQueryParams().setSpaceId(spaceId).all()).getData();
-    Map<String, String> result = new LinkedHashMap<>();
-    valueSets.forEach(vs -> {
-      valueSetVersionService.query(new ValueSetVersionQueryParams().setValueSet(vs.getId())).getData().forEach(vsv -> {
-        List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + vsv.getId());
-        String json = ValueSetFhirMapper.toFhirJson(vs, vsv, provenances);
-        String prettyJson = JsonUtil.toPrettyJson(JsonUtil.toMap(json));
-        String fhirId = ValueSetFhirMapper.toFhirId(vs, vsv);
-        result.put(fhirId + ".json", prettyJson);
+    return valueSets.stream().flatMap(vs -> {
+      return valueSetVersionService.query(new ValueSetVersionQueryParams().setValueSet(vs.getId())).getData().stream().flatMap(vsv -> {
+        return resourceContentProvider.getContent(vs, vsv).stream();
       });
-    });
-    return result.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> new SpaceGithubData(e.getValue())));
+    }).toList();
   }
 
   @Override

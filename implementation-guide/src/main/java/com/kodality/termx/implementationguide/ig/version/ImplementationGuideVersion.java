@@ -17,8 +17,7 @@ public class ImplementationGuideVersion {
   private String status;
   private String packageId;
   private String fhirVersion;
-  private String githubUrl;
-  private String emptyGithubUrl;
+  private ImplementationGuideVersionGithub github;
   private String template;
   private String algorithm;
   private OffsetDateTime date;
@@ -27,9 +26,17 @@ public class ImplementationGuideVersion {
 
   @Getter
   @Setter
-  private static class ImplementationGuideVersionDependsOn {
+  public static class ImplementationGuideVersionDependsOn {
     private String packageId;
     private String version;
     private String reason;
+  }
+
+  @Getter
+  @Setter
+  public static class ImplementationGuideVersionGithub {
+    private String repo;
+    private String branch;
+    private String init;
   }
 }

@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset ig:implementation_guide
+--changeset ig:implementation_guide-3
 drop table if exists sys.implementation_guide_page;
 drop table if exists sys.implementation_guide_resource;
 drop table if exists sys.implementation_guide_group;
@@ -37,10 +37,9 @@ create table sys.implementation_guide_version (
     status                  text                      not null,
     package_id              text,
     fhir_version            text,
-    github_url              text,
-    empty_github_url        text,
     template                text,
     algorithm               text,
+    github                  jsonb,
     depends_on              jsonb,
     sys_created_at          timestamp                 not null,
     sys_created_by          text                      not null,

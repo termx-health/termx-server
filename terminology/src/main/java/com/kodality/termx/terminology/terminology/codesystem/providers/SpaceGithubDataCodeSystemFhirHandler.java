@@ -1,19 +1,15 @@
-package com.kodality.termx.terminology.terminology.codesystem;
+package com.kodality.termx.terminology.terminology.codesystem.providers;
 
 
-import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.core.sys.provenance.Provenance;
-import com.kodality.termx.core.sys.provenance.ProvenanceService;
+import com.kodality.termx.core.github.ResourceContentProvider.ResourceContent;
 import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
 import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirImportService;
 import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
-import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.codesystem.CodeSystem;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Singleton;
@@ -25,10 +21,9 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @RequiredArgsConstructor
 public class SpaceGithubDataCodeSystemFhirHandler implements SpaceGithubDataHandler {
+  private final ResourceContentCodeSystemVersionFhirProvider resourceContentProvider;
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
-  private final CodeSystemEntityVersionService codeSystemEntityVersionService;
-  private final ProvenanceService provenanceService;
   private final CodeSystemFhirImportService codeSystemFhirImportService;
 
   @Override
@@ -42,22 +37,13 @@ public class SpaceGithubDataCodeSystemFhirHandler implements SpaceGithubDataHand
   }
 
   @Override
-  public Map<String, SpaceGithubData> getContent(Long spaceId) {
+  public List<ResourceContent> getContent(Long spaceId) {
     List<CodeSystem> codeSystems = codeSystemService.query(new CodeSystemQueryParams().setSpaceId(spaceId).all()).getData();
-    Map<String, SpaceGithubData> result = new LinkedHashMap<>();
-    codeSystems.forEach(cs -> {
-      codeSystemVersionService.query(new CodeSystemVersionQueryParams().setCodeSystem(cs.getId())).getData().forEach(csv -> {
-        List<Provenance> provenances = provenanceService.find("CodeSystemVersion|" + csv.getId());
-        csv.setEntities(codeSystemEntityVersionService.query(new CodeSystemEntityVersionQueryParams()
-            .setCodeSystemVersionId(csv.getId())
-            .all()).getData());
-        String json = CodeSystemFhirMapper.toFhirJson(cs, csv, provenances);
-        String prettyJson = JsonUtil.toPrettyJson(JsonUtil.toMap(json));
-        String fhirId = CodeSystemFhirMapper.toFhirId(cs, csv);
-        result.put(fhirId + ".json", new SpaceGithubData(prettyJson));
+    return codeSystems.stream().flatMap(cs -> {
+      return codeSystemVersionService.query(new CodeSystemVersionQueryParams().setCodeSystem(cs.getId())).getData().stream().flatMap(csv -> {
+        return resourceContentProvider.getContent(cs, csv).stream();
       });
-    });
-    return result;
+    }).toList();
   }
 
   @Override

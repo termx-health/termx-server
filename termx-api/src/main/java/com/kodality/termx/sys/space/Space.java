@@ -38,23 +38,5 @@ public class Space {
   public static class SpaceIntegrationGithub {
     private String repo;
     private Map<String, String> dirs;
-    private SpaceIntegrationImplementationGuide ig;
-  }
-
-  @Getter
-  @Setter
-  @Accessors(chain = true)
-  public static class SpaceIntegrationImplementationGuide {
-    private String header;
-    private List<Long> pageContents;
-    private List<SpaceIntegrationImplementationGuideMenuItem> menu;
-  }
-
-  @Getter
-  @Setter
-  public static class SpaceIntegrationImplementationGuideMenuItem {
-    private String name;
-    private Long page;
-    private List<SpaceIntegrationImplementationGuideMenuItem> children; //actually only one level
   }
 }

@@ -16,6 +16,7 @@ public class ImplementationGuideVersionRepository extends BaseRepository {
 
   private final PgBeanProcessor bp = new PgBeanProcessor(ImplementationGuideVersion.class, bp -> {
     bp.addColumnProcessor("depends_on", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("github", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("groups", PgBeanProcessor.fromJson(JsonUtil.getListType(ImplementationGuideGroup.class)));
   });
 
@@ -35,8 +36,7 @@ public class ImplementationGuideVersionRepository extends BaseRepository {
     ssb.property("status", version.getStatus());
     ssb.property("package_id", version.getPackageId());
     ssb.property("fhir_version", version.getFhirVersion());
-    ssb.property("github_url", version.getGithubUrl());
-    ssb.property("empty_github_url", version.getEmptyGithubUrl());
+    ssb.jsonProperty("github", version.getGithub());
     ssb.property("template", version.getTemplate());
     ssb.property("algorithm", version.getAlgorithm());
     ssb.jsonProperty("depends_on", version.getDependsOn());

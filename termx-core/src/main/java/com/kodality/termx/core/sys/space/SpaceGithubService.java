@@ -22,10 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class SpaceGithubService {
+  private static final String MAIN = "main";
   private final SpaceService spaceService;
   private final GithubService githubService;
   private final List<SpaceGithubDataHandler> dataHandlers;
-  private final SpaceGithubDataImplementationGuideHandler igHandler;
 
   public Map<String, String> getProviders() {
     return dataHandlers.stream().collect(Collectors.toMap(SpaceGithubDataHandler::getName, SpaceGithubDataHandler::getDefaultDir));
@@ -44,13 +44,10 @@ public class SpaceGithubService {
     Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
 
-    return Stream.concat(
-        Stream.of(githubService.status(repo, igHandler.getCurrentContent(space))),
-        getHandlers(space).map(h -> {
-          String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
-          return githubService.status(repo, dir, h.getCurrentContent(space));
-        })
-    ).reduce(new GithubStatus(), (a, b) -> {
+    return getHandlers(space).map(h -> {
+      String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
+      return githubService.status(repo, MAIN, dir, h.getCurrentContent(space));
+    }).reduce(new GithubStatus(), (a, b) -> {
       a.setSha(b.getSha());
       a.getFiles().putAll(b.getFiles());
       return a;
@@ -76,10 +73,10 @@ public class SpaceGithubService {
         .filter(n -> n.getName().equals(handlerType))
         .findFirst()
         .map(h -> h.getCurrentContent(space).stream().collect(Collectors.toMap(GithubContent::getPath, GithubContent::getContent)).get(file))
-        .orElseGet(() -> igHandler.getContent(space).get(file));
+        .orElse(null);
 
     return new GithubDiff()
-        .setLeft(githubService.getContent(repo, file).getContent())
+        .setLeft(githubService.getContent(repo, MAIN, file).getContent())
         .setRight(currentContent);
   }
 
@@ -87,20 +84,11 @@ public class SpaceGithubService {
     Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
 
-    List<GithubContent> allChanges = Stream.concat(
-            Stream.of(space).map(s -> {
-              List<GithubContent> gc = igHandler.getCurrentContent(space);
-              return collectChanges(gc, githubService.status(repo, gc));
-            }),
-            getHandlers(space).map(h -> {
-              String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
-              List<GithubContent> gc = h.getCurrentContent(space);
-              return collectChanges(gc, githubService.status(repo, dir, gc));
-            })
-        )
-        .flatMap(x -> x)
-        .filter(c -> files == null || files.contains(c.getPath()))
-        .toList();
+    List<GithubContent> allChanges = getHandlers(space).flatMap(h -> {
+      String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
+      List<GithubContent> gc = h.getCurrentContent(space);
+      return collectChanges(gc, githubService.status(repo, MAIN, dir, gc));
+    }).filter(c -> files == null || files.contains(c.getPath())).toList();
     if (allChanges.isEmpty()) {
       return; // nothing changed
     }
@@ -110,7 +98,7 @@ public class SpaceGithubService {
     c.setAuthorName(SessionStore.require().getUsername());
     c.setAuthorEmail(SessionStore.require().getUsername() + "@termx"); // TODO email
     c.setFiles(allChanges);
-    githubService.commit(repo, c);
+    githubService.commit(repo, MAIN, c);
   }
 
   private Stream<GithubContent> collectChanges(List<GithubContent> currentContent, GithubStatus status) {
@@ -129,40 +117,16 @@ public class SpaceGithubService {
     getHandlers(space).forEach(h -> {
       String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
       List<GithubContent> changes = h.getCurrentContent(space);
-      GithubStatus status = githubService.status(repo, dir, changes);
+      GithubStatus status = githubService.status(repo, MAIN, dir, changes);
       Map<String, String> content = status.getFiles().keySet().stream()
           .filter(k -> List.of(GithubStatus.M, GithubStatus.A, GithubStatus.D).contains(status.getFiles().get(k)))
           .filter(k -> files == null || files.contains(k))
           .collect(com.kodality.commons.stream.Collectors.<String, String, String>toMap(
               k -> StringUtils.removeStart(k, dir + "/"),
-              k -> GithubStatus.A.equals(status.getFiles().get(k)) ? null : githubService.getContent(repo, k).getContent()
+              k -> GithubStatus.A.equals(status.getFiles().get(k)) ? null : githubService.getContent(repo, MAIN, k).getContent()
           ));
       h.saveContent(spaceId, content);
     });
-  }
-
-  public SpaceGithubIgStatus getIgStatus(Long spaceId) {
-    Space space = loadSpace(spaceId);
-    if (space.getIntegration().getGithub().getIg() == null) {
-      return new SpaceGithubIgStatus(true);
-    }
-    String repo = space.getIntegration().getGithub().getRepo();
-    return new SpaceGithubIgStatus(githubService.getContent(repo, "_genonce.sh") != null);
-  }
-
-  public void initIg(Long spaceId, String baseRepo) {
-    Space space = loadSpace(spaceId);
-    String repo = space.getIntegration().getGithub().getRepo();
-
-    List<GithubContent> contents = githubService.readFully(baseRepo).stream()
-        .filter(c -> !List.of("LICENSE", "README.md", "sushi-config.yaml", "input/includes/menu.xml").contains(c.getPath()))
-        .toList();
-    GithubCommit c = new GithubCommit();
-    c.setMessage("initialize ig from " + baseRepo);
-    c.setAuthorName(SessionStore.require().getUsername());
-    c.setAuthorEmail(SessionStore.require().getUsername() + "@termx"); // TODO email
-    c.setFiles(contents);
-    githubService.commit(repo, c);
   }
 
   private Space loadSpace(Long spaceId) {
