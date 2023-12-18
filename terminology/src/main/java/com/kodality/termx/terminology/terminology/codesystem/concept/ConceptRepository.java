@@ -25,7 +25,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 public class ConceptRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(Concept.class);
 
-  private final Map<String, String> orderMapping = Map.of("code", "c.code");
+  private final Map<String, String> orderMapping = Map.of("code", "c.code", "codeSystem", "c.code_system");
 
   private final String select = "select distinct on (c.code) c.*, " +
       "(exists (select 1 from terminology.code_system_entity_version csev where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status = 'active')) as immutable ";
@@ -63,11 +63,12 @@ public class ConceptRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder(select + ", " +
+      SqlBuilder sb = new SqlBuilder("select * from ("+ select + ", " +
           isLeaf(params) + "as leaf, " +
           childCount(params) + "as child_count " +
           "from terminology.concept c " + join);
       sb.append(filter(params));
+      sb.append(") c ");
       sb.append(order(params, orderMapping));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
