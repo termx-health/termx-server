@@ -3,6 +3,7 @@ package com.kodality.termx.wiki;
 
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termx.core.github.GithubService.GithubContent.GithubContentEncoding;
+import com.kodality.termx.core.github.ResourceContentProvider.ResourceContent;
 import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
 import com.kodality.termx.core.sys.space.SpaceService;
 import com.kodality.termx.sys.space.Space;
@@ -22,9 +23,9 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.http.server.types.files.StreamedFile;
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -65,7 +66,7 @@ public class SpaceGithubDataWikiSsgHandler implements SpaceGithubDataHandler {
   }
 
   @Override
-  public Map<String, SpaceGithubData> getContent(Long spaceId) {
+  public List<ResourceContent> getContent(Long spaceId) {
     Space space = spaceService.load(spaceId);
     List<Page> pages = pageService.query(new PageQueryParams().setSpaceIds(spaceId.toString()).all()).getData();
     List<PageLink> links = pageLinkService.query(new PageLinkQueryParams().setSpaceIds(spaceId.toString()).all()).getData();
@@ -98,18 +99,22 @@ public class SpaceGithubDataWikiSsgHandler implements SpaceGithubDataHandler {
         .map(Optional::get)
         .toList();
 
-    Map<String, SpaceGithubData> result = new HashMap<>();
-    result.put("space.json", new SpaceGithubData(toPrettyJson(new SsgSpaceIndex(termxWebUrl.orElse(null), space.getCode(), space.getNames()))));
-    result.put("pages.json", new SpaceGithubData(toPrettyJson(composePagesIndex(pages, links))));
-    result.putAll(contents.stream().collect(Collectors.toMap(
-        p -> "pages/" + p.getSlug() + (p.getContentType().equals("html") ? ".html" : ".md"),
-        p -> new SpaceGithubData(p.getContent()))));
-    result.putAll(attachments.stream().collect(Collectors.toMap(
-        a -> "attachments/" + a.pageId() + "/" + a.name(),
-        o -> new SpaceGithubData(o.base64(), GithubContentEncoding.base64))));
-    result.putAll(relatedResources.stream().collect(Collectors.toMap(
-        r -> "resources/" + r.resourceType() + "/" + r.name() + "." + r.contentType(),
-        r -> new SpaceGithubData(r.content))));
+    List<ResourceContent> result = new ArrayList<>();
+    result.add(new ResourceContent("space.json", toPrettyJson(new SsgSpaceIndex(termxWebUrl.orElse(null), space.getCode(), space.getNames()))));
+    result.add(new ResourceContent("pages.json", toPrettyJson(composePagesIndex(pages, links))));
+    result.addAll(contents.stream().map(p -> new ResourceContent(
+        "pages/" + p.getSlug() + (p.getContentType().equals("html") ? ".html" : ".md"),
+        p.getContent()
+    )).toList());
+    result.addAll(attachments.stream().map(a -> new ResourceContent(
+        "attachments/" + a.pageId() + "/" + a.name(),
+        a.base64(),
+        GithubContentEncoding.base64
+    )).toList());
+    result.addAll(relatedResources.stream().map(r -> new ResourceContent(
+        "resources/" + r.resourceType() + "/" + r.name() + "." + r.contentType(),
+        r.content
+    )).toList());
     return result;
   }
 

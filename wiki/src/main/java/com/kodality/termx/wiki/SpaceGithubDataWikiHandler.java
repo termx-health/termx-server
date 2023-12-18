@@ -2,6 +2,7 @@ package com.kodality.termx.wiki;
 
 
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termx.core.github.ResourceContentProvider.ResourceContent;
 import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
 import com.kodality.termx.wiki.SpaceGithubDataWikiHandler.SpaceGithubPage.SpaceGithubPageContent;
 import com.kodality.termx.wiki.page.Page;
@@ -14,7 +15,6 @@ import com.kodality.termx.wiki.pagecontent.PageContentService;
 import com.kodality.termx.wiki.pagelink.PageLinkService;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +45,7 @@ public class SpaceGithubDataWikiHandler implements SpaceGithubDataHandler {
   }
 
   @Override
-  public Map<String, SpaceGithubData> getContent(Long spaceId) {
+  public List<ResourceContent> getContent(Long spaceId) {
     Map<Long, PageLink> links = pageLinkService.query(new PageLinkQueryParams().setSpaceIds(spaceId.toString()).all()).getData().stream()
         .collect(Collectors.toMap(PageLink::getTargetId, l -> l));
     List<Page> pages = pageService.query(new PageQueryParams().setSpaceIds(spaceId.toString()).all()).getData();
@@ -53,11 +53,10 @@ public class SpaceGithubDataWikiHandler implements SpaceGithubDataHandler {
         .sorted(Comparator.comparing(Page::getId))
         .sorted(Comparator.comparing(p -> links.get(p.getId()).getOrderNumber()))
         .collect(Collectors.groupingBy(p -> CollectionUtils.isEmpty(p.getLinks()) ? 0L : p.getLinks().get(0).getSourceId()));
-    Map<String, String> result = new HashMap<>();
-    result.put("pages.json", JsonUtil.toPrettyJson(pagesTree.isEmpty() ? List.of() : buildPages(0L, pagesTree)));
-    result.putAll(pages.stream().flatMap(p -> p.getContents().stream()).collect(Collectors.toMap(p -> p.getSlug() + ".md", PageContent::getContent)));
-
-    return result.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> new SpaceGithubData(e.getValue())));
+    List<ResourceContent> result = new ArrayList<>();
+    result.add(new ResourceContent("pages.json", JsonUtil.toPrettyJson(pagesTree.isEmpty() ? List.of() : buildPages(0L, pagesTree))));
+    result.addAll(pages.stream().flatMap(p -> p.getContents().stream()).map(p -> new ResourceContent(p.getSlug() + ".md", p.getContent())).toList());
+    return result;
   }
 
   private List<SpaceGithubPage> buildPages(Long parent, Map<Long, List<Page>> allPages) {
