@@ -13,6 +13,9 @@ dependencies {
     implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}")
     implementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
 
+    implementation("com.kodality.kefhir:fhir-rest:${kefhirVersion}") { changing = true }
+    implementation("com.kodality.kefhir:validation-profile:${kefhirVersion}") { changing = true }
+
     implementation 'commons-io:commons-io:2.15.0'
 
     implementation("io.micronaut.spring:micronaut-spring")

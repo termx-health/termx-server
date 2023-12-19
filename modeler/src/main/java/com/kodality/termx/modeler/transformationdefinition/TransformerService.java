@@ -49,6 +49,7 @@ import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.r5.context.ContextUtilities;
 import org.hl7.fhir.r5.elementmodel.Element;
 import org.hl7.fhir.r5.elementmodel.Manager.FhirFormat;
+import org.hl7.fhir.r5.elementmodel.ParserBase;
 import org.hl7.fhir.r5.formats.IParser.OutputStyle;
 import org.hl7.fhir.r5.formats.JsonParser;
 import org.hl7.fhir.r5.formats.XmlParser;
@@ -164,7 +165,9 @@ public class TransformerService {
     FhirFormat format = input.startsWith("<") ? FhirFormat.XML : FhirFormat.JSON;
     Element transformed = eng.transform(input.getBytes(StandardCharsets.UTF_8), format, mapUri);
     ByteArrayOutputStream boas = new ByteArrayOutputStream();
-    new org.hl7.fhir.r5.elementmodel.JsonParser(eng.getContext()).compose(transformed, boas, OutputStyle.PRETTY, null);
+    ParserBase parser = format == FhirFormat.XML ? new org.hl7.fhir.r5.elementmodel.XmlParser(eng.getContext())
+        : new org.hl7.fhir.r5.elementmodel.JsonParser(eng.getContext());
+    parser.compose(transformed, boas, OutputStyle.PRETTY, null);
     String result = boas.toString(StandardCharsets.UTF_8);
     boas.close();
     return result;

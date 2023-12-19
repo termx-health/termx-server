@@ -1,7 +1,6 @@
 package com.kodality.termx.modeler.fhir;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.api.resource.InstanceOperationDefinition;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
@@ -13,6 +12,8 @@ import com.kodality.termx.modeler.transformationdefinition.TransformationDefinit
 import com.kodality.termx.modeler.transformationdefinition.TransformationResult;
 import com.kodality.termx.modeler.transformationdefinition.TransformerService;
 import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.resource.other.Binary;
+import com.kodality.zmei.fhir.resource.other.Parameters;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,10 +41,8 @@ public class StructureMapTransformOperation implements InstanceOperationDefiniti
 
   @Override
   public ResourceContent run(ResourceId id, ResourceContent resourceContent) {
-    // @see com.kodality.zmei.fhir.resource.other.Parameters
-    List<Map<String, Object>> parameters = (List<Map<String, Object>>) JsonUtil.toMap(resourceContent.getValue()).get("parameter");
-
-    Object instance = findParameter(parameters, "content").map(p -> p.get("resource"))
+    Parameters p = FhirMapper.fromJson(resourceContent.getValue(), Parameters.class);
+    String input = p.findParameter("content").map(pp -> ((Binary) pp.getResource()).getDataString())
         .orElseThrow(() -> new FhirException(400, IssueType.REQUIRED, "content required"));
 
     var params = new TransformationDefinitionQueryParams();
@@ -54,31 +53,21 @@ public class StructureMapTransformOperation implements InstanceOperationDefiniti
       throw new FhirException(400, IssueType.INVALID, "Matched multiple StructureMap resources");
     }
 
-    TransformationResult transformation = transformerService.transform(FhirMapper.toJson(instance), resp.findFirst().orElseThrow());
-    return new ResourceContent(transformation.getResult(), "json");
+    TransformationResult transformation = transformerService.transform(input, resp.findFirst().orElseThrow());
+    return new ResourceContent(transformation.getResult(), transformation.getResult().startsWith("<") ? "xml" : "json");
   }
 
   @Override
   public ResourceContent run(ResourceContent resourceContent) {
-    // @see com.kodality.zmei.fhir.resource.other.Parameters
-    List<Map<String, Object>> parameters = (List<Map<String, Object>>) JsonUtil.toMap(resourceContent.getValue()).get("parameter");
-
-    Object instance = findParameter(parameters, "content").map(p -> p.get("resource"))
+    Parameters p = FhirMapper.fromJson(resourceContent.getValue(), Parameters.class);
+    String input = p.findParameter("content").map(pp -> ((Binary) pp.getResource()).getDataString())
         .orElseThrow(() -> new FhirException(400, IssueType.REQUIRED, "content required"));
 
     // canonical URL
-    String source = (String) findParameter(parameters, "source").map(p -> p.getOrDefault("valueUri", p.get("valueString"))).orElse(null);
-    // StructureMap as FHIR resource
-    Object sourceMap = findParameter(parameters, "sourceMap").map(p -> p.get("valueString")).orElse(null);
-    // StructureMaps as FML
-    List<String> srcMaps = parameters.stream().filter(p -> "srcMap".equals(p.get("name"))).map(p -> (String) p.get("valueString")).toList();
+    String source = p.findParameter("valueUri").map(c -> c.getValueUri() == null ? c.getValueString() : c.getValueUri()).orElse(null);
 
     TransformationDefinition internalDefinition = null;
-    if (!srcMaps.isEmpty()) {
-      throw new FhirException(400, IssueType.NOTSUPPORTED, "srcMap is not supported!");
-    } else if (sourceMap != null) {
-      throw new FhirException(400, IssueType.NOTSUPPORTED, "sourceMap is not supported!");
-    } else if (source != null) {
+     if (source != null) {
       var params = new TransformationDefinitionQueryParams();
       params.setFhirUrls(source); // NB! can match multiple definitions, but using the first one
       params.limit(2);
@@ -93,8 +82,8 @@ public class StructureMapTransformOperation implements InstanceOperationDefiniti
       throw new FhirException(400, IssueType.NOTFOUND, "StructureMap is missing");
     }
 
-    TransformationResult transformation = transformerService.transform(FhirMapper.toJson(instance), internalDefinition);
-    return new ResourceContent(transformation.getResult(), "json");
+    TransformationResult transformation = transformerService.transform(input, internalDefinition);
+    return new ResourceContent(transformation.getResult(), transformation.getResult().startsWith("<") ? "xml" : "json");
   }
 
   public Optional<Map<String, Object>> findParameter(List<Map<String, Object>> parameters, String name) {

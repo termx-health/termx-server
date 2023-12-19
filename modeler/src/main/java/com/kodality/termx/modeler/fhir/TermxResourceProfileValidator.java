@@ -1,4 +1,4 @@
-package com.kodality.termx.fhir;
+package com.kodality.termx.modeler.fhir;
 
 import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
