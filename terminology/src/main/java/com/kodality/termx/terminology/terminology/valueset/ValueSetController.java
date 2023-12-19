@@ -13,6 +13,7 @@ import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceChange;
 import com.kodality.termx.terminology.terminology.valueset.concept.ValueSetVersionConceptService;
 import com.kodality.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleService;
+import com.kodality.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleSetService;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetExpandRequest;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
@@ -21,6 +22,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionReference;
+import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
@@ -49,6 +51,7 @@ public class ValueSetController {
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
+  private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final ValueSetDuplicateService valueSetDuplicateService;
   private final ImportLogger importLogger;
@@ -217,6 +220,17 @@ public class ValueSetController {
   }
 
   //----------------ValueSet Version Rule----------------
+  @Authorized(Privilege.VS_EDIT)
+  @Put(uri = "/{valueSet}/versions/{version}/rule-sets/{id}")
+  public HttpResponse<?> updateRuleSet(@PathVariable String valueSet, @PathVariable String version, @PathVariable Long id,
+                                    @Body @Valid ValueSetVersionRuleSet ruleSet) {
+    ruleSet.setId(id);
+    provenanceService.provenanceValueSetVersion("save-rule-set", valueSet, version, () -> {
+      valueSetVersionRuleSetService.save(ruleSet, valueSet, version);
+    });
+    return HttpResponse.created(ruleSet);
+  }
+
   @Authorized(Privilege.VS_EDIT)
   @Post(uri = "/{valueSet}/versions/{version}/rules")
   public HttpResponse<?> createRule(@PathVariable String valueSet, @PathVariable String version, @Body @Valid ValueSetVersionRule rule) {

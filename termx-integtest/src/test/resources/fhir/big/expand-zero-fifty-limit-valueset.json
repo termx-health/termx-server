@@ -6,7 +6,7 @@
   "name" : "BigValueSetAll",
   "title" : "Big ValueSet All",
   "status" : "active",
-  "experimental" : true,
+  "experimental" : false,
   "date" : "2023-04-01",
   "publisher" : "FHIR Project",
   "compose" : {
@@ -26,54 +26,18 @@
       "valueInteger" : 0
     },
     {
+      "name" : "used-codesystem",
+      "valueUri" : "http://hl7.org/fhir/test/CodeSystem/big"
+    },
+    {
       "$optional$" : true,
       "name" : "version",
-      "valueCanonical" : "http://hl7.org/fhir/test/CodeSystem/big"
+      "valueUri" : "http://hl7.org/fhir/test/CodeSystem/big"
     }],
     "contains" : [{
       "system" : "http://hl7.org/fhir/test/CodeSystem/big",
       "code" : "code1",
       "display" : "Display 1"
-    },
-    {
-      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
-      "code" : "code2",
-      "display" : "Display 2"
-    },
-    {
-      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
-      "code" : "code3",
-      "display" : "Display 3"
-    },
-    {
-      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
-      "code" : "code4",
-      "display" : "Display 4"
-    },
-    {
-      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
-      "code" : "code5",
-      "display" : "Display 5"
-    },
-    {
-      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
-      "code" : "code6",
-      "display" : "Display 6"
-    },
-    {
-      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
-      "code" : "code7",
-      "display" : "Display 7"
-    },
-    {
-      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
-      "code" : "code8",
-      "display" : "Display 8"
-    },
-    {
-      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
-      "code" : "code9",
-      "display" : "Display 9"
     },
     {
       "system" : "http://hl7.org/fhir/test/CodeSystem/big",
@@ -127,6 +91,11 @@
     },
     {
       "system" : "http://hl7.org/fhir/test/CodeSystem/big",
+      "code" : "code2",
+      "display" : "Display 2"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
       "code" : "code20",
       "display" : "Display 20"
     },
@@ -174,6 +143,11 @@
       "system" : "http://hl7.org/fhir/test/CodeSystem/big",
       "code" : "code29",
       "display" : "Display 29"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
+      "code" : "code3",
+      "display" : "Display 3"
     },
     {
       "system" : "http://hl7.org/fhir/test/CodeSystem/big",
@@ -227,6 +201,11 @@
     },
     {
       "system" : "http://hl7.org/fhir/test/CodeSystem/big",
+      "code" : "code4",
+      "display" : "Display 4"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
       "code" : "code40",
       "display" : "Display 40"
     },
@@ -277,8 +256,33 @@
     },
     {
       "system" : "http://hl7.org/fhir/test/CodeSystem/big",
+      "code" : "code5",
+      "display" : "Display 5"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
       "code" : "code50",
       "display" : "Display 50"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
+      "code" : "code6",
+      "display" : "Display 6"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
+      "code" : "code7",
+      "display" : "Display 7"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
+      "code" : "code8",
+      "display" : "Display 8"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/big",
+      "code" : "code9",
+      "display" : "Display 9"
     }]
   }
 }

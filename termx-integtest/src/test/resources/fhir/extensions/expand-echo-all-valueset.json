@@ -6,7 +6,7 @@
   "name" : "ExtensionsValueSetAll",
   "title" : "Extensions ValueSet All",
   "status" : "active",
-  "experimental" : true,
+  "experimental" : false,
   "date" : "2023-04-01",
   "publisher" : "FHIR Project",
   "compose" : {
@@ -23,9 +23,22 @@
       "valueBoolean" : true
     },
     {
+      "name" : "used-codesystem",
+      "valueUri" : "http://hl7.org/fhir/test/CodeSystem/extensions"
+    },
+    {
+      "name" : "used-supplement",
+      "valueUri" : "http://hl7.org/fhir/test/CodeSystem/supplement|0.1.1"
+    },
+    {
       "$optional$" : true,
       "name" : "version",
-      "valueCanonical" : "http://hl7.org/fhir/test/CodeSystem/extensions"
+      "valueUri" : "http://hl7.org/fhir/test/CodeSystem/extensions"
+    },
+    {
+      "$optional$" : true,
+      "name" : "version",
+      "valueUri" : "http://hl7.org/fhir/test/CodeSystem/supplement|0.1.1"
     }],
     "property" : [{
       "code" : "weight",
@@ -40,20 +53,6 @@
       "uri" : "http://hl7.org/fhir/concept-properties#order"
     }],
     "contains" : [{
-      "extension" : [{
-        "extension" : [{
-          "url" : "code",
-          "valueCode" : "CODE-1"
-        },
-        {
-          "url" : "use",
-          "valueCoding" : {
-            "system" : "http://hl7.org/fhir/codesystem-altcode-kind",
-            "code" : "case-insensitive"
-          }
-        }],
-        "url" : "http://hl7.org/fhir/StructureDefinition/codesystem-alternate"
-      }],
       "system" : "http://hl7.org/fhir/test/CodeSystem/extensions",
       "code" : "code1",
       "display" : "Display 1",
@@ -64,6 +63,10 @@
         }],
         "language" : "de",
         "value" : "Mein erster Code"
+      },
+      {
+        "language" : "nl",
+        "value" : "ectenoot"
       }],
       "property" : [{
         "code" : "label",
@@ -80,20 +83,6 @@
     },
     {
       "extension" : [{
-        "extension" : [{
-          "url" : "code",
-          "valueCode" : "CODE-2"
-        },
-        {
-          "url" : "use",
-          "valueCoding" : {
-            "system" : "http://hl7.org/fhir/codesystem-altcode-kind",
-            "code" : "case-insensitive"
-          }
-        }],
-        "url" : "http://hl7.org/fhir/StructureDefinition/codesystem-alternate"
-      },
-      {
         "url" : "http://hl7.org/fhir/StructureDefinition/rendering-style",
         "valueString" : "font-weight: bold; font-decoration: underline"
       },
@@ -115,20 +104,6 @@
     },
     {
       "extension" : [{
-        "extension" : [{
-          "url" : "code",
-          "valueCode" : "CODE-3"
-        },
-        {
-          "url" : "use",
-          "valueCoding" : {
-            "system" : "http://hl7.org/fhir/codesystem-altcode-kind",
-            "code" : "case-insensitive"
-          }
-        }],
-        "url" : "http://hl7.org/fhir/StructureDefinition/codesystem-alternate"
-      },
-      {
         "url" : "http://hl7.org/fhir/StructureDefinition/rendering-style",
         "valueString" : "font-weight: bold; font-decoration: strikethrough"
       },
@@ -149,34 +124,6 @@
       }]
     },
     {
-      "extension" : [{
-        "extension" : [{
-          "url" : "code",
-          "valueCode" : "codeFour"
-        },
-        {
-          "url" : "use",
-          "valueCoding" : {
-            "system" : "http://hl7.org/fhir/codesystem-altcode-kind",
-            "code" : "alternate"
-          }
-        }],
-        "url" : "http://hl7.org/fhir/StructureDefinition/codesystem-alternate"
-      },
-      {
-        "extension" : [{
-          "url" : "code",
-          "valueCode" : "CODE-4"
-        },
-        {
-          "url" : "use",
-          "valueCoding" : {
-            "system" : "http://hl7.org/fhir/codesystem-altcode-kind",
-            "code" : "case-insensitive"
-          }
-        }],
-        "url" : "http://hl7.org/fhir/StructureDefinition/codesystem-alternate"
-      }],
       "system" : "http://hl7.org/fhir/test/CodeSystem/extensions",
       "code" : "code4",
       "display" : "Display 4",
@@ -190,20 +137,6 @@
       }]
     },
     {
-      "extension" : [{
-        "extension" : [{
-          "url" : "code",
-          "valueCode" : "CODE-5"
-        },
-        {
-          "url" : "use",
-          "valueCoding" : {
-            "system" : "http://hl7.org/fhir/codesystem-altcode-kind",
-            "code" : "case-insensitive"
-          }
-        }],
-        "url" : "http://hl7.org/fhir/StructureDefinition/codesystem-alternate"
-      }],
       "system" : "http://hl7.org/fhir/test/CodeSystem/extensions",
       "code" : "code5",
       "display" : "Display 5",
@@ -217,34 +150,6 @@
       }]
     },
     {
-      "extension" : [{
-        "extension" : [{
-          "url" : "code",
-          "valueCode" : "6code"
-        },
-        {
-          "url" : "use",
-          "valueCoding" : {
-            "system" : "http://hl7.org/fhir/codesystem-altcode-kind",
-            "code" : "deprecated"
-          }
-        }],
-        "url" : "http://hl7.org/fhir/StructureDefinition/codesystem-alternate"
-      },
-      {
-        "extension" : [{
-          "url" : "code",
-          "valueCode" : "CODE-6"
-        },
-        {
-          "url" : "use",
-          "valueCoding" : {
-            "system" : "http://hl7.org/fhir/codesystem-altcode-kind",
-            "code" : "case-insensitive"
-          }
-        }],
-        "url" : "http://hl7.org/fhir/StructureDefinition/codesystem-alternate"
-      }],
       "system" : "http://hl7.org/fhir/test/CodeSystem/extensions",
       "code" : "code6",
       "display" : "Display 6",

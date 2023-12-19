@@ -3,10 +3,10 @@
   "resourceType" : "ValueSet",
   "url" : "http://hl7.org/fhir/test/ValueSet/en-single",
   "version" : "5.0.0",
-  "name" : "LanguageValueSetDESingle",
-  "title" : "Language ValueSet DE Single",
+  "name" : "LanguageValueSetENSingle",
+  "title" : "Language ValueSet EN Single",
   "status" : "active",
-  "experimental" : true,
+  "experimental" : false,
   "date" : "2023-04-01",
   "publisher" : "FHIR Project",
   "compose" : {
@@ -19,8 +19,16 @@
     "timestamp" : "$instant$",
     "total" : 7,
     "parameter" : [{
+      "name" : "excludeNested",
+      "valueBoolean" : true
+    },
+    {
       "name" : "includeDesignations",
       "valueBoolean" : true
+    },
+    {
+      "name" : "used-codesystem",
+      "valueUri" : "http://hl7.org/fhir/test/CodeSystem/en-single"
     },
     {
       "$optional$" : true,
@@ -35,27 +43,27 @@
     {
       "system" : "http://hl7.org/fhir/test/CodeSystem/en-single",
       "code" : "code2",
-      "display" : "Display 2",
-      "contains" : [{
-        "system" : "http://hl7.org/fhir/test/CodeSystem/en-single",
-        "code" : "code2a",
-        "display" : "Display 2a",
-        "contains" : [{
-          "system" : "http://hl7.org/fhir/test/CodeSystem/en-single",
-          "code" : "code2aI",
-          "display" : "Display 2aI"
-        },
-        {
-          "system" : "http://hl7.org/fhir/test/CodeSystem/en-single",
-          "code" : "code2aII",
-          "display" : "Display 2aII"
-        }]
-      },
-      {
-        "system" : "http://hl7.org/fhir/test/CodeSystem/en-single",
-        "code" : "code2b",
-        "display" : "Display 2b"
-      }]
+      "display" : "Display 2"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/en-single",
+      "code" : "code2a",
+      "display" : "Display 2a"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/en-single",
+      "code" : "code2aI",
+      "display" : "Display 2aI"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/en-single",
+      "code" : "code2aII",
+      "display" : "Display 2aII"
+    },
+    {
+      "system" : "http://hl7.org/fhir/test/CodeSystem/en-single",
+      "code" : "code2b",
+      "display" : "Display 2b"
     },
     {
       "system" : "http://hl7.org/fhir/test/CodeSystem/en-single",

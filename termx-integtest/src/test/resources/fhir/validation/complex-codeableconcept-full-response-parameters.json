@@ -12,7 +12,12 @@
         "version" : "1.0.0",
         "code" : "code1",
         "display" : "Display 1 (1.0)"
-      }]
+      },{
+        "$optional$" : true,
+        "system" : "http://hl7.org/fhir/test/CodeSystem/simple",
+        "code" : "xxxx"
+      }],
+      "text" : "Some crap text"
     }
   },
   {
@@ -25,25 +30,25 @@
       "resourceType" : "OperationOutcome",
       "issue" : [{
         "severity" : "error",
-        "code" : "invalid",
+        "code" : "code-invalid",
         "details" : {
-          "text" : "Wrong Display Name 'xxxxx' for http://hl7.org/fhir/test/CodeSystem/version#code1 - should be 'Display 1 (1.0)' (for the language(s) '--')"
+          "text" : "$external:1:xxxx$"
         },
-        "location" : ["CodeableConcept.coding[0].display"]
+        "location" : ["CodeableConcept.coding[1].code"]
       },
       {
         "severity" : "error",
         "code" : "invalid",
         "details" : {
-          "text" : "Unknown Code 'xxxx' in the system 'http://hl7.org/fhir/test/CodeSystem/simple'"
+          "text" : "$external:2:xxxx$"
         },
-        "location" : ["CodeableConcept.coding[1].code"]
+        "location" : ["CodeableConcept.coding[0].display"]
       }]
     }
   },
   {
     "name" : "message",
-    "valueString" : "Wrong Display Name 'xxxxx' for http://hl7.org/fhir/test/CodeSystem/version#code1 - should be 'Display 1 (1.0)' (for the language(s) '--'); Unknown Code 'xxxx' in the system 'http://hl7.org/fhir/test/CodeSystem/simple'"
+    "valueString" : "$external:3:xxxx$"
   },
   {
     "name" : "result",

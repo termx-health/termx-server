@@ -1,14 +1,16 @@
 {
   "resourceType" : "Parameters",
-  "language" : "en",
   "parameter" : [{
     "name" : "url",
     "valueUrl" : "http://hl7.org/fhir/test/ValueSet/de-multi"
   },{
     "name" : "displayLanguage",
-    "valueCode" : "en"
+    "valueCode" : "en, *; q=0"
   },{
     "name" : "includeDesignations",
+    "valueBoolean" : true
+  },{
+    "name" : "excludeNested",
     "valueBoolean" : true
   }]
 }

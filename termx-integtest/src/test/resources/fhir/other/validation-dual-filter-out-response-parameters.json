@@ -6,17 +6,17 @@
       "resourceType" : "OperationOutcome",
       "issue" : [{
         "severity" : "error",
-        "code" : "invalid",
+        "code" : "code-invalid",
         "details" : {
-          "text" : "The provided code http://hl7.org/fhir/test/CodeSystem/dual-filter#AA is not in the value set 'http://hl7.org/fhir/test/ValueSet/dual-filter'"
+          "text" : "The provided code 'http://hl7.org/fhir/test/CodeSystem/dual-filter#AA' was not found in the value set 'http://hl7.org/fhir/test/ValueSet/dual-filter'"
         },
-        "location" : ["CodeableConcept"]
+        "location" : ["CodeableConcept.coding[0].code"]
       }]
     }
   },
   {
     "name" : "message",
-    "valueString" : "The provided code http://hl7.org/fhir/test/CodeSystem/dual-filter#AA is not in the value set 'http://hl7.org/fhir/test/ValueSet/dual-filter'"
+    "valueString" : "The provided code 'http://hl7.org/fhir/test/CodeSystem/dual-filter#AA' was not found in the value set 'http://hl7.org/fhir/test/ValueSet/dual-filter'"
   },
   {
     "name" : "result",

@@ -6,14 +6,14 @@
     "valueString" : "unknown extensions are ignored"
   },{
     "url" : "http://hl7.org/fhir/StructureDefinition/valueset-supplement",
-    "valueCanonical" : "http://hl7.org/fhir/test/CodeSystem/supplement"
+    "valueCanonical" : "http://hl7.org/fhir/test/CodeSystem/supplement|0.1.1"
   }],
   "url" : "http://hl7.org/fhir/test/ValueSet/extensions-enumerated",
   "version" : "5.0.0",
   "name" : "ExtensionsValueSetEnumerated",
   "title" : "Extensions ValueSet Enumerated",
   "status" : "active",
-  "experimental" : true,
+  "experimental" : false,
   "date" : "2023-04-01",
   "publisher" : "FHIR Project",
   "compose" : {
@@ -89,6 +89,9 @@
         "extension" : [{
           "url" : "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder",
           "valueInteger" : 4
+        },{
+          "url" : "http://hl7.org/fhir/StructureDefinition/valueset-concept-definition",
+          "valueString" : "A valueset specific definition"
         },{
           "url" : "http://hl7.org/fhir/StructureDefinition/valueset-label",
           "valueString" : "e."

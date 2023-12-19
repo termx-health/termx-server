@@ -12,6 +12,6 @@
     }
   },{
     "name" : "displayLanguage",
-    "valueCode" : "en"
+    "valueCode" : "en, en-AU; q=0.4"
   }]
 }

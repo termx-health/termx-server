@@ -6,7 +6,7 @@
   "name" : "SimpleValueSetAll",
   "title" : "Simple ValueSet All",
   "status" : "active",
-  "experimental" : true,
+  "experimental" : false,
   "date" : "2023-04-01",
   "publisher" : "FHIR Project",
   "compose" : {
@@ -23,6 +23,11 @@
       "valueBoolean" : true
     },
     {
+      "name" : "used-codesystem",
+      "valueUri" : "http://hl7.org/fhir/test/CodeSystem/simple|0.1.0"
+    },
+    {
+      "$optional$" : true,
       "name" : "version",
       "valueUri" : "http://hl7.org/fhir/test/CodeSystem/simple|0.1.0"
     }],
