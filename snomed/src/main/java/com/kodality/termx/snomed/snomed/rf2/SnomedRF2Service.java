@@ -1,6 +1,7 @@
 package com.kodality.termx.snomed.snomed.rf2;
 
 import com.kodality.termx.core.auth.SessionStore;
+import com.kodality.termx.snomed.client.SnowstormClient;
 import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
 import com.kodality.termx.snomed.description.SnomedDescriptionType;
@@ -37,6 +38,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 @RequiredArgsConstructor
 public class SnomedRF2Service {
   private final static String process = "snomed-rf2-export";
+  private final static String file_load = "snomed-rf2-load-file";
 
   public static final String CONCEPT_FILE_NAME = "sct2_Concept_Snapshot_MAIN_SNOMEDCT-EST.txt";
   public static final String DESCRIPTION_FILE_NAME = "sct2_Description_Snapshot_MAIN_SNOMEDCT-EST.txt";
@@ -52,9 +54,24 @@ public class SnomedRF2Service {
 
 
   private final SnomedService snomedService;
+  private final SnowstormClient snowstormClient;
   private final CodeSystemProvider codeSystemProvider;
   private final LorqueProcessService lorqueProcessService;
   private final SnomedTranslationService snomedTranslationService;
+
+  public LorqueProcess getRF2File(String jobId) {
+    LorqueProcess lorqueProcess = lorqueProcessService.start(new LorqueProcess().setProcessName(SnomedRF2Service.file_load));
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
+      try {
+        ProcessResult result = ProcessResult.binary(snowstormClient.getRF2File(jobId));
+        lorqueProcessService.complete(lorqueProcess.getId(), result);
+      } catch (Exception e) {
+        ProcessResult result = ProcessResult.text(ExceptionUtils.getMessage(e) + "\n" + ExceptionUtils.getStackTrace(e));
+        lorqueProcessService.fail(lorqueProcess.getId(), result);
+      }
+    }));
+    return lorqueProcess;
+  }
 
   public LorqueProcess startRF2Export() {
     LorqueProcess lorqueProcess = lorqueProcessService.start(new LorqueProcess().setProcessName(SnomedRF2Service.process));

@@ -147,10 +147,6 @@ public class SnowstormClient {
     }).orElseThrow());
   }
 
-  public CompletableFuture<SnomedExportJob> loadExportJob(String jobId) {
-    return client.GET("exports/" + jobId, SnomedExportJob.class);
-  }
-
   public byte[] getRF2File(String jobId) {
     return binaryHttpClient.GET("exports/" + jobId + "/archive").body();
   }

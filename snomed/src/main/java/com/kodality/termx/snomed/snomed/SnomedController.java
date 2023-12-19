@@ -222,18 +222,19 @@ public class SnomedController {
     return Map.of("jobId", snowstormClient.createExportJob(request).join());
   }
 
+
   @Authorized(Privilege.SNOMED_VIEW)
-  @Get("/exports/{jobId}")
-  public SnomedExportJob loadExportJob(@PathVariable String jobId) {
-    return snowstormClient.loadExportJob(jobId).join();
+  @Get(value = "/exports/{jobId}/archive")
+  public HttpResponse<?> getRF2File(@PathVariable String jobId) {
+    LorqueProcess lorqueProcess = snomedRF2Service.getRF2File(jobId);
+    return HttpResponse.accepted().body(lorqueProcess);
   }
 
   @Authorized(Privilege.SNOMED_VIEW)
-  @Get(value = "/exports/{jobId}/archive", produces = "application/zip")
-  public HttpResponse<?> getRF2File(@PathVariable String jobId) {
-    MutableHttpResponse<byte[]> response = HttpResponse.ok(snowstormClient.getRF2File(jobId));
-    return response
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=snomed_translations.zip")
+  @Get(value = "/exports/archive/result/{lorqueProcessId}", produces = "application/zip")
+  public HttpResponse<?> getRF2File(Long lorqueProcessId) {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
+    return response.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=snomed_export.zip")
         .contentType(MediaType.of("application/zip"));
   }
 
