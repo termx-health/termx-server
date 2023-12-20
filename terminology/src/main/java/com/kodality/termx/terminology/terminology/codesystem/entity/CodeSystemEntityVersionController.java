@@ -18,7 +18,9 @@ public class CodeSystemEntityVersionController {
   @Get(uri = "/{id}")
   public CodeSystemEntityVersion getEntityVersion(@PathVariable Long id) {
     CodeSystemEntityVersion csev = codeSystemEntityVersionService.load(id);
-    SessionStore.require().checkPermitted(csev.getCodeSystem(), Privilege.CS_VIEW);
+    if (csev != null) {
+      SessionStore.require().checkPermitted(csev.getCodeSystem(), Privilege.CS_VIEW);
+    }
     return csev;
   }
 }
