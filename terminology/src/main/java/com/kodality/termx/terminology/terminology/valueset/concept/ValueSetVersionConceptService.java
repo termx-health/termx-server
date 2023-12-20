@@ -89,7 +89,7 @@ public class ValueSetVersionConceptService {
     for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
       expansion.addAll(provider.expand(ruleSet, version, preferredLanguage));
     }
-    if (ruleSet.getInactive() != null && !ruleSet.getInactive()) {
+    if (ruleSet.getInactive() == null || !ruleSet.getInactive()) {
       return expansion.stream().filter(ValueSetVersionConcept::isActive).collect(Collectors.toList());
     }
     return expansion;
