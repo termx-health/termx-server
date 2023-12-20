@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -82,7 +83,7 @@ public class TransformerService {
   private final TransformationDefinitionRepository structureMapRepository;
   private final ResourceLoader resourceLoader;
   private final TerminologyServerHttpClientService httpClientService;
-  private final FhirFshConverter fshConverter;
+  private final Optional<FhirFshConverter> fshConverter;
   private final HttpClient httpClient = new HttpClient();
   private ValidationEngine engine;
   @Value("${micronaut.server.port}")
@@ -203,7 +204,7 @@ public class TransformerService {
         case definition -> {
           var sd = structureDefinitionService.load(Long.valueOf(res.getReference().getLocalId())).orElseThrow();
           if ("fsh".equals(sd.getContentFormat())) {
-            yield fshConverter.toFhir(sd.getContent()).join();
+            yield fshConverter.orElseThrow().toFhir(sd.getContent()).join();
           }
           yield sd.getContent();
         }

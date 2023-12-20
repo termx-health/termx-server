@@ -13,10 +13,10 @@ import com.kodality.termx.modeler.transformationdefinition.TransformationResult;
 import com.kodality.termx.modeler.transformationdefinition.TransformerService;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.other.Binary;
+import com.kodality.zmei.fhir.resource.other.OperationOutcome;
+import com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r4.model.ResourceType;
@@ -53,8 +53,7 @@ public class StructureMapTransformOperation implements InstanceOperationDefiniti
       throw new FhirException(400, IssueType.INVALID, "Matched multiple StructureMap resources");
     }
 
-    TransformationResult transformation = transformerService.transform(input, resp.findFirst().orElseThrow());
-    return new ResourceContent(transformation.getResult(), transformation.getResult().startsWith("<") ? "xml" : "json");
+    return buildResponse(transformerService.transform(input, resp.findFirst().orElseThrow()));
   }
 
   @Override
@@ -67,7 +66,7 @@ public class StructureMapTransformOperation implements InstanceOperationDefiniti
     String source = p.findParameter("valueUri").map(c -> c.getValueUri() == null ? c.getValueString() : c.getValueUri()).orElse(null);
 
     TransformationDefinition internalDefinition = null;
-     if (source != null) {
+    if (source != null) {
       var params = new TransformationDefinitionQueryParams();
       params.setFhirUrls(source); // NB! can match multiple definitions, but using the first one
       params.limit(2);
@@ -82,11 +81,17 @@ public class StructureMapTransformOperation implements InstanceOperationDefiniti
       throw new FhirException(400, IssueType.NOTFOUND, "StructureMap is missing");
     }
 
-    TransformationResult transformation = transformerService.transform(input, internalDefinition);
+    return buildResponse(transformerService.transform(input, internalDefinition));
+  }
+
+
+  private static ResourceContent buildResponse(TransformationResult transformation) {
+    if (transformation.getError() != null) {
+      OperationOutcome oo = new OperationOutcome();
+      oo.setIssue(List.of(new OperationOutcomeIssue().setSeverity("error").setCode(transformation.getError())));
+      return new ResourceContent(FhirMapper.toJson(oo), "json");
+    }
     return new ResourceContent(transformation.getResult(), transformation.getResult().startsWith("<") ? "xml" : "json");
   }
 
-  public Optional<Map<String, Object>> findParameter(List<Map<String, Object>> parameters, String name) {
-    return parameters == null ? Optional.empty() : parameters.stream().filter(pp -> name.equals(pp.get("name"))).findFirst();
-  }
 }
