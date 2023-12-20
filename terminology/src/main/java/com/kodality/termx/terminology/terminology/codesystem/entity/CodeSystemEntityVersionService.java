@@ -102,6 +102,9 @@ public class CodeSystemEntityVersionService {
   }
 
   public CodeSystemEntityVersion decorate(CodeSystemEntityVersion version) {
+    if (version == null) {
+      return null;
+    }
     version.setDesignations(designationService.loadAll(version.getId()));
     version.setPropertyValues(entityPropertyValueService.loadAll(version.getId()));
     version.setAssociations(codeSystemAssociationService.loadAll(version.getId()));
