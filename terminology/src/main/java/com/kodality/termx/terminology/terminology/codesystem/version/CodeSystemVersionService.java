@@ -2,7 +2,10 @@ package com.kodality.termx.terminology.terminology.codesystem.version;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.terminology.ApiError;
+import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.ts.PublicationStatus;
+import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
@@ -20,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CodeSystemVersionService {
   private final CodeSystemVersionRepository repository;
+  private final CodeSystemEntityVersionService entityVersionService;
 
   @Transactional
   public void save(CodeSystemVersion version) {
@@ -82,6 +86,12 @@ public class CodeSystemVersionService {
       return;
     }
     repository.activate(codeSystem, version);
+
+    List<CodeSystemEntityVersion> entityVersions = entityVersionService.query(new CodeSystemEntityVersionQueryParams()
+        .setStatus(PublicationStatus.draft)
+        .setCodeSystem(codeSystem)
+        .setCodeSystemVersion(version).all()).getData();
+    entityVersionService.activate(codeSystem, entityVersions.stream().map(CodeSystemEntityVersion::getId).toList());
   }
 
   @Transactional
