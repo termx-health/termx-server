@@ -68,6 +68,13 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
+  public void cancel(Long codeSystemEntityVersionId) {
+    SqlBuilder sb = new SqlBuilder("update terminology.code_system_association set sys_status = 'C' where " +
+        "(source_code_system_entity_version_id = ? or target_code_system_entity_version_id = ?) " +
+        "and sys_status = 'A'", codeSystemEntityVersionId, codeSystemEntityVersionId);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
   public QueryResult<CodeSystemAssociation> query(CodeSystemAssociationQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_association csa where csa.sys_status = 'A'");

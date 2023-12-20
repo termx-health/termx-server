@@ -313,7 +313,7 @@ public class CodeSystemController {
   @Delete(uri = "/{codeSystem}/entity-versions/{id}")
   public HttpResponse<?> deleteEntityVersion(@PathVariable String codeSystem, @PathVariable Long id) {
     CodeSystemEntityVersion version = codeSystemEntityVersionService.load(id);
-    codeSystemEntityVersionService.cancel(codeSystem, id);
+    codeSystemEntityVersionService.cancel(id);
     provenanceService.create(CodeSystemProvenanceService.provenance("delete", version));
     return HttpResponse.noContent();
   }

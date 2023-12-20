@@ -64,6 +64,12 @@ public class CodeSystemAssociationService {
   }
 
   @Transactional
+  public void cancel(Long codeSystemEntityVersionId) {
+    repository.cancel(codeSystemEntityVersionId);
+  }
+
+
+  @Transactional
   public void batchUpsert(Map<Long, List<CodeSystemAssociation>> associations, String codeSystem) {
     List<Entry<Long, List<CodeSystemAssociation>>> entries = associations.entrySet().stream().toList();
     validate(entries);

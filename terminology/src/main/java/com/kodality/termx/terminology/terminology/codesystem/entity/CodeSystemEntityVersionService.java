@@ -216,10 +216,10 @@ public class CodeSystemEntityVersionService {
   }
 
   @Transactional
-  public void cancel(String codeSystem, Long id) {
+  public void cancel(Long id) {
     designationService.save(List.of(), id);
     entityPropertyValueService.save(List.of(), id);
-    codeSystemAssociationService.save(List.of(), id, codeSystem);
+    codeSystemAssociationService.cancel(id);
 
     repository.cancel(id);
     conceptRefreshViewJob.refreshView();
