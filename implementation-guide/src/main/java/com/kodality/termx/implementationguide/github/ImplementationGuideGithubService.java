@@ -48,8 +48,8 @@ public class ImplementationGuideGithubService {
   private static final String PAGECONTENT = INPUT + "/pagecontent";
   //  private static final String FSH = INPUT + "/fsh";
   private static final Map<String, Map<String, String>> PATHS = Map.of(
-      "CodeSystem", Map.of("fhir", VOCABULARY/*, "fsh", FSH + "/code-systems"*/),
-      "ValueSet", Map.of("fhir", VOCABULARY/*, "fsh", FSH + "/value-sets"*/),
+      "CodeSystem", Map.of("fhir", VOCABULARY + "/code-systems"/*, "fsh", FSH + "/code-systems"*/),
+      "ValueSet", Map.of("fhir", VOCABULARY + "/value-sets"/*, "fsh", FSH + "/value-sets"*/),
       "WikiPage", Map.of("md", PAGECONTENT)
   );
 
