@@ -1,5 +1,6 @@
 package com.kodality.termx.ts.mapset;
 
+import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
 import io.micronaut.core.annotation.Introspected;
 import java.time.LocalDate;
@@ -21,6 +22,7 @@ public class MapSetVersion extends MapSetVersionReference {
   private LocalDate releaseDate;
   private LocalDate expirationDate;
   private OffsetDateTime created;
+  private List<Identifier> identifiers;
 
   private MapSetVersionScope scope;
   private MapSetVersionStatistics statistics;

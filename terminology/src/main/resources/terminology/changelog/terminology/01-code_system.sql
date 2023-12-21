@@ -117,3 +117,7 @@ alter table terminology.code_system drop column name_bak;
 --changeset kodality:code_system-permissions
 alter table terminology.code_system add column permissions jsonb;
 --
+
+--changeset kodality:code_system_version-identifiers
+alter table terminology.code_system_version add column identifiers jsonb;
+--

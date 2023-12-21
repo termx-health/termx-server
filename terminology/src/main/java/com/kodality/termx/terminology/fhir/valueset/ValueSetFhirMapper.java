@@ -98,7 +98,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     fhirValueSet.setPurpose(toFhirName(valueSet.getPurpose(), version.getPreferredLanguage()));
     fhirValueSet.setPrimitiveExtensions("purpose", toFhirTranslationExtension(valueSet.getPurpose(), version.getPreferredLanguage()));
     fhirValueSet.setContact(toFhirContacts(valueSet.getContacts()));
-    fhirValueSet.setIdentifier(toFhirIdentifiers(valueSet.getIdentifiers()));
+    fhirValueSet.setIdentifier(toFhirIdentifiers(valueSet.getIdentifiers(), version.getIdentifiers()));
     fhirValueSet.setText(toFhirText(valueSet.getNarrative()));
     fhirValueSet.setPublisher(valueSet.getPublisher());
     fhirValueSet.setExperimental(valueSet.getExperimental() != null && valueSet.getExperimental());
@@ -435,6 +435,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     version.setReleaseDate(valueSet.getDate() == null ? LocalDate.now() : LocalDate.from(valueSet.getDate()));
     version.setRuleSet(fromFhirCompose(valueSet));
     version.setSnapshot(fromFhirExpansion(valueSet));
+    version.setIdentifiers(fromFhirVersionIdentifiers(valueSet.getIdentifier()));
     return version;
   }
 

@@ -7,12 +7,15 @@ import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.ContactDetail.Telecom;
 import com.kodality.termx.ts.Language;
 import com.kodality.zmei.fhir.Extension;
+import com.kodality.zmei.fhir.datatypes.CodeableConcept;
+import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Identifier;
 import com.kodality.zmei.fhir.datatypes.Narrative;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public abstract class BaseFhirMapper {
   public static final String SEPARATOR = "--";
+  public static final String VERSION_IDENTIFIER_TYPE = "version";
 
   public static String[] parseCompositeId(String id) {
     id = URLDecoder.decode(id, StandardCharsets.UTF_8);
@@ -63,11 +67,16 @@ public abstract class BaseFhirMapper {
     return name == null ? null : List.of(new com.kodality.zmei.fhir.datatypes.ContactDetail().setName(name));
   }
 
-  protected static List<Identifier> toFhirIdentifiers(List<com.kodality.commons.model.Identifier> identifiers) {
-    if (identifiers == null) {
+  protected static List<Identifier> toFhirIdentifiers(List<com.kodality.commons.model.Identifier> identifiers, List<com.kodality.commons.model.Identifier> versionIdentifiers) {
+    if (identifiers == null && versionIdentifiers == null) {
       return null;
     }
-    return identifiers.stream().map(i -> new Identifier().setSystem(i.getSystem()).setValue(i.getValue())).collect(Collectors.toList());
+    List<Identifier> fhirIdentifiers = Optional.ofNullable(identifiers).orElse(new ArrayList<>()).stream()
+        .map(i -> new Identifier().setSystem(i.getSystem()).setValue(i.getValue())).collect(Collectors.toList());
+    fhirIdentifiers.addAll(Optional.ofNullable(versionIdentifiers).orElse(new ArrayList<>()).stream()
+        .filter(vi -> identifiers == null || identifiers.stream().noneMatch(i -> (i.getSystem() + i.getValue()).equals(vi.getSystem() + vi.getValue())))
+        .map(vi -> new Identifier().setSystem(vi.getSystem()).setValue(vi.getValue()).setType(new CodeableConcept(new Coding(VERSION_IDENTIFIER_TYPE)))).toList());
+    return fhirIdentifiers;
   }
 
   public static String toFhirName(LocalizedName name, String lang) {
@@ -98,7 +107,16 @@ public abstract class BaseFhirMapper {
     if (identifiers == null) {
       return null;
     }
-    return identifiers.stream().map(i -> new com.kodality.commons.model.Identifier(i.getSystem(), i.getValue())).collect(Collectors.toList());
+    return identifiers.stream().filter(i -> i.getType() == null || i.getType().getCoding() == null || i.getType().getCoding().stream().noneMatch(c -> VERSION_IDENTIFIER_TYPE.equals(c.getCode())))
+        .map(i -> new com.kodality.commons.model.Identifier(i.getSystem(), i.getValue())).collect(Collectors.toList());
+  }
+
+  protected static List<com.kodality.commons.model.Identifier> fromFhirVersionIdentifiers(List<com.kodality.zmei.fhir.datatypes.Identifier> identifiers) {
+    if (identifiers == null) {
+      return null;
+    }
+    return identifiers.stream().filter(i -> i.getType() != null && i.getType().getCoding() != null && i.getType().getCoding().stream().anyMatch(c -> VERSION_IDENTIFIER_TYPE.equals(c.getCode())))
+        .map(i -> new com.kodality.commons.model.Identifier(i.getSystem(), i.getValue())).collect(Collectors.toList());
   }
 
   protected static List<ContactDetail> fromFhirContacts(List<com.kodality.zmei.fhir.datatypes.ContactDetail> details) {

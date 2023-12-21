@@ -207,3 +207,7 @@ alter table terminology.value_set_version add column preferred_language text;
 --changeset kodality:value_set_version_rule-properties
 alter table terminology.value_set_version_rule add column properties jsonb;
 --
+
+--changeset kodality:value_set_version-identifiers
+alter table terminology.value_set_version add column identifiers jsonb;
+--

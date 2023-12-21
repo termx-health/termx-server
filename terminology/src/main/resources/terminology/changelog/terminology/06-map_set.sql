@@ -121,3 +121,7 @@ create index map_set_property_defined_property_idx on terminology.map_set_proper
 
 select core.create_table_metadata('terminology.map_set_property');
 --rollback drop table if exists terminology.map_set_property;
+
+--changeset kodality:map_set_version-identifiers
+alter table terminology.map_set_version add column identifiers jsonb;
+--

@@ -78,7 +78,7 @@ public class CodeSystemProvenanceService {
     Function<CodeSystem, Map<String, Object>> fn = cs -> {
       Map<String, Object> map = JsonUtil.getObjectMapper().convertValue(cs, Map.class);
       map.put("properties", cs.getProperties() == null ? null : cs.getProperties().stream().collect(Collectors.toMap(EntityProperty::getName, x -> x)));
-      map.put("identifiers", cs.getIdentifiers() == null ? null : cs.getIdentifiers().stream().collect(Collectors.toMap(Identifier::getSystem, x -> x)));
+      map.put("identifiers", cs.getIdentifiers() == null ? null : cs.getIdentifiers().stream().collect(Collectors.toMap(i -> i.getSystem() + i.getValue(), x -> x)));
       map.put("contacts",
           cs.getContacts() == null ? null : cs.getContacts().stream().collect(Collectors.toMap(x -> x.getName() == null ? "" : x.getName(), x -> x)));
       return map;

@@ -5,7 +5,9 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.db.util.PgUtil;
+import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import javax.inject.Singleton;
@@ -17,6 +19,7 @@ public class ValueSetVersionRepository extends BaseRepository {
     bp.addColumnProcessor("rule_set", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("snapshot", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
   });
 
   private final static String select = "select distinct on (vsv.id) vsv.*, " +
@@ -62,6 +65,7 @@ public class ValueSetVersionRepository extends BaseRepository {
     ssb.property("expiration_date", version.getExpirationDate());
     ssb.property("created", version.getCreated());
     ssb.property("algorithm", version.getAlgorithm());
+    ssb.jsonProperty("identifiers", version.getIdentifiers());
     SqlBuilder sb = ssb.buildSave("terminology.value_set_version", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     version.setId(id);

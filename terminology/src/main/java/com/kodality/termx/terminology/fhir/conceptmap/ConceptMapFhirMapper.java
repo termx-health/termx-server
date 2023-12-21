@@ -98,7 +98,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     fhirConceptMap.setPrimitiveExtensions("purpose", toFhirTranslationExtension(mapSet.getPurpose(), version.getPreferredLanguage()));
     fhirConceptMap.setText(toFhirText(mapSet.getNarrative()));
     fhirConceptMap.setExperimental(mapSet.getExperimental() != null && mapSet.getExperimental());
-    fhirConceptMap.setIdentifier(toFhirIdentifiers(mapSet.getIdentifiers()));
+    fhirConceptMap.setIdentifier(toFhirIdentifiers(mapSet.getIdentifiers(), version.getIdentifiers()));
     fhirConceptMap.setContact(toFhirContacts(mapSet.getContacts()));
     fhirConceptMap.setLastReviewDate(toFhirDate(provenances, "reviewed"));
     fhirConceptMap.setApprovalDate(toFhirDate(provenances, "approved"));
@@ -242,6 +242,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     version.setReleaseDate(conceptMap.getDate() == null ? LocalDate.now() : LocalDate.from(conceptMap.getDate()));
     version.setScope(fromFhirScope(conceptMap));
     version.setAssociations(fromFhirAssociations(conceptMap));
+    version.setIdentifiers(fromFhirVersionIdentifiers(conceptMap.getIdentifier()));
     return version;
   }
 

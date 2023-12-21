@@ -5,7 +5,9 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.db.util.PgUtil;
+import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
@@ -20,6 +22,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(CodeSystemVersion.class, pb -> {
     pb.addColumnProcessor("description", PgBeanProcessor.fromJson());
     pb.addColumnProcessor("supported_languages", PgBeanProcessor.fromArray());
+    pb.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
   });
 
   private final static String select = "select csv.*, " +
@@ -40,6 +43,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
     ssb.property("expiration_date", version.getExpirationDate());
     ssb.property("created", version.getCreated());
     ssb.property("status", version.getStatus());
+    ssb.jsonProperty("identifiers", version.getIdentifiers());
     SqlBuilder sb = ssb.buildSave("terminology.code_system_version", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     version.setId(id);

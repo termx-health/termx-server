@@ -4,7 +4,9 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
@@ -16,7 +18,7 @@ public class MapSetVersionRepository extends BaseRepository {
     bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("scope", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("statistics", PgBeanProcessor.fromJson());
-
+    bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
   });
 
   private final static String select = "select msv.*, " +
@@ -47,6 +49,7 @@ public class MapSetVersionRepository extends BaseRepository {
     ssb.property("expiration_date", version.getExpirationDate());
     ssb.property("created", version.getCreated());
     ssb.jsonProperty("scope", version.getScope());
+    ssb.jsonProperty("identifiers", version.getIdentifiers());
     SqlBuilder sb = ssb.buildSave("terminology.map_set_version", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     version.setId(id);

@@ -359,6 +359,7 @@ public class CodeSystemImportService {
     version.setSupportedLanguages(codeSystemVersion.getSupportedLanguages());
     version.setPreferredLanguage(codeSystemVersion.getPreferredLanguage());
     version.setReleaseDate(codeSystemVersion.getReleaseDate());
+    version.setIdentifiers(codeSystemVersion.getIdentifiers());
     version.setRuleSet(new ValueSetVersionRuleSet().setRules(List.of(
         new ValueSetVersionRule()
             .setType(ValueSetVersionRuleType.include)

@@ -94,7 +94,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setPrimitiveExtensions("purpose", toFhirTranslationExtension(codeSystem.getPurpose(), version.getPreferredLanguage()));
     fhirCodeSystem.setText(toFhirText(codeSystem.getNarrative()));
     fhirCodeSystem.setExperimental(codeSystem.getExperimental() != null && codeSystem.getExperimental());
-    fhirCodeSystem.setIdentifier(toFhirIdentifiers(codeSystem.getIdentifiers()));
+    fhirCodeSystem.setIdentifier(toFhirIdentifiers(codeSystem.getIdentifiers(), version.getIdentifiers()));
     fhirCodeSystem.setContact(toFhirContacts(codeSystem.getContacts()));
     fhirCodeSystem.setLastReviewDate(toFhirDate(provenances, "reviewed"));
     fhirCodeSystem.setApprovalDate(toFhirDate(provenances, "approved"));
@@ -327,6 +327,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     version.setStatus(PublicationStatus.draft);
     version.setAlgorithm(fhirCodeSystem.getVersionAlgorithmString());
     version.setReleaseDate(fhirCodeSystem.getDate() == null ? LocalDate.now() : LocalDate.from(fhirCodeSystem.getDate()));
+    version.setIdentifiers(fromFhirVersionIdentifiers(fhirCodeSystem.getIdentifier()));
     return List.of(version);
   }
 

@@ -1,5 +1,6 @@
 package com.kodality.termx.ts.valueset;
 
+import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
 import io.micronaut.core.annotation.Introspected;
 import java.time.LocalDate;
@@ -22,6 +23,7 @@ public class ValueSetVersion extends ValueSetVersionReference {
   private OffsetDateTime created;
   private String algorithm;
   private ValueSetVersionRuleSet ruleSet;
+  private List<Identifier> identifiers;
 
   //always loaded but does not update from here
   private ValueSetSnapshot snapshot;
