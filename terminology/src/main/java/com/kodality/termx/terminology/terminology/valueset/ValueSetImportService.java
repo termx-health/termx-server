@@ -82,11 +82,10 @@ public class ValueSetImportService {
     if (existingValueSet == null) {
       log.info("Value set {} does not exist, creating new", valueSet.getId());
       valueSetService.save(valueSet);
+    } else {
+      log.info("Updating value set {}", valueSet.getId());
+      valueSetService.save(valueSet);
     }
-  }
-
-  private void saveValueSetVersion(ValueSetVersion valueSetVersion) {
-   saveValueSetVersion(valueSetVersion, null);
   }
 
   private void saveValueSetVersion(ValueSetVersion valueSetVersion, ValueSetSnapshot snapshot) {

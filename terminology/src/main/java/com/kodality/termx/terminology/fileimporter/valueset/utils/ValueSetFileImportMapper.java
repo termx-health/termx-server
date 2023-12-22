@@ -67,6 +67,7 @@ public class ValueSetFileImportMapper {
         .setCodeSystemVersion(new CodeSystemVersionReference().setId(fpVersion.getRule().getCodeSystemVersionId()))));
     version.getRuleSet().getRules().get(0).setId(null);
     version.getRuleSet().getRules().get(0).setConcepts(concepts);
+    version.setIdentifiers(fpVersion.getOid() != null ? List.of(new Identifier(OID_SYSTEM, OID_PREFIX + fpVersion.getOid())) : version.getIdentifiers());
     return version;
   }
 

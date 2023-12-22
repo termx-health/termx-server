@@ -74,5 +74,6 @@ public class CodeSystemFileImportRequest {
     private String language;
     private String algorithm;
     private LocalDate releaseDate;
+    private String oid;
   }
 }

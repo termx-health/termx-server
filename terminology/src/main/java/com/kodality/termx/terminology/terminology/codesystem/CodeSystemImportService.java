@@ -68,6 +68,7 @@ import static java.util.stream.Collectors.toCollection;
 public class CodeSystemImportService {
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
+  private final CodeSystemRepository codeSystemRepository;
   private final EntityPropertyService entityPropertyService;
   private final AssociationTypeService associationTypeService;
   private final CodeSystemVersionService codeSystemVersionService;
@@ -142,6 +143,9 @@ public class CodeSystemImportService {
     if (existingCodeSystem.isEmpty()) {
       log.info("Code system {} does not exist, creating new", codeSystem.getId());
       codeSystemService.save(codeSystem);
+    } else {
+      log.info("Updating code system {}", codeSystem.getId());
+      codeSystemRepository.save(codeSystem);
     }
   }
 

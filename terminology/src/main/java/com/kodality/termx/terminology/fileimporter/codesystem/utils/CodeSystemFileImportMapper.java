@@ -101,6 +101,7 @@ public class CodeSystemFileImportMapper {
     version.setSupportedLanguages(langs);
     version.setPreferredLanguage(fpVersion.getLanguage() != null ? fpVersion.getLanguage() : langs.size() == 1 ? langs.get(0) :
         langs.contains(SessionStore.require().getLang()) ? SessionStore.require().getLang() : null);
+    version.setIdentifiers(fpVersion.getOid() != null ? List.of(new Identifier(OID_SYSTEM, OID_PREFIX + fpVersion.getOid())) : version.getIdentifiers());
     return version;
   }
 

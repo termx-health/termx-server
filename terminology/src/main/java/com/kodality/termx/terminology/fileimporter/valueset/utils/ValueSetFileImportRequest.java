@@ -63,6 +63,7 @@ public class ValueSetFileImportRequest {
     private LocalDate releaseDate;
     private String algorithm;
     private FileProcessingValueSetVersionRule rule;
+    private String oid;
   }
 
   @Getter
