@@ -123,7 +123,8 @@ public class ImplementationGuideGithubService {
 
   private List<GithubContent> getRootContent(ImplementationGuide ig, ImplementationGuideVersion igVersion) {
     return List.of(
-        new GithubContent().setPath("sushi-config.yaml").setContent(generateSushiConfig(ig, igVersion)).setEncoding(GithubContentEncoding.utf8)
+        new GithubContent().setPath("sushi-config.yaml").setContent(generateSushiConfig(ig, igVersion)).setEncoding(GithubContentEncoding.utf8),
+        new GithubContent().setPath("ig.ini").setContent(generateIgIni(ig, igVersion)).setEncoding(GithubContentEncoding.utf8)
     );
   }
 
@@ -171,7 +172,7 @@ public class ImplementationGuideGithubService {
   public void initIg(String igId, String version) {
     IgData ig = loadIg(igId, version);
     List<GithubContent> contents = githubService.readFully(ig.version.getGithub().getInit()).stream()
-        .filter(c -> !List.of("LICENSE", "README.md", "sushi-config.yaml", "input/includes/menu.xml").contains(c.getPath()))
+        .filter(c -> !List.of("LICENSE", "README.md", "sushi-config.yaml", "input/includes/menu.xml", "ig.ini").contains(c.getPath()))
         .toList();
     GithubCommit c = new GithubCommit();
     c.setMessage("initialize ig from " + ig.version.getGithub().getInit());
@@ -185,6 +186,14 @@ public class ImplementationGuideGithubService {
     IgData ig = loadIg(igId, igVersion);
     String sha = githubService.getLastCommitSha(ig.repo, baseBranch);
     githubService.createBranch(ig.repo, ig.branch, sha);
+  }
+
+  private String generateIgIni(ImplementationGuide ig, ImplementationGuideVersion igVersion) {
+    List<String> parts = new ArrayList<>();
+    parts.add("[IG]");
+    parts.add("ig = fsh-generated/resources/ImplementationGuide-" + ig.getId() + ".json");
+    parts.add("template = fhir.base.template#current");
+    return String.join("\n", parts);
   }
 
   private String generateSushiConfig(ImplementationGuide ig, ImplementationGuideVersion igVersion) {
@@ -204,7 +213,7 @@ public class ImplementationGuideGithubService {
     parts.add("releaseLabel: ballot");
     if (ig.getPublisher() != null) {
       parts.add("publisher: ");
-      parts.add(" name: " + ig.getPublisher());
+      parts.add("  name: " + ig.getPublisher());
     }
 
     List<ImplementationGuidePage> pages = igPageService.loadAll(igVersion.getId());
