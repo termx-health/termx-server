@@ -70,7 +70,7 @@ public class CodeSystemFileImportMapper {
     codeSystem.setIdentifiers(fpCodeSystem.getOid() != null ? List.of(new Identifier(OID_SYSTEM, OID_PREFIX + fpCodeSystem.getOid())) : codeSystem.getIdentifiers());
     codeSystem.setTitle(fpCodeSystem.getTitle() != null ? fpCodeSystem.getTitle() : codeSystem.getTitle());
     codeSystem.setDescription(fpCodeSystem.getDescription() != null ? fpCodeSystem.getDescription() : codeSystem.getDescription());
-    codeSystem.setVersions(List.of(existingCodeSystemVersion != null ? existingCodeSystemVersion : toCsVersion(fpVersion, result.getEntities(), fpCodeSystem.getId())));
+    codeSystem.setVersions(List.of(toCsVersion(fpVersion, result.getEntities(), fpCodeSystem.getId(), existingCodeSystemVersion)));
     codeSystem.setProperties(toCsProperties(result.getProperties()));
     codeSystem.setConcepts(result.getEntities().stream().map(e -> toCsConcept(codeSystem.getId(), e, result.getEntities())).toList());
     codeSystem.setContent(fpCodeSystem.getSupplement() != null ? CodeSystemContent.supplement : CodeSystemContent.complete);
@@ -88,11 +88,12 @@ public class CodeSystemFileImportMapper {
         .toList()));
   }
 
-  private static CodeSystemVersion toCsVersion(FileProcessingCodeSystemVersion fpVersion, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities, String codeSystem) {
+  private static CodeSystemVersion toCsVersion(FileProcessingCodeSystemVersion fpVersion, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities, String codeSystem,
+                                               CodeSystemVersion existingCodeSystemVersion) {
     List<String> langs = entities.stream().flatMap(e -> e.values().stream()
         .flatMap(v -> v.stream().map(FileProcessingEntityPropertyValue::getLang))).filter(Objects::nonNull).distinct().toList();
 
-    CodeSystemVersion version = new CodeSystemVersion();
+    CodeSystemVersion version = existingCodeSystemVersion != null ? JsonUtil.fromJson(JsonUtil.toJson(existingCodeSystemVersion), CodeSystemVersion.class) : new CodeSystemVersion();
     version.setCodeSystem(codeSystem);
     version.setVersion(fpVersion.getNumber());
     version.setStatus(PublicationStatus.draft);
