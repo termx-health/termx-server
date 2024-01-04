@@ -26,6 +26,10 @@ public class PackageResourceService {
     return resource;
   }
 
+  @Transactional
+  public void changeServer(List<Long> ids, String server) {
+    repository.changeServer(ids, server);
+  }
   public List<PackageResource> loadAll(Long spaceId, String packageCode, String version) {
     return repository.loadAll(spaceId, packageCode, version);
   }

@@ -15,7 +15,10 @@ public enum ApiError {
   TC106("TC106", "Import failed"),
   TC107("TC107", "Space Github directories must be unique"),
   TC108("TC108", "Space code '{{code}}' is already used."),
-  TC109("TC109", "Server cannot contain multiple '{{name}}' headers");
+  TC109("TC109", "Server cannot contain multiple '{{name}}' headers"),
+  TC110("TC110", "Release code '{{code}}' is already used."),
+  TC111("TC111", "Resource sync failed."),
+  ;
 
   @Getter
   private String code;

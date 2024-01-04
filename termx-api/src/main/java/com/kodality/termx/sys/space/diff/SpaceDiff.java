@@ -15,6 +15,7 @@ public class SpaceDiff {
   @Setter
   @Accessors(chain = true)
   public static class SpaceDiffItem {
+    private Long id;
     private String resourceId;
     private String resourceType;
     private String resourceServer;

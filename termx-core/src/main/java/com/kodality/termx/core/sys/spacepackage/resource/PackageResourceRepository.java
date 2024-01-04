@@ -32,6 +32,13 @@ public class PackageResourceRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
+  public void changeServer(List<Long> ids, String server) {
+    SqlBuilder sb = new SqlBuilder("update sys.package_version_resource set terminology_server = ?", server);
+    sb.append(" where sys_status = 'A'");
+    sb.and().in("id", ids);
+    jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
   public List<PackageResource> loadAll(Long spaceId, String packageCode, String version) {
     SqlBuilder sb = new SqlBuilder("select distinct on (pvr.id) pvr.* from sys.package_version_resource pvr");
     sb.append("left join sys.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A'");

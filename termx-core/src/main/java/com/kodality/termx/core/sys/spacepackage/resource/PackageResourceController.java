@@ -50,6 +50,13 @@ public class PackageResourceController {
     return packageResourceService.save(request.getVersionId(), request.getResource());
   }
 
+  @Authorized(privilege = Privilege.S_EDIT)
+  @Post("/change-server")
+  public  HttpResponse<?> update(@Valid @Body PackageResourceChangeServerRequest request) {
+    packageResourceService.changeServer(request.getResourceIds(), request.getTerminologyServer());
+    return HttpResponse.ok();
+  }
+
 
   @Authorized(privilege = Privilege.S_EDIT)
   @Post(value = "/{id}/sync")
@@ -82,6 +89,16 @@ public class PackageResourceController {
     @NotNull
     private PackageResource resource;
   }
+
+  @Getter
+  @Setter
+  public static class PackageResourceChangeServerRequest {
+    @NotNull
+    private List<Long> resourceIds;
+    @NotNull
+    private String terminologyServer;
+  }
+
 
   @Getter
   @Setter

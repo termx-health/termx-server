@@ -8,6 +8,7 @@ import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.sys.job.logger.ImportLogger;
 import com.kodality.termx.sys.job.JobLogResponse;
+import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.space.Space;
 import com.kodality.termx.sys.space.SpaceQueryParams;
 import com.kodality.termx.sys.space.diff.SpaceDiff;
@@ -25,6 +26,7 @@ import io.micronaut.http.annotation.Put;
 import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.reactivex.rxjava3.core.Flowable;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ import org.reactivestreams.Publisher;
 @RequiredArgsConstructor
 public class SpaceController {
   private final SpaceService spaceService;
+  private final SpaceSyncService syncService;
   private final SpaceDiffService diffService;
   private final SpaceImportService importService;
   private final SpaceOverviewService overviewService;
@@ -78,8 +81,18 @@ public class SpaceController {
 
   @Authorized(Privilege.S_VIEW)
   @Get("/{id}/diff")
-  public SpaceDiff diff(@PathVariable Long id, @Nullable @QueryValue String packageCode, @Nullable @QueryValue String version) {
-    return diffService.findDiff(id, packageCode, version);
+  public HttpResponse<?> diff(@PathVariable Long id, @Nullable @QueryValue String packageCode, @Nullable @QueryValue String version) {
+    LorqueProcess lorqueProcess = diffService.findDiff(id, packageCode, version);
+    return HttpResponse.accepted().body(lorqueProcess);
+  }
+
+  @Authorized(Privilege.S_EDIT)
+  @Post("/{id}/sync")
+  public HttpResponse<?> syncResources(@PathVariable Long id, @Body Map<String, String> request) {
+    JobLogResponse response = syncService.syncResources(id,
+        request.getOrDefault("packageCode", null),
+        request.getOrDefault("version", null));
+    return HttpResponse.accepted().body(response);
   }
 
   @Authorized(privilege = Privilege.S_EDIT)
