@@ -346,6 +346,8 @@ public class CodeSystemImportService {
     valueSet.setId(codeSystem.getId());
     valueSet.setUri(codeSystem.getUri().replaceAll("(?i)CodeSystem", "ValueSet"));
     valueSet.setTitle(codeSystem.getTitle());
+    valueSet.setName(codeSystem.getName());
+    valueSet.setDescription(codeSystem.getDescription());
     valueSet.setVersions(List.of(toValueSetVersion(codeSystem.getId(), codeSystem.getVersions().get(0), properties)));
     valueSet.setContacts(codeSystem.getContacts());
     valueSet.setIdentifiers(codeSystem.getIdentifiers());
