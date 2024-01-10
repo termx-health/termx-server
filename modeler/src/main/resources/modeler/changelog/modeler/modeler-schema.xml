@@ -11,15 +11,26 @@
     </changeSet>
 
     <changeSet id="default_privileges_for_schema_modeler" author="kodality">
+        <validCheckSum>ANY</validCheckSum>
         <sql>
-            GRANT USAGE ON SCHEMA modeler TO termserver_app;
-            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT USAGE ON SEQUENCES TO termserver_app;
-            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT EXECUTE ON FUNCTIONS TO termserver_app;
-            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT SELECT,INSERT,UPDATE ON TABLES TO termserver_app;
+            GRANT USAGE ON SCHEMA modeler TO ${app-username};
+            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT USAGE ON SEQUENCES TO ${app-username};
+            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT EXECUTE ON FUNCTIONS TO ${app-username};
+            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT SELECT,INSERT,UPDATE ON TABLES TO ${app-username};
+        </sql>
+    </changeSet>
 
-            GRANT USAGE ON SCHEMA modeler TO termserver_viewer;
-            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT EXECUTE ON FUNCTIONS TO termserver_viewer;
-            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT SELECT ON TABLES TO termserver_viewer;
+    <changeSet id="default_privileges__modeler__viewer" author="kodality">
+        <validCheckSum>ANY</validCheckSum>
+        <preConditions onFail="CONTINUE">
+            <changeLogPropertyDefined property="viewer-username"/>
+        </preConditions>
+        <sql>
+            GRANT USAGE ON SCHEMA modeler TO ${viewer-username};
+            GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA modeler TO ${viewer-username};
+            GRANT SELECT ON ALL TABLES IN SCHEMA modeler TO ${viewer-username};
+            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT EXECUTE ON FUNCTIONS TO ${viewer-username};
+            ALTER DEFAULT PRIVILEGES IN SCHEMA modeler GRANT SELECT ON TABLES TO ${viewer-username};
         </sql>
     </changeSet>
 
