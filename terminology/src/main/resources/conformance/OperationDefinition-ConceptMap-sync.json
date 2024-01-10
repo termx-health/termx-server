@@ -1,0 +1,52 @@
+{
+  "id": "ConceptMap-sync",
+  "url": "http://hl7.org/fhir/OperationDefinition/ConceptMap-sync",
+  "code": "sync",
+  "date": "2023-03-26T15:21:02+11:00",
+  "kind": "operation",
+  "name": "Sync",
+  "type": true,
+  "title": "Importing concept map from fhir definition",
+  "status": "draft",
+  "system": false,
+  "version": "5.0.0",
+  "instance": true,
+  "resource": [
+    "ConceptMap"
+  ],
+  "parameter": [
+    {
+      "max": "*",
+      "min": 1,
+      "use": "in",
+      "name": "resources",
+      "part": [
+        {
+          "max": "1",
+          "min": 1,
+          "name": "id",
+          "type": "string",
+          "documentation": "The id of resource"
+        },
+        {
+          "max": "1",
+          "min": 1,
+          "name": "url",
+          "type": "string",
+          "documentation": "The url of resource definition"
+        }
+      ]
+    },
+    {
+      "max": "1",
+      "min": 1,
+      "use": "out",
+      "name": "jobId",
+      "type": "string"
+    }
+  ],
+  "publisher": "TermX",
+  "affectsState": false,
+  "experimental": false,
+  "resourceType": "OperationDefinition"
+}
