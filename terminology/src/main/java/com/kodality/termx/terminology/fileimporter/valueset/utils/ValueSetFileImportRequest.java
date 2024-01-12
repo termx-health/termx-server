@@ -62,6 +62,7 @@ public class ValueSetFileImportRequest {
     private String language;
     private LocalDate releaseDate;
     private String algorithm;
+    private Boolean inactive;
     private FileProcessingValueSetVersionRule rule;
     private String oid;
   }

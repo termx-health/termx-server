@@ -60,7 +60,7 @@ public class ValueSetFileImportMapper {
     version.setAlgorithm(fpVersion.getAlgorithm());
     version.setPreferredLanguage(fpVersion.getLanguage() != null ? fpVersion.getLanguage() : SessionStore.require().getLang());
     version.setRuleSet(version.getRuleSet() == null ? new ValueSetVersionRuleSet() : version.getRuleSet());
-    version.getRuleSet().setRules(existingRule != null ? List.of(existingRule) : List.of(new ValueSetVersionRule()
+    version.getRuleSet().setInactive(fpVersion.getInactive()).setRules(existingRule != null ? List.of(existingRule) : List.of(new ValueSetVersionRule()
         .setType(ValueSetVersionRuleType.include)
         .setProperties(fpVersion.getRule().getProperties())
         .setCodeSystem(fpVersion.getRule().getCodeSystem())

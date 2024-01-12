@@ -29,7 +29,7 @@
   "version" : "5.0.0",
   "name" : "RequestPriority",
   "title" : "RequestPriority",
-  "status" : "draft",
+  "status" : "active",
   "experimental" : true,
   "date" : "2023-03-26T15:21:02+11:00",
   "publisher" : "HL7 (FHIR Project)",
