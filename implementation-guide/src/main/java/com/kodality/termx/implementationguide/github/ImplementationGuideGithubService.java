@@ -134,7 +134,7 @@ public class ImplementationGuideGithubService {
     return Stream.concat(
         resources.stream().flatMap(r -> {
           Map<String, String> paths = PATHS.get(r.getType());
-          return paths.keySet().stream().flatMap(p -> {
+          return paths == null ? Stream.empty() : paths.keySet().stream().flatMap(p -> {
             return getProvider(r.getType(), p).getContent(PipeUtil.toPipe(r.getReference(), r.getVersion())).stream().map(content -> {
               return new GithubContent()
                   .setPath(paths.get(p) + "/" + content.getName())
