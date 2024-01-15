@@ -12,5 +12,7 @@
   <include file="40-terminology_server.sql" relativeToChangelogFile="true"/>
   <include file="50-space.sql" relativeToChangelogFile="true"/>
   <include file="51-package.sql" relativeToChangelogFile="true"/>
+  <include file="60-release.sql" relativeToChangelogFile="true"/>
+  <include file="61-checklist.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

@@ -18,6 +18,7 @@ public enum ApiError {
   TC109("TC109", "Server cannot contain multiple '{{name}}' headers"),
   TC110("TC110", "Release code '{{code}}' is already used."),
   TC111("TC111", "Resource sync failed."),
+  TC112("TC112", "Checklist rule code '{{code}}' is already used."),
   ;
 
   @Getter

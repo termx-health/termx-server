@@ -3,8 +3,12 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
-    <include file="sys/changelog.xml" relativeToChangelogFile="true"/>
 
-    <include file="codesystem/changelog-data-codesystem.xml" relativeToChangelogFile="true"/>
-    <include file="valueset/changelog-data-valueset.xml" relativeToChangelogFile="true"/>
+  <changeSet id="issue-severity" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
+      <param name="files" value="sys/changelog/data/valueset/issue-severity.json"/>
+    </customChange>
+  </changeSet>
+
 </databaseChangeLog>
