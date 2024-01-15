@@ -52,9 +52,9 @@ public class CodeSystemFileImportController {
       try {
         log.info("Code system file import started");
         long start = System.currentTimeMillis();
-        CodeSystemFileImportResponse resp = req.getLink() != null
-            ? fileImporterService.process(req)
-            : fileImporterService.process(req, importFile);
+        CodeSystemFileImportResponse resp = importFile != null
+            ? fileImporterService.process(req, importFile)
+            : fileImporterService.process(req);
 
         log.info("Code system file import took {} seconds", (System.currentTimeMillis() - start) / 1000);
         ImportLog importLog = new ImportLog();

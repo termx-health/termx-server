@@ -51,9 +51,9 @@ public class ValueSetFileImportController {
         log.info("Value set file import started");
         long start = System.currentTimeMillis();
         ImportLog importLog = new ImportLog();
-        ValueSetFileImportResponse resp = req.getLink() != null
-            ? fileImporterService.process(req)
-            : fileImporterService.process(req, importFile);
+        ValueSetFileImportResponse resp = importFile != null
+            ? fileImporterService.process(req, importFile)
+            : fileImporterService.process(req);
         if (CollectionUtils.isNotEmpty(resp.getErrors())) {
           importLog.setErrors(resp.getErrors().stream().map(Issue::formattedMessage).distinct().toList());
         }

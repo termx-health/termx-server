@@ -27,8 +27,11 @@ public class FileAnalysisController {
   public FileAnalysisResponse analyze(@Nullable Publisher<CompletedFileUpload> file, @Part("request") String request) {
     FileAnalysisRequest req = JsonUtil.fromJson(request, FileAnalysisRequest.class);
 
-    return file != null
-        ? fileAnalysisService.analyze(req, FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()))
+    CompletedFileUpload fileUpload = file != null ? Flowable.fromPublisher(file).firstElement().blockingGet() : null;
+    byte[] importFile = fileUpload != null ? FileUtil.readBytes(fileUpload) : null;
+
+    return importFile != null
+        ? fileAnalysisService.analyze(req, importFile)
         : fileAnalysisService.analyze(req);
   }
 }
