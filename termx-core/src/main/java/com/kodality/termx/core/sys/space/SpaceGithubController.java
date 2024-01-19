@@ -30,7 +30,7 @@ public class SpaceGithubController {
   @Authorized(privilege = Privilege.S_VIEW)
   @Get("/github/providers")
   public Map<String, String> getProviders() {
-    return service().getProviders();
+    return spaceGithubService.map(SpaceGithubService::getProviders).orElse(Map.of());
   }
 
   @Authorized(Privilege.S_VIEW)
