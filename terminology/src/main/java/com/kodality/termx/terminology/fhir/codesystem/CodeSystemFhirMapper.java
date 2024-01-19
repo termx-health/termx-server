@@ -236,8 +236,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         CodeSystemConceptProperty fhir = new CodeSystemConceptProperty();
         fhir.setCode(entityProperty.getName());
         switch (entityProperty.getType()) {
-          case EntityPropertyType.code -> fhir.setValueCode((String) pv.getValue());
-          case EntityPropertyType.string -> fhir.setValueString((String) pv.getValue());
+          case EntityPropertyType.code -> fhir.setValueCode(pv.getValue() instanceof String ? (String) pv.getValue() : String.valueOf(pv.getValue()));
+          case EntityPropertyType.string -> fhir.setValueString(pv.getValue() instanceof String ? (String) pv.getValue() : String.valueOf(pv.getValue()));
           case EntityPropertyType.bool -> fhir.setValueBoolean((Boolean) pv.getValue());
           case EntityPropertyType.decimal -> fhir.setValueDecimal(new BigDecimal(String.valueOf(pv.getValue())));
           case EntityPropertyType.integer -> fhir.setValueInteger(Integer.valueOf(String.valueOf(pv.getValue())));
@@ -249,7 +249,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
             if (pv.getValue() instanceof OffsetDateTime) {
               fhir.setValueDateTime((OffsetDateTime) pv.getValue());
             } else {
-              fhir.setValueDateTime(DateUtil.parseOffsetDateTime((String) pv.getValue()));
+              fhir.setValueDateTime(DateUtil.parseOffsetDateTime(pv.getValue() instanceof String ? (String) pv.getValue() : String.valueOf(pv.getValue())));
             }
           }
         }
