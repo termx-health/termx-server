@@ -19,6 +19,7 @@ public enum ApiError {
   TC110("TC110", "Release code '{{code}}' is already used."),
   TC111("TC111", "Resource sync failed."),
   TC112("TC112", "Checklist rule code '{{code}}' is already used."),
+  TC113("TC113", "Either resourceType and resourceId or checklistId should be provided to validate rules"),
   ;
 
   @Getter
