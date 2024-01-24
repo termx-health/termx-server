@@ -4,6 +4,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.core.sys.checklist.validaton.CodeSystemRuleValidator;
 import com.kodality.termx.sys.checklist.Checklist.ChecklistWhitelist;
 import com.kodality.termx.sys.checklist.ChecklistAssertion.ChecklistAssertionError;
+import com.kodality.termx.sys.checklist.ChecklistAssertion.ChecklistAssertionErrorResource;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Concept;
@@ -28,11 +29,14 @@ public class R1RuleValidator implements CodeSystemRuleValidator {
 
   @Override
   public List<ChecklistAssertionError> validate(CodeSystem codeSystem, List<Concept> concepts, List<ChecklistWhitelist> whitelists) {
-    return concepts.stream().flatMap(c -> c.getVersions().stream())
+    return concepts.stream().filter(c -> whitelists.stream().noneMatch(wl -> "Concept".equals(wl.getResourceType()) && c.getCode().equals(wl.getResourceId())))
+        .flatMap(c -> c.getVersions().stream())
         .collect(Collectors.groupingBy(v -> getPropKey(v.getPropertyValues()), mapping(CodeSystemEntityVersion::getCode, toList())))
         .values().stream().map(HashSet::new).filter(s -> s.size() > 1)
-        .map(s -> new ChecklistAssertionError().setError(String.format("Concepts '%s' have duplicate properties and property values.", String.join("','", s))))
-        .toList();
+        .map(s -> new ChecklistAssertionError()
+            .setError(String.format("Concepts '%s' have duplicate properties and property values.", String.join("','", s)))
+            .setResources(s.stream().map(c -> new ChecklistAssertionErrorResource().setResourceType("Concept").setResourceId(c)).toList())
+        ).toList();
   }
 
   private String getPropKey(List<EntityPropertyValue> propertyValues) {

@@ -3,6 +3,7 @@ package com.kodality.termx.core.sys.checklist.validaton.validators;
 import com.kodality.termx.core.sys.checklist.validaton.CodeSystemRuleValidator;
 import com.kodality.termx.sys.checklist.Checklist.ChecklistWhitelist;
 import com.kodality.termx.sys.checklist.ChecklistAssertion.ChecklistAssertionError;
+import com.kodality.termx.sys.checklist.ChecklistAssertion.ChecklistAssertionErrorResource;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.Concept;
@@ -22,12 +23,16 @@ public class C3RuleValidator implements CodeSystemRuleValidator {
 
   @Override
   public List<ChecklistAssertionError> validate(CodeSystem codeSystem, List<Concept> concepts, List<ChecklistWhitelist> whitelists) {
-    return concepts.stream().flatMap(c -> c.getVersions().stream())
+    return concepts.stream().filter(c -> whitelists.stream().noneMatch(wl -> "Concept".equals(wl.getResourceType()) && c.getCode().equals(wl.getResourceId())))
+        .flatMap(c -> c.getVersions().stream())
         .flatMap(v -> v.getDesignations().stream().filter(d -> PublicationStatus.active.equals(d.getStatus()) && d.isPreferred()).map(d -> Pair.of(v.getCode(), d)))
         .collect(Collectors.groupingBy(d -> d.getValue().getName() + d.getValue().getLanguage())).values().stream()
         .map(val -> {
           Set<String> codes = val.stream().collect(Collectors.groupingBy(Pair::getKey)).keySet();
-          return codes.size() > 1 ? new ChecklistAssertionError().setError(String.format("Concepts '%s' have identical terms", String.join("','", codes))) : null;
+          return codes.size() > 1 ? new ChecklistAssertionError()
+              .setError(String.format("Concepts '%s' have identical terms", String.join("','", codes)))
+              .setResources(codes.stream().map(c -> new ChecklistAssertionErrorResource().setResourceType("Concept").setResourceId(c)).toList())
+              : null;
         }).filter(Objects::nonNull).toList();
   }
 }

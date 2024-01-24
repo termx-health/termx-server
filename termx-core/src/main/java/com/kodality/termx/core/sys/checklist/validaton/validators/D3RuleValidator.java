@@ -3,6 +3,7 @@ package com.kodality.termx.core.sys.checklist.validaton.validators;
 import com.kodality.termx.core.sys.checklist.validaton.CodeSystemRuleValidator;
 import com.kodality.termx.sys.checklist.Checklist.ChecklistWhitelist;
 import com.kodality.termx.sys.checklist.ChecklistAssertion.ChecklistAssertionError;
+import com.kodality.termx.sys.checklist.ChecklistAssertion.ChecklistAssertionErrorResource;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.EntityProperty;
@@ -24,10 +25,13 @@ public class D3RuleValidator implements CodeSystemRuleValidator {
     if (CollectionUtils.isEmpty(properties)) {
       return List.of(new ChecklistAssertionError().setError("The properties are not defined within a CodeSystem"));
     }
-    List<Concept> notDefinedConcepts = concepts.stream().filter(c -> c.getVersions().stream()
-        .anyMatch(v -> CollectionUtils.isEmpty(v.getPropertyValues()) && CollectionUtils.isEmpty(v.getAssociations()))).toList();
-    return notDefinedConcepts.stream()
-        .map(c -> new ChecklistAssertionError().setError(String.format("The concept '%s' definition does not use properties or associations.", c.getCode())))
+    List<Concept> notDefinedConcepts = concepts.stream().filter(c -> whitelists.stream().noneMatch(wl -> "Concept".equals(wl.getResourceType()) && c.getCode().equals(wl.getResourceId())))
+        .filter(c -> c.getVersions().stream().anyMatch(v -> CollectionUtils.isEmpty(v.getPropertyValues()) && CollectionUtils.isEmpty(v.getAssociations())))
         .toList();
+    return notDefinedConcepts.stream()
+        .map(c -> new ChecklistAssertionError()
+            .setError(String.format("The concept '%s' definition does not use properties or associations.", c.getCode()))
+            .setResources(List.of(new ChecklistAssertionErrorResource().setResourceType("Concept").setResourceId(c.getCode())))
+        ).toList();
   }
 }

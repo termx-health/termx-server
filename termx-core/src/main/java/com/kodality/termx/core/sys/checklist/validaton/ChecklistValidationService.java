@@ -60,7 +60,7 @@ public class ChecklistValidationService {
         List<ChecklistAssertionError> errors = List.of(new ChecklistAssertionError().setError(String.format("Validator %s is not implemented", checklist.getRule().getCode())));
         checklistAssertionService.create(checklist.getId(), errors);
       } else validator.ifPresent(codeSystemRuleValidator ->
-          checklistAssertionService.create(checklist.getId(), codeSystemRuleValidator.validate(codeSystem, concepts, checklist.getWhitelist())));
+          checklistAssertionService.create(checklist.getId(), codeSystemRuleValidator.validate(codeSystem, concepts, Optional.ofNullable(checklist.getWhitelist()).orElse(List.of()))));
     });
   }
 }

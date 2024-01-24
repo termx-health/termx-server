@@ -23,6 +23,12 @@ public class ChecklistAssertion {
   @Accessors(chain = true)
   public static class ChecklistAssertionError {
     private String error;
+    private List<ChecklistAssertionErrorResource> resources;
+  }
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class ChecklistAssertionErrorResource {
     private String resourceId;
     private String resourceType;
   }
