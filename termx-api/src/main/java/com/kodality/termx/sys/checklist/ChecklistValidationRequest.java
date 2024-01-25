@@ -1,12 +1,12 @@
 package com.kodality.termx.sys.checklist;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 @Getter
 @Setter
-@RequiredArgsConstructor
+@Accessors(chain = true)
 public class ChecklistValidationRequest {
   private String resourceType;
   private String resourceId;
