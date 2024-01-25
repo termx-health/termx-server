@@ -81,4 +81,11 @@
     </customChange>
   </changeSet>
 
+  <changeSet id="jurisdiction" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
+      <param name="files" value="terminology/changelog/data/valueset/jurisdiction.json"/>
+    </customChange>
+  </changeSet>
+
 </databaseChangeLog>

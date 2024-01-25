@@ -123,4 +123,25 @@
     </customChange>
   </changeSet>
 
+  <changeSet id="iso3166-1" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/iso3166-1.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="iso3166-2" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/iso3166-2.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="m49" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/m49.json"/>
+    </customChange>
+  </changeSet>
+
 </databaseChangeLog>

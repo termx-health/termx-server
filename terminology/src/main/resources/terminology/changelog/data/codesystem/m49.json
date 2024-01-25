@@ -1,0 +1,14 @@
+{
+  "resourceType" : "CodeSystem",
+  "id" : "m49",
+  "url" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
+  "version" : "1.0.0",
+  "name" : "M49",
+  "title" : "M49",
+  "status" : "active",
+  "experimental" : false,
+  "date" : "2022-08-23T00:00:00-04:00",
+  "publisher" : "United Nations",
+  "caseSensitive" : true,
+  "content" : "not-present"
+}
