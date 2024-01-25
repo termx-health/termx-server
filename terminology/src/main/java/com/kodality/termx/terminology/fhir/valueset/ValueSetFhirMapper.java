@@ -1,6 +1,7 @@
 package com.kodality.termx.terminology.fhir.valueset;
 
 import com.kodality.commons.exception.ApiClientException;
+import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
@@ -93,8 +94,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     fhirValueSet.setName(valueSet.getName());
     fhirValueSet.setTitle(toFhirName(valueSet.getTitle(), version.getPreferredLanguage()));
     fhirValueSet.setPrimitiveExtensions("title", toFhirTranslationExtension(valueSet.getTitle(), version.getPreferredLanguage()));
-    fhirValueSet.setDescription(toFhirName(valueSet.getDescription(), version.getPreferredLanguage()));
-    fhirValueSet.setPrimitiveExtensions("description", toFhirTranslationExtension(valueSet.getDescription(), version.getPreferredLanguage()));
+    LocalizedName description = joinDescriptions(valueSet.getDescription(), version.getDescription());
+    fhirValueSet.setDescription(toFhirName(description, version.getPreferredLanguage()));
+    fhirValueSet.setPrimitiveExtensions("description", toFhirTranslationExtension(description, version.getPreferredLanguage()));
     fhirValueSet.setPurpose(toFhirName(valueSet.getPurpose(), version.getPreferredLanguage()));
     fhirValueSet.setPrimitiveExtensions("purpose", toFhirTranslationExtension(valueSet.getPurpose(), version.getPreferredLanguage()));
     fhirValueSet.setContact(toFhirContacts(valueSet.getContacts()));

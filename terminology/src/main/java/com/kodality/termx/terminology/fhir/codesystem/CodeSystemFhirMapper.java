@@ -1,6 +1,7 @@
 package com.kodality.termx.terminology.fhir.codesystem;
 
 import com.kodality.commons.exception.ApiClientException;
+import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
@@ -88,8 +89,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setName(codeSystem.getName());
     fhirCodeSystem.setTitle(toFhirName(codeSystem.getTitle(), version.getPreferredLanguage()));
     fhirCodeSystem.setPrimitiveExtensions("title", toFhirTranslationExtension(codeSystem.getTitle(), version.getPreferredLanguage()));
-    fhirCodeSystem.setDescription(toFhirName(codeSystem.getDescription(), version.getPreferredLanguage()));
-    fhirCodeSystem.setPrimitiveExtensions("description", toFhirTranslationExtension(codeSystem.getDescription(), version.getPreferredLanguage()));
+    LocalizedName description = joinDescriptions(codeSystem.getDescription(), version.getDescription());
+    fhirCodeSystem.setDescription(toFhirName(description, version.getPreferredLanguage()));
+    fhirCodeSystem.setPrimitiveExtensions("description", toFhirTranslationExtension(description, version.getPreferredLanguage()));
     fhirCodeSystem.setPurpose(toFhirName(codeSystem.getPurpose(), version.getPreferredLanguage()));
     fhirCodeSystem.setPrimitiveExtensions("purpose", toFhirTranslationExtension(codeSystem.getPurpose(), version.getPreferredLanguage()));
     fhirCodeSystem.setText(toFhirText(codeSystem.getNarrative()));

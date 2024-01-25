@@ -19,10 +19,17 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 
 public abstract class BaseFhirMapper {
   public static final String SEPARATOR = "--";
@@ -94,6 +101,15 @@ public abstract class BaseFhirMapper {
     return Optional.ofNullable(provenances).flatMap(list -> list.stream().filter(p -> activity.equals(p.getActivity()))
         .max(Comparator.comparing(Provenance::getDate)).map(p -> p.getDate().toLocalDate())).orElse(null);
   }
+
+  protected static LocalizedName joinDescriptions(LocalizedName descriptionA, LocalizedName descriptionB) {
+    return new LocalizedName(Stream.of(descriptionA, descriptionB).filter(Objects::nonNull)
+        .flatMap(description -> description.entrySet().stream())
+        .collect(Collectors.groupingBy(Entry::getKey, mapping(Entry::getValue, toList())))
+        .entrySet().stream().map(es -> Pair.of(es.getKey(), String.join(" ", es.getValue())))
+        .collect(Collectors.toMap(Pair::getKey, Pair::getValue)));
+  }
+
 
 
   protected static LocalizedName fromFhirName(String name, String lang) {

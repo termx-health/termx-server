@@ -1,6 +1,7 @@
 package com.kodality.termx.terminology.fhir.conceptmap;
 
 import com.kodality.commons.exception.ApiClientException;
+import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
@@ -92,8 +93,9 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     fhirConceptMap.setName(mapSet.getName());
     fhirConceptMap.setTitle(toFhirName(mapSet.getTitle(), version.getPreferredLanguage()));
     fhirConceptMap.setPrimitiveExtensions("title", toFhirTranslationExtension(mapSet.getTitle(), version.getPreferredLanguage()));
-    fhirConceptMap.setDescription(toFhirName(mapSet.getDescription(), version.getPreferredLanguage()));
-    fhirConceptMap.setPrimitiveExtensions("description", toFhirTranslationExtension(mapSet.getDescription(), version.getPreferredLanguage()));
+    LocalizedName description = joinDescriptions(mapSet.getDescription(), version.getDescription());
+    fhirConceptMap.setDescription(toFhirName(description, version.getPreferredLanguage()));
+    fhirConceptMap.setPrimitiveExtensions("description", toFhirTranslationExtension(description, version.getPreferredLanguage()));
     fhirConceptMap.setPurpose(toFhirName(mapSet.getPurpose(), version.getPreferredLanguage()));
     fhirConceptMap.setPrimitiveExtensions("purpose", toFhirTranslationExtension(mapSet.getPurpose(), version.getPreferredLanguage()));
     fhirConceptMap.setText(toFhirText(mapSet.getNarrative()));
