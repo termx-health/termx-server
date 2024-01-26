@@ -118,6 +118,7 @@ public class ValueSetVersionRepository extends BaseRepository {
     sb.appendIfNotNull("and vs.uri = ?", params.getValueSetUri());
     sb.appendIfNotNull("and vs.name = ?", params.getValueSetName());
     sb.appendIfNotNull("and vs.name ~* ?", params.getValueSetNameContains());
+    sb.appendIfNotNull("and vs.name ilike ? || '%'", params.getValueSetNameStarts());
     sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getValueSetTitle());
     sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%' || terminology.search_translate(?) || '%'", params.getValueSetTitleContains());
     sb.appendIfNotNull("and vs.publisher = ?", params.getValueSetPublisher());
