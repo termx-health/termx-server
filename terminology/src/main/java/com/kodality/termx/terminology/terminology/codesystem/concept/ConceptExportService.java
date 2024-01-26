@@ -22,16 +22,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.poi.ss.SpreadsheetVersion;
-import org.apache.poi.ss.util.AreaReference;
-import org.apache.poi.ss.util.CellReference;
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
@@ -119,22 +116,15 @@ public class ConceptExportService {
   }
 
   private byte[] composeXlsx(List<String> headers, List<Object[]> rows) {
-    XSSFWorkbook workbook = new XSSFWorkbook();
-    XSSFSheet sheet = workbook.createSheet();
+
+    Workbook workbook = new XSSFWorkbook();
+    Sheet sheet = workbook.createSheet("Concepts");
 
     int rowNum = 0;
     rowNum = addXlsxRow(headers.toArray(), sheet, rowNum);
     for (Object[] row : rows) {
       rowNum = addXlsxRow(row, sheet, rowNum);
     }
-
-    int columnNumber = rows.stream().mapToInt(r -> r.length).max().getAsInt();
-    IntStream.range(0, columnNumber).forEach(sheet::autoSizeColumn);
-    XSSFSheet pivotSheet = workbook.createSheet("Pivot");
-    CellReference topLeft = new CellReference(sheet.getFirstRowNum(), sheet.getRow(0).getFirstCellNum());
-    CellReference botRight = new CellReference(sheet.getLastRowNum(), sheet.getRow(0).getLastCellNum() - 1);
-    AreaReference aref = new AreaReference(topLeft, botRight, SpreadsheetVersion.EXCEL2007);
-    pivotSheet.createPivotTable(aref, new CellReference("A1"), sheet);
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     try {
@@ -146,11 +136,11 @@ public class ConceptExportService {
     return bos.toByteArray();
   }
 
-  private int addXlsxRow(Object[] array, XSSFSheet sheet, int rowNum) {
-    XSSFRow row = sheet.createRow(rowNum);
+  private int addXlsxRow(Object[] array, Sheet sheet, int rowNum) {
+    Row row = sheet.createRow(rowNum);
     int cellNum = 0;
     for (Object o : array) {
-      XSSFCell cell = row.createCell(cellNum);
+      Cell cell = row.createCell(cellNum);
       cell.setCellValue(defaultIfNull(o, "").toString());
       cellNum++;
     }
