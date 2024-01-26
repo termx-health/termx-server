@@ -92,7 +92,8 @@ public enum ApiError {
   TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted."),
   TE804("TE804", "Target concept is not defined."),
   TE805("TE805", "Target concept and source concepts are the same."),
-  TE806("TE806", "FHIR TO FSH converter not provided");
+  TE806("TE806", "FHIR TO FSH converter not provided"),
+  TE807("TE807", "'{{format}}' is not supported.");
   @Getter
   private String code;
   @Getter

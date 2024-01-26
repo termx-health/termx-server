@@ -2,12 +2,15 @@ package com.kodality.termx.terminology.terminology.codesystem;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.core.sys.lorque.LorqueProcessService;
+import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceChange;
 import com.kodality.termx.terminology.terminology.codesystem.association.CodeSystemAssociationService;
+import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptExportService;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
@@ -26,7 +29,10 @@ import com.kodality.termx.ts.codesystem.ConceptTransactionRequest;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
 import io.micronaut.core.annotation.Nullable;
+import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MediaType;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Delete;
@@ -49,6 +55,7 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public class CodeSystemController {
   private final ConceptService conceptService;
+  private final ConceptExportService conceptExportService;
   private final CodeSystemService codeSystemService;
   private final EntityPropertyService entityPropertyService;
   private final CodeSystemVersionService codeSystemVersionService;
@@ -56,6 +63,7 @@ public class CodeSystemController {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final CodeSystemProvenanceService provenanceService;
+  private final LorqueProcessService lorqueProcessService;
 
   //----------------CodeSystem----------------
 
@@ -266,6 +274,32 @@ public class CodeSystemController {
     });
     return HttpResponse.ok();
   }
+
+  @Authorized(Privilege.CS_VIEW)
+  @Get(uri = "/{codeSystem}/versions/{version}/concepts/export{?params*}")
+  public LorqueProcess exportConcepts(@PathVariable String codeSystem, @PathVariable String version, Map<String, String> params) {
+    return conceptExportService.export(codeSystem, version, params.getOrDefault("format", "csv"));
+  }
+
+  @Authorized(Privilege.CS_VIEW)
+  @Get(value = "/concepts/export-csv/result/{lorqueProcessId}", produces = "application/csv")
+  public HttpResponse<?> getConceptExportCSV(Long lorqueProcessId) {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=concepts.csv")
+        .contentType(MediaType.of("application/csv"));
+  }
+
+  @Authorized(Privilege.CS_VIEW)
+  @Get(value = "/concepts/export-xlsx/result/{lorqueProcessId}", produces = "application/vnd.ms-excel")
+  public HttpResponse<?> getConceptExportXLSX(Long lorqueProcessId) {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=concepts.xlsx")
+        .contentType(MediaType.of("application/vnd.ms-excel"));
+  }
+
+
 
   //----------------CodeSystem EntityVersion----------------
 
