@@ -7,9 +7,11 @@ import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.ProcessResult;
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.ts.PublicationStatus;
+import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
+import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
@@ -22,15 +24,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 
 @Singleton
@@ -78,7 +84,13 @@ public class ConceptExportService {
         .flatMap(v -> Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream().filter(d -> PublicationStatus.active.equals(d.getStatus())))
         .collect(Collectors.groupingBy(d -> d.getDesignationType() + "#" + d.getLanguage())).keySet());
     fields.addAll(concepts.stream().flatMap(c -> c.getVersions().stream()).flatMap(v -> Optional.ofNullable(v.getPropertyValues()).orElse(List.of()).stream())
-        .collect(Collectors.groupingBy(EntityPropertyValue::getEntityProperty)).keySet());
+        .flatMap(pv -> pv.getEntityPropertyType().equals(EntityPropertyType.coding) ?
+            Stream.of(pv.getEntityProperty(), pv.getEntityProperty() + "#system") :
+            Stream.of(pv.getEntityProperty()))
+        .collect(Collectors.groupingBy(v -> v)).keySet());
+    fields.addAll(concepts.stream().flatMap(c -> c.getVersions().stream())
+        .flatMap(v -> Optional.ofNullable(v.getAssociations()).orElse(List.of()).stream().filter(d -> PublicationStatus.active.equals(d.getStatus())))
+        .collect(Collectors.groupingBy(CodeSystemAssociation::getAssociationType)).keySet());
     return fields;
   }
 
@@ -87,8 +99,15 @@ public class ConceptExportService {
     Map<String, List<Designation>> designations = c.getVersions().stream().flatMap(v -> Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream())
         .filter(d -> PublicationStatus.active.equals(d.getStatus()))
         .collect(Collectors.groupingBy(d -> d.getDesignationType() + "#" + d.getLanguage()));
-    Map<String, List<EntityPropertyValue>> properties = c.getVersions().stream().flatMap(v -> Optional.ofNullable(v.getPropertyValues()).orElse(List.of()).stream())
-        .collect(Collectors.groupingBy(EntityPropertyValue::getEntityProperty));
+    Map<String, List<EntityPropertyValue>> properties =
+        c.getVersions().stream().flatMap(v -> Optional.ofNullable(v.getPropertyValues()).orElse(List.of()).stream())
+            .flatMap(pv -> pv.getEntityPropertyType().equals(EntityPropertyType.coding) ?
+                Stream.of(Pair.of(pv.getEntityProperty(), pv), Pair.of(pv.getEntityProperty() + "#system", pv)) :
+                Stream.of(Pair.of(pv.getEntityProperty(), pv)))
+            .collect(Collectors.groupingBy(Pair::getKey, mapping(Pair::getValue, toList())));
+    Map<String, List<CodeSystemAssociation>> associations = c.getVersions().stream().flatMap(v -> Optional.ofNullable(v.getAssociations()).orElse(List.of()).stream())
+        .filter(a -> PublicationStatus.active.equals(a.getStatus()))
+        .collect(Collectors.groupingBy(CodeSystemAssociation::getAssociationType));
     headers.forEach(h -> {
       if ("code".equals(h)) {
         row.add(c.getCode());
@@ -96,7 +115,14 @@ public class ConceptExportService {
         row.add(designations.get(h).stream().map(Designation::getName)
             .collect(Collectors.joining("#")));
       } else if (properties.containsKey(h)) {
-        row.add(properties.get(h).stream().map(EntityPropertyValue::getValue).map(v -> v instanceof String ? (String) v : JsonUtil.toJson(v))
+        row.add(properties.get(h).stream().map(pv -> {
+          if (pv.getEntityPropertyType().equals(EntityPropertyType.coding)) {
+            return h.contains("#system") ? pv.asCodingValue().getCodeSystem() : pv.asCodingValue().getCode();
+          }
+          return pv.getValue() instanceof String ? (String) pv.getValue() : JsonUtil.toJson(pv.getValue());
+        }).collect(Collectors.joining("#")));
+      } else if (associations.containsKey(h)) {
+        row.add(associations.get(h).stream().map(CodeSystemAssociation::getTargetCode)
             .collect(Collectors.joining("#")));
       } else {
         row.add("");
