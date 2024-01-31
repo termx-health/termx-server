@@ -32,6 +32,11 @@ public class ChecklistRuleService {
     return repository.load(id);
   }
 
+  @Transactional
+  public void delete(Long id) {
+    repository.delete(id);
+  }
+
   public QueryResult<ChecklistRule> query(ChecklistRuleQueryParams params) {
     return repository.query(params);
   }

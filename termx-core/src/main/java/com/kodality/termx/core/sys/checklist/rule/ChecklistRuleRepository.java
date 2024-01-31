@@ -77,5 +77,9 @@ public class ChecklistRuleRepository extends BaseRepository {
     return sortMap;
   }
 
+  public void delete(Long id) {
+    String sql = "update sys.checklist_rule set sys_status = 'C' where id = ? and sys_status = 'A'";
+    jdbcTemplate.update(sql, id);
+  }
 
 }

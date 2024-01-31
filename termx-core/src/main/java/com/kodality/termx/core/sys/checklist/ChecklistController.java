@@ -16,6 +16,7 @@ import com.kodality.termx.sys.checklist.ChecklistValidationRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
@@ -80,6 +81,13 @@ public class ChecklistController {
   public QueryResult<ChecklistRule> search(ChecklistRuleQueryParams params) {
     params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.C_VIEW, Long::valueOf));
     return ruleService.query(params);
+  }
+
+  @Authorized(Privilege.C_EDIT)
+  @Delete(uri = "/rules/{id}")
+  public HttpResponse<?> deleteRule(@PathVariable Long id) {
+    ruleService.delete(id);
+    return HttpResponse.ok();
   }
 
   //----------------Rule----------------

@@ -18,6 +18,7 @@ class AuthorizationFilterTest extends Specification {
     ['*.*.view']                           | ['*.*.*']                              | true
     ['*.CodeSystem.view']                  | ['*.CodeSystem.edit']                  | false
     ['ABS.CodeSystem.edit']                | ['SBA.CodeSystem.edit']                | false
+    ['*.CodeSystem.*']                     | ['SBA.CodeSystem.edit']                | true
   }
 
 //  def "privilege resource check works"() {

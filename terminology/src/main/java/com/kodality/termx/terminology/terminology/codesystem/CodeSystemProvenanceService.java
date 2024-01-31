@@ -1,6 +1,5 @@
 package com.kodality.termx.terminology.terminology.codesystem;
 
-import com.kodality.commons.model.Identifier;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceChange;
@@ -85,15 +84,6 @@ public class CodeSystemProvenanceService {
     };
     return ProvenanceUtil.diff(fn.apply(left), fn.apply(right));
   }
-
-//  public void provenanceCodeSystemVersion(String action, Long versionId, Consumer<CodeSystemVersion> save) {
-//    CodeSystemVersion before = codeSystemVersionService.load(versionId);
-//    save.accept(before);
-//    CodeSystemVersion after = codeSystemVersionService.load(versionId);
-//    provenanceService.create(provenance(action, after)
-//        .setDetail(before == null ? null : new ProvenanceDetail().setChanges(ProvenanceUtil.diff(before, after)))
-//    );
-//  }
 
   public void provenanceCodeSystemVersion(String activity, String csId, String version, Runnable save) {
     CodeSystemVersion before = codeSystemVersionService.load(csId, version).orElse(null);
