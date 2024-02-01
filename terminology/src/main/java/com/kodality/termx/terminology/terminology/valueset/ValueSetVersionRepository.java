@@ -8,8 +8,10 @@ import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
+import io.micronaut.core.util.StringUtils;
 import javax.inject.Singleton;
 
 @Singleton
@@ -113,21 +115,49 @@ public class ValueSetVersionRepository extends BaseRepository {
 
   private SqlBuilder filter(ValueSetVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.appendIfNotNull("and vsv.value_set = ?", params.getValueSet());
     sb.and().in("vs.id", params.getPermittedValueSets());
+
+    // VS id
+    sb.appendIfNotNull("and vsv.value_set = ?", params.getValueSet());
+
+    // VS uri
     sb.appendIfNotNull("and vs.uri = ?", params.getValueSetUri());
+
+    // VS identifier
+    if (StringUtils.isNotEmpty(params.getValueSetIdentifier())) {
+      String[] tokens = PipeUtil.parsePipe(params.getValueSetIdentifier());
+      sb.and("exists (select 1 from jsonb_array_elements(vs.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)", tokens[0], tokens[1]);
+    }
+
+    // VS name
     sb.appendIfNotNull("and vs.name = ?", params.getValueSetName());
-    sb.appendIfNotNull("and vs.name ~* ?", params.getValueSetNameContains());
     sb.appendIfNotNull("and vs.name ilike ? || '%'", params.getValueSetNameStarts());
-    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getValueSetTitle());
-    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%' || terminology.search_translate(?) || '%'", params.getValueSetTitleContains());
+    sb.appendIfNotNull("and vs.name ~* ?", params.getValueSetNameContains());
+
+    // VS publisher
     sb.appendIfNotNull("and vs.publisher = ?", params.getValueSetPublisher());
+    sb.appendIfNotNull("and vs.publisher ilike ? || '%'", params.getValueSetPublisherStarts());
+    sb.appendIfNotNull("and vs.publisher ~* ?", params.getValueSetPublisherContains());
+
+    // VS title
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getValueSetTitle());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '%`%'", params.getValueSetTitleStarts());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%' || terminology.search_translate(?) || '%'", params.getValueSetTitleContains());
+
+    // VS description
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%`' || terminology.search_translate(?) || '`%'", params.getValueSetDescription());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%`' || terminology.search_translate(?) || '%`%'", params.getValueSetDescriptionStarts());
     sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%' || terminology.search_translate(?) || '%'", params.getValueSetDescriptionContains());
-    sb.appendIfNotNull("and vsvr.type = 'include' and cs.uri = ?", params.getCodeSystemUri());
+
+
     sb.appendIfNotNull("and exists (select 1 from jsonb_array_elements(vss.expansion::jsonb) exp where (exp -> 'concept' ->> 'code') = ?)", params.getConceptCode());
+    sb.appendIfNotNull("and vsvr.type = 'include' and cs.uri = ?", params.getCodeSystemUri());
+
     sb.and().in("vsv.id", params.getIds(), Long::valueOf);
     sb.appendIfNotNull("and vsv.version = ?", params.getVersion());
     sb.appendIfNotNull("and vsv.status = ?", params.getStatus());
+    sb.appendIfNotNull("and (vsv.release_date is null or vsv.release_date = ?)", params.getReleaseDate());
+    sb.appendIfNotNull("and (vsv.release_date is null or vsv.release_date >= ?)", params.getReleaseDateGe());
     sb.appendIfNotNull("and (vsv.release_date is null or vsv.release_date <= ?)", params.getReleaseDateLe());
     sb.appendIfNotNull("and (vsv.expiration_date is null or vsv.expiration_date >= ?)", params.getExpirationDateGe());
     return sb;

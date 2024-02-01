@@ -11,18 +11,36 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class CodeSystemVersionQueryParams extends QueryParams {
-  private String codeSystem;
-  private String codeSystemUri;
-  private String codeSystemName;
-  private String codeSystemTitle;
-  private String codeSystemPublisher;
-  private String codeSystemContent;
-  private String codeSystemDescriptionContains;
-  private String conceptCode;
   private List<String> permittedCodeSystems;
+
+  private String codeSystem; // eq, multiple
+  private String codeSystemUri; // eq
+  private String codeSystemContent;
+  private String codeSystemIdentifier;
+  // name
+  private String codeSystemName;
+  private String codeSystemNameStarts;
+  private String codeSystemNameContains;
+  // publisher
+  private String codeSystemPublisher;
+  private String codeSystemPublisherStarts;
+  private String codeSystemPublisherContains;
+  // title
+  private String codeSystemTitle;
+  private String codeSystemTitleStarts;
+  private String codeSystemTitleContains;
+  // description
+  private String codeSystemDescription;
+  private String codeSystemDescriptionStarts;
+  private String codeSystemDescriptionContains;
+
+  private String conceptCode;
+
+
   private String ids;
   private String version;
   private String status;
+  private LocalDate releaseDate;
   private LocalDate releaseDateLe;
   private LocalDate releaseDateGe;
   private LocalDate expirationDateLe;

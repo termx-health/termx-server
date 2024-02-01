@@ -5,11 +5,10 @@ import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
-import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.fhir.BaseFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
-import com.kodality.termx.terminology.terminology.codesystem.compare.CodeSystemCompareResult;
+import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
@@ -32,8 +31,6 @@ import com.kodality.termx.ts.property.PropertyReference;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
-import com.kodality.zmei.fhir.resource.other.Parameters;
-import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptDesignation;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
@@ -139,7 +136,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
     fhirCodeSystem.setConcept(version.getEntities() == null ? null : version.getEntities().stream()
         .filter(e -> codeSystem.getHierarchyMeaning() == null || e.getAssociations() == null ||
-            e.getAssociations().stream().noneMatch(a -> a.getAssociationType().equals(codeSystem.getHierarchyMeaning())))
+                     e.getAssociations().stream().noneMatch(a -> a.getAssociationType().equals(codeSystem.getHierarchyMeaning())))
         .map(e -> toFhir(e, codeSystem, version, childMap, parentMap))
         .sorted(Comparator.comparing(CodeSystemConcept::getCode))
         .collect(Collectors.toList()));
@@ -530,16 +527,47 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       switch (k) {
         case SearchCriterion._COUNT -> params.setLimit(fhir.getCount());
         case SearchCriterion._PAGE -> params.setOffset(getOffset(fhir));
-        case "_id" -> params.setIds(v);
-        case "system", "url" -> params.setUri(v);
-        case "version" -> params.setVersionVersion(v);
-        case "name" -> params.setName(v);
-        case "title" -> params.setTitle(v);
-        case "status" -> params.setVersionStatus(v);
-        case "publisher" -> params.setPublisher(v);
-        case "description" -> params.setDescriptionContains(v);
-        case "content-mode" -> params.setContent(v);
+        case "_id" -> params.setIds(CodeSystemFhirMapper.parseCompositeId(v)[0]);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.26 :token
         case "code" -> params.setConceptCode(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.27 :token
+        case "content-mode" -> params.setContent(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.33 :date
+        // Allowed: eq, ne, gt, ge, lt, le, sa, eb, ap
+        case "date" -> {
+          if (v.startsWith("ge")) {
+            params.setVersionReleaseDateGe(LocalDate.parse(v.substring(2)));
+          } else {
+            params.setVersionReleaseDate(LocalDate.parse(v));
+          }
+        }
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.35 :string
+        case "description:exact" -> params.setDescription(v);
+        case "description" -> params.setDescriptionStarts(v);
+        case "description:contains" -> params.setDescriptionContains(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.37 :token
+        case "identifier" -> params.setIdentifier(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.40 :string
+        case "name:exact" -> params.setName(v);
+        case "name" -> params.setNameStarts(v);
+        case "name:contains" -> params.setNameContains(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.42 :string
+        case "publisher:exact" -> params.setPublisher(v);
+        case "publisher" -> params.setPublisherStarts(v);
+        case "publisher:contains" -> params.setPublisherContains(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.43 :token
+        case "status" -> params.setVersionStatus(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.44 :reference
+        case "supplements" -> params.setBaseCodeSystem(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.45 :uri
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.48 :uri
+        case "system", "url" -> params.setUri(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.46 :string
+        case "title:exact" -> params.setTitle(v);
+        case "title" -> params.setTitleStarts(v);
+        case "title:contains" -> params.setTitleContains(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.49 :uri
+        case "version" -> params.setVersionVersion(v);
         default -> throw new ApiClientException("Search by '" + k + "' not supported");
       }
     });
@@ -555,16 +583,45 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       switch (k) {
         case SearchCriterion._COUNT -> params.setLimit(fhir.getCount());
         case SearchCriterion._PAGE -> params.setOffset(getOffset(fhir));
-        case "_id" -> params.setCodeSystem(v);
-        case "system", "url" -> params.setCodeSystemUri(v);
-        case "version" -> params.setVersion(v);
-        case "name" -> params.setCodeSystemName(v);
-        case "title" -> params.setCodeSystemTitle(v);
-        case "status" -> params.setStatus(v);
-        case "publisher" -> params.setCodeSystemPublisher(v);
-        case "description" -> params.setCodeSystemDescriptionContains(v);
-        case "content-mode" -> params.setCodeSystemContent(v);
+        case "_id" -> params.setCodeSystem(CodeSystemFhirMapper.parseCompositeId(v)[0]);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.26 :token
         case "code" -> params.setConceptCode(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.27 :token
+        case "content-mode" -> params.setCodeSystemContent(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.33 :date
+        // Allowed: eq, ne, gt, ge, lt, le, sa, eb, ap
+        case "date" -> {
+          if (v.startsWith("ge")) {
+            params.setReleaseDateGe(LocalDate.parse(v.substring(2)));
+          } else {
+            params.setReleaseDate(LocalDate.parse(v));
+          }
+        }
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.35 :string
+        case "description:exact" -> params.setCodeSystemDescription(v);
+        case "description" -> params.setCodeSystemDescriptionStarts(v);
+        case "description:contains" -> params.setCodeSystemDescriptionContains(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.37 :token
+        case "identifier" -> params.setCodeSystemIdentifier(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.40 :string
+        case "name:exact" -> params.setCodeSystemName(v);
+        case "name" -> params.setCodeSystemNameStarts(v);
+        case "name:contains" -> params.setCodeSystemNameContains(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.42 :string
+        case "publisher:exact" -> params.setCodeSystemPublisher(v);
+        case "publisher" -> params.setCodeSystemPublisherStarts(v);
+        case "publisher:contains" -> params.setCodeSystemPublisherContains(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.43 :token
+        case "status" -> params.setStatus(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.45 :uri
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.48 :uri
+        case "system", "url" -> params.setCodeSystemUri(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.46 :uri
+        case "title:exact" -> params.setCodeSystemTitle(v);
+        case "title" -> params.setCodeSystemTitleStarts(v);
+        case "title:contains" -> params.setCodeSystemTitleContains(v);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.49 :uri
+        case "version" -> params.setVersion(v);
         default -> throw new ApiClientException("Search by '" + k + "' not supported");
       }
     });

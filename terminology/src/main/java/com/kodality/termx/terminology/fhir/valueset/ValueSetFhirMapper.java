@@ -9,7 +9,6 @@ import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.fhir.BaseFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.terminology.Privilege;
-import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
@@ -320,8 +319,8 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         .collect(Collectors.groupingBy(c -> c.getRight().getTargetCode(), Collectors.mapping(Pair::getLeft, toList())));
     List<String> codes = concepts.stream().map(c -> c.getConcept().getCode()).distinct().toList();
     List<ValueSetVersionConcept> rootConcepts = concepts.stream().filter(c -> c.isEnumerated() ||
-        CollectionUtils.isEmpty(c.getAssociations()) ||
-        c.getAssociations().stream().noneMatch(a -> codes.contains(a.getTargetCode()))).toList();
+                                                                              CollectionUtils.isEmpty(c.getAssociations()) ||
+                                                                              c.getAssociations().stream().noneMatch(a -> codes.contains(a.getTargetCode()))).toList();
     return rootConcepts.stream()
         .map(c -> {
           ValueSetExpansionContains contains = toFhirExpansionContains(c, properties, param);
@@ -346,19 +345,44 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       switch (k) {
         case SearchCriterion._COUNT -> params.setLimit(fhir.getCount());
         case SearchCriterion._PAGE -> params.setOffset(getOffset(fhir));
-        case "_id" -> params.setIds(v);
-        case "version" -> params.setVersionVersion(v);
-        case "url" -> params.setUri(v);
+        case "_id" -> params.setIds(ValueSetFhirMapper.parseCompositeId(v)[0]);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.33 :token
+        case "code" -> params.setConceptCode(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.34 :token
+        case "identifier" -> params.setIdentifier(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.29 :date
+        // Allowed: eq, ne, gt, ge, lt, le, sa, eb, ap
+        case "date" -> {
+          if (v.startsWith("ge")) {
+            params.setVersionReleaseDateGe(LocalDate.parse(v.substring(2)));
+          } else {
+            params.setVersionReleaseDate(LocalDate.parse(v));
+          }
+        }
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.31 :string
+        case "description:exact" -> params.setDescriptionContains(v);
+        case "description" -> params.setDescriptionContains(v);
+        case "description:contains" -> params.setDescriptionContains(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.36 :string
         case "name:exact" -> params.setName(v);
         case "name" -> params.setNameStarts(v);
         case "name:contains" -> params.setNameContains(v);
-        case "title" -> params.setTitle(v);
-        case "title:contains" -> params.setTitleContains(v);
-        case "status" -> params.setVersionStatus(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.38 :string
+        case "publisher:exact" -> params.setPublisher(v);
+        case "publisher" -> params.setPublisherStarts(v);
+        case "publisher:contains" -> params.setPublisherContains(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.39 :uri
         case "reference" -> params.setCodeSystemUri(v);
-        case "publisher" -> params.setVersionSource(v);
-        case "description" -> params.setDescriptionContains(v);
-        case "code" -> params.setConceptCode(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.40 :token
+        case "status" -> params.setVersionStatus(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.41 :title
+        case "title:exact" -> params.setTitle(v);
+        case "title" -> params.setTitleStarts(v);
+        case "title:contains" -> params.setTitleContains(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.43 :uri
+        case "url" -> params.setUri(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.44 :token
+        case "version" -> params.setVersionVersion(v);
         default -> throw new ApiClientException("Search by '" + k + "' not supported");
       }
     });
@@ -373,19 +397,44 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       switch (k) {
         case SearchCriterion._COUNT -> params.setLimit(fhir.getCount());
         case SearchCriterion._PAGE -> params.setOffset(getOffset(fhir));
-        case "_id" -> params.setValueSet(v);
-        case "version" -> params.setVersion(v);
-        case "url" -> params.setValueSetUri(v);
+        case "_id" -> params.setValueSet(ValueSetFhirMapper.parseCompositeId(v)[0]);
+        // https://www.hl7.org/fhir/codesystem-search.html#4.8.33 :token
+        case "code" -> params.setConceptCode(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.34 :token
+        case "identifier" -> params.setValueSetIdentifier(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.29 :date
+        // Allowed: eq, ne, gt, ge, lt, le, sa, eb, ap
+        case "date" -> {
+          if (v.startsWith("ge")) {
+            params.setReleaseDateGe(LocalDate.parse(v.substring(2)));
+          } else {
+            params.setReleaseDate(LocalDate.parse(v));
+          }
+        }
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.31 :string
+        case "description:exact" -> params.setValueSetDescriptionContains(v);
+        case "description" -> params.setValueSetDescriptionContains(v);
+        case "description:contains" -> params.setValueSetDescriptionContains(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.36 :string
         case "name:exact" -> params.setValueSetName(v);
         case "name" -> params.setValueSetNameStarts(v);
         case "name:contains" -> params.setValueSetNameContains(v);
-        case "title" -> params.setValueSetTitle(v);
-        case "title:contains" -> params.setValueSetTitleContains(v);
-        case "status" -> params.setStatus(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.38 :string
+        case "publisher:exact" -> params.setValueSetPublisher(v);
+        case "publisher" -> params.setValueSetPublisherStarts(v);
+        case "publisher:contains" -> params.setValueSetPublisherContains(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.39 :uri
         case "reference" -> params.setCodeSystemUri(v);
-        case "publisher" -> params.setValueSetPublisher(v);
-        case "description" -> params.setValueSetDescriptionContains(v);
-        case "code" -> params.setConceptCode(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.40 :token
+        case "status" -> params.setStatus(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.41 :title
+        case "title:exact" -> params.setValueSetTitle(v);
+        case "title" -> params.setValueSetTitleStarts(v);
+        case "title:contains" -> params.setValueSetTitleContains(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.43 :uri
+        case "url" -> params.setValueSetUri(v);
+        // https://www.hl7.org/fhir/valueset-search.html#4.9.44 :token
+        case "version" -> params.setVersion(v);
         default -> throw new ApiClientException("Search by '" + k + "' not supported");
       }
     });
@@ -397,7 +446,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
 
   public static ValueSet fromFhirValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     ValueSet vs = new ValueSet();
-    vs.setId(CodeSystemFhirMapper.parseCompositeId(valueSet.getId())[0]);
+    vs.setId(ValueSetFhirMapper.parseCompositeId(valueSet.getId())[0]);
     vs.setUri(valueSet.getUrl());
     vs.setPublisher(valueSet.getPublisher());
     vs.setName(valueSet.getName());

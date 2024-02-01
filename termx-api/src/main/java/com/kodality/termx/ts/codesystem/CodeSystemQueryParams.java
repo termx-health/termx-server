@@ -11,41 +11,51 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class CodeSystemQueryParams extends QueryParams {
-  private String id;
-  private String ids;
-  private String idContains;
   private List<String> permittedIds;
-  private String publisher;
-  private String uri;
-  private String uriContains;
-  private String content;
-  private String name;
-  private String nameContains;
-  private String title;
-  private String titleContains;
-  private String description;
+  private String id; // eq
+  private String ids; // eq
+  private String idContains;
+  private String uri; // eq, multiple
+  private String uriContains; //
+  private String baseCodeSystem; // eq
+  private String content; // eq
+  private String identifier; // eq
+
+  // description
+  private String description; // eq
+  private String descriptionStarts;
   private String descriptionContains;
-  private String baseCodeSystem;
-
-  private String text;
+  // name
+  private String name; // eq
+  private String nameStarts;
+  private String nameContains;
+  // publisher
+  private String publisher; // eq
+  private String publisherStarts;
+  private String publisherContains;
+  // title
+  private String title; // eq
+  private String titleStarts;
+  private String titleContains;
+  //text
+  private String text; // eq, any(cs.id, cs.uri, cs.name) OR cs.title
   private String textContains;
+  // concept
+  private String conceptCode; // eq
+  private String conceptCodeSystemVersion; // decorate
 
-  private String conceptCode;
-  private String conceptCodeSystemVersion;
-  private boolean conceptsDecorated;
-
-  private Long versionId;
-  private String versionVersion;
-  private String versionStatus;
+  private Long versionId; // eq
+  private String versionVersion; // eq
+  private String versionStatus; // eq
+  private LocalDate versionReleaseDate;
   private LocalDate versionReleaseDateGe;
   private LocalDate versionExpirationDateLe;
-  private boolean versionsDecorated;
+  private Long codeSystemEntityVersionId; // eq
 
+  private boolean versionsDecorated; // decorate
+  private boolean conceptsDecorated; // decorate
   private boolean propertiesDecorated;
-
-  private Long codeSystemEntityVersionId;
-
-  private String lang;
+  private String lang; // used for sort
 
   private Long spaceId;
   private Long packageId;
