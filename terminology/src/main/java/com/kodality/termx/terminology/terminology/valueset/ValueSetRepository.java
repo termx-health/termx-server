@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
@@ -58,14 +59,14 @@ public class ValueSetRepository extends BaseRepository {
 
   public QueryResult<ValueSet> query(ValueSetQueryParams params) {
     String join = "left join terminology.value_set_version vsv on vsv.value_set = vs.id and vsv.sys_status = 'A' " +
-        "left join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A' " +
-        "left join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' " +
-        "left join terminology.code_system cs on cs.id = vsvr.code_system and cs.sys_status = 'A' " +
-        "left join terminology.value_set_snapshot vss on vsv.id = vss.value_set_version_id and vss.sys_status = 'A' " +
-        "left join sys.package_version_resource pvr on pvr.resource_type = 'value-set' and pvr.resource_id = vs.id and pvr.sys_status = 'A' " +
-        "left join sys.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
-        "left join sys.package p on p.id = pv.package_id and p.sys_status = 'A' " +
-        "left join sys.space s on s.id = p.space_id and s.sys_status = 'A' ";
+                  "left join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A' " +
+                  "left join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' " +
+                  "left join terminology.code_system cs on cs.id = vsvr.code_system and cs.sys_status = 'A' " +
+                  "left join terminology.value_set_snapshot vss on vsv.id = vss.value_set_version_id and vss.sys_status = 'A' " +
+                  "left join sys.package_version_resource pvr on pvr.resource_type = 'value-set' and pvr.resource_id = vs.id and pvr.sys_status = 'A' " +
+                  "left join sys.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' " +
+                  "left join sys.package p on p.id = pv.package_id and p.sys_status = 'A' " +
+                  "left join sys.space s on s.id = p.space_id and s.sys_status = 'A' ";
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(distinct(vs.id)) from terminology.value_set vs " + join);
       sb.append(filter(params));
@@ -80,44 +81,80 @@ public class ValueSetRepository extends BaseRepository {
   }
 
   private SqlBuilder filter(ValueSetQueryParams params) {
-    SqlBuilder sb = new SqlBuilder();
-    sb.append("where vs.sys_status = 'A'");
+    SqlBuilder sb = new SqlBuilder("where vs.sys_status = 'A'");
+    sb.appendIfNotNull(params.getPermittedIds(), (s, p) -> s.and().in("vs.id", p));
+
+    // id
     sb.appendIfNotNull("and vs.id = ?", params.getId());
     sb.appendIfNotNull("and vs.id ~* ?", params.getIdContains());
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("vs.id", p));
-    sb.appendIfNotNull(params.getPermittedIds(), (s, p) -> s.and().in("vs.id", p));
-    sb.appendIfNotNull("and vs.publisher = ?", params.getPublisher());
+
+    // uri
     sb.appendIfNotNull("and vs.uri = ?", params.getUri());
     sb.appendIfNotNull("and vs.uri ~* ?", params.getUriContains());
+
+    // identifier
+    if (StringUtils.isNotEmpty(params.getIdentifier())) {
+      String[] tokens = PipeUtil.parsePipe(params.getIdentifier());
+      sb.and("exists (select 1 from jsonb_array_elements(vs.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)",
+          tokens[0], tokens[1]);
+    }
+
+    // description
     sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%`' || terminology.search_translate(?) || '`%'", params.getDescription());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%`' || terminology.search_translate(?) || '%`%'", params.getDescriptionStarts());
     sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%' || terminology.search_translate(?) || '%'", params.getDescriptionContains());
+
+    // name
     sb.appendIfNotNull("and vs.name = ?", params.getName());
     sb.appendIfNotNull("and vs.name ilike ? || '%'", params.getNameStarts());
     sb.appendIfNotNull("and vs.name ~* ?", params.getNameContains());
+
+    // publisher
+    sb.appendIfNotNull("and vs.publisher = ?", params.getPublisher());
+    sb.appendIfNotNull("and vs.publisher ilike ? || '%'", params.getPublisherStarts());
+    sb.appendIfNotNull("and vs.publisher ~* ?", params.getPublisherContains());
+
+    // title
     sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getTitle());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '%`%'", params.getTitleStarts());
     sb.appendIfNotNull("and terminology.jsonb_search(vs.title) like '%' || terminology.search_translate(?) || '%'", params.getTitleContains());
+
+
+    // text
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and ( terminology.text_search(vs.id, vs.uri) like '%`' || terminology.search_translate(?) || '`%'" +
-              "     or terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%' )",
+      sb.and("(terminology.text_search(vs.id, vs.uri) like '%`' || terminology.search_translate(?) || '`%'" +
+             "     or terminology.jsonb_search(vs.title) like '%`' || terminology.search_translate(?) || '`%' )",
           params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and ( terminology.text_search(vs.id, vs.uri) like '%' || terminology.search_translate(?) || '%'" +
-              "     or terminology.jsonb_search(vs.title) like '%' || terminology.search_translate(?) || '%' )",
+      sb.and("(terminology.text_search(vs.id, vs.uri) like '%' || terminology.search_translate(?) || '%'" +
+             "     or terminology.jsonb_search(vs.title) like '%' || terminology.search_translate(?) || '%' )",
           params.getTextContains(), params.getTextContains());
     }
+
+    // version
     sb.appendIfNotNull("and vsv.id = ?", params.getVersionId());
     sb.appendIfNotNull("and vsv.version = ?", params.getVersionVersion());
-    sb.appendIfNotNull("and vsv.source = ?", params.getVersionSource());
     sb.appendIfNotNull("and vsv.status = ?", params.getVersionStatus());
+    sb.appendIfNotNull("and vsv.source = ?", params.getVersionSource());
+    sb.appendIfNotNull("and vsv.release_date = ?", params.getVersionReleaseDate());
+    sb.appendIfNotNull("and vsv.release_date >= ?", params.getVersionReleaseDateGe());
+
+    // CS
     sb.appendIfNotNull("and vsvr.type = 'include' and vsvr.code_system = ?", params.getCodeSystem());
     sb.appendIfNotNull("and vsvr.type = 'include' and cs.uri = ?", params.getCodeSystemUri());
+
+    // concept
     if (params.getConceptCode() != null) {
       sb.append("and exists (select 1 from jsonb_array_elements(vss.expansion::jsonb) exp where (exp -> 'concept' ->> 'code') = ?)", params.getConceptCode());
     }
     if (params.getConceptId() != null) {
-      sb.append("and exists (select 1 from jsonb_array_elements(vss.expansion::jsonb) exp where (exp -> 'concept' ->> 'id')::bigint = ?)", params.getConceptId());
+      sb.append("and exists (select 1 from jsonb_array_elements(vss.expansion::jsonb) exp where (exp -> 'concept' ->> 'id')::bigint = ?)",
+          params.getConceptId());
     }
+
+    // meta
     sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
     sb.appendIfNotNull("and p.id = ?", params.getPackageId());
     sb.appendIfNotNull("and s.id = ?", params.getSpaceId());

@@ -8,9 +8,11 @@ import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
+import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -26,9 +28,9 @@ public class CodeSystemVersionRepository extends BaseRepository {
   });
 
   private final static String select = "select csv.*, " +
-      "(select count(1) from terminology.entity_version_code_system_version_membership evcsvm, terminology.code_system_entity_version csev " +
-      "                 where evcsvm.code_system_version_id = csv.id and evcsvm.code_system_entity_version_id = csev.id and evcsvm.sys_status = 'A' and csev.sys_status = 'A') " +
-      "as concepts_total ";
+                                       "(select count(1) from terminology.entity_version_code_system_version_membership evcsvm, terminology.code_system_entity_version csev " +
+                                       "                 where evcsvm.code_system_version_id = csv.id and evcsvm.code_system_entity_version_id = csev.id and evcsvm.sys_status = 'A' and csev.sys_status = 'A') " +
+                                       "as concepts_total ";
 
   public void save(CodeSystemVersion version) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -62,14 +64,14 @@ public class CodeSystemVersionRepository extends BaseRepository {
   public QueryResult<CodeSystemVersion> query(CodeSystemVersionQueryParams params) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(1) from terminology.code_system_version csv " +
-          "inner join terminology.code_system cs on cs.id = csv.code_system and cs.sys_status = 'A' " +
-          "where csv.sys_status = 'A'");
+                                     "inner join terminology.code_system cs on cs.id = csv.code_system and cs.sys_status = 'A' " +
+                                     "where csv.sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
       SqlBuilder sb = new SqlBuilder(select + "from terminology.code_system_version csv " +
-          "inner join terminology.code_system cs on cs.id = csv.code_system and cs.sys_status = 'A' " +
-          "where csv.sys_status = 'A'");
+                                     "inner join terminology.code_system cs on cs.id = csv.code_system and cs.sys_status = 'A' " +
+                                     "where csv.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
@@ -78,23 +80,63 @@ public class CodeSystemVersionRepository extends BaseRepository {
 
   private SqlBuilder filter(CodeSystemVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
-    sb.and().in("cs.id", params.getCodeSystem());
     sb.and().in("cs.id", params.getPermittedCodeSystems());
+
+    // CS ids
+    sb.and().in("cs.id", params.getCodeSystem());
+
+    // CS uri
     sb.appendIfNotNull("and cs.uri = ?", params.getCodeSystemUri());
-    sb.appendIfNotNull("and cs.name = ?", params.getCodeSystemName());
-    sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getCodeSystemTitle());
-    sb.appendIfNotNull("and cs.publisher = ?", params.getCodeSystemPublisher());
+
+    // CS content
     sb.appendIfNotNull("and cs.content = ?", params.getCodeSystemContent());
+
+    // CS identifier
+    if (StringUtils.isNotEmpty(params.getCodeSystemIdentifier())) {
+      String[] tokens = PipeUtil.parsePipe(params.getCodeSystemIdentifier());
+      sb.and("exists (select 1 from jsonb_array_elements(cs.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)", tokens[0], tokens[1]);
+    }
+
+    // CS name
+    sb.appendIfNotNull("and cs.name = ?", params.getCodeSystemName());
+    sb.appendIfNotNull("and cs.name ilike ? || '%'", params.getCodeSystemNameStarts());
+    sb.appendIfNotNull("and cs.name ~* ?", params.getCodeSystemNameContains());
+
+    // CS publisher
+    sb.appendIfNotNull("and cs.publisher = ?", params.getCodeSystemPublisher());
+    sb.appendIfNotNull("and cs.publisher ilike ? || '%'", params.getCodeSystemPublisherStarts());
+    sb.appendIfNotNull("and cs.publisher ~* ?", params.getCodeSystemPublisherContains());
+
+    // CS title
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getCodeSystemTitle());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '%`%'", params.getCodeSystemTitleStarts());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%' || terminology.search_translate(?) || '%'", params.getCodeSystemTitleContains());
+
+    // CS description
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%`' || terminology.search_translate(?) || '`%'", params.getCodeSystemDescription());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%`' || terminology.search_translate(?) || '%`%'", params.getCodeSystemDescriptionStarts());
     sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%' || terminology.search_translate(?) || '%'", params.getCodeSystemDescriptionContains());
+
+    // concept code
+    sb.appendIfNotNull(
+        "and exists (select 1 from terminology.entity_version_code_system_version_membership evcsvm, terminology.code_system_entity_version csev " +
+        "where evcsvm.code_system_version_id = csv.id and evcsvm.code_system_entity_version_id = csev.id and evcsvm.sys_status = 'A' and csev.sys_status = 'A' and csev.code = ?)",
+        params.getConceptCode());
+
+    // CSV
     sb.and().in("csv.id", params.getIds(), Long::valueOf);
     sb.appendIfNotNull("and csv.version = ?", params.getVersion());
     sb.appendIfNotNull("and csv.status = ?", params.getStatus());
+
+    // CSV release date
+    sb.appendIfNotNull("and csv.release_date = ?", params.getReleaseDate());
     sb.appendIfNotNull("and csv.release_date <= ?", params.getReleaseDateLe());
     sb.appendIfNotNull("and csv.release_date >= ?", params.getReleaseDateGe());
+
+    // CSV expiration date
     sb.appendIfNotNull("and (csv.expiration_date <= ? or csv.expiration_date is null)", params.getExpirationDateLe());
     sb.appendIfNotNull("and (csv.expiration_date >= ? or csv.expiration_date is null)", params.getExpirationDateGe());
-    sb.appendIfNotNull("and exists (select 1 from terminology.entity_version_code_system_version_membership evcsvm, terminology.code_system_entity_version csev " +
-        "where evcsvm.code_system_version_id = csv.id and evcsvm.code_system_entity_version_id = csev.id and evcsvm.sys_status = 'A' and csev.sys_status = 'A' and csev.code = ?)", params.getConceptCode());
+
     return sb;
   }
 
@@ -130,16 +172,19 @@ public class CodeSystemVersionRepository extends BaseRepository {
       return;
     }
     List<Long> existingEntityVersionIds = jdbcTemplate.queryForList("select code_system_entity_version_id from terminology.entity_version_code_system_version_membership " +
-        "where code_system_version_id = ? and sys_status = 'A'", Long.class, codeSystemVersionId);
+                                  "where code_system_version_id = ? and sys_status = 'A'", Long.class, codeSystemVersionId);
 
     List<Long> newEntityVersionIds = entityVersionIds.stream().filter(id -> !existingEntityVersionIds.contains(id) && id != null).toList();
     String query = "insert into terminology.entity_version_code_system_version_membership (code_system_entity_version_id, code_system_version_id) select ?,? ";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
-      @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
+      @Override
+      public void setValues(PreparedStatement ps, int i) throws SQLException {
         ps.setLong(1, newEntityVersionIds.get(i));
         ps.setLong(2, codeSystemVersionId);
       }
-      @Override public int getBatchSize() {return newEntityVersionIds.size();}
+
+      @Override
+      public int getBatchSize() {return newEntityVersionIds.size();}
     });
   }
 
@@ -149,11 +194,14 @@ public class CodeSystemVersionRepository extends BaseRepository {
     }
     String query = "update terminology.entity_version_code_system_version_membership set sys_status = 'C' where sys_status = 'A'and code_system_entity_version_id = ? and code_system_version_id = ? ";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
-      @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
+      @Override
+      public void setValues(PreparedStatement ps, int i) throws SQLException {
         ps.setLong(1, entityVersionIds.get(i));
         ps.setLong(2, codeSystemVersionId);
       }
-      @Override public int getBatchSize() {return entityVersionIds.size();}
+
+      @Override
+      public int getBatchSize() {return entityVersionIds.size();}
     });
   }
 
@@ -164,8 +212,8 @@ public class CodeSystemVersionRepository extends BaseRepository {
 
   public CodeSystemVersion loadLastVersionByUri(String uri) {
     String sql = select + "from terminology.code_system_version csv where csv.sys_status = 'A' and " +
-        "exists (select 1 from terminology.code_system cs where cs.id = csv.code_system and cs.uri = ? and cs.sys_status = 'A') " +
-        "order by csv.release_date desc";
+                 "exists (select 1 from terminology.code_system cs where cs.id = csv.code_system and cs.uri = ? and cs.sys_status = 'A') " +
+                 "order by csv.release_date desc";
     return getBean(sql, bp, uri);
   }
 

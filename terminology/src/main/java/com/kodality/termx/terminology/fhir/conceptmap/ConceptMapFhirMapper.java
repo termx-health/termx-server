@@ -5,10 +5,10 @@ import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
-import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.fhir.BaseFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
+import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionService;
@@ -350,14 +350,44 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
       switch (k) {
         case SearchCriterion._COUNT -> params.setLimit(fhir.getCount());
         case SearchCriterion._PAGE -> params.setOffset(getOffset(fhir));
-        case "_id" -> params.setIds(v);
-        case "url" -> params.setUri(v);
-        case "version" -> params.setVersionVersion(v);
-        case "name" -> params.setName(v);
-        case "title" -> params.setTitle(v);
+        case "_id" -> params.setIds(ConceptMapFhirMapper.parseCompositeId(v)[0]);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.26
+        case "date" -> {
+          if (v.startsWith("ge")) {
+            params.setVersionReleaseDateGe(LocalDate.parse(v.substring(2)));
+          } else {
+            params.setVersionReleaseDate(LocalDate.parse(v));
+          }
+        }
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.28 :string
+        case "description:exact" -> params.setDescription(v);
+        case "description" -> params.setDescriptionStarts(v);
+        case "description:contains" -> params.setDescriptionContains(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.30 :token
+        case "identifier" -> params.setIdentifier(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.33 :string
+        case "name:exact" -> params.setName(v);
+        case "name" -> params.setNameStarts(v);
+        case "name:contains" -> params.setNameContains(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.46 :string
+        case "title:exact" -> params.setTitle(v);
+        case "title" -> params.setTitleStarts(v);
+        case "title:contains" -> params.setTitleContains(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.36 :string
+        case "publisher:exact" -> params.setPublisher(v);
+        case "publisher" -> params.setPublisherStarts(v);
+        case "publisher:contains" -> params.setPublisherContains(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.41 :token
         case "status" -> params.setVersionStatus(v);
-        case "publisher" -> params.setPublisher(v);
-        case "description" -> params.setDescriptionContains(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.37 :token
+        case "source-code" -> params.setVersionConceptSourceCode(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.42 :token
+        case "target-code" -> params.setVersionConceptTargetCode(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.48 :uri
+        case "url" -> params.setUri(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.49 :token
+        case "version" -> params.setVersionVersion(v);
+
         default -> throw new ApiClientException("Search by '" + k + "' not supported");
       }
     });

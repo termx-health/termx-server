@@ -1,8 +1,8 @@
 package com.kodality.termx.terminology.terminology.codesystem;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.core.fhir.BaseFhirMapper;
+import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
@@ -83,36 +83,37 @@ public class CodeSystemService {
   }
 
   private CodeSystem decorate(CodeSystem codeSystem) {
-    decorateVersions(codeSystem, null, null, null);
+    decorateVersions(codeSystem, new CodeSystemQueryParams());
     return codeSystem;
   }
 
   private void decorateQueryResult(QueryResult<CodeSystem> codeSystems, CodeSystemQueryParams params) {
     codeSystems.getData().forEach(codeSystem -> {
       if (params.isConceptsDecorated()) {
-        decorateConcepts(codeSystem, params.getConceptCode(), params.getConceptCodeSystemVersion());
+        decorateConcepts(codeSystem, params);
       }
       if (params.isVersionsDecorated()) {
-        decorateVersions(codeSystem, params.getVersionVersion(), params.getVersionReleaseDateGe(), params.getVersionExpirationDateLe());
+        decorateVersions(codeSystem, params);
       }
     });
   }
 
-  private void decorateConcepts(CodeSystem codeSystem, String conceptCode, String conceptCodeSystemVersion) {
+  private void decorateConcepts(CodeSystem codeSystem, CodeSystemQueryParams params) {
     ConceptQueryParams conceptParams = new ConceptQueryParams();
     conceptParams.setCodeSystem(codeSystem.getId());
-    conceptParams.setCode(conceptCode);
-    conceptParams.setCodeSystemVersion(conceptCodeSystemVersion);
+    conceptParams.setCode(params.getConceptCode());
+    conceptParams.setCodeSystemVersion(params.getConceptCodeSystemVersion());
     conceptParams.all();
     codeSystem.setConcepts(conceptService.query(conceptParams).getData());
   }
 
-  private void decorateVersions(CodeSystem codeSystem, String versionVersion, LocalDate versionReleaseDateGe, LocalDate versionExpirationDateLe) {
+  private void decorateVersions(CodeSystem codeSystem, CodeSystemQueryParams params) {
     CodeSystemVersionQueryParams versionParams = new CodeSystemVersionQueryParams();
     versionParams.setCodeSystem(codeSystem.getId());
-    versionParams.setVersion(versionVersion);
-    versionParams.setReleaseDateGe(versionReleaseDateGe);
-    versionParams.setExpirationDateLe(versionExpirationDateLe);
+    versionParams.setVersion(params.getVersionVersion());
+    versionParams.setReleaseDate(params.getVersionReleaseDate());
+    versionParams.setReleaseDateGe(params.getVersionReleaseDateGe());
+    versionParams.setExpirationDateLe(params.getVersionExpirationDateLe());
     versionParams.all();
     codeSystem.setVersions(codeSystemVersionService.query(versionParams).getData());
   }

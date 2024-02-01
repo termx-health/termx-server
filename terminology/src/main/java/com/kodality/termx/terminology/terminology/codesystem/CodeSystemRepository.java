@@ -7,6 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.codesystem.CodeSystem;
@@ -37,23 +38,23 @@ public class CodeSystemRepository extends BaseRepository {
   });
 
   private static final String select = "select distinct on (cs.id) cs.*, " +
-      "(select jsonb_agg(ep.p) from (select json_build_object(" +
-      "               'id', ep.id, " +
-      "               'name', ep.name, " +
-      "               'uri', ep.uri, " +
-      "               'kind', ep.kind, " +
-      "               'type', ep.type, " +
-      "               'description', ep.description, " +
-      "               'status', ep.status, " +
-      "               'orderNumber', ep.order_number, " +
-      "               'preferred', ep.preferred, " +
-      "               'required', ep.required, " +
-      "               'showInList', ep.show_in_list, " +
-      "               'rule', ep.rule, " +
-      "               'created', ep.created, " +
-      "               'definedEntityPropertyId', ep.defined_entity_property_id) as p " +
-      "from terminology.entity_property ep where ep.code_system = cs.id and ep.sys_status = 'A' order by ep.order_number) ep) as properties, " +
-      "(select cs1.uri from terminology.code_system cs1 where cs1.id = cs.base_code_system and cs1.sys_status = 'A') as base_code_system_uri ";
+                                       "(select jsonb_agg(ep.p) from (select json_build_object(" +
+                                       "               'id', ep.id, " +
+                                       "               'name', ep.name, " +
+                                       "               'uri', ep.uri, " +
+                                       "               'kind', ep.kind, " +
+                                       "               'type', ep.type, " +
+                                       "               'description', ep.description, " +
+                                       "               'status', ep.status, " +
+                                       "               'orderNumber', ep.order_number, " +
+                                       "               'preferred', ep.preferred, " +
+                                       "               'required', ep.required, " +
+                                       "               'showInList', ep.show_in_list, " +
+                                       "               'rule', ep.rule, " +
+                                       "               'created', ep.created, " +
+                                       "               'definedEntityPropertyId', ep.defined_entity_property_id) as p " +
+                                       "from terminology.entity_property ep where ep.code_system = cs.id and ep.sys_status = 'A' order by ep.order_number) ep) as properties, " +
+                                       "(select cs1.uri from terminology.code_system cs1 where cs1.id = cs.base_code_system and cs1.sys_status = 'A') as base_code_system_uri ";
 
   public void save(CodeSystem codeSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -108,43 +109,79 @@ public class CodeSystemRepository extends BaseRepository {
   }
 
   private SqlBuilder filter(CodeSystemQueryParams params) {
-    SqlBuilder sb = new SqlBuilder();
-    sb.append("where cs.sys_status = 'A'");
+    SqlBuilder sb = new SqlBuilder("where cs.sys_status = 'A'");
     sb.and().in("cs.id", params.getPermittedIds());
+
+    // id
     sb.appendIfNotNull("and cs.id = ?", params.getId());
     sb.appendIfNotNull(params.getIds(), (s, p) -> s.and().in("cs.id", p));
     sb.appendIfNotNull("and cs.id ~* ?", params.getIdContains());
-    if (StringUtils.isNotEmpty(params.getUri())) {
-      sb.and().in("cs.uri", params.getUri());
-    }
+
+    // uri
+    sb.appendIfNotNull(params.getUri(), (s, p) -> s.and().in("cs.uri", params.getUri()));
     sb.appendIfNotNull("and cs.uri ~* ?", params.getUriContains());
+
+    // content
     sb.appendIfNotNull("and cs.content = ?", params.getContent());
-    sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%`' || terminology.search_translate(?) || '`%'", params.getDescription());
-    sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%' || terminology.search_translate(?) || '%'", params.getDescriptionContains());
+
+    // identifier
+    if (StringUtils.isNotEmpty(params.getIdentifier())) {
+      String[] tokens = PipeUtil.parsePipe(params.getIdentifier());
+      sb.and("exists (select 1 from jsonb_array_elements(cs.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)",
+          tokens[0], tokens[1]);
+    }
+
+    // base CodeSystem aka. supplement
     sb.appendIfNotNull("and cs.base_code_system = ?", params.getBaseCodeSystem());
-    sb.appendIfNotNull("and cs.publisher = ?", params.getPublisher());
+
+    // description
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%`' || terminology.search_translate(?) || '`%'", params.getDescription());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%`' || terminology.search_translate(?) || '%`%'", params.getDescriptionStarts());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.description) like '%' || terminology.search_translate(?) || '%'", params.getDescriptionContains());
+
+    // name
     sb.appendIfNotNull("and cs.name = ?", params.getName());
+    sb.appendIfNotNull("and cs.name ilike ? || '%'", params.getNameStarts());
     sb.appendIfNotNull("and cs.name ~* ?", params.getNameContains());
+
+    // publisher
+    sb.appendIfNotNull("and cs.publisher = ?", params.getPublisher());
+    sb.appendIfNotNull("and cs.publisher ilike ? || '%'", params.getPublisherStarts());
+    sb.appendIfNotNull("and cs.publisher ~* ?", params.getPublisherContains());
+
+    // title
     sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '`%'", params.getTitle());
+    sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '%`%'", params.getTitleStarts());
     sb.appendIfNotNull("and terminology.jsonb_search(cs.title) like '%' || terminology.search_translate(?) || '%'", params.getTitleContains());
+
+    // text
     if (StringUtils.isNotEmpty(params.getText())) {
-      sb.append("and ( terminology.text_search(cs.id, cs.uri, cs.name) like '%`' || terminology.search_translate(?) || '`%'" +
-              "     or terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '`%' )",
+      sb.and("( terminology.text_search(cs.id, cs.uri, cs.name) like '%`' || terminology.search_translate(?) || '`%'" +
+             "     or terminology.jsonb_search(cs.title) like '%`' || terminology.search_translate(?) || '`%' )",
           params.getText(), params.getText());
     }
     if (StringUtils.isNotEmpty(params.getTextContains())) {
-      sb.append("and ( terminology.text_search(cs.id, cs.uri, cs.name) like '%' || terminology.search_translate(?) || '%'" +
-              "     or terminology.jsonb_search(cs.title) like '%' || terminology.search_translate(?) || '%' )",
+      sb.and("( terminology.text_search(cs.id, cs.uri, cs.name) like '%' || terminology.search_translate(?) || '%'" +
+             "     or terminology.jsonb_search(cs.title) like '%' || terminology.search_translate(?) || '%' )",
           params.getTextContains(), params.getTextContains());
     }
-    sb.appendIfNotNull("and csv.version = ?", params.getVersionVersion());
+
+    // concept
+    sb.appendIfNotNull("and c.code = ?", params.getConceptCode());
+
+    // version
     sb.appendIfNotNull("and csv.id = ?", params.getVersionId());
+    sb.appendIfNotNull("and csv.version = ?", params.getVersionVersion());
     sb.appendIfNotNull("and csv.status = ?", params.getVersionStatus());
+    sb.appendIfNotNull("and csv.release_date = ?", params.getVersionReleaseDate());
     sb.appendIfNotNull("and csv.release_date >= ?", params.getVersionReleaseDateGe());
     sb.appendIfNotNull("and (csv.expiration_date <= ? or csv.expiration_date is null)", params.getVersionExpirationDateLe());
-    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev" +
-        " where csev.code_system_entity_id = cse.id and csev.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
-    sb.appendIfNotNull("and c.code = ?", params.getConceptCode());
+
+    // entity version
+    sb.appendIfNotNull("and exists (select 1 from terminology.code_system_entity_version csev " +
+                       "where csev.code_system_entity_id = cse.id and csev.sys_status = 'A' and csev.id = ?)", params.getCodeSystemEntityVersionId());
+
+    // meta
     sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
     sb.appendIfNotNull("and p.id = ?", params.getPackageId());
     sb.appendIfNotNull("and s.id = ?", params.getSpaceId());
@@ -172,7 +209,8 @@ public class CodeSystemRepository extends BaseRepository {
     String join = "";
     if (CollectionUtils.isNotEmpty(Stream.of(
             params.getVersionVersion(), params.getVersionId(), params.getVersionStatus(),
-            params.getVersionReleaseDateGe(), params.getVersionExpirationDateLe())
+            params.getVersionReleaseDate(), params.getVersionReleaseDateGe(),
+            params.getVersionExpirationDateLe())
         .filter(Objects::nonNull).toList())) {
       join += "left join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A' ";
     }
