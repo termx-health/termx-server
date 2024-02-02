@@ -83,7 +83,7 @@ public class LoincMapper {
   private static List<Designation> mapDesignations(LoincConcept c) {
     List<Designation> designations = new ArrayList<>();
     if (c.getDisplay() != null) {
-      designations.add(mapDesignation(c.getDisplay(), DISPLAY, Language.en));
+      c.getDisplay().forEach((key, value) -> designations.add(mapDesignation(value, DISPLAY, key)));
     }
     if (c.getRelatedNames() != null) {
       designations.addAll(c.getRelatedNames().stream().map(rn -> mapDesignation(rn.getValue(), KEY_WORDS, rn.getKey())).toList());

@@ -89,7 +89,7 @@ public class LoincService {
     return rows.stream().collect(Collectors.groupingBy(r -> r[headers.indexOf("LoincNumber")])).entrySet().stream()
         .map(g -> new LoincConcept()
             .setCode(g.getKey())
-            .setDisplay(g.getValue().stream().map(r -> r[headers.indexOf("LongCommonName")]).findFirst().orElse(null))
+            .setDisplay(new HashMap<>(Map.of(Language.en, g.getValue().stream().map(r -> r[headers.indexOf("LongCommonName")]).findFirst().orElse(""))))
             .setProperties(g.getValue().stream().map(r -> new LoincConceptProperty()
                 .setName(r[headers.indexOf("PartTypeName")])
                 .setType(EntityPropertyType.coding)
@@ -158,6 +158,8 @@ public class LoincService {
       updatePartDisplay(parts, c.getProperties(), "SCALE", Pair.of(lang, r[headers.indexOf("SCALE_TYP")]));
       updatePartDisplay(parts, c.getProperties(), "METHOD", Pair.of(lang, r[headers.indexOf("METHOD_TYP")]));
       updatePartDisplay(parts, c.getProperties(), "CLASS", Pair.of(lang, r[headers.indexOf("CLASS")]));
+
+      c.getDisplay().put(lang, r[headers.indexOf("LONG_COMMON_NAME")]);
 
       c.setRelatedNames(c.getRelatedNames() == null ? new ArrayList<>() : c.getRelatedNames());
       c.getRelatedNames().add(Pair.of(lang, r[headers.indexOf("RELATEDNAMES2")]));

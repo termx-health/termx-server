@@ -13,6 +13,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemImportRequest.CodeSystemImport
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityPropertyKind;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -63,19 +64,19 @@ public class AtcEstMapper {
     designation.setStatus(PublicationStatus.active);
     designation.setDesignationType(DISPLAY);
     designation.setPreferred(true);
-    return List.of(designation);
+    return new ArrayList<>(List.of(designation));
   }
 
   private static List<CodeSystemAssociation> mapAssociations(AtcEst a, List<AtcEst> atc) {
     String targetCode = findParent(a.getCode(), atc, 1);
     if (targetCode == null) {
-      return List.of();
+      return new ArrayList<>();
     }
     CodeSystemAssociation association = new CodeSystemAssociation();
     association.setAssociationType(IS_A);
     association.setStatus(PublicationStatus.active);
     association.setTargetCode(targetCode);
-    return List.of(association);
+    return new ArrayList<>(List.of(association));
   }
 
   private static String findParent(String child, List<AtcEst> atc, int offset) {

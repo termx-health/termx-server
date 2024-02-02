@@ -225,7 +225,8 @@ public class CodeSystemFileImportMapper {
   }
 
   private static List<String> findParents(String child, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities) {
-   return entities.stream().map(p -> Pair.of(getEntityProp(p, CONCEPT_CODE), getEntityProp(p, CONCEPT_CHILD))).filter(p -> child.equals(p.getValue())).map(Pair::getKey).toList();
+   return entities.stream().map(p -> Pair.of(getEntityProp(p, CONCEPT_CODE), getEntityProp(p, CONCEPT_CHILD)))
+       .filter(p -> child != null && child.equals(p.getValue())).map(Pair::getKey).toList();
   }
 
   private static String findParent(String child, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities, int offset) {
