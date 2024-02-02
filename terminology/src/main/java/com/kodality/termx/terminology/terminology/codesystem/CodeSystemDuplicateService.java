@@ -146,18 +146,21 @@ public class CodeSystemDuplicateService {
   private Map<Long, Long> duplicateConcepts(List<Concept> concepts, String targetCodeSystem, Map<Long, Long> propertyMap) {
     concepts.forEach(c -> c.setId(null));
     conceptService.batchSave(concepts, targetCodeSystem);
-    concepts.forEach(c -> c.getVersions().forEach(v -> {
-      v.setCodeSystemEntityId(c.getId());
-      v.setCodeSystem(targetCodeSystem);
-      v.setCreated(null);
-      v.setDesignations(CollectionUtils.isEmpty(v.getDesignations()) ? new ArrayList<>() : v.getDesignations());
-      v.setPropertyValues(CollectionUtils.isEmpty(v.getPropertyValues()) ? new ArrayList<>() : v.getPropertyValues());
-      v.setAssociations(CollectionUtils.isEmpty(v.getAssociations()) ? new ArrayList<>() : v.getAssociations());
-      v.getDesignations().forEach(d -> d.setId(null).setDesignationTypeId(propertyMap.getOrDefault(d.getDesignationTypeId(), d.getDesignationTypeId())));
-      v.getPropertyValues().forEach(pv -> pv.setId(null).setEntityPropertyId(propertyMap.getOrDefault(pv.getEntityPropertyId(), pv.getEntityPropertyId())));
-      v.setAssociations(new ArrayList<>());
-      v.setStatus(PublicationStatus.draft);
-    }));
+    concepts.forEach(c -> {
+      c.setVersions(c.getVersions() == null ? new ArrayList<>() : c.getVersions());
+      c.getVersions().forEach(v -> {
+        v.setCodeSystemEntityId(c.getId());
+        v.setCodeSystem(targetCodeSystem);
+        v.setCreated(null);
+        v.setDesignations(CollectionUtils.isEmpty(v.getDesignations()) ? new ArrayList<>() : v.getDesignations());
+        v.setPropertyValues(CollectionUtils.isEmpty(v.getPropertyValues()) ? new ArrayList<>() : v.getPropertyValues());
+        v.setAssociations(CollectionUtils.isEmpty(v.getAssociations()) ? new ArrayList<>() : v.getAssociations());
+        v.getDesignations().forEach(d -> d.setId(null).setDesignationTypeId(propertyMap.getOrDefault(d.getDesignationTypeId(), d.getDesignationTypeId())));
+        v.getPropertyValues().forEach(pv -> pv.setId(null).setEntityPropertyId(propertyMap.getOrDefault(pv.getEntityPropertyId(), pv.getEntityPropertyId())));
+        v.setAssociations(new ArrayList<>());
+        v.setStatus(PublicationStatus.draft);
+      });
+    });
     Map<Long, Pair<Long, CodeSystemEntityVersion>> versions = concepts.stream().flatMap(c -> c.getVersions().stream()).collect(Collectors.toMap(CodeSystemEntityVersion::getId, v -> Pair.of(v.getCodeSystemEntityId(), v)));
     Map<Long, List<CodeSystemEntityVersion>> batch = concepts.stream().flatMap(c -> c.getVersions().stream().peek(v -> v.setId(null))).collect(Collectors.groupingBy(CodeSystemEntityVersion::getCodeSystemEntityId));
     codeSystemEntityVersionService.batchSave(batch, targetCodeSystem);
