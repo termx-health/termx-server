@@ -62,6 +62,7 @@ public class CodeSystemFileImportRequest {
     private LocalizedName description;
     private Map<String, String> contact;
     private String supplement;
+    private String admin;
     private String endorser;
   }
 

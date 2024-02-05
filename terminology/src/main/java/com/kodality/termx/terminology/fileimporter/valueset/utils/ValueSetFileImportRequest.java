@@ -51,6 +51,7 @@ public class ValueSetFileImportRequest {
     private LocalizedName title;
     private LocalizedName description;
     private Map<String, String> contact;
+    private String admin;
     private String endorser;
   }
 
