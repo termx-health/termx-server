@@ -25,15 +25,15 @@ public class DesignationService {
     return repository.query(params);
   }
 
-  public List<Designation> loadAll(Long codeSystemEntityVersionId) {
-    return repository.loadAll(codeSystemEntityVersionId);
+  public List<Designation> loadAll(Long codeSystemEntityVersionId, Long baseEntityVersionId) {
+    return repository.loadAll(codeSystemEntityVersionId, baseEntityVersionId);
   }
 
   @Transactional
   public void save(List<Designation> designations, Long codeSystemEntityVersionId) {
     repository.retain(designations, codeSystemEntityVersionId);
     if (designations != null) {
-      designations.forEach(designation -> save(designation, codeSystemEntityVersionId));
+      designations.stream().filter(d -> !d.isSupplement()).forEach(designation -> save(designation, codeSystemEntityVersionId));
     }
   }
 

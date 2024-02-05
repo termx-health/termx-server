@@ -15,6 +15,7 @@ import java.sql.Types;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -45,9 +46,13 @@ public class CodeSystemAssociationRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 
-  public List<CodeSystemAssociation> loadAll(Long sourceVersionId) {
-    String sql = select + "from terminology.code_system_association csa where csa.sys_status = 'A' and csa.source_code_system_entity_version_id = ?";
-    return getBeans(sql, bp, sourceVersionId);
+  public List<CodeSystemAssociation> loadAll(Long codeSystemEntityVersionId, Long baseEntityVersionId) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.append(select);
+    sb.appendIfNotNull(", csa.source_code_system_entity_version_id = ?", baseEntityVersionId);
+    sb.append("from terminology.code_system_association csa where csa.sys_status = 'A'");
+    sb.and().in("csa.source_code_system_entity_version_id", Stream.of(codeSystemEntityVersionId, baseEntityVersionId).filter(Objects::nonNull).toList());
+    return getBeans(sb.getSql(), bp, sb.getParams());
   }
 
   public List<CodeSystemAssociation> loadReferences(String codeSystem, Long targetVersionId) {

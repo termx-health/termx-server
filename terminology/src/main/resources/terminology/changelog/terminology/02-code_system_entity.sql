@@ -44,6 +44,12 @@ create index code_system_entity_version_code_system_idx on terminology.code_syst
 select core.create_table_metadata('terminology.code_system_entity_version');
 --rollback drop table if exists terminology.code_system_entity_version;
 
+--changeset kodality:code_system_entity_version-base_entity_version_id
+alter table terminology.code_system_entity_version add column base_entity_version_id bigint;
+alter table terminology.code_system_entity_version add constraint code_system_entity_version_base_entity_version_fk foreign key (base_entity_version_id) references terminology.code_system_entity_version(id);
+create index code_system_entity_version_base_entity_version_idx on terminology.code_system_entity_version(base_entity_version_id);
+--
+
 --changeset kodality:entity_version_code_system_version_membership
 drop table if exists terminology.entity_version_code_system_version_membership;
 create table terminology.entity_version_code_system_version_membership (

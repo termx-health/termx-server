@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -38,9 +39,14 @@ public class EntityPropertyValueRepository extends BaseRepository {
     value.setId(id);
   }
 
-  public List<EntityPropertyValue> loadAll(Long codeSystemEntityVersionId) {
-    String sql = select + from + "where epv.sys_status = 'A' and epv.code_system_entity_version_id = ? order by ep.order_number";
-    return getBeans(sql, bp, codeSystemEntityVersionId);
+  public List<EntityPropertyValue> loadAll(Long codeSystemEntityVersionId, Long baseEntityVersionId) {
+    SqlBuilder sb = new SqlBuilder();
+    sb.append(select);
+    sb.appendIfNotNull(", epv.code_system_entity_version_id = ? as supplement", baseEntityVersionId);
+    sb.append( from + "where epv.sys_status = 'A'");
+    sb.and().in("epv.code_system_entity_version_id", Stream.of(codeSystemEntityVersionId, baseEntityVersionId).filter(Objects::nonNull).toList());
+    sb.append("order by ep.order_number");
+    return getBeans(sb.getSql(), bp, sb.getParams());
   }
 
   public EntityPropertyValue load(Long id) {

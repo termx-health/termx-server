@@ -172,7 +172,7 @@ public class CodeSystemDuplicateService {
     concepts.forEach(concept -> concept.getVersions().forEach(version -> {
       Optional<Long> sourceVersionId = entityVersionsMap.entrySet().stream().filter(es -> es.getValue().equals(version.getId())).findFirst().map(Entry::getKey);
       if (sourceVersionId.isPresent()) {
-        List<CodeSystemAssociation> associations = codeSystemAssociationService.loadAll(sourceVersionId.get());
+        List<CodeSystemAssociation> associations = codeSystemAssociationService.loadAll(sourceVersionId.get(), null);
         associations.forEach(a -> {
           a.setId(null);
           a.setTargetId(entityVersionsMap.get(a.getTargetId()));

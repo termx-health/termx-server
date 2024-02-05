@@ -28,6 +28,7 @@ public class CodeSystemEntityVersion {
   private List<CodeSystemVersionReference> versions;
 
   private Long codeSystemEntityId;
+  private Long baseEntityVersionId;
   private String sysModifiedBy;
   private OffsetDateTime sysModifiedAt;
 

@@ -32,8 +32,8 @@ public class CodeSystemAssociationService {
   private final ConceptRefreshViewJob conceptRefreshViewJob;
   private final CodeSystemEntityVersionRepository codeSystemEntityVersionRepository;
 
-  public List<CodeSystemAssociation> loadAll(Long sourceVersionId) {
-    return repository.loadAll(sourceVersionId);
+  public List<CodeSystemAssociation> loadAll(Long codeSystemEntityVersionId, Long baseEntityVersionId) {
+    return repository.loadAll(codeSystemEntityVersionId, baseEntityVersionId);
   }
 
   public List<CodeSystemAssociation> loadReferences(String codeSystem, Long targetVersionId) {
@@ -48,7 +48,7 @@ public class CodeSystemAssociationService {
   public void save(List<CodeSystemAssociation> associations, Long codeSystemEntityVersionId, String codeSystem) {
     repository.retain(associations, codeSystemEntityVersionId);
     if (associations != null) {
-      associations.forEach(association -> save(association, codeSystemEntityVersionId, codeSystem));
+      associations.stream().filter(a -> !a.isSupplement()).forEach(association -> save(association, codeSystemEntityVersionId, codeSystem));
     }
   }
 

@@ -18,4 +18,6 @@ public class CodeSystemAssociation extends CodeSystemEntity {
 
   private String sourceCode;
   private String targetCode;
+
+  private boolean supplement;
 }
