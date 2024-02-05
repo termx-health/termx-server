@@ -22,8 +22,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,17 +72,23 @@ public class CodeSystemEntityVersionService {
     log.info("Versions saved ({} sec)", (System.currentTimeMillis() - start) / 1000);
     start = System.currentTimeMillis();
 
-    Map<Long, List<Designation>> designations = versions.values().stream().flatMap(Collection::stream).collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getDesignations));
-    Map<Long, List<EntityPropertyValue>> propertyValues = versions.values().stream().flatMap(Collection::stream).collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getPropertyValues));
-    Map<Long, List<CodeSystemAssociation>> associations = versions.values().stream().flatMap(Collection::stream).collect(Collectors.toMap(CodeSystemEntityVersion::getId, ev -> prepareAssociations(ev.getAssociations())));
+    Map<Long, List<Designation>> designations = versions.values().stream().flatMap(Collection::stream).filter(v -> v.getDesignations() != null)
+        .collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getDesignations));
+    Map<Long, List<EntityPropertyValue>> propertyValues = versions.values().stream().flatMap(Collection::stream).filter(v -> v.getPropertyValues() != null)
+        .collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getPropertyValues));
+    Map<Long, List<CodeSystemAssociation>> associations = versions.values().stream().flatMap(Collection::stream).filter(v -> v.getAssociations() != null)
+        .collect(Collectors.toMap(CodeSystemEntityVersion::getId, ev -> prepareAssociations(ev.getAssociations())));
     designationService.batchUpsert(designations);
-    log.info("Designations saved '{}' ({} sec)", designations.values().stream().flatMap(Collection::stream).toList().size(), (System.currentTimeMillis() - start) / 1000);
+    log.info("Designations saved '{}' ({} sec)", designations.values().stream().flatMap(Collection::stream).toList().size(),
+        (System.currentTimeMillis() - start) / 1000);
     start = System.currentTimeMillis();
     entityPropertyValueService.batchUpsert(propertyValues);
-    log.info("Properties saved '{}' ({} sec)", propertyValues.values().stream().flatMap(Collection::stream).toList().size(), (System.currentTimeMillis() - start) / 1000);
+    log.info("Properties saved '{}' ({} sec)", propertyValues.values().stream().flatMap(Collection::stream).toList().size(),
+        (System.currentTimeMillis() - start) / 1000);
     start = System.currentTimeMillis();
     codeSystemAssociationService.batchUpsert(associations, codeSystem);
-    log.info("Associations saved '{}' ({} sec)", associations.values().stream().flatMap(Collection::stream).toList().size(), (System.currentTimeMillis() - start) / 1000);
+    log.info("Associations saved '{}' ({} sec)", associations.values().stream().flatMap(Collection::stream).toList().size(),
+        (System.currentTimeMillis() - start) / 1000);
     conceptRefreshViewJob.refreshView();
   }
 
@@ -105,9 +113,10 @@ public class CodeSystemEntityVersionService {
     if (version == null) {
       return null;
     }
-    version.setDesignations(designationService.loadAll(version.getId()));
-    version.setPropertyValues(entityPropertyValueService.loadAll(version.getId()));
-    version.setAssociations(codeSystemAssociationService.loadAll(version.getId()));
+    System.out.println("here");
+    version.setDesignations(designationService.loadAll(version.getId(), version.getBaseEntityVersionId()));
+    version.setPropertyValues(entityPropertyValueService.loadAll(version.getId(), version.getBaseEntityVersionId()));
+    version.setAssociations(codeSystemAssociationService.loadAll(version.getId(), version.getBaseEntityVersionId()));
     return version;
   }
 
@@ -117,7 +126,9 @@ public class CodeSystemEntityVersionService {
     }
     IntStream.range(0, (versions.size() + 10000 - 1) / 10000)
         .mapToObj(i -> versions.subList(i * 10000, Math.min(versions.size(), (i + 1) * 10000))).forEach(batch -> {
-          String versionIds = batch.stream().map(CodeSystemEntityVersion::getId).map(String::valueOf).collect(Collectors.joining(","));
+          String versionIds = String.join(",", batch.stream()
+              .flatMap(v -> Stream.of(v.getId(), v.getBaseEntityVersionId())).filter(Objects::nonNull).map(String::valueOf)
+              .collect(Collectors.groupingBy(id -> id)).keySet());
 
           DesignationQueryParams designationParams = new DesignationQueryParams().setCodeSystemEntityVersionId(versionIds);
           designationParams.setLimit(-1);
@@ -130,9 +141,15 @@ public class CodeSystemEntityVersionService {
           Map<Long, List<CodeSystemAssociation>> associations = codeSystemAssociationService.query(codeSystemAssociationParams).getData().stream().collect(Collectors.groupingBy(CodeSystemAssociation::getSourceId));
 
           batch.forEach(v -> {
-            v.setDesignations(designations.get(v.getId()));
-            v.setPropertyValues(propertyValues.get(v.getId()));
-            v.setAssociations(associations.get(v.getId()));
+            v.setDesignations(designations.getOrDefault(v.getId(), new ArrayList<>()));
+            v.setPropertyValues(propertyValues.getOrDefault(v.getId(), new ArrayList<>()));
+            v.setAssociations(associations.getOrDefault(v.getId(), new ArrayList<>()));
+
+            if (v.getBaseEntityVersionId() != null) {
+              v.getDesignations().addAll(designations.getOrDefault(v.getBaseEntityVersionId(), new ArrayList<>()).stream().map(d -> d.setSupplement(true)).toList());
+              v.getPropertyValues().addAll(propertyValues.getOrDefault(v.getBaseEntityVersionId(), new ArrayList<>()).stream().map(p -> p.setSupplement(true)).toList());
+              v.getAssociations().addAll(associations.getOrDefault(v.getBaseEntityVersionId(), new ArrayList<>()).stream().map(a -> a.setSupplement(true)).toList());
+            }
           });
         });
     return versions;

@@ -17,8 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class EntityPropertyValueService {
   private final EntityPropertyValueRepository repository;
 
-  public List<EntityPropertyValue> loadAll(Long codeSystemEntityVersionId) {
-    return repository.loadAll(codeSystemEntityVersionId);
+  public List<EntityPropertyValue> loadAll(Long codeSystemEntityVersionId, Long baseEntityVersionId) {
+    return repository.loadAll(codeSystemEntityVersionId, baseEntityVersionId);
   }
 
   public Optional<EntityPropertyValue> load(Long id) {
@@ -29,7 +29,7 @@ public class EntityPropertyValueService {
   public void save(List<EntityPropertyValue> values, Long codeSystemEntityVersionId) {
     repository.retain(values, codeSystemEntityVersionId);
     if (values != null) {
-      values.forEach(value -> save(value, codeSystemEntityVersionId));
+      values.stream().filter(v -> !v.isSupplement()).forEach(value -> save(value, codeSystemEntityVersionId));
     }
   }
 

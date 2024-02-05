@@ -20,6 +20,8 @@ public class EntityPropertyValue {
   private String entityProperty;
   private String entityPropertyType;
 
+  private boolean supplement;
+
   public EntityPropertyValueCodingValue asCodingValue() {
     return JsonUtil.fromJson(JsonUtil.toJson(value), EntityPropertyValueCodingValue.class);
   }

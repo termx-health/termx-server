@@ -229,9 +229,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       conceptProperties.add(new CodeSystemConceptProperty().setCode("modifiedBy").setValueString(entityVersion.getSysModifiedBy()));
     }
     if (CollectionUtils.isNotEmpty(entityVersion.getPropertyValues())) {
-      Map<Long, EntityProperty> entityProperties = properties.stream().collect(Collectors.toMap(PropertyReference::getId, ep -> ep));
+      Map<String, EntityProperty> entityProperties = properties.stream().collect(Collectors.toMap(PropertyReference::getName, ep -> ep));
       conceptProperties.addAll(entityVersion.getPropertyValues().stream().map(pv -> {
-        EntityProperty entityProperty = entityProperties.get(pv.getEntityPropertyId());
+        EntityProperty entityProperty = entityProperties.get(pv.getEntityProperty());
         CodeSystemConceptProperty fhir = new CodeSystemConceptProperty();
         fhir.setCode(entityProperty.getName());
         switch (entityProperty.getType()) {

@@ -24,8 +24,8 @@ public class EntityPropertyService {
   private final DesignationService designationService;
   private final EntityPropertyValueService entityPropertyValueService;
 
-  public Optional<EntityProperty> load(String codeSystem, Long id) {
-    return Optional.ofNullable(repository.load(codeSystem, id));
+  public Optional<EntityProperty> load(Long id) {
+    return Optional.ofNullable(repository.load(id));
   }
 
   public List<EntityProperty> load(String codeSystem) {
@@ -95,8 +95,8 @@ public class EntityPropertyService {
   }
 
   @Transactional
-  public void deleteUsages(Long id, String codeSystem) {
-    if (load(codeSystem, id).isEmpty()) {
+  public void deleteUsages(Long id) {
+    if (load(id).isEmpty()) {
       throw new NotFoundException("property", id);
     }
     entityPropertyValueService.delete(id);

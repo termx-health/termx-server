@@ -45,9 +45,9 @@ public class EntityPropertyRepository extends BaseRepository {
     entityProperty.setId(id);
   }
 
-  public EntityProperty load(String codeSystem, Long id) {
-    String sql ="select * from terminology.entity_property ep where ep.sys_status = 'A' and ep.code_system = ? and ep.id = ?";
-    return getBean(sql, bp, codeSystem, id);
+  public EntityProperty load(Long id) {
+    String sql ="select * from terminology.entity_property ep where ep.sys_status = 'A' and ep.id = ?";
+    return getBean(sql, bp, id);
   }
 
   public EntityProperty load(String codeSystem, String name) {

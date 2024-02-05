@@ -22,7 +22,7 @@ public class Designation {
   private String status;
   private Long codeSystemEntityVersionId;
 
-  private Long supplementId;
-
   private String designationType;
+
+  private boolean supplement;
 }

@@ -13,6 +13,7 @@ import com.kodality.termx.terminology.terminology.codesystem.association.CodeSys
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptExportService;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
+import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemSupplementService;
 import com.kodality.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.codesystem.CodeSystem;
@@ -62,6 +63,7 @@ public class CodeSystemController {
   private final CodeSystemDuplicateService codeSystemDuplicateService;
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+  private final CodeSystemSupplementService codeSystemSupplementService;
   private final CodeSystemProvenanceService provenanceService;
   private final LorqueProcessService lorqueProcessService;
 
@@ -360,6 +362,22 @@ public class CodeSystemController {
     return HttpResponse.ok();
   }
 
+  @Authorized(Privilege.CS_EDIT)
+  @Post(uri = "/{codeSystem}/entity-versions/supplement")
+  public HttpResponse<?> supplementEntityVersion(@PathVariable String codeSystem, @Body Map<String, List<Long>> request) {
+    List<CodeSystemEntityVersion> versions = codeSystemSupplementService.supplement(codeSystem, null, request.getOrDefault("ids", List.of()));
+    versions.forEach(v -> provenanceService.create(CodeSystemProvenanceService.provenance("supplement", v).created()));
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.CS_EDIT)
+  @Post(uri = "/{codeSystem}/versions/{version}/entity-versions/supplement")
+  public HttpResponse<?> supplementEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @Body Map<String, List<Long>> request) {
+    List<CodeSystemEntityVersion> versions = codeSystemSupplementService.supplement(codeSystem, version, request.getOrDefault("ids", List.of()));
+    versions.forEach(v -> provenanceService.create(CodeSystemProvenanceService.provenance("supplement", v).created()));
+    return HttpResponse.ok();
+  }
+
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/entity-versions/{id}/references")
   public List<CodeSystemAssociation> getReferences(@PathVariable String codeSystem, @PathVariable Long id) {
@@ -379,7 +397,7 @@ public class CodeSystemController {
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/entity-properties/{id}")
   public EntityProperty getEntityProperty(@PathVariable String codeSystem, @PathVariable Long id) {
-    return entityPropertyService.load(codeSystem, id)
+    return entityPropertyService.load(id)
         .orElseThrow(() -> new NotFoundException("EntityProperty not found: " + id));
   }
 
@@ -416,7 +434,7 @@ public class CodeSystemController {
   @Post(uri = "/{codeSystem}/entity-properties/{propertyId}/delete-usages")
   public HttpResponse<?> deleteEntityPropertyUsages(@PathVariable String codeSystem, @PathVariable Long propertyId) {
     provenanceService.provenanceCodeSystem("delete-usages", codeSystem, () -> {
-      entityPropertyService.deleteUsages(propertyId, codeSystem);
+      entityPropertyService.deleteUsages(propertyId);
     });
     return HttpResponse.ok();
   }
