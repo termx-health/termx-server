@@ -28,7 +28,7 @@ public class ConceptRepository extends BaseRepository {
   private final Map<String, String> orderMapping = Map.of("code", "c.code", "codeSystem", "c.code_system");
 
   private final String select = "select distinct on (c.code) c.*, " +
-      "(exists (select 1 from terminology.code_system_entity_version csev where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status = 'active')) as immutable ";
+      "(exists (select 1 from terminology.code_system_entity_version csev where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status in ('active', 'retired'))) as immutable ";
 
   public void save(Concept concept) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
