@@ -10,5 +10,5 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class CodeSystemConceptSupplementRequest {
   private List<Long> ids;
-  private String snomedCode;
+  private String externalSystemCode;
 }

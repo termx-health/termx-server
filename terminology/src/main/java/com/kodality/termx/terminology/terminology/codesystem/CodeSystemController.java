@@ -241,6 +241,15 @@ public class CodeSystemController {
     return HttpResponse.created(concept);
   }
 
+  @Authorized(Privilege.CS_EDIT)
+  @Delete(uri = "/{codeSystem}/concepts/{code}")
+  public HttpResponse<?> deleteConcept(@PathVariable String codeSystem, @PathVariable String code) {
+    Concept concept = conceptService.load(codeSystem, code).orElseThrow();
+    conceptService.cancel(concept.getCode(), codeSystem);
+    provenanceService.create(CodeSystemProvenanceService.provenance("delete", concept));
+    return HttpResponse.noContent();
+  }
+
   @Authorized(Privilege.CS_VIEW)
   @Get(uri = "/{codeSystem}/versions/{version}/concepts/{code}")
   public Concept getConcept(@PathVariable String codeSystem, @PathVariable String version, @PathVariable String code) {

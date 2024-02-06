@@ -1,5 +1,6 @@
 package com.kodality.termx.terminology.terminology.codesystem.entity;
 
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
@@ -42,8 +43,8 @@ public class CodeSystemSupplementService {
     if (CollectionUtils.isNotEmpty(request.getIds())) {
       versions.addAll(supplementFromIds(cs, csv, request.getIds()));
     }
-    if (StringUtils.isNotEmpty(request.getSnomedCode())) {
-      versions.add(supplementFromSnomed(cs, csv, request.getSnomedCode()));
+    if (StringUtils.isNotEmpty(request.getExternalSystemCode())) {
+      versions.add(supplementFromExternalSystem(cs, csv, request.getExternalSystemCode()));
     }
     return versions;
   }
@@ -96,10 +97,10 @@ public class CodeSystemSupplementService {
     return result;
   }
 
-  private CodeSystemEntityVersion supplementFromSnomed(String cs, String csv, String snomedCode) {
-    Concept concept = conceptService.load(cs, csv, snomedCode).orElse(conceptService.save(new Concept().setCode(snomedCode), cs));
+  private CodeSystemEntityVersion supplementFromExternalSystem(String cs, String csv, String externalSystemCode) {
+    Concept concept = conceptService.load(cs, csv, externalSystemCode).orElse(conceptService.save(new Concept().setCode(externalSystemCode), cs));
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
-    version.setCode(snomedCode);
+    version.setCode(externalSystemCode);
     version.setStatus(PublicationStatus.draft);
     version.setCodeSystem(cs);
     version.setCodeSystemEntityId(concept.getId());

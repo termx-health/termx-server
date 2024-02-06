@@ -17,6 +17,7 @@ public class CodeSystemEntityVersion {
   private Long id;
   private String code;
   private String codeSystem;
+  private String codeSystemBase;
   private String description;
   private String status;
   private OffsetDateTime created;

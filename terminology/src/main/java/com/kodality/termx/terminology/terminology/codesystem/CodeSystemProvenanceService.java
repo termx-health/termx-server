@@ -13,6 +13,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemTransactionRequest;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
+import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptTransactionRequest;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
@@ -145,6 +146,11 @@ public class CodeSystemProvenanceService {
   public static Provenance provenance(String action, CodeSystemVersion v) {
     return new Provenance(action, "CodeSystemVersion", v.getId().toString(), v.getVersion())
         .addContext("part-of", "CodeSystem", v.getCodeSystem());
+  }
+
+  public static Provenance provenance(String action, Concept concept) {
+    return new Provenance(action, "CodeSystemEntity", concept.getId().toString(), concept.getCode())
+        .addContext("part-of", "CodeSystem", concept.getCodeSystem());
   }
 
   public static Provenance provenance(String action, CodeSystemEntityVersion v) {

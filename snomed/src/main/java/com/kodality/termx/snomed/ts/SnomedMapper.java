@@ -71,11 +71,15 @@ public class SnomedMapper {
     designationPt.setName(pt.getTerm());
     designationPt.setLanguage(pt.getLang());
     designationPt.setDesignationType("display");
+    designationPt.setPreferred(true);
+    designationPt.setStatus(PublicationStatus.active);
 
     Designation designationFsn = new Designation();
     designationFsn.setName(fsn.getTerm());
     designationFsn.setLanguage(fsn.getLang());
     designationFsn.setDesignationType("description");
+    designationFsn.setPreferred(false);
+    designationFsn.setStatus(PublicationStatus.active);
     return List.of(designationPt, designationFsn);
   }
 

@@ -2,6 +2,7 @@ package com.kodality.termx.terminology.terminology.codesystem.entity;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.core.ts.CodeSystemExternalProvider;
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptRefreshViewJob;
@@ -12,6 +13,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociationQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.DesignationQueryParams;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
@@ -23,6 +25,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -40,6 +43,7 @@ public class CodeSystemEntityVersionService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemEntityVersionRepository repository;
   private final ConceptRefreshViewJob conceptRefreshViewJob;
+  private final List<CodeSystemExternalProvider> codeSystemProviders;
 
   public void validate(String codeSystem, Long versionId) {
     if (!repository.exists(codeSystem, versionId)) {
@@ -152,6 +156,21 @@ public class CodeSystemEntityVersionService {
             }
           });
         });
+
+    versions.stream().filter(v -> v.getCodeSystemBase() != null).collect(Collectors.groupingBy(CodeSystemEntityVersion::getCodeSystemBase)).entrySet().forEach(es -> {
+      codeSystemProviders.forEach(provider -> {
+        Map<String, List<CodeSystemEntityVersion>> concepts = provider.searchConcepts(es.getKey(), new ConceptQueryParams()
+            .setCodeSystem(es.getKey())
+            .setCode(es.getValue().stream().map(CodeSystemEntityVersion::getCode).collect(Collectors.joining(",")))
+            .all()).getData().stream().flatMap(c -> c.getVersions().stream()).collect(Collectors.groupingBy(CodeSystemEntityVersion::getCode));
+        es.getValue().forEach(version -> {
+          version.getDesignations().addAll(concepts.getOrDefault(version.getCode(), List.of()).stream()
+              .findFirst().map(c -> Optional.ofNullable(c.getDesignations()).orElse(List.of()).stream().peek(d -> d.setSupplement(true)).toList()).orElse(List.of()));
+          version.getPropertyValues().addAll(concepts.getOrDefault(version.getCode(), List.of()).stream()
+              .findFirst().map(c -> Optional.ofNullable(c.getPropertyValues()).orElse(List.of()).stream().peek(p -> p.setSupplement(true)).toList()).orElse(List.of()));
+        });
+      });
+    });
     return versions;
   }
 

@@ -1,6 +1,7 @@
 package com.kodality.termx.terminology.terminology.codesystem.concept;
 
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemRepository;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityService;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
@@ -176,9 +177,20 @@ public class ConceptService {
   }
 
   @Transactional
-  public void cancel(Long conceptId, String codeSystem) {
-    codeSystemEntityService.cancel(conceptId);
-    repository.cancel(conceptId);
+  public void cancel(String code, String codeSystem) {
+    Concept concept = load(codeSystem, code).orElseThrow();
+
+    boolean conceptHasNonDraftVersion = Optional.ofNullable(concept.getVersions()).orElse(List.of()).stream().anyMatch(v -> !PublicationStatus.draft.equals(v.getStatus()));
+    if (conceptHasNonDraftVersion) {
+      throw ApiError.TE114.toApiException();
+    }
+
+    boolean conceptIsLinkedToNonDraftVersion = Optional.ofNullable(concept.getVersions()).orElse(List.of()).stream().flatMap(v -> Optional.ofNullable(v.getVersions()).orElse(List.of()).stream()).anyMatch(v -> !PublicationStatus.draft.equals(v.getStatus()));
+    if (conceptIsLinkedToNonDraftVersion) {
+      throw ApiError.TE115.toApiException();
+    }
+
+    repository.cancel(concept.getId());
   }
 
   @Transactional

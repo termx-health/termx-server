@@ -318,8 +318,8 @@ public class ConceptRepository extends BaseRepository {
   }
 
   public void cancel(Long id) {
-    SqlBuilder sb = new SqlBuilder("update terminology.concept set sys_status = 'C' where id = ? and sys_status = 'A'", id);
-    jdbcTemplate.update(sb.getSql(), sb.getParams());
+    SqlBuilder sb = new SqlBuilder("select * from terminology.cancel_entity(?)", id);
+    jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
   }
 
   public void refreshClosureView() {

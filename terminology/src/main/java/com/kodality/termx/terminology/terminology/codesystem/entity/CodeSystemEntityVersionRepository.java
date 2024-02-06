@@ -37,7 +37,8 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
           ", (select jsonb_agg(json_build_object('id', csv.id, 'version', csv.version, 'status', csv.status, 'preferredLanguage', csv.preferred_language, 'releaseDate', csv.release_date))" +
           "   from terminology.code_system_version csv where csv.sys_status = 'A' " +
           "       and exists (select 1 from terminology.entity_version_code_system_version_membership evcsvm " +
-          "         where evcsvm.code_system_entity_version_id = csev.id and evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A')) versions ";
+          "         where evcsvm.code_system_entity_version_id = csev.id and evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A')) versions, " +
+      "(select cs.base_code_system from terminology.code_system cs where cs.id = csev.code_system and cs.sys_status = 'A') as code_system_base ";
 
   public void save(CodeSystemEntityVersion version, Long codeSystemEntityId) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
