@@ -10,6 +10,7 @@ import com.kodality.termx.ts.codesystem.Concept;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
@@ -24,7 +25,7 @@ public class C3RuleValidator implements CodeSystemRuleValidator {
   @Override
   public List<ChecklistAssertionError> validate(CodeSystem codeSystem, List<Concept> concepts, List<ChecklistWhitelist> whitelists) {
     return concepts.stream().filter(c -> whitelists.stream().noneMatch(wl -> "Concept".equals(wl.getResourceType()) && c.getCode().equals(wl.getResourceId())))
-        .flatMap(c -> c.getVersions().stream())
+        .flatMap(c -> Optional.ofNullable(c.getVersions()).orElse(List.of()).stream())
         .flatMap(v -> v.getDesignations().stream().filter(d -> PublicationStatus.active.equals(d.getStatus()) && d.isPreferred()).map(d -> Pair.of(v.getCode(), d)))
         .collect(Collectors.groupingBy(d -> d.getValue().getName() + d.getValue().getLanguage())).values().stream()
         .map(val -> {

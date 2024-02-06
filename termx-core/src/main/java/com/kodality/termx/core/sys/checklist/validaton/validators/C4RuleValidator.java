@@ -8,6 +8,7 @@ import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.Concept;
 import jakarta.inject.Singleton;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Singleton
@@ -21,7 +22,7 @@ public class C4RuleValidator implements CodeSystemRuleValidator {
   @Override
   public List<ChecklistAssertionError> validate(CodeSystem codeSystem, List<Concept> concepts, List<ChecklistWhitelist> whitelists) {
     return concepts.stream().filter(c -> whitelists.stream().noneMatch(wl -> "Concept".equals(wl.getResourceType()) && c.getCode().equals(wl.getResourceId())))
-        .flatMap(c -> c.getVersions().stream())
+        .flatMap(c -> Optional.ofNullable(c.getVersions()).orElse(List.of()).stream())
         .flatMap(v -> v.getDesignations().stream().filter(d -> d.getName().length() > MAX_DESIGNATION_LENGTH).map(d -> Pair.of(v.getCode(), d.getName())))
         .map(p -> new ChecklistAssertionError()
             .setError(String.format("The concept's '%s' designation length exceeds the maximum allowed number of symbols (%d).", p.getKey(), MAX_DESIGNATION_LENGTH))

@@ -30,7 +30,7 @@ public class R1RuleValidator implements CodeSystemRuleValidator {
   @Override
   public List<ChecklistAssertionError> validate(CodeSystem codeSystem, List<Concept> concepts, List<ChecklistWhitelist> whitelists) {
     return concepts.stream().filter(c -> whitelists.stream().noneMatch(wl -> "Concept".equals(wl.getResourceType()) && c.getCode().equals(wl.getResourceId())))
-        .flatMap(c -> c.getVersions().stream())
+        .flatMap(c -> Optional.ofNullable(c.getVersions()).orElse(List.of()).stream())
         .collect(Collectors.groupingBy(v -> getPropKey(v.getPropertyValues()), mapping(CodeSystemEntityVersion::getCode, toList())))
         .values().stream().map(HashSet::new).filter(s -> s.size() > 1)
         .map(s -> new ChecklistAssertionError()

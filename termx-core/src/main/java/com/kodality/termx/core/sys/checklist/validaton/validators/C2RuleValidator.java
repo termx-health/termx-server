@@ -25,7 +25,7 @@ public class C2RuleValidator implements CodeSystemRuleValidator {
   @Override
   public List<ChecklistAssertionError> validate(CodeSystem codeSystem, List<Concept> concepts, List<ChecklistWhitelist> whitelists) {
     return concepts.stream().filter(c -> whitelists.stream().noneMatch(wl -> "Concept".equals(wl.getResourceType()) && c.getCode().equals(wl.getResourceId())))
-        .flatMap(c -> c.getVersions().stream())
+        .flatMap(c -> Optional.ofNullable(c.getVersions()).orElse(List.of()).stream())
         .flatMap(v -> {
           Map<String, List<Designation>> designations =
               Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream().collect(Collectors.groupingBy(Designation::getLanguage));

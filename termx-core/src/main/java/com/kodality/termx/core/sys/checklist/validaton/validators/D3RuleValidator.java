@@ -26,7 +26,7 @@ public class D3RuleValidator implements CodeSystemRuleValidator {
       return List.of(new ChecklistAssertionError().setError("The properties are not defined within a CodeSystem"));
     }
     List<Concept> notDefinedConcepts = concepts.stream().filter(c -> whitelists.stream().noneMatch(wl -> "Concept".equals(wl.getResourceType()) && c.getCode().equals(wl.getResourceId())))
-        .filter(c -> c.getVersions().stream().anyMatch(v -> CollectionUtils.isEmpty(v.getPropertyValues()) && CollectionUtils.isEmpty(v.getAssociations())))
+        .filter(c -> Optional.ofNullable(c.getVersions()).orElse(List.of()).stream().anyMatch(v -> CollectionUtils.isEmpty(v.getPropertyValues()) && CollectionUtils.isEmpty(v.getAssociations())))
         .toList();
     return notDefinedConcepts.stream()
         .map(c -> new ChecklistAssertionError()

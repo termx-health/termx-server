@@ -8,7 +8,9 @@ import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.Concept;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Singleton
 public class C1RuleValidator implements CodeSystemRuleValidator {
@@ -21,7 +23,7 @@ public class C1RuleValidator implements CodeSystemRuleValidator {
   @Override
   public List<ChecklistAssertionError> validate(CodeSystem codeSystem, List<Concept> concepts, List<ChecklistWhitelist> whitelists) {
     return concepts.stream().filter(c -> whitelists.stream().noneMatch(wl -> "Concept".equals(wl.getResourceType()) && c.getCode().equals(wl.getResourceId())))
-        .flatMap(c -> c.getVersions().stream())
+        .flatMap(c -> Optional.ofNullable(c.getVersions()).orElse(List.of()).stream())
         .filter(v -> CollectionUtils.isEmpty(v.getDesignations()))
         .map(v -> new ChecklistAssertionError()
             .setError(String.format("The concept '%s' does not have at least one designation", v.getCode()))

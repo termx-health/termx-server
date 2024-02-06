@@ -21,7 +21,7 @@ public class R4RuleValidator implements CodeSystemRuleValidator {
   @Override
   public List<ChecklistAssertionError> validate(CodeSystem codeSystem, List<Concept> concepts, List<ChecklistWhitelist> whitelists) {
     return concepts.stream().filter(c -> whitelists.stream().noneMatch(wl -> "Concept".equals(wl.getResourceType()) && c.getCode().equals(wl.getResourceId())))
-        .flatMap(c -> c.getVersions().stream())
+        .flatMap(c -> Optional.ofNullable(c.getVersions()).orElse(List.of()).stream())
         .filter(v -> Optional.ofNullable(v.getAssociations()).orElse(List.of()).stream().anyMatch(a -> !a.getStatus().equals(v.getStatus())))
         .map(v -> new ChecklistAssertionError()
             .setError(String.format("The concept '%s' has associations with status not according to concept version status.", v.getCode()))
