@@ -124,7 +124,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setVersionAlgorithmString(version.getAlgorithm());
     fhirCodeSystem.setEffectivePeriod(new Period(
         OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC),
-        version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getReleaseDate().atTime(23, 59), ZoneOffset.UTC)));
+        version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getExpirationDate().atTime(23, 59), ZoneOffset.UTC)));
     fhirCodeSystem.setStatus(version.getStatus());
     fhirCodeSystem.setProperty(toFhirCodeSystemProperty(codeSystem.getProperties(), version.getPreferredLanguage()));
 

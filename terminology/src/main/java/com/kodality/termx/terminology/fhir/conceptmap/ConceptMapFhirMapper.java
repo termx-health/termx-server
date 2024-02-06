@@ -114,7 +114,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     fhirConceptMap.setVersion(version.getVersion());
     fhirConceptMap.setEffectivePeriod(new Period(
         OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC),
-        version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getReleaseDate().atTime(23, 59), ZoneOffset.UTC)));
+        version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getExpirationDate().atTime(23, 59), ZoneOffset.UTC)));
     fhirConceptMap.setStatus(version.getStatus());
     fhirConceptMap.setSourceScopeUri(version.getScope().getSourceValueSet() == null ? null : version.getScope().getSourceValueSet().getUri());
     fhirConceptMap.setTargetScopeUri(version.getScope().getTargetValueSet() == null ? null : version.getScope().getTargetValueSet().getUri());

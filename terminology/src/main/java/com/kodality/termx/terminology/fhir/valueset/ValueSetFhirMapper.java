@@ -125,7 +125,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     fhirValueSet.setVersionAlgorithmString(version.getAlgorithm());
     fhirValueSet.setEffectivePeriod(new Period(
         OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC),
-        version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getReleaseDate().atTime(23, 59), ZoneOffset.UTC)));
+        version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getExpirationDate().atTime(23, 59), ZoneOffset.UTC)));
     fhirValueSet.setStatus(version.getStatus());
     fhirValueSet.setCompose(toFhirCompose(version.getRuleSet()));
     return fhirValueSet;
