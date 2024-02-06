@@ -15,6 +15,7 @@ import com.kodality.zmei.fhir.datatypes.Narrative;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -100,6 +101,11 @@ public abstract class BaseFhirMapper {
   protected static LocalDate toFhirDate(List<Provenance> provenances, String activity) {
     return Optional.ofNullable(provenances).flatMap(list -> list.stream().filter(p -> activity.equals(p.getActivity()))
         .max(Comparator.comparing(Provenance::getDate)).map(p -> p.getDate().toLocalDate())).orElse(null);
+  }
+
+  protected static OffsetDateTime toFhirOffsetDateTime(List<Provenance> provenances) {
+    return Optional.ofNullable(provenances).orElse(List.of()).stream()
+        .max(Comparator.comparing(Provenance::getDate)).map(Provenance::getDate).orElse(null);
   }
 
   protected static LocalizedName joinDescriptions(LocalizedName descriptionA, LocalizedName descriptionB) {

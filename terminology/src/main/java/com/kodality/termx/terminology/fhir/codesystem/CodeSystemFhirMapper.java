@@ -31,6 +31,7 @@ import com.kodality.termx.ts.property.PropertyReference;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
+import com.kodality.zmei.fhir.datatypes.Period;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptDesignation;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
@@ -95,6 +96,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setExperimental(codeSystem.getExperimental() != null && codeSystem.getExperimental());
     fhirCodeSystem.setIdentifier(toFhirIdentifiers(codeSystem.getIdentifiers(), version.getIdentifiers()));
     fhirCodeSystem.setContact(toFhirContacts(codeSystem.getContacts()));
+    fhirCodeSystem.setDate(toFhirOffsetDateTime(provenances));
     fhirCodeSystem.setLastReviewDate(toFhirDate(provenances, "reviewed"));
     fhirCodeSystem.setApprovalDate(toFhirDate(provenances, "approved"));
     fhirCodeSystem.setContent(codeSystem.getContent());
@@ -120,7 +122,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setVersion(version.getVersion());
     fhirCodeSystem.setLanguage(version.getPreferredLanguage());
     fhirCodeSystem.setVersionAlgorithmString(version.getAlgorithm());
-    fhirCodeSystem.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
+    fhirCodeSystem.setEffectivePeriod(new Period(
+        OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC),
+        version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getReleaseDate().atTime(23, 59), ZoneOffset.UTC)));
     fhirCodeSystem.setStatus(version.getStatus());
     fhirCodeSystem.setProperty(toFhirCodeSystemProperty(codeSystem.getProperties(), version.getPreferredLanguage()));
 
@@ -325,7 +329,10 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     }
     version.setStatus(PublicationStatus.draft);
     version.setAlgorithm(fhirCodeSystem.getVersionAlgorithmString());
-    version.setReleaseDate(fhirCodeSystem.getDate() == null ? LocalDate.now() : LocalDate.from(fhirCodeSystem.getDate()));
+    version.setReleaseDate(fhirCodeSystem.getEffectivePeriod() == null || fhirCodeSystem.getEffectivePeriod().getStart() == null ? LocalDate.now() :
+        LocalDate.from(fhirCodeSystem.getEffectivePeriod().getStart()));
+    version.setExpirationDate(fhirCodeSystem.getEffectivePeriod() == null || fhirCodeSystem.getEffectivePeriod().getEnd() == null ? null :
+        LocalDate.from(fhirCodeSystem.getEffectivePeriod().getEnd()));
     version.setIdentifiers(fromFhirVersionIdentifiers(fhirCodeSystem.getIdentifier()));
     return List.of(version);
   }

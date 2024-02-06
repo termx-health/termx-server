@@ -33,6 +33,7 @@ import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
+import com.kodality.zmei.fhir.datatypes.Period;
 import com.kodality.zmei.fhir.resource.Resource;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
@@ -103,6 +104,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     fhirValueSet.setText(toFhirText(valueSet.getNarrative()));
     fhirValueSet.setPublisher(valueSet.getPublisher());
     fhirValueSet.setExperimental(valueSet.getExperimental() != null && valueSet.getExperimental());
+    fhirValueSet.setDate(toFhirOffsetDateTime(provenances));
     fhirValueSet.setLastReviewDate(toFhirDate(provenances, "reviewed"));
     fhirValueSet.setApprovalDate(toFhirDate(provenances, "approved"));
     if (valueSet.getCopyright() != null) {
@@ -121,7 +123,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     fhirValueSet.setVersion(version.getVersion());
     fhirValueSet.setLanguage(version.getPreferredLanguage());
     fhirValueSet.setVersionAlgorithmString(version.getAlgorithm());
-    fhirValueSet.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
+    fhirValueSet.setEffectivePeriod(new Period(
+        OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC),
+        version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getReleaseDate().atTime(23, 59), ZoneOffset.UTC)));
     fhirValueSet.setStatus(version.getStatus());
     fhirValueSet.setCompose(toFhirCompose(version.getRuleSet()));
     return fhirValueSet;
@@ -485,7 +489,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     version.setVersion(valueSet.getVersion() == null ? "1.0.0" : valueSet.getVersion());
     version.setStatus(PublicationStatus.draft);
     version.setPreferredLanguage(valueSet.getLanguage());
-    version.setReleaseDate(valueSet.getDate() == null ? LocalDate.now() : LocalDate.from(valueSet.getDate()));
+    version.setReleaseDate(valueSet.getEffectivePeriod() == null || valueSet.getEffectivePeriod().getStart() == null ? LocalDate.now() :
+        LocalDate.from(valueSet.getEffectivePeriod().getStart()));
+    version.setExpirationDate(valueSet.getEffectivePeriod() == null || valueSet.getEffectivePeriod().getEnd() == null ? null :
+        LocalDate.from(valueSet.getEffectivePeriod().getEnd()));
     version.setRuleSet(fromFhirCompose(valueSet));
     version.setSnapshot(fromFhirExpansion(valueSet));
     version.setIdentifiers(fromFhirVersionIdentifiers(valueSet.getIdentifier()));

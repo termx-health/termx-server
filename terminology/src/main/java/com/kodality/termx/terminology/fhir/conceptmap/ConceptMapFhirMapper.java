@@ -34,6 +34,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
+import com.kodality.zmei.fhir.datatypes.Period;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroup;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElement;
@@ -102,6 +103,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     fhirConceptMap.setExperimental(mapSet.getExperimental() != null && mapSet.getExperimental());
     fhirConceptMap.setIdentifier(toFhirIdentifiers(mapSet.getIdentifiers(), version.getIdentifiers()));
     fhirConceptMap.setContact(toFhirContacts(mapSet.getContacts()));
+    fhirConceptMap.setDate(toFhirOffsetDateTime(provenances));
     fhirConceptMap.setLastReviewDate(toFhirDate(provenances, "reviewed"));
     fhirConceptMap.setApprovalDate(toFhirDate(provenances, "approved"));
     fhirConceptMap.setCopyright(mapSet.getCopyright() != null ? mapSet.getCopyright().getHolder() : null);
@@ -110,7 +112,9 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
         List.of(new CodeableConcept().setText(mapSet.getCopyright().getJurisdiction())) : null);
 
     fhirConceptMap.setVersion(version.getVersion());
-    fhirConceptMap.setDate(OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC));
+    fhirConceptMap.setEffectivePeriod(new Period(
+        OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC),
+        version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getReleaseDate().atTime(23, 59), ZoneOffset.UTC)));
     fhirConceptMap.setStatus(version.getStatus());
     fhirConceptMap.setSourceScopeUri(version.getScope().getSourceValueSet() == null ? null : version.getScope().getSourceValueSet().getUri());
     fhirConceptMap.setTargetScopeUri(version.getScope().getTargetValueSet() == null ? null : version.getScope().getTargetValueSet().getUri());
@@ -241,7 +245,10 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     version.setStatus(PublicationStatus.draft);
     version.setPreferredLanguage(conceptMap.getLanguage() == null ? Language.en : conceptMap.getLanguage());
     version.setAlgorithm(conceptMap.getVersionAlgorithmString());
-    version.setReleaseDate(conceptMap.getDate() == null ? LocalDate.now() : LocalDate.from(conceptMap.getDate()));
+    version.setReleaseDate(conceptMap.getEffectivePeriod() == null || conceptMap.getEffectivePeriod().getStart() == null ? LocalDate.now() :
+        LocalDate.from(conceptMap.getEffectivePeriod().getStart()));
+    version.setExpirationDate(conceptMap.getEffectivePeriod() == null || conceptMap.getEffectivePeriod().getEnd() == null ? null :
+        LocalDate.from(conceptMap.getEffectivePeriod().getEnd()));
     version.setScope(fromFhirScope(conceptMap));
     version.setAssociations(fromFhirAssociations(conceptMap));
     version.setIdentifiers(fromFhirVersionIdentifiers(conceptMap.getIdentifier()));
