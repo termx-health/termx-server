@@ -3,8 +3,11 @@ package com.kodality.termx.terminology.terminology.relatedartifacts;
 import com.kodality.termx.sys.space.Space;
 import com.kodality.termx.sys.space.SpaceQueryParams;
 import com.kodality.termx.core.sys.space.SpaceService;
+import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.terminology.mapset.version.MapSetVersionService;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
+import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifact;
@@ -14,8 +17,10 @@ import com.kodality.termx.core.wiki.PageProvider;
 import com.kodality.termx.wiki.page.PageContent;
 import com.kodality.termx.wiki.page.PageRelationType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 @Singleton
 @RequiredArgsConstructor
 public class CodeSystemRelatedArtifactService extends RelatedArtifactService {
+  private final CodeSystemService codeSystemService;
   private final ValueSetService valueSetService;
   private final MapSetVersionService mapSetVersionService;
   private final PageProvider pageProvider;
@@ -36,11 +42,20 @@ public class CodeSystemRelatedArtifactService extends RelatedArtifactService {
   @Override
   public List<RelatedArtifact> findRelatedArtifacts(String id) {
     List<RelatedArtifact> artifacts = new ArrayList<>();
+    artifacts.addAll(findSupplement(id));
     artifacts.addAll(findValueSets(id));
     artifacts.addAll(findMapSets(id));
     artifacts.addAll(findPages(id));
     artifacts.addAll(findSpaces(id));
     return artifacts;
+  }
+
+  private List<RelatedArtifact> findSupplement(String id) {
+    Optional<String> supplementCs = codeSystemService.load(id).map(CodeSystem::getBaseCodeSystem);
+    List<RelatedArtifact> ra = supplementCs.map(cs -> new RelatedArtifact().setType("CodeSystem").setId(cs)).stream().collect(Collectors.toList());
+    ra.addAll(codeSystemService.query(new CodeSystemQueryParams().setBaseCodeSystem(id).all()).getData().stream()
+        .map(cs -> new RelatedArtifact().setType("CodeSystem").setId(cs.getId())).toList());
+    return ra;
   }
 
   private List<RelatedArtifact> findValueSets(String id) {
