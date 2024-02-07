@@ -190,7 +190,7 @@ public class ConceptService {
       throw ApiError.TE115.toApiException();
     }
 
-    repository.cancel(concept.getId());
+    repository.cancel(concept.getId(), codeSystem);
   }
 
   @Transactional

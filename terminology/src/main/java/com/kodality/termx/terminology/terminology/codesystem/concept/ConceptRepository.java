@@ -317,8 +317,8 @@ public class ConceptRepository extends BaseRepository {
     });
   }
 
-  public void cancel(Long id) {
-    SqlBuilder sb = new SqlBuilder("select * from terminology.cancel_entity(?)", id);
+  public void cancel(Long id, String codeSystem) {
+    SqlBuilder sb = new SqlBuilder("select * from terminology.cancel_entity(?,?)", id, codeSystem);
     jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
   }
 
