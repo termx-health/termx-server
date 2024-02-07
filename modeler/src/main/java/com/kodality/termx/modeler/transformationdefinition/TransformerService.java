@@ -105,7 +105,7 @@ public class TransformerService {
 
   public Bundle loadBaseResources() {
     try {
-      return parse(new String(resourceLoader.getResources("conformance/base/profile-types.json").findFirst().orElseThrow().openStream().readAllBytes()));
+      return parse(new String(resourceLoader.getResources("conformance/base/profiles-types.json").findFirst().orElseThrow().openStream().readAllBytes()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -117,7 +117,11 @@ public class TransformerService {
 
       for (TransformationDefinitionResource res : def.getResources()) {
         try {
-          eng.getContext().cacheResource(parse(getContent(res)));
+          StructureDefinition sd = parse(getContent(res));
+          // profile-types.json loads StructureDefinitions on startup, skipping duplicates
+          if (eng.getContext().getStructure(sd.getName()) == null) {
+            eng.getContext().cacheResource(sd);
+          }
         } catch (FHIRException e) {
           return new TransformationResult().setError("Invalid resource " + res.getName() + ": " + e.getMessage());
         }
@@ -166,7 +170,8 @@ public class TransformerService {
     FhirFormat format = input.startsWith("<") ? FhirFormat.XML : FhirFormat.JSON;
     Element transformed = eng.transform(input.getBytes(StandardCharsets.UTF_8), format, mapUri);
     ByteArrayOutputStream boas = new ByteArrayOutputStream();
-    ParserBase parser = format == FhirFormat.XML ? new org.hl7.fhir.r5.elementmodel.XmlParser(eng.getContext())
+    ParserBase parser = format == FhirFormat.XML
+        ? new org.hl7.fhir.r5.elementmodel.XmlParser(eng.getContext())
         : new org.hl7.fhir.r5.elementmodel.JsonParser(eng.getContext());
     parser.compose(transformed, boas, OutputStyle.PRETTY, null);
     String result = boas.toString(StandardCharsets.UTF_8);

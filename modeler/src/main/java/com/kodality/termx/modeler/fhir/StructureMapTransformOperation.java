@@ -93,5 +93,4 @@ public class StructureMapTransformOperation implements InstanceOperationDefiniti
     }
     return new ResourceContent(transformation.getResult(), transformation.getResult().startsWith("<") ? "xml" : "json");
   }
-
 }
