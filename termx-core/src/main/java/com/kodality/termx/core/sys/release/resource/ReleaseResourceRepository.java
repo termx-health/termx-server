@@ -40,4 +40,11 @@ public class ReleaseResourceRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder("select * from sys.release_resource where sys_status = 'A' and release_id = ?", releaseId);
     return getBeans(sb.getSql(), bp, sb.getParams());
   }
+
+  public ReleaseResource load(Long releaseId, String resourceType, String resourceId, String resourceVersion) {
+    SqlBuilder sb = new SqlBuilder("select * from sys.release_resource where sys_status = 'A' and release_id = ? and resource_type = ? and resource_id = ?",
+        releaseId, resourceType, resourceId);
+    sb.appendIfNotNull("and resource_version = ?", resourceVersion);
+    return getBean(sb.getSql(), bp, sb.getParams());
+  }
 }

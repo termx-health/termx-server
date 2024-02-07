@@ -21,6 +21,7 @@ public enum ApiError {
   TC112("TC112", "Checklist rule code '{{code}}' is already used."),
   TC113("TC113", "Either resourceType and resourceId or checklistId should be provided to validate rules"),
   TC114("TC114", "Checklist validation has unaccomplished checks, can not publish release."),
+  TC115("TC115", "This resource is already added to release."),
   ;
 
   @Getter
