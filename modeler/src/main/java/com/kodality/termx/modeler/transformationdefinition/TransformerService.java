@@ -117,11 +117,14 @@ public class TransformerService {
 
       for (TransformationDefinitionResource res : def.getResources()) {
         try {
-          StructureDefinition sd = parse(getContent(res));
-          // profile-types.json loads StructureDefinitions on startup, skipping duplicates
-          if (eng.getContext().getStructure(sd.getName()) == null) {
-            eng.getContext().cacheResource(sd);
+          Resource resource = parse(getContent(res));
+          if (res.getType().equals(definition)) {
+            if (eng.getContext().getStructure(((StructureDefinition) resource).getName()) != null) {
+              // profile-types.json loads StructureDefinitions on startup, skipping duplicates
+              continue;
+            }
           }
+          eng.getContext().cacheResource(resource);
         } catch (FHIRException e) {
           return new TransformationResult().setError("Invalid resource " + res.getName() + ": " + e.getMessage());
         }
@@ -201,7 +204,6 @@ public class TransformerService {
   }
 
   public String getContent(TransformationDefinitionResource res) {
-
     return switch (res.getSource()) {
       case statik -> res.getReference().getContent();
       case url -> queryResource(res.getReference().getResourceUrl(), res.getReference().getResourceServerId());
