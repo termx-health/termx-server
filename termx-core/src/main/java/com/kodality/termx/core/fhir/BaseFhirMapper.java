@@ -91,7 +91,8 @@ public abstract class BaseFhirMapper {
     if (name == null) {
       return null;
     }
-    return name.getOrDefault(Optional.ofNullable(lang).orElse(Language.en), name.values().stream().findFirst().orElse(null));
+    String fhirName = name.getOrDefault(Optional.ofNullable(lang).orElse(Language.en), name.values().stream().findFirst().orElse(null));
+    return StringUtils.isEmpty(fhirName) ? null : fhirName;
   }
 
   protected static Narrative toFhirText(String narrative) {
