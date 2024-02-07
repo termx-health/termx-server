@@ -53,20 +53,23 @@ public class ChecklistRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder(select + selectAssertions(params.isAssertionsDecorated()) + "from sys.checklist c");
+      SqlBuilder sb = new SqlBuilder(select + selectAssertions(params.isAssertionsDecorated(), params.getResourceVersion()) + "from sys.checklist c");
       sb.append(filter(params));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
   }
 
-  private String selectAssertions(boolean assertionsDecorated) {
+  private String selectAssertions(boolean assertionsDecorated, String resourceVersion) {
     if (!assertionsDecorated) {
       return "";
     }
-    return ", (select jsonb_agg(ca.a) from (select json_build_object(" +
-        "'id', ca.id, 'passed', ca.passed, 'executor', ca.executor, 'executionDate', ca.execution_date, 'errors', ca.errors) as a " +
-        "from sys.checklist_assertion ca where ca.sys_status = 'A' and ca.checklist_id = c.id order by ca.execution_date desc) ca) as assertions ";
+    SqlBuilder sb = new SqlBuilder(", (select jsonb_agg(ca.a) from (select json_build_object(" +
+        "'id', ca.id, 'resourceVersion', ca.resource_version, 'passed', ca.passed, 'executor', ca.executor, 'executionDate', ca.execution_date, 'errors', ca.errors) as a " +
+            "from sys.checklist_assertion ca where ca.sys_status = 'A' and ca.checklist_id = c.id");
+    sb.appendIfNotNull("and ca.resource_version = ?", resourceVersion);
+    sb.append("order by ca.execution_date desc) ca) as assertions ");
+    return sb.toPrettyString();
   }
 
   private SqlBuilder filter(ChecklistQueryParams params) {

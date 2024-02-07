@@ -26,9 +26,10 @@ create unique index checklist_rule_ukey on sys.checklist_rule (code) where (sys_
 select core.create_table_metadata('sys.checklist_rule');
 --
 
---changeset kodality:checklist
-drop table if exists sys.checklist;
+--changeset kodality:checklist-1
+drop table if exists sys.checklist_assertion;
 drop table if exists sys.checklist_whitelist;
+drop table if exists sys.checklist;
 
 create table sys.checklist (
     id                    bigint default nextval('core.s_entity') primary key,
@@ -67,6 +68,7 @@ create table sys.checklist_assertion (
     id                    bigint default nextval('core.s_entity') primary key,
     checklist_id          bigint not null,
     rule_id               bigint not null,
+    resource_version      text not null,
     passed                boolean not null default false,
     executor              text not null,
     execution_date        timestamptz not null,

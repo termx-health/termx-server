@@ -23,14 +23,16 @@ public class ChecklistAssertionService {
     return repository.query(params);
   }
 
-  public ChecklistAssertion create(Long checklistId, boolean passed) {
+  public ChecklistAssertion create(Long checklistId, String resourceVersion, boolean passed) {
     ChecklistAssertion assertion = new ChecklistAssertion();
+    assertion.setResourceVersion(resourceVersion);
     assertion.setPassed(passed);
     return create(checklistId, assertion);
   }
 
-  public ChecklistAssertion create(Long checklistId, List<ChecklistAssertionError> errors) {
+  public ChecklistAssertion create(Long checklistId, String resourceVersion, List<ChecklistAssertionError> errors) {
     ChecklistAssertion assertion = new ChecklistAssertion();
+    assertion.setResourceVersion(resourceVersion);
     assertion.setPassed(CollectionUtils.isEmpty(errors));
     assertion.setErrors(errors);
     return create(checklistId, assertion);

@@ -31,6 +31,9 @@ public class ChecklistValidationService {
 
   @Transactional
   public void runChecks(ChecklistValidationRequest request) {
+    if (request.getResourceVersion() == null) {
+      throw ApiError.TC116.toApiException();
+    }
     if ((request.getResourceId() == null || request.getResourceType() == null) && request.getChecklistId() == null) {
       throw ApiError.TC113.toApiException();
     }
@@ -45,12 +48,12 @@ public class ChecklistValidationService {
     checklists.stream().collect(Collectors.groupingBy(checklist -> PipeUtil.toPipe(checklist.getResourceType(), checklist.getResourceId()))).entrySet().forEach(group -> {
       String[] resource = PipeUtil.parsePipe(group.getKey());
       if (resource[0].equals("CodeSystem")) {
-        runCodeSystemChecks(resource[1], group.getValue());
+        runCodeSystemChecks(resource[1], group.getValue(), request.getResourceVersion());
       }
     });
   }
 
-  private void runCodeSystemChecks(String codeSystemId, List<Checklist> checklists) {
+  private void runCodeSystemChecks(String codeSystemId, List<Checklist> checklists, String version) {
     CodeSystem codeSystem = codeSystemProvider.loadCodeSystem(codeSystemId);
     List<Concept> concepts = codeSystemProvider.searchConcepts(new ConceptQueryParams().setCodeSystem(codeSystemId).all()).getData();
 
@@ -58,9 +61,9 @@ public class ChecklistValidationService {
       Optional<CodeSystemRuleValidator> validator = codeSystemValidators.stream().filter(v -> v.getRuleCode().equals(checklist.getRule().getCode())).findFirst();
       if (validator.isEmpty() && RULE_VERIFICATION.equals(checklist.getRule().getVerification())) {
         List<ChecklistAssertionError> errors = List.of(new ChecklistAssertionError().setError(String.format("Validator %s is not implemented", checklist.getRule().getCode())));
-        checklistAssertionService.create(checklist.getId(), errors);
+        checklistAssertionService.create(checklist.getId(), version, errors);
       } else validator.ifPresent(codeSystemRuleValidator ->
-          checklistAssertionService.create(checklist.getId(), codeSystemRuleValidator.validate(codeSystem, concepts, Optional.ofNullable(checklist.getWhitelist()).orElse(List.of()))));
+          checklistAssertionService.create(checklist.getId(), version, codeSystemRuleValidator.validate(codeSystem, concepts, Optional.ofNullable(checklist.getWhitelist()).orElse(List.of()))));
     });
   }
 }

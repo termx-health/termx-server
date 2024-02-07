@@ -10,6 +10,7 @@ import lombok.experimental.Accessors;
 @Setter
 public class ChecklistAssertion {
   private Long id;
+  private String resourceVersion;
   private boolean passed;
   private String executor;
   private OffsetDateTime executionDate;

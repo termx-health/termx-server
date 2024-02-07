@@ -10,6 +10,7 @@ import lombok.experimental.Accessors;
 public class ChecklistValidationRequest {
   private String resourceType;
   private String resourceId;
+  private String resourceVersion;
   private Long checklistId;
   private String ruleTarget;
 }

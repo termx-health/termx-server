@@ -94,8 +94,8 @@ public class ChecklistController {
 
   @Authorized(privilege = Privilege.C_EDIT)
   @Post("/{id}/assertions")
-  public ChecklistAssertion create(@PathVariable Long id, @Valid @Body Map<String, Boolean> body) {
-    return assertionService.create(id, body.getOrDefault("passed", false));
+  public ChecklistAssertion create(@PathVariable Long id, @Valid @Body AssertionRequest request) {
+    return assertionService.create(id, request.getResourceVersion(), request.isPassed());
   }
 
   @Authorized(privilege = Privilege.C_EDIT)
@@ -111,5 +111,12 @@ public class ChecklistController {
     private List<Checklist> checklist;
     private String resourceId;
     private String resourceType;
+  }
+
+  @Getter
+  @Setter
+  public static class AssertionRequest {
+    private boolean passed;
+    private String resourceVersion;
   }
 }

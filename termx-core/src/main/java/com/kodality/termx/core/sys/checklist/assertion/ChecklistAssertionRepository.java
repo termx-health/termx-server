@@ -29,6 +29,7 @@ public class ChecklistAssertionRepository extends BaseRepository {
     ssb.property("id", assertion.getId());
     ssb.property("checklist_id", assertion.getChecklistId());
     ssb.property("rule_id", assertion.getRuleId());
+    ssb.property("resource_version", assertion.getResourceVersion());
     ssb.property("passed", assertion.isPassed());
     ssb.property("executor", assertion.getExecutor());
     ssb.property("execution_date", assertion.getExecutionDate());
