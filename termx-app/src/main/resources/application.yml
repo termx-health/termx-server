@@ -19,6 +19,9 @@ endpoints:
     enabled: true
     details-visible: anonymous
     sensitive: false
+  info:
+    enabled: true
+    sensitive: false
   prometheus:
     enabled: true
     sensitive: false
