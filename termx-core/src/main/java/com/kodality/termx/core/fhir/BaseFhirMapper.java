@@ -113,7 +113,7 @@ public abstract class BaseFhirMapper {
     return new LocalizedName(Stream.of(descriptionA, descriptionB).filter(Objects::nonNull)
         .flatMap(description -> description.entrySet().stream())
         .collect(Collectors.groupingBy(Entry::getKey, mapping(Entry::getValue, toList())))
-        .entrySet().stream().map(es -> Pair.of(es.getKey(), String.join(" ", es.getValue())))
+        .entrySet().stream().map(es -> Pair.of(es.getKey(), String.join(" ", es.getValue().stream().filter(StringUtils::isNotEmpty).toList())))
         .collect(Collectors.toMap(Pair::getKey, Pair::getValue)));
   }
 
