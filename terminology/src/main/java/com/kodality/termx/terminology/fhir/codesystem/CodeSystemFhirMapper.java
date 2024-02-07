@@ -171,8 +171,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         .findFirst().orElse(null);
     concept.setDisplay(display != null ? display.getName() : null);
     concept.setDefinition(definition != null ? definition.getName() : null);
-    concept.setDesignation(toFhirDesignations(designations.stream()
-        .filter(d -> (display == null || !display.getId().equals(d.getId()) && (definition == null || !definition.getId().equals(d.getId())))).toList()));
+    concept.setDesignation(toFhirDesignations(designations.stream().filter(d ->  display != d && definition != d).toList()));
   }
 
   private static List<CodeSystemConceptDesignation> toFhirDesignations(List<Designation> designations) {
