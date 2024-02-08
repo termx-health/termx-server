@@ -6,13 +6,17 @@ import com.kodality.termx.core.sys.lorque.LorqueProcessService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.ProcessResult;
 import com.kodality.termx.terminology.ApiError;
+import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.ts.PublicationStatus;
+import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
+import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import com.kodality.termx.ts.property.PropertyReference;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
 import java.io.ByteArrayOutputStream;
@@ -43,6 +47,7 @@ import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 @RequiredArgsConstructor
 public class ConceptExportService {
   private final ConceptService conceptService;
+  private final CodeSystemService codeSystemService;
   private final LorqueProcessService lorqueProcessService;
 
   private final static String process = "cs-concept-export";
@@ -62,10 +67,11 @@ public class ConceptExportService {
     return lorqueProcess;
   }
 
-  private byte[] composeResult(String codeSystem, String version, String format) {
-    List<Concept> concepts = conceptService.query(new ConceptQueryParams().setCodeSystem(codeSystem).setCodeSystemVersion(version).all()).getData();
+  private byte[] composeResult(String codeSystemId, String version, String format) {
+    CodeSystem codeSystem = codeSystemService.load(codeSystemId).orElseThrow();
+    List<Concept> concepts = conceptService.query(new ConceptQueryParams().setCodeSystem(codeSystemId).setCodeSystemVersion(version).all()).getData();
 
-    List<String> headers = composeHeaders(concepts);
+    List<String> headers = composeHeaders(codeSystem, concepts);
     List<Object[]> rows = concepts.stream().map(c -> composeRow(c, headers)).toList();
 
     if ("csv".equals(format)) {
@@ -77,7 +83,7 @@ public class ConceptExportService {
     throw ApiError.TE807.toApiException();
   }
 
-  private List<String> composeHeaders(List<Concept> concepts) {
+  private List<String> composeHeaders(CodeSystem codeSystem, List<Concept> concepts) {
     List<String> fields = new ArrayList<>();
     fields.add("code");
     fields.addAll(concepts.stream().flatMap(c -> c.getVersions().stream())
@@ -91,6 +97,8 @@ public class ConceptExportService {
     fields.addAll(concepts.stream().flatMap(c -> c.getVersions().stream())
         .flatMap(v -> Optional.ofNullable(v.getAssociations()).orElse(List.of()).stream().filter(d -> PublicationStatus.active.equals(d.getStatus())))
         .collect(Collectors.groupingBy(CodeSystemAssociation::getAssociationType)).keySet());
+    fields.addAll(Optional.ofNullable(codeSystem.getProperties()).orElse(List.of()).stream()
+        .map(PropertyReference::getName).filter(p -> List.of("status", "is-a", "parent", "child", "partOf", "groupedBy", "classifiedWith").contains(p)).toList());
     return fields;
   }
 
@@ -111,6 +119,8 @@ public class ConceptExportService {
     headers.forEach(h -> {
       if ("code".equals(h)) {
         row.add(c.getCode());
+      } else if ("status".equals(h)) {
+        row.add(c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getStatus).orElse(""));
       } else if (designations.containsKey(h)) {
         row.add(designations.get(h).stream().map(Designation::getName)
             .collect(Collectors.joining("#")));
