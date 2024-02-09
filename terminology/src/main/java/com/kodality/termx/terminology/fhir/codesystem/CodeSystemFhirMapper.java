@@ -608,7 +608,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         case "description" -> params.setCodeSystemDescriptionStarts(v);
         case "description:contains" -> params.setCodeSystemDescriptionContains(v);
         // https://www.hl7.org/fhir/codesystem-search.html#4.8.37 :token
-        case "identifier" -> params.setCodeSystemIdentifier(v);
+        case "identifier" -> params.setIdentifier(v);
         // https://www.hl7.org/fhir/codesystem-search.html#4.8.40 :string
         case "name:exact" -> params.setCodeSystemName(v);
         case "name" -> params.setCodeSystemNameStarts(v);

@@ -19,7 +19,7 @@ public class CodeSystemQueryParams extends QueryParams {
   private String uriContains; //
   private String baseCodeSystem; // eq
   private String content; // eq
-  private String identifier; // eq
+  private String identifier; // eq, cs.identifier OR csv.identifier
 
   // description
   private String description; // eq

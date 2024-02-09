@@ -16,7 +16,6 @@ public class CodeSystemVersionQueryParams extends QueryParams {
   private String codeSystem; // eq, multiple
   private String codeSystemUri; // eq
   private String codeSystemContent;
-  private String codeSystemIdentifier;
   // name
   private String codeSystemName;
   private String codeSystemNameStarts;
@@ -39,6 +38,7 @@ public class CodeSystemVersionQueryParams extends QueryParams {
 
   private String ids;
   private String version;
+  private String identifier; // eq, csv.identifier OR cs.identifier
   private String status;
   private LocalDate releaseDate;
   private LocalDate releaseDateLe;

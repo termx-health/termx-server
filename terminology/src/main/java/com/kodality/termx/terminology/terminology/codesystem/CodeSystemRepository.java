@@ -127,8 +127,10 @@ public class CodeSystemRepository extends BaseRepository {
     // identifier
     if (StringUtils.isNotEmpty(params.getIdentifier())) {
       String[] tokens = PipeUtil.parsePipe(params.getIdentifier());
-      sb.and("exists (select 1 from jsonb_array_elements(cs.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)",
-          tokens[0], tokens[1]);
+      sb.and("(false");
+      sb.or("exists (select 1 from jsonb_array_elements(cs.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)", tokens[0], tokens[1]);
+      sb.or("exists (select 1 from jsonb_array_elements(csv.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)", tokens[0], tokens[1]);
+      sb.append(")");
     }
 
     // base CodeSystem aka. supplement
@@ -208,6 +210,7 @@ public class CodeSystemRepository extends BaseRepository {
   private String getJoin(CodeSystemQueryParams params) {
     String join = "";
     if (CollectionUtils.isNotEmpty(Stream.of(
+            params.getIdentifier(),
             params.getVersionVersion(), params.getVersionId(), params.getVersionStatus(),
             params.getVersionReleaseDate(), params.getVersionReleaseDateGe(),
             params.getVersionExpirationDateLe())

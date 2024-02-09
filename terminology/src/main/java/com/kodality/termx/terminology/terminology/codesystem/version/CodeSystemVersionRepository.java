@@ -92,9 +92,12 @@ public class CodeSystemVersionRepository extends BaseRepository {
     sb.appendIfNotNull("and cs.content = ?", params.getCodeSystemContent());
 
     // CS identifier
-    if (StringUtils.isNotEmpty(params.getCodeSystemIdentifier())) {
-      String[] tokens = PipeUtil.parsePipe(params.getCodeSystemIdentifier());
-      sb.and("exists (select 1 from jsonb_array_elements(cs.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)", tokens[0], tokens[1]);
+    if (StringUtils.isNotEmpty(params.getIdentifier())) {
+      String[] tokens = PipeUtil.parsePipe(params.getIdentifier());
+      sb.and("(false");
+      sb.or("exists (select 1 from jsonb_array_elements(csv.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)", tokens[0], tokens[1]);
+      sb.or("exists (select 1 from jsonb_array_elements(cs.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)", tokens[0], tokens[1]);
+      sb.append(")");
     }
 
     // CS name
