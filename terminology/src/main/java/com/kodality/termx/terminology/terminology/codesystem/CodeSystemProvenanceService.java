@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 
 @Singleton
@@ -154,9 +155,13 @@ public class CodeSystemProvenanceService {
   }
 
   public static Provenance provenance(String action, CodeSystemEntityVersion v) {
-    return new Provenance(action, "CodeSystemEntityVersion", v.getId().toString(), v.getCode())
+    Provenance provenance = new Provenance(action, "CodeSystemEntityVersion", v.getId().toString(), v.getCode())
         .addContext("part-of", "CodeSystem", v.getCodeSystem())
         .addContext("part-of", "CodeSystemEntity", v.getCodeSystemEntityId().toString());
+    if (CollectionUtils.isNotEmpty(v.getVersions())) {
+      v.getVersions().forEach(ver -> provenance.addContext("part-of", "CodeSystemVersion", ver.getId().toString(),  ver.getVersion()));
+    }
+    return provenance;
   }
 
 
