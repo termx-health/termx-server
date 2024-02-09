@@ -140,7 +140,7 @@ public class ValueSetVersionConceptService {
           if (CollectionUtils.isEmpty(c.getAdditionalDesignations())) {
             c.setAdditionalDesignations(designations.stream()
                 .filter(d -> CollectionUtils.isEmpty(supportedLanguages) || supportedLanguages.contains(d.getLanguage()))
-                .filter(d -> c.getDisplay() == null || !d.getId().equals(c.getDisplay().getId())).toList());
+                .filter(d -> c.getDisplay() == null || d != c.getDisplay()).toList());
           }
           c.setActive(calculatedActive(versions));
           c.setStatus(versions.stream().findFirst().map(CodeSystemEntityVersion::getStatus).orElse(PublicationStatus.active));
