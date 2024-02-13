@@ -8,7 +8,12 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class CodeSystemConceptSupplementRequest {
+public class CodeSystemSupplementRequest {
+  //concept supplement
   private List<Long> ids;
   private String externalSystemCode;
+
+  //cs full supplement
+  private String codeSystem;
+  private String codeSystemUri;
 }

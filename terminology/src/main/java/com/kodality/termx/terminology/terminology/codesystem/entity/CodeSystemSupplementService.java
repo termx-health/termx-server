@@ -1,21 +1,25 @@
 package com.kodality.termx.terminology.terminology.codesystem.entity;
 
-import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
-import com.kodality.termx.ts.codesystem.CodeSystemConceptSupplementRequest;
+import com.kodality.termx.ts.codesystem.CodeSystemContent;
+import com.kodality.termx.ts.codesystem.CodeSystemSupplementRequest;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termx.ts.codesystem.CodeSystemTransactionRequest;
+import com.kodality.termx.ts.codesystem.CodeSystemVersion;
+import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyKind;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import io.micronaut.core.util.CollectionUtils;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -38,7 +42,14 @@ public class CodeSystemSupplementService {
   private final EntityPropertyService entityPropertyService;
 
   @Transactional
-  public List<CodeSystemEntityVersion> supplement(String cs, String csv, CodeSystemConceptSupplementRequest request) {
+  public void supplement(String cs, CodeSystemSupplementRequest request) {
+    if (request.getCodeSystem() != null && request.getCodeSystemUri() != null) {
+      fullCsSupplement(cs, request);
+    }
+  }
+
+  @Transactional
+  public List<CodeSystemEntityVersion> supplement(String cs, String csv, CodeSystemSupplementRequest request) {
     List<CodeSystemEntityVersion> versions = new ArrayList<>();
     if (CollectionUtils.isNotEmpty(request.getIds())) {
       versions.addAll(supplementFromIds(cs, csv, request.getIds()));
@@ -48,6 +59,28 @@ public class CodeSystemSupplementService {
     }
     return versions;
   }
+
+  private void fullCsSupplement(String cs, CodeSystemSupplementRequest request) {
+    CodeSystem baseCodeSystem = codeSystemService.load(cs, true).orElseThrow();
+    CodeSystemTransactionRequest csRequest = new CodeSystemTransactionRequest();
+    csRequest.setCodeSystem(new CodeSystem()
+        .setBaseCodeSystem(baseCodeSystem.getId()).setContent(CodeSystemContent.supplement)
+        .setId(request.getCodeSystem()).setUri(request.getCodeSystemUri())
+            .setTitle(baseCodeSystem.getTitle()).setName(baseCodeSystem.getName())
+            .setCaseSensitive(baseCodeSystem.getCaseSensitive()).setPublisher(baseCodeSystem.getPublisher())
+        );
+    csRequest.setProperties(baseCodeSystem.getProperties());
+
+    Optional<CodeSystemVersion> baseCsVersion = baseCodeSystem.getVersions().stream().findFirst();
+    CodeSystemVersion csVersion = new CodeSystemVersion().setCodeSystem(request.getCodeSystem());
+    csVersion.setVersion(baseCsVersion.map(CodeSystemVersionReference::getVersion).orElse(null));
+    csVersion.setReleaseDate(LocalDate.now());
+    csVersion.setStatus(PublicationStatus.draft);
+    csRequest.setVersion(csVersion);
+
+    codeSystemService.save(csRequest);
+  }
+
 
   @Transactional
   public List<CodeSystemEntityVersion> supplementFromIds(String cs, String csv, List<Long> ids) {

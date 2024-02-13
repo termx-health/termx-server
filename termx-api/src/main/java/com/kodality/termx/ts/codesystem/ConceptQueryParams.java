@@ -21,6 +21,7 @@ public class ConceptQueryParams extends QueryParams {
   private List<String> permittedCodeSystems;
   private String codeSystemUri;
   private String codeSystemVersion;
+  private String codeSystemVersionCodeSystem;
   private Long codeSystemVersionId;
   private String codeSystemVersions; //cs1|v1,cs2|v1
   private LocalDate codeSystemVersionReleaseDateLe;

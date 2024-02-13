@@ -115,6 +115,11 @@ public class ConceptRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCodeSystem())) {
       sb.and().in("c.code_system ", params.getCodeSystem());
     }
+    if (StringUtils.isNotEmpty(params.getCodeSystemVersionCodeSystem()) && CollectionUtils.isNotEmpty(Stream.of(params.getCodeSystemVersion(), params.getCodeSystemVersionId(), params.getCodeSystemVersions(),
+        params.getCodeSystemVersionReleaseDateLe(), params.getCodeSystemVersionReleaseDateGe(),
+        params.getCodeSystemVersionExpirationDateLe(), params.getCodeSystemVersionExpirationDateLe()).filter(Objects::nonNull).toList())) {
+      sb.and().in("csv.code_system ", params.getCodeSystemVersionCodeSystem());
+    }
     sb.appendIfNotNull("and cs.uri = ?", params.getCodeSystemUri());
     sb.appendIfNotNull("and c.code ~* ?", params.getCodeContains());
     if (StringUtils.isNotEmpty(params.getTextContains()) || StringUtils.isNotEmpty(params.getTextEq()) || StringUtils.isNotEmpty(params.getDesignationCiEq())) {

@@ -168,6 +168,7 @@ public class ConceptService {
 
   private void prepareParams(ConceptQueryParams params) {
     if (params.getCodeSystem() != null) {
+      params.setCodeSystemVersionCodeSystem(params.getCodeSystem());
       String[] codeSystems = params.getCodeSystem().split(",");
       params.setCodeSystem(Arrays.stream(codeSystems).map(cs -> String.join(",", codeSystemRepository.closure(cs))).collect(Collectors.joining(",")));
       if (StringUtils.isEmpty(params.getCodeSystem())) {

@@ -18,7 +18,7 @@ import com.kodality.termx.terminology.terminology.codesystem.entityproperty.Enti
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
-import com.kodality.termx.ts.codesystem.CodeSystemConceptSupplementRequest;
+import com.kodality.termx.ts.codesystem.CodeSystemSupplementRequest;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
@@ -101,6 +101,15 @@ public class CodeSystemController {
     provenanceService.provenanceCodeSystem("duplicate", request.getCodeSystem(), () -> {
       CodeSystem targetCodeSystem = new CodeSystem().setId(request.getCodeSystem()).setUri(request.getCodeSystemUri());
       codeSystemDuplicateService.duplicateCodeSystem(targetCodeSystem, codeSystem);
+    });
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.CS_EDIT)
+  @Post(uri = "/{codeSystem}/supplement")
+  public HttpResponse<?> supplementCodeSystem(@PathVariable String codeSystem, @Body @Valid CodeSystemSupplementRequest request) {
+    provenanceService.provenanceCodeSystem("supplement", request.getCodeSystem(), () -> {
+      codeSystemSupplementService.supplement(codeSystem, request);
     });
     return HttpResponse.ok();
   }
@@ -374,7 +383,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/entity-versions/supplement")
-  public HttpResponse<?> supplementEntityVersion(@PathVariable String codeSystem, @Body CodeSystemConceptSupplementRequest request) {
+  public HttpResponse<?> supplementEntityVersion(@PathVariable String codeSystem, @Body CodeSystemSupplementRequest request) {
     List<CodeSystemEntityVersion> versions = codeSystemSupplementService.supplement(codeSystem, null, request);
     versions.forEach(v -> provenanceService.create(CodeSystemProvenanceService.provenance("supplement", v).created()));
     return HttpResponse.ok();
@@ -382,7 +391,7 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/versions/{version}/entity-versions/supplement")
-  public HttpResponse<?> supplementEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @Body CodeSystemConceptSupplementRequest request) {
+  public HttpResponse<?> supplementEntityVersion(@PathVariable String codeSystem, @PathVariable String version, @Body CodeSystemSupplementRequest request) {
     List<CodeSystemEntityVersion> versions = codeSystemSupplementService.supplement(codeSystem, version, request);
     versions.forEach(v -> provenanceService.create(CodeSystemProvenanceService.provenance("supplement", v).created()));
     return HttpResponse.ok();
