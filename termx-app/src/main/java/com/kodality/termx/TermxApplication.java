@@ -27,24 +27,29 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @OpenAPIInclude(
     tags = @Tag(name = "Terminology"),
     classes = {
+        com.kodality.termx.terminology.terminology.association.AssociationTypeController.class,
         com.kodality.termx.terminology.terminology.codesystem.CodeSystemController.class,
+        com.kodality.termx.terminology.terminology.codesystem.validator.CodeSystemValidatorController.class,
+        com.kodality.termx.terminology.terminology.codesystem.entitypropertysummary.CodeSystemEntityPropertySummaryController.class,
         com.kodality.termx.terminology.terminology.codesystem.compare.CodeSystemCompareController.class,
-        com.kodality.termx.terminology.terminology.codesystem.concept.ConceptController.class,
-        com.kodality.termx.terminology.terminology.codesystem.designation.DesignationController.class,
-        com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionController.class,
-        com.kodality.termx.terminology.terminology.valueset.ValueSetController.class,
-        com.kodality.termx.terminology.terminology.valueset.ValueSetVersionController.class,
-        com.kodality.termx.terminology.terminology.mapset.MapSetController.class
+        com.kodality.termx.terminology.terminology.definedproperty.DefinedPropertyController.class,
+        com.kodality.termx.terminology.terminology.mapset.MapSetController.class,
+        com.kodality.termx.terminology.terminology.namingsystem.NamingSystemController.class,
+        com.kodality.termx.terminology.terminology.relatedartifacts.RelatedArtifactController.class,
+        com.kodality.termx.terminology.terminology.valueset.ValueSetController.class
     }
 )
 @OpenAPIInclude(
     tags = @Tag(name = "Wiki"),
     classes = {
         com.kodality.termx.wiki.tag.TagController.class,
+        com.kodality.termx.wiki.space.WikiSpaceController.class,
         com.kodality.termx.wiki.template.TemplateController.class,
         com.kodality.termx.wiki.page.PageController.class,
         com.kodality.termx.wiki.pagecontent.PageContentController.class,
-        com.kodality.termx.wiki.pagerelation.PageRelationController.class
+        com.kodality.termx.wiki.pagerelation.PageRelationController.class,
+        com.kodality.termx.wiki.pagecomment.PageCommentController.class,
+        com.kodality.termx.wiki.pagelink.PageLinkController.class
     }
 )
 @OpenAPIInclude(
@@ -54,7 +59,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @OpenAPIInclude(
     tags = @Tag(name = "Modeler"),
     classes = {
-        com.kodality.termx.modeler.structuredefinition.StructureDefinitionController.class
+        com.kodality.termx.modeler.structuredefinition.StructureDefinitionController.class,
+        com.kodality.termx.modeler.transformationdefinition.TransformationDefinitionController.class,
+        com.kodality.termx.implementationguide.ig.ImplementationGuideController.class
     }
 )
 @OpenAPIInclude(
@@ -85,6 +92,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         com.kodality.termx.terminology.fileimporter.mapset.MapSetFileImportController.class,
         com.kodality.termx.terminology.fileimporter.association.AssociationFileImportController.class,
         com.kodality.termx.terminology.fileimporter.analyze.FileAnalysisController.class
+    }
+)
+@OpenAPIInclude(
+    tags = @Tag(name = "Task management"),
+    classes = {
+        com.kodality.termx.task.TaskController.class
     }
 )
 @SecurityScheme(name = "openid",
