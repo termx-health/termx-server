@@ -1,15 +1,16 @@
 package com.kodality.termx.terminology.terminology.relatedartifacts;
 
+import com.kodality.termx.core.sys.space.SpaceService;
+import com.kodality.termx.core.wiki.PageProvider;
 import com.kodality.termx.sys.space.Space;
 import com.kodality.termx.sys.space.SpaceQueryParams;
-import com.kodality.termx.core.sys.space.SpaceService;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifact;
-import com.kodality.termx.core.wiki.PageProvider;
 import com.kodality.termx.wiki.page.PageContent;
 import com.kodality.termx.wiki.page.PageRelationType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @Singleton
 @RequiredArgsConstructor
 public class MapSetRelatedArtifactService extends RelatedArtifactService {
-  private final PageProvider pageProvider;
+  private final Optional<PageProvider> pageProvider;
   private final SpaceService spaceService;
 
   @Override
@@ -34,7 +35,7 @@ public class MapSetRelatedArtifactService extends RelatedArtifactService {
   }
 
   private List<RelatedArtifact> findPages(String id) {
-    List<PageContent> pages = pageProvider.getRelatedPageContents(id, PageRelationType.ms);
+    List<PageContent> pages = pageProvider.map(p-> p.getRelatedPageContents(id, PageRelationType.ms)).orElse(List.of());
 
     String spaceIds = pages.stream().map(PageContent::getSpaceId).distinct().map(String::valueOf).collect(Collectors.joining(","));
     Map<Long, String> spaces = spaceService.query(new SpaceQueryParams().setIds(spaceIds).limit(spaceIds.split(",").length))
