@@ -125,3 +125,15 @@ select core.create_table_metadata('terminology.map_set_property');
 --changeset kodality:map_set_version-identifiers
 alter table terminology.map_set_version add column identifiers jsonb;
 --
+
+--changeset kodality:map_set-other_title-source_reference-replaces-topic-configuration_attributes-use_context
+alter table terminology.map_set add column other_title jsonb;
+alter table terminology.map_set add column source_reference text;
+alter table terminology.map_set add column replaces text;
+alter table terminology.map_set add column topic jsonb;
+alter table terminology.map_set add column configuration_attributes jsonb;
+alter table terminology.map_set add column use_context jsonb;
+
+alter table terminology.map_set add constraint map_set_replaces_fk foreign key (replaces) references terminology.map_set(id);
+create index map_set_replaces_idx on terminology.map_set(replaces);
+--

@@ -1,0 +1,224 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "termx-resource-configuration",
+  "url": "https://termx.org/fhir/CodeSystem/termx-resource-configuration",
+  "version": "1.0.0",
+  "versionAlgorithmString": "semver",
+  "name": "TermXResourceConfiguration",
+  "title": "TermX resource configuration",
+  "status": "draft",
+  "experimental": false,
+  "date": "2024-02-12T15:11:17.652685Z",
+  "publisher": "kts",
+  "effectivePeriod": {
+    "start": "2024-02-12T00:00:00Z"
+  },
+  "caseSensitive": false,
+  "content": "complete",
+  "property": [
+    {
+      "code": "conceptOrder",
+      "uri": "http://hl7.org/fhir/StructureDefinition/codesystem-conceptOrder",
+      "description": "Concept Order",
+      "type": "integer"
+    },
+    {
+      "code": "definition",
+      "description": "Definition",
+      "type": "string"
+    },
+    {
+      "code": "display",
+      "uri": "http://terminology.hl7.org/CodeSystem/designation-usage|display",
+      "description": "Display",
+      "type": "string"
+    },
+    {
+      "code": "fhir",
+      "description": "Show in FHIR API",
+      "type": "boolean"
+    },
+    {
+      "code": "language",
+      "description": "Language selector",
+      "type": "boolean"
+    },
+    {
+      "code": "markdown",
+      "description": "Markdown input",
+      "type": "boolean"
+    },
+    {
+      "code": "url",
+      "type": "string"
+    }
+  ],
+  "concept": [
+    {
+      "code": "change-management",
+      "display": "Description of the change managemen process",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "code": "display"
+          },
+          "value": "Muudatuste juhtimise protsessi kirjeldus"
+        },
+        {
+          "language": "et",
+          "use": {
+            "code": "definition"
+          },
+          "value": "Juhendmaterjal, mis kirjeldab muudatustega seotud korraldus"
+        }
+      ],
+      "property": [
+        {
+          "code": "conceptOrder",
+          "valueInteger": 10
+        },
+        {
+          "code": "language",
+          "valueBoolean": true
+        }
+      ]
+    },
+    {
+      "code": "coding-principles",
+      "display": "Coding principles",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "code": "display"
+          },
+          "value": "Kodeerimispõhimõtted"
+        },
+        {
+          "language": "et",
+          "use": {
+            "code": "definition"
+          },
+          "value": "Info koodipikkuse, hierarhia olemasolu ja olemuse kohta, jms."
+        }
+      ],
+      "property": [
+        {
+          "code": "conceptOrder",
+          "valueInteger": 20
+        },
+        {
+          "code": "language",
+          "valueBoolean": true
+        }
+      ]
+    },
+    {
+      "code": "instruction",
+      "display": "Instructions for use",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "code": "display"
+          },
+          "value": "Kasutusjuhised"
+        },
+        {
+          "language": "et",
+          "use": {
+            "code": "definition"
+          },
+          "value": "Lühike tekst või viide veebilehele, kus on kõik vajalik info loendi/koodisüsteemi kasutamise kohta."
+        }
+      ],
+      "property": [
+        {
+          "code": "conceptOrder",
+          "valueInteger": 30
+        },
+        {
+          "code": "fhir",
+          "valueBoolean": true
+        },
+        {
+          "code": "language",
+          "valueBoolean": true
+        },
+        {
+          "code": "markdown",
+          "valueBoolean": true
+        }
+      ]
+    },
+    {
+      "code": "legislation",
+      "display": "Relation to legislation",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "code": "display"
+          },
+          "value": "Seos õigusaktidega"
+        },
+        {
+          "language": "et",
+          "use": {
+            "code": "definition"
+          },
+          "value": "Riigiteataja URL, nimi ja sisuline selgitus"
+        }
+      ],
+      "property": [
+        {
+          "code": "conceptOrder",
+          "valueInteger": 50
+        },
+        {
+          "code": "fhir",
+          "valueBoolean": true
+        },
+        {
+          "code": "language",
+          "valueBoolean": true
+        },
+        {
+          "code": "markdown",
+          "valueBoolean": true
+        }
+      ]
+    },
+    {
+      "code": "origin",
+      "display": "Reference to base classifier",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "code": "display"
+          },
+          "value": "Viide alusklassifikaatorile"
+        },
+        {
+          "language": "et",
+          "use": {
+            "code": "definition"
+          },
+          "value": "Alusklassifikaator võib olla nii rahvusvaheline kui ka riigisisene. Täidetakse kui kohaldub."
+        }
+      ],
+      "property": [
+        {
+          "code": "conceptOrder",
+          "valueInteger": 60
+        },
+        {
+          "code": "language",
+          "valueBoolean": true
+        }
+      ]
+    }
+  ]
+}

@@ -9,15 +9,24 @@ import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.fhir.BaseFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.terminology.Privilege;
+import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
+import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
+import com.kodality.termx.terminology.terminology.mapset.MapSetService;
+import com.kodality.termx.terminology.terminology.relatedartifacts.ValueSetRelatedArtifactService;
+import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
 import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
 import com.kodality.termx.ts.Permissions;
 import com.kodality.termx.ts.PublicationStatus;
+import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.Concept;
+import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
+import com.kodality.termx.ts.mapset.MapSet;
+import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetSnapshot;
@@ -59,6 +68,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
@@ -67,11 +77,23 @@ import static java.util.stream.Collectors.toList;
 
 @Context
 public class ValueSetFhirMapper extends BaseFhirMapper {
+  private final ConceptService conceptService;
+  private final CodeSystemService codeSystemService;
+  private final ValueSetService valueSetService;
+  private final MapSetService mapSetService;
+  private final ValueSetRelatedArtifactService relatedArtifactService;
   private static Optional<String> termxWebUrl;
   private static final String concept_definition = "http://hl7.org/fhir/StructureDefinition/valueset-concept-definition";
   private static final String concept_order = "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder";
 
-  public ValueSetFhirMapper(@Value("${termx.web-url}") Optional<String> termxWebUrl) {
+  public ValueSetFhirMapper(ConceptService conceptService,
+                            CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
+                            ValueSetRelatedArtifactService relatedArtifactService, @Value("${termx.web-url}") Optional<String> termxWebUrl) {
+    this.conceptService = conceptService;
+    this.codeSystemService = codeSystemService;
+    this.valueSetService = valueSetService;
+    this.mapSetService = mapSetService;
+    this.relatedArtifactService = relatedArtifactService;
     ValueSetFhirMapper.termxWebUrl = termxWebUrl;
   }
 
@@ -82,28 +104,36 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return vs.getId() + BaseFhirMapper.SEPARATOR + vsv.getVersion();
   }
 
-  public static String toFhirJson(ValueSet vs, ValueSetVersion vsv, List<Provenance> provenances) {
+  public String toFhirJson(ValueSet vs, ValueSetVersion vsv, List<Provenance> provenances) {
     return FhirMapper.toJson(toFhir(vs, vsv, provenances));
   }
 
-  public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances) {
+  public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
     termxWebUrl.ifPresent(url -> fhirValueSet.addExtension(toFhirWebSourceExtension(url, valueSet.getId())));
     fhirValueSet.setId(toFhirId(valueSet, version));
     fhirValueSet.setUrl(valueSet.getUri());
     fhirValueSet.setName(valueSet.getName());
+    if (CollectionUtils.isNotEmpty(valueSet.getOtherTitle())) {
+      valueSet.getOtherTitle().forEach(otherName -> fhirValueSet.addExtension(
+          toFhirOtherTitleExtension("http://hl7.org/fhir/StructureDefinition/valueset-otherTitle", otherName)));
+    }
     fhirValueSet.setTitle(toFhirName(valueSet.getTitle(), version.getPreferredLanguage()));
     fhirValueSet.setPrimitiveExtensions("title", toFhirTranslationExtension(valueSet.getTitle(), version.getPreferredLanguage()));
     LocalizedName description = joinDescriptions(valueSet.getDescription(), version.getDescription());
     fhirValueSet.setDescription(toFhirName(description, version.getPreferredLanguage()));
     fhirValueSet.setPrimitiveExtensions("description", toFhirTranslationExtension(description, version.getPreferredLanguage()));
     fhirValueSet.setPurpose(toFhirName(valueSet.getPurpose(), version.getPreferredLanguage()));
+    fhirValueSet.setTopic(toFhirTopic(valueSet.getTopic()));
+    fhirValueSet.setUseContext(toFhirUseContext(valueSet.getUseContext()));
     fhirValueSet.setPrimitiveExtensions("purpose", toFhirTranslationExtension(valueSet.getPurpose(), version.getPreferredLanguage()));
     fhirValueSet.setContact(toFhirContacts(valueSet.getContacts()));
     fhirValueSet.setIdentifier(toFhirIdentifiers(valueSet.getIdentifiers(), version.getIdentifiers()));
     fhirValueSet.setText(toFhirText(valueSet.getNarrative()));
     fhirValueSet.setPublisher(valueSet.getPublisher());
     fhirValueSet.setExperimental(valueSet.getExperimental() != null && valueSet.getExperimental());
+    Optional.ofNullable(valueSet.getSourceReference()).ifPresent(ref -> fhirValueSet.addExtension(toFhirSourceReferenceExtension("http://hl7.org/fhir/StructureDefinition/valueset-sourceReference", ref)));
+    Optional.ofNullable(valueSet.getReplaces()).flatMap(id -> Optional.ofNullable(valueSetService.load(id)).map(ValueSet::getUri)).ifPresent(uri -> fhirValueSet.addExtension(toFhirReplacesExtension(uri)));
     fhirValueSet.setDate(toFhirOffsetDateTime(provenances));
     fhirValueSet.setLastReviewDate(toFhirDate(provenances, "reviewed"));
     fhirValueSet.setApprovalDate(toFhirDate(provenances, "approved"));
@@ -119,6 +149,23 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       fhirValueSet.setReviewer(valueSet.getPermissions().getViewer() != null ? toFhirContacts(valueSet.getPermissions().getViewer()) : null);
       fhirValueSet.setEndorser(valueSet.getPermissions().getEndorser() != null ? toFhirContacts(valueSet.getPermissions().getEndorser()) : null);
     }
+    if (CollectionUtils.isNotEmpty(valueSet.getConfigurationAttributes())) {
+      Map<String, Concept> concepts = conceptService.query(new ConceptQueryParams().setCodeSystem("termx-resource-configuration").all()).getData().stream()
+          .collect(Collectors.toMap(Concept::getCode, c -> c));
+      toFhir(fhirValueSet, valueSet.getConfigurationAttributes(), concepts);
+    }
+    List<String> relatedArtifacts = relatedArtifactService.findRelatedArtifacts(valueSet.getId()).stream()
+        .map(a -> {
+          if (RelatedArtifactType.cs.equals(a.getType())) {
+            return codeSystemService.load(a.getId()).map(CodeSystem::getUri).orElse(null);
+          } else if (RelatedArtifactType.vs.equals(a.getType())) {
+            return Optional.ofNullable(valueSetService.load(a.getId())).map(ValueSet::getUri).orElse(null);
+          } else if (RelatedArtifactType.ms.equals(a.getType())) {
+            return mapSetService.load(a.getId()).map(MapSet::getUri).orElse(null);
+          }
+          return null;
+        }).filter(Objects::nonNull).toList();
+    toFhirRelatedArtifacts(fhirValueSet, relatedArtifacts);
 
     fhirValueSet.setVersion(version.getVersion());
     fhirValueSet.setLanguage(version.getPreferredLanguage());
@@ -197,7 +244,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }).collect(toList());
   }
 
-  public static com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances,
+  public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances,
                                                                             List<ValueSetVersionConcept> concepts, Parameters param) {
     boolean active = Optional.ofNullable(param).map(p -> p.findParameter("activeOnly")
         .map(pp -> pp.getValueBoolean() != null ? pp.getValueBoolean() : "true".equals(pp.getValueString()))

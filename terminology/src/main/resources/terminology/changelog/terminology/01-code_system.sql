@@ -121,3 +121,16 @@ alter table terminology.code_system add column permissions jsonb;
 --changeset kodality:code_system_version-identifiers
 alter table terminology.code_system_version add column identifiers jsonb;
 --
+
+--changeset kodality:code_system-other_title-source_reference-replaces-topic-configuration_attributes-use_context
+alter table terminology.code_system add column other_title jsonb;
+alter table terminology.code_system add column source_reference text;
+alter table terminology.code_system add column replaces text;
+alter table terminology.code_system add column topic jsonb;
+alter table terminology.code_system add column configuration_attributes jsonb;
+alter table terminology.code_system add column use_context jsonb;
+
+alter table terminology.code_system add constraint code_system_replaces_fk foreign key (replaces) references terminology.code_system(id);
+create index code_system_replaces_idx on terminology.code_system(replaces);
+
+--

@@ -6,6 +6,7 @@ import com.kodality.termx.sys.space.Space;
 import com.kodality.termx.sys.space.SpaceQueryParams;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifact;
+import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import com.kodality.termx.wiki.page.PageContent;
@@ -49,10 +50,10 @@ public class ValueSetRelatedArtifactService extends RelatedArtifactService {
     return versions.stream().map(ValueSetVersion::getRuleSet).filter(Objects::nonNull).filter(r -> r.getRules() != null)
         .flatMap(r -> r.getRules().stream()).filter(Objects::nonNull).map(r -> {
           if (r.getCodeSystem() != null) {
-            return new RelatedArtifact().setId(r.getCodeSystem()).setType("CodeSystem");
+            return new RelatedArtifact().setId(r.getCodeSystem()).setType(RelatedArtifactType.cs);
           }
           if (r.getValueSet() != null) {
-            return new RelatedArtifact().setId(r.getValueSet()).setType("ValueSet");
+            return new RelatedArtifact().setId(r.getValueSet()).setType(RelatedArtifactType.vs);
           }
           return null;
         }).filter(Objects::nonNull).filter(distinctByKey(ra -> ra.getType() + ra.getId())).collect(Collectors.toList());
@@ -66,12 +67,12 @@ public class ValueSetRelatedArtifactService extends RelatedArtifactService {
     Map<Long, String> spaces = spaceService.query(new SpaceQueryParams().setIds(spaceIds).limit(spaceIds.split(",").length))
         .getData().stream().collect(Collectors.toMap(Space::getId, Space::getCode));
 
-    return pages.stream().map(p -> new RelatedArtifact().setId(spaces.get(p.getSpaceId()) + "|" + p.getSlug()).setType("Page")).collect(Collectors.toList());
+    return pages.stream().map(p -> new RelatedArtifact().setId(spaces.get(p.getSpaceId()) + "|" + p.getSlug()).setType(RelatedArtifactType.p)).collect(Collectors.toList());
   }
 
   private List<RelatedArtifact> findSpaces(String id) {
     return spaceService.query(new SpaceQueryParams().setResource("value-set|" + id).all()).getData().stream().map(s ->
-        new RelatedArtifact().setId(s.getCode() + "|" + s.getId()).setType("Space")).toList();
+        new RelatedArtifact().setId(s.getCode() + "|" + s.getId()).setType(RelatedArtifactType.s)).toList();
   }
 
   public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {

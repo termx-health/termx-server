@@ -8,7 +8,10 @@ import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.PipeUtil;
+import com.kodality.termx.ts.ConfigurationAttribute;
 import com.kodality.termx.ts.ContactDetail;
+import com.kodality.termx.ts.OtherTitle;
+import com.kodality.termx.ts.UseContext;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams.Ordering;
@@ -26,8 +29,12 @@ public class ValueSetRepository extends BaseRepository {
     bp.addColumnProcessor("settings", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("copyright", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("permissions", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("topic", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("use_context", PgBeanProcessor.fromJson(JsonUtil.getListType(UseContext.class)));
+    bp.addColumnProcessor("other_title", PgBeanProcessor.fromJson(JsonUtil.getListType(OtherTitle.class)));
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
+    bp.addColumnProcessor("configuration_attributes", PgBeanProcessor.fromJson(JsonUtil.getListType(ConfigurationAttribute.class)));
   });
 
   public void save(ValueSet valueSet) {
@@ -36,15 +43,21 @@ public class ValueSetRepository extends BaseRepository {
     ssb.property("uri", valueSet.getUri());
     ssb.property("publisher", valueSet.getPublisher());
     ssb.property("name", valueSet.getName());
+    ssb.jsonProperty("other_title", valueSet.getOtherTitle());
     ssb.jsonProperty("title", valueSet.getTitle());
     ssb.jsonProperty("description", valueSet.getDescription());
     ssb.jsonProperty("purpose", valueSet.getPurpose());
     ssb.jsonProperty("identifiers", valueSet.getIdentifiers());
+    ssb.jsonProperty("configuration_attributes", valueSet.getConfigurationAttributes());
+    ssb.jsonProperty("replaces", valueSet.getReplaces());
     ssb.jsonProperty("contacts", valueSet.getContacts());
     ssb.jsonProperty("copyright", valueSet.getCopyright());
     ssb.jsonProperty("permissions", valueSet.getPermissions());
+    ssb.jsonProperty("topic", valueSet.getTopic());
+    ssb.jsonProperty("use_context", valueSet.getUseContext());
     ssb.property("narrative", valueSet.getNarrative());
     ssb.property("experimental", valueSet.getExperimental());
+    ssb.property("source_reference", valueSet.getSourceReference());
     ssb.jsonProperty("settings", valueSet.getSettings());
     ssb.property("sys_status", "A");
 

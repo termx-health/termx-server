@@ -30,6 +30,7 @@ public class ResourceContentCodeSystemVersionFshProvider implements ResourceCont
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final ProvenanceService provenanceService;
   private final FhirFshConverter fhirFshConverter;
+  private final CodeSystemFhirMapper mapper;
 
   @Override
   public String getResourceType() {
@@ -59,7 +60,7 @@ public class ResourceContentCodeSystemVersionFshProvider implements ResourceCont
     csv.setEntities(codeSystemEntityVersionService.query(new CodeSystemEntityVersionQueryParams()
         .setCodeSystemVersionId(csv.getId())
         .all()).getData());
-    String json = CodeSystemFhirMapper.toFhirJson(cs, csv, provenances);
+    String json = mapper.toFhirJson(cs, csv, provenances);
     String fhirId = CodeSystemFhirMapper.toFhirId(cs, csv);
     return List.of(new ResourceContent(fhirId + ".fsh", fhirFshConverter.toFsh(json).join()));
   }

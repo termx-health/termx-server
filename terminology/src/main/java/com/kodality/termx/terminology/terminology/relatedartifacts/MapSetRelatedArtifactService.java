@@ -5,6 +5,7 @@ import com.kodality.termx.core.wiki.PageProvider;
 import com.kodality.termx.sys.space.Space;
 import com.kodality.termx.sys.space.SpaceQueryParams;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifact;
+import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
 import com.kodality.termx.wiki.page.PageContent;
 import com.kodality.termx.wiki.page.PageRelationType;
 import java.util.ArrayList;
@@ -41,11 +42,11 @@ public class MapSetRelatedArtifactService extends RelatedArtifactService {
     Map<Long, String> spaces = spaceService.query(new SpaceQueryParams().setIds(spaceIds).limit(spaceIds.split(",").length))
         .getData().stream().collect(Collectors.toMap(Space::getId, Space::getCode));
 
-    return pages.stream().map(p -> new RelatedArtifact().setId(spaces.get(p.getSpaceId()) + "|" + p.getSlug()).setType("Page")).collect(Collectors.toList());
+    return pages.stream().map(p -> new RelatedArtifact().setId(spaces.get(p.getSpaceId()) + "|" + p.getSlug()).setType(RelatedArtifactType.p)).collect(Collectors.toList());
   }
 
   private List<RelatedArtifact> findSpaces(String id) {
     return spaceService.query(new SpaceQueryParams().setResource("map-set|" + id).all()).getData().stream().map(s ->
-        new RelatedArtifact().setId(s.getCode() + "|" + s.getId()).setType("Space")).toList();
+        new RelatedArtifact().setId(s.getCode() + "|" + s.getId()).setType(RelatedArtifactType.s)).toList();
   }
 }

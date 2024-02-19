@@ -9,6 +9,11 @@ import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.fhir.BaseFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.terminology.Privilege;
+import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
+import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
+import com.kodality.termx.terminology.terminology.mapset.MapSetService;
+import com.kodality.termx.terminology.terminology.relatedartifacts.CodeSystemRelatedArtifactService;
+import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
 import com.kodality.termx.ts.CaseSignificance;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
@@ -22,12 +27,16 @@ import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
 import com.kodality.termx.ts.codesystem.Concept;
+import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyKind;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.property.PropertyReference;
+import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
+import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
@@ -60,11 +69,24 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 @Context
 public class CodeSystemFhirMapper extends BaseFhirMapper {
+  private final ConceptService conceptService;
+  private final CodeSystemService codeSystemService;
+  private final ValueSetService valueSetService;
+  private final MapSetService mapSetService;
+  private final CodeSystemRelatedArtifactService relatedArtifactService;
   private static final String DISPLAY = "display";
   private static final String DEFINITION = "definition";
   private static Optional<String> termxWebUrl;
 
-  public CodeSystemFhirMapper(@Value("${termx.web-url}") Optional<String> termxWebUrl) {
+
+  public CodeSystemFhirMapper(ConceptService conceptService,
+                              CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
+                              CodeSystemRelatedArtifactService relatedArtifactService, @Value("${termx.web-url}") Optional<String> termxWebUrl) {
+    this.conceptService = conceptService;
+    this.codeSystemService = codeSystemService;
+    this.valueSetService = valueSetService;
+    this.mapSetService = mapSetService;
+    this.relatedArtifactService = relatedArtifactService;
     CodeSystemFhirMapper.termxWebUrl = termxWebUrl;
   }
 
@@ -74,26 +96,34 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return cs.getId() + BaseFhirMapper.SEPARATOR + csv.getVersion();
   }
 
-  public static String toFhirJson(CodeSystem cs, CodeSystemVersion csv, List<Provenance> provenances) {
+  public String toFhirJson(CodeSystem cs, CodeSystemVersion csv, List<Provenance> provenances) {
     return FhirMapper.toJson(toFhir(cs, csv, provenances));
   }
 
-  public static com.kodality.zmei.fhir.resource.terminology.CodeSystem toFhir(CodeSystem codeSystem, CodeSystemVersion version, List<Provenance> provenances) {
+  public com.kodality.zmei.fhir.resource.terminology.CodeSystem toFhir(CodeSystem codeSystem, CodeSystemVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem = new com.kodality.zmei.fhir.resource.terminology.CodeSystem();
-    termxWebUrl.ifPresent(url -> toFhirWebSourceExtension(url, codeSystem.getId()));
+    termxWebUrl.ifPresent(url -> fhirCodeSystem.addExtension(toFhirWebSourceExtension(url, codeSystem.getId())));
     fhirCodeSystem.setId(toFhirId(codeSystem, version));
     fhirCodeSystem.setUrl(codeSystem.getUri());
     fhirCodeSystem.setPublisher(codeSystem.getPublisher());
     fhirCodeSystem.setName(codeSystem.getName());
+    if (CollectionUtils.isNotEmpty(codeSystem.getOtherTitle())) {
+      codeSystem.getOtherTitle().forEach(otherName -> fhirCodeSystem.addExtension(
+          toFhirOtherTitleExtension("http://hl7.org/fhir/StructureDefinition/codesystem-otherTitle", otherName)));
+    }
     fhirCodeSystem.setTitle(toFhirName(codeSystem.getTitle(), version.getPreferredLanguage()));
     fhirCodeSystem.setPrimitiveExtensions("title", toFhirTranslationExtension(codeSystem.getTitle(), version.getPreferredLanguage()));
     LocalizedName description = joinDescriptions(codeSystem.getDescription(), version.getDescription());
     fhirCodeSystem.setDescription(toFhirName(description, version.getPreferredLanguage()));
     fhirCodeSystem.setPrimitiveExtensions("description", toFhirTranslationExtension(description, version.getPreferredLanguage()));
     fhirCodeSystem.setPurpose(toFhirName(codeSystem.getPurpose(), version.getPreferredLanguage()));
+    fhirCodeSystem.setTopic(toFhirTopic(codeSystem.getTopic()));
+    fhirCodeSystem.setUseContext(toFhirUseContext(codeSystem.getUseContext()));
     fhirCodeSystem.setPrimitiveExtensions("purpose", toFhirTranslationExtension(codeSystem.getPurpose(), version.getPreferredLanguage()));
     fhirCodeSystem.setText(toFhirText(codeSystem.getNarrative()));
     fhirCodeSystem.setExperimental(codeSystem.getExperimental() != null && codeSystem.getExperimental());
+    Optional.ofNullable(codeSystem.getSourceReference()).ifPresent(ref -> fhirCodeSystem.addExtension(toFhirSourceReferenceExtension("http://hl7.org/fhir/StructureDefinition/codesystem-sourceReference", ref)));
+    Optional.ofNullable(codeSystem.getReplaces()).flatMap(id -> codeSystemService.load(id).map(CodeSystem::getUri)).ifPresent(uri -> fhirCodeSystem.addExtension(toFhirReplacesExtension(uri)));
     fhirCodeSystem.setIdentifier(toFhirIdentifiers(codeSystem.getIdentifiers(), version.getIdentifiers()));
     fhirCodeSystem.setContact(toFhirContacts(codeSystem.getContacts()));
     fhirCodeSystem.setDate(toFhirOffsetDateTime(provenances));
@@ -118,6 +148,24 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       fhirCodeSystem.setReviewer(codeSystem.getPermissions().getViewer() != null ? toFhirContacts(codeSystem.getPermissions().getViewer()) : null);
       fhirCodeSystem.setEndorser(codeSystem.getPermissions().getEndorser() != null ? toFhirContacts(codeSystem.getPermissions().getEndorser()) : null);
     }
+    if (CollectionUtils.isNotEmpty(codeSystem.getConfigurationAttributes())) {
+      Map<String, Concept> concepts = conceptService.query(new ConceptQueryParams().setCodeSystem("termx-resource-configuration").all()).getData().stream()
+          .collect(Collectors.toMap(Concept::getCode, c -> c));
+      toFhir(fhirCodeSystem, codeSystem.getConfigurationAttributes(), concepts);
+    }
+
+    List<String> relatedArtifacts = relatedArtifactService.findRelatedArtifacts(codeSystem.getId()).stream()
+        .map(a -> {
+          if (RelatedArtifactType.cs.equals(a.getType())) {
+            return codeSystemService.load(a.getId()).map(CodeSystem::getUri).orElse(null);
+          } else if (RelatedArtifactType.vs.equals(a.getType())) {
+            return Optional.ofNullable(valueSetService.load(a.getId())).map(ValueSet::getUri).orElse(null);
+          } else if (RelatedArtifactType.ms.equals(a.getType())) {
+            return mapSetService.load(a.getId()).map(MapSet::getUri).orElse(null);
+          }
+          return null;
+        }).filter(Objects::nonNull).toList();
+    toFhirRelatedArtifacts(fhirCodeSystem, relatedArtifacts);
 
     fhirCodeSystem.setVersion(version.getVersion());
     fhirCodeSystem.setLanguage(version.getPreferredLanguage());

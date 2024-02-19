@@ -95,4 +95,25 @@
     </customChange>
   </changeSet>
 
+  <changeSet id="definition-use" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
+      <param name="files" value="terminology/changelog/data/valueset/definition-use.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="definition-topic" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
+      <param name="files" value="terminology/changelog/data/valueset/definition-topic.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="usage-context-type" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
+      <param name="files" value="terminology/changelog/data/valueset/usage-context-type.json"/>
+    </customChange>
+  </changeSet>
+
 </databaseChangeLog>

@@ -151,4 +151,32 @@
     </customChange>
   </changeSet>
 
+  <changeSet id="definition-topic" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/definition-topic.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="definition-use" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/definition-use.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="termx-resource-configuration" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/termx-resource-configuration.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="usage-context-type" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/usage-context-type.json"/>
+    </customChange>
+  </changeSet>
+
 </databaseChangeLog>

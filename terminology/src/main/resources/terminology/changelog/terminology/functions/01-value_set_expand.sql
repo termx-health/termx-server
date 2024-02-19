@@ -18,8 +18,7 @@ with rules as (
     from terminology.value_set_version_rule_set rs
          inner join terminology.value_set_version v on v.id = rs.value_set_version_id and v.sys_status = 'A'
          inner join terminology.value_set_version_rule r on r.rule_set_id = rs.id and r.sys_status = 'A'
-                and ((r.code_system is not null or r.value_set_version_id is not null) 
-                      and r.code_system not in ('snomed-ct','loinc','ucum'))
+                and ((r.code_system is not null and r.code_system not in ('snomed-ct','loinc','ucum')) or r.value_set_version_id is not null)
          left outer join terminology.code_system cs on cs.sys_status = 'A' and cs.id = r.code_system    
          left outer join terminology.code_system bcs on bcs.sys_status = 'A' and bcs.id = cs.base_code_system
    where v.id = p_value_set_version_id and rs.sys_status = 'A'

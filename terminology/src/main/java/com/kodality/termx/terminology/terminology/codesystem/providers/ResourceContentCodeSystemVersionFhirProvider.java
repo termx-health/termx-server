@@ -27,6 +27,7 @@ public class ResourceContentCodeSystemVersionFhirProvider implements ResourceCon
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final ProvenanceService provenanceService;
+  private final CodeSystemFhirMapper mapper;
 
   @Override
   public String getResourceType() {
@@ -56,7 +57,7 @@ public class ResourceContentCodeSystemVersionFhirProvider implements ResourceCon
     csv.setEntities(codeSystemEntityVersionService.query(new CodeSystemEntityVersionQueryParams()
         .setCodeSystemVersionId(csv.getId())
         .all()).getData());
-    String json = CodeSystemFhirMapper.toFhirJson(cs, csv, provenances);
+    String json = mapper.toFhirJson(cs, csv, provenances);
     String prettyJson = JsonUtil.toPrettyJson(JsonUtil.toMap(json));
     String fhirId = CodeSystemFhirMapper.toFhirId(cs, csv);
     return List.of(new ResourceContent(fhirId + ".json", prettyJson));

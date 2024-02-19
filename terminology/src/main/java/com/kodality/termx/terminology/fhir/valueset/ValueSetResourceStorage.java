@@ -29,6 +29,7 @@ public class ValueSetResourceStorage extends BaseFhirResourceHandler {
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetFhirImportService importService;
   private final ProvenanceService provenanceService;
+  private final ValueSetFhirMapper mapper;
 
   @Override
   public String getResourceType() {
@@ -87,7 +88,7 @@ public class ValueSetResourceStorage extends BaseFhirResourceHandler {
     List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + vsv.getId());
     return vs == null ? null : new ResourceVersion(
         new VersionId("ValueSet", ValueSetFhirMapper.toFhirId(vs, vsv)),
-        new ResourceContent(ValueSetFhirMapper.toFhirJson(vs, vsv, provenances), "json")
+        new ResourceContent(mapper.toFhirJson(vs, vsv, provenances), "json")
     );
   }
 

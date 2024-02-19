@@ -34,6 +34,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   private final ProvenanceService provenanceService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final ValueSetFhirMapper mapper;
 
   public String getResourceType() {
     return ResourceType.ValueSet.name();
@@ -114,7 +115,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       expandedConcepts = expandedConcepts.stream().limit(count).toList();
     }
 
-    return ValueSetFhirMapper.toFhir(vs, version, provenances, expandedConcepts, req);
+    return mapper.toFhir(vs, version, provenances, expandedConcepts, req);
   }
 
 }

@@ -9,7 +9,10 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ts.CaseSignificance;
+import com.kodality.termx.ts.ConfigurationAttribute;
 import com.kodality.termx.ts.ContactDetail;
+import com.kodality.termx.ts.OtherTitle;
+import com.kodality.termx.ts.UseContext;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams.Ordering;
@@ -32,9 +35,13 @@ public class CodeSystemRepository extends BaseRepository {
     bp.addColumnProcessor("settings", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("copyright", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("permissions", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("topic", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("use_context", PgBeanProcessor.fromJson(JsonUtil.getListType(UseContext.class)));
+    bp.addColumnProcessor("other_title", PgBeanProcessor.fromJson(JsonUtil.getListType(OtherTitle.class)));
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
     bp.addColumnProcessor("properties", PgBeanProcessor.fromJson(JsonUtil.getListType(EntityProperty.class)));
+    bp.addColumnProcessor("configuration_attributes", PgBeanProcessor.fromJson(JsonUtil.getListType(ConfigurationAttribute.class)));
   });
 
   private static final String select = "select distinct on (cs.id) cs.*, " +
@@ -62,13 +69,19 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.property("uri", codeSystem.getUri());
     ssb.property("publisher", codeSystem.getPublisher());
     ssb.property("name", codeSystem.getName());
+    ssb.jsonProperty("other_title", codeSystem.getOtherTitle());
     ssb.jsonProperty("title", codeSystem.getTitle());
     ssb.jsonProperty("description", codeSystem.getDescription());
     ssb.jsonProperty("purpose", codeSystem.getPurpose());
     ssb.property("hierarchy_meaning", codeSystem.getHierarchyMeaning());
+    ssb.jsonProperty("topic", codeSystem.getTopic());
+    ssb.jsonProperty("use_context", codeSystem.getUseContext());
     ssb.property("narrative", codeSystem.getNarrative());
     ssb.property("experimental", codeSystem.getExperimental());
+    ssb.property("source_reference", codeSystem.getSourceReference());
+    ssb.property("replaces", codeSystem.getReplaces());
     ssb.jsonProperty("identifiers", codeSystem.getIdentifiers());
+    ssb.jsonProperty("configuration_attributes", codeSystem.getConfigurationAttributes());
     ssb.jsonProperty("contacts", codeSystem.getContacts());
     ssb.property("content", codeSystem.getContent());
     ssb.property("case_sensitive", codeSystem.getCaseSensitive() == null ? CaseSignificance.entire_term_case_insensitive : codeSystem.getCaseSensitive());

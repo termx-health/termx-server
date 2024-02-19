@@ -3,15 +3,23 @@ package com.kodality.termx.core.fhir;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.termx.core.sys.provenance.Provenance;
+import com.kodality.termx.ts.ConfigurationAttribute;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.ContactDetail.Telecom;
 import com.kodality.termx.ts.Language;
+import com.kodality.termx.ts.OtherTitle;
+import com.kodality.termx.ts.Topic;
+import com.kodality.termx.ts.UseContext;
+import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.datatypes.ContactPoint;
 import com.kodality.zmei.fhir.datatypes.Identifier;
 import com.kodality.zmei.fhir.datatypes.Narrative;
+import com.kodality.zmei.fhir.datatypes.RelatedArtifact;
+import com.kodality.zmei.fhir.datatypes.UsageContext;
+import com.kodality.zmei.fhir.resource.DomainResource;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -60,6 +68,22 @@ public abstract class BaseFhirMapper {
     return new Extension("http://hl7.org/fhir/tools/StructureDefinition/web-source").setValueUrl(url + "/fhir/ValueSet/" + id);
   }
 
+  protected static Extension toFhirSourceReferenceExtension(String url, String value) {
+    return new Extension(url).setValueUri(value);
+  }
+
+  protected static Extension toFhirReplacesExtension(String value) {
+    return new Extension("http://hl7.org/fhir/StructureDefinition/replaces").setValueUri(value);
+  }
+
+  protected static Extension toFhirOtherTitleExtension(String url, OtherTitle otherTitle) {
+    Extension extension = new Extension(url);
+    extension.setExtension(List.of(
+        new Extension().setUrl("name").setValueString(otherTitle.getName()),
+        new Extension().setUrl("preferred").setValueBoolean(otherTitle.isPreferred())));
+    return extension;
+  }
+
   protected static List<com.kodality.zmei.fhir.datatypes.ContactDetail> toFhirContacts(List<ContactDetail> cds) {
     return cds == null ? null : cds.stream().map(c -> new com.kodality.zmei.fhir.datatypes.ContactDetail()
             .setName(c.getName())
@@ -75,7 +99,8 @@ public abstract class BaseFhirMapper {
     return name == null ? null : List.of(new com.kodality.zmei.fhir.datatypes.ContactDetail().setName(name));
   }
 
-  protected static List<Identifier> toFhirIdentifiers(List<com.kodality.commons.model.Identifier> identifiers, List<com.kodality.commons.model.Identifier> versionIdentifiers) {
+  protected static List<Identifier> toFhirIdentifiers(List<com.kodality.commons.model.Identifier> identifiers,
+                                                      List<com.kodality.commons.model.Identifier> versionIdentifiers) {
     if (identifiers == null && versionIdentifiers == null) {
       return null;
     }
@@ -83,7 +108,8 @@ public abstract class BaseFhirMapper {
         .map(i -> new Identifier().setSystem(i.getSystem()).setValue(i.getValue())).collect(Collectors.toList());
     fhirIdentifiers.addAll(Optional.ofNullable(versionIdentifiers).orElse(new ArrayList<>()).stream()
         .filter(vi -> identifiers == null || identifiers.stream().noneMatch(i -> (i.getSystem() + i.getValue()).equals(vi.getSystem() + vi.getValue())))
-        .map(vi -> new Identifier().setSystem(vi.getSystem()).setValue(vi.getValue()).setType(new CodeableConcept(new Coding(VERSION_IDENTIFIER_TYPE)))).toList());
+        .map(vi -> new Identifier().setSystem(vi.getSystem()).setValue(vi.getValue()).setType(new CodeableConcept(new Coding(VERSION_IDENTIFIER_TYPE))))
+        .toList());
     return fhirIdentifiers;
   }
 
@@ -97,6 +123,18 @@ public abstract class BaseFhirMapper {
 
   protected static Narrative toFhirText(String narrative) {
     return narrative == null ? null : new Narrative().setDiv(narrative);
+  }
+
+  protected static CodeableConcept toFhirTopic(Topic topic) {
+    return topic == null ? null : new CodeableConcept()
+        .setText(topic.getText())
+        .setCoding(Optional.ofNullable(topic.getTags()).orElse(List.of()).stream().map(t -> new Coding().setCode(t)).toList());
+  }
+
+  protected static List<UsageContext> toFhirUseContext(List<UseContext> useContext) {
+    return useContext == null ? null : useContext.stream().map(ctx -> new UsageContext()
+        .setCode(new Coding(ctx.getType()))
+        .setValueCodeableConcept(new CodeableConcept().setText(ctx.getValue()))).toList();
   }
 
   protected static LocalDate toFhirDate(List<Provenance> provenances, String activity) {
@@ -118,7 +156,6 @@ public abstract class BaseFhirMapper {
   }
 
 
-
   protected static LocalizedName fromFhirName(String name, String lang) {
     if (name == null) {
       return null;
@@ -130,7 +167,8 @@ public abstract class BaseFhirMapper {
     if (identifiers == null) {
       return null;
     }
-    return identifiers.stream().filter(i -> i.getType() == null || i.getType().getCoding() == null || i.getType().getCoding().stream().noneMatch(c -> VERSION_IDENTIFIER_TYPE.equals(c.getCode())))
+    return identifiers.stream().filter(i -> i.getType() == null || i.getType().getCoding() == null ||
+            i.getType().getCoding().stream().noneMatch(c -> VERSION_IDENTIFIER_TYPE.equals(c.getCode())))
         .map(i -> new com.kodality.commons.model.Identifier(i.getSystem(), i.getValue())).collect(Collectors.toList());
   }
 
@@ -138,7 +176,8 @@ public abstract class BaseFhirMapper {
     if (identifiers == null) {
       return null;
     }
-    return identifiers.stream().filter(i -> i.getType() != null && i.getType().getCoding() != null && i.getType().getCoding().stream().anyMatch(c -> VERSION_IDENTIFIER_TYPE.equals(c.getCode())))
+    return identifiers.stream().filter(i -> i.getType() != null && i.getType().getCoding() != null &&
+            i.getType().getCoding().stream().anyMatch(c -> VERSION_IDENTIFIER_TYPE.equals(c.getCode())))
         .map(i -> new com.kodality.commons.model.Identifier(i.getSystem(), i.getValue())).collect(Collectors.toList());
   }
 
@@ -178,5 +217,24 @@ public abstract class BaseFhirMapper {
       return null;
     }
     return translations;
+  }
+
+  protected static void toFhir(DomainResource resource, List<ConfigurationAttribute> configurationAttributes, Map<String, Concept> concepts) {
+    configurationAttributes.forEach(attr -> {
+      Concept concept = concepts.get(attr.getAttribute());
+      if (concept == null || (Boolean) concept.getLastVersion().map(v -> v.getPropertyValue("fhir").orElse(false)).orElse(false)) {
+        return;
+      }
+      Extension extension = new Extension();
+      concept.getLastVersion().flatMap(v -> v.getPropertyValue("url")).ifPresentOrElse(url -> extension.setUrl((String) url), () -> extension.addPrimitiveExtension("code", new Extension().setValueCode(attr.getAttribute())));
+      Optional.ofNullable(attr.getLanguage()).ifPresent(lang -> extension.addPrimitiveExtension("language", new Extension().setValueCode(lang)));
+      Optional.ofNullable(attr.getValue()).ifPresent(c -> extension.addPrimitiveExtension("content", new Extension().setValueString(c)));
+      resource.addExtension(extension);
+    });
+  }
+
+  protected static void toFhirRelatedArtifacts(DomainResource resource, List<String> relatedArtifacts) {
+    relatedArtifacts.forEach(a -> resource.addExtension(new Extension("http://hl7.org/fhir/StructureDefinition/workflow-relatedArtifact")
+        .setValueRelatedArtifact(new RelatedArtifact().setResource(a))));
   }
 }

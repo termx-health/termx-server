@@ -10,7 +10,12 @@ import com.kodality.termx.core.fhir.BaseFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
+import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
+import com.kodality.termx.terminology.terminology.mapset.MapSetService;
+import com.kodality.termx.terminology.terminology.relatedartifacts.MapSetRelatedArtifactService;
+import com.kodality.termx.terminology.terminology.relatedartifacts.RelatedArtifactService;
+import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
@@ -20,6 +25,7 @@ import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.Concept;
+import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
@@ -30,6 +36,8 @@ import com.kodality.termx.ts.mapset.MapSetQueryParams;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersion.MapSetResourceReference;
 import com.kodality.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
+import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
+import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
@@ -60,18 +68,28 @@ import org.apache.commons.lang3.tuple.Pair;
 
 @Context
 public class ConceptMapFhirMapper extends BaseFhirMapper {
+  private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
+  private final ValueSetService valueSetService;
+  private final MapSetService mapSetService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetVersionService valueSetVersionService;
+  private final MapSetRelatedArtifactService relatedArtifactService;
 
   private static Optional<String> termxWebUrl;
 
-  public ConceptMapFhirMapper(CodeSystemService codeSystemService, CodeSystemVersionService codeSystemVersionService,
-                              ValueSetVersionService valueSetVersionService,
+  public ConceptMapFhirMapper(ConceptService conceptService,
+                              CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
+                              CodeSystemVersionService codeSystemVersionService, ValueSetVersionService valueSetVersionService,
+                              MapSetRelatedArtifactService relatedArtifactService,
                               @Value("${termx.web-url}") Optional<String> termxWebUrl) {
+    this.conceptService = conceptService;
     this.codeSystemService = codeSystemService;
+    this.valueSetService = valueSetService;
+    this.mapSetService = mapSetService;
     this.codeSystemVersionService = codeSystemVersionService;
     this.valueSetVersionService = valueSetVersionService;
+    this.relatedArtifactService = relatedArtifactService;
     ConceptMapFhirMapper.termxWebUrl = termxWebUrl;
   }
 
@@ -87,20 +105,28 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
 
   public com.kodality.zmei.fhir.resource.terminology.ConceptMap toFhir(MapSet mapSet, MapSetVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.ConceptMap fhirConceptMap = new com.kodality.zmei.fhir.resource.terminology.ConceptMap();
-    termxWebUrl.ifPresent(url -> toFhirWebSourceExtension(url, mapSet.getId()));
+    termxWebUrl.ifPresent(url -> fhirConceptMap.addExtension(toFhirWebSourceExtension(url, mapSet.getId())));
     fhirConceptMap.setId(toFhirId(mapSet, version));
     fhirConceptMap.setUrl(mapSet.getUri());
     fhirConceptMap.setPublisher(mapSet.getPublisher());
     fhirConceptMap.setName(mapSet.getName());
+    if (CollectionUtils.isNotEmpty(mapSet.getOtherTitle())) {
+      mapSet.getOtherTitle().forEach(otherName -> fhirConceptMap.addExtension(
+          toFhirOtherTitleExtension("http://hl7.org/fhir/StructureDefinition/conceptmap-otherTitle", otherName)));
+    }
     fhirConceptMap.setTitle(toFhirName(mapSet.getTitle(), version.getPreferredLanguage()));
     fhirConceptMap.setPrimitiveExtensions("title", toFhirTranslationExtension(mapSet.getTitle(), version.getPreferredLanguage()));
     LocalizedName description = joinDescriptions(mapSet.getDescription(), version.getDescription());
     fhirConceptMap.setDescription(toFhirName(description, version.getPreferredLanguage()));
     fhirConceptMap.setPrimitiveExtensions("description", toFhirTranslationExtension(description, version.getPreferredLanguage()));
     fhirConceptMap.setPurpose(toFhirName(mapSet.getPurpose(), version.getPreferredLanguage()));
+    fhirConceptMap.setTopic(toFhirTopic(mapSet.getTopic()));
+    fhirConceptMap.setUseContext(toFhirUseContext(mapSet.getUseContext()));
     fhirConceptMap.setPrimitiveExtensions("purpose", toFhirTranslationExtension(mapSet.getPurpose(), version.getPreferredLanguage()));
     fhirConceptMap.setText(toFhirText(mapSet.getNarrative()));
     fhirConceptMap.setExperimental(mapSet.getExperimental() != null && mapSet.getExperimental());
+    Optional.ofNullable(mapSet.getSourceReference()).ifPresent(ref -> fhirConceptMap.addExtension(toFhirSourceReferenceExtension("http://hl7.org/fhir/StructureDefinition/conceptmap-sourceReference", ref)));
+    Optional.ofNullable(mapSet.getReplaces()).flatMap(id -> mapSetService.load(id).map(MapSet::getUri)).ifPresent(uri -> fhirConceptMap.addExtension(toFhirReplacesExtension(uri)));
     fhirConceptMap.setIdentifier(toFhirIdentifiers(mapSet.getIdentifiers(), version.getIdentifiers()));
     fhirConceptMap.setContact(toFhirContacts(mapSet.getContacts()));
     fhirConceptMap.setDate(toFhirOffsetDateTime(provenances));
@@ -110,6 +136,23 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     fhirConceptMap.setCopyrightLabel(mapSet.getCopyright() != null ? mapSet.getCopyright().getStatement() : null);
     fhirConceptMap.setJurisdiction(mapSet.getCopyright() != null && mapSet.getCopyright().getJurisdiction() != null ?
         List.of(new CodeableConcept().setText(mapSet.getCopyright().getJurisdiction())) : null);
+    if (CollectionUtils.isNotEmpty(mapSet.getConfigurationAttributes())) {
+      Map<String, Concept> concepts = conceptService.query(new ConceptQueryParams().setCodeSystem("termx-resource-configuration").all()).getData().stream()
+          .collect(Collectors.toMap(Concept::getCode, c -> c));
+      toFhir(fhirConceptMap, mapSet.getConfigurationAttributes(), concepts);
+    }
+    List<String> relatedArtifacts = relatedArtifactService.findRelatedArtifacts(mapSet.getId()).stream()
+        .map(a -> {
+          if (RelatedArtifactType.cs.equals(a.getType())) {
+            return codeSystemService.load(a.getId()).map(CodeSystem::getUri).orElse(null);
+          } else if (RelatedArtifactType.vs.equals(a.getType())) {
+            return Optional.ofNullable(valueSetService.load(a.getId())).map(ValueSet::getUri).orElse(null);
+          } else if (RelatedArtifactType.ms.equals(a.getType())) {
+            return mapSetService.load(a.getId()).map(MapSet::getUri).orElse(null);
+          }
+          return null;
+        }).filter(Objects::nonNull).toList();
+    toFhirRelatedArtifacts(fhirConceptMap, relatedArtifacts);
 
     fhirConceptMap.setVersion(version.getVersion());
     fhirConceptMap.setEffectivePeriod(new Period(

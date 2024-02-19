@@ -27,6 +27,7 @@ public class ResourceContentValueSetVersionFshProvider implements ResourceConten
   private final ValueSetVersionService valueSetVersionService;
   private final ProvenanceService provenanceService;
   private final FhirFshConverter fhirFshConverter;
+  private final ValueSetFhirMapper mapper;
 
   @Override
   public String getResourceType() {
@@ -53,7 +54,7 @@ public class ResourceContentValueSetVersionFshProvider implements ResourceConten
 
   public List<ResourceContent> getContent(ValueSet vs, ValueSetVersion vsv) {
     List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + vsv.getId());
-    String json = ValueSetFhirMapper.toFhirJson(vs, vsv, provenances);
+    String json = mapper.toFhirJson(vs, vsv, provenances);
     String fhirId = ValueSetFhirMapper.toFhirId(vs, vsv);
     return List.of(new ResourceContent(fhirId + ".fsh", fhirFshConverter.toFsh(json).join()));
   }

@@ -211,3 +211,15 @@ alter table terminology.value_set_version_rule add column properties jsonb;
 --changeset kodality:value_set_version-identifiers
 alter table terminology.value_set_version add column identifiers jsonb;
 --
+
+--changeset kodality:value_set-other_title-source_reference-replaces-topic-configuration_attributes-use_context
+alter table terminology.value_set add column other_title jsonb;
+alter table terminology.value_set add column source_reference text;
+alter table terminology.value_set add column replaces text;
+alter table terminology.value_set add column topic jsonb;
+alter table terminology.value_set add column configuration_attributes jsonb;
+alter table terminology.value_set add column use_context jsonb;
+
+alter table terminology.value_set add constraint value_set_replaces_fk foreign key (replaces) references terminology.value_set(id);
+create index value_set_replaces_idx on terminology.value_set(replaces);
+--

@@ -11,6 +11,7 @@ import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.mapset.MapSetAssociation;
 import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifact;
+import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.wiki.page.PageContent;
@@ -48,7 +49,7 @@ public class ConceptRelatedArtifactService extends RelatedArtifactService {
 
   private List<RelatedArtifact> findValueSets(String id) {
     List<ValueSet> valueSets = valueSetService.query(new ValueSetQueryParams().setConceptId(Long.valueOf(id)).all()).getData();
-    return valueSets.stream().map(vs -> new RelatedArtifact().setId(vs.getId()).setType("ValueSet")).collect(Collectors.toList());
+    return valueSets.stream().map(vs -> new RelatedArtifact().setId(vs.getId()).setType(RelatedArtifactType.vs)).collect(Collectors.toList());
   }
 
   private List<RelatedArtifact> findMapSets(String id) {
@@ -57,7 +58,7 @@ public class ConceptRelatedArtifactService extends RelatedArtifactService {
     List<MapSetAssociation> associations = new ArrayList<>();
     associations.addAll(mapSetAssociationService.query(new MapSetAssociationQueryParams().setSourceCodeAndSystem(concept.getCode() + "|" + concept.getCodeSystem()).all()).getData());
     associations.addAll(mapSetAssociationService.query(new MapSetAssociationQueryParams().setTargetCodeAndSystem(concept.getCode() + "|" + concept.getCodeSystem()).all()).getData());
-    return associations.stream().map(a -> new RelatedArtifact().setId(a.getMapSet()).setType("MapSet")).collect(Collectors.toList());
+    return associations.stream().map(a -> new RelatedArtifact().setId(a.getMapSet()).setType(RelatedArtifactType.ms)).collect(Collectors.toList());
   }
 
 
@@ -70,6 +71,6 @@ public class ConceptRelatedArtifactService extends RelatedArtifactService {
     Map<Long, String> spaces = spaceService.query(new SpaceQueryParams().setIds(spaceIds).limit(spaceIds.split(",").length))
         .getData().stream().collect(Collectors.toMap(Space::getId, Space::getCode));
 
-    return pages.stream().map(p -> new RelatedArtifact().setId(spaces.get(p.getSpaceId()) + "|" + p.getSlug()).setType("Page")).collect(Collectors.toList());
+    return pages.stream().map(p -> new RelatedArtifact().setId(spaces.get(p.getSpaceId()) + "|" + p.getSlug()).setType(RelatedArtifactType.p)).collect(Collectors.toList());
   }
 }

@@ -40,6 +40,7 @@ public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final ProvenanceService provenanceService;
   private final CodeSystemImportService importService;
+  private final CodeSystemFhirMapper mapper;
 
   @Override
   public String getResourceType() {
@@ -124,7 +125,7 @@ public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
     List<Provenance> provenances = provenanceService.find("CodeSystemVersion|" + csv.getId());
     return cs == null ? null : new ResourceVersion(
         new VersionId("CodeSystem", CodeSystemFhirMapper.toFhirId(cs, csv)),
-        new ResourceContent(CodeSystemFhirMapper.toFhirJson(cs, csv, provenances), "json")
+        new ResourceContent(mapper.toFhirJson(cs, csv, provenances), "json")
     );
   }
 
