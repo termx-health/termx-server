@@ -55,7 +55,7 @@ public class ChecklistValidationService {
 
   private void runCodeSystemChecks(String codeSystemId, List<Checklist> checklists, String version) {
     CodeSystem codeSystem = codeSystemProvider.loadCodeSystem(codeSystemId);
-    List<Concept> concepts = codeSystemProvider.searchConcepts(new ConceptQueryParams().setCodeSystem(codeSystemId).all()).getData();
+    List<Concept> concepts = codeSystemProvider.searchConcepts(new ConceptQueryParams().setCodeSystem(codeSystemId).setCodeSystemVersion(version).all()).getData();
 
     checklists.forEach(checklist -> {
       Optional<CodeSystemRuleValidator> validator = codeSystemValidators.stream().filter(v -> v.getRuleCode().equals(checklist.getRule().getCode())).findFirst();

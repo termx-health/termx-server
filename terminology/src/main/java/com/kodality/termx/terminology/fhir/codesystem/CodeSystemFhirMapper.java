@@ -37,6 +37,7 @@ import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.property.PropertyReference;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
 import com.kodality.termx.ts.valueset.ValueSet;
+import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
@@ -131,6 +132,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setApprovalDate(toFhirDate(provenances, "approved"));
     fhirCodeSystem.setContent(codeSystem.getContent());
     fhirCodeSystem.setHierarchyMeaning(codeSystem.getHierarchyMeaning());
+    fhirCodeSystem.addExtension(new Extension("http://hl7.org/fhir/StructureDefinition/cqf-knowledgeRepresentationLevel").setValueCode("executable"));
     if (!CodeSystemContent.supplement.equals(fhirCodeSystem.getContent())) {
       fhirCodeSystem.setCaseSensitive(
           codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));

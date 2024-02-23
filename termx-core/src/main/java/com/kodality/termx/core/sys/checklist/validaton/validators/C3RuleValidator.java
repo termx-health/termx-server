@@ -11,7 +11,6 @@ import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -29,7 +28,7 @@ public class C3RuleValidator implements CodeSystemRuleValidator {
         .flatMap(v -> v.getDesignations().stream().filter(d -> PublicationStatus.active.equals(d.getStatus()) && d.isPreferred()).map(d -> Pair.of(v.getCode(), d)))
         .collect(Collectors.groupingBy(d -> d.getValue().getName() + d.getValue().getLanguage())).values().stream()
         .map(val -> {
-          Set<String> codes = val.stream().collect(Collectors.groupingBy(Pair::getKey)).keySet();
+          List<String> codes = val.stream().map(Pair::getKey).toList();
           return codes.size() > 1 ? new ChecklistAssertionError()
               .setError(String.format("Concepts '%s' have identical terms", String.join("','", codes)))
               .setResources(codes.stream().map(c -> new ChecklistAssertionErrorResource().setResourceType("Concept").setResourceId(c)).toList())
