@@ -61,7 +61,7 @@ public class ValueSetImportService {
 
     saveValueSet(valueSet);
     ValueSetVersion valueSetVersion = valueSet.getVersions().get(0);
-    saveValueSetVersion(valueSetVersion, valueSetVersion.getSnapshot());
+    saveValueSetVersion(valueSetVersion, valueSetVersion.getSnapshot(), action.isCleanRun());
 
     if (action.isActivate()) {
       valueSetVersionService.activate(valueSet.getId(), valueSetVersion.getVersion());
@@ -88,10 +88,10 @@ public class ValueSetImportService {
     }
   }
 
-  private void saveValueSetVersion(ValueSetVersion valueSetVersion, ValueSetSnapshot snapshot) {
+  private void saveValueSetVersion(ValueSetVersion valueSetVersion, ValueSetSnapshot snapshot, boolean cleanRun) {
     Optional<ValueSetVersion> existingVersion = valueSetVersionService.load(valueSetVersion.getValueSet(), valueSetVersion.getVersion());
 
-    if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
+    if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft) && !cleanRun) {
       throw ApiError.TE104.toApiException(Map.of("version", valueSetVersion.getVersion()));
     }
     existingVersion.ifPresent(v -> valueSetVersionService.cancel(v.getId()));

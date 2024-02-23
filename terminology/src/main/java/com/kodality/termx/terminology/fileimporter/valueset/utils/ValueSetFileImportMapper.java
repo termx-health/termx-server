@@ -59,6 +59,7 @@ public class ValueSetFileImportMapper {
     ValueSetVersion version =
         existingValueSetVersion != null ? JsonUtil.fromJson(JsonUtil.toJson(existingValueSetVersion), ValueSetVersion.class) : new ValueSetVersion();
     version.setValueSet(valueSet);
+    version.setSnapshot(null);
     version.setVersion(fpVersion.getNumber());
     version.setStatus(PublicationStatus.draft);
     version.setReleaseDate(fpVersion.getReleaseDate() == null ? LocalDate.now() : fpVersion.getReleaseDate());

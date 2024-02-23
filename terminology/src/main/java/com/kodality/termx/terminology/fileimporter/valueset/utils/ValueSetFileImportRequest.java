@@ -23,6 +23,7 @@ public class ValueSetFileImportRequest {
   private FileProcessingMapping mapping;
 
   private boolean dryRun;
+  private boolean cleanVersion;
 
   private String importClass;
 

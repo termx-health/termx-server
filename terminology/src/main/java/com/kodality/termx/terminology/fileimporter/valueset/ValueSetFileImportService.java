@@ -118,6 +118,7 @@ public class ValueSetFileImportService {
         ValueSetImportAction action = new ValueSetImportAction()
             .setActivate(PublicationStatus.active.equals(request.getVersion().getStatus()))
             .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
+            .setCleanRun(request.isCleanVersion())
             .setSpaceToAdd(request.getSpace() != null && request.getSpacePackage() != null ?
                 String.join("|", request.getSpace(), request.getSpacePackage()) : null);
         valueSetImportService.importValueSet(copy, action);
@@ -143,6 +144,7 @@ public class ValueSetFileImportService {
     ValueSetImportAction action = new ValueSetImportAction()
         .setActivate(PublicationStatus.active.equals(request.getVersion().getStatus()))
         .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
+        .setCleanRun(request.isCleanVersion())
         .setSpaceToAdd(request.getSpace() != null && request.getSpacePackage() != null ?
             String.join("|", request.getSpace(), request.getSpacePackage()) : null);
     valueSetImportService.importValueSet(mappedValueSet, action);

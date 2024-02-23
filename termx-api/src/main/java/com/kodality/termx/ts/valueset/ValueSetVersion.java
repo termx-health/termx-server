@@ -8,9 +8,11 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 @Getter
 @Setter
+@Accessors(chain = true)
 @Introspected
 public class ValueSetVersion extends ValueSetVersionReference {
   private String valueSet;

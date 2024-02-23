@@ -337,7 +337,8 @@ public class CodeSystemImportService {
     ValueSetImportAction action = new ValueSetImportAction()
         .setActivate(csAction.isActivate())
         .setRetire(csAction.isRetire())
-        .setSpaceToAdd(csAction.getSpaceToAdd());
+        .setSpaceToAdd(csAction.getSpaceToAdd())
+        .setCleanRun(csAction.isCleanRun());
     valueSetImportService.importValueSet(valueSet, action);
   }
 

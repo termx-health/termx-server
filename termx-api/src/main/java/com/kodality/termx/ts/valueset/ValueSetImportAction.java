@@ -10,5 +10,6 @@ import lombok.experimental.Accessors;
 public class ValueSetImportAction {
   private boolean activate;
   private boolean retire;
+  private boolean cleanRun;
   private String spaceToAdd; //spaceCode|packageCode
 }
