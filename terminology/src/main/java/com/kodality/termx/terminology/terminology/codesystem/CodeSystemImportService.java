@@ -27,6 +27,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemImportAction;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.Concept;
+import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
@@ -61,6 +62,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toMap;
 
 @Slf4j
 @Singleton
@@ -95,7 +97,7 @@ public class CodeSystemImportService {
     saveCodeSystemVersion(codeSystemVersion, action.isCleanRun());
 
     List<EntityProperty> entityProperties = saveProperties(codeSystem.getProperties(), codeSystem.getId());
-    saveConcepts(codeSystem.getConcepts(), codeSystemVersion, entityProperties, action.isCleanConceptRun());
+    saveConcepts(prepareConcepts(codeSystem.getConcepts(), codeSystem.getBaseCodeSystem()), codeSystemVersion, entityProperties, action.isCleanConceptRun());
 
     if (action.isActivate()) {
       SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_PUBLISH);
@@ -115,6 +117,19 @@ public class CodeSystemImportService {
 
     log.info("IMPORT FINISHED (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
     return codeSystem;
+  }
+
+  private List<Concept> prepareConcepts(List<Concept> concepts, String baseCodeSystem) {
+    //remove duplicate codes
+    concepts = concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new));
+
+    if (baseCodeSystem != null) {
+      String codes = concepts.stream().map(Concept::getCode).collect(Collectors.joining(","));
+      Map<String, Optional<Long>> baseVersionIds = conceptService.query(new ConceptQueryParams().setCode(codes).setCodeSystem(baseCodeSystem).limit(concepts.size())).getData().stream()
+              .collect(toMap(Concept::getCode, c -> c.getLastVersion().map(CodeSystemEntityVersion::getId)));
+      concepts.forEach(c -> baseVersionIds.getOrDefault(c.getCode(), Optional.empty()).ifPresent(baseVersionId -> c.getVersions().get(0).setBaseEntityVersionId(baseVersionId)));
+    }
+    return concepts;
   }
 
   private void saveCodeSystem(CodeSystem codeSystem) {
@@ -174,8 +189,6 @@ public class CodeSystemImportService {
   public void saveConcepts(List<Concept> concepts, CodeSystemVersion version, List<EntityProperty> entityProperties, boolean cleanRun) {
     SessionStore.require().checkPermitted(version.getCodeSystem(), Privilege.CS_EDIT);
 
-    concepts =
-        concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new)); //removes duplicate codes
     log.info("Creating '{}' concepts", concepts.size());
     long start = System.currentTimeMillis();
     conceptService.batchSave(concepts, version.getCodeSystem());
