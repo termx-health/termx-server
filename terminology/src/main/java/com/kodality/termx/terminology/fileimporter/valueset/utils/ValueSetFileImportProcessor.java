@@ -37,7 +37,7 @@ public class ValueSetFileImportProcessor {
     Integer retirementDateIdx = request.getMapping().getRetirementDate() == null ? null : headers.indexOf(request.getMapping().getRetirementDate());
     Integer statusIdx = request.getMapping().getStatus() == null ? null : headers.indexOf(request.getMapping().getStatus());
     return rows.stream()
-        .filter(r -> (retirementDateIdx == null || !StringUtils.isNotEmpty(r[retirementDateIdx])) &&
+        .filter(r -> (retirementDateIdx == null || StringUtils.isEmpty(r[retirementDateIdx])) &&
             (statusIdx == null || !PublicationStatus.retired.equals(PublicationStatus.getStatus(r[statusIdx]))))
         .map(r -> {
           if (r.length > (codeIdx + 1) && r[codeIdx] == null) {
