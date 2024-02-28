@@ -16,9 +16,14 @@ github:
     secret: 'bffd5a32dcf31667974c09c429f690f057d4182f'
   app-name: termx-dev-local-publisher
 
+bob:
+  minio:
+    url: http://localhost:9000
+    access-key: "minio"
+    secret-key: "supersecretkey"
 
 keycloak:
   url: https://auth.kodality.dev/admin/realms/terminology
   sso-url: https://auth.kodality.dev/realms/terminology/protocol/openid-connect
   client-id: term-service
-  client-secret: xxx
+  client-secret: sWqeHUvhp40Z20CdUvB9591s7x8H8Oq2

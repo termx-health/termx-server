@@ -61,9 +61,7 @@ auth:
       - '/pages/static'
 
 snowstorm:
-  url: https://snowstorm.kodality.dev/
-  user: termserver-app
-  password: ''
+  url: http://localhost:8080/
   branch: 'MAIN'
   namespace: '1000265'
 

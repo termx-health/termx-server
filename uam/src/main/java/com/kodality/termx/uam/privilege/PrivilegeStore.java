@@ -1,12 +1,10 @@
-package com.kodality.termx.auth.auth;
+package com.kodality.termx.uam.privilege;
 
 import com.kodality.commons.cache.CacheManager;
 import com.kodality.termx.auth.Privilege;
 import com.kodality.termx.auth.PrivilegeQueryParams;
 import com.kodality.termx.auth.PrivilegeResource;
 import com.kodality.termx.auth.PrivilegeResource.PrivilegeResourceActions;
-import com.kodality.termx.auth.privilege.PrivilegeDataHandler;
-import com.kodality.termx.auth.privilege.PrivilegeService;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
