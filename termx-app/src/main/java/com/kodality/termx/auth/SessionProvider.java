@@ -1,4 +1,4 @@
-package com.kodality.termx.auth.auth;
+package com.kodality.termx.auth;
 
 import com.kodality.termx.core.auth.SessionInfo;
 import io.micronaut.http.HttpRequest;

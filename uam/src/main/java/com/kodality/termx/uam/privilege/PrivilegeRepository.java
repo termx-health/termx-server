@@ -1,4 +1,4 @@
-package com.kodality.termx.auth.privilege;
+package com.kodality.termx.uam.privilege;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
@@ -8,40 +8,30 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Privilege;
 import com.kodality.termx.auth.PrivilegeQueryParams;
 import io.micronaut.core.util.StringUtils;
+import jakarta.inject.Singleton;
 import java.util.Map;
-import javax.inject.Singleton;
 
 @Singleton
 public class PrivilegeRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(Privilege.class, PgBeanProcessor::addNamesColumnProcessor);
 
-  public void save(Privilege privilege) {
-    SaveSqlBuilder ssb = new SaveSqlBuilder();
-    ssb.property("id", privilege.getId());
-    ssb.property("code", privilege.getCode());
-    ssb.jsonProperty("names", privilege.getNames());
-    SqlBuilder sb = ssb.buildSave("auth.privilege", "id");
-    Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
-    privilege.setId(id);
-  }
-
   public Privilege load(Long id) {
-    String sql = "select * from auth.privilege where id = ? and sys_status = 'A'";
+    String sql = "select * from uam.privilege where id = ? and sys_status = 'A'";
     return getBean(sql, bp, id);
   }
 
   public Privilege load(String code) {
-    String sql = "select * from auth.privilege where code = ? and sys_status = 'A'";
+    String sql = "select * from uam.privilege where code = ? and sys_status = 'A'";
     return getBean(sql, bp, code);
   }
 
   public QueryResult<Privilege> query(PrivilegeQueryParams params) {
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from auth.privilege where sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select count(1) from uam.privilege where sys_status = 'A'");
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select * from auth.privilege where sys_status = 'A'");
+      SqlBuilder sb = new SqlBuilder("select * from uam.privilege where sys_status = 'A'");
       sb.append(filter(params));
       sb.append(order(params, Map.of("code", "code")));
       sb.append(limit(params));
@@ -58,8 +48,18 @@ public class PrivilegeRepository extends BaseRepository {
     return sb;
   }
 
+  public void save(Privilege privilege) {
+    SaveSqlBuilder ssb = new SaveSqlBuilder();
+    ssb.property("id", privilege.getId());
+    ssb.property("code", privilege.getCode());
+    ssb.jsonProperty("names", privilege.getNames());
+    SqlBuilder sb = ssb.buildSave("uam.privilege", "id");
+    Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
+    privilege.setId(id);
+  }
+
   public void delete(Long id) {
-    SqlBuilder sb = new SqlBuilder("update auth.privilege set sys_status = 'C' where id = ? and sys_status = 'A'", id);
+    SqlBuilder sb = new SqlBuilder("update uam.privilege set sys_status = 'C' where id = ? and sys_status = 'A'", id);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 }

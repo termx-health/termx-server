@@ -2,10 +2,10 @@ package com.kodality.termx.user;
 
 import com.kodality.commons.cache.CacheManager;
 import com.kodality.termx.auth.Privilege;
-import com.kodality.termx.auth.auth.PrivilegeStore;
-import com.kodality.termx.auth.privilege.PrivilegeDataHandler;
 import com.kodality.termx.core.user.User;
 import com.kodality.termx.core.user.UserProvider;
+import com.kodality.termx.uam.privilege.PrivilegeDataHandler;
+import com.kodality.termx.uam.privilege.PrivilegeStore;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Optional;

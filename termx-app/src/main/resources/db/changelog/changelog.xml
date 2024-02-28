@@ -15,5 +15,6 @@
     </changeSet>
 
     <include file="01-init-user.sql" relativeToChangelogFile="true"/>
-    <include file="auth/changelog-auth-master.xml" relativeToChangelogFile="true"/>
+
+    <include file="uam/changelog.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

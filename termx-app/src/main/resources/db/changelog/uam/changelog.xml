@@ -3,8 +3,5 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
-    <include file="changelog-auth.xml" relativeToChangelogFile="true"/>
-    <include file="01-privilege.sql" relativeToChangelogFile="true"/>
-    <include file="02-privilege_resource.sql" relativeToChangelogFile="true"/>
-    <include file="data/changelog-data.xml" relativeToChangelogFile="true"/>
+    <include file="01-privilege-defaults.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>

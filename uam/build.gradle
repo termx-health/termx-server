@@ -1,0 +1,11 @@
+dependencies {
+  annotationProcessor "io.micronaut.openapi:micronaut-openapi"
+  annotationProcessor "io.micronaut.spring:micronaut-spring-annotation"
+
+  implementation project(':termx-api')
+  implementation project(':termx-core')
+
+  implementation("com.kodality.commons:commons-micronaut:${commonsMicronautVersion}")
+  implementation("com.kodality.commons:commons-micronaut-pg:${commonsMicronautVersion}")
+  implementation("com.kodality.commons:commons-cache:${commonsVersion}")
+}
