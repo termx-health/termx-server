@@ -167,7 +167,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
           }
           return null;
         }).filter(Objects::nonNull).toList();
-    toFhirRelatedArtifacts(fhirCodeSystem, relatedArtifacts);
+//    toFhirRelatedArtifacts(fhirCodeSystem, relatedArtifacts);
 
     fhirCodeSystem.setVersion(version.getVersion());
     fhirCodeSystem.setLanguage(version.getPreferredLanguage());

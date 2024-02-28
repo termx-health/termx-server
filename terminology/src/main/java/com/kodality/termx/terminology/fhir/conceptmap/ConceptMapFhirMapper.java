@@ -152,7 +152,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
           }
           return null;
         }).filter(Objects::nonNull).toList();
-    toFhirRelatedArtifacts(fhirConceptMap, relatedArtifacts);
+//    toFhirRelatedArtifacts(fhirConceptMap, relatedArtifacts);
 
     fhirConceptMap.setVersion(version.getVersion());
     fhirConceptMap.setEffectivePeriod(new Period(

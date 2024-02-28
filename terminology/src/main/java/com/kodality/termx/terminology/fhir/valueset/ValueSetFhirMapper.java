@@ -165,7 +165,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
           }
           return null;
         }).filter(Objects::nonNull).toList();
-    toFhirRelatedArtifacts(fhirValueSet, relatedArtifacts);
+//    toFhirRelatedArtifacts(fhirValueSet, relatedArtifacts);
 
     fhirValueSet.setVersion(version.getVersion());
     fhirValueSet.setLanguage(version.getPreferredLanguage());
