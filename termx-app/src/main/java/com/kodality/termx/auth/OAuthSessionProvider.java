@@ -1,4 +1,4 @@
-package com.kodality.termx.auth.auth;
+package com.kodality.termx.auth;
 
 import com.auth0.jwk.Jwk;
 import com.auth0.jwk.JwkException;
@@ -12,6 +12,7 @@ import com.kodality.commons.cache.CacheManager;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.core.auth.SessionInfo;
+import com.kodality.termx.uam.privilege.PrivilegeStore;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.cookie.Cookie;

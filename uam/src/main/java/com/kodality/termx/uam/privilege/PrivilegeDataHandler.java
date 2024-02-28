@@ -1,4 +1,4 @@
-package com.kodality.termx.auth.privilege;
+package com.kodality.termx.uam.privilege;
 
 import com.kodality.termx.auth.Privilege;
 

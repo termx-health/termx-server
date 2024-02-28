@@ -18,6 +18,7 @@ dependencies {
   implementation project(':task-taskflow')
   implementation project(':modeler')
   implementation project(':implementation-guide')
+  implementation project(':uam')
 
   implementation project(':edition-int')
   implementation project(':edition-est')
