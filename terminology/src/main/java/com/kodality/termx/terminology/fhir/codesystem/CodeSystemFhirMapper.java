@@ -287,9 +287,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       conceptProperties.add(new CodeSystemConceptProperty().setCode("modifiedBy").setValueString(entityVersion.getSysModifiedBy()));
     }
     if (CollectionUtils.isNotEmpty(entityVersion.getPropertyValues())) {
-      Map<String, EntityProperty> entityProperties = properties.stream().collect(Collectors.toMap(PropertyReference::getName, ep -> ep));
+      Map<String, List<EntityProperty>> entityProperties = properties.stream().collect(Collectors.groupingBy(PropertyReference::getName));
       conceptProperties.addAll(entityVersion.getPropertyValues().stream().map(pv -> {
-        EntityProperty entityProperty = entityProperties.get(pv.getEntityProperty());
+        EntityProperty entityProperty = entityProperties.getOrDefault(pv.getEntityProperty(), List.of()).stream().findFirst().orElse(null);
+        if (entityProperty == null) {
+          return null;
+        }
         CodeSystemConceptProperty fhir = new CodeSystemConceptProperty();
         fhir.setCode(entityProperty.getName());
         switch (entityProperty.getType()) {
@@ -311,7 +314,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
           }
         }
         return fhir;
-      }).sorted(Comparator.comparing(CodeSystemConceptProperty::getCode)).toList());
+      }).filter(Objects::nonNull).sorted(Comparator.comparing(CodeSystemConceptProperty::getCode)).toList());
     }
     return conceptProperties;
   }
