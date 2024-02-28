@@ -38,7 +38,7 @@ public class PrivilegeRepository extends BaseRepository {
       sb.append(filter(params));
       sb.append(order(params, Map.<String, Function<String, SqlBuilder>>of(
           "code", v -> new SqlBuilder("code"),
-          "names", v -> new SqlBuilder("names ->> ?", SessionStore.get().map(SessionInfo::getLang).orElse("en"))
+          "name", v -> new SqlBuilder("names ->> ?", SessionStore.get().map(SessionInfo::getLang).orElse("en"))
       )));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
