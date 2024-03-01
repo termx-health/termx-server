@@ -298,6 +298,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
           case EntityPropertyType.integer -> fhir.setValueInteger(Integer.valueOf(String.valueOf(pv.getValue())));
           case EntityPropertyType.coding -> {
             Concept concept = JsonUtil.getObjectMapper().convertValue(pv.getValue(), Concept.class);
+            if (concept.getCodeSystem() == null || concept.getCode() == null) {
+              return null;
+            }
             fhir.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
           }
           case EntityPropertyType.dateTime -> {
