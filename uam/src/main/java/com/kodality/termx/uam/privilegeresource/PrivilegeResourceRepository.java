@@ -15,11 +15,13 @@ public class PrivilegeResourceRepository extends BaseRepository {
   });
 
   public List<PrivilegeResource> load(Long privilegeId) {
-    String sql = " select pr.*," +
-                 " (case" +
-                 "   when pr.resource_type IN ('Space', 'Wiki') then (select s.code from sys.space s where s.id = pr.resource_id::bigint) " +
-                 " else null end) as resource_name " +
-                 " from uam.privilege_resource pr where privilege_id = ? and sys_status = 'A'";
+    String sql = """
+        select
+          pr.*,
+          (case when pr.resource_type IN ('Space', 'Wiki') then (select s.code from sys.space s where s.id = pr.resource_id::bigint) else null end) as resource_name 
+        from uam.privilege_resource pr 
+        where privilege_id = ? and sys_status = 'A'
+        """;
     return getBeans(sql, bp, privilegeId);
   }
 
@@ -30,6 +32,7 @@ public class PrivilegeResourceRepository extends BaseRepository {
     ssb.property("resource_id", resource.getResourceId());
     ssb.property("privilege_id", privilegeId);
     ssb.jsonProperty("actions", resource.getActions());
+
     SqlBuilder sb = ssb.buildSave("uam.privilege_resource", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     resource.setId(id);

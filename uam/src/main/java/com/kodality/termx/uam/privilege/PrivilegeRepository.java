@@ -60,6 +60,7 @@ public class PrivilegeRepository extends BaseRepository {
     ssb.property("code", privilege.getCode());
     ssb.jsonProperty("names", privilege.getNames());
     SqlBuilder sb = ssb.buildSave("uam.privilege", "id");
+
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     privilege.setId(id);
   }

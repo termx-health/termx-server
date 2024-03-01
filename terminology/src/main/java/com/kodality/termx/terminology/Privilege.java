@@ -5,6 +5,9 @@ public interface Privilege {
   String CS_EDIT = "CodeSystem.edit";
   String CS_PUBLISH = "CodeSystem.publish";
 
+  String DEF_PROP_VIEW = "DefinedProperty.view";
+  String DEF_PROP_EDIT = "DefinedProperty.edit";
+
   String VS_VIEW = "ValueSet.view";
   String VS_EDIT = "ValueSet.edit";
   String VS_PUBLISH = "ValueSet.publish";
