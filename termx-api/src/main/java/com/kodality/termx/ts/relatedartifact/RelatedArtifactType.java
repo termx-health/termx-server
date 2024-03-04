@@ -4,6 +4,6 @@ public interface RelatedArtifactType {
   String cs = "CodeSystem";
   String vs = "ValueSet";
   String ms = "MapSet";
-  String s = "Spase";
+  String s = "Space";
   String p = "Page";
 }
