@@ -122,6 +122,10 @@ alter table terminology.code_system add column permissions jsonb;
 alter table terminology.code_system_version add column identifiers jsonb;
 --
 
+--changeset kodality:code_system_version-uri
+alter table terminology.code_system_version add column uri text;
+--
+
 --changeset kodality:code_system-other_title-source_reference-replaces-topic-configuration_attributes-use_context
 alter table terminology.code_system add column other_title jsonb;
 alter table terminology.code_system add column source_reference text;

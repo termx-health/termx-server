@@ -5,10 +5,8 @@ import com.kodality.termx.sys.server.resource.TerminologyServerResourceProvider;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceSyncProvider;
 import com.kodality.termx.terminology.terminology.FhirServerHttpClientService;
 import com.kodality.zmei.fhir.client.FhirClient;
-import com.kodality.zmei.fhir.client.FhirClientError;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet;
 import jakarta.inject.Singleton;
-import java.util.concurrent.CompletionException;
 import lombok.RequiredArgsConstructor;
 
 @Singleton
