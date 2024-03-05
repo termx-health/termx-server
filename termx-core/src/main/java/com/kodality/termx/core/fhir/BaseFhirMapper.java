@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.hl7.fhir.r5.model.Narrative.NarrativeStatus;
 
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -122,7 +123,7 @@ public abstract class BaseFhirMapper {
   }
 
   protected static Narrative toFhirText(String narrative) {
-    return narrative == null ? null : new Narrative().setDiv(narrative);
+    return narrative == null ? null : new Narrative().setDiv(narrative).setStatus(NarrativeStatus.GENERATED.toCode());
   }
 
   protected static CodeableConcept toFhirTopic(Topic topic) {
