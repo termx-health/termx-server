@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class SysSequenceController {
   private final SysSequenceService sysSequenceService;
 
-  @Authorized("Sequence.edit")
+  @Authorized("Sequence.view")
   @Get("{?params*}")
   public QueryResult<SysSequence> query(SysSequenceQueryParams params) {
     return sysSequenceService.query(params);
