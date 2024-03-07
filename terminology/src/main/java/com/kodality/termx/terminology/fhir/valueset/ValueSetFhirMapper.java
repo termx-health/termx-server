@@ -174,11 +174,11 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC),
         version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getExpirationDate().atTime(23, 59), ZoneOffset.UTC)));
     fhirValueSet.setStatus(version.getStatus());
-    fhirValueSet.setCompose(toFhirCompose(version.getRuleSet()));
+    fhirValueSet.setCompose(toFhirCompose(version.getRuleSet(), fhirValueSet));
     return fhirValueSet;
   }
 
-  private static ValueSetCompose toFhirCompose(ValueSetVersionRuleSet ruleSet) {
+  private static ValueSetCompose toFhirCompose(ValueSetVersionRuleSet ruleSet, com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet) {
     if (ruleSet == null) {
       return null;
     }
@@ -189,19 +189,24 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }
     compose.setProperty(ruleSet.getRules() == null ? List.of() :
         ruleSet.getRules().stream().flatMap(r -> Optional.ofNullable(r.getProperties()).orElse(List.of()).stream()).filter(StringUtils::isNotEmpty).toList());
-    compose.setInclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.include));
-    compose.setExclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.exclude));
+    compose.setInclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.include, fhirValueSet));
+    compose.setExclude(toFhirInclude(ruleSet.getRules(), ValueSetVersionRuleType.exclude, fhirValueSet));
     return compose;
   }
 
-  private static List<ValueSetComposeInclude> toFhirInclude(List<ValueSetVersionRule> rules, String type) {
+  private static List<ValueSetComposeInclude> toFhirInclude(List<ValueSetVersionRule> rules, String type, com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet) {
     if (CollectionUtils.isEmpty(rules)) {
       return null;
     }
     return rules.stream().filter(r -> r.getType().equals(type)).map(rule -> {
       ValueSetComposeInclude include = new ValueSetComposeInclude();
-      include.setSystem(rule.getCodeSystemUri());
-      include.setVersion(rule.getCodeSystemVersion() == null ? null : rule.getCodeSystemVersion().getUri() != null ? rule.getCodeSystemVersion().getUri() : rule.getCodeSystemVersion().getVersion());
+      if (rule.getCodeSystemBaseUri() != null) {
+        include.setSystem(rule.getCodeSystemBaseUri());
+        fhirValueSet.addExtension(new Extension("http://hl7.org/fhir/StructureDefinition/valueset-supplement").setValueCanonical(rule.getCodeSystemUri()));
+      } else {
+        include.setSystem(rule.getCodeSystemUri());
+        include.setVersion(rule.getCodeSystemVersion() == null ? null : Optional.ofNullable(rule.getCodeSystemVersion().getUri()).orElse(rule.getCodeSystemVersion().getVersion()));
+      }
       include.setConcept(toFhirConcept(rule.getConcepts()));
       include.setFilter(toFhirFilter(rule.getFilters()));
       include.setValueSet(rule.getValueSetUri() == null ? null : List.of(rule.getValueSetUri()));

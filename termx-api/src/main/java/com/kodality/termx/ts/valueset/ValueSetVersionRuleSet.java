@@ -34,6 +34,7 @@ public class ValueSetVersionRuleSet {
     private ValueSetVersionReference valueSetVersion;
 
     private String codeSystemUri;
+    private String codeSystemBaseUri;
     private String valueSetUri;
 
     @Getter

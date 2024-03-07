@@ -45,6 +45,7 @@ public class ValueSetVersionRepository extends BaseRepository {
       "      'concepts', vsvr.concepts, " +
       "      'filters', vsvr.filters, " +
       "      'codeSystem', vsvr.code_system, " +
+      "      'codeSystemBaseUri', (select cs.uri from terminology.code_system cs where exists(select 1 from terminology.code_system cs1 where cs1.id = vsvr.code_system and cs1.base_code_system = cs.id and cs1.sys_status = 'A') and cs.sys_status = 'A'), " +
       "      'codeSystemUri', (select cs.uri from terminology.code_system cs where cs.id = vsvr.code_system and cs.sys_status = 'A'), " +
       "      'codeSystemVersion', (select json_build_object('id', csv.id, 'version', csv.version, 'uri', csv.uri) from terminology.code_system_version csv where csv.id = vsvr.code_system_version_id and csv.sys_status = 'A'), " +
       "      'valueSet', vsvr.value_set, " +
