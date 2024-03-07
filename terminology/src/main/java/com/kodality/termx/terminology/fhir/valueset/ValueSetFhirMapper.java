@@ -4,6 +4,7 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.fhir.BaseFhirMapper;
@@ -201,7 +202,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return rules.stream().filter(r -> r.getType().equals(type)).map(rule -> {
       ValueSetComposeInclude include = new ValueSetComposeInclude();
       if (rule.getCodeSystemBaseUri() != null) {
-        include.setSystem(rule.getCodeSystemBaseUri());
+        String[] baseCS = PipeUtil.parsePipe(rule.getCodeSystemBaseUri());
+        include.setSystem(baseCS[0]);
+        include.setVersion(baseCS.length > 1 ? baseCS[1] : null);
         fhirValueSet.addExtension(new Extension("http://hl7.org/fhir/StructureDefinition/valueset-supplement").setValueCanonical(rule.getCodeSystemUri()));
       } else {
         include.setSystem(rule.getCodeSystemUri());
