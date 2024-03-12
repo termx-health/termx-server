@@ -45,10 +45,16 @@ public class SnomedMapper {
 
   public SnomedConceptSearchParams toSnomedParams(ConceptQueryParams params) {
     SnomedConceptSearchParams snomedParams = new SnomedConceptSearchParams();
-    snomedParams.setConceptIds(StringUtils.isNotEmpty(params.getCode()) ? Arrays.stream(params.getCode().split(",")).toList() : List.of());
+    if (StringUtils.isNotEmpty(params.getCode())) {
+      snomedParams.setConceptIds(Arrays.stream(params.getCode().split(",")).toList());
+    }
+    if (CollectionUtils.isNotEmpty(params.getCodes())) {
+      snomedParams.setConceptIds(params.getCodes());
+    }
     snomedParams.setTerm(params.getTextContains());
     snomedParams.setActive(true);
-    snomedParams.setLimit(params.getLimit());
+    snomedParams.setAll(params.getLimit() == -1);
+    snomedParams.setLimit(params.getLimit() == -1 ? null : params.getLimit());
     return snomedParams;
   }
 

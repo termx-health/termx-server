@@ -9,6 +9,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ucum.MeasurementUnit;
 import com.kodality.termx.ucum.MeasurementUnitMapping;
 import com.kodality.termx.ucum.MeasurementUnitQueryParams;
+import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.List;
 import javax.inject.Singleton;
@@ -51,6 +52,9 @@ public class MeasurementUnitRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder();
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("mu.code", params.getCode());
+    }
+    if (CollectionUtils.isNotEmpty(params.getCodes())) {
+      sb.and().in("mu.code", params.getCodes());
     }
     if (StringUtils.isNotEmpty(params.getCodeCisEq())) {
       sb.and().in("lower(mu.code)", params.getCodeCisEq().toLowerCase());

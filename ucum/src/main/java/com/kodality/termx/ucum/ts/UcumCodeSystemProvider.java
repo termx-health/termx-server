@@ -27,6 +27,7 @@ public class UcumCodeSystemProvider extends CodeSystemExternalProvider {
     ucumParams.setLimit(params.getLimit());
     ucumParams.setOffset(params.getOffset());
     ucumParams.setCode(params.getCode());
+    ucumParams.setCodes(params.getCodes());
     ucumParams.setTextContains(params.getTextContains());
     ucumParams.setCodeCisEq(params.getDesignationCiEq());
     QueryResult<MeasurementUnit> result = measurementUnitService.query(ucumParams);
