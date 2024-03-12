@@ -90,7 +90,7 @@ public class ObservationDefinitionImportService {
 
       ConceptQueryParams params = new ConceptQueryParams();
       params.setCodeSystem(LOINC);
-      params.setCode(String.join(",", loincCodes));
+      params.setCodes(loincCodes);
       params.setLimit(loincCodes.size());
       List<Concept> concepts = codeSystemProvider.searchConcepts(params).getData();
       observationDefinitions.addAll(concepts.stream().map(this::fromLoincToObservationDefinition).toList());

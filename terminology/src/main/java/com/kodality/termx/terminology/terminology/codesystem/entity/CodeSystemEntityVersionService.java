@@ -161,7 +161,7 @@ public class CodeSystemEntityVersionService {
       codeSystemProviders.forEach(provider -> {
         Map<String, List<CodeSystemEntityVersion>> concepts = provider.searchConcepts(es.getKey(), new ConceptQueryParams()
             .setCodeSystem(es.getKey())
-            .setCode(es.getValue().stream().map(CodeSystemEntityVersion::getCode).collect(Collectors.joining(",")))
+            .setCodes(es.getValue().stream().map(CodeSystemEntityVersion::getCode).collect(Collectors.toList()))
             .all()).getData().stream().flatMap(c -> c.getVersions().stream()).collect(Collectors.groupingBy(CodeSystemEntityVersion::getCode));
         es.getValue().forEach(version -> {
           version.getDesignations().addAll(concepts.getOrDefault(version.getCode(), List.of()).stream()

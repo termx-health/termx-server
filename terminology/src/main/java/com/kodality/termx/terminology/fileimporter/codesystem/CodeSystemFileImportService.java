@@ -361,7 +361,7 @@ public class CodeSystemFileImportService {
             base.setLimit(10_000);
             base.setCodeSystem(StringUtils.join(rule.getCodeSystems(), ","));
             List<Concept> resp = ListUtils.union(
-                conceptService.query(base.setCode(codes)).getData(),
+                conceptService.query(base.setCodes(externalConceptCodes)).getData(),
                 conceptService.query(base.setDesignationCiEq(codes).setCode(null)).getData()
             ).stream().filter(distinctByKey(Concept::getCode)).toList();
 

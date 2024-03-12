@@ -147,8 +147,14 @@ public class ConceptRepository extends BaseRepository {
       }
       sb.append("))");
     }
+    if (StringUtils.isNotEmpty(params.getCodeEq())) {
+      sb.and("c.code = ?", params.getCodeEq());
+    }
     if (StringUtils.isNotEmpty(params.getCode())) {
       sb.and().in("c.code ", params.getCode());
+    }
+    if (CollectionUtils.isNotEmpty(params.getCodes())) {
+      sb.and().in("c.code ", params.getCodes());
     }
     sb.appendIfNotNull("and csv.id = ?", params.getCodeSystemVersionId());
     sb.appendIfNotNull("and csv.version = ?", params.getCodeSystemVersion());

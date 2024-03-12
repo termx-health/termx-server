@@ -181,7 +181,7 @@ public class ValueSetFileImportService {
     }
     List<String> conceptCodes = concepts.stream().map(c -> c.getConcept().getCode()).distinct().toList();
     List<String> csConceptCodes = conceptService.query(
-        new ConceptQueryParams().setCodeSystem(codeSystem.getId()).setCode(String.join(",", conceptCodes)).limit(conceptCodes.size()))
+        new ConceptQueryParams().setCodeSystem(codeSystem.getId()).setCodes(conceptCodes).limit(conceptCodes.size()))
         .getData().stream().map(Concept::getCode).toList();
     conceptCodes.forEach(code -> {
       if (!csConceptCodes.contains(code)) {

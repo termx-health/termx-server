@@ -38,6 +38,8 @@ import com.kodality.termx.ts.property.DefinedPropertyQueryParams;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetImportAction;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleType;
@@ -124,8 +126,8 @@ public class CodeSystemImportService {
     concepts = concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new));
 
     if (baseCodeSystem != null) {
-      String codes = concepts.stream().map(Concept::getCode).collect(Collectors.joining(","));
-      Map<String, Optional<Long>> baseVersionIds = conceptService.query(new ConceptQueryParams().setCode(codes).setCodeSystem(baseCodeSystem).limit(concepts.size())).getData().stream()
+      List<String> codes = concepts.stream().map(Concept::getCode).collect(Collectors.toList());
+      Map<String, Optional<Long>> baseVersionIds = conceptService.query(new ConceptQueryParams().setCodes(codes).setCodeSystem(baseCodeSystem).limit(concepts.size())).getData().stream()
               .collect(toMap(Concept::getCode, c -> c.getLastVersion().map(CodeSystemEntityVersion::getId)));
       concepts.forEach(c -> baseVersionIds.getOrDefault(c.getCode(), Optional.empty()).ifPresent(baseVersionId -> c.getVersions().get(0).setBaseEntityVersionId(baseVersionId)));
     }
@@ -362,7 +364,7 @@ public class CodeSystemImportService {
     valueSet.setTitle(codeSystem.getTitle());
     valueSet.setName(codeSystem.getName());
     valueSet.setDescription(codeSystem.getDescription());
-    valueSet.setVersions(List.of(toValueSetVersion(codeSystem.getId(), codeSystem.getVersions().get(0), properties)));
+    valueSet.setVersions(List.of(toValueSetVersion(codeSystem, properties)));
     valueSet.setContacts(codeSystem.getContacts());
     valueSet.setIdentifiers(codeSystem.getIdentifiers());
     valueSet.setPublisher(codeSystem.getPublisher());
@@ -371,9 +373,11 @@ public class CodeSystemImportService {
     return valueSet;
   }
 
-  public static ValueSetVersion toValueSetVersion(String valueSet, CodeSystemVersion codeSystemVersion, List<String> properties) {
+  public static ValueSetVersion toValueSetVersion(CodeSystem codeSystem, List<String> properties) {
+    CodeSystemVersion codeSystemVersion = codeSystem.getVersions().get(0);
+
     ValueSetVersion version = new ValueSetVersion();
-    version.setValueSet(valueSet);
+    version.setValueSet(codeSystem.getId());
     version.setVersion(codeSystemVersion.getVersion());
     version.setStatus(PublicationStatus.draft);
     version.setSupportedLanguages(codeSystemVersion.getSupportedLanguages());
@@ -386,8 +390,19 @@ public class CodeSystemImportService {
             .setProperties(properties)
             .setCodeSystem(codeSystemVersion.getCodeSystem())
             .setCodeSystemVersion(codeSystemVersion)
+            .setConcepts(Optional.ofNullable(codeSystem.getBaseCodeSystem()).isPresent() ?
+                codeSystem.getConcepts().stream().map(CodeSystemImportService::toValueSetConcept).toList() : null)
     )));
     return version;
+  }
+
+  private static ValueSetVersionConcept toValueSetConcept(Concept concept) {
+    ValueSetVersionConcept vsConcept = new ValueSetVersionConcept();
+    vsConcept.setConcept(new ValueSetVersionConceptValue()
+        .setConceptVersionId(concept.getVersions().get(0).getId())
+        .setCode(concept.getCode())
+        .setCodeSystem(concept.getCodeSystem()));
+    return vsConcept;
   }
 
   private void addToSpace(String codeSystemId, String spaceToAdd) {

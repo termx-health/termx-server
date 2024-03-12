@@ -66,7 +66,7 @@ public class ConceptService {
         .forEach(batch -> {
           ConceptQueryParams params = new ConceptQueryParams();
           params.setLimit(batch.size());
-          params.setCode(batch.stream().map(Concept::getCode).collect(Collectors.joining(",")));
+          params.setCodes(batch.stream().map(Concept::getCode).collect(Collectors.toList()));
           params.setCodeSystem(codeSystem);
           prepareParams(params);
           existingConcepts.addAll(repository.query(params).getData());
@@ -133,7 +133,7 @@ public class ConceptService {
     return query(new ConceptQueryParams()
         .setCodeSystem(codeSystem)
         .setCodeSystemVersion(codeSystemVersion)
-        .setCode(code)).findFirst().map(c -> decorate(c, codeSystem, codeSystemVersion));
+        .setCodeEq(code)).findFirst().map(c -> decorate(c, codeSystem, codeSystemVersion));
   }
 
   private Concept decorate(Concept concept, String codeSystem, String codeSystemVersion) {

@@ -80,7 +80,7 @@ public class CodeSystemValidationService {
 
           if (CollectionUtils.isNotEmpty(rule.getCodeSystems())) {
             var params = new ConceptQueryParams();
-            params.setCode(StringUtils.join(externalCodings, ","));
+            params.setCodes(externalCodings);
             params.setLimit(10_000);
             params.setCodeSystem(StringUtils.join(rule.getCodeSystems(), ","));
             return conceptService.query(params).map(ValueSetVersionConceptValue::fromConcept).getData();

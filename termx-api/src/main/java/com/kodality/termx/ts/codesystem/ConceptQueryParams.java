@@ -13,6 +13,8 @@ import lombok.experimental.Accessors;
 public class ConceptQueryParams extends QueryParams {
   private String id;
   private String code;
+  private String codeEq;
+  private List<String> codes;
   private String codeContains;
   private String textEq;
   private String textContains;
