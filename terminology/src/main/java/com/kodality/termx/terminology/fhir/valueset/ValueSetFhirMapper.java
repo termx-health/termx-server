@@ -21,9 +21,11 @@ import com.kodality.termx.ts.Language;
 import com.kodality.termx.ts.Permissions;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
+import com.kodality.termx.ts.codesystem.DesignationType;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.mapset.MapSet;
@@ -179,7 +181,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return fhirValueSet;
   }
 
-  private static ValueSetCompose toFhirCompose(ValueSetVersionRuleSet ruleSet, com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet) {
+  private ValueSetCompose toFhirCompose(ValueSetVersionRuleSet ruleSet, com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet) {
     if (ruleSet == null) {
       return null;
     }
@@ -195,7 +197,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return compose;
   }
 
-  private static List<ValueSetComposeInclude> toFhirInclude(List<ValueSetVersionRule> rules, String type, com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet) {
+  private List<ValueSetComposeInclude> toFhirInclude(List<ValueSetVersionRule> rules, String type, com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet) {
     if (CollectionUtils.isEmpty(rules)) {
       return null;
     }
@@ -206,11 +208,12 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         include.setSystem(baseCS[0]);
         include.setVersion(baseCS.length > 1 ? baseCS[1] : null);
         fhirValueSet.addExtension(new Extension("http://hl7.org/fhir/StructureDefinition/valueset-supplement").setValueCanonical(rule.getCodeSystemUri()));
+        include.setConcept(toFhirConcept(rule.getConcepts(), conceptService.query(new ConceptQueryParams().setCodeSystem(rule.getCodeSystem()).setCodeSystemVersion(rule.getCodeSystemVersion().getVersion()).all()).getData()));
       } else {
         include.setSystem(rule.getCodeSystemUri());
         include.setVersion(rule.getCodeSystemVersion() == null ? null : Optional.ofNullable(rule.getCodeSystemVersion().getUri()).orElse(rule.getCodeSystemVersion().getVersion()));
+        include.setConcept(toFhirConcept(rule.getConcepts()));
       }
-      include.setConcept(toFhirConcept(rule.getConcepts()));
       include.setFilter(toFhirFilter(rule.getFilters()));
       include.setValueSet(rule.getValueSetUri() == null ? null : List.of(rule.getValueSetUri()));
       return include;
@@ -237,6 +240,35 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       }
       return concept;
     }).collect(toList());
+  }
+
+  private static List<ValueSetComposeIncludeConcept> toFhirConcept(List<ValueSetVersionConcept> concepts, List<Concept> csConcepts) {
+    if (CollectionUtils.isEmpty(concepts)) {
+      return null;
+    }
+    Map<String, List<Concept>> gropedCsConcepts = csConcepts.stream().collect(Collectors.groupingBy(Concept::getCode));
+    return concepts.stream().map(valueSetConcept -> {
+      List<Designation> baseDesignations = gropedCsConcepts.getOrDefault(valueSetConcept.getConcept().getCode(), List.of()).stream().findFirst()
+          .flatMap(c -> c.getLastVersion().map(CodeSystemEntityVersion::getDesignations)).orElse(List.of());
+
+      ValueSetComposeIncludeConcept concept = new ValueSetComposeIncludeConcept();
+      concept.setCode(valueSetConcept.getConcept().getCode());
+      concept.setDisplay(valueSetConcept.getDisplay() == null ? baseDesignations.stream().filter(d -> DesignationType.display.equals(d.getDesignationType())).findFirst().map(Designation::getName).orElse(null) : valueSetConcept.getDisplay().getName());
+      concept.setDesignation(valueSetConcept.getAdditionalDesignations() == null ?
+          baseDesignations.stream().filter(d -> !DesignationType.display.equals(d.getDesignationType())).map(ValueSetFhirMapper::toFhirDesignation).collect(toList()):
+          valueSetConcept.getAdditionalDesignations().stream().map(ValueSetFhirMapper::toFhirDesignation).collect(toList()));
+      if (valueSetConcept.getOrderNumber() != null) {
+        concept.setExtension(List.of(new Extension().setValueInteger(valueSetConcept.getOrderNumber()).setUrl(concept_order)));
+      }
+      return concept;
+    }).collect(toList());
+  }
+
+  private static ValueSetComposeIncludeConceptDesignation toFhirDesignation(Designation d) {
+    ValueSetComposeIncludeConceptDesignation designation = new ValueSetComposeIncludeConceptDesignation();
+    designation.setValue(d.getName());
+    designation.setLanguage(d.getLanguage());
+    return designation;
   }
 
   private static List<ValueSetComposeIncludeFilter> toFhirFilter(List<ValueSetRuleFilter> filters) {
