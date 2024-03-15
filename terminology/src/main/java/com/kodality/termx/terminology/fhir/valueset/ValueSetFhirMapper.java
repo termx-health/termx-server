@@ -133,7 +133,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     fhirValueSet.setContact(toFhirContacts(valueSet.getContacts()));
     fhirValueSet.setIdentifier(toFhirIdentifiers(valueSet.getIdentifiers(), version.getIdentifiers()));
     fhirValueSet.setText(toFhirText(valueSet.getNarrative()));
-    fhirValueSet.setPublisher(valueSet.getPublisher());
+    fhirValueSet.setPublisher(conceptService.load("publisher", valueSet.getPublisher()).flatMap(Concept::getLastVersion).flatMap(CodeSystemEntityVersion::getDisplay).orElse(valueSet.getPublisher()));
     fhirValueSet.setExperimental(valueSet.getExperimental() != null && valueSet.getExperimental());
     Optional.ofNullable(valueSet.getSourceReference()).ifPresent(ref -> fhirValueSet.addExtension(toFhirSourceReferenceExtension("http://hl7.org/fhir/StructureDefinition/valueset-sourceReference", ref)));
     Optional.ofNullable(valueSet.getReplaces()).flatMap(id -> Optional.ofNullable(valueSetService.load(id)).map(ValueSet::getUri)).ifPresent(uri -> fhirValueSet.addExtension(toFhirReplacesExtension(uri)));

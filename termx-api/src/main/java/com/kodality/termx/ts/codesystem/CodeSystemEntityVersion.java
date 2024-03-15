@@ -39,4 +39,11 @@ public class CodeSystemEntityVersion {
         .filter(p -> p.getEntityProperty().equals(propertyName))
         .findFirst().map(EntityPropertyValue::getValue);
   }
+
+  @JsonIgnore
+  public Optional<String> getDisplay(){
+    return this.getDesignations() == null ? Optional.empty() : this.getDesignations().stream()
+        .filter(d -> DesignationType.display.equals(d.getDesignationType()))
+        .findFirst().map(Designation::getName);
+  }
 }

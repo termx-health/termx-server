@@ -23,6 +23,7 @@ import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationKind;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
@@ -108,7 +109,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     termxWebUrl.ifPresent(url -> fhirConceptMap.addExtension(toFhirWebSourceExtension(url, mapSet.getId())));
     fhirConceptMap.setId(toFhirId(mapSet, version));
     fhirConceptMap.setUrl(mapSet.getUri());
-    fhirConceptMap.setPublisher(mapSet.getPublisher());
+    fhirConceptMap.setPublisher(conceptService.load("publisher", mapSet.getPublisher()).flatMap(Concept::getLastVersion).flatMap(CodeSystemEntityVersion::getDisplay).orElse(mapSet.getPublisher()));
     fhirConceptMap.setName(mapSet.getName());
     if (CollectionUtils.isNotEmpty(mapSet.getOtherTitle())) {
       mapSet.getOtherTitle().forEach(otherName -> fhirConceptMap.addExtension(

@@ -107,7 +107,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     termxWebUrl.ifPresent(url -> fhirCodeSystem.addExtension(toFhirWebSourceExtension(url, codeSystem.getId())));
     fhirCodeSystem.setId(toFhirId(codeSystem, version));
     fhirCodeSystem.setUrl(codeSystem.getUri());
-    fhirCodeSystem.setPublisher(codeSystem.getPublisher());
+    fhirCodeSystem.setPublisher(conceptService.load("publisher", codeSystem.getPublisher()).flatMap(Concept::getLastVersion).flatMap(CodeSystemEntityVersion::getDisplay).orElse(codeSystem.getPublisher()));
     fhirCodeSystem.setName(codeSystem.getName());
     if (CollectionUtils.isNotEmpty(codeSystem.getOtherTitle())) {
       codeSystem.getOtherTitle().forEach(otherName -> fhirCodeSystem.addExtension(
