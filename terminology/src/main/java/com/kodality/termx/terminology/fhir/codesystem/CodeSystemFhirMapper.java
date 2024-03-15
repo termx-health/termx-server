@@ -62,6 +62,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import static java.util.stream.Collectors.mapping;
@@ -123,7 +124,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setPrimitiveExtensions("purpose", toFhirTranslationExtension(codeSystem.getPurpose(), version.getPreferredLanguage()));
     fhirCodeSystem.setText(toFhirText(codeSystem.getNarrative()));
     fhirCodeSystem.setExperimental(codeSystem.getExperimental() != null && codeSystem.getExperimental());
-    Optional.ofNullable(codeSystem.getSourceReference()).ifPresent(ref -> fhirCodeSystem.addExtension(toFhirSourceReferenceExtension("http://hl7.org/fhir/StructureDefinition/codesystem-sourceReference", ref)));
+    Optional.ofNullable(StringUtils.isEmpty(codeSystem.getSourceReference()) ? null : codeSystem.getSourceReference()).ifPresent(ref -> fhirCodeSystem.addExtension(toFhirSourceReferenceExtension("http://hl7.org/fhir/StructureDefinition/codesystem-sourceReference", ref)));
     Optional.ofNullable(codeSystem.getReplaces()).flatMap(id -> codeSystemService.load(id).map(CodeSystem::getUri)).ifPresent(uri -> fhirCodeSystem.addExtension(toFhirReplacesExtension(uri)));
     fhirCodeSystem.setIdentifier(toFhirIdentifiers(codeSystem.getIdentifiers(), version.getIdentifiers()));
     fhirCodeSystem.setContact(toFhirContacts(codeSystem.getContacts()));
