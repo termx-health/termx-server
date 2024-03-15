@@ -1,6 +1,7 @@
 package com.kodality.termx.terminology.fhir.conceptmap;
 
 import com.kodality.termx.core.http.BinaryHttpClient;
+import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.terminology.mapset.MapSetImportService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationType;
@@ -8,6 +9,7 @@ import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.mapset.MapSetImportAction;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.Resource;
+import com.kodality.zmei.fhir.resource.ResourceType;
 import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
 import jakarta.inject.Singleton;
@@ -27,6 +29,9 @@ public class ConceptMapFhirImportService {
 
   @Transactional
   public void importMapSet(ConceptMap fhirConceptMap, MapSetImportAction action) {
+    if (!ResourceType.conceptMap.equals(fhirConceptMap.getResourceType())) {
+      throw ApiError.TE107.toApiException();
+    }
     List<AssociationType> associationTypes = mapper.fromFhirAssociationTypes(fhirConceptMap);
     MapSet mapSet = mapper.fromFhir(fhirConceptMap);
 

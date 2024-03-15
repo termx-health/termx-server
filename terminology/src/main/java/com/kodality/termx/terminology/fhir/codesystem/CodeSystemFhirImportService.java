@@ -1,6 +1,7 @@
 package com.kodality.termx.terminology.fhir.codesystem;
 
 import com.kodality.termx.core.http.BinaryHttpClient;
+import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemImportService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.association.AssociationKind;
@@ -8,6 +9,7 @@ import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.codesystem.CodeSystemImportAction;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.Resource;
+import com.kodality.zmei.fhir.resource.ResourceType;
 import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import jakarta.inject.Singleton;
@@ -26,6 +28,9 @@ public class CodeSystemFhirImportService {
 
   @Transactional
   public void importCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem) {
+    if (!ResourceType.codeSystem.equals(codeSystem.getResourceType())) {
+      throw ApiError.TE107.toApiException();
+    }
     List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
     CodeSystemImportAction action = new CodeSystemImportAction().setActivate(PublicationStatus.active.equals(codeSystem.getStatus())).setCleanRun(true);
     importService.importCodeSystem(CodeSystemFhirMapper.fromFhirCodeSystem(codeSystem), associationTypes, action);
