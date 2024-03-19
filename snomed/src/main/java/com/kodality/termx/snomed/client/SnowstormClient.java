@@ -20,7 +20,6 @@ import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
 import com.kodality.termx.snomed.refset.SnomedRefsetMemberResponse;
 import com.kodality.termx.snomed.refset.SnomedRefsetResponse;
 import com.kodality.termx.snomed.refset.SnomedRefsetSearchParams;
-import com.kodality.termx.snomed.rf2.SnomedExportJob;
 import com.kodality.termx.snomed.rf2.SnomedExportRequest;
 import com.kodality.termx.snomed.rf2.SnomedImportJob;
 import com.kodality.termx.snomed.rf2.SnomedImportRequest;
@@ -254,7 +253,11 @@ public class SnowstormClient {
 
   public String getLanguages(String branch) {
     if (branch.startsWith("MAIN/") && branch.split("/").length > 1) {
-      return String.join(",", loadCodeSystem(branch.split("/")[1]).join().getLanguages().keySet());
+      try {
+        return String.join(",", loadCodeSystem(branch.split("/")[1]).join().getLanguages().keySet());
+      } catch (RuntimeException e) {
+        return "en";
+      }
     }
     return "en";
   }
