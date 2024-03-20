@@ -104,7 +104,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   public com.kodality.zmei.fhir.resource.terminology.CodeSystem toFhir(CodeSystem codeSystem, CodeSystemVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem = new com.kodality.zmei.fhir.resource.terminology.CodeSystem();
-    termxWebUrl.ifPresent(url -> fhirCodeSystem.addExtension(toFhirWebSourceExtension(url, codeSystem.getId())));
+    if (!codeSystem.isExternalWebSource()) {
+      termxWebUrl.ifPresent(url -> fhirCodeSystem.addExtension(toFhirWebSourceExtension(url, codeSystem.getId())));
+    }
     fhirCodeSystem.setId(toFhirId(codeSystem, version));
     fhirCodeSystem.setUrl(codeSystem.getUri());
     fhirCodeSystem.setPublisher(conceptService.load("publisher", codeSystem.getPublisher()).flatMap(Concept::getLastVersion).flatMap(CodeSystemEntityVersion::getDisplay).orElse(codeSystem.getPublisher()));

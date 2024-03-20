@@ -33,6 +33,7 @@ public class MapSet {
   private Boolean experimental;
   private String sourceReference;
   private String replaces;
+  private boolean externalWebSource;
   private List<Identifier> identifiers;
   private List<ConfigurationAttribute> configurationAttributes;
   private List<ContactDetail> contacts;

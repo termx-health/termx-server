@@ -106,7 +106,9 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
 
   public com.kodality.zmei.fhir.resource.terminology.ConceptMap toFhir(MapSet mapSet, MapSetVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.ConceptMap fhirConceptMap = new com.kodality.zmei.fhir.resource.terminology.ConceptMap();
-    termxWebUrl.ifPresent(url -> fhirConceptMap.addExtension(toFhirWebSourceExtension(url, mapSet.getId())));
+    if (!mapSet.isExternalWebSource()) {
+      termxWebUrl.ifPresent(url -> fhirConceptMap.addExtension(toFhirWebSourceExtension(url, mapSet.getId())));
+    }
     fhirConceptMap.setId(toFhirId(mapSet, version));
     fhirConceptMap.setUrl(mapSet.getUri());
     fhirConceptMap.setPublisher(conceptService.load("publisher", mapSet.getPublisher()).flatMap(Concept::getLastVersion).flatMap(CodeSystemEntityVersion::getDisplay).orElse(mapSet.getPublisher()));

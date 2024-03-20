@@ -113,7 +113,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
 
   public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
-    termxWebUrl.ifPresent(url -> fhirValueSet.addExtension(toFhirWebSourceExtension(url, valueSet.getId())));
+    if (!valueSet.isExternalWebSource()) {
+      termxWebUrl.ifPresent(url -> fhirValueSet.addExtension(toFhirWebSourceExtension(url, valueSet.getId())));
+    }
     fhirValueSet.setId(toFhirId(valueSet, version));
     fhirValueSet.setUrl(valueSet.getUri());
     fhirValueSet.setName(valueSet.getName());

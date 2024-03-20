@@ -137,3 +137,7 @@ alter table terminology.map_set add column use_context jsonb;
 alter table terminology.map_set add constraint map_set_replaces_fk foreign key (replaces) references terminology.map_set(id);
 create index map_set_replaces_idx on terminology.map_set(replaces);
 --
+
+--changeset kodality:map_set-external_web_source
+alter table terminology.map_set add column external_web_source boolean;
+--

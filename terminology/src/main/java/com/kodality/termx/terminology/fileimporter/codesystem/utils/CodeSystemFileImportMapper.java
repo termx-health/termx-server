@@ -75,6 +75,7 @@ public class CodeSystemFileImportMapper {
     codeSystem.setConcepts(result.getEntities().stream().map(e -> toCsConcept(codeSystem.getId(), e, result.getEntities())).toList());
     codeSystem.setContent(fpCodeSystem.getSupplement() != null ? CodeSystemContent.supplement : CodeSystemContent.complete);
     codeSystem.setBaseCodeSystemUri(fpCodeSystem.getSupplement());
+    codeSystem.setExternalWebSource(fpCodeSystem.isExternalWebSource());
     codeSystem.setHierarchyMeaning(toHierarchyMeaning(result.getProperties()).orElse(null));
     codeSystem.setContacts(CollectionUtils.isNotEmpty(fpCodeSystem.getContact()) ? toContacts(fpCodeSystem.getContact()) : codeSystem.getContacts());
     if (fpCodeSystem.getAdmin() != null || fpCodeSystem.getEndorser() != null) {

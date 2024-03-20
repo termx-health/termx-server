@@ -118,6 +118,10 @@ alter table terminology.code_system drop column name_bak;
 alter table terminology.code_system add column permissions jsonb;
 --
 
+--changeset kodality:code_system-external_web_source
+alter table terminology.code_system add column external_web_source boolean;
+--
+
 --changeset kodality:code_system_version-identifiers
 alter table terminology.code_system_version add column identifiers jsonb;
 --

@@ -105,7 +105,7 @@ public class CodeSystemFileImportService {
       codeSystemFhirImportService.importCodeSystem(json, request.getCodeSystem().getId());
       return new CodeSystemFileImportResponse();
     }
-    CodeSystemFileImportResult result = CodeSystemFileImportProcessor.process(request.getType(), file, request.getProperties());
+    CodeSystemFileImportResult result = CodeSystemFileImportProcessor.process(request, file);
     return save(request, result);
   }
 

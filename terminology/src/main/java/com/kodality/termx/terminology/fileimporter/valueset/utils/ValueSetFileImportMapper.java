@@ -37,6 +37,7 @@ public class ValueSetFileImportMapper {
     valueSet.setTitle(fpValueSet.getTitle() != null ? fpValueSet.getTitle() : valueSet.getTitle());
     valueSet.setDescription(fpValueSet.getDescription() != null ? fpValueSet.getDescription() : valueSet.getDescription());
     valueSet.setContacts(CollectionUtils.isNotEmpty(fpValueSet.getContact()) ? toContacts(fpValueSet.getContact()) : valueSet.getContacts());
+    valueSet.setExternalWebSource(fpValueSet.isExternalWebSource());
     if (fpValueSet.getAdmin() != null || fpValueSet.getEndorser() != null) {
       Permissions permissions = new Permissions();
       permissions.setAdmin(fpValueSet.getAdmin());

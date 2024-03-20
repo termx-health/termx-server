@@ -34,6 +34,8 @@ public class CodeSystemFileImportRequest {
   private String space;
   private String spacePackage;
 
+  private boolean autoConceptOrder;
+
   @Getter
   @Setter
   public static class FileProcessingProperty {
@@ -64,6 +66,7 @@ public class CodeSystemFileImportRequest {
     private String supplement;
     private String admin;
     private String endorser;
+    private boolean externalWebSource;
   }
 
   @Getter

@@ -39,7 +39,10 @@ public class CodeSystemFileImportProcessor {
   public static final String DESIGNATION_PROPERTY_TYPE = "designation";
 
 
-  public static CodeSystemFileImportResult process(String type, byte[] file, List<FileProcessingProperty> importProperties) {
+  public static CodeSystemFileImportResult process(CodeSystemFileImportRequest request, byte[] file) {
+    String type = request.getType();
+    List<FileProcessingProperty> importProperties = request.getProperties();
+
     if (importProperties.stream().noneMatch(p -> List.of(IDENTIFIER_PROPERTY, HIERARCHICAL_CONCEPT).contains(p.getName()))) {
       throw ApiError.TE722.toApiException();
     }
@@ -93,6 +96,9 @@ public class CodeSystemFileImportProcessor {
         }
       }
 
+      if (request.isAutoConceptOrder()) {
+        entity.put("conceptOrder", List.of(new FileProcessingEntityPropertyValue().setValue((rows.indexOf(r) + 1) * 10).setPropertyName("conceptOrder")));
+      }
       return entity;
     }).filter(CollectionUtils::isNotEmpty).toList();
 
@@ -106,6 +112,9 @@ public class CodeSystemFileImportProcessor {
         })
         .filter(distinctByKey(FileProcessingResponseProperty::getPropertyName))
         .collect(Collectors.toList());
+    if (request.isAutoConceptOrder()) {
+      properties.add(new FileProcessingResponseProperty().setPropertyName("conceptOrder").setPropertyType(integer).setPropertyKind(EntityPropertyKind.property));
+    }
 
 
     return new CodeSystemFileImportResult().setEntities(entities).setProperties(properties);

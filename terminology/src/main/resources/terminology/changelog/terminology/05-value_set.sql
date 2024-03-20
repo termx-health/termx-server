@@ -200,6 +200,10 @@ update terminology.value_set set name = (select replace(n.value::text, '"'::text
 alter table terminology.value_set drop column name_bak;
 --
 
+--changeset kodality:value_set-external_web_source
+alter table terminology.value_set add column external_web_source boolean;
+--
+
 --changeset kodality:value_set_version-preferred_language
 alter table terminology.value_set_version add column preferred_language text;
 --

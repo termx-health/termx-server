@@ -71,6 +71,7 @@ public class MapSetRepository extends BaseRepository {
     ssb.jsonProperty("contacts", mapSet.getContacts());
     ssb.jsonProperty("copyright", mapSet.getCopyright());
     ssb.jsonProperty("settings", mapSet.getSettings());
+    ssb.property("external_web_source", mapSet.isExternalWebSource());
     ssb.property("sys_status", "A");
 
     SqlBuilder sb = ssb.buildUpsert("terminology.map_set", "id");
