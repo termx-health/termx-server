@@ -76,11 +76,15 @@ public class ReleaseService {
 
   private void validateChecklist(Long releaseId) {
     List<ReleaseResource> resources = resourceService.loadAll(releaseId);
-    resources.forEach(r -> validationService.runChecks(new ChecklistValidationRequest().setResourceType(r.getResourceType()).setResourceId(r.getResourceId())));
+    resources.forEach(r -> validationService.runChecks(new ChecklistValidationRequest()
+        .setResourceType(r.getResourceType())
+        .setResourceId(r.getResourceId())
+        .setResourceVersion(r.getResourceVersion())));
     List<Checklist> unaccomplishedChecks = resources.stream().flatMap(r -> checklistService.query(new ChecklistQueryParams()
         .setAssertionsDecorated(true)
         .setResourceId(r.getResourceId())
-        .setResourceType(r.getResourceType()).all()).getData().stream())
+        .setResourceType(r.getResourceType())
+        .setResourceVersion(r.getResourceVersion()).all()).getData().stream())
         .filter(checklist -> CollectionUtils.isEmpty(checklist.getAssertions()) || !checklist.getAssertions().get(0).isPassed()).toList();
     if (CollectionUtils.isNotEmpty(unaccomplishedChecks)) {
       throw ApiError.TC114.toApiException();
