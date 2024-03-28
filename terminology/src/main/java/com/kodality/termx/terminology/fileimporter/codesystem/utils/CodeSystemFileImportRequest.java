@@ -79,5 +79,6 @@ public class CodeSystemFileImportRequest {
     private String algorithm;
     private LocalDate releaseDate;
     private String oid;
+    private String supplementVersion;
   }
 }

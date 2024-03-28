@@ -24,6 +24,8 @@ public class CodeSystemVersion extends CodeSystemVersionReference {
   private OffsetDateTime created;
   private List<Identifier> identifiers;
 
+  private String baseCodeSystem;
+
   private Integer conceptsTotal;
 
   private List<CodeSystemEntityVersion> entities;

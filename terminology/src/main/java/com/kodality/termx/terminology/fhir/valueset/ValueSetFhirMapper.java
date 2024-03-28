@@ -206,10 +206,11 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return rules.stream().filter(r -> r.getType().equals(type)).map(rule -> {
       ValueSetComposeInclude include = new ValueSetComposeInclude();
       String version = rule.getCodeSystemVersion() == null ? null : StringUtils.isNotEmpty(rule.getCodeSystemVersion().getUri()) ? rule.getCodeSystemVersion().getUri():rule.getCodeSystemVersion().getVersion();
+      String baseVersion = rule.getCodeSystemVersion() == null ? null : rule.getCodeSystemVersion().getBaseCodeSystemVersion() == null ? null :
+          StringUtils.isNotEmpty(rule.getCodeSystemVersion().getBaseCodeSystemVersion().getUri()) ? rule.getCodeSystemVersion().getBaseCodeSystemVersion().getUri():rule.getCodeSystemVersion().getBaseCodeSystemVersion().getVersion();
       if (rule.getCodeSystemBaseUri() != null) {
-        String[] baseCS = PipeUtil.parsePipe(rule.getCodeSystemBaseUri());
-        include.setSystem(baseCS[0]);
-        include.setVersion(baseCS.length > 1 ? baseCS[1] : null);
+        include.setSystem(rule.getCodeSystemBaseUri());
+        include.setVersion(baseVersion);
         fhirValueSet.addExtension(new Extension("http://hl7.org/fhir/StructureDefinition/valueset-supplement").setValueCanonical(PipeUtil.toPipe(rule.getCodeSystemUri(), version)));
         include.setConcept(toFhirConcept(rule.getConcepts(), conceptService.query(new ConceptQueryParams().setCodeSystem(rule.getCodeSystem()).setCodeSystemVersion(rule.getCodeSystemVersion().getVersion()).all()).getData()));
       } else {

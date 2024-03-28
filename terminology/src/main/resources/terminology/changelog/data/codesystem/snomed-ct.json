@@ -6,7 +6,7 @@
     "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>This code system snomed-ct defines many codes, but they are not represented here</p></div>"
   },
   "url": "http://snomed.info/sct",
-  "version": "2021-07-31",
+  "version": "international-edition",
   "name": "SNOMED-CT",
   "title": "SNOMED CT",
   "status": "active",

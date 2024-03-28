@@ -15,4 +15,6 @@ public class CodeSystemVersionReference {
   private String status;
   private String preferredLanguage;
   private LocalDate releaseDate;
+
+  private CodeSystemVersionReference baseCodeSystemVersion;
 }

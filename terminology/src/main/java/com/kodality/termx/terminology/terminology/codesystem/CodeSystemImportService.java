@@ -175,6 +175,13 @@ public class CodeSystemImportService {
     } else if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
       throw ApiError.TE104.toApiException(Map.of("version", codeSystemVersion.getVersion()));
     }
+
+    if (codeSystemVersion.getBaseCodeSystem() != null && codeSystemVersion.getBaseCodeSystemVersion() != null && codeSystemVersion.getBaseCodeSystemVersion().getVersion() != null) {
+      codeSystemVersionService.loadVersionByUri(codeSystemVersion.getBaseCodeSystem(), codeSystemVersion.getBaseCodeSystemVersion().getVersion()).ifPresent(v -> {
+        codeSystemVersion.getBaseCodeSystemVersion().setId(v.getId());
+      });
+    }
+
     log.info("Saving code system version {}", codeSystemVersion.getVersion());
     codeSystemVersionService.save(codeSystemVersion);
   }
@@ -370,6 +377,7 @@ public class CodeSystemImportService {
     valueSet.setPublisher(codeSystem.getPublisher());
     valueSet.setCopyright(codeSystem.getCopyright());
     valueSet.setPermissions(codeSystem.getPermissions());
+    valueSet.setExternalWebSource(codeSystem.isExternalWebSource());
     return valueSet;
   }
 

@@ -25,12 +25,15 @@ public class CodeSystemVersionRepository extends BaseRepository {
     pb.addColumnProcessor("description", PgBeanProcessor.fromJson());
     pb.addColumnProcessor("supported_languages", PgBeanProcessor.fromArray());
     pb.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
+    pb.addColumnProcessor("base_code_system_version", PgBeanProcessor.fromJson());
   });
 
   private final static String select = "select csv.*, " +
                                        "(select count(1) from terminology.entity_version_code_system_version_membership evcsvm, terminology.code_system_entity_version csev " +
                                        "                 where evcsvm.code_system_version_id = csv.id and evcsvm.code_system_entity_version_id = csev.id and evcsvm.sys_status = 'A' and csev.sys_status = 'A') " +
-                                       "as concepts_total ";
+                                       "as concepts_total, " +
+                                       "(select cs.base_code_system from terminology.code_system cs where cs.id = csv.code_system and cs.sys_status = 'A') as base_code_system, " +
+                                       "(select json_build_object('id', csv1.id, 'version', csv1.version, 'uri', csv1.uri) from terminology.code_system_version csv1 where csv1.id = csv.base_code_system_version_id and csv1.sys_status = 'A') as base_code_system_version ";
 
   public void save(CodeSystemVersion version) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -46,6 +49,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
     ssb.property("expiration_date", version.getExpirationDate());
     ssb.property("created", version.getCreated());
     ssb.property("status", version.getStatus());
+    ssb.property("base_code_system_version_id", version.getBaseCodeSystemVersion() == null ? null : version.getBaseCodeSystemVersion().getId());
     ssb.jsonProperty("identifiers", version.getIdentifiers());
     SqlBuilder sb = ssb.buildSave("terminology.code_system_version", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());

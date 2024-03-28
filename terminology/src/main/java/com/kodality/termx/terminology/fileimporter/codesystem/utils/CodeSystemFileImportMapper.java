@@ -20,6 +20,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemContent;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
+import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
@@ -70,7 +71,7 @@ public class CodeSystemFileImportMapper {
     codeSystem.setIdentifiers(fpCodeSystem.getOid() != null ? List.of(new Identifier(OID_SYSTEM, OID_PREFIX + fpCodeSystem.getOid())) : codeSystem.getIdentifiers());
     codeSystem.setTitle(fpCodeSystem.getTitle() != null ? fpCodeSystem.getTitle() : codeSystem.getTitle());
     codeSystem.setDescription(fpCodeSystem.getDescription() != null ? fpCodeSystem.getDescription() : codeSystem.getDescription());
-    codeSystem.setVersions(List.of(toCsVersion(fpVersion, result.getEntities(), fpCodeSystem.getId(), existingCodeSystemVersion)));
+    codeSystem.setVersions(List.of(toCsVersion(fpVersion, result.getEntities(), fpCodeSystem, existingCodeSystemVersion)));
     codeSystem.setProperties(toCsProperties(result.getProperties()));
     codeSystem.setConcepts(result.getEntities().stream().map(e -> toCsConcept(codeSystem.getId(), e, result.getEntities())).toList());
     codeSystem.setContent(fpCodeSystem.getSupplement() != null ? CodeSystemContent.supplement : CodeSystemContent.complete);
@@ -94,18 +95,20 @@ public class CodeSystemFileImportMapper {
         .toList()));
   }
 
-  private static CodeSystemVersion toCsVersion(FileProcessingCodeSystemVersion fpVersion, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities, String codeSystem,
-                                               CodeSystemVersion existingCodeSystemVersion) {
+  private static CodeSystemVersion toCsVersion(FileProcessingCodeSystemVersion fpVersion, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities,
+                                               FileProcessingCodeSystem fpCodeSystem, CodeSystemVersion existingCodeSystemVersion) {
     List<String> langs = entities.stream().flatMap(e -> e.values().stream()
         .flatMap(v -> v.stream().map(FileProcessingEntityPropertyValue::getLang))).filter(Objects::nonNull).distinct().toList();
 
     CodeSystemVersion version = existingCodeSystemVersion != null ? JsonUtil.fromJson(JsonUtil.toJson(existingCodeSystemVersion), CodeSystemVersion.class) : new CodeSystemVersion();
-    version.setCodeSystem(codeSystem);
+    version.setCodeSystem(fpCodeSystem.getId());
     version.setVersion(fpVersion.getNumber());
     version.setStatus(PublicationStatus.draft);
     version.setReleaseDate(fpVersion.getReleaseDate() == null ? LocalDate.now() : fpVersion.getReleaseDate());
     version.setAlgorithm(fpVersion.getAlgorithm());
     version.setSupportedLanguages(langs);
+    version.setBaseCodeSystem(fpCodeSystem.getSupplement());
+    version.setBaseCodeSystemVersion(fpVersion.getSupplementVersion() != null ? new CodeSystemVersionReference().setVersion(fpVersion.getSupplementVersion()) : null);
     version.setPreferredLanguage(fpVersion.getLanguage() != null ? fpVersion.getLanguage() : langs.size() == 1 ? langs.get(0) :
         langs.contains(SessionStore.require().getLang()) ? SessionStore.require().getLang() : null);
     version.setIdentifiers(fpVersion.getOid() != null ? List.of(new Identifier(OID_SYSTEM, OID_PREFIX + fpVersion.getOid())) : version.getIdentifiers());

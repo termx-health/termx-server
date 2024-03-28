@@ -140,7 +140,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       fhirCodeSystem.setCaseSensitive(
           codeSystem.getCaseSensitive() != null && !CaseSignificance.entire_term_case_insensitive.equals(codeSystem.getCaseSensitive()));
     }
-    fhirCodeSystem.setSupplements(codeSystem.getBaseCodeSystemUri());
+    fhirCodeSystem.setSupplements(toFhirSupplement(codeSystem, version));
     if (codeSystem.getCopyright() != null) {
       fhirCodeSystem.setCopyright(codeSystem.getCopyright().getHolder());
       fhirCodeSystem.setCopyrightLabel(codeSystem.getCopyright().getStatement());
@@ -200,6 +200,16 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return fhirCodeSystem;
   }
 
+  private static String toFhirSupplement(CodeSystem codeSystem, CodeSystemVersion version) {
+    if (codeSystem.getBaseCodeSystemUri() == null) {
+      return null;
+    }
+    return Stream.of(
+            codeSystem.getBaseCodeSystemUri(),
+            Optional.ofNullable(version.getBaseCodeSystemVersion()).map(v -> v.getUri() == null ? v.getVersion() : v.getUri()).orElse(null))
+        .filter(Objects::nonNull).collect(Collectors.joining("|"));
+  }
+
   private static CodeSystemConcept toFhir(CodeSystemEntityVersion e, CodeSystem codeSystem, CodeSystemVersion version,
                                           Map<Long, List<CodeSystemEntityVersion>> childMap, Map<Long, List<String>> parentMap) {
     CodeSystemConcept concept = new CodeSystemConcept();
@@ -224,7 +234,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         .findFirst().orElse(null);
     concept.setDisplay(display != null ? display.getName() : null);
     concept.setDefinition(definition != null ? definition.getName() : null);
-    concept.setDesignation(toFhirDesignations(designations.stream().filter(d ->  display != d && definition != d).toList()));
+    concept.setDesignation(toFhirDesignations(designations.stream().filter(d -> display != d && definition != d).toList()));
   }
 
   private static List<CodeSystemConceptDesignation> toFhirDesignations(List<Designation> designations) {
@@ -347,7 +357,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         .setEditor(fromFhirContactsName(fhirCodeSystem.getEditor()))
         .setViewer(fromFhirContactsName(fhirCodeSystem.getReviewer()))
         .setEndorser(fromFhirContactsName(fhirCodeSystem.getEndorser())));
-    codeSystem.setHierarchyMeaning(fhirCodeSystem.getHierarchyMeaning());
+    if (!CodeSystemContent.supplement.equals(codeSystem.getContent())) {
+      codeSystem.setHierarchyMeaning(fhirCodeSystem.getHierarchyMeaning());
+    }
     codeSystem.setContent(fhirCodeSystem.getContent());
     codeSystem.setCaseSensitive(fhirCodeSystem.getCaseSensitive() != null && fhirCodeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
         CaseSignificance.entire_term_case_insensitive);

@@ -142,3 +142,9 @@ alter table terminology.code_system add constraint code_system_replaces_fk forei
 create index code_system_replaces_idx on terminology.code_system(replaces);
 
 --
+
+--changeset kodality:code_system_version-base_code_system_version_id
+alter table terminology.code_system_version add column base_code_system_version_id bigint;
+alter table terminology.code_system_version add constraint code_system_version_base_code_system_version_fk foreign key (base_code_system_version_id) references terminology.code_system_version(id);
+create index code_system_version_base_code_system_version_idx on terminology.code_system_version(base_code_system_version_id);
+--
