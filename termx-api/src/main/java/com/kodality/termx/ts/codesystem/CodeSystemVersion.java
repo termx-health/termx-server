@@ -25,6 +25,7 @@ public class CodeSystemVersion extends CodeSystemVersionReference {
   private List<Identifier> identifiers;
 
   private String baseCodeSystem;
+  private String baseCodeSystemUri;
 
   private Integer conceptsTotal;
 

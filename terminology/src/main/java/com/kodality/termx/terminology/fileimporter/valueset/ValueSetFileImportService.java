@@ -153,7 +153,9 @@ public class ValueSetFileImportService {
 
   private void prepare(ValueSetFileImportRequest request) {
     if (request.getVersion().getRule() != null && request.getVersion().getRule().getCodeSystemUri() != null) {
-      CodeSystemVersion csv = codeSystemVersionService.loadLastVersionByUri(request.getVersion().getRule().getCodeSystemUri());
+      CodeSystemVersion csv = request.getVersion().getRule().getCodeSystemVersion() != null ?
+          codeSystemVersionService.loadVersionByUri(request.getVersion().getRule().getCodeSystemUri(), request.getVersion().getRule().getCodeSystemVersion()).get() :
+          codeSystemVersionService.loadLastVersionByUri(request.getVersion().getRule().getCodeSystemUri());
       if (csv == null) {
         throw ApiError.TE727.toApiException(Map.of("uri", request.getVersion().getRule().getCodeSystemUri()));
       }

@@ -76,6 +76,7 @@ public class ValueSetFileImportRequest {
     private Long id;
 
     private String codeSystem;
+    private String codeSystemVersion;
     private Long codeSystemVersionId;
 
     private List<String> properties;

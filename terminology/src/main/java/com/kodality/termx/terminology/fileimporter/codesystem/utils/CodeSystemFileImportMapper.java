@@ -74,8 +74,9 @@ public class CodeSystemFileImportMapper {
     codeSystem.setVersions(List.of(toCsVersion(fpVersion, result.getEntities(), fpCodeSystem, existingCodeSystemVersion)));
     codeSystem.setProperties(toCsProperties(result.getProperties()));
     codeSystem.setConcepts(result.getEntities().stream().map(e -> toCsConcept(codeSystem.getId(), e, result.getEntities())).toList());
-    codeSystem.setContent(fpCodeSystem.getSupplement() != null ? CodeSystemContent.supplement : CodeSystemContent.complete);
-    codeSystem.setBaseCodeSystemUri(fpCodeSystem.getSupplement());
+    codeSystem.setContent(fpCodeSystem.getSupplement() != null || fpCodeSystem.getSupplementUri() != null ? CodeSystemContent.supplement : CodeSystemContent.complete);
+    codeSystem.setBaseCodeSystem(fpCodeSystem.getSupplement());
+    codeSystem.setBaseCodeSystemUri(fpCodeSystem.getSupplementUri());
     codeSystem.setExternalWebSource(fpCodeSystem.isExternalWebSource());
     codeSystem.setHierarchyMeaning(toHierarchyMeaning(result.getProperties()).orElse(null));
     codeSystem.setContacts(CollectionUtils.isNotEmpty(fpCodeSystem.getContact()) ? toContacts(fpCodeSystem.getContact()) : codeSystem.getContacts());
@@ -108,6 +109,7 @@ public class CodeSystemFileImportMapper {
     version.setAlgorithm(fpVersion.getAlgorithm());
     version.setSupportedLanguages(langs);
     version.setBaseCodeSystem(fpCodeSystem.getSupplement());
+    version.setBaseCodeSystemUri(fpCodeSystem.getSupplementUri());
     version.setBaseCodeSystemVersion(fpVersion.getSupplementVersion() != null ? new CodeSystemVersionReference().setVersion(fpVersion.getSupplementVersion()) : null);
     version.setPreferredLanguage(fpVersion.getLanguage() != null ? fpVersion.getLanguage() : langs.size() == 1 ? langs.get(0) :
         langs.contains(SessionStore.require().getLang()) ? SessionStore.require().getLang() : null);

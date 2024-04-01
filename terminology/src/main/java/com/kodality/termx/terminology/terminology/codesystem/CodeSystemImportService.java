@@ -177,7 +177,13 @@ public class CodeSystemImportService {
     }
 
     if (codeSystemVersion.getBaseCodeSystem() != null && codeSystemVersion.getBaseCodeSystemVersion() != null && codeSystemVersion.getBaseCodeSystemVersion().getVersion() != null) {
-      codeSystemVersionService.loadVersionByUri(codeSystemVersion.getBaseCodeSystem(), codeSystemVersion.getBaseCodeSystemVersion().getVersion()).ifPresent(v -> {
+      codeSystemVersionService.load(codeSystemVersion.getBaseCodeSystem(), codeSystemVersion.getBaseCodeSystemVersion().getVersion()).ifPresent(v -> {
+        codeSystemVersion.getBaseCodeSystemVersion().setId(v.getId());
+      });
+    }
+
+    if (codeSystemVersion.getBaseCodeSystemUri() != null && codeSystemVersion.getBaseCodeSystemVersion() != null && codeSystemVersion.getBaseCodeSystemVersion().getVersion() != null) {
+      codeSystemVersionService.loadVersionByUri(codeSystemVersion.getBaseCodeSystemUri(), codeSystemVersion.getBaseCodeSystemVersion().getVersion()).ifPresent(v -> {
         codeSystemVersion.getBaseCodeSystemVersion().setId(v.getId());
       });
     }
