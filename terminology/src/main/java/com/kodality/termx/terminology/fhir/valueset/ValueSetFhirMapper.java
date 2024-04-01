@@ -212,7 +212,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         include.setSystem(rule.getCodeSystemBaseUri());
         include.setVersion(baseVersion);
         fhirValueSet.addExtension(new Extension("http://hl7.org/fhir/StructureDefinition/valueset-supplement").setValueCanonical(PipeUtil.toPipe(rule.getCodeSystemUri(), version)));
-        include.setConcept(toFhirConcept(rule.getConcepts(), conceptService.query(new ConceptQueryParams().setCodeSystem(rule.getCodeSystem()).setCodeSystemVersion(rule.getCodeSystemVersion().getVersion()).all()).getData()));
+        if (rule.getCodeSystem() != null && rule.getCodeSystemVersion() != null) {
+          include.setConcept(toFhirConcept(rule.getConcepts(), conceptService.query(new ConceptQueryParams().setCodeSystem(rule.getCodeSystem()).setCodeSystemVersion(rule.getCodeSystemVersion().getVersion()).all()).getData()));
+        }
       } else {
         include.setSystem(rule.getCodeSystemUri());
         include.setVersion(version);
