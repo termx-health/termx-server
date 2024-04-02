@@ -67,7 +67,7 @@ public class PackageResourceController {
       try {
         log.info("Package resource sync started");
         long start = System.currentTimeMillis();
-        packageResourceSyncService.sync(id, request.getType());
+        packageResourceSyncService.sync(id, request.getType(), false);
         log.info("Package resource sync took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
         importLogger.logImport(job.getJobId());
       } catch (ApiClientException e) {

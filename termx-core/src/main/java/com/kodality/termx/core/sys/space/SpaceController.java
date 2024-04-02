@@ -88,10 +88,11 @@ public class SpaceController {
 
   @Authorized(Privilege.S_EDIT)
   @Post("/{id}/sync")
-  public HttpResponse<?> syncResources(@PathVariable Long id, @Body Map<String, String> request) {
+  public HttpResponse<?> syncResources(@PathVariable Long id, @Body Map<String, Object> request) {
     JobLogResponse response = syncService.syncResources(id,
-        request.getOrDefault("packageCode", null),
-        request.getOrDefault("version", null));
+        (String) request.getOrDefault("packageCode", null),
+        (String) request.getOrDefault("version", null),
+        (boolean) request.getOrDefault("clearSync", false));
     return HttpResponse.accepted().body(response);
   }
 

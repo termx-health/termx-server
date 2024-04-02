@@ -1,14 +1,15 @@
 package com.kodality.termx.terminology.fhir.codesystem.providers;
 
-import com.kodality.termx.sys.ResourceType;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceProvider;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceSyncProvider;
 import com.kodality.termx.terminology.terminology.FhirServerHttpClientService;
-import com.kodality.zmei.fhir.client.FhirClient;
-import com.kodality.zmei.fhir.client.FhirClientError;
+import com.kodality.termx.terminology.terminology.FhirServerHttpClientService.FhirServerHttpClient;
+import com.kodality.zmei.fhir.resource.ResourceType;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
+import com.kodality.zmei.fhir.search.FhirQueryParams;
 import jakarta.inject.Singleton;
-import java.util.concurrent.CompletionException;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 
 @Singleton
@@ -18,21 +19,29 @@ public class TerminologyServerCodeSystemProvider implements TerminologyServerRes
 
   @Override
   public String getType() {
-    return ResourceType.codeSystem;
+    return com.kodality.termx.sys.ResourceType.codeSystem;
   }
 
   @Override
   public Object getResource(Long serverId, String resourceId) {
-    FhirClient client = fhirClientService.getHttpClient(serverId);
-    return client.read("CodeSystem", resourceId).join();
+    FhirServerHttpClient client = fhirClientService.getHttpClient(serverId);
+    return client.read(ResourceType.codeSystem, resourceId).join();
   }
 
   @Override
-  public void sync(Long sourceServerId, Long targetServerId, String resourceId) {
-    FhirClient sourceClient = fhirClientService.getHttpClient(sourceServerId);
-    FhirClient targetClient = fhirClientService.getHttpClient(targetServerId);
+  public void sync(Long sourceServerId, Long targetServerId, String resourceId, boolean clearSync) {
+    FhirServerHttpClient sourceClient = fhirClientService.getHttpClient(sourceServerId);
+    FhirServerHttpClient targetClient = fhirClientService.getHttpClient(targetServerId);
 
-    CodeSystem codeSystem = sourceClient.<CodeSystem>read("CodeSystem", resourceId).join();
+    CodeSystem codeSystem = sourceClient.<CodeSystem>read(ResourceType.codeSystem, resourceId).join();
+    if (clearSync) {
+      if (codeSystem.getUrl().equals("http://snomed.info/sct") || codeSystem.getUrl().startsWith("http://snomed.info/sct")) {
+        throw new RuntimeException();
+      }
+      targetClient.search(ResourceType.codeSystem, new FhirQueryParams(Map.of("url", List.of(codeSystem.getUrl())))).join().getEntry().forEach(e -> {
+        targetClient.delete(ResourceType.codeSystem, ((CodeSystem) e.getResource()).getId()).join();
+      });
+    }
     targetClient.update(codeSystem.getId(), codeSystem).join();
   }
 }

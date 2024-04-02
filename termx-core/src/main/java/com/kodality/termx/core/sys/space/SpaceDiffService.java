@@ -93,6 +93,8 @@ public class SpaceDiffService {
 
     current.remove("meta");
     comparable.remove("meta");
+    current.remove("text");
+    comparable.remove("text");
     return JsonUtil.toJson(current).equals(JsonUtil.toJson(comparable));
   }
 }

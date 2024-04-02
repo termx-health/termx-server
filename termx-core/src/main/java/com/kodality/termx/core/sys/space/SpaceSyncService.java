@@ -28,11 +28,11 @@ public class SpaceSyncService {
   private final PackageResourceSyncService packageResourceSyncService;
 
   private static final String JOB = "space-resource-sync";
-  public JobLogResponse syncResources(Long spaceId, String packageCode, String version) {
+  public JobLogResponse syncResources(Long spaceId, String packageCode, String version, boolean clearSync) {
     JobLogResponse job = importLogger.createJob(JOB);
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
-        ImportLog log = sync(spaceId, packageCode, version);
+        ImportLog log = sync(spaceId, packageCode, version, clearSync);
         importLogger.logImport(job.getJobId(), log);
       } catch (ApiClientException e) {
         importLogger.logImport(job.getJobId(), e);
@@ -43,22 +43,23 @@ public class SpaceSyncService {
     return job;
   }
 
-  public ImportLog sync(Long spaceId, String packageCode, String version) {
+  public ImportLog sync(Long spaceId, String packageCode, String version, boolean clearSync) {
     TerminologyServer currentServer = terminologyServerService.loadCurrentInstallation();
     if (currentServer == null) {
       throw ApiError.TC105.toApiException();
     }
 
     List<PackageResource> resources = packageResourceService.loadAll(spaceId, packageCode, version);
-    
     ImportLog log = new ImportLog().setErrors(new ArrayList<>()).setSuccesses(new ArrayList<>());
     resources.forEach(resource -> {
-      boolean isUpToDate = diffService.isUpToDate(resource, currentServer);
-      if (isUpToDate) {
-        return;
+      if (!clearSync) {
+        boolean isUpToDate = diffService.isUpToDate(resource, currentServer);
+        if (isUpToDate) {
+          return;
+        }
       }
       try {
-        packageResourceSyncService.sync(resource.getId(), PackageResourceSyncType.external);
+        packageResourceSyncService.sync(resource.getId(), PackageResourceSyncType.external, clearSync);
         log.getSuccesses().add(String.join("|", resource.getResourceId(), resource.getResourceType()));
       } catch (Exception e) {
         log.getErrors().add(String.join("|", resource.getResourceId(), resource.getResourceType(), e.getMessage()));
