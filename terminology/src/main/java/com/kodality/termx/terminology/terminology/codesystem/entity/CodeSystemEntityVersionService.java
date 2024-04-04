@@ -117,7 +117,6 @@ public class CodeSystemEntityVersionService {
     if (version == null) {
       return null;
     }
-    System.out.println("here");
     version.setDesignations(designationService.loadAll(version.getId(), version.getBaseEntityVersionId()));
     version.setPropertyValues(entityPropertyValueService.loadAll(version.getId(), version.getBaseEntityVersionId()));
     version.setAssociations(codeSystemAssociationService.loadAll(version.getId(), version.getBaseEntityVersionId()));

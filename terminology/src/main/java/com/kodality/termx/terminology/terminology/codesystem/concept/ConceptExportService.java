@@ -100,7 +100,8 @@ public class ConceptExportService {
             Stream.of(pv.getEntityProperty()))
         .collect(Collectors.groupingBy(v -> v)).keySet());
     fields.addAll(Optional.ofNullable(codeSystem.getProperties()).orElse(List.of()).stream()
-        .map(PropertyReference::getName).filter(p -> List.of("status", "is-a", "parent", "child", "partOf", "groupedBy", "classifiedWith").contains(p)).toList());
+        .map(PropertyReference::getName)
+        .filter(p -> List.of("status", "is-a", "parent", "child", "partOf", "groupedBy", "classifiedWith").contains(p)).toList());
     return fields;
   }
 
