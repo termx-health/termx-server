@@ -21,6 +21,7 @@ public class CodeSystemFileImportResult {
     private String propertyType;
     private String propertyName;
     private String propertyKind;
+    private String propertyCodeSystem;
   }
 
   @Getter
@@ -31,6 +32,7 @@ public class CodeSystemFileImportResult {
     private String propertyName;
     private String propertyType;
     private String propertyTypeFormat;
+    private String propertyCodeSystem;
     private String lang;
     private Object value;
   }

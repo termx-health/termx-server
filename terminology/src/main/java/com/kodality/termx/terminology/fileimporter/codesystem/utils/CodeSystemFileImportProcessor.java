@@ -108,7 +108,8 @@ public class CodeSystemFileImportProcessor {
           return new FileProcessingResponseProperty()
               .setPropertyName(p.getPropertyName() != null ? p.getPropertyName() : p.getColumnName())
               .setPropertyType(DESIGNATION_PROPERTY_TYPE.equals(p.getPropertyType()) ? EntityPropertyType.string : p.getPropertyType())
-              .setPropertyKind(DESIGNATION_PROPERTY_TYPE.equals(p.getPropertyType()) ? EntityPropertyKind.designation : EntityPropertyKind.property);
+              .setPropertyKind(DESIGNATION_PROPERTY_TYPE.equals(p.getPropertyType()) ? EntityPropertyKind.designation : EntityPropertyKind.property)
+              .setPropertyCodeSystem(p.getPropertyCodeSystem());
         })
         .filter(distinctByKey(FileProcessingResponseProperty::getPropertyName))
         .collect(Collectors.toList());
@@ -135,6 +136,7 @@ public class CodeSystemFileImportProcessor {
       ep.setPropertyName(prop.getName());
       ep.setPropertyType(DESIGNATION_PROPERTY_TYPE.equals(prop.getPropertyType()) ? EntityPropertyType.string : prop.getPropertyType());
       ep.setPropertyTypeFormat(prop.getPropertyTypeFormat());
+      ep.setPropertyCodeSystem(prop.getPropertyCodeSystem());
       ep.setLang(prop.getLanguage());
       ep.setValue(transformedValue);
       return ep;

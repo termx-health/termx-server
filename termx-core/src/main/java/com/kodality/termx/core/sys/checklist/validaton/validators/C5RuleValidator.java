@@ -12,11 +12,11 @@ import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Singleton
-public class C4RuleValidator implements CodeSystemRuleValidator {
+public class C5RuleValidator implements CodeSystemRuleValidator {
   private final static int MAX_DESIGNATION_LENGTH = 500;
   @Override
   public String getRuleCode() {
-    return "C4";
+    return "C5";
   }
 
   @Override

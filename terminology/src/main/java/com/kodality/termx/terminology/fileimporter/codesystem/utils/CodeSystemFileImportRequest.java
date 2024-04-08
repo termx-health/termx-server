@@ -43,6 +43,7 @@ public class CodeSystemFileImportRequest {
     private String propertyName;
     private String propertyType;
     private String propertyTypeFormat;
+    private String propertyCodeSystem;
     private String propertyDelimiter;
     private boolean preferred;
     private String language;

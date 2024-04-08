@@ -24,8 +24,10 @@ import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
+import com.kodality.termx.ts.codesystem.EntityPropertyRule;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,6 +129,9 @@ public class CodeSystemFileImportMapper {
           property.setType(fpProperty.getPropertyType());
           property.setKind(fpProperty.getPropertyKind());
           property.setStatus(PublicationStatus.active);
+          if (StringUtils.isNotEmpty(fpProperty.getPropertyCodeSystem())) {
+            property.setRule(new EntityPropertyRule().setCodeSystems(List.of(fpProperty.getPropertyCodeSystem())));
+          }
           return property;
         }).collect(Collectors.toList());
   }
