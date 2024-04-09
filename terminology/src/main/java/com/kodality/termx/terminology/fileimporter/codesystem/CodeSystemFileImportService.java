@@ -362,7 +362,7 @@ public class CodeSystemFileImportService {
             base.setCodeSystem(StringUtils.join(rule.getCodeSystems(), ","));
             List<Concept> resp = ListUtils.union(
                 conceptService.query(base.setCodes(externalConceptCodes)).getData(),
-                conceptService.query(base.setDesignationCiEq(codes).setCode(null)).getData()
+                conceptService.query(base.setDesignationCiEq(codes).setCodes(null)).getData()
             ).stream().filter(distinctByKey(Concept::getCode)).toList();
 
             log.info("\tquery took {} millis", System.currentTimeMillis() - start);
