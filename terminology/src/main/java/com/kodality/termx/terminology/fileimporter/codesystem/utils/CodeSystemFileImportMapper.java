@@ -80,7 +80,7 @@ public class CodeSystemFileImportMapper {
     codeSystem.setBaseCodeSystem(fpCodeSystem.getSupplement());
     codeSystem.setBaseCodeSystemUri(fpCodeSystem.getSupplementUri());
     codeSystem.setExternalWebSource(fpCodeSystem.isExternalWebSource());
-    codeSystem.setHierarchyMeaning(toHierarchyMeaning(result.getProperties()).orElse(null));
+    codeSystem.setHierarchyMeaning(CodeSystemContent.supplement.equals(codeSystem.getContent()) ? null : toHierarchyMeaning(result.getProperties()).orElse(null));
     codeSystem.setContacts(CollectionUtils.isNotEmpty(fpCodeSystem.getContact()) ? toContacts(fpCodeSystem.getContact()) : codeSystem.getContacts());
     if (fpCodeSystem.getAdmin() != null || fpCodeSystem.getEndorser() != null) {
       Permissions permissions = new Permissions();
