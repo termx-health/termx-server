@@ -69,7 +69,8 @@ public class ConceptExportService {
 
   private byte[] composeResult(String codeSystemId, String version, String format) {
     CodeSystem codeSystem = codeSystemService.load(codeSystemId).orElseThrow();
-    List<Concept> concepts = conceptService.query(new ConceptQueryParams().setCodeSystem(codeSystemId).setCodeSystemVersion(version).all()).getData();
+    List<Concept> concepts = conceptService.query(new ConceptQueryParams().setCodeSystem(codeSystemId).setCodeSystemVersion(version)
+        .setCodeSystemEntityStatus(PublicationStatus.active).all()).getData();
 
     List<Pair<String, String>> associations = concepts.stream().flatMap(c -> c.getVersions().stream())
         .flatMap(v -> Optional.ofNullable(v.getAssociations()).orElse(List.of()).stream().map(a -> Pair.of(v.getCode(), a.getTargetCode()))).toList();
@@ -98,7 +99,7 @@ public class ConceptExportService {
         .flatMap(pv -> pv.getEntityPropertyType().equals(EntityPropertyType.coding) ?
             Stream.of(pv.getEntityProperty(), pv.getEntityProperty() + "#system") :
             Stream.of(pv.getEntityProperty()))
-        .collect(Collectors.groupingBy(v -> v)).keySet());
+        .collect(Collectors.groupingBy(v -> v)).keySet().stream().sorted().toList());
     fields.addAll(Optional.ofNullable(codeSystem.getProperties()).orElse(List.of()).stream()
         .map(PropertyReference::getName)
         .filter(p -> List.of("status", "is-a", "parent", "child", "partOf", "groupedBy", "classifiedWith").contains(p)).toList());
