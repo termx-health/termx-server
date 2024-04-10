@@ -223,7 +223,7 @@ public abstract class BaseFhirMapper {
   protected static void toFhir(DomainResource resource, List<ConfigurationAttribute> configurationAttributes, Map<String, Concept> concepts) {
     configurationAttributes.forEach(attr -> {
       Concept concept = concepts.get(attr.getAttribute());
-      if (concept == null || (Boolean) concept.getLastVersion().map(v -> v.getPropertyValue("fhir").orElse(false)).orElse(false)) {
+      if (concept == null || !((Boolean) concept.getLastVersion().map(v -> v.getPropertyValue("fhir").orElse(false)).orElse(false))) {
         return;
       }
       Extension extension = new Extension();
