@@ -307,6 +307,7 @@ public class CodeSystemImportService {
         .mapToObj(i -> entityIds.subList(i * 10000, Math.min(versions.size(), (i + 1) * 10000))).forEach(batch -> {
           CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams()
               .setCodeSystemEntityIds(batch.stream().map(String::valueOf).collect(Collectors.joining(",")))
+              .setCodeSystemVersionId(csVersionId)
               .setStatus(String.join(",", PublicationStatus.active, PublicationStatus.draft))
               .all();
           Map<Long, List<CodeSystemEntityVersion>> existingVersions =
@@ -329,6 +330,7 @@ public class CodeSystemImportService {
 
   private List<CodeSystemEntityVersion> mergeWithActiveVersion(List<CodeSystemEntityVersion> newVersions, CodeSystemEntityVersion activeVersion,
                                                                Long csVersionId) {
+    System.out.println("Retired: " + activeVersion.getCode());
     codeSystemEntityVersionService.retire(activeVersion.getId());
     codeSystemVersionService.unlinkEntityVersions(csVersionId, List.of(activeVersion.getId()));
     return mergeVersions(newVersions, activeVersion);
