@@ -45,15 +45,14 @@ public class LoincController {
       @Part("request") String request) {
     LoincImportRequest req = JsonUtil.fromJson(request, LoincImportRequest.class);
     List<Pair<String, byte[]>> files = List.of(
-        Pair.of("parts", partsFile != null ? FileUtil.readBytes(Flowable.fromPublisher(partsFile).firstOrError().blockingGet()) : null),
-        Pair.of("terminology", terminologyFile != null ? FileUtil.readBytes(Flowable.fromPublisher(terminologyFile).firstOrError().blockingGet()) : null),
-        Pair.of("supplementary-properties",
-            supplementaryPropertiesFile != null ? FileUtil.readBytes(Flowable.fromPublisher(supplementaryPropertiesFile).firstOrError().blockingGet()) : null),
-        Pair.of("panels", panelsFile != null ? FileUtil.readBytes(Flowable.fromPublisher(panelsFile).firstOrError().blockingGet()) : null),
-        Pair.of("answer-list", answerListFile != null ? FileUtil.readBytes(Flowable.fromPublisher(answerListFile).firstOrError().blockingGet()) : null),
-        Pair.of("answer-list-link", answerListLinkFile != null ? FileUtil.readBytes(Flowable.fromPublisher(answerListLinkFile).firstOrError().blockingGet()) : null),
-        Pair.of("translations", translationsFile != null ? FileUtil.readBytes(Flowable.fromPublisher(translationsFile).firstOrError().blockingGet()) : null),
-        Pair.of("order-observation", orderObservationFile != null ? FileUtil.readBytes(Flowable.fromPublisher(orderObservationFile).firstOrError().blockingGet()) : null));
+        Pair.of("parts", getBytes(partsFile)),
+        Pair.of("terminology", getBytes(terminologyFile)),
+        Pair.of("supplementary-properties", getBytes(supplementaryPropertiesFile)),
+        Pair.of("panels", getBytes(panelsFile)),
+        Pair.of("answer-list", getBytes(answerListFile)),
+        Pair.of("answer-list-link", getBytes(answerListLinkFile)),
+        Pair.of("translations", getBytes(translationsFile)),
+        Pair.of("order-observation", getBytes(orderObservationFile)));
 
     JobLogResponse jobLogResponse = importLogger.createJob("LOINC-IMPORT");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
@@ -72,5 +71,12 @@ public class LoincController {
       }
     }));
     return jobLogResponse;
+  }
+
+  private static byte[] getBytes(Publisher<CompletedFileUpload> file) {
+    try {
+      return FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet());
+    } catch (RuntimeException ignored) {}
+    return null;
   }
 }
