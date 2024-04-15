@@ -254,7 +254,11 @@ public class SnowstormClient {
 
   public String getLanguages(String branch) {
     if (branch.startsWith("MAIN/") && branch.split("/").length > 1) {
-      return String.join(",", loadCodeSystem(branch.split("/")[1]).join().getLanguages().keySet());
+      try {
+        return String.join(",", loadCodeSystem(branch.split("/")[1]).join().getLanguages().keySet());
+      } catch (RuntimeException e) {
+        return "en";
+      }
     }
     return "en";
   }
