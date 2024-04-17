@@ -86,12 +86,7 @@ public class CodeSystemVersionService {
       return;
     }
     repository.activate(codeSystem, version);
-
-    List<CodeSystemEntityVersion> entityVersions = entityVersionService.query(new CodeSystemEntityVersionQueryParams()
-        .setStatus(PublicationStatus.draft)
-        .setCodeSystem(codeSystem)
-        .setCodeSystemVersion(version).all()).getData();
-    entityVersionService.activate(codeSystem, entityVersions.stream().map(CodeSystemEntityVersion::getId).toList());
+    entityVersionService.activate(codeSystem, version);
   }
 
   @Transactional

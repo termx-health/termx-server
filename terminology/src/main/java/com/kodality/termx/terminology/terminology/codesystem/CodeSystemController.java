@@ -403,6 +403,13 @@ public class CodeSystemController {
     return codeSystemAssociationService.loadReferences(codeSystem, id);
   }
 
+  @Authorized(Privilege.CS_EDIT)
+  @Post(uri = "/{codeSystem}/versions/{version}/entity-versions/activate")
+  public HttpResponse<?> activateEntityVersions(@PathVariable String codeSystem, @PathVariable String version) {
+    codeSystemEntityVersionService.activate(codeSystem, version);
+    return HttpResponse.ok();
+  }
+
 
   //----------------CodeSystem Property----------------
 

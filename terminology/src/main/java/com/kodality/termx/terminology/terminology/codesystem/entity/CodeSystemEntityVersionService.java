@@ -187,9 +187,18 @@ public class CodeSystemEntityVersionService {
   }
 
   @Transactional
-  public void activate(String codeSystem, List<Long> versionIds) {
+  public void activate(String codeSystem, String codeSystemVersion) {
+    List<Long> entityVersionIds = query(new CodeSystemEntityVersionQueryParams()
+        .setStatus(PublicationStatus.draft)
+        .setCodeSystem(codeSystem)
+        .setCodeSystemVersion(codeSystemVersion).all()).getData().stream().map(CodeSystemEntityVersion::getId).toList();
+    activate(codeSystem, entityVersionIds);
+  }
+
+  @Transactional
+  public void activate(String codeSystem, List<Long> entityVersionIds) {
     long start = System.currentTimeMillis();
-    repository.activate(codeSystem, versionIds);
+    repository.activate(codeSystem, entityVersionIds);
     conceptRefreshViewJob.refreshView();
     log.info("Activated (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }
