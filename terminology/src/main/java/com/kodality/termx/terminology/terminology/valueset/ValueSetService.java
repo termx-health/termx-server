@@ -10,6 +10,7 @@ import com.kodality.termx.ts.valueset.ValueSetTransactionRequest;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -35,14 +36,14 @@ public class ValueSetService {
 
   @Transactional
   public void save(ValueSet valueSet) {
-    validateId(valueSet.getId());
+    validate(valueSet);
     repository.save(valueSet);
   }
 
   @Transactional
   public void save(ValueSetTransactionRequest request) {
     ValueSet valueSet = request.getValueSet();
-    validateId(valueSet.getId());
+    validate(valueSet);
     repository.save(valueSet);
 
     ValueSetVersion version = request.getVersion();
@@ -92,6 +93,18 @@ public class ValueSetService {
   private void validateId(String id) {
     if (id.contains(BaseFhirMapper.SEPARATOR)) {
       throw ApiError.TE113.toApiException(Map.of("symbols", BaseFhirMapper.SEPARATOR));
+    }
+  }
+
+  private void validate(ValueSet valueSet) {
+    validateId(valueSet.getId());
+
+    if (CollectionUtils.isNotEmpty(valueSet.getConfigurationAttributes())) {
+      valueSet.getConfigurationAttributes().forEach(c -> {
+        if (StringUtils.isEmpty(c.getValue())) {
+          throw ApiError.TE117.toApiException(Map.of("valueSet", valueSet.getId()));
+        }
+      });
     }
   }
 }

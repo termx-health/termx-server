@@ -16,12 +16,14 @@ import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleType;
+import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 @Singleton
@@ -35,7 +37,7 @@ public class CodeSystemService {
 
   @Transactional
   public void save(CodeSystem codeSystem) {
-    validateId(codeSystem.getId());
+    validate(codeSystem);
     repository.save(codeSystem);
     entityPropertyService.save(codeSystem.getId(), codeSystem.getProperties());
   }
@@ -43,7 +45,7 @@ public class CodeSystemService {
   @Transactional
   public void save(CodeSystemTransactionRequest request) {
     CodeSystem codeSystem = request.getCodeSystem();
-    validateId(codeSystem.getId());
+    validate(codeSystem);
     repository.save(codeSystem);
 
     entityPropertyService.save(codeSystem.getId(), request.getProperties());
@@ -137,6 +139,18 @@ public class CodeSystemService {
   private void validateId(String id) {
     if (id.contains(BaseFhirMapper.SEPARATOR)) {
       throw ApiError.TE113.toApiException(Map.of("symbols", BaseFhirMapper.SEPARATOR));
+    }
+  }
+
+  private void validate(CodeSystem codeSystem) {
+    validateId(codeSystem.getId());
+
+    if (CollectionUtils.isNotEmpty(codeSystem.getConfigurationAttributes())) {
+      codeSystem.getConfigurationAttributes().forEach(c -> {
+        if (StringUtils.isEmpty(c.getValue())) {
+          throw ApiError.TE116.toApiException(Map.of("codeSystem", codeSystem.getId()));
+        }
+      });
     }
   }
 }

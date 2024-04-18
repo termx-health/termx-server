@@ -12,6 +12,8 @@ import com.kodality.termx.ts.mapset.MapSetQueryParams;
 import com.kodality.termx.ts.mapset.MapSetTransactionRequest;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
+import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +41,7 @@ public class MapSetService {
 
   @Transactional
   public void save(MapSet mapSet) {
-    validateId(mapSet.getId());
+    validate(mapSet);
     repository.save(mapSet);
     mapSetPropertyService.save(mapSet.getProperties(), mapSet.getId());
   }
@@ -47,7 +49,7 @@ public class MapSetService {
   @Transactional
   public void save(MapSetTransactionRequest request) {
     MapSet mapSet = request.getMapSet();
-    validateId(mapSet.getId());
+    validate(mapSet);
     repository.save(mapSet);
     mapSetPropertyService.save(request.getProperties(), mapSet.getId());
 
@@ -97,6 +99,18 @@ public class MapSetService {
   private void validateId(String id) {
     if (id.contains(BaseFhirMapper.SEPARATOR)) {
       throw ApiError.TE113.toApiException(Map.of("symbols", BaseFhirMapper.SEPARATOR));
+    }
+  }
+
+  private void validate(MapSet mapSet) {
+    validateId(mapSet.getId());
+
+    if (CollectionUtils.isNotEmpty(mapSet.getConfigurationAttributes())) {
+      mapSet.getConfigurationAttributes().forEach(c -> {
+        if (StringUtils.isEmpty(c.getValue())) {
+          throw ApiError.TE118.toApiException(Map.of("mapSet", mapSet.getId()));
+        }
+      });
     }
   }
 }
