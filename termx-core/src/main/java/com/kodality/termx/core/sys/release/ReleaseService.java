@@ -5,6 +5,7 @@ import com.kodality.termx.core.ApiError;
 import com.kodality.termx.core.sys.checklist.ChecklistService;
 import com.kodality.termx.core.sys.checklist.validaton.ChecklistValidationService;
 import com.kodality.termx.core.sys.release.resource.ReleaseResourceService;
+import com.kodality.termx.core.sys.release.resource.providers.ReleaseResourceProvider;
 import com.kodality.termx.sys.checklist.Checklist;
 import com.kodality.termx.sys.checklist.ChecklistQueryParams;
 import com.kodality.termx.sys.checklist.ChecklistValidationRequest;
@@ -29,6 +30,7 @@ public class ReleaseService {
   private final ReleaseResourceService resourceService;
   private final ChecklistValidationService validationService;
   private final ChecklistService checklistService;
+  private final List<ReleaseResourceProvider> resourceProviders;
 
   @Transactional
   public Release save(Release release) {
@@ -66,6 +68,10 @@ public class ReleaseService {
     if (PublicationStatus.active.equals(status)) {
       validateChecklist(id);
     }
+
+    List<ReleaseResource> resources = resourceService.loadAll(id);
+    resources.forEach(r -> resourceProviders.forEach(provider -> provider.activate(r.getResourceType(), r.getResourceId(), r.getResourceVersion())));
+
     Release currentRelease = load(id);
     if (status.equals(currentRelease.getStatus())) {
       log.warn("Release '{}' is already activated, skipping activation process.", currentRelease.getCode());

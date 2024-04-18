@@ -23,7 +23,6 @@ public class ReleaseResourceRepository extends BaseRepository {
     ssb.property("resource_id", resource.getResourceId());
     ssb.property("resource_version", resource.getResourceVersion());
     ssb.jsonProperty("resource_names", resource.getResourceNames());
-    ssb.property("error_count", resource.getErrorCount());
 
     SqlBuilder sb = ssb.buildSave("sys.release_resource", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());

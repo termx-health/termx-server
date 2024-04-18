@@ -41,3 +41,8 @@ create index release_resource_release_idx on sys.release_resource (release_id);
 select core.create_table_metadata('sys.release');
 select core.create_table_metadata('sys.release_resource');
 --
+
+
+--changeset kodality:release-authors
+alter table sys.release add column authors jsonb;
+--

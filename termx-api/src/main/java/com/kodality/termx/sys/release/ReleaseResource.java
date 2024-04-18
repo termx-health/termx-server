@@ -14,5 +14,4 @@ public class ReleaseResource {
   private String resourceId;
   private String resourceVersion;
   private LocalizedName resourceNames;
-  private Long errorCount;
 }

@@ -11,6 +11,8 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ReleaseQueryParams extends QueryParams {
   private String textContains;
+  private String status;
+  private String resource; //type or type|id or type|id|version
 
   private List<Long> permittedIds;
 }
