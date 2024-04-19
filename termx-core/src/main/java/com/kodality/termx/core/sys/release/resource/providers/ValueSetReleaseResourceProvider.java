@@ -3,7 +3,6 @@ package com.kodality.termx.core.sys.release.resource.providers;
 
 import com.kodality.termx.core.ts.ValueSetProvider;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
-import com.kodality.zmei.fhir.resource.ResourceType;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +23,6 @@ public class ValueSetReleaseResourceProvider extends ReleaseResourceProvider {
 
   @Override
   public String getResourceType() {
-    return ResourceType.valueSet;
+    return "ValueSet";
   }
 }
