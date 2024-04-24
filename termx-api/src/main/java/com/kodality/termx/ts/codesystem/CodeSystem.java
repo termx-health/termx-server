@@ -49,6 +49,8 @@ public class CodeSystem {
   private String baseCodeSystemUri;
   private CodeSystemSettings settings;
 
+  private String valueSet;
+
   private List<Concept> concepts;
   private List<EntityProperty> properties;
   private List<CodeSystemVersion> versions;

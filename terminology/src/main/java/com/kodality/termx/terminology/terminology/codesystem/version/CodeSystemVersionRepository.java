@@ -26,6 +26,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
     pb.addColumnProcessor("supported_languages", PgBeanProcessor.fromArray());
     pb.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
     pb.addColumnProcessor("base_code_system_version", PgBeanProcessor.fromJson());
+    pb.addColumnProcessor("value_set", PgBeanProcessor.fromJson());
   });
 
   private final static String select = "select csv.*, " +
@@ -33,7 +34,11 @@ public class CodeSystemVersionRepository extends BaseRepository {
                                        "                 where evcsvm.code_system_version_id = csv.id and evcsvm.code_system_entity_version_id = csev.id and evcsvm.sys_status = 'A' and csev.sys_status = 'A') " +
                                        "as concepts_total, " +
                                        "(select cs.base_code_system from terminology.code_system cs where cs.id = csv.code_system and cs.sys_status = 'A') as base_code_system, " +
-                                       "(select json_build_object('id', csv1.id, 'version', csv1.version, 'uri', csv1.uri) from terminology.code_system_version csv1 where csv1.id = csv.base_code_system_version_id and csv1.sys_status = 'A') as base_code_system_version ";
+                                       "(select json_build_object('id', csv1.id, 'version', csv1.version, 'uri', csv1.uri) from terminology.code_system_version csv1 where csv1.id = csv.base_code_system_version_id and csv1.sys_status = 'A') as base_code_system_version, " +
+                                       "(select json_build_object('valueSet', vsv.value_set, 'version', vsv.version) from terminology.value_set_version vsv " +
+                                       "        inner join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A'" +
+                                       "        inner join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' and vsvr.type = 'include'" +
+                                       "        where vsv.sys_status = 'A' and vsvr.code_system = csv.code_system and vsvr.code_system_version_id = csv.id and vsvr.concepts is null and vsvr.filters is null) as value_set ";
 
   public void save(CodeSystemVersion version) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();

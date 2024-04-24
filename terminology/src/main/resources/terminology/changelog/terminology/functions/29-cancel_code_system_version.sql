@@ -29,7 +29,7 @@ csev as (
 		                     and m.csev_id = m2.code_system_entity_version_id
 		                     and m.id <> m2.id 
 		                     and m.code_system_version_id <> m2.code_system_version_id
-		         where m2.sys_status = 'A'), 0) as reused
+		         where m2.sys_status = 'A' limit 1), 0) as reused
 	  from memb m
 ),
 assoc as ( 

@@ -61,7 +61,11 @@ public class CodeSystemRepository extends BaseRepository {
                                        "               'created', ep.created, " +
                                        "               'definedEntityPropertyId', ep.defined_entity_property_id) as p " +
                                        "from terminology.entity_property ep where ep.code_system = cs.id and ep.sys_status = 'A' order by ep.order_number) ep) as properties, " +
-                                       "(select cs1.uri from terminology.code_system cs1 where cs1.id = cs.base_code_system and cs1.sys_status = 'A') as base_code_system_uri ";
+                                       "(select cs1.uri from terminology.code_system cs1 where cs1.id = cs.base_code_system and cs1.sys_status = 'A') as base_code_system_uri, " +
+                                       "(select distinct on (vsv.value_set) vsv.value_set from terminology.value_set_version vsv " +
+                                       "        inner join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A'" +
+                                       "        inner join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' and vsvr.type = 'include'" +
+                                       "        where vsv.sys_status = 'A' and vsvr.code_system = cs.id and vsvr.concepts is null and vsvr.filters is null) as value_set ";
 
   public void save(CodeSystem codeSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();

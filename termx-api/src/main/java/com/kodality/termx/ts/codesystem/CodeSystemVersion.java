@@ -2,6 +2,7 @@ package com.kodality.termx.ts.codesystem;
 
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
+import com.kodality.termx.ts.valueset.ValueSetVersionReference;
 import io.micronaut.core.annotation.Introspected;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -26,6 +27,8 @@ public class CodeSystemVersion extends CodeSystemVersionReference {
 
   private String baseCodeSystem;
   private String baseCodeSystemUri;
+
+  private ValueSetVersionReference valueSet;
 
   private Integer conceptsTotal;
 

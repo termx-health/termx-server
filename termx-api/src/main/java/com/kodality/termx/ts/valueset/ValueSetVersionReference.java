@@ -9,5 +9,6 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class ValueSetVersionReference {
   private Long id;
+  private String valueSet;
   private String version;
 }
