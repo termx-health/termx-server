@@ -4,16 +4,22 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.core.Privilege;
 import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.core.auth.SessionStore;
+import com.kodality.termx.core.sys.checklist.assertion.ChecklistAssertionExportService;
 import com.kodality.termx.core.sys.checklist.assertion.ChecklistAssertionService;
 import com.kodality.termx.core.sys.checklist.validaton.ChecklistValidationService;
 import com.kodality.termx.core.sys.checklist.rule.ChecklistRuleService;
+import com.kodality.termx.core.sys.lorque.LorqueProcessService;
 import com.kodality.termx.sys.checklist.Checklist;
 import com.kodality.termx.sys.checklist.ChecklistAssertion;
 import com.kodality.termx.sys.checklist.ChecklistQueryParams;
 import com.kodality.termx.sys.checklist.ChecklistRule;
 import com.kodality.termx.sys.checklist.ChecklistRuleQueryParams;
 import com.kodality.termx.sys.checklist.ChecklistValidationRequest;
+import com.kodality.termx.sys.lorque.LorqueProcess;
+import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MediaType;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Delete;
@@ -35,6 +41,8 @@ public class ChecklistController {
   private final ChecklistRuleService ruleService;
   private final ChecklistAssertionService assertionService;
   private final ChecklistValidationService validationService;
+  private final ChecklistAssertionExportService assertionExportService;
+  private final LorqueProcessService lorqueProcessService;
 
   //----------------Checklist----------------
 
@@ -90,7 +98,7 @@ public class ChecklistController {
     return HttpResponse.ok();
   }
 
-  //----------------Rule----------------
+  //----------------Assertions----------------
 
   @Authorized(privilege = Privilege.C_EDIT)
   @Post("/{id}/assertions")
@@ -103,6 +111,21 @@ public class ChecklistController {
   public HttpResponse<?> runChecks(@Valid @Body ChecklistValidationRequest request) {
     validationService.runChecks(request);
     return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.C_VIEW)
+  @Get(uri = "/assertions/export{?params*}")
+  public LorqueProcess exportAssertions(Map<String, String> params) {
+    return assertionExportService.export(params.get("resourceType"), params.get("resourceId"), params.get("resourceVersion"));
+  }
+
+  @Authorized(Privilege.C_VIEW)
+  @Get(value = "/assertions/export/result/{lorqueProcessId}", produces = "application/csv")
+  public HttpResponse<?> getAssertionExportResult(Long lorqueProcessId) {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=assertions.csv")
+        .contentType(MediaType.of("application/csv"));
   }
 
   @Getter
