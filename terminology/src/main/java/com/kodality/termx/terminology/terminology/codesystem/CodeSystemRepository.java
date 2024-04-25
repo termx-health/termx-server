@@ -65,7 +65,7 @@ public class CodeSystemRepository extends BaseRepository {
                                        "(select distinct on (vsv.value_set) vsv.value_set from terminology.value_set_version vsv " +
                                        "        inner join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A'" +
                                        "        inner join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' and vsvr.type = 'include'" +
-                                       "        where vsv.sys_status = 'A' and vsvr.code_system = cs.id and vsvr.concepts is null and vsvr.filters is null) as value_set ";
+                                       "        where vsv.sys_status = 'A' and vsvr.code_system = cs.id and vsvr.concepts is null and vsvr.filters is null limit 1) as value_set ";
 
   public void save(CodeSystem codeSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
