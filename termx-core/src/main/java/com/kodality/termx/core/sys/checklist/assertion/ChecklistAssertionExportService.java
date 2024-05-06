@@ -54,8 +54,7 @@ public class ChecklistAssertionExportService {
 
     List<String> headers = List.of("rule_code", "rule_title", "rule_description", "errors");
     List<Object[]> rows = checklists.stream()
-        .filter(checklist -> CollectionUtils.isNotEmpty(checklist.getAssertions()) &&
-            !checklist.getAssertions().get(checklist.getAssertions().size() - 1).isPassed())
+        .filter(checklist -> CollectionUtils.isNotEmpty(checklist.getAssertions()) && !checklist.getAssertions().get(0).isPassed())
         .map(this::composeRow).toList();
 
     return composeCsv(headers, rows);
