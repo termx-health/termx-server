@@ -75,6 +75,7 @@ public class MapSetPropertyRepository extends BaseRepository {
       sb.and().in("msp.name", params.getNames());
     }
     sb.appendIfNotNull("and msp.map_set = ?", params.getMapSet());
+    sb.appendIfNotNull("and msp.defined_entity_property_id = ?", params.getDefinedEntityPropertyId());
     return sb;
   }
 

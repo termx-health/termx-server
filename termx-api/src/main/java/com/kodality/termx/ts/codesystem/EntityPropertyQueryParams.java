@@ -14,4 +14,5 @@ public class EntityPropertyQueryParams extends QueryParams {
   private String names;
   private String codeSystem;
   private List<String> permittedCodeSystems;
+  private Long definedEntityPropertyId;
 }

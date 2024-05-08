@@ -18,6 +18,7 @@ public class MapSetProperty extends PropertyReference {
   private Integer orderNumber;
   private boolean required;
   private OffsetDateTime created;
+  private String mapSet;
 
   private Long definedEntityPropertyId;
 }

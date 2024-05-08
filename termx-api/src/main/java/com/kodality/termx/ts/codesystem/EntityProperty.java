@@ -21,6 +21,7 @@ public class EntityProperty extends PropertyReference {
   private boolean required;
   private boolean showInList;
   private OffsetDateTime created;
+  private String codeSystem;
 
   private Long definedEntityPropertyId;
 }

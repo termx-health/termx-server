@@ -49,4 +49,11 @@ public class DefinedPropertyController {
     return HttpResponse.ok();
   }
 
+  @Authorized(Privilege.DEF_PROP_EDIT)
+  @Post("/{id}/update-related")
+  public HttpResponse<?> updateRelated(@PathVariable Long id) {
+    service.updateRelated(id);
+    return HttpResponse.ok();
+  }
+
 }

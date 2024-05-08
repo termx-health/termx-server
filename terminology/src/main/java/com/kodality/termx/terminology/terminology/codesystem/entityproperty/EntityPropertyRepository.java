@@ -78,7 +78,10 @@ public class EntityPropertyRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getNames())) {
       sb.and().in("ep.name", params.getNames());
     }
-    sb.and().in("ep.code_system", params.getCodeSystem());
+    if (StringUtils.isNotEmpty(params.getCodeSystem())) {
+      sb.and().in("ep.code_system", params.getCodeSystem());
+    }
+    sb.appendIfNotNull("and ep.defined_entity_property_id = ?", params.getDefinedEntityPropertyId());
     return sb;
   }
 

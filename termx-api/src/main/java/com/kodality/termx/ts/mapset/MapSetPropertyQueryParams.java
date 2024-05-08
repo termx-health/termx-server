@@ -14,4 +14,5 @@ public class MapSetPropertyQueryParams extends QueryParams {
   private String names;
   private String mapSet;
   private List<String> permittedMapSets;
+  private Long definedEntityPropertyId;
 }
