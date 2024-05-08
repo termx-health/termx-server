@@ -279,6 +279,7 @@ public class CodeSystemImportService {
         .mapToObj(i -> entityIds.subList(i * 10000, Math.min(versions.size(), (i + 1) * 10000))).forEach(batch -> {
           CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams()
               .setCodeSystemEntityIds(batch.stream().map(String::valueOf).collect(Collectors.joining(",")))
+              .setCodeSystemVersionId(csVersionId)
               .setStatus(String.join(",", PublicationStatus.active, PublicationStatus.draft))
               .all();
           Map<Long, List<CodeSystemEntityVersion>> existingVersions =
