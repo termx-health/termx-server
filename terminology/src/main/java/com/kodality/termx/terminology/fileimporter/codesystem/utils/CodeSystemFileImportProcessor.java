@@ -13,17 +13,20 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.security.auth.login.Configuration.Parameters;
 
 import static com.kodality.termx.terminology.fileimporter.FileParser.csvParser;
 import static com.kodality.termx.terminology.fileimporter.FileParser.tsvParser;
@@ -37,6 +40,7 @@ public class CodeSystemFileImportProcessor {
   public static final String IDENTIFIER_PROPERTY = "concept-code";
   public static final String HIERARCHICAL_CONCEPT = "hierarchical-concept";
   public static final String DESIGNATION_PROPERTY_TYPE = "designation";
+  public static final String RANDOM_UUID = UUID.randomUUID().toString();
 
 
   public static CodeSystemFileImportResult process(CodeSystemFileImportRequest request, byte[] file) {
@@ -100,8 +104,16 @@ public class CodeSystemFileImportProcessor {
         entity.put("conceptOrder", List.of(new FileProcessingEntityPropertyValue().setValue((rows.indexOf(r) + 1) * 10).setPropertyName("conceptOrder")));
       }
       return entity;
-    }).filter(CollectionUtils::isNotEmpty).toList();
+    }).filter(CollectionUtils::isNotEmpty)
+        .collect(Collectors.groupingBy(r -> r.getOrDefault(IDENTIFIER_PROPERTY, r.get(HIERARCHICAL_CONCEPT)).stream()
+            .findFirst().map(v -> (String) v.getValue()).orElse(RANDOM_UUID)));
 
+    if (entities.containsKey(RANDOM_UUID)) {
+      throw ApiError.TE722.toApiException();
+    }
+    if (entities.values().stream().anyMatch(v -> v.size() > 1)) {
+      throw ApiError.TE738.toApiException();
+    }
 
     var properties = importProperties.stream()
         .map(p -> {
@@ -118,7 +130,7 @@ public class CodeSystemFileImportProcessor {
     }
 
 
-    return new CodeSystemFileImportResult().setEntities(entities).setProperties(properties);
+    return new CodeSystemFileImportResult().setEntities(entities.values().stream().flatMap(Collection::stream).toList()).setProperties(properties);
   }
 
 

@@ -92,6 +92,7 @@ public enum ApiError {
   TE735("TE735", "The \"{{property}}\" is missing! Unknown target type!"),
   TE736("TE736", "The \"{{property}}\" is missing! Invalid source type cannot fallback! Change the source type to 'code-system' or provide values!"),
   TE737("TE737", "The \"{{property}}\" is missing! Invalid target type cannot fallback! Change the target type to 'code-system' or provide values!"),
+  TE738("TE738", "File contains duplicate concept code rows."),
   TE801("TE801", "Association type is required, can't be deleted."),
   TE802("TE802", "Association type is used in code system '{{codeSystem}}' association, can't be deleted."),
   TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted."),
