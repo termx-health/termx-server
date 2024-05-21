@@ -133,7 +133,8 @@ public class ValueSetVersionConceptService {
 
           List<Designation> designations = versions.stream()
               .filter(v -> CollectionUtils.isNotEmpty(v.getDesignations()))
-              .flatMap(v -> v.getDesignations().stream()).toList();
+              .flatMap(v -> v.getDesignations().stream())
+              .filter(d -> !PublicationStatus.retired.equals(d.getStatus())).toList();
           if (c.getDisplay() == null || StringUtils.isEmpty(c.getDisplay().getName())) {
             c.setDisplay(ConceptUtil.getDisplay(designations, preferredLanguage, preferredLanguages));
           }
