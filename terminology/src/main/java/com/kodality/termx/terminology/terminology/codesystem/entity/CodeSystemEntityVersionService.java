@@ -66,7 +66,7 @@ public class CodeSystemEntityVersionService {
     }));
 
     long start = System.currentTimeMillis();
-    repository.batchUpsert(versions);
+    repository.batchUpsert(versions, codeSystem);
     log.info("Versions saved ({} sec)", (System.currentTimeMillis() - start) / 1000);
     start = System.currentTimeMillis();
 

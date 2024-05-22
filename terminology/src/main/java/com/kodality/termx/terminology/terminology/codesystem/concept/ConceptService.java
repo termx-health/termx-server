@@ -18,7 +18,6 @@ import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -58,24 +57,15 @@ public class ConceptService {
 
   @Transactional
   public List<Concept> batchSave(List<Concept> concepts, String codeSystem) {
-    List<Concept> existingConcepts = new ArrayList<>();
-
-    IntStream.range(0, (concepts.size() + 1000 - 1) / 1000)
-        .mapToObj(i -> concepts.subList(i * 1000, Math.min(concepts.size(), (i + 1) * 1000)))
-        .forEach(batch -> {
-          ConceptQueryParams params = new ConceptQueryParams();
-          params.setLimit(batch.size());
-          params.setCode(batch.stream().map(Concept::getCode).collect(Collectors.joining(",")));
-          params.setCodeSystem(codeSystem);
-          prepareParams(params);
-          existingConcepts.addAll(repository.query(params).getData());
-        });
+    ConceptQueryParams params = new ConceptQueryParams().setCodeSystem(codeSystem).all();
+    prepareParams(params);
+    Map<String, List<Concept>> existingConcepts = repository.query(params).getData().stream().collect(Collectors.groupingBy(Concept::getCode));
 
     concepts.forEach(concept -> {
       concept.setType(CodeSystemEntityType.concept);
       concept.setCodeSystem(codeSystem);
 
-      Optional<Concept> existingConcept = existingConcepts.stream().filter(ec -> ec.getCode().equals(concept.getCode())).findFirst();
+      Optional<Concept> existingConcept = Optional.ofNullable(existingConcepts.getOrDefault(concept.getCode(), null)).flatMap(l -> l.stream().findFirst());
       existingConcept.ifPresent(value -> {
         concept.setId(value.getId());
         concept.setCodeSystem(value.getCodeSystem());

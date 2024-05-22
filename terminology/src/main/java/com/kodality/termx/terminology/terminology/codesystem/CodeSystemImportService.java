@@ -47,6 +47,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -174,8 +175,7 @@ public class CodeSystemImportService {
   public void saveConcepts(List<Concept> concepts, CodeSystemVersion version, List<EntityProperty> entityProperties, boolean cleanRun) {
     SessionStore.require().checkPermitted(version.getCodeSystem(), Privilege.CS_EDIT);
 
-    concepts =
-        concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new)); //removes duplicate codes
+    concepts = concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new)); //removes duplicate codes
     log.info("Creating '{}' concepts", concepts.size());
     long start = System.currentTimeMillis();
     conceptService.batchSave(concepts, version.getCodeSystem());
@@ -257,18 +257,15 @@ public class CodeSystemImportService {
   }
 
   private void prepareCodeSystemAssociations(Map<Long, List<CodeSystemAssociation>> associations, Long versionId) {
-    List<CodeSystemAssociation> codeSystemAssociations = associations.values().stream().flatMap(Collection::stream).toList();
-
-    IntStream.range(0, (codeSystemAssociations.size() + 1000 - 1) / 1000)
-        .mapToObj(i -> codeSystemAssociations.subList(i * 1000, Math.min(codeSystemAssociations.size(), (i + 1) * 1000))).forEach(batch -> {
-          CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams()
-              .setCode(batch.stream().map(CodeSystemAssociation::getTargetCode).filter(StringUtils::isNotEmpty).collect(Collectors.joining(",")))
-              .setCodeSystemVersionId(versionId);
-          params.setLimit(batch.size());
-          List<CodeSystemEntityVersion> targets = codeSystemEntityVersionService.query(params).getData();
-          batch.forEach(a -> a.setTargetId(a.getTargetCode() == null ? null :
-              targets.stream().filter(t -> t.getCode().equals(a.getTargetCode())).findFirst().map(CodeSystemEntityVersion::getId).orElse(null)));
-        });
+    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(versionId).all();
+    Map<String, List<CodeSystemEntityVersion>> versions =
+        codeSystemEntityVersionService.query(params).getData().stream().collect(Collectors.groupingBy(CodeSystemEntityVersion::getCode));
+    associations.values().stream()
+        .flatMap(Collection::stream)
+        .filter(a -> a.getTargetId() == null && a.getTargetCode() != null)
+        .forEach(a -> a.setTargetId(
+            Optional.ofNullable(versions.getOrDefault(a.getTargetCode(), null)).flatMap(v -> v.stream().findFirst().map(CodeSystemEntityVersion::getId))
+                .orElse(null)));
     associations.keySet().forEach(k -> associations.put(k, associations.get(k).stream().filter(a -> a.getTargetId() != null).toList()));
   }
 
@@ -317,12 +314,15 @@ public class CodeSystemImportService {
       v.setPropertyValues(Optional.ofNullable(v.getPropertyValues()).orElse(new ArrayList<>()));
       v.getPropertyValues().addAll(Optional.ofNullable(sourceVersion.getPropertyValues()).orElse(new ArrayList<>()).stream()
           .filter(pv -> v.getPropertyValues().stream().noneMatch(
-              pv1 -> pv.getEntityPropertyId().equals(pv1.getEntityPropertyId()) && (JsonUtil.toJson(pv.getValue()).equals(JsonUtil.toJson(pv1.getValue())))))
+              pv1 -> Objects.equals(pv.getEntityPropertyId(), pv1.getEntityPropertyId()) &&
+                  Objects.equals(JsonUtil.toJson(pv.getValue()), JsonUtil.toJson(pv1.getValue()))))
           .toList());
       v.setDesignations(Optional.ofNullable(v.getDesignations()).orElse(new ArrayList<>()));
       v.getDesignations().addAll(Optional.ofNullable(sourceVersion.getDesignations()).orElse(new ArrayList<>()).stream()
           .filter(d -> v.getDesignations().stream().noneMatch(
-              d1 -> d.getName().equals(d1.getName()) && d.getLanguage().equals(d1.getLanguage()) && d.getDesignationTypeId().equals(d1.getDesignationTypeId())))
+              d1 -> Objects.equals(d.getName(), d1.getName()) &&
+                  Objects.equals(d.getLanguage(), d1.getLanguage()) &&
+                  Objects.equals(d.getDesignationTypeId(), d1.getDesignationTypeId())))
           .toList());
       v.setAssociations(Optional.ofNullable(v.getAssociations()).orElse(new ArrayList<>()));
       v.getAssociations().addAll(Optional.ofNullable(sourceVersion.getAssociations()).orElse(new ArrayList<>()).stream()
