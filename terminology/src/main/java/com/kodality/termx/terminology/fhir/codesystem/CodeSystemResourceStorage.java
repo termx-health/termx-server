@@ -70,7 +70,7 @@ public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
 
     long start = System.currentTimeMillis();
     CodeSystemVersion version = versionNumber == null ? codeSystemVersionService.loadLastVersion(codeSystemId) :
-        codeSystemVersionService.load(codeSystemId, versionNumber).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "resource not found"));
+        codeSystemVersionService.load(codeSystemId, versionNumber).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "resource not found"));
     log.info("Code System load took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
     start = System.currentTimeMillis();
 

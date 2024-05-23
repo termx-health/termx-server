@@ -42,8 +42,8 @@ public class CodeSystemCompareOperation implements InstanceOperationDefinition, 
     String versionA = req.findParameter("versionA").map(ParametersParameter::getValueString).orElseThrow(() -> new FhirException(400, IssueType.REQUIRED, "versionA required"));
     String versionB = req.findParameter("versionB").map(ParametersParameter::getValueString).orElseThrow(() -> new FhirException(400, IssueType.REQUIRED, "versionB required"));
 
-    Long versionAId = codeSystemVersionService.loadVersionByUri(system, versionA).map(CodeSystemVersionReference::getId).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "versionA not found"));
-    Long versionBId = codeSystemVersionService.loadVersionByUri(system, versionB).map(CodeSystemVersionReference::getId).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "versionB not found"));
+    Long versionAId = codeSystemVersionService.loadVersionByUri(system, versionA).map(CodeSystemVersionReference::getId).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "versionA not found"));
+    Long versionBId = codeSystemVersionService.loadVersionByUri(system, versionB).map(CodeSystemVersionReference::getId).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "versionB not found"));
     return new ResourceContent(FhirMapper.toJson(toFhir(compareService.compare(versionAId, versionBId))), "json");
   }
 
@@ -56,8 +56,8 @@ public class CodeSystemCompareOperation implements InstanceOperationDefinition, 
     String versionA = req.findParameter("versionA").map(ParametersParameter::getValueString).orElseThrow(() -> new FhirException(400, IssueType.REQUIRED, "versionA required"));
     String versionB = req.findParameter("versionB").map(ParametersParameter::getValueString).orElseThrow(() -> new FhirException(400, IssueType.REQUIRED, "versionB required"));
 
-    Long versionAId = codeSystemVersionService.load(csId, versionA).map(CodeSystemVersionReference::getId).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "versionA not found"));
-    Long versionBId = codeSystemVersionService.load(csId, versionB).map(CodeSystemVersionReference::getId).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "versionB not found"));
+    Long versionAId = codeSystemVersionService.load(csId, versionA).map(CodeSystemVersionReference::getId).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "versionA not found"));
+    Long versionBId = codeSystemVersionService.load(csId, versionB).map(CodeSystemVersionReference::getId).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "versionB not found"));
     return new ResourceContent(FhirMapper.toJson(toFhir(compareService.compare(versionAId, versionBId))), "json");
   }
 

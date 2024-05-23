@@ -78,7 +78,7 @@ public class StructureMapTransformOperation implements InstanceOperationDefiniti
     }
 
     if (internalDefinition == null) {
-      throw new FhirException(400, IssueType.NOTFOUND, "StructureMap is missing");
+      throw new FhirException(404, IssueType.NOTFOUND, "StructureMap is missing");
     }
 
     return buildResponse(transformerService.transform(input, internalDefinition));

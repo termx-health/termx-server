@@ -59,7 +59,7 @@ public class ValueSetResourceStorage extends BaseFhirResourceHandler {
       return null;
     }
     ValueSetVersion version = versionNumber == null ? valueSetVersionService.loadLastVersion(vsId) :
-        valueSetVersionService.load(vsId, versionNumber).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "resource not found"));
+        valueSetVersionService.load(vsId, versionNumber).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "resource not found"));
     return toFhir(valueSet, version);
   }
 

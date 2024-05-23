@@ -59,7 +59,7 @@ public class ConceptMapResourceStorage extends BaseFhirResourceHandler {
       return null;
     }
     MapSetVersion version = versionNumber == null ? mapSetVersionService.loadLastVersion(id) :
-        mapSetVersionService.load(id, versionNumber).orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "resource not found"));
+        mapSetVersionService.load(id, versionNumber).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "resource not found"));
     version.setAssociations(loadAssociations(version));
     return toFhir(mapSet, version);
   }

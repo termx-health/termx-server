@@ -53,7 +53,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     String vsId = parts[0];
     String versionNumber = parts[1];
     ValueSetVersion vsVersion = valueSetVersionService.load(vsId, versionNumber)
-        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "ValueSet version not found"));
+        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "ValueSet version not found"));
     Parameters resp = run(vsVersion, req);
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }

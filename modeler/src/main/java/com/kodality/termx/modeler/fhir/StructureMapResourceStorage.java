@@ -138,7 +138,7 @@ public class StructureMapResourceStorage extends BaseFhirResourceHandler {
       QueryResult<TransformationDefinition> resp =
           transformationDefinitionService.search(new TransformationDefinitionQueryParams().setFhirUrls(i.getValue()).limit(2));
       if (resp.getData().size() != 1) {
-        throw new FhirException(400, IssueType.NOTFOUND, "StructureMap \"" + i.getValue() + "\" is missing on the server!");
+        throw new FhirException(404, IssueType.NOTFOUND, "StructureMap \"" + i.getValue() + "\" is missing on the server!");
       }
 
       var res = new TransformationDefinitionResource();

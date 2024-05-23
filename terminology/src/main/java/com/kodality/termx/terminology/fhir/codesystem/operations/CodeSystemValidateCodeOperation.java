@@ -52,7 +52,7 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     String csId = parts[0];
     String versionNumber = parts[1];
     CodeSystemVersion csv = codeSystemVersionService.load(csId, versionNumber)
-        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "Concept version not found"));
+        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "Concept version not found"));
     Parameters resp = run(csv.getCodeSystem(), csv.getId(), req);
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }

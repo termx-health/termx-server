@@ -47,7 +47,7 @@ public class CodeSystemSubsumesOperation implements InstanceOperationDefinition,
     String csId = parts[0];
     String versionNumber = parts[1];
     CodeSystemVersion csv = codeSystemVersionService.load(csId, versionNumber)
-        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "Concept version not found"));
+        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "Concept version not found"));
     Parameters resp = run(csv, req);
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }
@@ -63,7 +63,7 @@ public class CodeSystemSubsumesOperation implements InstanceOperationDefinition,
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
     CodeSystemVersion csv = version == null ? codeSystemVersionService.loadLastVersionByUri(system) : codeSystemVersionService.loadVersionByUri(system, version)
-        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "Concept version not found"));
+        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "Concept version not found"));
     return run(csv, req);
   }
 
@@ -102,7 +102,7 @@ public class CodeSystemSubsumesOperation implements InstanceOperationDefinition,
     conceptParams.setLimit(1);
     conceptParams.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
     return conceptService.query(conceptParams).findFirst()
-        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "Concept '" + code + "' not found in " + codeSystemVersion.getCodeSystem()));
+        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "Concept '" + code + "' not found in " + codeSystemVersion.getCodeSystem()));
   }
 
 }

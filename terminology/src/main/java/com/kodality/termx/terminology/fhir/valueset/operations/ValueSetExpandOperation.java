@@ -55,7 +55,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     vsParams.setLimit(1);
     vsParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
     ValueSet valueSet = valueSetService.query(vsParams).findFirst()
-        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "value set not found: " + id.getResourceId()));
+        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "value set not found: " + id.getResourceId()));
 
     com.kodality.zmei.fhir.resource.terminology.ValueSet resp = expand(valueSet, versionNumber, req);
     return new ResourceContent(FhirMapper.toJson(resp), "json");
@@ -77,7 +77,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     vsParams.setLimit(1);
     vsParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
     ValueSet valueSet = valueSetService.query(vsParams).findFirst()
-        .orElseThrow(() -> new FhirException(400, IssueType.NOTFOUND, "value set not found: " + url));
+        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "value set not found: " + url));
 
     return expand(valueSet, versionNr, req);
   }
@@ -94,7 +94,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       version = valueSetVersionService.loadLastVersion(vs.getId());
     }
     if (version == null) {
-      throw new FhirException(400, IssueType.NOTFOUND, "value set version not found");
+      throw new FhirException(404, IssueType.NOTFOUND, "value set version not found");
     }
 
     String displayLanguage = req == null ? null : req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
