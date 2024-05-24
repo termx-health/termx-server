@@ -167,7 +167,7 @@ public class CodeSystemController {
     provenanceService.provenanceCodeSystemVersion("save", codeSystem, version, () -> {
       codeSystemVersionService.save(codeSystemVersion);
     });
-    return HttpResponse.created(version);
+    return HttpResponse.created(codeSystemVersion);
   }
 
   @Authorized(Privilege.CS_PUBLISH)
