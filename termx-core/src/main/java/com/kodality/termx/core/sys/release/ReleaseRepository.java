@@ -43,6 +43,7 @@ public class ReleaseRepository extends BaseRepository {
     ssb.property("release_date", release.getReleaseDate());
     ssb.property("status", release.getStatus());
     ssb.jsonProperty("authors", release.getAuthors());
+    ssb.property("terminology_server", release.getTerminologyServer());
 
     SqlBuilder sb = ssb.buildSave("sys.release", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());

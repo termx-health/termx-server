@@ -8,7 +8,10 @@ import com.kodality.termx.sys.server.resource.TerminologyServerResourceRequest;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceResponse;
 import com.kodality.zmei.fhir.client.FhirClientError;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
@@ -21,13 +24,14 @@ public class TerminologyServerResourceService {
   public TerminologyServerResourceResponse getResource(TerminologyServerResourceRequest request) {
     TerminologyServer server = serverService.load(request.getServerCode());
     TerminologyServerResourceProvider provider = resourceProviders.stream()
-        .filter(p -> p.getType().equals(request.getResourceType()))
+        .filter(p -> p.checkType(request.getResourceType()))
         .findFirst()
-        .orElseThrow(() -> ApiError.TC102.toApiException());
+        .orElseThrow(ApiError.TC102::toApiException);
 
     TerminologyServerResourceResponse response = new TerminologyServerResourceResponse();
     try {
-      Object resource = provider.getResource(server.getId(), request.getResourceId());
+      String id = Stream.of(request.getResourceId(), request.getResourceVersion()).filter(Objects::nonNull).collect(Collectors.joining("--"));
+      Object resource = provider.getResource(server.getId(), id);
       response.setResource(JsonUtil.toPrettyJson(resource));
     } catch (CompletionException e) {
       if (!(e.getCause() instanceof FhirClientError) || 404 != ((FhirClientError) e.getCause()).getResponse().statusCode()) {

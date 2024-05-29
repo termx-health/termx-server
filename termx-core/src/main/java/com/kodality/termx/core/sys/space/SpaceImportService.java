@@ -131,16 +131,19 @@ public class SpaceImportService {
         ResourceType.mapSet, overview.getMapSet()
     );
 
-    List<PackageResource> resources = types.entrySet().stream().flatMap(e -> {
-      return resourceProviders
-          .stream()
-          .filter(p -> p.getType().equals(e.getKey()))
-          .findFirst()
-          .orElseThrow()
-          .queryExistingResources(e.getValue())
-          .stream()
-          .map(id -> new PackageResource().setResourceId(id).setResourceType(e.getKey()));
-    }).toList();
+    List<PackageResource> resources = types.entrySet().stream().flatMap(e -> resourceProviders
+        .stream()
+        .filter(p -> p.getType().equals(e.getKey()))
+        .findFirst()
+        .orElseThrow()
+        .queryExistingResources(e.getValue())
+        .stream()
+        .map(id -> {
+          PackageResource pr = new PackageResource();
+          pr.setResourceId(id);
+          pr.setResourceType(e.getKey());
+          return pr;
+        })).toList();
 
     return resources.stream()
         .filter(

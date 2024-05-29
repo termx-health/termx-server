@@ -1,5 +1,6 @@
 package com.kodality.termx.sys.spacepackage;
 
+import com.kodality.termx.sys.ResourceReference;
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
 import lombok.Getter;
@@ -21,10 +22,8 @@ public class PackageVersion {
   @Setter
   @Accessors(chain = true)
   @Introspected
-  public static class PackageResource {
+  public static class PackageResource extends ResourceReference {
     private Long id;
-    private String resourceType;
-    private String resourceId;
     private String terminologyServer;
 
     private Long versionId;

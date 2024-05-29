@@ -6,6 +6,7 @@ import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.release.resource.ReleaseResourceService;
+import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.release.Release;
 import com.kodality.termx.sys.release.ReleaseQueryParams;
 import com.kodality.termx.sys.release.ReleaseResource;
@@ -19,6 +20,7 @@ import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +30,7 @@ public class ReleaseController {
   private final ReleaseService releaseService;
   private final ReleaseResourceService releaseResourceService;
   private final ReleaseProvenanceService provenanceService;
+  private final ReleaseSyncService syncService;
 
 
   //----------------Release----------------
@@ -124,5 +127,21 @@ public class ReleaseController {
   @Get("{id}/provenances")
   public List<Provenance> loadProvenances(@PathVariable Long id) {
     return provenanceService.find(id);
+  }
+
+  //----------------Release Server Sync----------------
+
+  @Authorized(privilege = Privilege.R_PUBLISH)
+  @Post("{id}/server-sync")
+  public HttpResponse<?> syncResources(@PathVariable Long id, @Valid @Body Map<String, Object> request) {
+    JobLogResponse response = syncService.syncResources(id, (Long) request.get("resourceId"));
+    return HttpResponse.accepted().body(response);
+  }
+
+  @Authorized(privilege = Privilege.R_VIEW)
+  @Post("{id}/validate-sync")
+  public HttpResponse<?> validateSync(@PathVariable Long id) {
+    JobLogResponse response = syncService.validateSync(id);
+    return HttpResponse.accepted().body(response);
   }
 }

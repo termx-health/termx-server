@@ -1,11 +1,7 @@
 package com.kodality.termx.core.sys.spacepackage.resource;
 
-import com.kodality.commons.exception.ApiClientException;
-import com.kodality.termx.core.ApiError;
 import com.kodality.termx.core.Privilege;
 import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.core.sys.job.logger.ImportLogger;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import io.micronaut.http.HttpResponse;
@@ -17,7 +13,6 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import io.micronaut.http.annotation.QueryValue;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -30,11 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 @Controller("/package-resources")
 @RequiredArgsConstructor
 public class PackageResourceController {
-  private final ImportLogger importLogger;
   private final PackageResourceService packageResourceService;
   private final PackageResourceSyncService packageResourceSyncService;
-
-  private static final String JOB_TYPE = "package-resource-sync";
 
   @Authorized(privilege = Privilege.S_VIEW)
   @Get("/{?params*}")
@@ -52,7 +44,7 @@ public class PackageResourceController {
 
   @Authorized(privilege = Privilege.S_EDIT)
   @Post("/change-server")
-  public  HttpResponse<?> update(@Valid @Body PackageResourceChangeServerRequest request) {
+  public HttpResponse<?> update(@Valid @Body PackageResourceChangeServerRequest request) {
     packageResourceService.changeServer(request.getResourceIds(), request.getTerminologyServer());
     return HttpResponse.ok();
   }
@@ -62,22 +54,7 @@ public class PackageResourceController {
   @Post(value = "/{id}/sync")
   public HttpResponse<?> importResource(@PathVariable Long id, @Valid @Body PackageResourceSyncRequest request) {
     //TODO: auth?
-    JobLogResponse job = importLogger.createJob(JOB_TYPE);
-    CompletableFuture.runAsync(SessionStore.wrap(() -> {
-      try {
-        log.info("Package resource sync started");
-        long start = System.currentTimeMillis();
-        packageResourceSyncService.sync(id, request.getType(), false);
-        log.info("Package resource sync took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
-        importLogger.logImport(job.getJobId());
-      } catch (ApiClientException e) {
-        log.error("Error while syncing package", e);
-        importLogger.logImport(job.getJobId(), e);
-      } catch (Exception e) {
-        log.error("Error while syncing package", e);
-        importLogger.logImport(job.getJobId(), ApiError.TC106.toApiException());
-      }
-    }));
+    JobLogResponse job = packageResourceSyncService.sync(id, request.getType(), request.getResourceVersion(), false);
     return HttpResponse.ok(job);
   }
 
@@ -105,6 +82,7 @@ public class PackageResourceController {
   public static class PackageResourceSyncRequest {
     @NotNull
     private String type;
+    private String resourceVersion;
   }
 
 }

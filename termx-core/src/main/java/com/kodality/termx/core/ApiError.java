@@ -23,6 +23,7 @@ public enum ApiError {
   TC114("TC114", "Checklist validation has unaccomplished checks, can not publish release."),
   TC115("TC115", "This resource is already added to release."),
   TC116("TC116", "Parameter resourceVersion should be provided to validate rules."),
+  TC200("TC200", "Job '{{type}}' failed. \n Error message -> \n {{error}}"),
   ;
 
   @Getter

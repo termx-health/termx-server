@@ -27,6 +27,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.zmei.fhir.FhirMapper;
 import jakarta.inject.Singleton;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
@@ -88,6 +89,11 @@ public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
   public ResourceVersion save(ResourceId id, ResourceContent content) {
     com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem =
         FhirMapper.fromJson(content.getValue(), com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
+    if (codeSystem.getId() != null) {
+      String[] idParts = CodeSystemFhirMapper.parseCompositeId(codeSystem.getId());
+      codeSystem.setId(idParts[0]);
+      codeSystem.setVersion(Optional.ofNullable(idParts[1]).orElse(codeSystem.getVersion()));
+    }
     List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
     CodeSystemImportAction action = new CodeSystemImportAction().setActivate(PublicationStatus.active.equals(codeSystem.getStatus()));
     CodeSystem cs = importService.importCodeSystem(CodeSystemFhirMapper.fromFhirCodeSystem(codeSystem), associationTypes, action);

@@ -19,4 +19,5 @@ public class Release {
   private String status;
   private List<String> authors;
   private List<ReleaseResource> resources;
+  private String terminologyServer;
 }
