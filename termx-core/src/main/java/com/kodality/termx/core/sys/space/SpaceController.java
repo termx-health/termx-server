@@ -11,7 +11,6 @@ import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.space.Space;
 import com.kodality.termx.sys.space.SpaceQueryParams;
-import com.kodality.termx.sys.space.diff.SpaceDiff;
 import com.kodality.termx.sys.space.overview.SpaceOverviewResponse;
 import com.kodality.termx.core.utils.FileUtil;
 import io.micronaut.core.annotation.Nullable;
@@ -39,7 +38,7 @@ import org.reactivestreams.Publisher;
 public class SpaceController {
   private final SpaceService spaceService;
   private final SpaceSyncService syncService;
-  private final SpaceDiffService diffService;
+  private final SpaceResourceDiffService diffService;
   private final SpaceImportService importService;
   private final SpaceOverviewService overviewService;
 

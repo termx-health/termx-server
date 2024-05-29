@@ -181,6 +181,9 @@
               "documentation": "Used for import of FHIR code systems. The `CodeSystem.url` cannot equal the well-known code system URLs for SNOMED CT and LOINC. "
             },
             {
+              "code": "update"
+            },
+            {
               "code": "search-type"
             }
           ],

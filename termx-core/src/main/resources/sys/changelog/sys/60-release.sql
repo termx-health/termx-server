@@ -42,7 +42,11 @@ select core.create_table_metadata('sys.release');
 select core.create_table_metadata('sys.release_resource');
 --
 
-
 --changeset kodality:release-authors
 alter table sys.release add column authors jsonb;
+--
+
+--changeset kodality:release-terminology_server
+alter table sys.release add column terminology_server text;
+create index release_terminology_server_idx on sys.release (terminology_server);
 --

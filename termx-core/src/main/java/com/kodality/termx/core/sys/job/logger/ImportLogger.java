@@ -1,12 +1,20 @@
 package com.kodality.termx.core.sys.job.logger;
 
+import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.ApiException;
+import com.kodality.termx.core.ApiError;
+import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.sys.job.JobLog.JobDefinition;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.core.sys.job.JobLogService;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -14,6 +22,21 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 @RequiredArgsConstructor
 public class ImportLogger {
   private final JobLogService jobLogService;
+
+  public <T> JobLogResponse runJob(String type, T value, Function<T, ImportLog> function) {
+    JobLogResponse job = createJob(type);
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
+      try {
+        ImportLog log = function.apply(value);
+        logImport(job.getJobId(), log);
+      } catch (ApiClientException e) {
+        logImport(job.getJobId(), e);
+      } catch (Exception e) {
+        logImport(job.getJobId(), ApiError.TC200.toApiException(Map.of("type", type, "error", e.getMessage())));
+      }
+    }));
+    return job;
+  }
 
   public JobLogResponse createJob(String type) {
     return createJob(null, type);

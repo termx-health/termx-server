@@ -159,7 +159,10 @@ public class ValueSetImportService {
     List<PackageResource> resources = packageVersion.getResources() == null ? List.of() : packageVersion.getResources();
     boolean exists = resources.stream().anyMatch(r -> r.getResourceType().equals("value-set") && r.getResourceId().equals(valueSetId));
     if (!exists) {
-      packageResourceService.save(packageVersion.getId(), new PackageResource().setResourceType("value-set").setResourceId(valueSetId));
+      PackageResource pr = new PackageResource();
+      pr.setResourceType("value-set");
+      pr.setResourceId(valueSetId);
+      packageResourceService.save(packageVersion.getId(), pr);
     }
   }
 }

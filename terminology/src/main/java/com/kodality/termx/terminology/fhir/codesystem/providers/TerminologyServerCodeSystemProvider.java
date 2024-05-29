@@ -10,16 +10,18 @@ import com.kodality.zmei.fhir.search.FhirQueryParams;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 
 @Singleton
 @RequiredArgsConstructor
 public class TerminologyServerCodeSystemProvider implements TerminologyServerResourceProvider, TerminologyServerResourceSyncProvider {
   private final FhirServerHttpClientService fhirClientService;
+  private final static Set<String> types = Set.of("code-system", "CodeSystem");
 
   @Override
-  public String getType() {
-    return com.kodality.termx.sys.ResourceType.codeSystem;
+  public boolean checkType(String type) {
+    return types.contains(type);
   }
 
   @Override

@@ -432,7 +432,10 @@ public class CodeSystemImportService {
     List<PackageResource> resources = packageVersion.getResources() == null ? List.of() : packageVersion.getResources();
     boolean exists = resources.stream().anyMatch(r -> r.getResourceType().equals("code-system") && r.getResourceId().equals(codeSystemId));
     if (!exists) {
-      packageResourceService.save(packageVersion.getId(), new PackageResource().setResourceType("code-system").setResourceId(codeSystemId));
+      PackageResource pr = new PackageResource();
+      pr.setResourceType("code-system");
+      pr.setResourceId(codeSystemId);
+      packageResourceService.save(packageVersion.getId(), pr);
     }
   }
 

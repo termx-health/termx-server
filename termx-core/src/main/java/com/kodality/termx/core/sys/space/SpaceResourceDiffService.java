@@ -4,35 +4,42 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.core.ApiError;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.sys.lorque.LorqueProcessService;
+import com.kodality.termx.core.sys.resource.ResourceDiffService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.ProcessResult;
 import com.kodality.termx.sys.server.TerminologyServer;
 import com.kodality.termx.core.sys.server.TerminologyServerResourceService;
 import com.kodality.termx.core.sys.server.TerminologyServerService;
-import com.kodality.termx.sys.server.resource.TerminologyServerResourceRequest;
 import com.kodality.termx.sys.space.diff.SpaceDiff;
 import com.kodality.termx.sys.space.diff.SpaceDiff.SpaceDiffItem;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import com.kodality.termx.core.sys.spacepackage.resource.PackageResourceService;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.inject.Singleton;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @Slf4j
 @Singleton
-@RequiredArgsConstructor
-public class SpaceDiffService {
+public class SpaceResourceDiffService extends ResourceDiffService {
   private final PackageResourceService packageResourceService;
   private final TerminologyServerService terminologyServerService;
-  private final TerminologyServerResourceService terminologyServerResourceService;
   private final LorqueProcessService lorqueProcessService;
 
   private final static String process = "space-diff";
+
+  public SpaceResourceDiffService(
+      TerminologyServerResourceService terminologyServerResourceService,
+      PackageResourceService packageResourceService,
+      TerminologyServerService terminologyServerService,
+      LorqueProcessService lorqueProcessService
+  ) {
+    super(terminologyServerResourceService);
+    this.packageResourceService = packageResourceService;
+    this.terminologyServerService = terminologyServerService;
+    this.lorqueProcessService = lorqueProcessService;
+  }
 
   public LorqueProcess findDiff(Long spaceId, String packageCode, String version) {
     LorqueProcess lorqueProcess = lorqueProcessService.start(new LorqueProcess().setProcessName(process));
@@ -64,37 +71,10 @@ public class SpaceDiffService {
       item.setResourceId(resource.getResourceId());
       item.setResourceType(resource.getResourceType());
       item.setResourceServer(resource.getTerminologyServer());
-      item.setUpToDate(isUpToDate(resource, currentServer));
+      item.setUpToDate(isUpToDate(resource, currentServer.getCode(), resource.getTerminologyServer()));
       return item;
     }).toList();
     log.info("Space diff: Up-to-date checked ({} sec)", (System.currentTimeMillis() - start) / 1000);
     return new SpaceDiff().setItems(items);
-  }
-
-  public boolean isUpToDate(PackageResource resource, TerminologyServer currentServer) {
-    if (resource.getTerminologyServer() == null || resource.getTerminologyServer().equals(currentServer.getCode())) {
-      return true;
-    }
-    TerminologyServerResourceRequest request = new TerminologyServerResourceRequest()
-        .setResourceId(resource.getResourceId())
-        .setResourceType(resource.getResourceType())
-        .setServerCode(currentServer.getCode());
-    Map<String, Object> current = JsonUtil.fromJson(terminologyServerResourceService.getResource(request).getResource(), JsonUtil.getMapType(Object.class));
-    if (current == null) {
-      return false;
-    }
-
-    request.setResourceId((String) current.get("id"));
-    request.setServerCode(resource.getTerminologyServer());
-    Map<String, Object> comparable = JsonUtil.fromJson(terminologyServerResourceService.getResource(request).getResource(), JsonUtil.getMapType(Object.class));
-    if (comparable == null) {
-      return false;
-    }
-
-    current.remove("meta");
-    comparable.remove("meta");
-    current.remove("text");
-    comparable.remove("text");
-    return JsonUtil.toJson(current).equals(JsonUtil.toJson(comparable));
   }
 }

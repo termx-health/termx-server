@@ -11,16 +11,18 @@ import com.kodality.zmei.fhir.search.FhirQueryParams;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 
 @Singleton
 @RequiredArgsConstructor
 public class TerminologyServerValueSetProvider implements TerminologyServerResourceProvider, TerminologyServerResourceSyncProvider {
   private final FhirServerHttpClientService fhirClientService;
+  private final static Set<String> types = Set.of("value-set", "ValueSet");
 
   @Override
-  public String getType() {
-    return com.kodality.termx.sys.ResourceType.valueSet;
+  public boolean checkType(String type) {
+    return types.contains(type);
   }
 
   @Override

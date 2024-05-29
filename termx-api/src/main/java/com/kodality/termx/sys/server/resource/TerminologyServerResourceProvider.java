@@ -1,7 +1,7 @@
 package com.kodality.termx.sys.server.resource;
 
 public interface TerminologyServerResourceProvider {
-  String getType();
+  boolean checkType(String type);
 
   Object getResource(Long serverId, String resourceId);
 }

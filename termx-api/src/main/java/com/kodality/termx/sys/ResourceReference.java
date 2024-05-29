@@ -1,7 +1,6 @@
-package com.kodality.termx.sys.server.resource;
+package com.kodality.termx.sys;
 
 import io.micronaut.core.annotation.Introspected;
-import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -10,12 +9,8 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 @Introspected
-public class TerminologyServerResourceRequest {
-  @NotNull
-  private String serverCode;
-  @NotNull
+public class ResourceReference {
   private String resourceType;
-  @NotNull
   private String resourceId;
   private String resourceVersion;
 }
