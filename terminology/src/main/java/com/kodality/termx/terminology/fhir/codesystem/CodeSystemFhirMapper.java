@@ -119,9 +119,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     }
     fhirCodeSystem.setTitle(toFhirName(codeSystem.getTitle(), version.getPreferredLanguage()));
     fhirCodeSystem.setPrimitiveExtensions("title", toFhirTranslationExtension(codeSystem.getTitle(), version.getPreferredLanguage()));
-    LocalizedName description = joinDescriptions(codeSystem.getDescription(), version.getDescription());
-    fhirCodeSystem.setDescription(toFhirName(description, version.getPreferredLanguage()));
-    fhirCodeSystem.setPrimitiveExtensions("description", toFhirTranslationExtension(description, version.getPreferredLanguage()));
+    fhirCodeSystem.setDescription(toFhirName(codeSystem.getDescription(), version.getPreferredLanguage()));
+    fhirCodeSystem.setPrimitiveExtensions("description", toFhirTranslationExtension(codeSystem.getDescription(), version.getPreferredLanguage()));
+    String versionDescription = toFhirName(version.getDescription(), version.getPreferredLanguage());
+    if (StringUtils.isNotEmpty(versionDescription)) {
+      fhirCodeSystem.addExtension(toFhirVersionDescriptionExtension(versionDescription));
+    }
     fhirCodeSystem.setPurpose(toFhirName(codeSystem.getPurpose(), version.getPreferredLanguage()));
     fhirCodeSystem.setTopic(toFhirTopic(codeSystem.getTopic()));
     fhirCodeSystem.setUseContext(toFhirUseContext(codeSystem.getUseContext()));

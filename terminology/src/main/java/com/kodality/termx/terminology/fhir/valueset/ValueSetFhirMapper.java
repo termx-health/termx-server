@@ -125,9 +125,12 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }
     fhirValueSet.setTitle(toFhirName(valueSet.getTitle(), version.getPreferredLanguage()));
     fhirValueSet.setPrimitiveExtensions("title", toFhirTranslationExtension(valueSet.getTitle(), version.getPreferredLanguage()));
-    LocalizedName description = joinDescriptions(valueSet.getDescription(), version.getDescription());
-    fhirValueSet.setDescription(toFhirName(description, version.getPreferredLanguage()));
-    fhirValueSet.setPrimitiveExtensions("description", toFhirTranslationExtension(description, version.getPreferredLanguage()));
+    fhirValueSet.setDescription(toFhirName(valueSet.getDescription(), version.getPreferredLanguage()));
+    fhirValueSet.setPrimitiveExtensions("description", toFhirTranslationExtension(valueSet.getDescription(), version.getPreferredLanguage()));
+    String versionDescription = toFhirName(version.getDescription(), version.getPreferredLanguage());
+    if (StringUtils.isNotEmpty(versionDescription)) {
+      fhirValueSet.addExtension(toFhirVersionDescriptionExtension(versionDescription));
+    }
     fhirValueSet.setPurpose(toFhirName(valueSet.getPurpose(), version.getPreferredLanguage()));
     fhirValueSet.setTopic(toFhirTopic(valueSet.getTopic()));
     fhirValueSet.setUseContext(toFhirUseContext(valueSet.getUseContext()));

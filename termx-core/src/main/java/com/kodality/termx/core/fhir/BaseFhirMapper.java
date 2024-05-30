@@ -85,6 +85,12 @@ public abstract class BaseFhirMapper {
     return extension;
   }
 
+  protected static Extension toFhirVersionDescriptionExtension(String description) {
+    Extension extension = new Extension("https://fhir.ee/StructureDefinition/version-description");
+    extension.setValueString(description);
+    return extension;
+  }
+
   protected static List<com.kodality.zmei.fhir.datatypes.ContactDetail> toFhirContacts(List<ContactDetail> cds) {
     return cds == null ? null : cds.stream().map(c -> new com.kodality.zmei.fhir.datatypes.ContactDetail()
             .setName(c.getName())
@@ -147,15 +153,6 @@ public abstract class BaseFhirMapper {
     return Optional.ofNullable(provenances).orElse(List.of()).stream()
         .max(Comparator.comparing(Provenance::getDate)).map(Provenance::getDate).orElse(null);
   }
-
-  protected static LocalizedName joinDescriptions(LocalizedName descriptionA, LocalizedName descriptionB) {
-    return new LocalizedName(Stream.of(descriptionA, descriptionB).filter(Objects::nonNull)
-        .flatMap(description -> description.entrySet().stream())
-        .collect(Collectors.groupingBy(Entry::getKey, mapping(Entry::getValue, toList())))
-        .entrySet().stream().map(es -> Pair.of(es.getKey(), String.join(" ", es.getValue().stream().filter(StringUtils::isNotEmpty).toList())))
-        .collect(Collectors.toMap(Pair::getKey, Pair::getValue)));
-  }
-
 
   protected static LocalizedName fromFhirName(String name, String lang) {
     if (name == null) {

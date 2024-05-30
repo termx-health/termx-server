@@ -53,6 +53,7 @@ import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapProperty
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -119,9 +120,12 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     }
     fhirConceptMap.setTitle(toFhirName(mapSet.getTitle(), version.getPreferredLanguage()));
     fhirConceptMap.setPrimitiveExtensions("title", toFhirTranslationExtension(mapSet.getTitle(), version.getPreferredLanguage()));
-    LocalizedName description = joinDescriptions(mapSet.getDescription(), version.getDescription());
-    fhirConceptMap.setDescription(toFhirName(description, version.getPreferredLanguage()));
-    fhirConceptMap.setPrimitiveExtensions("description", toFhirTranslationExtension(description, version.getPreferredLanguage()));
+    fhirConceptMap.setDescription(toFhirName(mapSet.getDescription(), version.getPreferredLanguage()));
+    fhirConceptMap.setPrimitiveExtensions("description", toFhirTranslationExtension(mapSet.getDescription(), version.getPreferredLanguage()));
+    String versionDescription = toFhirName(version.getDescription(), version.getPreferredLanguage());
+    if (StringUtils.isNotEmpty(versionDescription)) {
+      fhirConceptMap.addExtension(toFhirVersionDescriptionExtension(versionDescription));
+    }
     fhirConceptMap.setPurpose(toFhirName(mapSet.getPurpose(), version.getPreferredLanguage()));
     fhirConceptMap.setTopic(toFhirTopic(mapSet.getTopic()));
     fhirConceptMap.setUseContext(toFhirUseContext(mapSet.getUseContext()));
