@@ -66,7 +66,7 @@ public class SpaceMapSetImportProvider implements SpaceResourceProvider {
         .map(r -> servers.stream()
             .filter(s -> s.getCode().equals(r.getTerminologyServer()))
             .findFirst()
-            .map(s -> new ImportUrl(r.getResourceId(), "%s/fhir/MapSet/%s".formatted(StringUtils.stripEnd(s.getRootUrl(), "/"), r.getResourceId())))
+            .map(s -> new ImportUrl(r.getResourceId(), "%s/fhir/ConceptMap/%s".formatted(StringUtils.stripEnd(s.getRootUrl(), "/"), r.getResourceId())))
             .orElse(null))
         .filter(Objects::nonNull)
         .toList();
