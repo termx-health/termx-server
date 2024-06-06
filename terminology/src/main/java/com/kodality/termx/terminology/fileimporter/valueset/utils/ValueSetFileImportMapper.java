@@ -63,7 +63,7 @@ public class ValueSetFileImportMapper {
     version.setSnapshot(null);
     version.setVersion(fpVersion.getNumber());
     version.setStatus(PublicationStatus.draft);
-    version.setReleaseDate(fpVersion.getReleaseDate() == null ? LocalDate.now() : fpVersion.getReleaseDate());
+    version.setReleaseDate(version.getReleaseDate() != null ? version.getReleaseDate() : fpVersion.getReleaseDate() != null ? fpVersion.getReleaseDate() : LocalDate.now());
     version.setAlgorithm(fpVersion.getAlgorithm());
     version.setPreferredLanguage(fpVersion.getLanguage() != null ? fpVersion.getLanguage() : SessionStore.require().getLang());
     version.setRuleSet(version.getRuleSet() == null ? new ValueSetVersionRuleSet() : version.getRuleSet());
