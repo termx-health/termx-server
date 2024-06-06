@@ -4,6 +4,7 @@ import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
+import com.kodality.termx.ts.codesystem.CodeSystemCompareResult;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.QueryValue;

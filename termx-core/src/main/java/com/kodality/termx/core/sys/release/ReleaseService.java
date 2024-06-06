@@ -4,6 +4,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.core.ApiError;
 import com.kodality.termx.core.sys.checklist.ChecklistService;
 import com.kodality.termx.core.sys.checklist.validaton.ChecklistValidationService;
+import com.kodality.termx.core.sys.release.notes.ReleaseNotesService;
 import com.kodality.termx.core.sys.release.resource.ReleaseResourceService;
 import com.kodality.termx.core.sys.release.resource.providers.ReleaseResourceProvider;
 import com.kodality.termx.sys.checklist.Checklist;
@@ -31,6 +32,7 @@ public class ReleaseService {
   private final ChecklistValidationService validationService;
   private final ChecklistService checklistService;
   private final List<ReleaseResourceProvider> resourceProviders;
+  private final ReleaseNotesService releaseNotesService;
 
   @Transactional
   public Release save(Release release) {
@@ -52,9 +54,11 @@ public class ReleaseService {
       release.setStatus(PublicationStatus.draft);
     }
   }
+
   public Release load(Long id) {
     return repository.load(id);
   }
+
   public Release load(String code) {
     return repository.load(code);
   }
@@ -65,14 +69,14 @@ public class ReleaseService {
 
   @Transactional
   public void changeStatus(Long id, String status) {
+    Release currentRelease = load(id);
+
     if (PublicationStatus.active.equals(status)) {
       validateChecklist(id);
+      currentRelease.getResources().forEach(r -> resourceProviders.forEach(provider -> provider.activate(r.getResourceType(), r.getResourceId(), r.getResourceVersion())));
+      releaseNotesService.generateNotes(currentRelease);
     }
 
-    List<ReleaseResource> resources = resourceService.loadAll(id);
-    resources.forEach(r -> resourceProviders.forEach(provider -> provider.activate(r.getResourceType(), r.getResourceId(), r.getResourceVersion())));
-
-    Release currentRelease = load(id);
     if (status.equals(currentRelease.getStatus())) {
       log.warn("Release '{}' is already activated, skipping activation process.", currentRelease.getCode());
       return;
@@ -87,10 +91,10 @@ public class ReleaseService {
         .setResourceId(r.getResourceId())
         .setResourceVersion(r.getResourceVersion())));
     List<Checklist> unaccomplishedChecks = resources.stream().flatMap(r -> checklistService.query(new ChecklistQueryParams()
-        .setAssertionsDecorated(true)
-        .setResourceId(r.getResourceId())
-        .setResourceType(r.getResourceType())
-        .setResourceVersion(r.getResourceVersion()).all()).getData().stream())
+            .setAssertionsDecorated(true)
+            .setResourceId(r.getResourceId())
+            .setResourceType(r.getResourceType())
+            .setResourceVersion(r.getResourceVersion()).all()).getData().stream())
         .filter(checklist -> CollectionUtils.isEmpty(checklist.getAssertions()) || !checklist.getAssertions().get(0).isPassed()).toList();
     if (CollectionUtils.isNotEmpty(unaccomplishedChecks)) {
       throw ApiError.TC114.toApiException();

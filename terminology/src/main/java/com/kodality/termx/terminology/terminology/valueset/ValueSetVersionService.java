@@ -116,4 +116,8 @@ public class ValueSetVersionService {
   public void cancel(Long id) {
     repository.cancel(id);
   }
+
+  public ValueSetVersion loadPreviousVersion(String valueSet, String version) {
+    return repository.loadPreviousVersion(valueSet, version);
+  }
 }

@@ -1,5 +1,6 @@
 package com.kodality.termx.terminology.terminology.codesystem.compare;
 
+import com.kodality.termx.ts.codesystem.CodeSystemCompareResult;
 import jakarta.inject.Singleton;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;

@@ -54,8 +54,7 @@ public class ValueSetVersionRepository extends BaseRepository {
       "      'valueSetUri', (select vs.uri from terminology.value_set vs where vs.id = vsvr.value_set and vs.sys_status = 'A'), " +
       "      'valueSetVersion', (select json_build_object('id', vsv.id, 'version', vsv.version) from terminology.value_set_version vsv where vsv.id = vsvr.value_set_version_id and vsv.sys_status = 'A') " +
       "   )) from terminology.value_set_version_rule vsvr where vsvrs.id = vsvr.rule_set_id and vsvr.sys_status = 'A') " +
-      ") from terminology.value_set_version_rule_set vsvrs where vsv.id = vsvrs.value_set_version_id and vsvrs.sys_status = 'A') as rule_set "
-      ;
+      ") from terminology.value_set_version_rule_set vsvrs where vsv.id = vsvrs.value_set_version_id and vsvrs.sys_status = 'A') as rule_set ";
 
   public void save(ValueSetVersion version) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -87,7 +86,8 @@ public class ValueSetVersionRepository extends BaseRepository {
   }
 
   public ValueSetVersion loadLastVersion(String valueSet) {
-    String sql = select + "from terminology.value_set_version vsv where vsv.sys_status = 'A' and vsv.value_set = ? and (vsv.status = 'active' or vsv.status = 'draft') order by vsv.id, vsv.release_date desc";
+    String sql = select +
+        "from terminology.value_set_version vsv where vsv.sys_status = 'A' and vsv.value_set = ? and (vsv.status = 'active' or vsv.status = 'draft') order by vsv.id, vsv.release_date desc";
     return getBean(sql, bp, valueSet);
   }
 
@@ -129,7 +129,8 @@ public class ValueSetVersionRepository extends BaseRepository {
     // VS identifier
     if (StringUtils.isNotEmpty(params.getValueSetIdentifier())) {
       String[] tokens = PipeUtil.parsePipe(params.getValueSetIdentifier());
-      sb.and("exists (select 1 from jsonb_array_elements(vs.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)", tokens[0], tokens[1]);
+      sb.and("exists (select 1 from jsonb_array_elements(vs.identifiers) i where (i ->> 'system') = coalesce(?, (i ->> 'system')) and (i ->> 'value') = ?)",
+          tokens[0], tokens[1]);
     }
 
     // VS name
@@ -149,11 +150,14 @@ public class ValueSetVersionRepository extends BaseRepository {
 
     // VS description
     sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%`' || terminology.search_translate(?) || '`%'", params.getValueSetDescription());
-    sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%`' || terminology.search_translate(?) || '%`%'", params.getValueSetDescriptionStarts());
-    sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%' || terminology.search_translate(?) || '%'", params.getValueSetDescriptionContains());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%`' || terminology.search_translate(?) || '%`%'",
+        params.getValueSetDescriptionStarts());
+    sb.appendIfNotNull("and terminology.jsonb_search(vs.description) like '%' || terminology.search_translate(?) || '%'",
+        params.getValueSetDescriptionContains());
 
 
-    sb.appendIfNotNull("and exists (select 1 from jsonb_array_elements(vss.expansion::jsonb) exp where (exp -> 'concept' ->> 'code') = ?)", params.getConceptCode());
+    sb.appendIfNotNull("and exists (select 1 from jsonb_array_elements(vss.expansion::jsonb) exp where (exp -> 'concept' ->> 'code') = ?)",
+        params.getConceptCode());
     sb.appendIfNotNull("and vsvr.type = 'include' and cs.uri = ?", params.getCodeSystemUri());
 
     sb.and().in("vsv.id", params.getIds(), Long::valueOf);
@@ -167,12 +171,12 @@ public class ValueSetVersionRepository extends BaseRepository {
   }
 
   public void saveStatus(String valueSet, String version, String status) {
-    String sql = "update terminology.value_set_version set status = ? where value_set = ? and version = ? and sys_status = 'A' and status <> ?";
+    String sql = "UPDATE terminology.value_set_version SET status = ? WHERE value_set = ? AND version = ? AND sys_status = 'A' AND status <> ?";
     jdbcTemplate.update(sql, status, valueSet, version, status);
   }
 
   public void saveExpirationDate(ValueSetVersion version) {
-    String sql = "update terminology.value_set_version set expiration_date = ? where id = ?";
+    String sql = "UPDATE terminology.value_set_version SET expiration_date = ? WHERE id = ?";
     jdbcTemplate.update(sql, version.getExpirationDate(), version.getId());
   }
 
@@ -188,4 +192,10 @@ public class ValueSetVersionRepository extends BaseRepository {
     jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
   }
 
+  public ValueSetVersion loadPreviousVersion(String valueSet, String version) {
+    String sql = "with current_version as (select release_date from terminology.value_set_version where value_set = ? and version = ? and sys_status = 'A') " +
+            select + "from terminology.value_set_version vsv where vsv.value_set = ? and vsv.release_date < (select release_date from current_version)" +
+            "order by vsv.id, vsv.release_date desc";
+    return getBean(sql, bp, valueSet, version, valueSet);
+  }
 }

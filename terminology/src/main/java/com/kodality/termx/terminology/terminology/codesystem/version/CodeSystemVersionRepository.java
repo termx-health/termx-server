@@ -230,6 +230,13 @@ public class CodeSystemVersionRepository extends BaseRepository {
     return getBean(sql, bp, uri);
   }
 
+  public CodeSystemVersion loadPreviousVersion(String codeSystem, String version) {
+    String sql = "with current_version as (select release_date from terminology.code_system_version where code_system = ? and version = ? and sys_status = 'A') " +
+        select + "from terminology.code_system_version csv where csv.code_system = ? and csv.release_date < (select release_date from current_version)" +
+        "order by csv.release_date desc";
+    return getBean(sql, bp, codeSystem, version, codeSystem);
+  }
+
   public void cancel(Long id) {
     SqlBuilder sb = new SqlBuilder("select * from terminology.cancel_code_system_version(?)", id);
     jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Boolean.class);

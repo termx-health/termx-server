@@ -1,5 +1,6 @@
 package com.kodality.termx.ts.codesystem;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.termx.ts.ConfigurationAttribute;
@@ -7,10 +8,13 @@ import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.OtherTitle;
 import com.kodality.termx.ts.Permissions;
+import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.Topic;
 import com.kodality.termx.ts.UseContext;
 import io.micronaut.core.annotation.Introspected;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -54,6 +58,18 @@ public class CodeSystem {
   private List<Concept> concepts;
   private List<EntityProperty> properties;
   private List<CodeSystemVersion> versions;
+
+  @JsonIgnore
+  public Optional<CodeSystemVersion> getFirstVersion() {
+    return this.getVersions().stream().min(Comparator.comparing(CodeSystemVersion::getReleaseDate));
+  }
+
+  @JsonIgnore
+  public Optional<CodeSystemVersion> getLastVersion() {
+    return this.getVersions().stream()
+        .filter(v -> !PublicationStatus.retired.equals(v.getStatus()))
+        .max(Comparator.comparing(CodeSystemVersion::getReleaseDate));
+  }
 
   @Getter
   @Setter

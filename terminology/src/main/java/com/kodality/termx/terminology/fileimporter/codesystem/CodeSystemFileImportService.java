@@ -19,8 +19,8 @@ import com.kodality.termx.terminology.terminology.codesystem.CodeSystemImportSer
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.terminology.codesystem.validator.CodeSystemValidationService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
-import com.kodality.termx.terminology.terminology.codesystem.compare.CodeSystemCompareResult;
-import com.kodality.termx.terminology.terminology.codesystem.compare.CodeSystemCompareResult.CodeSystemCompareResultDiffItem;
+import com.kodality.termx.ts.codesystem.CodeSystemCompareResult;
+import com.kodality.termx.ts.codesystem.CodeSystemCompareResult.CodeSystemCompareResultDiffItem;
 import com.kodality.termx.terminology.terminology.codesystem.compare.CodeSystemCompareService;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.terminology.valueset.concept.ValueSetVersionConceptService;

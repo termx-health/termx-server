@@ -19,6 +19,7 @@ dependencies {
   implementation project(':modeler')
   implementation project(':implementation-guide')
   implementation project(':uam')
+  implementation project(':bob')
 
   implementation project(':edition-int')
   implementation project(':edition-est')

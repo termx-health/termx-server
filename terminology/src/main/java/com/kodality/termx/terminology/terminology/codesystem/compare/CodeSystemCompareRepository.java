@@ -2,8 +2,9 @@ package com.kodality.termx.terminology.terminology.codesystem.compare;
 
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.terminology.terminology.codesystem.compare.CodeSystemCompareResult.CodeSystemCompareResultChange;
-import com.kodality.termx.terminology.terminology.codesystem.compare.CodeSystemCompareResult.CodeSystemCompareResultDiff;
+import com.kodality.termx.ts.codesystem.CodeSystemCompareResult;
+import com.kodality.termx.ts.codesystem.CodeSystemCompareResult.CodeSystemCompareResultChange;
+import com.kodality.termx.ts.codesystem.CodeSystemCompareResult.CodeSystemCompareResultDiff;
 import jakarta.inject.Singleton;
 
 @Singleton
@@ -12,10 +13,10 @@ public class CodeSystemCompareRepository extends BaseRepository {
     String s = "select c.code, csev.status, csev.id version_id, csev.description," +
         "        (select jsonb_agg(ep.name || '|' || epv.value::text order by ep.name, epv.value::text)  " +
         "          from terminology.entity_property_value epv, terminology.entity_property ep " +
-        "         where epv.entity_property_id = ep.id and epv.code_system_entity_version_id = csev.id) properties, " +
+        "         where epv.entity_property_id = ep.id and epv.code_system_entity_version_id = csev.id and epv.sys_status = 'A') properties, " +
         "        (select jsonb_agg(ep.name || '|' || d.language || '|' || d.name::text order by ep.name, d.language, d.name::text)  " +
         "           from terminology.designation d, terminology.entity_property ep " +
-        "         where d.designation_type_id = ep.id and d.code_system_entity_version_id  = csev.id) designations " +
+        "         where d.designation_type_id = ep.id and d.code_system_entity_version_id  = csev.id and d.sys_status = 'A') designations " +
         "   from terminology.code_system_version csv" +
         "       inner join terminology.entity_version_code_system_version_membership m on m.code_system_version_id = csv.id" +
         "       inner join terminology.code_system_entity_version csev on csev.code_system = csv.code_system and m.code_system_entity_version_id = csev.id" +

@@ -5,9 +5,12 @@ import com.kodality.termx.core.Privilege;
 import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.sys.provenance.Provenance;
+import com.kodality.termx.core.sys.release.notes.ReleaseAttachmentService;
+import com.kodality.termx.core.sys.release.notes.ReleaseNotesService;
 import com.kodality.termx.core.sys.release.resource.ReleaseResourceService;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.sys.release.Release;
+import com.kodality.termx.sys.release.ReleaseAttachment;
 import com.kodality.termx.sys.release.ReleaseQueryParams;
 import com.kodality.termx.sys.release.ReleaseResource;
 import com.kodality.termx.ts.PublicationStatus;
@@ -19,6 +22,7 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
+import io.micronaut.http.server.types.files.StreamedFile;
 import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
@@ -31,6 +35,8 @@ public class ReleaseController {
   private final ReleaseResourceService releaseResourceService;
   private final ReleaseProvenanceService provenanceService;
   private final ReleaseSyncService syncService;
+  private final ReleaseAttachmentService attachmentService;
+  private final ReleaseNotesService notesService;
 
 
   //----------------Release----------------
@@ -143,5 +149,26 @@ public class ReleaseController {
   public HttpResponse<?> validateSync(@PathVariable Long id) {
     JobLogResponse response = syncService.validateSync(id);
     return HttpResponse.accepted().body(response);
+  }
+
+  //----------------Release Notes----------------
+
+  @Authorized(privilege = Privilege.R_VIEW)
+  @Get("/{id}/notes")
+  public List<ReleaseAttachment> getReleaseNotes(@PathVariable Long id) {
+    return attachmentService.getAttachments(id);
+  }
+
+  @Authorized(privilege = Privilege.R_VIEW)
+  @Get("/{id}/notes/{fileName}")
+  public StreamedFile getFile(@PathVariable Long id, @PathVariable String fileName) {
+    return attachmentService.getAttachmentContent(id, fileName);
+  }
+
+  @Authorized(privilege = Privilege.R_EDIT)
+  @Post("/{id}/generate-notes")
+  public HttpResponse<?> generateReleaseNotes(@PathVariable Long id) {
+    notesService.generateNotes(id);
+    return HttpResponse.ok();
   }
 }
