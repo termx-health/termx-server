@@ -69,11 +69,12 @@ public class ConceptExportService {
 
   private byte[] composeResult(String codeSystemId, String version, String format) {
     CodeSystem codeSystem = codeSystemService.load(codeSystemId).orElseThrow();
-    List<Concept> concepts = conceptService.query(new ConceptQueryParams().setCodeSystem(codeSystemId).setCodeSystemVersion(version)
-        .setCodeSystemEntityStatus(PublicationStatus.active).all()).getData();
+    List<Concept> concepts = conceptService.query(new ConceptQueryParams().setCodeSystem(codeSystemId).setCodeSystemVersion(version).all()).getData();
 
     List<Pair<String, String>> associations = concepts.stream().flatMap(c -> c.getVersions().stream())
-        .flatMap(v -> Optional.ofNullable(v.getAssociations()).orElse(List.of()).stream().map(a -> Pair.of(v.getCode(), a.getTargetCode()))).toList();
+        .flatMap(v -> Optional.ofNullable(v.getAssociations()).orElse(List.of()).stream()
+            .filter(a -> PublicationStatus.active.equals(a.getStatus()))
+            .map(a -> Pair.of(v.getCode(), a.getTargetCode()))).toList();
     Map<String, List<String>> children = associations.stream().collect(Collectors.groupingBy(Pair::getValue, mapping(Pair::getKey, toList())));
     Map<String, List<String>> parents = associations.stream().collect(Collectors.groupingBy(Pair::getKey, mapping(Pair::getValue, toList())));
 
@@ -132,6 +133,9 @@ public class ConceptExportService {
         row.add(properties.get(h).stream().map(pv -> {
           if (pv.getEntityPropertyType().equals(EntityPropertyType.coding)) {
             return h.contains("#system") ? pv.asCodingValue().getCodeSystem() : pv.asCodingValue().getCode();
+          }
+          if (pv.getEntityPropertyType().equals(EntityPropertyType.dateTime)) {
+            return pv.asDateTimeValue().toLocalDate().toString();
           }
           return pv.getValue() instanceof String ? (String) pv.getValue() : JsonUtil.toJson(pv.getValue());
         }).collect(Collectors.joining("#")));

@@ -2,6 +2,7 @@ package com.kodality.termx.ts.codesystem;
 
 import com.kodality.commons.util.JsonUtil;
 import io.micronaut.core.annotation.Introspected;
+import java.time.OffsetDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -24,6 +25,10 @@ public class EntityPropertyValue {
 
   public EntityPropertyValueCodingValue asCodingValue() {
     return JsonUtil.fromJson(JsonUtil.toJson(value), EntityPropertyValueCodingValue.class);
+  }
+
+  public OffsetDateTime asDateTimeValue() {
+    return OffsetDateTime.parse((String) value);
   }
 
   @Getter
