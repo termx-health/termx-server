@@ -104,7 +104,7 @@ public class ReleaseNotesService {
         .append(" ")
         .append(release.getNames().getOrDefault(SessionStore.require().getLang(), release.getNames().values().stream().findFirst().orElse("")))
         .append("\n");
-    sb.append(TranslateUtil.translate("txt.date", i18n)).append(": ").append(release.getReleaseDate().toLocalDate().toString());
+    sb.append(TranslateUtil.translate("txt.date", i18n)).append(": ").append(Optional.ofNullable(release.getReleaseDate()).map(r -> r.toLocalDate().toString()).orElse(""));
 
     Map<String, String> txtBlocks = new HashMap<>();
     txtBlocks.putAll(composeCsTxt(csCompare));
