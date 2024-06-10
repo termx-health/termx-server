@@ -232,7 +232,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
 
   public CodeSystemVersion loadPreviousVersion(String codeSystem, String version) {
     String sql = "with current_version as (select release_date from terminology.code_system_version where code_system = ? and version = ? and sys_status = 'A') " +
-        select + "from terminology.code_system_version csv where csv.code_system = ? and csv.release_date < (select release_date from current_version)" +
+        select + "from terminology.code_system_version csv where csv.code_system = ? and csv.release_date < (select release_date from current_version) and csv.sys_status = 'A' " +
         "order by csv.release_date desc";
     return getBean(sql, bp, codeSystem, version, codeSystem);
   }

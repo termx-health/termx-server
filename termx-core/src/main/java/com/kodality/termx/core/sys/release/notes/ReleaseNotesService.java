@@ -243,7 +243,7 @@ public class ReleaseNotesService {
   }
 
   private Stream<Object[]> composeVsCsvRow(Entry<ValueSet, ValueSetCompareResult> entry) {
-    ValueSetVersion oldVsv = entry.getKey().getLastVersion().get();
+    ValueSetVersion oldVsv = entry.getKey().getFirstVersion().get();
     ValueSetVersion newVsv = entry.getKey().getLastVersion().get();
     List<Object> commonPart = vsRowCommonPart(entry, newVsv);
 

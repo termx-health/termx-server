@@ -194,7 +194,7 @@ public class ValueSetVersionRepository extends BaseRepository {
 
   public ValueSetVersion loadPreviousVersion(String valueSet, String version) {
     String sql = "with current_version as (select release_date from terminology.value_set_version where value_set = ? and version = ? and sys_status = 'A') " +
-            select + "from terminology.value_set_version vsv where vsv.value_set = ? and vsv.release_date < (select release_date from current_version)" +
+            select + "from terminology.value_set_version vsv where vsv.value_set = ? and vsv.release_date < (select release_date from current_version) and vsv.sys_status = 'A' " +
             "order by vsv.id, vsv.release_date desc";
     return getBean(sql, bp, valueSet, version, valueSet);
   }
