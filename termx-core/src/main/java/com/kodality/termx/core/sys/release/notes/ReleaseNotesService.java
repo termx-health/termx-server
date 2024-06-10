@@ -243,12 +243,15 @@ public class ReleaseNotesService {
   }
 
   private Stream<Object[]> composeVsCsvRow(Entry<ValueSet, ValueSetCompareResult> entry) {
-    ValueSetVersion vsv = entry.getKey().getLastVersion().get();
-    List<Object> commonPart = vsRowCommonPart(entry, vsv);
-    Map<String, ValueSetVersionConcept> oldConcepts =
-        entry.getKey().getFirstVersion().get().getSnapshot().getExpansion().stream().collect(Collectors.toMap(c -> c.getConcept().getCode(), c -> c));
-    Map<String, ValueSetVersionConcept> newConcepts =
-        vsv.getSnapshot().getExpansion().stream().collect(Collectors.toMap(c -> c.getConcept().getCode(), c -> c));
+    ValueSetVersion oldVsv = entry.getKey().getLastVersion().get();
+    ValueSetVersion newVsv = entry.getKey().getLastVersion().get();
+    List<Object> commonPart = vsRowCommonPart(entry, newVsv);
+
+
+    Map<String, ValueSetVersionConcept> oldConcepts = oldVsv.getSnapshot() == null || oldVsv.getSnapshot().getExpansion() == null ? Map.of() :
+       oldVsv.getSnapshot().getExpansion().stream().collect(Collectors.toMap(c -> c.getConcept().getCode(), c -> c));
+    Map<String, ValueSetVersionConcept> newConcepts = newVsv.getSnapshot() == null || newVsv.getSnapshot().getExpansion() == null ? Map.of() :
+        newVsv.getSnapshot().getExpansion().stream().collect(Collectors.toMap(c -> c.getConcept().getCode(), c -> c));
 
     List<Object[]> rows = new ArrayList<>();
     rows.addAll(entry.getValue().getAdded().stream().map(code -> vsRows(commonPart, newConcepts.get(code), "added")).toList());
