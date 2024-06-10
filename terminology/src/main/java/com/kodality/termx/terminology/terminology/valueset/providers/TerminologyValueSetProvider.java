@@ -3,7 +3,7 @@ package com.kodality.termx.terminology.terminology.valueset.providers;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.termx.core.ts.ValueSetProvider;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
-import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionService;
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.terminology.terminology.valueset.compare.ValueSetCompareService;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetCompareResult;

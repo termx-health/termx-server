@@ -1,10 +1,10 @@
-package com.kodality.termx.terminology.terminology.valueset.concept;
+package com.kodality.termx.terminology.terminology.valueset.expansion;
 
 import com.kodality.commons.util.DateUtil;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptUtil;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
-import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionRepository;
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionRepository;
 import com.kodality.termx.terminology.terminology.valueset.snapshot.ValueSetSnapshotService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.core.ts.ValueSetExternalExpandProvider;

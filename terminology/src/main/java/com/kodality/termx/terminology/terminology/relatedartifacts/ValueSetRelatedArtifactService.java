@@ -4,7 +4,7 @@ import com.kodality.termx.core.sys.space.SpaceService;
 import com.kodality.termx.core.wiki.PageProvider;
 import com.kodality.termx.sys.space.Space;
 import com.kodality.termx.sys.space.SpaceQueryParams;
-import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionService;
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifact;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
 import com.kodality.termx.ts.valueset.ValueSetVersion;

@@ -1,4 +1,4 @@
-package com.kodality.termx.terminology.terminology.valueset;
+package com.kodality.termx.terminology.terminology.valueset.version;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;

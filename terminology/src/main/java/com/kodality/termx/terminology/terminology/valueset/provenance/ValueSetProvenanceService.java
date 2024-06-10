@@ -1,9 +1,11 @@
-package com.kodality.termx.terminology.terminology.valueset;
+package com.kodality.termx.terminology.terminology.valueset.provenance;
 
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceChange;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.core.sys.provenance.ProvenanceUtil;
+import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetTransactionRequest;
 import com.kodality.termx.ts.valueset.ValueSetVersion;

@@ -5,7 +5,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.MapUtil;
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
-import com.kodality.termx.terminology.terminology.valueset.concept.ValueSetVersionConceptService;
+import com.kodality.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Concept;

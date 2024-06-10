@@ -6,7 +6,7 @@ import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptServ
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptUtil;
 import com.kodality.termx.terminology.terminology.mapset.association.MapSetAssociationRepository;
 import com.kodality.termx.terminology.terminology.mapset.version.MapSetVersionRepository;
-import com.kodality.termx.terminology.terminology.valueset.concept.ValueSetVersionConceptService;
+import com.kodality.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;

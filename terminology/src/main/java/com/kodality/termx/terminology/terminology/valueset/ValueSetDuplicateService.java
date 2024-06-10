@@ -2,6 +2,7 @@ package com.kodality.termx.terminology.terminology.valueset;
 
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleService;
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import io.micronaut.core.util.CollectionUtils;

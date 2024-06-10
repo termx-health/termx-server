@@ -4,6 +4,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.core.fhir.BaseFhirMapper;
 import com.kodality.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleService;
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetTransactionRequest;

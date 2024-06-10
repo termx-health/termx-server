@@ -2,7 +2,7 @@ package com.kodality.termx.editionest.atcest.utils;
 
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import com.kodality.termx.core.utils.CsvMapperUtil;
+import com.kodality.termx.core.utils.CsvUtil;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -19,7 +19,7 @@ public class AtcEstCsvReader {
           .withColumnSeparator(SEPARATOR)
           .withHeader();
 
-      MappingIterator<AtcEst> it = CsvMapperUtil.getMapper()
+      MappingIterator<AtcEst> it = CsvUtil.getMapper()
           .readerFor(AtcEst.class)
           .with(schema)
           .readValues(new String(bytes, StandardCharsets.ISO_8859_1));

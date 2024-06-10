@@ -3,13 +3,14 @@ package com.kodality.termx.terminology.terminology.codesystem.concept;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.sys.lorque.LorqueProcessService;
+import com.kodality.termx.core.utils.CsvUtil;
+import com.kodality.termx.core.utils.XlsxUtil;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.ProcessResult;
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
-import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
@@ -17,11 +18,6 @@ import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.termx.ts.property.PropertyReference;
-import com.univocity.parsers.csv.CsvWriter;
-import com.univocity.parsers.csv.CsvWriterSettings;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,15 +29,9 @@ import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 
 @Singleton
 @RequiredArgsConstructor
@@ -82,10 +72,10 @@ public class ConceptExportService {
     List<Object[]> rows = concepts.stream().map(c -> composeRow(c, headers, children, parents)).toList();
 
     if ("csv".equals(format)) {
-      return composeCsv(headers, rows);
+      return CsvUtil.composeCsv(headers, rows);
     }
     if ("xlsx".equals(format)) {
-      return composeXlsx(headers, rows);
+      return XlsxUtil.composeXlsx(headers, rows, "concepts");
     }
     throw ApiError.TE807.toApiException();
   }
@@ -144,48 +134,5 @@ public class ConceptExportService {
       }
     });
     return row.toArray();
-  }
-
-  private byte[] composeCsv(List<String> headers, List<Object[]> rows) {
-    OutputStream out = new ByteArrayOutputStream();
-    CsvWriterSettings settings = new CsvWriterSettings();
-    settings.getFormat().setDelimiter(',');
-    CsvWriter writer = new CsvWriter(out, settings);
-    writer.writeHeaders(headers);
-    writer.writeRowsAndClose(rows);
-    return out.toString().getBytes();
-  }
-
-  private byte[] composeXlsx(List<String> headers, List<Object[]> rows) {
-
-    Workbook workbook = new XSSFWorkbook();
-    Sheet sheet = workbook.createSheet("Concepts");
-
-    int rowNum = 0;
-    rowNum = addXlsxRow(headers.toArray(), sheet, rowNum);
-    for (Object[] row : rows) {
-      rowNum = addXlsxRow(row, sheet, rowNum);
-    }
-
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    try {
-      workbook.write(bos);
-      bos.close();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return bos.toByteArray();
-  }
-
-  private int addXlsxRow(Object[] array, Sheet sheet, int rowNum) {
-    Row row = sheet.createRow(rowNum);
-    int cellNum = 0;
-    for (Object o : array) {
-      Cell cell = row.createCell(cellNum);
-      cell.setCellValue(defaultIfNull(o, "").toString());
-      cellNum++;
-    }
-    rowNum++;
-    return rowNum;
   }
 }

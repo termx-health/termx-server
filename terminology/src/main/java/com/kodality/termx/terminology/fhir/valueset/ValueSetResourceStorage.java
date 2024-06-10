@@ -12,7 +12,7 @@ import com.kodality.termx.core.fhir.BaseFhirResourceHandler;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
-import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionService;
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
 import com.kodality.termx.ts.valueset.ValueSetVersion;

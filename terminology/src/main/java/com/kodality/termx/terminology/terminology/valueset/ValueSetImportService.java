@@ -10,9 +10,10 @@ import com.kodality.termx.core.sys.spacepackage.resource.PackageResourceService;
 import com.kodality.termx.core.sys.spacepackage.version.PackageVersionService;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
-import com.kodality.termx.terminology.terminology.valueset.concept.ValueSetVersionConceptService;
+import com.kodality.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
 import com.kodality.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.terminology.terminology.valueset.snapshot.ValueSetSnapshotService;
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
@@ -33,7 +34,6 @@ import java.util.stream.Collectors;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.saxon.expr.Component.M;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j

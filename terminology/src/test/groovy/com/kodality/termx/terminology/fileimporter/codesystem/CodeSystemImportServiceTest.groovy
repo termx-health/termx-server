@@ -1,7 +1,6 @@
 package com.kodality.termx.terminology.fileimporter.codesystem
 
 import com.kodality.commons.model.QueryResult
-import com.kodality.termx.terminology.fhir.FhirFshConverter
 import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirImportService
 import com.kodality.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportRequest
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemImportService
@@ -11,8 +10,8 @@ import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemV
 import com.kodality.termx.terminology.terminology.codesystem.compare.CodeSystemCompareService
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService
 import com.kodality.termx.terminology.terminology.valueset.ValueSetService
-import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionService
-import com.kodality.termx.terminology.terminology.valueset.concept.ValueSetVersionConceptService
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService
+import com.kodality.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService
 import com.kodality.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleService
 import com.kodality.termx.ts.PublicationStatus
 import com.kodality.termx.ts.codesystem.*

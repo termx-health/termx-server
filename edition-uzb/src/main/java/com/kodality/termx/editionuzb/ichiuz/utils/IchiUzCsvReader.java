@@ -2,7 +2,7 @@ package com.kodality.termx.editionuzb.ichiuz.utils;
 
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import com.kodality.termx.core.utils.CsvMapperUtil;
+import com.kodality.termx.core.utils.CsvUtil;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -18,7 +18,7 @@ public class IchiUzCsvReader {
           .withColumnSeparator(SEPARATOR)
           .withHeader();
 
-      MappingIterator<IchiUz> it = CsvMapperUtil.getMapper()
+      MappingIterator<IchiUz> it = CsvUtil.getMapper()
           .readerFor(IchiUz.class)
           .with(schema)
           .readValues(new String(bytes, StandardCharsets.ISO_8859_1));

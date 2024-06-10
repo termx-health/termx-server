@@ -3,6 +3,8 @@ package com.kodality.termx.terminology.terminology.valueset;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.core.sys.lorque.LorqueProcessService;
+import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.core.auth.Authorized;
@@ -11,9 +13,12 @@ import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.core.sys.job.logger.ImportLogger;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceChange;
-import com.kodality.termx.terminology.terminology.valueset.concept.ValueSetVersionConceptService;
+import com.kodality.termx.terminology.terminology.valueset.expansion.ValueSetExportService;
+import com.kodality.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
+import com.kodality.termx.terminology.terminology.valueset.provenance.ValueSetProvenanceService;
 import com.kodality.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleSetService;
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetExpandRequest;
 import com.kodality.termx.ts.valueset.ValueSetQueryParams;
@@ -25,7 +30,10 @@ import com.kodality.termx.ts.valueset.ValueSetVersionReference;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import io.micronaut.core.annotation.Nullable;
+import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MediaType;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Delete;
@@ -56,6 +64,8 @@ public class ValueSetController {
   private final ValueSetDuplicateService valueSetDuplicateService;
   private final ImportLogger importLogger;
   private final ValueSetProvenanceService provenanceService;
+  private final LorqueProcessService lorqueProcessService;
+  private final ValueSetExportService valueSetExportService;
 
   //----------------ValueSet----------------
 
@@ -217,6 +227,30 @@ public class ValueSetController {
       }
     }));
     return jobLogResponse;
+  }
+
+  @Authorized(Privilege.VS_VIEW)
+  @Get(uri = "/{valueSet}/versions/{version}/expansion-export{?params*}")
+  public LorqueProcess exportConcepts(@PathVariable String valueSet, @PathVariable String version, Map<String, String> params) {
+    return valueSetExportService.export(valueSet, version, params.getOrDefault("format", "csv"));
+  }
+
+  @Authorized(Privilege.VS_VIEW)
+  @Get(value = "/expansion-export-csv/result/{lorqueProcessId}", produces = "application/csv")
+  public HttpResponse<?> getConceptExportCSV(Long lorqueProcessId) {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment")
+        .contentType(MediaType.of("application/csv"));
+  }
+
+  @Authorized(Privilege.VS_VIEW)
+  @Get(value = "/expansion-export-xlsx/result/{lorqueProcessId}", produces = "application/vnd.ms-excel")
+  public HttpResponse<?> getConceptExportXLSX(Long lorqueProcessId) {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment")
+        .contentType(MediaType.of("application/vnd.ms-excel"));
   }
 
   //----------------ValueSet Version Rule----------------

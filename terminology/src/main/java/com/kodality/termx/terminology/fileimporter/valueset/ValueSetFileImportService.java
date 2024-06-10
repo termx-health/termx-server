@@ -18,7 +18,7 @@ import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptServ
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetImportService;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
-import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionService;
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;

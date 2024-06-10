@@ -23,7 +23,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemCompareResult;
 import com.kodality.termx.ts.codesystem.CodeSystemCompareResult.CodeSystemCompareResultDiffItem;
 import com.kodality.termx.terminology.terminology.codesystem.compare.CodeSystemCompareService;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
-import com.kodality.termx.terminology.terminology.valueset.concept.ValueSetVersionConceptService;
+import com.kodality.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemImportAction;

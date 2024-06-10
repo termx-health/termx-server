@@ -3,7 +3,7 @@ package com.kodality.termx.terminology.terminology.codesystem
 import com.kodality.commons.model.QueryResult
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService
 import com.kodality.termx.terminology.terminology.codesystem.validator.CodeSystemValidationService
-import com.kodality.termx.terminology.terminology.valueset.concept.ValueSetVersionConceptService
+import com.kodality.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService
 import com.kodality.termx.ts.codesystem.*
 import spock.lang.Specification
 import spock.lang.Unroll

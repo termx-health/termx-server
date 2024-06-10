@@ -1,7 +1,6 @@
 package com.kodality.termx.terminology.fhir.conceptmap;
 
 import com.kodality.commons.exception.ApiClientException;
-import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
@@ -14,9 +13,8 @@ import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptServ
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.terminology.mapset.MapSetService;
 import com.kodality.termx.terminology.terminology.relatedartifacts.MapSetRelatedArtifactService;
-import com.kodality.termx.terminology.terminology.relatedartifacts.RelatedArtifactService;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
-import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionService;
+import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
 import com.kodality.termx.ts.PublicationStatus;
