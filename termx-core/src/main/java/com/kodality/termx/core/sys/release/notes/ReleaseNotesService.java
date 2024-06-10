@@ -276,6 +276,9 @@ public class ReleaseNotesService {
   }
 
   private static Object[] vsRows(List<Object> commonPart, ValueSetVersionConcept concept, String changeType) {
+    if (concept == null) {
+      return List.of("", "", "", "", "").toArray();
+    }
     List<Object> row = new ArrayList<>(commonPart);
     row.add(concept.getConcept().getCode());
     row.add(Optional.ofNullable(concept.getDisplay()).map(Designation::getName).orElse(""));
