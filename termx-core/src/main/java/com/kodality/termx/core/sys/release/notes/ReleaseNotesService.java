@@ -107,11 +107,11 @@ public class ReleaseNotesService {
     sb.append(TranslateUtil.translate("txt.date", i18n)).append(": ").append(Optional.ofNullable(release.getReleaseDate()).map(r -> r.toLocalDate().toString()).orElse(""));
 
     Map<String, String> txtBlocks = new HashMap<>();
-    txtBlocks.putAll(composeCsTxt(csCompare));
-    txtBlocks.putAll(composeVsTxt(vsCompare));
+    txtBlocks.putAll(composeCsTxt(csCompare, release.getResources()));
+    txtBlocks.putAll(composeVsTxt(vsCompare, release.getResources()));
     txtBlocks.putAll(composeResourceTxt(release.getResources()));
 
-    txtBlocks.entrySet().stream().sorted(Entry.comparingByKey()).forEach(es -> sb.append(es.getValue()));
+    txtBlocks.entrySet().stream().sorted(Entry.comparingByKey()).forEach(es -> sb.append("\n\n").append(es.getValue()));
 
     attachment.setContent(sb.toString().getBytes());
     attachment.setContentLength((long) attachment.getContent().length);
@@ -194,10 +194,9 @@ public class ReleaseNotesService {
     return Stream.of(removed, added).filter(StringUtils::isNotEmpty).collect(Collectors.joining("\n"));
   }
 
-  private Map<String, String> composeCsTxt(Map<CodeSystem, CodeSystemCompareResult> res) {
-    return res.entrySet().stream().map(es -> {
+  private Map<String, String> composeCsTxt(Map<CodeSystem, CodeSystemCompareResult> res, List<ReleaseResource> resources) {
+    Map<String, String> map = res.entrySet().stream().map(es -> {
       StringBuilder sb = new StringBuilder();
-      sb.append("\n\n");
       sb.append(TranslateUtil.translate("txt.codesystem", i18n)).append(": ")
           .append(es.getKey().getTitle().getOrDefault(SessionStore.require().getLang(), es.getKey().getTitle().values().stream().findFirst().orElse("")))
           .append("\n");
@@ -231,6 +230,8 @@ public class ReleaseNotesService {
       }
       return Pair.of(es.getKey().getId() + "cs", sb.toString());
     }).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+    resources.stream().filter(r -> "CodeSystem".equals(r.getResourceType()) && !map.containsKey(r.getResourceId() + "cs")).forEach(r -> map.put(r.getResourceId() + "cs", getString(r)));
+    return map;
   }
 
   // ------------------------------ VS ------------------------------
@@ -285,10 +286,9 @@ public class ReleaseNotesService {
     return row.toArray();
   }
 
-  private Map<String, String> composeVsTxt(Map<ValueSet, ValueSetCompareResult> res) {
-    return res.entrySet().stream().map(es -> {
+  private Map<String, String> composeVsTxt(Map<ValueSet, ValueSetCompareResult> res, List<ReleaseResource> resources) {
+    Map<String, String> map = res.entrySet().stream().map(es -> {
       StringBuilder sb = new StringBuilder();
-      sb.append("\n\n");
       sb.append(TranslateUtil.translate("txt.valueset", i18n)).append(": ")
           .append(es.getKey().getTitle().getOrDefault(SessionStore.require().getLang(), es.getKey().getTitle().values().stream().findFirst().orElse("")))
           .append("\n");
@@ -313,16 +313,8 @@ public class ReleaseNotesService {
       }
       return Pair.of(es.getKey().getId() + "vs", sb.toString());
     }).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
-  }
-
-  private Map<String, String> composeResourceTxt(List<ReleaseResource> resources) {
-    return resources.stream().filter(r -> !List.of("CodeSystem", "ValueSet").contains(r.getResourceType())).map(r -> {
-      String sb = "\n\n" +
-          TranslateUtil.translate("txt." + r.getResourceType(), i18n) + ": " +
-          r.getResourceNames().getOrDefault(SessionStore.require().getLang(), r.getResourceNames().values().stream().findFirst().orElse("")) +
-          "\n";
-      return Pair.of(r.getResourceId() + r.getResourceType(), sb);
-    }).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+    resources.stream().filter(r -> "ValueSet".equals(r.getResourceType()) && !map.containsKey(r.getResourceId() + "vs")).forEach(r -> map.put(r.getResourceId() + "vs", getString(r)));
+    return map;
   }
 
   // ------------------------------ Common ------------------------------
@@ -331,5 +323,17 @@ public class ReleaseNotesService {
         .max(Comparator.comparing(Provenance::getDate))
         .map(p -> p.getDate().toString())
         .orElse("");
+  }
+
+  private Map<String, String> composeResourceTxt(List<ReleaseResource> resources) {
+    return resources.stream().filter(r -> !List.of("CodeSystem", "ValueSet").contains(r.getResourceType())).map(r -> {
+      String str = getString(r);
+      return Pair.of(r.getResourceId() + r.getResourceType(), str);
+    }).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+  }
+
+  private static String getString(ReleaseResource r) {
+    return TranslateUtil.translate("txt." + r.getResourceType(), i18n) + ": " +
+        r.getResourceNames().getOrDefault(SessionStore.require().getLang(), r.getResourceNames().values().stream().findFirst().orElse(""));
   }
 }
