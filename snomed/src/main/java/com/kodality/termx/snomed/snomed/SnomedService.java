@@ -31,11 +31,15 @@ public class SnomedService {
   private static final int MAX_CONCEPT_COUNT = 100;
   private final Pattern BRANCH_REGEX = Pattern.compile("^[A-Z0-9/-]+$");
 
-  public List<SnomedConcept> loadConcepts(List<String> ids) {
-    return loadConcepts(ids, null);
+  public List<SnomedConcept> loadConcepts(List<String> ids, String branch) {
+    return loadConcepts(ids, null, branch);
   }
 
-  public List<SnomedConcept> loadConcepts(List<String> ids, Boolean active) {
+  public List<SnomedConcept> loadConcepts(List<String> ids) {
+    return loadConcepts(ids, null, null);
+  }
+
+  public List<SnomedConcept> loadConcepts(List<String> ids, Boolean active, String branch) {
     List<SnomedConcept> concepts = new ArrayList<>();
     IntStream.range(0, (ids.size() + MAX_CONCEPT_COUNT - 1) / MAX_CONCEPT_COUNT)
         .mapToObj(i -> ids.subList(i * MAX_CONCEPT_COUNT, Math.min(ids.size(), (i + 1) * MAX_CONCEPT_COUNT))).forEach(batch -> {
@@ -43,6 +47,7 @@ public class SnomedService {
           params.setConceptIds(batch);
           params.setLimit(batch.size());
           params.setActive(active);
+          params.setBranch(branch);
           concepts.addAll(searchConcepts(params));
         });
     return concepts;

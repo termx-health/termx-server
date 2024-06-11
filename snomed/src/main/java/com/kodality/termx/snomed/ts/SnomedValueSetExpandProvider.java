@@ -1,10 +1,13 @@
 package com.kodality.termx.snomed.ts;
 
+import com.kodality.termx.core.ts.CodeSystemProvider;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.description.SnomedDescription;
 import com.kodality.termx.snomed.snomed.SnomedService;
 import com.kodality.termx.core.ts.ValueSetExternalExpandProvider;
+import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
+import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
@@ -12,6 +15,9 @@ import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,15 +31,17 @@ import javax.inject.Singleton;
 public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider {
   private final SnomedMapper snomedMapper;
   private final SnomedService snomedService;
+  private final CodeSystemProvider codeSystemProvider;
 
   private static final String SNOMED = "snomed-ct";
   private static final String SNOMED_IS_A = "is-a";
   private static final String SNOMED_DESCENDENT_OF = "descendent-of";
   private static final String SNOMED_IN = "in";
 
-  public SnomedValueSetExpandProvider(SnomedMapper snomedMapper, SnomedService snomedService) {
+  public SnomedValueSetExpandProvider(SnomedMapper snomedMapper, SnomedService snomedService, CodeSystemProvider codeSystemProvider) {
     this.snomedMapper = snomedMapper;
     this.snomedService = snomedService;
+    this.codeSystemProvider = codeSystemProvider;
   }
 
   @Override
@@ -42,20 +50,21 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
     List<String> preferredLanguages = preferredLanguage != null ? List.of(preferredLanguage) :
         version.getPreferredLanguage() != null ? List.of(version.getPreferredLanguage()) : List.of();
 
+    String branch = getBranch(rule.getCodeSystemVersion());
     if (CollectionUtils.isNotEmpty(rule.getConcepts())) {
-      return prepare(rule.getConcepts(), preferredLanguages, supportedLanguages);
+      return prepare(rule.getConcepts(), preferredLanguages, supportedLanguages, branch);
     }
     if (CollectionUtils.isNotEmpty(rule.getFilters())) {
-      return rule.getFilters().stream().flatMap(f -> filterConcepts(f, preferredLanguages, supportedLanguages).stream()).collect(Collectors.toList());
+      return rule.getFilters().stream().flatMap(f -> filterConcepts(f, preferredLanguages, supportedLanguages, branch).stream()).collect(Collectors.toList());
     }
     return new ArrayList<>();
   }
 
-  private List<ValueSetVersionConcept> filterConcepts(ValueSetRuleFilter filter, List<String> preferredLanguages, List<String> supportedLanguages) {
+  private List<ValueSetVersionConcept> filterConcepts(ValueSetRuleFilter filter, List<String> preferredLanguages, List<String> supportedLanguages, String branch) {
     String ecl = composeEcl(filter);
-    List<SnomedConcept> snomedConcepts = snomedService.searchConcepts(new SnomedConceptSearchParams().setEcl(ecl).setAll(true));
+    List<SnomedConcept> snomedConcepts = snomedService.searchConcepts(new SnomedConceptSearchParams().setEcl(ecl).setBranch(branch).setAll(true));
 
-    Map<String, List<SnomedDescription>> snomedDescriptions = getDescriptions(snomedConcepts.stream().map(SnomedConcept::getConceptId).toList());
+    Map<String, List<SnomedDescription>> snomedDescriptions = getDescriptions(snomedConcepts.stream().map(SnomedConcept::getConceptId).toList(), branch);
 
     return snomedConcepts.stream().map(sc -> {
           ValueSetVersionConcept c = new ValueSetVersionConcept();
@@ -69,12 +78,12 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
     ).toList();
   }
 
-  private List<ValueSetVersionConcept> prepare(List<ValueSetVersionConcept> concepts, List<String> preferredLanguages, List<String> supportedLanguages) {
+  private List<ValueSetVersionConcept> prepare(List<ValueSetVersionConcept> concepts, List<String> preferredLanguages, List<String> supportedLanguages, String branch) {
     Map<String, List<SnomedConcept>> snomedConcepts =
-        snomedService.loadConcepts(concepts.stream().map(c -> c.getConcept().getCode()).collect(Collectors.toList())).stream()
+        snomedService.loadConcepts(concepts.stream().map(c -> c.getConcept().getCode()).collect(Collectors.toList()), branch).stream()
             .collect(Collectors.groupingBy(SnomedConcept::getConceptId));
 
-    Map<String, List<SnomedDescription>> snomedDescriptions = getDescriptions(snomedConcepts.keySet().stream().toList());
+    Map<String, List<SnomedDescription>> snomedDescriptions = getDescriptions(snomedConcepts.keySet().stream().toList(), branch);
 
     concepts.forEach(c -> {
       SnomedConcept sc = Optional.ofNullable(snomedConcepts.get(c.getConcept().getCode())).flatMap(l -> l.stream().findFirst()).orElse(null);
@@ -90,11 +99,11 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
     return concepts.stream().sorted(Comparator.comparing(c -> c.getOrderNumber() == null ? 0 : c.getOrderNumber())).toList();
   }
 
-  private Map<String, List<SnomedDescription>> getDescriptions(List<String> conceptIds) {
+  private Map<String, List<SnomedDescription>> getDescriptions(List<String> conceptIds, String branch) {
     if (CollectionUtils.isEmpty(conceptIds)) {
       return Map.of();
     }
-    return snomedService.loadDescriptions(conceptIds).stream().collect(Collectors.groupingBy(SnomedDescription::getConceptId));
+    return snomedService.loadDescriptions(branch, conceptIds).stream().collect(Collectors.groupingBy(SnomedDescription::getConceptId));
   }
 
   private Designation findDisplay(List<SnomedDescription> snomedDescriptions, List<String> preferredLanguages) {
@@ -129,6 +138,46 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
     ecl += f.getValue();
     return ecl;
   }
+
+  private String getBranch(CodeSystemVersionReference codeSystemVersion) {
+    if (codeSystemVersion == null || codeSystemVersion.getUri() == null) {
+      return null;
+    }
+
+    String[] uri = codeSystemVersion.getUri().split("/");
+    if (uri.length < 5) {
+      return null;
+    }
+
+    String moduleId = uri[4];
+    Map<String, String> modules = loadModules();
+    String branchPath = modules.get(moduleId);
+    if (branchPath == null) {
+      return null;
+    }
+
+    String version = uri.length < 7 ? null : getBranchVersion(uri[6]);
+    return branchPath + (version == null ? "" : "/" + version);
+  }
+
+  private String getBranchVersion(String yyyyMMdd) {
+    DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+    DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    try {
+      LocalDate date = LocalDate.parse(yyyyMMdd, inputFormatter);
+      return date.format(outputFormatter);
+    } catch (DateTimeParseException e) {
+      return null;
+    }
+  }
+
+  private Map<String, String> loadModules() {
+    ConceptQueryParams params = new ConceptQueryParams().setCodeSystem("snomed-module").limit(-1);
+    return codeSystemProvider.searchConcepts(params).getData().stream()
+        .filter(c -> c.getLastVersion().map(v -> v.getPropertyValue("moduleId").isPresent() && v.getPropertyValue("branchPath").isPresent()).orElse(false))
+        .collect(Collectors.toMap(c -> (String) c.getLastVersion().get().getPropertyValue("moduleId").get(), c -> (String) c.getLastVersion().get().getPropertyValue("branchPath").get()));
+  }
+
 
   @Override
   public String getCodeSystemId() {
