@@ -1,11 +1,14 @@
 package com.kodality.termx.core.sys.release.notes;
 
+import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.micronaut.rest.MultipartBodyReader.Attachment;
+import com.kodality.commons.model.LocalizedName;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.core.sys.release.ReleaseRepository;
 import com.kodality.termx.core.ts.CodeSystemProvider;
+import com.kodality.termx.core.ts.MapSetProvider;
 import com.kodality.termx.core.ts.ValueSetProvider;
 import com.kodality.termx.core.utils.TranslateUtil;
 import com.kodality.termx.sys.release.Release;
@@ -19,6 +22,8 @@ import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
+import com.kodality.termx.ts.mapset.MapSet;
+import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetCompareResult;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
@@ -50,6 +55,7 @@ public class ReleaseNotesService {
   private final ReleaseRepository releaseRepository;
   private final CodeSystemProvider codeSystemProvider;
   private final ValueSetProvider valueSetProvider;
+  private final MapSetProvider mapSetProvider;
   private final ReleaseAttachmentService attachmentService;
   private final ProvenanceService provenanceService;
 
@@ -61,8 +67,8 @@ public class ReleaseNotesService {
   }
 
   public void generateNotes(Release release) {
-    Map<CodeSystem, CodeSystemCompareResult> codeSystemCompareResults = getCodeSystemCompareResults(release);
-    Map<ValueSet, ValueSetCompareResult> valueSetCompareResults = getValueSetCompareResults(release);
+    List<Pair<CodeSystem, CodeSystemCompareResult>> codeSystemCompareResults = getCodeSystemCompareResults(release);
+    List<Pair<ValueSet, ValueSetCompareResult>> valueSetCompareResults = getValueSetCompareResults(release);
 
     Attachment csv = composeCsv(codeSystemCompareResults, valueSetCompareResults)
         .setFileName(release.getCode() + ".csv");
@@ -75,7 +81,7 @@ public class ReleaseNotesService {
     ));
   }
 
-  private Attachment composeCsv(Map<CodeSystem, CodeSystemCompareResult> csCompare, Map<ValueSet, ValueSetCompareResult> vsCompare) {
+  private Attachment composeCsv(List<Pair<CodeSystem, CodeSystemCompareResult>> csCompare, List<Pair<ValueSet, ValueSetCompareResult>> vsCompare) {
     Attachment attachment = new Attachment().setContentType("text/csv");
 
     OutputStream out = new ByteArrayOutputStream();
@@ -86,8 +92,8 @@ public class ReleaseNotesService {
     csvWriter.writeHeaders("Type", "URI", "Version", "Title", "Name", "EffectivePeriod", "ChangeDate", "Code", "Display", "ChangeType", "Changes", "Comments");
 
     List<Object[]> rows = new ArrayList<>();
-    rows.addAll(csCompare.entrySet().stream().flatMap(this::composeCsCsvRow).toList());
-    rows.addAll(vsCompare.entrySet().stream().flatMap(this::composeVsCsvRow).toList());
+    rows.addAll(csCompare.stream().filter(es -> es.getValue() != null).flatMap(this::composeCsCsvRow).toList());
+    rows.addAll(vsCompare.stream().filter(es -> es.getValue() != null).flatMap(this::composeVsCsvRow).toList());
     csvWriter.writeRowsAndClose(rows);
 
     attachment.setContent(out.toString().getBytes());
@@ -95,7 +101,8 @@ public class ReleaseNotesService {
     return attachment;
   }
 
-  private Attachment composeTxt(Release release, Map<CodeSystem, CodeSystemCompareResult> csCompare, Map<ValueSet, ValueSetCompareResult> vsCompare) {
+  private Attachment composeTxt(Release release, List<Pair<CodeSystem, CodeSystemCompareResult>> csCompare,
+                                List<Pair<ValueSet, ValueSetCompareResult>> vsCompare) {
     Attachment attachment = new Attachment().setContentType("text/plain");
 
     StringBuilder sb = new StringBuilder();
@@ -104,11 +111,13 @@ public class ReleaseNotesService {
         .append(" ")
         .append(release.getNames().getOrDefault(SessionStore.require().getLang(), release.getNames().values().stream().findFirst().orElse("")))
         .append("\n");
-    sb.append(TranslateUtil.translate("txt.date", i18n)).append(": ").append(Optional.ofNullable(release.getReleaseDate()).map(r -> r.toLocalDate().toString()).orElse(""));
+    sb.append(TranslateUtil.translate("txt.date", i18n)).append(": ")
+        .append(Optional.ofNullable(release.getReleaseDate()).map(r -> r.toLocalDate().toString()).orElse(""));
 
     Map<String, String> txtBlocks = new HashMap<>();
-    txtBlocks.putAll(composeCsTxt(csCompare, release.getResources()));
-    txtBlocks.putAll(composeVsTxt(vsCompare, release.getResources()));
+    txtBlocks.putAll(composeCsTxt(csCompare));
+    txtBlocks.putAll(composeVsTxt(vsCompare));
+    txtBlocks.putAll(composeMsTxt(release.getResources()));
     txtBlocks.putAll(composeResourceTxt(release.getResources()));
 
     txtBlocks.entrySet().stream().sorted(Entry.comparingByKey()).forEach(es -> sb.append("\n\n").append(es.getValue()));
@@ -119,12 +128,12 @@ public class ReleaseNotesService {
   }
 
   // ------------------------------ CS ------------------------------
-  private Map<CodeSystem, CodeSystemCompareResult> getCodeSystemCompareResults(Release release) {
+  private List<Pair<CodeSystem, CodeSystemCompareResult>> getCodeSystemCompareResults(Release release) {
     return release.getResources().stream()
         .filter(r -> "CodeSystem".equals(r.getResourceType()))
         .map(r -> codeSystemProvider.compareWithPreviousVersion(r.getResourceId(), r.getResourceVersion()))
         .filter(Objects::nonNull)
-        .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+        .collect(Collectors.toList());
   }
 
   private Stream<Object[]> composeCsCsvRow(Entry<CodeSystem, CodeSystemCompareResult> entry) {
@@ -194,8 +203,15 @@ public class ReleaseNotesService {
     return Stream.of(removed, added).filter(StringUtils::isNotEmpty).collect(Collectors.joining("\n"));
   }
 
-  private Map<String, String> composeCsTxt(Map<CodeSystem, CodeSystemCompareResult> res, List<ReleaseResource> resources) {
-    Map<String, String> map = res.entrySet().stream().map(es -> {
+  private Map<String, String> composeCsTxt(List<Pair<CodeSystem, CodeSystemCompareResult>> res) {
+    return res.stream().map(es -> {
+      String key = es.getKey().getId() + "cs";
+      if (es.getValue() == null) {
+        String str = getString(es.getKey().getId(), es.getKey().getTitle(),
+            es.getKey().getVersions().size() > 1 ? es.getKey().getFirstVersion().get().getVersion() : null, es.getKey().getLastVersion().get().getVersion(),
+            es.getKey().getUri(), "codesystem");
+        return Pair.of(key, str);
+      }
       StringBuilder sb = new StringBuilder();
       sb.append(TranslateUtil.translate("txt.codesystem", i18n)).append(": ")
           .append(es.getKey().getTitle().getOrDefault(SessionStore.require().getLang(), es.getKey().getTitle().values().stream().findFirst().orElse("")))
@@ -228,19 +244,16 @@ public class ReleaseNotesService {
       if (StringUtils.isNotEmpty(description)) {
         sb.append("\n").append(TranslateUtil.translate("txt.description", i18n)).append(": ").append(description);
       }
-      return Pair.of(es.getKey().getId() + "cs", sb.toString());
+      return Pair.of(key, sb.toString());
     }).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
-    resources.stream().filter(r -> "CodeSystem".equals(r.getResourceType()) && !map.containsKey(r.getResourceId() + "cs")).forEach(r -> map.put(r.getResourceId() + "cs", getString(r)));
-    return map;
   }
 
   // ------------------------------ VS ------------------------------
-  private Map<ValueSet, ValueSetCompareResult> getValueSetCompareResults(Release release) {
+  private List<Pair<ValueSet, ValueSetCompareResult>> getValueSetCompareResults(Release release) {
     return release.getResources().stream()
         .filter(r -> "ValueSet".equals(r.getResourceType()))
         .map(r -> valueSetProvider.compareWithPreviousVersion(r.getResourceId(), r.getResourceVersion()))
-        .filter(Objects::nonNull)
-        .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+        .collect(Collectors.toList());
   }
 
   private Stream<Object[]> composeVsCsvRow(Entry<ValueSet, ValueSetCompareResult> entry) {
@@ -250,7 +263,7 @@ public class ReleaseNotesService {
 
 
     Map<String, ValueSetVersionConcept> oldConcepts = oldVsv.getSnapshot() == null || oldVsv.getSnapshot().getExpansion() == null ? Map.of() :
-       oldVsv.getSnapshot().getExpansion().stream().collect(Collectors.toMap(c -> c.getConcept().getCode(), c -> c));
+        oldVsv.getSnapshot().getExpansion().stream().collect(Collectors.toMap(c -> c.getConcept().getCode(), c -> c));
     Map<String, ValueSetVersionConcept> newConcepts = newVsv.getSnapshot() == null || newVsv.getSnapshot().getExpansion() == null ? Map.of() :
         newVsv.getSnapshot().getExpansion().stream().collect(Collectors.toMap(c -> c.getConcept().getCode(), c -> c));
 
@@ -286,8 +299,15 @@ public class ReleaseNotesService {
     return row.toArray();
   }
 
-  private Map<String, String> composeVsTxt(Map<ValueSet, ValueSetCompareResult> res, List<ReleaseResource> resources) {
-    Map<String, String> map = res.entrySet().stream().map(es -> {
+  private Map<String, String> composeVsTxt(List<Pair<ValueSet, ValueSetCompareResult>> res) {
+    return res.stream().map(es -> {
+      String key = es.getKey().getId() + "vs";
+      if (es.getValue() == null) {
+        String str = getString(es.getKey().getId(), es.getKey().getTitle(),
+            es.getKey().getVersions().size() > 1 ? es.getKey().getFirstVersion().get().getVersion() : null, es.getKey().getLastVersion().get().getVersion(),
+            es.getKey().getUri(), "valueset");
+        return Pair.of(key, str);
+      }
       StringBuilder sb = new StringBuilder();
       sb.append(TranslateUtil.translate("txt.valueset", i18n)).append(": ")
           .append(es.getKey().getTitle().getOrDefault(SessionStore.require().getLang(), es.getKey().getTitle().values().stream().findFirst().orElse("")))
@@ -311,11 +331,27 @@ public class ReleaseNotesService {
       if (StringUtils.isNotEmpty(description)) {
         sb.append("\n").append(TranslateUtil.translate("txt.description", i18n)).append(": ").append(description);
       }
-      return Pair.of(es.getKey().getId() + "vs", sb.toString());
+      return Pair.of(key, sb.toString());
     }).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
-    resources.stream().filter(r -> "ValueSet".equals(r.getResourceType()) && !map.containsKey(r.getResourceId() + "vs")).forEach(r -> map.put(r.getResourceId() + "vs", getString(r)));
-    return map;
   }
+
+  // ------------------------------ MS ------------------------------
+
+  private Map<String, String> composeMsTxt(List<ReleaseResource> resources) {
+    return resources.stream().filter(r -> "MapSet".equals(r.getResourceType())).map(r -> {
+      MapSet mapSet = mapSetProvider.loadMapSet(r.getResourceId())
+          .orElseThrow(() -> new NotFoundException("MapSet not found: " + r.getResourceId()));
+      MapSetVersion currentVersion = mapSetProvider.loadMapSetVersion(r.getResourceId(), r.getResourceVersion())
+          .orElseThrow(() -> new NotFoundException("MapSetVersion not found: " + r.getResourceId() + "--" + r.getResourceVersion()));
+      MapSetVersion previousVersion = mapSetProvider.loadPreviousMapSetVersion(r.getResourceId(), r.getResourceVersion()).orElse(null);
+
+      String str = getString(mapSet.getId(), mapSet.getTitle(),
+          Optional.ofNullable(previousVersion).map(MapSetVersion::getVersion).orElse(null), currentVersion.getVersion(),
+          mapSet.getUri(), r.getResourceType());
+      return Pair.of(r.getResourceId() + "-ms", str);
+    }).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+  }
+
 
   // ------------------------------ Common ------------------------------
   private static String getLatestProvenanceDate(List<Provenance> provenances) {
@@ -326,7 +362,7 @@ public class ReleaseNotesService {
   }
 
   private Map<String, String> composeResourceTxt(List<ReleaseResource> resources) {
-    return resources.stream().filter(r -> !List.of("CodeSystem", "ValueSet").contains(r.getResourceType())).map(r -> {
+    return resources.stream().filter(r -> !List.of("CodeSystem", "ValueSet", "MapSet").contains(r.getResourceType())).map(r -> {
       String str = getString(r);
       return Pair.of(r.getResourceId() + r.getResourceType(), str);
     }).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
@@ -334,6 +370,15 @@ public class ReleaseNotesService {
 
   private static String getString(ReleaseResource r) {
     return TranslateUtil.translate("txt." + r.getResourceType(), i18n) + ": " +
-        r.getResourceNames().getOrDefault(SessionStore.require().getLang(), r.getResourceNames().values().stream().findFirst().orElse(""));
+        r.getResourceNames().getOrDefault(SessionStore.require().getLang(), r.getResourceNames().values().stream().findFirst().orElse(r.getResourceId())) +
+        (r.getResourceVersion() == null ? "" : " " + r.getResourceVersion());
+  }
+
+  private static String getString(String id, LocalizedName name, String previousVersion, String currentVersion, String uri, String type) {
+    return TranslateUtil.translate("txt." + type, i18n) + ": " +
+        name.getOrDefault(SessionStore.require().getLang(), name.values().stream().findFirst().orElse(id)) +
+        (previousVersion == null ? " " + currentVersion : "") + "\n" +
+        TranslateUtil.translate("txt.url", i18n) + ": " + uri
+        + (previousVersion != null ? "\n" + TranslateUtil.translate("txt.changes", i18n) + ": " + previousVersion + " -> " + currentVersion : "");
   }
 }

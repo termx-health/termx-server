@@ -74,6 +74,10 @@ public class MapSetVersionService {
     return Optional.ofNullable(repository.load(mapSet, versionCode));
   }
 
+  public Optional<MapSetVersion> loadPrevious(String mapSet, String versionCode) {
+    return Optional.ofNullable(repository.loadPreviousVersion(mapSet, versionCode));
+  }
+
   public MapSetVersion load(Long id) {
     return repository.load(id);
   }

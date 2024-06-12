@@ -8,8 +8,9 @@ import com.kodality.termx.terminology.terminology.valueset.compare.ValueSetCompa
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetCompareResult;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
-import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
@@ -37,12 +38,13 @@ public class TerminologyValueSetProvider extends ValueSetProvider {
         .orElseThrow(() -> new NotFoundException("ValueSetVersion not found: " + valueSet + "--" + version));
     ValueSetVersion previousVersion = valueSetVersionService.loadPreviousVersion(valueSet, version);
 
+    ValueSet vs = valueSetService.load(valueSet);
+    vs.setVersions(Stream.of(previousVersion, currentVersion).filter(Objects::nonNull).toList());
     if (previousVersion == null) {
-      return null;
+      return Pair.of(vs, null);
     }
 
-    ValueSet vs = valueSetService.load(valueSet);
-    vs.setVersions(List.of(previousVersion, currentVersion));
+
     ValueSetCompareResult compare = valueSetCompareService.compare(previousVersion.getId(), currentVersion.getId());
     return Pair.of(vs, compare);
   }

@@ -12,8 +12,9 @@ import com.kodality.termx.ts.codesystem.CodeSystemCompareResult;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
-import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
@@ -50,12 +51,13 @@ public class TerminologyCodeSystemProvider extends CodeSystemProvider {
         .orElseThrow(() -> new NotFoundException("CodeSystemVersion not found: " + codeSystem + "--" + version));
     CodeSystemVersion previousVersion = codeSystemVersionService.loadPreviousVersion(codeSystem, version);
 
+    CodeSystem cs = codeSystemService.load(codeSystem).orElseThrow(() -> new NotFoundException("CodeSystem not found: " + codeSystem));
+    cs.setVersions(Stream.of(previousVersion, currentVersion).filter(Objects::nonNull).toList());
     if (previousVersion == null) {
-      return null;
+      return Pair.of(cs, null);
     }
 
-    CodeSystem cs = codeSystemService.load(codeSystem).orElseThrow(() -> new NotFoundException("CodeSystem not found: " + codeSystem));
-    cs.setVersions(List.of(previousVersion, currentVersion));
+
     CodeSystemCompareResult compare = codeSystemCompareService.compare(previousVersion.getId(), currentVersion.getId());
     return Pair.of(cs, compare);
   }
