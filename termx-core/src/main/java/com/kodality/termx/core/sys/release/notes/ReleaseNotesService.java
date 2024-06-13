@@ -357,7 +357,7 @@ public class ReleaseNotesService {
   private static String getLatestProvenanceDate(List<Provenance> provenances) {
     return Optional.ofNullable(provenances).orElse(List.of()).stream()
         .max(Comparator.comparing(Provenance::getDate))
-        .map(p -> p.getDate().toString())
+        .map(p -> p.getDate().toLocalDate().toString())
         .orElse("");
   }
 
