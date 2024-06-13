@@ -1,8 +1,6 @@
 package com.kodality.termx.core.sys.space;
 
-import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.ApiError;
 import com.kodality.termx.core.Privilege;
 import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.core.auth.SessionStore;
@@ -12,7 +10,6 @@ import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.space.Space;
 import com.kodality.termx.sys.space.SpaceQueryParams;
 import com.kodality.termx.sys.space.overview.SpaceOverviewResponse;
-import com.kodality.termx.core.utils.FileUtil;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
@@ -24,9 +21,7 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
 import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.multipart.CompletedFileUpload;
-import io.reactivex.rxjava3.core.Flowable;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -98,29 +93,10 @@ public class SpaceController {
   @Authorized(privilege = Privilege.S_EDIT)
   @Post(value = "/sync", consumes = MediaType.MULTIPART_FORM_DATA)
   public HttpResponse<?> importSpace(@Nullable Publisher<CompletedFileUpload> file) {
-    //TODO: auth?
-    JobLogResponse job = importLogger.createJob(JOB_TYPE);
     if (file == null) {
       return HttpResponse.badRequest();
     }
-
-
-    String yaml = new String(FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()));
-    CompletableFuture.runAsync(SessionStore.wrap(() -> {
-      try {
-        log.info("Space import started");
-        long start = System.currentTimeMillis();
-        importService.importSpace(yaml);
-        log.info("Space import took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
-        importLogger.logImport(job.getJobId());
-      } catch (ApiClientException e) {
-        log.error("Error while importing space", e);
-        importLogger.logImport(job.getJobId(), e);
-      } catch (Exception e) {
-        log.error("Error while importing space", e);
-        importLogger.logImport(job.getJobId(), ApiError.TC106.toApiException());
-      }
-    }));
+    JobLogResponse job = importLogger.runJob(JOB_TYPE, file, importService::importSpace);
     return HttpResponse.ok(job);
   }
 }

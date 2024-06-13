@@ -6,21 +6,25 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.MapUtil;
 import com.kodality.termx.core.ApiError;
+import com.kodality.termx.core.sys.job.logger.ImportLog;
+import com.kodality.termx.core.sys.server.TerminologyServerService;
+import com.kodality.termx.core.sys.spacepackage.PackageService;
+import com.kodality.termx.core.sys.spacepackage.version.PackageVersionService;
+import com.kodality.termx.core.utils.FileUtil;
 import com.kodality.termx.sys.ResourceType;
 import com.kodality.termx.sys.server.TerminologyServer;
 import com.kodality.termx.sys.server.TerminologyServerQueryParams;
-import com.kodality.termx.core.sys.server.TerminologyServerService;
 import com.kodality.termx.sys.space.Space;
 import com.kodality.termx.sys.space.overview.SpaceOverview;
 import com.kodality.termx.sys.space.resource.SpaceResourceProvider;
 import com.kodality.termx.sys.spacepackage.Package;
-import com.kodality.termx.core.sys.spacepackage.PackageService;
 import com.kodality.termx.sys.spacepackage.PackageStatus;
 import com.kodality.termx.sys.spacepackage.PackageVersion;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
-import com.kodality.termx.core.sys.spacepackage.version.PackageVersionService;
 import com.kodality.termx.ts.Language;
 import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.http.multipart.CompletedFileUpload;
+import io.reactivex.rxjava3.core.Flowable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +33,7 @@ import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
+import org.reactivestreams.Publisher;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -43,7 +48,8 @@ public class SpaceImportService {
   private final List<SpaceResourceProvider> resourceProviders;
 
   @Transactional
-  public void importSpace(String yaml) {
+  public ImportLog importSpace(Publisher<CompletedFileUpload> file) {
+    String yaml = new String(FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()));
     SpaceOverview overview = fromYaml(yaml);
 
     if (overview == null || overview.getCode() == null) {
@@ -66,6 +72,7 @@ public class SpaceImportService {
     Package pack = preparePackage(space.getId(), overview.getPack().getCode());
 
     savePackageVersion(pack.getId(), overview.getPack().getVersion(), resources);
+    return new ImportLog();
   }
 
   private Space prepareSpace(String code, List<TerminologyServer> terminologyServers) {

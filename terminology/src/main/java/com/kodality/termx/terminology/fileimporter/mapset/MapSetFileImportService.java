@@ -1,6 +1,7 @@
 package com.kodality.termx.terminology.fileimporter.mapset;
 
 import com.kodality.commons.model.Issue;
+import com.kodality.termx.core.sys.job.logger.ImportLog;
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.fhir.FhirFshConverter;
 import com.kodality.termx.terminology.fhir.conceptmap.ConceptMapFhirImportService;
@@ -45,7 +46,10 @@ public class MapSetFileImportService {
   private final ConceptMapFhirImportService fhirImportService;
   private final Optional<FhirFshConverter> fhirFshConverter;
 
-  public void process(MapSetFileImportRequest req, byte[] file) {
+  public ImportLog process(Map<String, Object> params) {
+    MapSetFileImportRequest req = (MapSetFileImportRequest) params.get("request");
+    byte[] file = (byte[]) params.get("file");
+
     MapSetImportAction action = new MapSetImportAction();
     action.setActivate(req.getMapSetVersion() != null && PublicationStatus.active.equals(req.getMapSetVersion().getStatus()));
     action.setCleanRun(req.isCleanRun());
@@ -53,11 +57,11 @@ public class MapSetFileImportService {
 
     if (req.getUrl() != null) {
       fhirImportService.importMapSetFromUrl(req.getUrl(), req.getMapSet().getId(), action);
-      return;
+      return new ImportLog();
     }
     if ("json".equals(req.getType())) {
       fhirImportService.importMapSet(new String(file, StandardCharsets.UTF_8), req.getMapSet().getId(), action);
-      return;
+      return new ImportLog();
     }
     if ("fsh".equals(req.getType())) {
       String json = fhirFshConverter.orElseThrow(ApiError.TE806::toApiException).toFhir(new String(file, StandardCharsets.UTF_8)).join();
@@ -67,6 +71,7 @@ public class MapSetFileImportService {
     List<MapSetFileImportRow> rows = parseRows(file);
     prepare(req, rows);
     save(req, rows, action);
+    return new ImportLog();
   }
 
   private void prepare(MapSetFileImportRequest req, List<MapSetFileImportRow> rows) {

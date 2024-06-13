@@ -1,5 +1,6 @@
 package com.kodality.termx.editionint.loinc;
 
+import com.kodality.termx.core.sys.job.logger.ImportLog;
 import com.kodality.termx.editionint.loinc.utils.LoincConcept;
 import com.kodality.termx.editionint.loinc.utils.LoincConcept.LoincConceptAssociation;
 import com.kodality.termx.editionint.loinc.utils.LoincConcept.LoincConceptProperty;
@@ -44,7 +45,9 @@ public class LoincService {
   private MapSetImportProvider msImportProvider;
 
   @Transactional
-  public void importLoinc(LoincImportRequest request, List<Pair<String, byte[]>> files) {
+  public ImportLog importLoinc(Map<String, Object> params) {
+    LoincImportRequest request = (LoincImportRequest) params.get("request");
+    List<Pair<String, byte[]>> files = (List<Pair<String, byte[]>>) params.get("files");
     processAnswerList(files, request);
 
     Map<String, LoincPart> parts = processParts(files);
@@ -52,6 +55,7 @@ public class LoincService {
     processLinguisticVariants(files, request, parts, concepts);
     csImportProvider.importCodeSystem(LoincPartMapper.toRequest(request, parts.values().stream().toList()));
     csImportProvider.importCodeSystem(LoincMapper.toRequest(request, concepts.values().stream().toList()));
+    return new ImportLog();
   }
 
   private Map<String, LoincPart> processParts(List<Pair<String, byte[]>> files) {

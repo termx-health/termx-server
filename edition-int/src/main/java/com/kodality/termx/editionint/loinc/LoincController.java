@@ -1,15 +1,12 @@
 package com.kodality.termx.editionint.loinc;
 
-import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.editionint.ApiError;
-import com.kodality.termx.editionint.Privilege;
 import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.editionint.loinc.utils.LoincImportRequest;
-import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.core.sys.job.logger.ImportLogger;
 import com.kodality.termx.core.utils.FileUtil;
+import com.kodality.termx.editionint.Privilege;
+import com.kodality.termx.editionint.loinc.utils.LoincImportRequest;
+import com.kodality.termx.sys.job.JobLogResponse;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
@@ -18,7 +15,7 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.reactivex.rxjava3.core.Flowable;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -28,6 +25,8 @@ import org.reactivestreams.Publisher;
 @Controller("/loinc")
 @RequiredArgsConstructor
 public class LoincController {
+  public static final String JOB_TYPE = "loinc-import";
+
   private final LoincService loincService;
   private final ImportLogger importLogger;
 
@@ -54,23 +53,8 @@ public class LoincController {
         Pair.of("translations", getBytes(translationsFile)),
         Pair.of("order-observation", getBytes(orderObservationFile)));
 
-    JobLogResponse jobLogResponse = importLogger.createJob("LOINC-IMPORT");
-    CompletableFuture.runAsync(SessionStore.wrap(() -> {
-      try {
-        log.info("LOINC import started");
-        long start = System.currentTimeMillis();
-        loincService.importLoinc(req, files);
-        log.info("LOINC import took {} seconds", (System.currentTimeMillis() - start) / 1000);
-        importLogger.logImport(jobLogResponse.getJobId());
-      } catch (ApiClientException e) {
-        log.error("Error while importing LOINC", e);
-        importLogger.logImport(jobLogResponse.getJobId(), e);
-      } catch (Exception e) {
-        log.error("Error while importing LOINC (TE700)", e);
-        importLogger.logImport(jobLogResponse.getJobId(), ApiError.EI000.toApiException());
-      }
-    }));
-    return jobLogResponse;
+    Map<String, Object> params = Map.of("request", req, "files", files);
+    return importLogger.runJob(JOB_TYPE, params, loincService::importLoinc);
   }
 
   private static byte[] getBytes(Publisher<CompletedFileUpload> file) {

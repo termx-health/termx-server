@@ -23,10 +23,10 @@ public class SpaceSyncService {
   private final ResourceSyncService resourceSyncService;
   private final TerminologyServerService terminologyServerService;
 
-  private static final String JOB = "space-resource-sync";
+  private static final String JOB_TYPE = "space-resource-sync";
   public JobLogResponse syncResources(Long spaceId, String packageCode, String version, boolean clearSync) {
     Map<String, Object> params = Map.of("spaceId", spaceId, "packageCode", packageCode, "version", version, "clearSync", clearSync);
-    return importLogger.runJob(JOB, params, this::sync);
+    return importLogger.runJob(JOB_TYPE, params, this::sync);
   }
 
   public ImportLog sync(Map<String, Object> params) {

@@ -4,6 +4,7 @@ import com.kodality.termx.core.treminology.LoincImportProvider;
 import com.kodality.termx.editionint.loinc.utils.LoincImportRequest;
 import com.kodality.termx.editionint.loinc.utils.LoincZipReader;
 import java.util.List;
+import java.util.Map;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
@@ -16,6 +17,6 @@ public class IntLoincImportProvider extends LoincImportProvider {
   @Override
   public void importLoinc(String system, byte[] file) {
     List<Pair<String, byte[]>> files = new LoincZipReader().handleZipPack(file);
-    service.importLoinc(new LoincImportRequest().setVersion("1"), files);
+    service.importLoinc(Map.of("request", new LoincImportRequest().setVersion("1"), "files", files));
   }
 }
