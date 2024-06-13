@@ -3,15 +3,12 @@ package com.kodality.termx.core.sys.checklist.assertion;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.sys.checklist.ChecklistService;
 import com.kodality.termx.core.sys.lorque.LorqueProcessService;
+import com.kodality.termx.core.utils.CsvUtil;
 import com.kodality.termx.sys.checklist.Checklist;
 import com.kodality.termx.sys.checklist.ChecklistAssertion.ChecklistAssertionError;
 import com.kodality.termx.sys.checklist.ChecklistQueryParams;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.ProcessResult;
-import com.univocity.parsers.csv.CsvWriter;
-import com.univocity.parsers.csv.CsvWriterSettings;
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -57,7 +54,7 @@ public class ChecklistAssertionExportService {
         .filter(checklist -> CollectionUtils.isNotEmpty(checklist.getAssertions()) && !checklist.getAssertions().get(0).isPassed())
         .map(this::composeRow).toList();
 
-    return composeCsv(headers, rows);
+    return CsvUtil.composeCsv(headers, rows, ",").toString().getBytes();
   }
 
   private Object[] composeRow(Checklist checklist) {
@@ -68,15 +65,5 @@ public class ChecklistAssertionExportService {
     row.add(Optional.ofNullable(checklist.getAssertions().get(0).getErrors()).orElse(List.of()).stream()
         .map(ChecklistAssertionError::getError).collect(Collectors.joining("\n")));
     return row.toArray();
-  }
-
-  private byte[] composeCsv(List<String> headers, List<Object[]> rows) {
-    OutputStream out = new ByteArrayOutputStream();
-    CsvWriterSettings settings = new CsvWriterSettings();
-    settings.getFormat().setDelimiter(',');
-    CsvWriter writer = new CsvWriter(out, settings);
-    writer.writeHeaders(headers);
-    writer.writeRowsAndClose(rows);
-    return out.toString().getBytes();
   }
 }

@@ -20,13 +20,13 @@ public class CsvUtil {
         .registerModule(new JavaTimeModule());
   }
 
-  public static byte[] composeCsv(List<String> headers, List<Object[]> rows) {
+  public static OutputStream composeCsv(List<String> headers, List<Object[]> rows, String delimiter) {
     OutputStream out = new ByteArrayOutputStream();
     CsvWriterSettings settings = new CsvWriterSettings();
-    settings.getFormat().setDelimiter(',');
+    settings.getFormat().setDelimiter(delimiter);
     CsvWriter writer = new CsvWriter(out, settings);
     writer.writeHeaders(headers);
     writer.writeRowsAndClose(rows);
-    return out.toString().getBytes();
+    return out;
   }
 }

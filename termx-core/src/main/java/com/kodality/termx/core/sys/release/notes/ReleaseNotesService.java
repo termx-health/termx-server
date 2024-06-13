@@ -10,6 +10,7 @@ import com.kodality.termx.core.sys.release.ReleaseRepository;
 import com.kodality.termx.core.ts.CodeSystemProvider;
 import com.kodality.termx.core.ts.MapSetProvider;
 import com.kodality.termx.core.ts.ValueSetProvider;
+import com.kodality.termx.core.utils.CsvUtil;
 import com.kodality.termx.core.utils.TranslateUtil;
 import com.kodality.termx.sys.release.Release;
 import com.kodality.termx.sys.release.ReleaseResource;
@@ -29,10 +30,6 @@ import com.kodality.termx.ts.valueset.ValueSetCompareResult;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionReference;
-import com.univocity.parsers.csv.CsvWriter;
-import com.univocity.parsers.csv.CsvWriterSettings;
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -84,19 +81,14 @@ public class ReleaseNotesService {
   private Attachment composeCsv(List<Pair<CodeSystem, CodeSystemCompareResult>> csCompare, List<Pair<ValueSet, ValueSetCompareResult>> vsCompare) {
     Attachment attachment = new Attachment().setContentType("text/csv");
 
-    OutputStream out = new ByteArrayOutputStream();
-    CsvWriterSettings settings = new CsvWriterSettings();
-    settings.getFormat().setDelimiter(';');
-
-    CsvWriter csvWriter = new CsvWriter(out, settings);
-    csvWriter.writeHeaders("Type", "URI", "Version", "Title", "Name", "EffectivePeriod", "ChangeDate", "Code", "Display", "ChangeType", "Changes", "Comments");
+    List<String> headers = List.of("Type", "URI", "Version", "Title", "Name", "EffectivePeriod", "ChangeDate",
+        "Code", "Display", "ChangeType", "Changes", "Comments");
 
     List<Object[]> rows = new ArrayList<>();
     rows.addAll(csCompare.stream().filter(es -> es.getValue() != null).flatMap(this::composeCsCsvRow).toList());
     rows.addAll(vsCompare.stream().filter(es -> es.getValue() != null).flatMap(this::composeVsCsvRow).toList());
-    csvWriter.writeRowsAndClose(rows);
 
-    attachment.setContent(out.toString().getBytes());
+    attachment.setContent(CsvUtil.composeCsv(headers, rows, ";").toString().getBytes());
     attachment.setContentLength((long) attachment.getContent().length);
     return attachment;
   }

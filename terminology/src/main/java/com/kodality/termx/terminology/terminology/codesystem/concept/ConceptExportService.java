@@ -72,7 +72,7 @@ public class ConceptExportService {
     List<Object[]> rows = concepts.stream().map(c -> composeRow(c, headers, children, parents)).toList();
 
     if ("csv".equals(format)) {
-      return CsvUtil.composeCsv(headers, rows);
+      return CsvUtil.composeCsv(headers, rows, ",").toString().getBytes();
     }
     if ("xlsx".equals(format)) {
       return XlsxUtil.composeXlsx(headers, rows, "concepts");

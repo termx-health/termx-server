@@ -20,13 +20,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.poi.sl.draw.geom.GuideIf.Op;
 
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -54,7 +52,7 @@ public class ValueSetExportService {
 
     String format = params.get("format");
     if ("csv".equals(format)) {
-      return ProcessResult.binary(CsvUtil.composeCsv(headers, rows));
+      return ProcessResult.binary(CsvUtil.composeCsv(headers, rows, ";").toString().getBytes());
     }
     if ("xlsx".equals(format)) {
       return ProcessResult.binary(XlsxUtil.composeXlsx(headers, rows, "concepts"));

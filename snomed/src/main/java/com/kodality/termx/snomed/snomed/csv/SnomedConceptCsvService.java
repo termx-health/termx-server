@@ -1,17 +1,15 @@
 package com.kodality.termx.snomed.snomed.csv;
 
 import com.kodality.termx.core.auth.SessionStore;
+import com.kodality.termx.core.sys.lorque.LorqueProcessService;
+import com.kodality.termx.core.utils.CsvUtil;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.description.SnomedDescription;
 import com.kodality.termx.snomed.snomed.SnomedService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
-import com.kodality.termx.core.sys.lorque.LorqueProcessService;
 import com.kodality.termx.sys.lorque.ProcessResult;
-import com.univocity.parsers.csv.CsvWriter;
-import com.univocity.parsers.csv.CsvWriterSettings;
 import io.micronaut.core.util.CollectionUtils;
-import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,14 +52,9 @@ public class SnomedConceptCsvService {
     Map<String, List<SnomedDescription>> conceptDescriptions = descriptions.stream().collect(Collectors.groupingBy(SnomedDescription::getConceptId));
     List<String> langs = descriptions.stream().map(SnomedDescription::getLang).distinct().toList();
 
-    OutputStream out = new ByteArrayOutputStream();
-    CsvWriterSettings settings = new CsvWriterSettings();
-    settings.getFormat().setDelimiter(',');
-    CsvWriter writer = new CsvWriter(out, settings);
-
-    writer.writeHeaders(composeHeaders(langs));
-    writer.writeRowsAndClose(concepts.stream().map(c -> composeRow(c, conceptDescriptions.get(c.getConceptId()), langs)).toList());
-    return out;
+    List<String> headers = composeHeaders(langs);
+    List<Object[]> rows = concepts.stream().map(c -> composeRow(c, conceptDescriptions.get(c.getConceptId()), langs)).toList();
+    return CsvUtil.composeCsv(headers, rows, ",");
   }
 
   private List<String> composeHeaders(List<String> langs) {
