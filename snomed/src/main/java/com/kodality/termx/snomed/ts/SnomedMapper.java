@@ -89,7 +89,7 @@ public class SnomedMapper {
     return List.of(designationPt, designationFsn);
   }
 
-  private Designation toConceptDesignation(SnomedDescription d) {
+  public Designation toConceptDesignation(SnomedDescription d) {
     Designation designation = new Designation();
     designation.setName(d.getTerm());
     designation.setLanguage(d.getLang());

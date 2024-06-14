@@ -1,11 +1,11 @@
 package com.kodality.termx.snomed.ts;
 
 import com.kodality.termx.core.ts.CodeSystemProvider;
+import com.kodality.termx.core.ts.ValueSetExternalExpandProvider;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.description.SnomedDescription;
 import com.kodality.termx.snomed.snomed.SnomedService;
-import com.kodality.termx.core.ts.ValueSetExternalExpandProvider;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
@@ -121,7 +121,8 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
     return snomedDescriptions.stream()
         .filter(d -> CollectionUtils.isEmpty(supportedLanguages) || d.getLang() != null && supportedLanguages.contains(d.getLang()))
         .filter(d -> !d.getDescriptionId().equals(displayId))
-        .map(d -> new Designation().setName(d.getTerm()).setLanguage(d.getLang())).toList();
+        .filter(SnomedDescription::isActive)
+        .map(snomedMapper::toConceptDesignation).toList();
   }
 
   private String composeEcl(ValueSetRuleFilter f) {
