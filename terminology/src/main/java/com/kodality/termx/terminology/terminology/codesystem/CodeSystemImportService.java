@@ -328,8 +328,6 @@ public class CodeSystemImportService {
 
   private List<CodeSystemEntityVersion> mergeWithActiveVersion(List<CodeSystemEntityVersion> newVersions, CodeSystemEntityVersion activeVersion,
                                                                Long csVersionId) {
-    System.out.println("Retired: " + activeVersion.getCode());
-    codeSystemEntityVersionService.retire(activeVersion.getId());
     codeSystemVersionService.unlinkEntityVersions(csVersionId, List.of(activeVersion.getId()));
     return mergeVersions(newVersions, activeVersion);
   }
