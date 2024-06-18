@@ -173,6 +173,8 @@ public class ValueSetFileImportService {
 
     String csId = request.getVersion() != null && request.getVersion().getRule() != null && request.getVersion().getRule().getCodeSystem() != null ?
         request.getVersion().getRule().getCodeSystem() : existingRule != null ? existingRule.getCodeSystem() : null;
+    String csVersion = request.getVersion() != null && request.getVersion().getRule() != null && request.getVersion().getRule().getCodeSystemVersion() != null ?
+        request.getVersion().getRule().getCodeSystemVersion() : existingRule != null ? existingRule.getCodeSystemVersion().getVersion() : null;
     CodeSystem codeSystem = codeSystemService.load(csId).orElse(null);
     if (codeSystem == null) {
       issues.add(new Issue(Severity.ERROR, String.format("CodeSystem %s not found", csId)));
@@ -183,7 +185,10 @@ public class ValueSetFileImportService {
     }
     List<String> conceptCodes = concepts.stream().map(c -> c.getConcept().getCode()).distinct().toList();
     List<String> csConceptCodes = conceptService.query(
-        new ConceptQueryParams().setCodeSystem(codeSystem.getId()).setCodes(conceptCodes).limit(conceptCodes.size()))
+            new ConceptQueryParams()
+                .setCodeSystem(codeSystem.getId())
+                .setCodeSystemVersion(csVersion)
+                .setCodes(conceptCodes).limit(conceptCodes.size()))
         .getData().stream().map(Concept::getCode).toList();
     conceptCodes.forEach(code -> {
       if (!csConceptCodes.contains(code)) {

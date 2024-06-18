@@ -1,14 +1,18 @@
 package com.kodality.termx.terminology.terminology.valueset.expansion;
 
 import com.kodality.commons.util.JsonUtil;
+import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.sys.lorque.LorqueProcessService;
 import com.kodality.termx.core.utils.CsvUtil;
 import com.kodality.termx.core.utils.XlsxUtil;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.ProcessResult;
 import com.kodality.termx.terminology.ApiError;
+import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
+import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptUtil;
 import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
+import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
@@ -34,6 +38,7 @@ import static java.util.stream.Collectors.toList;
 public class ValueSetExportService {
   private final LorqueProcessService lorqueProcessService;
   private final ValueSetVersionService valueSetVersionService;
+  private final ConceptService conceptService;
   private final static String process = "vs-expansion-export";
 
   public LorqueProcess export(String valueSet, String version, String format) {
@@ -76,7 +81,7 @@ public class ValueSetExportService {
 
     fields.addAll(concepts.stream().flatMap(v -> Optional.ofNullable(v.getPropertyValues()).orElse(List.of()).stream())
         .flatMap(pv -> pv.getEntityPropertyType().equals(EntityPropertyType.coding) ?
-            Stream.of(pv.getEntityProperty(), pv.getEntityProperty() + "#system") :
+            Stream.of(pv.getEntityProperty(), pv.getEntityProperty() + "#system", pv.getEntityProperty() + "#display") :
             Stream.of(pv.getEntityProperty()))
         .collect(Collectors.groupingBy(v -> v)).keySet().stream().sorted().toList());
 
@@ -91,20 +96,29 @@ public class ValueSetExportService {
         .collect(Collectors.groupingBy(d -> "additionalDesignation#" + d.getLanguage()));
     Map<String, List<EntityPropertyValue>> properties = Optional.ofNullable(c.getPropertyValues()).orElse(List.of()).stream()
         .flatMap(pv -> pv.getEntityPropertyType().equals(EntityPropertyType.coding) ?
-            Stream.of(Pair.of(pv.getEntityProperty(), pv), Pair.of(pv.getEntityProperty() + "#system", pv)) :
+            Stream.of(Pair.of(pv.getEntityProperty(), pv), Pair.of(pv.getEntityProperty() + "#system", pv), Pair.of(pv.getEntityProperty() + "#display", pv)) :
             Stream.of(Pair.of(pv.getEntityProperty(), pv)))
         .collect(Collectors.groupingBy(Pair::getKey, mapping(Pair::getValue, toList())));
     headers.forEach(h -> {
       if ("code".equals(h)) {
         row.add(c.getConcept().getCode());
-      } else if (c.getDisplay() != null && (Stream.of("display", c.getDisplay().getLanguage()).filter(Objects::nonNull).collect(Collectors.joining("#"))).equals(h)) {
+      } else if (c.getDisplay() != null &&
+          (Stream.of("display", c.getDisplay().getLanguage()).filter(Objects::nonNull).collect(Collectors.joining("#"))).equals(h)) {
         row.add(c.getDisplay().getName());
       } else if (designations.containsKey(h)) {
         row.add(designations.get(h).stream().map(Designation::getName).collect(Collectors.joining("#")));
       } else if (properties.containsKey(h)) {
         row.add(properties.get(h).stream().map(pv -> {
           if (pv.getEntityPropertyType().equals(EntityPropertyType.coding)) {
-            return h.contains("#system") ? pv.asCodingValue().getCodeSystem() : pv.asCodingValue().getCode();
+            if (h.contains("#system")) {
+              return pv.asCodingValue().getCodeSystem();
+            }
+            if (h.contains("#display")) {
+              return conceptService.load(pv.asCodingValue().getCodeSystem(), pv.asCodingValue().getCode())
+                  .map(cv -> ConceptUtil.getDisplay(cv.getLastVersion().map(CodeSystemEntityVersion::getDesignations)
+                      .orElse(List.of()), SessionStore.require().getLang(), null).getName()).orElse("");
+            }
+            return pv.asCodingValue().getCode();
           }
           if (pv.getEntityPropertyType().equals(EntityPropertyType.dateTime)) {
             return pv.asDateTimeValue().toLocalDate().toString();
