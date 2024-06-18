@@ -87,6 +87,8 @@ public class ValueSetExportService {
 
     fields.addAll(vsv.getRuleSet().getRules().stream().flatMap(r -> Optional.ofNullable(r.getProperties()).orElse(List.of()).stream())
         .filter(p -> fields.stream().noneMatch(f -> f.equals(p))).toList());
+    fields.add("codeSystem");
+    fields.add("codeSystemVersion");
     return fields;
   }
 
@@ -127,6 +129,10 @@ public class ValueSetExportService {
         }).collect(Collectors.joining("#")));
       } else if (List.of("parent", "groupedBy").contains(h)) {
         row.addAll(Optional.ofNullable(c.getAssociations()).orElse(List.of()).stream().map(CodeSystemAssociation::getTargetCode).toList());
+      } else if("codeSystem".equals(h)) {
+        row.add(c.getConcept().getBaseCodeSystemUri() != null ? c.getConcept().getBaseCodeSystemUri() : Optional.ofNullable(c.getConcept().getCodeSystemUri()).orElse(""));
+      }  else if("codeSystemVersion".equals(h)) {
+        row.add(c.getConcept().getCodeSystemVersions() != null ? c.getConcept().getCodeSystemVersions().stream().findFirst().orElse(null) : null);
       } else {
         row.add("");
       }

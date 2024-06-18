@@ -51,13 +51,17 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
         version.getPreferredLanguage() != null ? List.of(version.getPreferredLanguage()) : List.of();
 
     String branch = getBranch(rule.getCodeSystemVersion());
+    List<ValueSetVersionConcept> concepts = new ArrayList<>();
     if (CollectionUtils.isNotEmpty(rule.getConcepts())) {
-      return prepare(rule.getConcepts(), preferredLanguages, supportedLanguages, branch);
+      concepts.addAll(prepare(rule.getConcepts(), preferredLanguages, supportedLanguages, branch));
     }
     if (CollectionUtils.isNotEmpty(rule.getFilters())) {
-      return rule.getFilters().stream().flatMap(f -> filterConcepts(f, preferredLanguages, supportedLanguages, branch).stream()).collect(Collectors.toList());
+      concepts.addAll(rule.getFilters().stream().flatMap(f -> filterConcepts(f, preferredLanguages, supportedLanguages, branch).stream()).toList());
     }
-    return new ArrayList<>();
+    if (rule.getCodeSystemVersion() != null && rule.getCodeSystemVersion().getVersion() != null) {
+      concepts.forEach(c -> c.getConcept().setCodeSystemVersions(List.of(rule.getCodeSystemVersion().getVersion())));
+    }
+    return concepts;
   }
 
   private List<ValueSetVersionConcept> filterConcepts(ValueSetRuleFilter filter, List<String> preferredLanguages, List<String> supportedLanguages, String branch) {
