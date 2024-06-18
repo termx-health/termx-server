@@ -216,19 +216,19 @@ public class ReleaseNotesService {
           .append(es.getKey().getLastVersion().map(CodeSystemVersionReference::getVersion).orElse(""))
           .append(" ");
       if (!es.getValue().getAdded().isEmpty()) {
-        sb.append(TranslateUtil.translate("txt.added", i18n)).append(":")
+        sb.append(TranslateUtil.translate("txt.added", i18n)).append(": ")
             .append(es.getValue().getAdded().size()).append("; ");
       }
       if (es.getValue().getChanged().stream().anyMatch(CodeSystemCompareResultChange::retired)) {
-        sb.append(TranslateUtil.translate("txt.retired", i18n)).append(":")
+        sb.append(TranslateUtil.translate("txt.retired", i18n)).append(": ")
             .append(es.getValue().getChanged().stream().filter(CodeSystemCompareResultChange::retired).toList().size()).append("; ");
       }
       if (es.getValue().getChanged().stream().anyMatch(CodeSystemCompareResultChange::contentChanged)) {
-        sb.append(TranslateUtil.translate("txt.changed", i18n)).append(":")
+        sb.append(TranslateUtil.translate("txt.changed", i18n)).append(": ")
             .append(es.getValue().getChanged().stream().filter(CodeSystemCompareResultChange::contentChanged).toList().size()).append("; ");
       }
       if (!es.getValue().getDeleted().isEmpty()) {
-        sb.append(TranslateUtil.translate("txt.removed", i18n)).append(":").append(es.getValue().getDeleted().size()).append("; ");
+        sb.append(TranslateUtil.translate("txt.removed", i18n)).append(": ").append(es.getValue().getDeleted().size()).append("; ");
       }
       String description = es.getKey().getLastVersion()
           .map(CodeSystemVersion::getDescription)
