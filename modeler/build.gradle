@@ -17,7 +17,9 @@ dependencies {
     implementation("com.kodality.kefhir:validation-profile:${kefhirVersion}") { changing = true }
 
     implementation 'commons-io:commons-io:2.16.1'
-    implementation 'org.ogce:xpp3:1.1.6'
+    implementation("org.ogce:xpp3:1.1.6") {
+        exclude group: 'junit'
+    }
 
     implementation("io.micronaut.spring:micronaut-spring")
     implementation("io.micronaut.validation:micronaut-validation")

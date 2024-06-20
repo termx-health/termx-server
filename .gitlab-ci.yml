@@ -50,3 +50,14 @@ release tag:
   except:
     - branches
 
+
+dependency check:
+  when: manual
+  script:
+    - ./gradlew dependencyCheckAnalyze > etc/dependency-check.txt
+    - etc/list-deps.sh > etc/deps.md
+  artifacts:
+    paths:
+      - etc/dependency-check.txt
+      - etc/deps.md
+
