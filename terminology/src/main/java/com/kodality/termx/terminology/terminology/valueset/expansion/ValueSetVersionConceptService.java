@@ -84,12 +84,14 @@ public class ValueSetVersionConceptService {
       return version.getSnapshot().getExpansion();
     }
 
-    List<ValueSetVersionConcept> expansion = internalExpand(version, preferredLanguage);
+    List<ValueSetVersionConcept> expansion = internalExpand(version, preferredLanguage).stream()
+        .filter(e -> e.getConcept().getConceptVersionId() != null)
+        .collect(Collectors.toList());
     ValueSetVersionRuleSet ruleSet = version.getRuleSet();
     for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
       expansion.addAll(provider.expand(ruleSet, version, preferredLanguage));
     }
-    if (ruleSet.getInactive() == null || !ruleSet.getInactive()) {
+    if (ruleSet.getInactive() != null && !ruleSet.getInactive()) {
       return expansion.stream().filter(ValueSetVersionConcept::isActive).collect(Collectors.toList());
     }
     return expansion;

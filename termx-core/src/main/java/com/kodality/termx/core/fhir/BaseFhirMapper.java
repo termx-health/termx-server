@@ -237,6 +237,9 @@ public abstract class BaseFhirMapper {
   }
 
   protected static String fromFhirVersionDescriptionExtension(List<Extension> extensions) {
+    if (extensions == null) {
+      return null;
+    }
     return extensions.stream().filter(e -> "https://fhir.ee/StructureDefinition/version-description".equals(e.getUrl())).findFirst().map(Extension::getValueString).orElse(null);
   }
 }

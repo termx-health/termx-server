@@ -96,7 +96,7 @@ expressions as (
       and t.rule_id = c.rule_id
       and ((t.filter_ -> 'property' ->> 'name')::text = 'code' and 
            (c.csev_code = (t.filter_ ->> 'value')::text or 
-           regexp_match(c.csev_code, (t.filter_ ->> 'value')::text||'$') is not null))
+           c.csev_code = any(regexp_match(c.csev_code, (t.filter_ ->> 'value')::text||'$'))))
    union     
    -- concepts that match by properties 
    select c.*, t.rn, t.fcnt from c, t 
