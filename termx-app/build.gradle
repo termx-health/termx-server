@@ -43,7 +43,6 @@ dependencies {
   implementation("io.micronaut:micronaut-management")
   implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
   implementation("io.micronaut.openapi:micronaut-openapi")
-  implementation 'org.liquibase:liquibase-core:4.24.0' //rewrite micronauts liquibase version to a fresher one
 
   implementation("com.fasterxml.jackson.core:jackson-core:${rootProject.jacksonVersion}")
   implementation("com.fasterxml.jackson.core:jackson-databind:${rootProject.jacksonVersion}")
