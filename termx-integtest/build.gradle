@@ -21,7 +21,7 @@ dependencies {
     testImplementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
     testImplementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
 
-    testRuntimeOnly("ch.qos.logback:logback-classic:1.4.7")
+    testRuntimeOnly("ch.qos.logback:logback-classic:1.5.6")
 }
 
 application {

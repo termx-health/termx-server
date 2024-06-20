@@ -5,7 +5,7 @@ import com.kodality.termx.core.sys.server.TerminologyServerResourceService;
 import com.kodality.termx.sys.ResourceReference;
 import com.kodality.termx.sys.server.resource.TerminologyServerResourceRequest;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

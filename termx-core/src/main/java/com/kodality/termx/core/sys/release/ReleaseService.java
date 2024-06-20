@@ -17,7 +17,7 @@ import com.kodality.termx.ts.PublicationStatus;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

@@ -10,7 +10,7 @@ import com.kodality.termx.sys.checklist.ChecklistRuleQueryParams;
 import io.micronaut.core.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ChecklistRuleRepository extends BaseRepository {

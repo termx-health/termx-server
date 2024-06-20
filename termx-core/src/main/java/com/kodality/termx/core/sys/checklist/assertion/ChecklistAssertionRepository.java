@@ -8,7 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.sys.checklist.ChecklistAssertion;
 import com.kodality.termx.sys.checklist.ChecklistAssertionQueryParams;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
 @Singleton

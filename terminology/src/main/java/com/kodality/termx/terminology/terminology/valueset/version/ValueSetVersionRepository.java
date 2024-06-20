@@ -12,7 +12,7 @@ import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
 import io.micronaut.core.util.StringUtils;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ValueSetVersionRepository extends BaseRepository {

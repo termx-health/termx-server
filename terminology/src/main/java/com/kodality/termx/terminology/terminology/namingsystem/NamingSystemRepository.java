@@ -12,7 +12,7 @@ import com.kodality.termx.ts.namingsystem.NamingSystemQueryParams.Ordering;
 import io.micronaut.core.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class NamingSystemRepository extends BaseRepository {

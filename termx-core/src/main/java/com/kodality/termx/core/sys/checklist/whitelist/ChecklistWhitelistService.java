@@ -2,7 +2,7 @@ package com.kodality.termx.core.sys.checklist.whitelist;
 
 import com.kodality.termx.sys.checklist.Checklist.ChecklistWhitelist;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

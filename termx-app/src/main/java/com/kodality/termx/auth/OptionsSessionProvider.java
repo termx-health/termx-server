@@ -3,7 +3,7 @@ package com.kodality.termx.auth;
 import com.kodality.termx.core.auth.SessionInfo;
 import io.micronaut.http.HttpMethod;
 import io.micronaut.http.HttpRequest;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class OptionsSessionProvider extends SessionProvider {

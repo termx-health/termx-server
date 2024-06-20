@@ -8,7 +8,7 @@ import com.kodality.termx.terminology.terminology.mapset.MapSetProvenanceService
 import com.kodality.termx.terminology.terminology.mapset.version.MapSetVersionService;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

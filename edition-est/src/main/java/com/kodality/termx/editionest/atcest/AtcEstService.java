@@ -7,8 +7,8 @@ import com.kodality.termx.core.http.BinaryHttpClient;
 import com.kodality.termx.core.ts.CodeSystemImportProvider;
 import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration;
 import java.util.List;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 

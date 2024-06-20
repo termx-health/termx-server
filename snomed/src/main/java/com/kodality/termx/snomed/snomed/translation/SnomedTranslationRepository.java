@@ -10,7 +10,7 @@ import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
 import io.micronaut.core.util.StringUtils;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class SnomedTranslationRepository extends BaseRepository {

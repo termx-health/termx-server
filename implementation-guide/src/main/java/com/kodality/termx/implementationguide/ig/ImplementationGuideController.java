@@ -27,7 +27,7 @@ import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.validation.Validated;
 import java.util.List;
 import java.util.Map;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Validated

@@ -10,7 +10,7 @@ import com.kodality.termx.ts.Language;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

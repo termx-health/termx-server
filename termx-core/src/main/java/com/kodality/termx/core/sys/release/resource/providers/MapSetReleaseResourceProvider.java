@@ -3,7 +3,7 @@ package com.kodality.termx.core.sys.release.resource.providers;
 
 import com.kodality.termx.core.ts.MapSetProvider;
 import com.kodality.termx.ts.mapset.MapSetVersion;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

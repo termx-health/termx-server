@@ -16,8 +16,8 @@ dependencies {
     implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.commonsMicronautVersion}")
     implementation("com.kodality.commons:commons-tenant:${rootProject.commonsMicronautVersion}")
 
-    implementation 'commons-io:commons-io:2.15.0'
-    implementation("com.github.slugify:slugify:3.0.6")
+    implementation 'commons-io:commons-io:2.16.1'
+    implementation("com.github.slugify:slugify:3.0.7")
 
     implementation("io.micronaut.spring:micronaut-spring")
     implementation("io.micronaut.validation:micronaut-validation")

@@ -6,8 +6,8 @@ import com.kodality.termx.task.api.TaskStatusChangeInterceptor;
 import com.kodality.termx.wiki.page.PageComment;
 import com.kodality.termx.wiki.page.PageCommentStatus;
 import com.kodality.termx.wiki.pagecomment.PageCommentService;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 

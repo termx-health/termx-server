@@ -3,7 +3,7 @@ package com.kodality.termx.terminology.terminology.valueset.ruleset;
 import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionRepository;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -1,7 +1,7 @@
 package com.kodality.termx.sys.server.resource;
 
 import io.micronaut.core.annotation.Introspected;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;

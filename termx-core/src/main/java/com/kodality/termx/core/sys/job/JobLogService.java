@@ -8,7 +8,7 @@ import com.kodality.termx.sys.job.JobLog;
 import com.kodality.termx.sys.job.JobLog.JobDefinition;
 import com.kodality.termx.sys.job.JobLogQueryParams;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

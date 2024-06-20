@@ -16,7 +16,7 @@ dependencies {
   implementation("io.micronaut:micronaut-management")
   implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
 
-  implementation("io.minio:minio:8.5.6")
+  implementation("io.minio:minio:8.5.10")
   implementation 'org.xerial.snappy:snappy-java:1.1.10.5' //just to overwrite to a fresher version in minio
   implementation 'com.squareup.okio:okio:3.6.0' //just to overwrite to a fresher version in minio
 }

@@ -12,7 +12,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
 import io.micronaut.core.util.StringUtils;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ValueSetVersionRuleRepository extends BaseRepository {

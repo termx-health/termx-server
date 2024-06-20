@@ -25,7 +25,7 @@ import io.micronaut.http.annotation.Put;
 import io.micronaut.http.server.types.files.StreamedFile;
 import java.util.List;
 import java.util.Map;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Controller("/releases")

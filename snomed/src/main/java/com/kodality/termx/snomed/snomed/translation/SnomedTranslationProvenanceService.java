@@ -8,7 +8,7 @@ import com.kodality.termx.snomed.concept.SnomedTranslation;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

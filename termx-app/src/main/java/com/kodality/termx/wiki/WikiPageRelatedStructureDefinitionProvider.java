@@ -4,7 +4,7 @@ import com.kodality.termx.modeler.structuredefinition.StructureDefinitionQueryPa
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
 import com.kodality.termx.terminology.fhir.FhirFshConverter;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

@@ -15,7 +15,7 @@ import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class UcumValueSetExpandProvider extends ValueSetExternalExpandProvider {

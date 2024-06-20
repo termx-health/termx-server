@@ -15,7 +15,7 @@ import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 

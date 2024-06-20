@@ -4,7 +4,7 @@ import com.kodality.commons.client.HttpClient;
 import com.kodality.termx.sys.server.TerminologyServerKind;
 import com.kodality.termx.core.sys.server.TerminologyServerRepository;
 import java.net.http.HttpRequest.Builder;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class TerminologyServerHttpClientService extends ServerHttpClientService {

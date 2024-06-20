@@ -53,7 +53,7 @@ dependencies {
   implementation('com.auth0:jwks-rsa:0.22.1')
 
   runtimeOnly 'io.micronaut:micronaut-jackson-databind'
-  runtimeOnly "ch.qos.logback:logback-classic:1.4.7"
+  runtimeOnly "ch.qos.logback:logback-classic:1.5.6"
 
   testCompileOnly("org.projectlombok:lombok:1.18.30")
   testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
@@ -66,7 +66,7 @@ dependencies {
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.testcontainers:spock")
   testImplementation("org.testcontainers:testcontainers")
-  testImplementation("commons-io:commons-io:2.15.0")
+  testImplementation("commons-io:commons-io:2.16.1")
 }
 
 application {

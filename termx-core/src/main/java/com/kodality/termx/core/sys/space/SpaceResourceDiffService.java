@@ -16,7 +16,7 @@ import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import com.kodality.termx.core.sys.spacepackage.resource.PackageResourceService;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 

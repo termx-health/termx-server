@@ -12,7 +12,7 @@ import com.kodality.termx.wiki.pagecomment.diff.PageCommentDiffUtil;
 import com.kodality.termx.wiki.pagecomment.interceptors.PageCommentInterceptorService;
 import java.util.List;
 import java.util.Objects;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;

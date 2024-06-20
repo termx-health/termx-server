@@ -4,7 +4,7 @@ import com.kodality.termx.core.ApiError;
 import com.kodality.termx.sys.release.ReleaseResource;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

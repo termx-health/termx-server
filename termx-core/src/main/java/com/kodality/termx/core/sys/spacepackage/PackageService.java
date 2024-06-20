@@ -4,7 +4,7 @@ import com.kodality.termx.core.sys.spacepackage.version.PackageVersionService;
 import com.kodality.termx.sys.spacepackage.Package;
 import com.kodality.termx.sys.spacepackage.PackageTransactionRequest;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

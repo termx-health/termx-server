@@ -10,7 +10,7 @@ import com.kodality.termx.sys.checklist.ChecklistAssertionQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.time.OffsetDateTime;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

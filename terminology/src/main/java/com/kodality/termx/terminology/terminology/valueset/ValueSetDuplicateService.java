@@ -7,7 +7,7 @@ import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

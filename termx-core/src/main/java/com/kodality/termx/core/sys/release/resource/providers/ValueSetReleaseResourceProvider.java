@@ -3,7 +3,7 @@ package com.kodality.termx.core.sys.release.resource.providers;
 
 import com.kodality.termx.core.ts.ValueSetProvider;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

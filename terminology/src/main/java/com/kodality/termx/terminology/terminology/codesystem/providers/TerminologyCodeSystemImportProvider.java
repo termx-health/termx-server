@@ -17,7 +17,7 @@ import com.kodality.termx.ts.codesystem.EntityProperty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

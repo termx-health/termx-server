@@ -3,7 +3,7 @@ package com.kodality.termx.observationdefinition.observationdefinition.member;
 import com.kodality.termx.observationdefinition.observationdefinition.ObservationDefinitionRepository;
 import com.kodality.termx.observationdefintion.ObservationDefinitionMember;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -8,7 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.wiki.page.PageComment;
 import com.kodality.termx.wiki.page.PageCommentQueryParams;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class PageCommentRepository extends BaseRepository {

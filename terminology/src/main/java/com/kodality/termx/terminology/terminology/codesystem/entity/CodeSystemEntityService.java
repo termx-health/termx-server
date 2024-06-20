@@ -2,7 +2,7 @@ package com.kodality.termx.terminology.terminology.codesystem.entity;
 
 import com.kodality.termx.ts.codesystem.CodeSystemEntity;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

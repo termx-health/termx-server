@@ -11,7 +11,7 @@ import com.kodality.termx.sys.checklist.Checklist.ChecklistWhitelist;
 import com.kodality.termx.sys.checklist.ChecklistAssertion;
 import com.kodality.termx.sys.checklist.ChecklistQueryParams;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
 @Singleton

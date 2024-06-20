@@ -7,7 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.termx.wiki.page.PageTag;
 import com.kodality.termx.wiki.tag.Tag;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class PageTagRepository extends BaseRepository {

@@ -7,7 +7,7 @@ import com.kodality.termx.sys.server.TerminologyServer;
 import com.kodality.termx.sys.server.TerminologyServerQueryParams;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

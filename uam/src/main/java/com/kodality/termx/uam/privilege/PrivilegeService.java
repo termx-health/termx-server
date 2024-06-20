@@ -5,7 +5,7 @@ import com.kodality.termx.auth.Privilege;
 import com.kodality.termx.auth.PrivilegeQueryParams;
 import com.kodality.termx.uam.privilegeresource.PrivilegeResourceService;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

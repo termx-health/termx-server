@@ -9,7 +9,7 @@ import com.kodality.termx.wiki.page.PageContent;
 import com.kodality.termx.wiki.page.PageContentHistoryItem;
 import com.kodality.termx.wiki.page.PageContentHistoryQueryParams;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class PageContentHistoryRepository extends BaseRepository {

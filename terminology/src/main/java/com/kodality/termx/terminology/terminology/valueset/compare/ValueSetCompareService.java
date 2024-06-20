@@ -2,7 +2,7 @@ package com.kodality.termx.terminology.terminology.valueset.compare;
 
 import com.kodality.termx.ts.valueset.ValueSetCompareResult;
 import java.util.Objects;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

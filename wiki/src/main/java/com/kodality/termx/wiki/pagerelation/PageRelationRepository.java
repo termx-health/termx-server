@@ -9,7 +9,7 @@ import com.kodality.termx.wiki.page.PageRelation;
 import com.kodality.termx.wiki.page.PageRelationQueryParams;
 import io.micronaut.core.util.StringUtils;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class PageRelationRepository extends BaseRepository {

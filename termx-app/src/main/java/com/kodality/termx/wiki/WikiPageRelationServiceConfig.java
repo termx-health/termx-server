@@ -2,7 +2,7 @@ package com.kodality.termx.wiki;
 
 import com.kodality.termx.wiki.pagerelation.PageRelationServiceConfig;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import static com.kodality.termx.wiki.page.PageRelationType.concept;
 import static com.kodality.termx.wiki.page.PageRelationType.cs;

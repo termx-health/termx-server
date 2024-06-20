@@ -9,7 +9,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.wiki.page.PageTreeItem.PageTreeItemContent;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import static com.kodality.termx.wiki.page.PageQueryParams.Ordering;
 

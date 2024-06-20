@@ -6,7 +6,7 @@ import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class PackageResourceRepository extends BaseRepository {

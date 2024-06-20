@@ -8,7 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ts.property.DefinedProperty;
 import com.kodality.termx.ts.property.DefinedPropertyQueryParams;
 import io.micronaut.core.util.StringUtils;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class DefinedPropertyRepository extends BaseRepository {

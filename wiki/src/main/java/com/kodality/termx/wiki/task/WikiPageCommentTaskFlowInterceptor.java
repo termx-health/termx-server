@@ -18,8 +18,8 @@ import com.kodality.termx.wiki.pagecontent.PageContentService;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 

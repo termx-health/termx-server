@@ -5,7 +5,7 @@ import com.kodality.termx.core.ApiError;
 import com.kodality.termx.sys.checklist.ChecklistRule;
 import com.kodality.termx.sys.checklist.ChecklistRuleQueryParams;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

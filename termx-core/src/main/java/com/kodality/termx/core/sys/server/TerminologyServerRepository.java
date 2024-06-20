@@ -12,7 +12,7 @@ import com.kodality.termx.sys.server.TerminologyServer.TerminologyServerHeader;
 import com.kodality.termx.sys.server.TerminologyServerQueryParams;
 import java.util.Arrays;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
 @Singleton

@@ -23,7 +23,7 @@ import io.netty.handler.codec.http.multipart.MemoryAttribute;
 import io.reactivex.rxjava3.core.Flowable;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;

@@ -7,7 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.termx.observationdefintion.ObservationDefinitionMapping;
 import com.kodality.termx.observationdefintion.ObservationDefinitionMapping.ObservationDefinitionMappingTarget;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ObservationDefinitionMappingRepository extends BaseRepository {

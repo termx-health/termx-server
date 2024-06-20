@@ -7,7 +7,7 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ts.valueset.ValueSetSnapshot;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ValueSetSnapshotRepository extends BaseRepository {

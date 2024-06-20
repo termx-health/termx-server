@@ -8,7 +8,7 @@ import com.kodality.termx.sys.lorque.ProcessResultType;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.transaction.annotation.Transactional;

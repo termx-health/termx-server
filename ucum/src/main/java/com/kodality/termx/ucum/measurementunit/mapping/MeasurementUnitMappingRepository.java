@@ -4,7 +4,7 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.termx.ucum.MeasurementUnitMapping;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import static java.util.stream.Collectors.joining;
 

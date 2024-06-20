@@ -5,7 +5,7 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ValueSetVersionRuleSetRepository extends BaseRepository {

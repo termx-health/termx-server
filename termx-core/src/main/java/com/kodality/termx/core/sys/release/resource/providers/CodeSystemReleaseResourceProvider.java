@@ -2,7 +2,7 @@ package com.kodality.termx.core.sys.release.resource.providers;
 
 import com.kodality.termx.core.ts.CodeSystemProvider;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

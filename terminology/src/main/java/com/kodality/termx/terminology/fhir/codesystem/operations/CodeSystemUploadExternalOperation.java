@@ -11,7 +11,7 @@ import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import jakarta.inject.Singleton;
 import java.util.Base64;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.r4.model.ResourceType;

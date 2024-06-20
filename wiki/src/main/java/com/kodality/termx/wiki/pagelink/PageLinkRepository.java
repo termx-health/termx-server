@@ -10,7 +10,7 @@ import com.kodality.termx.wiki.page.PageLinkQueryParams;
 import com.kodality.termx.wiki.page.PageLinkQueryParams.Ordering;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
 @Singleton
