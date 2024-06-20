@@ -13,6 +13,7 @@ before_script:
 stages:
 - build
 - release
+- manual
 
 build:
   stage: build
@@ -52,6 +53,7 @@ release tag:
 
 
 dependency check:
+  stage: manual
   when: manual
   script:
     - ./gradlew dependencyCheckAnalyze > etc/dependency-check.txt
