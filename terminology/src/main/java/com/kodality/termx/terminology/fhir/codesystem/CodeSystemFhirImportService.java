@@ -32,7 +32,10 @@ public class CodeSystemFhirImportService {
       throw ApiError.TE107.toApiException();
     }
     List<AssociationType> associationTypes = List.of(new AssociationType("is-a", AssociationKind.codesystemHierarchyMeaning, true));
-    CodeSystemImportAction action = new CodeSystemImportAction().setActivate(PublicationStatus.active.equals(codeSystem.getStatus())).setCleanRun(true);
+    CodeSystemImportAction action = new CodeSystemImportAction()
+        .setActivate(PublicationStatus.active.equals(codeSystem.getStatus()))
+        .setRetire(PublicationStatus.retired.equals(codeSystem.getStatus()))
+        .setCleanRun(true);
     importService.importCodeSystem(CodeSystemFhirMapper.fromFhirCodeSystem(codeSystem), associationTypes, action);
   }
 

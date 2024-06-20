@@ -235,4 +235,8 @@ public abstract class BaseFhirMapper {
     relatedArtifacts.forEach(a -> resource.addExtension(new Extension("http://hl7.org/fhir/StructureDefinition/workflow-relatedArtifact")
         .setValueRelatedArtifact(new RelatedArtifact().setResource(a))));
   }
+
+  protected static String fromFhirVersionDescriptionExtension(List<Extension> extensions) {
+    return extensions.stream().filter(e -> "https://fhir.ee/StructureDefinition/version-description".equals(e.getUrl())).findFirst().map(Extension::getValueString).orElse(null);
+  }
 }

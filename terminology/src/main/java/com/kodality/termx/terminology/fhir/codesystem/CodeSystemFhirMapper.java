@@ -423,6 +423,11 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     version.setExpirationDate(fhirCodeSystem.getEffectivePeriod() == null || fhirCodeSystem.getEffectivePeriod().getEnd() == null ? null :
         LocalDate.from(fhirCodeSystem.getEffectivePeriod().getEnd()));
     version.setIdentifiers(fromFhirVersionIdentifiers(fhirCodeSystem.getIdentifier()));
+
+    String description = fromFhirVersionDescriptionExtension(fhirCodeSystem.getExtension());
+    if (description != null) {
+      version.setDescription(new LocalizedName(Map.of(Optional.ofNullable(version.getPreferredLanguage()).orElse(Language.en), description)));
+    }
     return List.of(version);
   }
 

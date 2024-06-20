@@ -22,7 +22,9 @@ public class ValueSetFhirImportService {
 
   @Transactional
   public void importValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
-    ValueSetImportAction action = new ValueSetImportAction().setActivate(PublicationStatus.active.equals(valueSet.getStatus()));
+    ValueSetImportAction action = new ValueSetImportAction()
+        .setActivate(PublicationStatus.active.equals(valueSet.getStatus()))
+        .setRetire(PublicationStatus.retired.equals(valueSet.getStatus()));
     importService.importValueSet(ValueSetFhirMapper.fromFhirValueSet(valueSet), action);
   }
 

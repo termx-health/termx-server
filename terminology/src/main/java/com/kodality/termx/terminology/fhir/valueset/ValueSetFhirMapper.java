@@ -590,6 +590,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     version.setValueSet(valueSet.getId());
     version.setVersion(valueSet.getVersion() == null ? "1.0.0" : valueSet.getVersion());
     version.setStatus(PublicationStatus.draft);
+    version.setAlgorithm(valueSet.getVersionAlgorithmString());
     version.setPreferredLanguage(valueSet.getLanguage());
     version.setReleaseDate(valueSet.getEffectivePeriod() == null || valueSet.getEffectivePeriod().getStart() == null ? LocalDate.now() :
         LocalDate.from(valueSet.getEffectivePeriod().getStart()));
@@ -598,6 +599,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     version.setRuleSet(fromFhirCompose(valueSet));
     version.setSnapshot(fromFhirExpansion(valueSet));
     version.setIdentifiers(fromFhirVersionIdentifiers(valueSet.getIdentifier()));
+    String description = fromFhirVersionDescriptionExtension(valueSet.getExtension());
+    if (description != null) {
+      version.setDescription(new LocalizedName(Map.of(Optional.ofNullable(version.getPreferredLanguage()).orElse(Language.en), description)));
+    }
     return version;
   }
 
