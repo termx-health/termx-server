@@ -13,6 +13,7 @@ before_script:
 stages:
 - build
 - release
+- manual
 
 build:
   stage: build
@@ -49,4 +50,16 @@ release tag:
     - /^\d*\.\d*\.\d*$/
   except:
     - branches
+
+
+dependency check:
+  stage: manual
+  when: manual
+  script:
+    - ./gradlew dependencyCheckAnalyze > etc/dependency-check.txt
+    - etc/list-deps.sh > etc/deps.md
+  artifacts:
+    paths:
+      - etc/dependency-check.txt
+      - etc/deps.md
 
