@@ -21,7 +21,7 @@ public class HttpTracingFilter implements HttpServerFilter {
 
   @Override
   public int getOrder() {
-    return ServerFilterPhase.SECURITY.after() - 1;
+    return ServerFilterPhase.SECURITY.before();
   }
 
   @Override
