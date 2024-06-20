@@ -10,11 +10,10 @@ import io.micronaut.http.annotation.Filter;
 import io.micronaut.http.filter.HttpServerFilter;
 import io.micronaut.http.filter.ServerFilterChain;
 import io.micronaut.http.server.netty.NettyHttpResponseFactory;
-import io.reactivex.rxjava3.core.Flowable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import java.util.Comparator;
 import java.util.List;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
 
 import static java.util.stream.Collectors.toList;
 
@@ -34,12 +33,12 @@ public class SessionFilter implements HttpServerFilter {
 
   @Override
   public Publisher<MutableHttpResponse<?>> doFilter(HttpRequest<?> request, ServerFilterChain chain) {
-    return Flowable.fromCallable(() -> authenticate(request)).switchMap(isAuthenticated -> {
+    return Mono.fromCallable(() -> authenticate(request)).flatMap(isAuthenticated -> {
       if (isAuthenticated) {
-        return chain.proceed(request);
+        return Mono.from(chain.proceed(request));
       }
-      return Flowable.just(new NettyHttpResponseFactory().status(HttpStatus.UNAUTHORIZED));
-    }).subscribeOn(Schedulers.io());
+      return Mono.just(new NettyHttpResponseFactory().status(HttpStatus.UNAUTHORIZED));
+    });
   }
 
   private boolean authenticate(HttpRequest<?> request) {
