@@ -8,10 +8,12 @@ import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEn
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.core.ts.CodeSystemExternalProvider;
 import com.kodality.termx.ts.PublicationStatus;
+import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemEntity;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityType;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.ConceptTransactionRequest;
@@ -116,7 +118,16 @@ public class ConceptService {
   }
 
   public Optional<Concept> load(String codeSystem, String code) {
-    return Optional.ofNullable(repository.load(codeSystemRepository.closure(codeSystem), code)).map(c -> decorate(c, codeSystem, null));
+    List<String> codeSystems = codeSystemRepository.closure(codeSystem);
+    if (CollectionUtils.isEmpty(codeSystems)) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(repository.load(codeSystems, code)).map(c -> decorate(c, codeSystem, null));
+  }
+
+  public Optional<Concept> loadByUri(String codeSystemUri, String code) {
+    Optional<String> codeSystem = codeSystemRepository.query(new CodeSystemQueryParams().setUri(codeSystemUri).limit(1)).findFirst().map(CodeSystem::getId);
+    return codeSystem.flatMap(cs -> load(cs, code));
   }
 
   public Optional<Concept> load(String codeSystem, String codeSystemVersion, String code) {

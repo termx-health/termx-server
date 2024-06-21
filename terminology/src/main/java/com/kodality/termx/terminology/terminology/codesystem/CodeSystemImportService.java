@@ -268,7 +268,11 @@ public class CodeSystemImportService {
         if (property.get().getType().equals(EntityPropertyType.coding)) {
           try {
             Coding coding = (Coding) pv.getValue();
-            conceptService.load(coding.getSystem(), coding.getCode()).ifPresent(pv::setValue);
+            Optional<Concept> concept = conceptService.load(coding.getSystem(), coding.getCode());
+            concept.ifPresentOrElse(
+                pv::setValue,
+                () -> conceptService.loadByUri(coding.getSystem(), coding.getCode()).ifPresent(pv::setValue)
+            );
           } catch (RuntimeException ignored) {
           }
         }
