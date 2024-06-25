@@ -13,7 +13,7 @@ import com.kodality.termx.core.sys.spacepackage.resource.PackageResourceService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 import static java.util.stream.Collectors.collectingAndThen;

@@ -11,7 +11,7 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.validator.routines.checkdigit.CheckDigitException;
 import org.apache.commons.validator.routines.checkdigit.VerhoeffCheckDigit;

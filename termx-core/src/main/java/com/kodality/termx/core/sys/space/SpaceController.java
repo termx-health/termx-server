@@ -28,7 +28,7 @@ import io.micronaut.http.multipart.CompletedFileUpload;
 import io.reactivex.rxjava3.core.Flowable;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;

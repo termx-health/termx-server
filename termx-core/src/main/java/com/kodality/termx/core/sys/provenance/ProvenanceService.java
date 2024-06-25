@@ -4,7 +4,7 @@ import com.kodality.commons.model.Reference;
 import com.kodality.termx.core.auth.SessionStore;
 import java.time.OffsetDateTime;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

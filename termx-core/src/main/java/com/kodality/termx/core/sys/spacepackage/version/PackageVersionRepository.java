@@ -8,7 +8,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.sys.spacepackage.PackageVersion;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class PackageVersionRepository extends BaseRepository {

@@ -8,7 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ts.association.AssociationType;
 import com.kodality.termx.ts.association.AssociationTypeQueryParams;
 import io.micronaut.core.util.StringUtils;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class AssociationTypeRepository extends BaseRepository {

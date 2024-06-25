@@ -4,7 +4,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.core.utils.TextUtil;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

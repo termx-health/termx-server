@@ -11,7 +11,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConc
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

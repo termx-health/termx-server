@@ -3,7 +3,7 @@ package com.kodality.termx.auth.auth;
 import com.kodality.termx.core.auth.SessionInfo;
 import io.micronaut.http.HttpRequest;
 import java.util.Set;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

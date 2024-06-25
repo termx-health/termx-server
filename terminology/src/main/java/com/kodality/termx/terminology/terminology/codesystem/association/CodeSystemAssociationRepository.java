@@ -15,7 +15,7 @@ import java.sql.Types;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 

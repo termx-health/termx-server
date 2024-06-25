@@ -11,7 +11,7 @@ import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

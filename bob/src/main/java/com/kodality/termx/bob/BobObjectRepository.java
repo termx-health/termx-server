@@ -5,7 +5,7 @@ import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
 import java.util.UUID;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class BobObjectRepository extends BaseRepository {

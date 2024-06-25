@@ -1,7 +1,7 @@
 package com.kodality.termx.wiki.tag;
 
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

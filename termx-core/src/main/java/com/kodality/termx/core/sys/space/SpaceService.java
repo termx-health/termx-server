@@ -8,7 +8,7 @@ import com.kodality.termx.sys.space.SpaceQueryParams;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Transactional;

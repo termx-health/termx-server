@@ -8,7 +8,7 @@ import com.kodality.termx.terminology.terminology.codesystem.entitypropertysumma
 import com.kodality.termx.terminology.terminology.codesystem.entitypropertysummary.CodeSystemEntityPropertySummary.CodeSystemEntityPropertySummaryItem;
 import io.micronaut.core.util.StringUtils;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class CodeSystemEntityPropertySummaryRepository extends BaseRepository {

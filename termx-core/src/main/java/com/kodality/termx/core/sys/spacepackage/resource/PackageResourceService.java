@@ -3,7 +3,7 @@ package com.kodality.termx.core.sys.spacepackage.resource;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

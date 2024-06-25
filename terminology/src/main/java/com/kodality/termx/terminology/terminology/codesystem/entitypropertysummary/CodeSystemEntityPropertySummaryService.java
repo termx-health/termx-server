@@ -1,6 +1,6 @@
 package com.kodality.termx.terminology.terminology.codesystem.entitypropertysummary;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

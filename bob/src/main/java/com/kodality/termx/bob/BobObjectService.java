@@ -5,7 +5,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.bob.minio.MinioService;
 import io.micronaut.http.server.types.files.StreamedFile;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

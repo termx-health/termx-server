@@ -10,7 +10,7 @@ import com.kodality.termx.ts.mapset.MapSetTransactionRequest;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

@@ -7,7 +7,7 @@ import com.kodality.termx.task.TaskStatus;
 import com.kodality.termx.task.api.TaskStatusChangeInterceptor;
 import java.util.Map;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 import static java.util.Map.entry;

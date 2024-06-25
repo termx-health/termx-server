@@ -8,7 +8,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceContext;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ProvenanceRepository extends BaseRepository {

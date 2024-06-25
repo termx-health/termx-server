@@ -8,7 +8,7 @@ import com.kodality.termx.terminology.terminology.valueset.ValueSetProvenanceSer
 import com.kodality.termx.terminology.terminology.valueset.ValueSetVersionService;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

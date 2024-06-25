@@ -11,7 +11,7 @@ import com.kodality.termx.sequence.SysSequence.SysSequenceLuv;
 import com.kodality.termx.sequence.SysSequenceQueryParams;
 import com.kodality.termx.sequence.SysSequenceQueryParams.Ordering;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class SysSequenceRepository extends BaseRepository {

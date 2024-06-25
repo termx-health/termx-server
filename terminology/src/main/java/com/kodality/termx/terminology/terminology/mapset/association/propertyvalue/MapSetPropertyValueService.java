@@ -4,7 +4,7 @@ import com.kodality.termx.ts.mapset.MapSetPropertyValue;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.transaction.annotation.Transactional;

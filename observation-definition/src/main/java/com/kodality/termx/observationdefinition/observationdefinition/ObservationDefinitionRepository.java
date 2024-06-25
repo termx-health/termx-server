@@ -12,7 +12,7 @@ import com.kodality.termx.observationdefintion.ObservationDefinition.Observation
 import com.kodality.termx.observationdefintion.ObservationDefinitionSearchParams;
 import io.micronaut.core.util.StringUtils;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ObservationDefinitionRepository extends BaseRepository {

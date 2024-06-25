@@ -1,7 +1,7 @@
 package com.kodality.termx.implementationguide.ig.version.resource;
 
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

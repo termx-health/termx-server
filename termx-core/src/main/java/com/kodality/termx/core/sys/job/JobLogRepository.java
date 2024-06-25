@@ -11,7 +11,7 @@ import com.kodality.termx.sys.job.JobLog;
 import com.kodality.termx.sys.job.JobLog.JobDefinition;
 import com.kodality.termx.sys.job.JobLogQueryParams;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class JobLogRepository extends BaseRepository {

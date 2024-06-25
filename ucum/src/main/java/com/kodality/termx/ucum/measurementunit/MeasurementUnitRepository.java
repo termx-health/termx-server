@@ -11,7 +11,7 @@ import com.kodality.termx.ucum.MeasurementUnitMapping;
 import com.kodality.termx.ucum.MeasurementUnitQueryParams;
 import io.micronaut.core.util.StringUtils;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class MeasurementUnitRepository extends BaseRepository {

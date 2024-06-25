@@ -4,7 +4,7 @@ import com.kodality.termx.ucum.ApiError;
 import com.kodality.termx.ucum.measurementunit.MeasurementUnitService;
 import com.kodality.termx.ucum.MeasurementUnit;
 import java.math.BigDecimal;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

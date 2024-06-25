@@ -5,7 +5,7 @@ import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptServ
 import com.kodality.termx.core.ts.CodeSystemProvider;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

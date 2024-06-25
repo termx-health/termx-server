@@ -9,7 +9,7 @@ import com.kodality.termx.sys.server.resource.TerminologyServerResourceResponse;
 import com.kodality.zmei.fhir.client.FhirClientError;
 import java.util.List;
 import java.util.concurrent.CompletionException;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

@@ -10,7 +10,7 @@ import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemV
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

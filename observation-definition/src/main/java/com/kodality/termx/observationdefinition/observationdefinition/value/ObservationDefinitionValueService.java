@@ -1,7 +1,7 @@
 package com.kodality.termx.observationdefinition.observationdefinition.value;
 
 import com.kodality.termx.observationdefintion.ObservationDefinitionValue;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

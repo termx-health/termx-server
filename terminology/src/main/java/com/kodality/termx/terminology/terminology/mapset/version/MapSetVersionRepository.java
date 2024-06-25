@@ -10,7 +10,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class MapSetVersionRepository extends BaseRepository {

@@ -4,7 +4,7 @@ import com.kodality.termx.core.treminology.LoincImportProvider;
 import com.kodality.termx.editionint.loinc.utils.LoincImportRequest;
 import com.kodality.termx.editionint.loinc.utils.LoincZipReader;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 

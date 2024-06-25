@@ -6,7 +6,7 @@ import com.kodality.termx.wiki.page.PageContent;
 import com.kodality.termx.wiki.page.PageContentQueryParams;
 import com.kodality.termx.wiki.pagecontent.PageContentService;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

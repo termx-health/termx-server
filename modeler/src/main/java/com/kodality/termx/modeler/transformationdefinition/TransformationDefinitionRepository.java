@@ -9,7 +9,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinitionQueryParams.Ordering;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class TransformationDefinitionRepository extends BaseRepository {

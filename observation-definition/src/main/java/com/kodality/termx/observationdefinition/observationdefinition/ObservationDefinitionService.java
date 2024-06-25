@@ -14,7 +14,7 @@ import com.kodality.termx.observationdefintion.ObservationDefinitionSearchParams
 import com.kodality.termx.observationdefintion.ObservationDefinitionStructure;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

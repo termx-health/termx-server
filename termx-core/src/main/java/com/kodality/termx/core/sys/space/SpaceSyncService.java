@@ -15,7 +15,7 @@ import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
 @Singleton

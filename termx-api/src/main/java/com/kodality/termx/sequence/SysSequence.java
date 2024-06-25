@@ -2,7 +2,7 @@ package com.kodality.termx.sequence;
 
 import java.time.LocalDate;
 import java.util.List;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;

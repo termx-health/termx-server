@@ -12,7 +12,7 @@ import com.kodality.termx.wiki.page.PageContentQueryParams.Ordering;
 import io.micronaut.core.util.StringUtils;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class PageContentRepository extends BaseRepository {

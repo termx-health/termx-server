@@ -7,7 +7,7 @@ import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ucum.MeasurementUnit;
 import com.kodality.termx.ucum.MeasurementUnitQueryParams;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class UcumCodeSystemProvider extends CodeSystemExternalProvider {

@@ -7,7 +7,7 @@ import com.kodality.termx.sys.server.resource.TerminologyServerResourceSyncProvi
 import com.kodality.termx.sys.spacepackage.PackageResourceSyncType;
 import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 

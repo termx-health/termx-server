@@ -7,7 +7,7 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ValueSetVersionConceptRepository extends BaseRepository {

@@ -8,7 +8,7 @@ import com.kodality.termx.wiki.page.Page;
 import com.kodality.termx.wiki.page.PageQueryParams;
 import com.kodality.termx.wiki.page.PageService;
 import java.util.List;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
