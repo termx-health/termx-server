@@ -60,6 +60,7 @@ public class CodeSystemService {
     if (request.getValueSet() != null) {
       CodeSystemVersion codeSystemVersion = version == null ? codeSystemVersionService.loadLastVersion(codeSystem.getId()) : version;
       request.getValueSet().getValueSet().setTitle(codeSystem.getTitle());
+      request.getValueSet().getValueSet().setName(codeSystem.getName());
       request.getValueSet().getVersion().setAlgorithm(codeSystemVersion.getAlgorithm());
       request.getValueSet().getVersion().setPreferredLanguage(codeSystemVersion.getPreferredLanguage());
       request.getValueSet().getVersion().setSupportedLanguages(codeSystemVersion.getSupportedLanguages());
