@@ -123,7 +123,16 @@ public class ValueSetImportService {
       if (StringUtils.isNotEmpty(r.getCodeSystemUri())) {
         CodeSystem codeSystem = codeSystemService.query(new CodeSystemQueryParams().setUri(r.getCodeSystemUri())).findFirst()
             .orElseThrow(() -> ApiError.TE110.toApiException(Map.of("cs", r.getCodeSystemUri())));
-        CodeSystemVersion codeSystemVersion = codeSystemVersionService.loadLastVersion(codeSystem.getId());
+
+        CodeSystemVersion codeSystemVersion = null;
+        if (r.getCodeSystemVersion() != null && r.getCodeSystemVersion().getId() != null) {
+          codeSystemVersion = codeSystemVersionService.load(r.getCodeSystemVersion().getId());
+        } else if (r.getCodeSystemVersion() != null && r.getCodeSystemVersion().getVersion() != null) {
+          codeSystemVersion = codeSystemVersionService.load(codeSystem.getId(), r.getCodeSystemVersion().getVersion()).orElse(null);
+        }
+        if (codeSystemVersion == null) {
+          codeSystemVersion = codeSystemVersionService.loadLastVersion(codeSystem.getId());
+        }
         r.setCodeSystem(codeSystem.getId());
         r.setCodeSystemVersion(codeSystemVersion);
       }

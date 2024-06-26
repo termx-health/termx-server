@@ -22,6 +22,7 @@ import com.kodality.termx.ts.Permissions;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
@@ -616,6 +617,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       ruleSet.setLockedDate(valueSet.getCompose().getLockedDate().atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime());
     }
     ruleSet.setRules(fromFhirRules(valueSet.getCompose().getInclude(), valueSet.getCompose().getExclude()));
+    if (CollectionUtils.isNotEmpty(valueSet.getCompose().getProperty())) {
+      ruleSet.getRules().forEach(r -> r.setProperties(valueSet.getCompose().getProperty()));
+    }
     return ruleSet;
   }
 
@@ -634,6 +638,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     ValueSetVersionRule rule = new ValueSetVersionRule();
     rule.setType(type);
     rule.setCodeSystemUri(r.getSystem());
+    rule.setCodeSystemVersion(new CodeSystemVersionReference().setVersion(r.getVersion()));
     rule.setConcepts(fromFhirConcepts(r.getConcept()));
     rule.setFilters(fromFhirFilters(r.getFilter()));
     rule.setValueSetUri(CollectionUtils.isEmpty(r.getValueSet()) ? null : r.getValueSet().get(0));

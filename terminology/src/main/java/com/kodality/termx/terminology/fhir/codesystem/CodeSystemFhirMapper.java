@@ -198,7 +198,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     Map<Long, List<String>> parentMap =
         entitiesWithAssociations.stream().collect(Collectors.groupingBy(e -> e.getKey().getSourceId(), mapping(p -> p.getKey().getTargetCode(), toList())));
 
-    List<String> propertySystems =
+    List<String> propertySystems = CollectionUtils.isEmpty(codeSystem.getProperties()) ? List.of() :
         codeSystem.getProperties().stream().filter(p -> p.getRule() != null && CollectionUtils.isNotEmpty(p.getRule().getCodeSystems()))
             .flatMap(p -> p.getRule().getCodeSystems().stream()).collect(toList());
     Map<String, String> propertySystemUri = CollectionUtils.isEmpty(propertySystems) ? Map.of() :
