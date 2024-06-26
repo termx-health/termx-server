@@ -14,6 +14,7 @@ public class SnomedCodeSystem {
   private String shortName;
   private String branchPath;
   private String countryCode;
+  private String dependantVersionEffectiveTime;
   private boolean dailyBuildAvailable;
   private Map<String, String> languages;
   private SnomedCodeSystemVersion latestVersion;
