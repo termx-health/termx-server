@@ -23,12 +23,17 @@ EOSQL
 ```
 In case you are using an existing database, run SQL commands between EOSQL via sql console.
 
-## Run application
+## Navigate to app folder and run application in the development mode 
 ```bash 
-./gradlew run
+cd termx-app
+./gradlew run -Pdev
 ``` 
+In the development mode you can use application without authentication. The application use special dev token **Bearer token** `yupi` in request Authorization header.
+
 ### Test
-Query `http://localhost:8200/fhir/CapabilityStatement`
+Query `http://localhost:8200/fhir/metadata` in the browser.
+It should return CapabilityStatement resource.
+
 
 ## Authentication
 
@@ -37,12 +42,10 @@ The terminology server requires authenticated users. Any authentication server s
 we are using [Keycloak](https://www.keycloak.org/). Check official [docs](https://www.keycloak.org/guides#getting-started) for setup. 
 Check the [example](https://wiki.kodality.dev/terminology-server/guide/authentication#keycloak) of the configuration.
 
-### Yupi authentication
-Add `-Pdev` when running.
+### Run application with authentication
 ```bash 
-./gradlew run -Pdev
+./gradlew run
 ```
-Pass **Bearer token** `yupi` in request Authorization header.
 
 ## Snowstorm 
 Snowstorm server serves SNOMED terminology and may be installed if you need SNOMED. 
