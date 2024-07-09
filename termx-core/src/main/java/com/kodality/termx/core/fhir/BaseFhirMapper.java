@@ -11,6 +11,7 @@ import com.kodality.termx.ts.OtherTitle;
 import com.kodality.termx.ts.Topic;
 import com.kodality.termx.ts.UseContext;
 import com.kodality.termx.ts.codesystem.Concept;
+import com.kodality.zmei.fhir.Element;
 import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
@@ -154,11 +155,22 @@ public abstract class BaseFhirMapper {
         .max(Comparator.comparing(Provenance::getDate)).map(Provenance::getDate).orElse(null);
   }
 
-  protected static LocalizedName fromFhirName(String name, String lang) {
+  protected static LocalizedName fromFhirName(String name, String lang, Element extension) {
     if (name == null) {
       return null;
     }
-    return new LocalizedName(Map.of(Optional.ofNullable(lang).orElse(Language.en), name));
+    LocalizedName localizedName =  new LocalizedName(Map.of(Optional.ofNullable(lang).orElse(Language.en), name));
+    if (extension == null) {
+      return localizedName;
+    }
+    extension.getExtensions("http://hl7.org/fhir/StructureDefinition/translation").forEach(translation -> {
+      String translationLang = translation.getExtension("lang").map(Extension::getValueCode).orElse(null);
+      String translationContent = translation.getExtension("content").map(Extension::getValueString).orElse(null);
+      if (translationLang != null && translationContent != null) {
+        localizedName.add(translationLang, translationContent);
+      }
+    });
+    return localizedName;
   }
 
   protected static List<com.kodality.commons.model.Identifier> fromFhirIdentifiers(List<com.kodality.zmei.fhir.datatypes.Identifier> identifiers) {

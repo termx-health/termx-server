@@ -358,34 +358,34 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   // -------------- FROM FHIR --------------
 
-  public static CodeSystem fromFhirCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
+  public static CodeSystem fromFhirCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCS) {
     CodeSystem codeSystem = new CodeSystem();
-    codeSystem.setId(CodeSystemFhirMapper.parseCompositeId(fhirCodeSystem.getId())[0]);
-    codeSystem.setUri(fhirCodeSystem.getUrl());
-    codeSystem.setPublisher(fhirCodeSystem.getPublisher());
-    codeSystem.setName(fhirCodeSystem.getName());
-    codeSystem.setTitle(fromFhirName(fhirCodeSystem.getTitle(), fhirCodeSystem.getLanguage()));
-    codeSystem.setDescription(fromFhirName(fhirCodeSystem.getDescription(), fhirCodeSystem.getLanguage()));
-    codeSystem.setPurpose(fromFhirName(fhirCodeSystem.getPurpose(), fhirCodeSystem.getLanguage()));
-    codeSystem.setNarrative(fhirCodeSystem.getText() == null ? null : fhirCodeSystem.getText().getDiv());
-    codeSystem.setExperimental(fhirCodeSystem.getExperimental());
-    codeSystem.setIdentifiers(fromFhirIdentifiers(fhirCodeSystem.getIdentifier()));
-    codeSystem.setContacts(fromFhirContacts(fhirCodeSystem.getContact()));
-    codeSystem.setCopyright(new Copyright().setHolder(fhirCodeSystem.getCopyright()).setStatement(fhirCodeSystem.getCopyrightLabel()));
-    codeSystem.setPermissions(new Permissions().setAdmin(fromFhirContactsName(fhirCodeSystem.getAuthor()))
-        .setEditor(fromFhirContactsName(fhirCodeSystem.getEditor()))
-        .setViewer(fromFhirContactsName(fhirCodeSystem.getReviewer()))
-        .setEndorser(fromFhirContactsName(fhirCodeSystem.getEndorser())));
+    codeSystem.setId(CodeSystemFhirMapper.parseCompositeId(fhirCS.getId())[0]);
+    codeSystem.setUri(fhirCS.getUrl());
+    codeSystem.setPublisher(fhirCS.getPublisher());
+    codeSystem.setName(fhirCS.getName());
+    codeSystem.setTitle(fromFhirName(fhirCS.getTitle(), fhirCS.getLanguage(), fhirCS.getPrimitiveElement("title")));
+    codeSystem.setDescription(fromFhirName(fhirCS.getDescription(), fhirCS.getLanguage(), fhirCS.getPrimitiveElement("description")));
+    codeSystem.setPurpose(fromFhirName(fhirCS.getPurpose(), fhirCS.getLanguage(), fhirCS.getPrimitiveElement("purpose")));
+    codeSystem.setNarrative(fhirCS.getText() == null ? null : fhirCS.getText().getDiv());
+    codeSystem.setExperimental(fhirCS.getExperimental());
+    codeSystem.setIdentifiers(fromFhirIdentifiers(fhirCS.getIdentifier()));
+    codeSystem.setContacts(fromFhirContacts(fhirCS.getContact()));
+    codeSystem.setCopyright(new Copyright().setHolder(fhirCS.getCopyright()).setStatement(fhirCS.getCopyrightLabel()));
+    codeSystem.setPermissions(new Permissions().setAdmin(fromFhirContactsName(fhirCS.getAuthor()))
+        .setEditor(fromFhirContactsName(fhirCS.getEditor()))
+        .setViewer(fromFhirContactsName(fhirCS.getReviewer()))
+        .setEndorser(fromFhirContactsName(fhirCS.getEndorser())));
     if (!CodeSystemContent.supplement.equals(codeSystem.getContent())) {
-      codeSystem.setHierarchyMeaning(fhirCodeSystem.getHierarchyMeaning());
+      codeSystem.setHierarchyMeaning(fhirCS.getHierarchyMeaning());
     }
-    codeSystem.setContent(fhirCodeSystem.getContent());
-    codeSystem.setCaseSensitive(fhirCodeSystem.getCaseSensitive() != null && fhirCodeSystem.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
+    codeSystem.setContent(fhirCS.getContent());
+    codeSystem.setCaseSensitive(fhirCS.getCaseSensitive() != null && fhirCS.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
         CaseSignificance.entire_term_case_insensitive);
 
-    codeSystem.setVersions(fromFhirVersion(fhirCodeSystem));
-    codeSystem.setConcepts(fromFhirConcepts(fhirCodeSystem.getConcept(), fhirCodeSystem, null, getParentMap(fhirCodeSystem.getConcept())));
-    codeSystem.setProperties(fromFhirProperties(fhirCodeSystem));
+    codeSystem.setVersions(fromFhirVersion(fhirCS));
+    codeSystem.setConcepts(fromFhirConcepts(fhirCS.getConcept(), fhirCS, null, getParentMap(fhirCS.getConcept())));
+    codeSystem.setProperties(fromFhirProperties(fhirCS));
     return codeSystem;
   }
 
@@ -482,7 +482,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     EntityProperty property = new EntityProperty();
     property.setName(p.getCode());
     property.setUri(p.getUri());
-    property.setDescription(fromFhirName(p.getDescription(), lang));
+    property.setDescription(fromFhirName(p.getDescription(), lang, null));
     property.setType(p.getType());
     property.setKind(EntityPropertyKind.property);
     property.setStatus(PublicationStatus.active);

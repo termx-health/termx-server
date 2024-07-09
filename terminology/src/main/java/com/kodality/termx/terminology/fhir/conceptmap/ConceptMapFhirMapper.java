@@ -251,23 +251,23 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
 
   // -------------- FROM FHIR --------------
 
-  public MapSet fromFhir(ConceptMap conceptMap) {
+  public MapSet fromFhir(ConceptMap cm) {
     MapSet ms = new MapSet();
-    ms.setId(ConceptMapFhirMapper.parseCompositeId(conceptMap.getId())[0]);
-    ms.setUri(conceptMap.getUrl());
-    ms.setPublisher(conceptMap.getPublisher());
-    ms.setName(conceptMap.getName());
-    ms.setTitle(fromFhirName(conceptMap.getTitle(), conceptMap.getLanguage()));
-    ms.setDescription(fromFhirName(conceptMap.getDescription(), conceptMap.getLanguage()));
-    ms.setPurpose(fromFhirName(conceptMap.getPurpose(), conceptMap.getLanguage()));
-    ms.setNarrative(conceptMap.getText() == null ? null : conceptMap.getText().getDiv());
-    ms.setExperimental(conceptMap.getExperimental());
-    ms.setIdentifiers(fromFhirIdentifiers(conceptMap.getIdentifier()));
-    ms.setContacts(fromFhirContacts(conceptMap.getContact()));
-    ms.setCopyright(new Copyright().setHolder(conceptMap.getCopyright()).setStatement(conceptMap.getCopyrightLabel()));
-    ms.setProperties(fromFhirProperties(conceptMap.getProperty(), conceptMap.getLanguage()));
+    ms.setId(ConceptMapFhirMapper.parseCompositeId(cm.getId())[0]);
+    ms.setUri(cm.getUrl());
+    ms.setPublisher(cm.getPublisher());
+    ms.setName(cm.getName());
+    ms.setTitle(fromFhirName(cm.getTitle(), cm.getLanguage(), cm.getPrimitiveElement("title")));
+    ms.setDescription(fromFhirName(cm.getDescription(), cm.getLanguage(), cm.getPrimitiveElement("description")));
+    ms.setPurpose(fromFhirName(cm.getPurpose(), cm.getLanguage(), cm.getPrimitiveElement("purpose")));
+    ms.setNarrative(cm.getText() == null ? null : cm.getText().getDiv());
+    ms.setExperimental(cm.getExperimental());
+    ms.setIdentifiers(fromFhirIdentifiers(cm.getIdentifier()));
+    ms.setContacts(fromFhirContacts(cm.getContact()));
+    ms.setCopyright(new Copyright().setHolder(cm.getCopyright()).setStatement(cm.getCopyrightLabel()));
+    ms.setProperties(fromFhirProperties(cm.getProperty(), cm.getLanguage()));
 
-    ms.setVersions(List.of(fromFhirVersion(conceptMap)));
+    ms.setVersions(List.of(fromFhirVersion(cm)));
     return ms;
   }
 
@@ -277,7 +277,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     }
     return properties.stream().map(p -> {
       MapSetProperty property = new MapSetProperty();
-      property.setDescription(fromFhirName(p.getDescription(), lang));
+      property.setDescription(fromFhirName(p.getDescription(), lang, null));
       property.setStatus(PublicationStatus.active);
       property.setName(p.getCode());
       property.setUri(p.getUri());

@@ -557,9 +557,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     vs.setUri(valueSet.getUrl());
     vs.setPublisher(valueSet.getPublisher());
     vs.setName(valueSet.getName());
-    vs.setTitle(fromFhirName(valueSet.getTitle(), valueSet.getLanguage()));
-    vs.setDescription(fromFhirName(valueSet.getDescription(), valueSet.getLanguage()));
-    vs.setPurpose(fromFhirName(valueSet.getPurpose(), valueSet.getLanguage()));
+    vs.setTitle(fromFhirName(valueSet.getTitle(), valueSet.getLanguage(), valueSet.getPrimitiveElement("title")));
+    vs.setDescription(fromFhirName(valueSet.getDescription(), valueSet.getLanguage(), valueSet.getPrimitiveElement("description")));
+    vs.setPurpose(fromFhirName(valueSet.getPurpose(), valueSet.getLanguage(), valueSet.getPrimitiveElement("purpose")));
     vs.setNarrative(valueSet.getText() == null ? null : valueSet.getText().getDiv());
     vs.setIdentifiers(fromFhirIdentifiers(valueSet.getIdentifier()));
     vs.setContacts(fromFhirContacts(valueSet.getContact()));
@@ -575,7 +575,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
 
   private static ValueSetSnapshot fromFhirExpansion(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     ValueSetExpansion expansion = valueSet.getExpansion();
-    if (expansion == null) {
+    if (expansion == null || expansion.getContains() == null) {
       return null;
     }
     return new ValueSetSnapshot().setExpansion(expansion.getContains().stream().map(c -> new ValueSetVersionConcept()
