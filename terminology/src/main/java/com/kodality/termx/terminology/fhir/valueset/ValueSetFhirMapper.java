@@ -289,11 +289,11 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     if (CollectionUtils.isEmpty(filters)) {
       return null;
     }
-    return filters.stream().map(valueSetRuleFilter -> {
+    return filters.stream().map(f -> {
       ValueSetComposeIncludeFilter filter = new ValueSetComposeIncludeFilter();
-      filter.setValue(JsonUtil.toJson(valueSetRuleFilter.getValue()));
-      filter.setOp(valueSetRuleFilter.getOperator());
-      filter.setProperty(valueSetRuleFilter.getProperty().getName());
+      filter.setValue(f.getValue() instanceof String ? (String) f.getValue() : JsonUtil.toJson(f.getValue()));
+      filter.setOp(f.getOperator());
+      filter.setProperty(f.getProperty().getName());
       return filter;
     }).collect(toList());
   }
