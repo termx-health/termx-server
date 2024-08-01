@@ -11,6 +11,10 @@ update terminology.entity_property
     set rule = jsonb_set(rule, '{codeSystems}', (replace(rule ->> 'codeSystems', p_current_code_system, p_new_code_system))::jsonb)
     where (rule ->> 'codeSystems') like '%' || p_current_code_system || '%';
 
+update terminology.entity_property_value
+set value = jsonb_set("value", '{codeSystem}', ('"' || p_new_code_system || '"')::jsonb)
+where "value" ->> 'codeSystem' = p_current_code_system;
+
 update sys.provenance set target = jsonb_set(target, '{id}', ('"' || p_new_code_system || '"')::jsonb)
   where target ->> 'type' = 'CodeSystem' and target ->> 'id' = p_current_code_system;
 update sys.provenance set context = replace(context::text, '"' || p_current_code_system || '"', '"' || p_new_code_system || '"')::jsonb
