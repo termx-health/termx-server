@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 @Singleton
 public class C7RuleValidator implements CodeSystemRuleValidator {
-  private final Pattern STRING_REGEX = Pattern.compile("^[^\\t\\n@$#\\\\]+$");
+  private final Pattern STRING_REGEX = Pattern.compile("^(?!.*\\s\\s)(?!.*\\s$)(?!^\\s)[^\\t\\n@$#\\\\]+$");
 
   @Override
   public String getRuleCode() {
@@ -26,7 +26,7 @@ public class C7RuleValidator implements CodeSystemRuleValidator {
         .filter(c -> !STRING_REGEX.matcher(c.getCode()).matches() ||
             Optional.ofNullable(c.getVersions()).orElse(List.of()).stream().anyMatch(v -> v.getDesignations().stream().anyMatch(d -> !STRING_REGEX.matcher(d.getName()).matches())))
         .map(c -> new ChecklistAssertionError()
-            .setError(String.format("The concept '%s' code or designation contains: tabs, newlines, or characters @, $, #, \\.", c.getCode()))
+            .setError(String.format("The concept '%s' code or designation contains: tabs, newlines, leading/trailing whitespaces, double spaces or characters @, $, #, \\.", c.getCode()))
             .setResources(List.of(new ChecklistAssertionErrorResource().setResourceType("Concept").setResourceId(c.getCode())))
         ).toList();
   }
