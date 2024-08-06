@@ -2,6 +2,7 @@ package com.kodality.termx.modeler.transformationdefinition;
 
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.client.HttpClientError;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.core.sys.server.httpclient.TerminologyServerHttpClientService;
 import com.kodality.termx.modeler.ApiError;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
@@ -23,6 +24,7 @@ import com.kodality.zmei.fhir.datatypes.Quantity;
 import com.kodality.zmei.fhir.datatypes.Range;
 import com.kodality.zmei.fhir.datatypes.Reference;
 import com.kodality.zmei.fhir.datatypes.Timing;
+import com.kodality.zmei.fhir.resource.medications.Dosage;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.io.ResourceLoader;
 import jakarta.inject.Singleton;
@@ -67,7 +69,6 @@ import org.hl7.fhir.utilities.xhtml.NodeType;
 import org.hl7.fhir.utilities.xhtml.XhtmlNode;
 import org.hl7.fhir.validation.ValidationEngine;
 import org.hl7.fhir.validation.ValidationEngine.ValidationEngineBuilder;
-
 import static com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource.TransformationDefinitionResourceSource.local;
 import static com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource.TransformationDefinitionResourceSource.statik;
 import static com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource.TransformationDefinitionResourceSource.url;
@@ -310,7 +311,7 @@ public class TransformerService {
       cu.generateSnapshot(definition, definition.getKind() != null && definition.getKind() == StructureDefinitionKind.LOGICAL);
     }
     Map<String, Object> resource = new LinkedHashMap<>();
-    resource.put(definition.getName(), new LinkedHashMap<>(Map.of("resourceType", definition.getName())));
+    resource.put(definition.getType(), new LinkedHashMap<>(Map.of("resourceType", definition.getType())));
     definition.getSnapshot().getElement().forEach(el -> {
       String[] path = StringUtils.substringBeforeLast(el.getPath(), ".").split("\\.");
       Map<String, Object> parent = resource;
@@ -318,13 +319,17 @@ public class TransformerService {
         Object v = parent.computeIfAbsent(p, x -> new LinkedHashMap<>());
         parent = (Map<String, Object>) (v instanceof List l ? l.get(0) : v);
       }
+
       String name = StringUtils.substringAfterLast(el.getPath(), ".");
       Object value = generateValue(name, el);
+      if (value instanceof com.kodality.zmei.fhir.Element element) {
+        value = JsonUtil.toMap(FhirMapper.toJson(element));
+      }
       if (value != null) {
         parent.put(name, "*".equals(el.getMax()) ? List.of(value) : value);
       }
     });
-    return FhirMapper.toJson(resource.get(definition.getName()), true);
+    return FhirMapper.toJson(resource.get(definition.getType()), true);
   }
 
   private Object generateValue(String name, ElementDefinition el) {
@@ -348,6 +353,7 @@ public class TransformerService {
       case "Identifier" -> new Identifier().setValue(randomString(16));
       case "HumanName" -> new HumanName().setGiven(List.of(randomString())).setFamily(randomString());
       case "Address" -> new Address().setText(randomString() + " " + randomString() + " " + randomString());
+      case "Dosage" -> new Dosage().setText(randomString() + " " + randomString() + " " + randomString());
       case "ContactPoint" -> new ContactPoint().setValue(randomString());
       case "Timing" -> new Timing();
       case "Quantity" -> new Quantity().setValue(randomBigDecimal());
