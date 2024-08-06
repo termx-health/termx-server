@@ -47,5 +47,6 @@ public class CodeSystem {
   public static class CodeSystemSettings {
     private boolean reviewRequired;
     private boolean approvalRequired;
+    private boolean disableHierarchyGrouping;
   }
 }
