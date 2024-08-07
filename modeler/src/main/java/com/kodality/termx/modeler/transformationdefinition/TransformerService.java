@@ -31,6 +31,8 @@ import jakarta.inject.Singleton;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -310,8 +312,9 @@ public class TransformerService {
       ContextUtilities cu = new ContextUtilities(getEngine().getContext());
       cu.generateSnapshot(definition, definition.getKind() != null && definition.getKind() == StructureDefinitionKind.LOGICAL);
     }
+    String resourceType = getResourceType(definition.getType());\
     Map<String, Object> resource = new LinkedHashMap<>();
-    resource.put(definition.getType(), new LinkedHashMap<>(Map.of("resourceType", definition.getType())));
+    resource.put(resourceType, new LinkedHashMap<>(Map.of("resourceType", resourceType)));
     definition.getSnapshot().getElement().forEach(el -> {
       String[] path = StringUtils.substringBeforeLast(el.getPath(), ".").split("\\.");
       Map<String, Object> parent = resource;
@@ -329,7 +332,7 @@ public class TransformerService {
         parent.put(name, "*".equals(el.getMax()) ? List.of(value) : value);
       }
     });
-    return FhirMapper.toJson(resource.get(definition.getType()), true);
+    return FhirMapper.toJson(resource.get(resourceType), true);
   }
 
   private Object generateValue(String name, ElementDefinition el) {
@@ -353,7 +356,7 @@ public class TransformerService {
       case "Identifier" -> new Identifier().setValue(randomString(16));
       case "HumanName" -> new HumanName().setGiven(List.of(randomString())).setFamily(randomString());
       case "Address" -> new Address().setText(randomString() + " " + randomString() + " " + randomString());
-      case "Dosage" -> new Dosage().setText(randomString() + " " + randomString() + " " + randomString());
+      case "Dosage" -> new Dosage().setText(randomString());
       case "ContactPoint" -> new ContactPoint().setValue(randomString());
       case "Timing" -> new Timing();
       case "Quantity" -> new Quantity().setValue(randomBigDecimal());
@@ -368,6 +371,15 @@ public class TransformerService {
       case "CodeableReference" -> new CodeableReference().setConcept(CodeableConcept.fromCodes(randomString()));
       default -> null;
     };
+  }
+
+  public static String getResourceType(String type) {
+    try {
+      new URL(type);
+      return StringUtils.substringAfterLast(type, "/");
+    } catch (MalformedURLException e) {
+      return type;
+    }
   }
 
   private static BigDecimal randomBigDecimal() {
