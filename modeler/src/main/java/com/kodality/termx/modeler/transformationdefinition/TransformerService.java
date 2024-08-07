@@ -312,7 +312,7 @@ public class TransformerService {
       ContextUtilities cu = new ContextUtilities(getEngine().getContext());
       cu.generateSnapshot(definition, definition.getKind() != null && definition.getKind() == StructureDefinitionKind.LOGICAL);
     }
-    String resourceType = getResourceType(definition.getType());\
+    String resourceType = getResourceType(definition.getType());
     Map<String, Object> resource = new LinkedHashMap<>();
     resource.put(resourceType, new LinkedHashMap<>(Map.of("resourceType", resourceType)));
     definition.getSnapshot().getElement().forEach(el -> {
