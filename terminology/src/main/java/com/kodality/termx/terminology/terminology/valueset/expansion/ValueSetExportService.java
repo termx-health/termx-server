@@ -128,7 +128,7 @@ public class ValueSetExportService {
           return pv.getValue() instanceof String ? (String) pv.getValue() : JsonUtil.toJson(pv.getValue());
         }).collect(Collectors.joining("#")));
       } else if (List.of("parent", "groupedBy").contains(h)) {
-        row.addAll(Optional.ofNullable(c.getAssociations()).orElse(List.of()).stream().map(CodeSystemAssociation::getTargetCode).toList());
+        row.add( Optional.ofNullable(c.getAssociations()).map(a -> a.stream().map(CodeSystemAssociation::getTargetCode).collect(Collectors.joining("#"))).orElse(""));
       } else if("codeSystem".equals(h)) {
         row.add(c.getConcept().getBaseCodeSystemUri() != null ? c.getConcept().getBaseCodeSystemUri() : Optional.ofNullable(c.getConcept().getCodeSystemUri()).orElse(""));
       }  else if("codeSystemVersion".equals(h)) {
