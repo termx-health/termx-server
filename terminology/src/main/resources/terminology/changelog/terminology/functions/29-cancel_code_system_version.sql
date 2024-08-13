@@ -36,8 +36,8 @@ assoc as (
   update terminology.code_system_association
      set sys_status = 'D'
    where sys_status <> 'D'
-     and (source_code_system_entity_version_id in (select id from csev)
-      or target_code_system_entity_version_id in (select id from csev))
+     and (source_code_system_entity_version_id in (select id from csev) and source_code_system_entity_version_id in (select id from csev where reused=0)
+      or target_code_system_entity_version_id in (select id from csev) and target_code_system_entity_version_id in (select id from csev where reused=0))
 returning id    
 ),
 mmm as (
