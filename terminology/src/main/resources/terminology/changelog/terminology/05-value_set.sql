@@ -227,3 +227,8 @@ alter table terminology.value_set add column use_context jsonb;
 alter table terminology.value_set add constraint value_set_replaces_fk foreign key (replaces) references terminology.value_set(id);
 create index value_set_replaces_idx on terminology.value_set(replaces);
 --
+
+--changeset kodality:value_set_version_rule_set-inactive-not_null
+update terminology.value_set_version_rule_set set inactive = false where inactive is null;
+alter table terminology.value_set_version_rule_set alter column inactive set not null;
+--

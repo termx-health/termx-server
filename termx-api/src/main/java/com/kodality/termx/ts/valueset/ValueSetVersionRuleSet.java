@@ -15,7 +15,7 @@ import lombok.experimental.Accessors;
 public class ValueSetVersionRuleSet {
   private Long id;
   private OffsetDateTime lockedDate;
-  private Boolean inactive;
+  private boolean inactive;
   private List<ValueSetVersionRule> rules;
 
   @Getter

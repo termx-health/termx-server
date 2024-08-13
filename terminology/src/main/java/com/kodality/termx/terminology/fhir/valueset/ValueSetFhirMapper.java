@@ -192,7 +192,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       return null;
     }
     ValueSetCompose compose = new ValueSetCompose();
-    compose.setInactive(ruleSet.getInactive());
+    compose.setInactive(ruleSet.isInactive());
     if (ruleSet.getLockedDate() != null) {
       compose.setLockedDate(ruleSet.getLockedDate().toLocalDate());
     }

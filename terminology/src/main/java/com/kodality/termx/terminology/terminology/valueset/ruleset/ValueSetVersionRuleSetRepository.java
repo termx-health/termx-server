@@ -15,7 +15,7 @@ public class ValueSetVersionRuleSetRepository extends BaseRepository {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", ruleSet.getId());
     ssb.property("locked_date", ruleSet.getLockedDate());
-    ssb.property("inactive", ruleSet.getInactive());
+    ssb.property("inactive", ruleSet.isInactive());
     ssb.property("value_set_version_id", valueSetVersionId);
     SqlBuilder sb = ssb.buildSave("terminology.value_set_version_rule_set", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
