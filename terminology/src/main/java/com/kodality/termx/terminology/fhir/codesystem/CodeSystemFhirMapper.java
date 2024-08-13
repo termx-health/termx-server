@@ -339,7 +339,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
               fhir.setValueDateTime((OffsetDateTime) pv.getValue());
             } else {
               OffsetDateTime dateTime = DateUtil.parseOffsetDateTime(pv.getValue() instanceof String ? (String) pv.getValue() : String.valueOf(pv.getValue()));
-              fhir.setValueDateTime(dateTime.withNano(0));
+              fhir.setValueDateTime(dateTime.withHour(0).withMinute(0).withSecond(0).withNano(0));
             }
           }
         }
