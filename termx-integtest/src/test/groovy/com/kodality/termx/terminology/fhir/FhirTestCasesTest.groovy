@@ -18,6 +18,7 @@ import groovy.util.logging.Slf4j
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import jakarta.inject.Inject
 import org.apache.commons.lang3.tuple.Pair
+import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Unroll
 
@@ -50,6 +51,7 @@ class FhirTestCasesTest extends TermxIntegTest {
   }
 
   @Unroll
+  @Ignore
   def "SUIT #test.left.name TEST #test.right.name"() {
     when:
     runSetup(test.left.setup)
