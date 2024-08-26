@@ -6,12 +6,19 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  IMAGE_NAME: termx-server
+
 jobs:
 
   build:
 
     runs-on: ubuntu-latest
     name: Build
+
+    permissions:
+      packages: write
+      contents: read
 
     steps:
     - name: Checkout sources
@@ -34,8 +41,12 @@ jobs:
 
     - name: Build the Docker image
       working-directory: ./termx-app
-      run: docker build . --file ./Dockerfile --tag termx-server:latest
+      run: docker build . --file ./Dockerfile --tag $IMAGE_NAME
+
+    - name: Log in to registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
     - name: Publish
       run: |
-        docker push ghcr.io/termx-health/termx-server:latest
+        docker tag $IMAGE_NAME ghcr.io/termx-health/$IMAGE_NAME:latest 
+        docker push ghcr.io/termx-health/$IMAGE_NAME:latest
