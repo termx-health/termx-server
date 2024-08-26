@@ -31,3 +31,6 @@ jobs:
 
     - name: Test
       run: ./gradlew check
+
+    - name: Build the Docker image
+      run: docker build . --file ./termx-app/Dockerfile --tag termx-server:$(date +%s)
