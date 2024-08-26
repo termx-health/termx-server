@@ -34,4 +34,8 @@ jobs:
 
     - name: Build the Docker image
       working-directory: ./termx-app
-      run: docker build . --file ./Dockerfile --tag termx-server:$(date +%s)
+      run: docker build . --file ./Dockerfile --tag termx-server:latest
+
+    - name: Publish
+      run: |
+        docker push ghcr.io/termx-health/termx-server:latest
