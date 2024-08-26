@@ -33,4 +33,5 @@ jobs:
       run: ./gradlew check
 
     - name: Build the Docker image
-      run: docker build . --file ./termx-app/Dockerfile --tag termx-server:$(date +%s)
+      working-directory: ./termx-app
+      run: docker build . --file ./Dockerfile --tag termx-server:$(date +%s)
