@@ -3,6 +3,8 @@ name: Build
 on:
   push:
     branches: [ "main" ]
+    tags:
+      - v*
   pull_request:
     branches: [ "main" ]
 
@@ -48,5 +50,11 @@ jobs:
 
     - name: Publish
       run: |
-        docker tag $IMAGE_NAME ghcr.io/termx-health/$IMAGE_NAME:latest 
-        docker push ghcr.io/termx-health/$IMAGE_NAME:latest
+        IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
+        VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+        [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+        [ "$VERSION" == "main" ] && VERSION=latest
+        echo IMAGE_ID=$IMAGE_ID
+        echo VERSION=$VERSION
+        docker tag $IMAGE_NAME $IMAGE_ID:$VERSION 
+        docker push $IMAGE_ID:$VERSION
