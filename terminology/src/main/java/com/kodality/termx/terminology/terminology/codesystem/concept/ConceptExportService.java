@@ -127,6 +127,9 @@ public class ConceptExportService {
           if (pv.getEntityPropertyType().equals(EntityPropertyType.dateTime)) {
             return pv.asDateTimeValue().toLocalDate().toString();
           }
+          if (pv.getEntityPropertyType().equals(EntityPropertyType.decimal)) {
+            return pv.asDecimal().stripTrailingZeros().toString();
+          }
           return pv.getValue() instanceof String ? (String) pv.getValue() : JsonUtil.toJson(pv.getValue());
         }).collect(Collectors.joining("#")));
       } else {
