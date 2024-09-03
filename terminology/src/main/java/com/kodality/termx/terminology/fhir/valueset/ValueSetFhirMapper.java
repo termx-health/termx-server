@@ -612,7 +612,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       return null;
     }
     ValueSetVersionRuleSet ruleSet = new ValueSetVersionRuleSet();
-    ruleSet.setInactive(valueSet.getCompose().getInactive());
+    ruleSet.setInactive(valueSet.getCompose().getInactive() != null && valueSet.getCompose().getInactive());
     if (valueSet.getCompose().getLockedDate() != null) {
       ruleSet.setLockedDate(valueSet.getCompose().getLockedDate().atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime());
     }
