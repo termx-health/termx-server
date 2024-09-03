@@ -115,7 +115,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
     if (!valueSet.isExternalWebSource()) {
-      termxWebUrl.ifPresent(url -> fhirValueSet.addExtension(toFhirWebSourceExtension(url, valueSet.getId())));
+      termxWebUrl.ifPresent(url -> fhirValueSet.addExtension(toFhirWebSourceExtension(url, valueSet.getId(), "ValueSet")));
     }
     fhirValueSet.setId(toFhirId(valueSet, version));
     fhirValueSet.setUrl(valueSet.getUri());
@@ -612,7 +612,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       return null;
     }
     ValueSetVersionRuleSet ruleSet = new ValueSetVersionRuleSet();
-    ruleSet.setInactive(valueSet.getCompose().getInactive());
+    ruleSet.setInactive(valueSet.getCompose().getInactive() != null && valueSet.getCompose().getInactive());
     if (valueSet.getCompose().getLockedDate() != null) {
       ruleSet.setLockedDate(valueSet.getCompose().getLockedDate().atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime());
     }

@@ -2,6 +2,7 @@ package com.kodality.termx.ts.codesystem;
 
 import com.kodality.commons.util.JsonUtil;
 import io.micronaut.core.annotation.Introspected;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,6 +30,10 @@ public class EntityPropertyValue {
 
   public OffsetDateTime asDateTimeValue() {
     return OffsetDateTime.parse((String) value);
+  }
+
+  public BigDecimal asDecimal() {
+    return new BigDecimal(String.valueOf(value));
   }
 
   @Getter

@@ -29,18 +29,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.hl7.fhir.r5.model.Narrative.NarrativeStatus;
-
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
 
 public abstract class BaseFhirMapper {
   public static final String SEPARATOR = "--";
@@ -66,8 +59,8 @@ public abstract class BaseFhirMapper {
         .collect(Collectors.toMap(k -> k, k -> fhir.getRawParams().get(k).get(0)));
   }
 
-  protected static Extension toFhirWebSourceExtension(String url, String id) {
-    return new Extension("http://hl7.org/fhir/tools/StructureDefinition/web-source").setValueUrl(url + "/fhir/ValueSet/" + id);
+  protected static Extension toFhirWebSourceExtension(String url, String id, String resourceType) {
+    return new Extension("http://hl7.org/fhir/tools/StructureDefinition/web-source").setValueUrl(url + "/fhir/" + resourceType+ "/" + id);
   }
 
   protected static Extension toFhirSourceReferenceExtension(String url, String value) {
