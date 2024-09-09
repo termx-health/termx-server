@@ -215,7 +215,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
       @Override
       public void setValues(PreparedStatement ps, int i) throws SQLException {
         CodeSystemEntityVersionRepository.this.setValues(ps, i, versionsToUpdate);
-        ps.setLong(7, versionsToUpdate.get(i).getValue().getId());
+        ps.setLong(8, versionsToUpdate.get(i).getValue().getId());
       }
       @Override
       public int getBatchSize() {return versionsToUpdate.size();}
