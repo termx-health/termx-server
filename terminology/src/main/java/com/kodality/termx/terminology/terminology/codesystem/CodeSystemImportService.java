@@ -222,7 +222,7 @@ public class CodeSystemImportService {
         .map(concept -> Pair.of(concept.getId(), prepareEntityVersion(concept.getVersions().get(0), entityProperties)))
         .collect(Collectors.toMap(Pair::getKey, p -> List.of(p.getValue())));
     if (!cleanRun) {
-      mergeWithCurrentVersions(version.getId(), entityVersionMap);
+      mergeWithCurrentVersions(getCurrentCodeSystemVersion(version).getId(), entityVersionMap);
     }
     codeSystemEntityVersionService.batchSave(entityVersionMap, version.getCodeSystem());
     log.info("Concept versions created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
@@ -246,6 +246,14 @@ public class CodeSystemImportService {
     prepareCodeSystemAssociations(associations, version.getId());
     codeSystemAssociationService.batchUpsert(associations, version.getCodeSystem());
     log.info("Associations created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
+  }
+
+  private CodeSystemVersion getCurrentCodeSystemVersion(CodeSystemVersion version) {
+    if (version.getVersion().contains("_shadow")) {
+      return codeSystemVersionService.load(version.getCodeSystem(), version.getVersion().replace("_shadow", ""))
+              .orElse(version);
+    }
+    return version;
   }
 
   private CodeSystemEntityVersion prepareEntityVersion(CodeSystemEntityVersion entityVersion, List<EntityProperty> properties) {
