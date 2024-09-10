@@ -20,6 +20,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jakarta.inject.Singleton;
 
 @Singleton
@@ -47,6 +49,9 @@ public class SnomedMapper {
     SnomedConceptSearchParams snomedParams = new SnomedConceptSearchParams();
     if (StringUtils.isNotEmpty(params.getCode())) {
       snomedParams.setConceptIds(Arrays.stream(params.getCode().split(",")).toList());
+    }
+    if (StringUtils.isNotEmpty(params.getCodeEq())) {
+      snomedParams.setConceptIds(Stream.of(params.getCodeEq()).toList());
     }
     if (CollectionUtils.isNotEmpty(params.getCodes())) {
       snomedParams.setConceptIds(params.getCodes());

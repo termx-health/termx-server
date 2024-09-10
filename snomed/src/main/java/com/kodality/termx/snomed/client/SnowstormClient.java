@@ -34,9 +34,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@Slf4j
 public class SnowstormClient {
   protected HttpClient client;
   protected BinaryHttpClient binaryHttpClient;
@@ -190,6 +194,10 @@ public class SnowstormClient {
 
     HttpRequest request = client.builder(b + "concepts" + query).GET()
         .setHeader(HttpHeaders.ACCEPT_LANGUAGE, getLanguages(b)).build();
+    if (log.isDebugEnabled()) {
+      log.debug("Requesting concepts from Snomed");
+      log.debug("\tSnomed request: {}", request);
+    }
     return client.executeAsync(request).thenApply(resp -> JsonUtil.fromJson(resp.body(), JsonUtil.getParametricType(SnomedSearchResult.class, SnomedConcept.class)));
   }
 
