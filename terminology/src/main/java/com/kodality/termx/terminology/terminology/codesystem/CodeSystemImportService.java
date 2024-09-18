@@ -210,6 +210,11 @@ public class CodeSystemImportService {
     conceptService.batchSave(concepts, version.getCodeSystem());
     log.info("Concepts created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
 
+    // if we import in replace mode
+    if (cleanRun) {
+      log.info("Cleaning concepts");
+      conceptService.cancelOrRetireRedundantConcepts(concepts, version);
+    }
 
     log.info("Creating '{}' concept versions", concepts.size());
     start = System.currentTimeMillis();
@@ -223,6 +228,8 @@ public class CodeSystemImportService {
         .collect(Collectors.toMap(Pair::getKey, p -> List.of(p.getValue())));
     if (!cleanRun) {
       mergeWithCurrentVersions(getCurrentCodeSystemVersion(version).getId(), entityVersionMap);
+    } else {
+      codeSystemEntityVersionService.cancelAllDraftVersions(version, concepts);
     }
     codeSystemEntityVersionService.batchSave(entityVersionMap, version.getCodeSystem());
     log.info("Concept versions created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");

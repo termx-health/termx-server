@@ -11,8 +11,11 @@ import com.kodality.termx.terminology.terminology.codesystem.entitypropertyvalue
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociationQueryParams;
+import com.kodality.termx.ts.codesystem.CodeSystemEntity;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termx.ts.codesystem.CodeSystemVersion;
+import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.DesignationQueryParams;
@@ -267,6 +270,21 @@ public class CodeSystemEntityVersionService {
 
     repository.cancel(id);
     conceptRefreshViewJob.refreshView();
+  }
+
+  @Transactional
+  public void cancelAllDraftVersions(CodeSystemVersion csVersion, List<Concept> concepts) {
+    final String entityIds = concepts.stream()
+            .map(CodeSystemEntity::getId)
+            .map(Object::toString)
+            .collect(Collectors.joining(","));
+    final CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams()
+            .setCodeSystemVersionId(csVersion.getId())
+            .setCodeSystemEntityIds(entityIds)
+            .setStatus(PublicationStatus.draft);
+    final List<CodeSystemEntityVersion> entityVersions = repository.query(params).getData().stream()
+            .toList();
+    entityVersions.forEach(ev -> repository.cancel(ev.getId()));
   }
 
   private void prepare(CodeSystemEntityVersion version) {
