@@ -14,6 +14,7 @@ import com.kodality.termx.ts.codesystem.CodeSystemEntityType;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
+import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.ConceptTransactionRequest;
@@ -60,9 +61,7 @@ public class ConceptService {
 
   @Transactional
   public List<Concept> batchSave(List<Concept> concepts, String codeSystem) {
-    ConceptQueryParams params = new ConceptQueryParams().setCodeSystem(codeSystem).all();
-    prepareParams(params);
-    Map<String, List<Concept>> existingConcepts = repository.query(params).getData().stream().collect(Collectors.groupingBy(Concept::getCode));
+    Map<String, List<Concept>> existingConcepts = getExistingConcepts(codeSystem).stream().collect(Collectors.groupingBy(Concept::getCode));
 
     concepts.forEach(concept -> {
       concept.setType(CodeSystemEntityType.concept);
@@ -96,6 +95,32 @@ public class ConceptService {
       codeSystemVersionService.linkEntityVersions(request.getCodeSystem(), request.getCodeSystemVersion(), List.of(entityVersion.getId()));
     }
     return concept;
+  }
+
+  @Transactional
+  public void cancelOrRetireRedundantConcepts(List<Concept> actualConcepts, CodeSystemVersion codeSystemVersion) {
+    final String codeSystem = codeSystemVersion.getCodeSystem();
+    final List<Concept> existingConcepts = getExistingConcepts(codeSystem);
+    final List<Concept> redundantConcept = existingConcepts.stream()
+            .filter(ex -> actualConcepts.stream()
+                    .noneMatch(c -> c.getCode().equals(ex.getCode()))
+            ).toList();
+    redundantConcept.forEach(rc -> {
+      decorate(rc, codeSystem, codeSystemVersion.getVersion());
+      if (rc.getVersions().stream().allMatch(v -> PublicationStatus.draft.equals(v.getStatus()))) {
+        log.info("Concept {} has only draft versions. Cancelling concept.", rc.getCode());
+        repository.cancel(rc.getId(), codeSystem);
+      } else {
+        log.info("Concept {} has 'active' versions. Retiring active versions.", rc.getCode());
+        rc.getVersions().forEach(v -> {
+          if (PublicationStatus.draft.equals(v.getStatus())) {
+            codeSystemEntityVersionService.cancel(v.getId());
+          } else if (PublicationStatus.active.equals(v.getStatus())) {
+            codeSystemEntityVersionService.retire(v.getId());
+          }
+        });
+      }
+    });
   }
 
   public QueryResult<Concept> query(ConceptQueryParams params) {
@@ -135,6 +160,12 @@ public class ConceptService {
         .setCodeSystem(codeSystem)
         .setCodeSystemVersion(codeSystemVersion)
         .setCodeEq(code)).findFirst().map(c -> decorate(c, codeSystem, codeSystemVersion));
+  }
+
+  private List<Concept> getExistingConcepts(String codeSystem) {
+    ConceptQueryParams params = new ConceptQueryParams().setCodeSystem(codeSystem).all();
+    prepareParams(params);
+    return repository.query(params).getData();
   }
 
   private Concept decorate(Concept concept, String codeSystem, String codeSystemVersion) {
