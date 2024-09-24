@@ -64,7 +64,7 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
   }
 
   private Parameters run(Parameters req) {
-    String url = req.findParameter("url").map(ParametersParameter::getValueString)
+    String url = req.findParameter("url").map(ParametersParameter::getValueUrl)
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
 
