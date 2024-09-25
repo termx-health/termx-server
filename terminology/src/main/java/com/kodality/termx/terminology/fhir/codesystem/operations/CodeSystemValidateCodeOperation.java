@@ -26,6 +26,7 @@ import io.micronaut.context.annotation.Factory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
@@ -64,7 +65,7 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
   }
 
   private Parameters run(Parameters req) {
-    String url = req.findParameter("url").map(ParametersParameter::getValueUrl)
+    String url = req.findParameter("url").map(pp -> StringUtils.firstNonBlank(pp.getValueUrl(), pp.getValueString()))
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
 
@@ -93,7 +94,7 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
   }
 
   private Parameters run(String csId, Long versionId, Parameters req) {
-    String code = req.findParameter("code").map(ParametersParameter::getValueString)
+    String code = req.findParameter("code").map(pp -> StringUtils.firstNonBlank(pp.getValueCode(), pp.getValueString()))
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
 
