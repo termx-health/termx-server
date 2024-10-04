@@ -18,7 +18,7 @@ with rules as (
     from terminology.value_set_version_rule_set rs
          inner join terminology.value_set_version v on v.id = rs.value_set_version_id and v.sys_status = 'A'
          inner join terminology.value_set_version_rule r on r.rule_set_id = rs.id and r.sys_status = 'A'
-                and ((r.code_system is not null and r.code_system not in ('snomed-ct','loinc','ucum')) or r.value_set_version_id is not null)
+                and ((r.code_system is not null and r.code_system not in ('snomed-ct'/*,'loinc'*/,'ucum')) or r.value_set_version_id is not null)
          left outer join terminology.code_system cs on cs.sys_status = 'A' and cs.id = r.code_system    
          left outer join terminology.code_system bcs on bcs.sys_status = 'A' and bcs.id = cs.base_code_system
    where v.id = p_value_set_version_id and rs.sys_status = 'A'
@@ -45,7 +45,7 @@ exact_concepts as (
                 and csev.id = evcsvm.code_system_entity_version_id
 ),
 expressions as (
-  -- list the all unique filters
+  -- split array to table/list of the unique filters
   with recursive t as (
     with f as (
 		  select r.*, jsonb_array_elements(r.filters) filter_, jsonb_array_length(r.filters) fcnt
@@ -77,107 +77,118 @@ expressions as (
 	     and csa1.sys_status = 'A'
   ),
   c as (
-	  select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.id csev_id, 
-	         csev.code csev_code, 
-	         jsonb_build_object('conceptVersionId', csev.id, 
-	                            'code', csev.code, 'codeSystem', t.code_system, 
-	                            'codeSystemUri', t.uri, 'baseCodeSystemUri', t.base_uri) obj
-	    from rules t
-	         left outer join terminology.code_system_entity_version csev 
-	                 on t.code_system = csev.code_system and csev.sys_status='A'
-	         left outer join terminology.entity_version_code_system_version_membership evcsvm 
-	                 on evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = t.code_system_version_id 
-	                and csev.id = evcsvm.code_system_entity_version_id
-	   where t.filters is not null      
+    -- >> the example of output of the list of concepts
+    --rule_id|type   |code_system|code_system_version_id|csev_id|csev_code|obj                                                                                                                                     |
+    -------+-------+-----------+----------------------+-------+---------+----------------------------------------------------------------------------------------------------------------------------------------+
+    --7192817|include|loinc      |               4981610|5085665|10-9     |{"code": "10-9", "codeSystem": "loinc", "codeSystemUri": "http://loinc.org", "conceptVersionId": 5085665, "baseCodeSystemUri": null}    |
+    -- <<
+    select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.id csev_id,
+           csev.code csev_code,
+           jsonb_build_object('conceptVersionId', csev.id,
+                              'code', csev.code, 'codeSystem', t.code_system,
+                              'codeSystemUri', t.uri, 'baseCodeSystemUri', t.base_uri) obj
+      from rules t
+           left outer join terminology.code_system_entity_version csev
+                   on t.code_system = csev.code_system and csev.sys_status='A'
+           left outer join terminology.entity_version_code_system_version_membership evcsvm
+                   on evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = t.code_system_version_id
+                  and csev.id = evcsvm.code_system_entity_version_id
+     where t.filters is not null
    )
-   -- concepts that match by exact code or regexp applied to code 
-   select c.*, t.rn, t.fcnt from c, t  
+   -- concepts that match by exact code or regexp applied to code
+   select c.*, t.rn, t.fcnt from c, t
     where t.code_system = c.code_system
       and t.rule_id = c.rule_id
-      and ((t.filter_ -> 'property' ->> 'name')::text = 'code' and 
-           (c.csev_code = (t.filter_ ->> 'value')::text or 
+      and ((t.filter_ -> 'property' ->> 'name')::text = 'code' and
+           (c.csev_code = (t.filter_ ->> 'value')::text or
            c.csev_code = any(regexp_match(c.csev_code, (t.filter_ ->> 'value')::text||'$'))))
-   union     
-   -- concepts that match by properties 
-   select c.*, t.rn, t.fcnt from c, t 
+   union
+   -- concepts that match by exact value of the properties
+   -- the example of (LOINC) filter: {"value": {"code": "LP6960-1", "codeSystem": "loinc-part"}, "operator": "=", "property": {"id": 4981592, "kind": "property", "name": "TIME", "type": "Coding"}}
+   select c.*, t.rn, t.fcnt from c, t
     where t.code_system = c.code_system
       and t.rule_id = c.rule_id
-      and coalesce((t.filter_ ->> 'operator'),'') <> 'is-a' 
-      and exists (select 1 from terminology.entity_property_value epv, terminology.entity_property ep 
+      and coalesce((t.filter_ ->> 'operator'),'') <> 'is-a'
+      and exists (select 1 from terminology.entity_property_value epv, terminology.entity_property ep
                   where epv.sys_status = 'A' and c.csev_id = epv.code_system_entity_version_id
-                    and ep.sys_status = 'A' and ep.id = epv.entity_property_id
-                    and (t.filter_ -> 'property' ->> 'name')::text = ep.name 
-                    and ((t.filter_ ->> 'value') is null or (t.filter_ -> 'value') = epv.value::jsonb or 
+                    and ep.sys_status = 'A' and ep.code_system = c.code_system and ep.id = epv.entity_property_id
+                    and (t.filter_ -> 'property' ->> 'name')::text = ep.name
+                    and (
+                         ep.type <> 'Coding' and ((t.filter_ ->> 'value') is null or (t.filter_ -> 'value') = epv.value::jsonb or
                          (t.filter_ ->> 'value')::text = (epv.value ->> 'code')::text)
-                 ) 
-   union 
-   -- concepts that match by designations 
-   select c.*, t.rn, t.fcnt from c, t 
+                         or
+                         ep.type = 'Coding' and  ((t.filter_ -> 'value' ->> 'code') is null or (t.filter_ -> 'value' -> 'code') = epv.value::jsonb or
+                         (t.filter_ -> 'value' ->> 'code')::text = (epv.value ->> 'code')::text)
+                    )
+                 )
+   union
+   -- concepts that match by designations
+   select c.*, t.rn, t.fcnt from c, t
     where t.code_system = c.code_system
       and t.rule_id = c.rule_id
-      and exists (select 1 from terminology.designation d, terminology.entity_property ep 
+      and exists (select 1 from terminology.designation d, terminology.entity_property ep
                   where d.sys_status = 'A' and c.csev_id = d.code_system_entity_version_id
                     and ep.sys_status = 'A' and ep.id = d.designation_type_id
-                    and (t.filter_ -> 'property' ->> 'name')::text = ep.name  
+                    and (t.filter_ -> 'property' ->> 'name')::text = ep.name
                     and ((t.filter_ ->> 'value')::text = d.name))
-   union 
+   union
    -- all recursive concepts calculated before
-   select c.*, r.rn, r.fcnt from r, c  
+   select c.*, r.rn, r.fcnt from r, c
     where c.code_system = r.code_system
       and c.rule_id = r.rule_id
       and c.csev_id = r.csev_id
 ),
 expression_concepts as (
-	select rule_id, type, csev_code, obj, fcnt, count(*)
-	  from expressions
-	 group by rule_id, type, csev_code, obj, fcnt
-	having fcnt = count(*)   
+  select rule_id, type, csev_code, obj, fcnt, count(*)
+    from expressions
+   group by rule_id, type, csev_code, obj, fcnt
+  having fcnt = count(*)
 ),
 cs as (
-  select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.id csev_id, csev.code csev_code, 
+  select t.rule_id, t."type", t.code_system, t.code_system_version_id, csev.id csev_id, csev.code csev_code,
          jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri, 'baseCodeSystemUri', t.base_uri) obj
-    from rules t, 
+    from rules t,
          terminology.code_system_entity_version csev,
-         terminology.entity_version_code_system_version_membership evcsvm 
+         terminology.entity_version_code_system_version_membership evcsvm
    where t.code_system = csev.code_system
      and evcsvm.sys_status = 'A' and csev.sys_status='A'
-     and evcsvm.code_system_version_id = t.code_system_version_id 
+     and evcsvm.code_system_version_id = t.code_system_version_id
      and csev.id = evcsvm.code_system_entity_version_id
-     and t.filters is null and t.concepts is null 
+     and t.filters is null and t.concepts is null
 ),
 vs as (
   select s.* from rules t, lateral terminology.value_set_expand(t.value_set_version_id) s
-   where t.value_set_version_id is not null 
+   where t.value_set_version_id is not null
 ),
 codes as (
-	select csev_code, obj
-	  from cs
-	 where type='include'
+  select csev_code, obj
+    from cs
+   where type='include'
   union
-	select concept ->> 'code', concept
-	  from vs  
+  select concept ->> 'code', concept
+    from vs
   union
-	 select csev_code, obj
-	  from expression_concepts
-	 where type='include'
-	union
-	select csev_code, obj 
-	  from exact_concepts
-	  where type='include' 
-	except   
-	select csev_code, obj 
-	  from cs
-	 where type='exclude'
-	except
-	select csev_code, obj 
-	  from expression_concepts
-	 where type='exclude'
-	except
-	select csev_code, obj 
-	  from exact_concepts
-	  where type='exclude' 
+   select csev_code, obj
+    from expression_concepts
+   where type='include'
+  union
+  select csev_code, obj
+    from exact_concepts
+    where type='include'
+  except
+  select csev_code, obj
+    from cs
+   where type='exclude'
+  except
+  select csev_code, obj
+    from expression_concepts
+   where type='exclude'
+  except
+  select csev_code, obj
+    from exact_concepts
+    where type='exclude'
 )
-select t.obj, ec.display, ec.additional_designations, ec.order_number, 
+select t.obj, ec.display, ec.additional_designations, ec.order_number,
        case when ec.csev_code is not null then true else false end
   from codes t left outer join exact_concepts ec on t.csev_code = ec.csev_code
  order by ec.order_number;
