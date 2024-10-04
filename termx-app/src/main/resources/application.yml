@@ -61,13 +61,13 @@ auth:
       - '/pages/static'
 
 snowstorm:
-  url: https://snowstorm.kodality.dev/
+  url: https://snowstorm.termx.org/
   user: termserver-app
   password: ''
   branch: 'MAIN'
   namespace: '1000265'
 
-chef.url: https://termx.kodality.dev/chef
+chef.url: https://demo.termx.org/chef
 #github:
 #  client:
 #    id: 'client-id'
