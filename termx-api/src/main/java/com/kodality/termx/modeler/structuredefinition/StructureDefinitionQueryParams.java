@@ -14,6 +14,12 @@ public class StructureDefinitionQueryParams extends QueryParams {
   private String code;
   private String textContains;
   private String urls;
+  private String contentFormat;
+  private String version;
 
   private List<Long> permittedIds;
+
+  private Long spaceId;
+  private Long packageId;
+  private Long packageVersionId;
 }
