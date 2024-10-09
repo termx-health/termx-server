@@ -16,7 +16,7 @@
       ]
     }
   ],
-  "description": "Standard Conformance Statement for the Terminology Server TermX provided by Kodality",
+  "description": "Standard Conformance Statement for the Terminology Server provided by TermX",
   "kind": "instance",
   "instantiates": [
     "http://hl7.org/fhir/CapabilityStatement/terminology-server"

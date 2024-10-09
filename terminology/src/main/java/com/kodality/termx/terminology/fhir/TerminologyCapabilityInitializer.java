@@ -40,7 +40,7 @@ public class TerminologyCapabilityInitializer implements TermxGeneratedConforman
 
   private TerminologyCapabilities generateTerminologyCapabilities() {
     TerminologyCapabilities tc = new TerminologyCapabilities();
-    tc.setUrl("https://termx.kodality.dev/api/fhir/metadata");
+    tc.setUrl("https://demo.termx.org/api/fhir/metadata");
     tc.setVersion("1");
     tc.setName("TermX Terminology Statement");
     tc.setTitle("TermX Terminology Statement");
