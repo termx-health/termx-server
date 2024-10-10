@@ -7,6 +7,10 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: termx-server
 
+defaults:
+  run:
+    working-directory: ./termx-app
+
 jobs:
 
   build:
@@ -29,7 +33,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ./termx-app
+          context: .
           platforms: linux/amd64,linux/arm64
           push: false
           tags: ${{ env.IMAGE_NAME }}
