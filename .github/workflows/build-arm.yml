@@ -57,7 +57,7 @@ jobs:
 #          file: ./termx-app/Dockerfile
           context: ./termx-app
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: false
 #          tags: ghcr.io/termx-server:latest
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
