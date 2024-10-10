@@ -55,23 +55,14 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-#          file: ./termx-app/Dockerfile
           context: ./termx-app
-          platforms: linux/arm64
-#          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64
           push: true
-#          tags: ghcr.io/termx-server:latest
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-#      - name: Publish
-#        run: |
-#          docker images
-#          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
-#          docker push $IMAGE_ID:main
-##          docker tag $IMAGE_NAME $IMAGE_ID:main
