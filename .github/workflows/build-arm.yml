@@ -48,8 +48,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          file: ./termx-app/Dockerfile
+#          file: ./termx-app/Dockerfile
           context: ./termx-app
           platforms: linux/amd64,linux/arm64
-          push: false
+          push: true
           tags: ${{ env.IMAGE_NAME }}
