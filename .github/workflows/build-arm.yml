@@ -65,6 +65,7 @@ jobs:
 
       - name: Publish
         run: |
+          docker images
           IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
           docker push $IMAGE_ID:main
 #          docker tag $IMAGE_NAME $IMAGE_ID:main
