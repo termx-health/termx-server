@@ -62,3 +62,4 @@ jobs:
           tags: ghcr.io/termx-health/termx-server:latest
 #          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
