@@ -25,6 +25,10 @@ public class TransformationDefinitionQueryParams extends QueryParams {
   private boolean summary;
   private List<Long> permittedIds;
 
+  private Long spaceId;
+  private Long packageId;
+  private Long packageVersionId;
+
   public interface Ordering {
     String id = "id";
     String name = "name";

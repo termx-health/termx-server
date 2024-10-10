@@ -2,10 +2,10 @@ package com.kodality.termx.modeler.structuredefinition.providers;
 
 import com.kodality.termx.core.github.ResourceContentProvider;
 import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
+import com.kodality.termx.modeler.github.CompositeIdUtils.CompositeId;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinition;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinitionUtils;
 import com.kodality.termx.terminology.fhir.FhirFshConverter;
 import jakarta.inject.Singleton;
 import jakarta.validation.constraints.NotNull;
@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.kodality.termx.modeler.github.CompositeIdUtils.parseCompositeId;
 import static com.kodality.termx.modeler.structuredefinition.StructureDefinitionUtils.*;
 
 @Slf4j
@@ -45,7 +46,7 @@ public class SpaceGithubDataStructureDefinitionFhirHandler implements SpaceGithu
             .setContentFormat("json")
             .all())
         .getData();
-    return structureDefinitions.stream().flatMap(cs -> resourceContentProvider.getContent(cs).stream()).toList();
+    return structureDefinitions.stream().flatMap(sd -> resourceContentProvider.getContent(sd).stream()).toList();
   }
 
   @Override
@@ -55,11 +56,12 @@ public class SpaceGithubDataStructureDefinitionFhirHandler implements SpaceGithu
         return;
       }
 
-      final StructureDefinitionUtils.CompositeId compositeId = StructureDefinitionUtils.parseCompositeId(StringUtils.removeEnd(file, ".json"));
+      final CompositeId compositeId = parseCompositeId(StringUtils.removeEnd(file, ".json"));
       final Optional<StructureDefinition> existingDefinition = structureDefinitionService.query(new StructureDefinitionQueryParams()
           .setSpaceId(spaceId)
           .setCode(compositeId.code())
           .setVersion(compositeId.version())
+          .all()
       ).getData().stream().findFirst();
 
       if (jsonContent == null) {
