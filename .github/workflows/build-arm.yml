@@ -58,6 +58,8 @@ jobs:
           tags: |
             type=ref,event=tag
             type=ref,event=branch
+          flavor: |
+            latest
 
       - name: Build and push
         uses: docker/build-push-action@v6
