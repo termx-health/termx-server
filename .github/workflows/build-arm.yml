@@ -50,7 +50,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
 #          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
-          images: ghcr.io/termx-health/termx-server
+          images: ghcr.io/termx-server
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -59,7 +59,7 @@ jobs:
           context: ./termx-app
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/termx-health/termx-server:latest
+          tags: ghcr.io/termx-server:latest
 #          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
