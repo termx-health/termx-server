@@ -56,16 +56,17 @@ jobs:
         with:
 #          file: ./termx-app/Dockerfile
           context: ./termx-app
-          platforms: linux/amd64,linux/arm64
-          push: false
+          platforms: linux/arm64
+#          platforms: linux/amd64,linux/arm64
+          push: true
 #          tags: ghcr.io/termx-server:latest
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 #          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish
-        run: |
-          docker images
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
-          docker push $IMAGE_ID:main
-#          docker tag $IMAGE_NAME $IMAGE_ID:main
+#      - name: Publish
+#        run: |
+#          docker images
+#          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
+#          docker push $IMAGE_ID:main
+##          docker tag $IMAGE_NAME $IMAGE_ID:main
