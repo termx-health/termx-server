@@ -1,5 +1,6 @@
 package com.kodality.termx.core.github;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
@@ -398,8 +399,13 @@ public class GithubService {
   public static class GithubContent {
     private String path;
     private String sha;
+    private Long size;
     // GithubContent without content will be deleted during commit;
     private String content;
+    @JsonProperty("git_url")
+    private String gitUrl;
+    @JsonProperty("download_url")
+    private String downloadUrl;
     private String encoding = GithubContentEncoding.utf8;
 
     public interface GithubContentEncoding {

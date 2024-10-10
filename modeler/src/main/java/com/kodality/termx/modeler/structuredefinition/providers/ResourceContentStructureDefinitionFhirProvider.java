@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+import static com.kodality.termx.modeler.github.CompositeIdUtils.getFhirId;
+
 @Slf4j
 @Singleton
 @RequiredArgsConstructor
@@ -37,7 +39,7 @@ public class ResourceContentStructureDefinitionFhirProvider implements ResourceC
   }
 
   public List<ResourceContent> getContent(StructureDefinition sd) {
-    String fhirId = sd.getCode();
+    String fhirId = getFhirId(sd.getCode(), sd.getVersion());
     final String json = JsonUtil.toPrettyJson(JsonUtil.toMap(sd.getContent()));
     return List.of(new ResourceContent(fhirId + ".json", json));
   }

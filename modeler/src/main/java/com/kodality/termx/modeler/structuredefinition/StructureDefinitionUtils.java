@@ -1,6 +1,5 @@
 package com.kodality.termx.modeler.structuredefinition;
 
-import com.kodality.termx.core.fhir.BaseFhirMapper;
 import lombok.experimental.UtilityClass;
 import org.hl7.fhir.r4b.formats.JsonParser;
 
@@ -42,13 +41,5 @@ public class StructureDefinitionUtils {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  public static CompositeId parseCompositeId(String fileName) {
-    String[] parts = BaseFhirMapper.parseCompositeId(fileName);
-    return new CompositeId(parts[0], parts[1]);
-  }
-
-  public record CompositeId(String code, String version) {
   }
 }

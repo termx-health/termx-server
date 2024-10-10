@@ -2,20 +2,20 @@ package com.kodality.termx.modeler.structuredefinition.providers;
 
 import com.kodality.termx.core.github.ResourceContentProvider;
 import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
+import com.kodality.termx.modeler.github.CompositeIdUtils.CompositeId;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinition;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinitionUtils;
 import com.kodality.termx.terminology.fhir.FhirFshConverter;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.kodality.termx.modeler.github.CompositeIdUtils.parseCompositeId;
 import static com.kodality.termx.modeler.structuredefinition.StructureDefinitionUtils.*;
 
 @Singleton
@@ -53,11 +53,12 @@ public class SpaceGithubDataStructureDefinitionFshHandler implements SpaceGithub
         return;
       }
 
-      final StructureDefinitionUtils.CompositeId compositeId = parseCompositeId(StringUtils.removeEnd(file, ".fsh"));
+      final CompositeId compositeId = parseCompositeId(StringUtils.removeEnd(file, ".fsh"));
       final Optional<StructureDefinition> existingDefinition = structureDefinitionService.query(new StructureDefinitionQueryParams()
           .setSpaceId(spaceId)
           .setCode(compositeId.code())
           .setVersion(compositeId.version())
+          .all()
       ).getData().stream().findFirst();
 
       if (fshContent == null) {
@@ -84,7 +85,6 @@ public class SpaceGithubDataStructureDefinitionFshHandler implements SpaceGithub
     });
   }
 
-  @NotNull
   private StructureDefinition createFshStructureDefinition(String fshContent) {
     final StructureDefinition structureDefinition = createFhirStructureDefinitionFromFsh(fshContent);
     structureDefinition.setContent(fshContent);

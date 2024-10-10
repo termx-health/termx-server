@@ -76,8 +76,20 @@ public class SpaceGithubService {
         .orElse(null);
 
     return new GithubDiff()
-        .setLeft(githubService.getContent(repo, MAIN, file).getContent())
+        .setLeft(getContent(file, repo))
         .setRight(currentContent);
+  }
+
+  private String getContent(String file, String repo) {
+    final GithubContent resp = githubService.getContent(repo, MAIN, file);
+    /*
+      size > 1MByte
+      https://docs.github.com/en/rest/repos/contents?apiVersion=2022-11-28#:~:text=endpoint%20are%20supported.-,Between%201%2D100%20MB,-%3A%20Only%20the%20raw
+     */
+    if (resp.getSize() > 1048576L) {
+      return githubService.getBlob(resp.getGitUrl());
+    }
+    return resp.getContent();
   }
 
   public void push(Long spaceId, String message, List<String> files) {
@@ -123,7 +135,7 @@ public class SpaceGithubService {
           .filter(k -> files == null || files.contains(k))
           .collect(com.kodality.commons.stream.Collectors.<String, String, String>toMap(
               k -> StringUtils.removeStart(k, dir + "/"),
-              k -> GithubStatus.A.equals(status.getFiles().get(k)) ? null : githubService.getContent(repo, MAIN, k).getContent()
+              k -> GithubStatus.A.equals(status.getFiles().get(k)) ? null : getContent(k, repo)
           ));
       h.saveContent(spaceId, content);
     });

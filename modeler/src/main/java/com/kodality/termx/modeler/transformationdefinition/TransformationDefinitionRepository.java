@@ -9,6 +9,10 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinitionQueryParams.Ordering;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
+
+import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 
 @Singleton
@@ -45,7 +49,7 @@ public class TransformationDefinitionRepository extends BaseRepository {
   }
 
   private SqlBuilder select(boolean isSummary) {
-    return new SqlBuilder("select id, name").appendIfTrue(!isSummary, ", resources, mapping, fhir_resource, test_source")
+    return new SqlBuilder("select td.id, td.name").appendIfTrue(!isSummary, ", td.resources, td.mapping, td.fhir_resource, td.test_source")
         .append(", (select date from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='created' order by id desc limit 1) created_at")
         .append(", (select author ->> 'id' from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='created' order by id desc limit 1) created_by")
         .append(", (select date from sys.provenance where target ->> 'type' = 'TransformationDefinition' and target ->> 'id' = td.id::text and activity ='modified' order by id desc limit 1) modified_at")
@@ -58,17 +62,41 @@ public class TransformationDefinitionRepository extends BaseRepository {
   }
 
   public QueryResult<TransformationDefinition> search(TransformationDefinitionQueryParams params) {
+    final String join = getJoin(params);
     return query(params, p -> {
-      SqlBuilder sb = new SqlBuilder("select count(1) from modeler.transformation_definition td");
+      SqlBuilder sb = new SqlBuilder("select count(1) " +
+          "from modeler.transformation_definition td " + join);
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = select(params.isSummary()).append(" from modeler.transformation_definition td");
+      SqlBuilder sb = select(params.isSummary()).append(" from modeler.transformation_definition td " + join);
       sb.append(filter(params));
       sb.append(order(params, orderMapping));
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
+  }
+
+  private String getJoin(TransformationDefinitionQueryParams params) {
+    String join = "";
+    if (CollectionUtils.isNotEmpty(
+        Stream.of(params.getPackageVersionId(),
+                params.getPackageId(),
+                params.getSpaceId())
+            .filter(Objects::nonNull).toList())) {
+      join += "left join sys.package_version_resource pvr on pvr.resource_type = 'transformation-definition' and pvr.resource_id = td.id::text and pvr.sys_status = 'A' " +
+          "left join sys.package_version pv on pv.id = pvr.version_id and pv.sys_status = 'A' ";
+    }
+    if (CollectionUtils.isNotEmpty(
+        Stream.of(params.getPackageId(),
+                params.getSpaceId())
+            .filter(Objects::nonNull).toList())) {
+      join += "left join sys.package p on p.id = pv.package_id and p.sys_status = 'A' ";
+    }
+    if (CollectionUtils.isNotEmpty(Stream.of(params.getSpaceId()).filter(Objects::nonNull).toList())) {
+      join += "left join sys.space s on s.id = p.space_id and s.sys_status = 'A' ";
+    }
+    return join;
   }
 
   private SqlBuilder filter(TransformationDefinitionQueryParams params) {

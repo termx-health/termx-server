@@ -7,9 +7,11 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 @Getter
 @Setter
+@Accessors(chain = true)
 public class TransformationDefinition {
   private Long id;
   @NotNull
@@ -32,6 +34,7 @@ public class TransformationDefinition {
 
   @Getter
   @Setter
+  @Accessors(chain = true)
   public static class TransformationDefinitionResource {
     @NotNull
     private String name;
@@ -56,6 +59,7 @@ public class TransformationDefinition {
 
   @Getter
   @Setter
+  @Accessors(chain = true)
   public static class TransformationDefinitionResourceReference {
     private String localId;
     private Long resourceServerId;

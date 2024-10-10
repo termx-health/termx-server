@@ -1,18 +1,15 @@
 package com.kodality.termx.modeler.structuredefinition.providers;
 
 import com.kodality.commons.exception.NotFoundException;
-import com.kodality.termx.core.fhir.BaseFhirMapper;
 import com.kodality.termx.core.github.ResourceContentProvider;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinition;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static com.kodality.termx.modeler.github.CompositeIdUtils.getFhirId;
 
 @Singleton
 @RequiredArgsConstructor
@@ -39,14 +36,7 @@ public class ResourceContentStructureDefinitionFshProvider implements ResourceCo
   }
 
   public List<ResourceContentProvider.ResourceContent> getContent(StructureDefinition sd) {
-    String fhirId = getFhirId(sd);
+    String fhirId = getFhirId(sd.getCode(), sd.getVersion());
     return List.of(new ResourceContentProvider.ResourceContent(fhirId + ".fsh", sd.getContent()));
-  }
-
-  @NotNull
-  private static String getFhirId(StructureDefinition sd) {
-    return Stream.of(sd.getCode(), sd.getVersion())
-        .filter(StringUtils::isNotBlank)
-        .collect(Collectors.joining(BaseFhirMapper.SEPARATOR));
   }
 }
