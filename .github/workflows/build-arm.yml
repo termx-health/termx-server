@@ -1,12 +1,15 @@
-name: Build ARM
+name: Build ARM + AMD
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    tags:
+      - v*
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: termx-server
-  BUILDX_NO_DEFAULT_ATTESTATIONS: 1
 
 defaults:
   run:
@@ -17,17 +20,11 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    name: Build ARM + AMD
+    name: Build
 
     permissions:
       packages: write
       contents: read
-
-    strategy:
-      matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
 
     steps:
       - name: Checkout sources
@@ -74,7 +71,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./termx-app
-          platforms: ${{ matrix.platform }}
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
