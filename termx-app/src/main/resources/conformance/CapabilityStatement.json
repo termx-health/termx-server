@@ -1,7 +1,7 @@
 {
   "resourceType": "CapabilityStatement",
   "id": "terminology-server",
-  "url": "https://termx.kodality.dev/api/fhir/metadata",
+  "url": "https://demo.termx.org/api/fhir/metadata",
   "version": "5.0.0",
   "name": "TermX Conformance Statement",
   "status": "active",
@@ -11,12 +11,12 @@
       "telecom": [
         {
           "system": "url",
-          "value": "http://wiki.kodality.dev/terminology-server/"
+          "value": "https://tutorial.termx.org/en/about"
         }
       ]
     }
   ],
-  "description": "Standard Conformance Statement for the Terminology Server TermX provided by Kodality",
+  "description": "Standard Conformance Statement for the Terminology Server provided by TermX",
   "kind": "instance",
   "instantiates": [
     "http://hl7.org/fhir/CapabilityStatement/terminology-server"
@@ -27,8 +27,8 @@
     "releaseDate": "2022-07-30T19:50:55.040Z"
   },
   "implementation": {
-    "description": "FHIR TS server running at https://termx.kodality.dev/api/fhir",
-    "url": "https://termx.kodality.dev/api/fhir"
+    "description": "FHIR TS server running at https://demo.termx.org/api/fhir",
+    "url": "https://demo.termx.org/api/fhir"
   },
   "fhirVersion": "5.0.0",
   "format": [
