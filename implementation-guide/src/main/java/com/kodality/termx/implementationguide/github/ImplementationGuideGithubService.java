@@ -50,6 +50,8 @@ public class ImplementationGuideGithubService {
   private static final Map<String, Map<String, String>> PATHS = Map.of(
       "CodeSystem", Map.of("fhir", VOCABULARY + "/code-systems"/*, "fsh", FSH + "/code-systems"*/),
       "ValueSet", Map.of("fhir", VOCABULARY + "/value-sets"/*, "fsh", FSH + "/value-sets"*/),
+      "StructureDefinition", Map.of("fhir", VOCABULARY + "/structure-definitions"/*, "fsh", FSH + "/structure-definitions"*/),
+      "StructureMap", Map.of("fhir", VOCABULARY + "/transformation-definitions"/*, "fsh", FSH + "/transformation-definitions"*/),
       "WikiPage", Map.of("md", PAGECONTENT)
   );
 

@@ -1,10 +1,14 @@
 package com.kodality.termx.modeler.transformationdefinition.providers;
 
+import com.kodality.commons.exception.NotFoundException;
+import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.core.github.ResourceContentProvider;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition;
+import com.kodality.termx.modeler.transformationdefinition.TransformationDefinitionQueryParams;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinitionService;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
@@ -16,7 +20,7 @@ public class ResourceContentTransformationDefinitionFhirProvider implements Reso
 
   @Override
   public String getResourceType() {
-    return "TransformationDefinition";
+    return "StructureMap";
   }
 
   @Override
@@ -25,8 +29,19 @@ public class ResourceContentTransformationDefinitionFhirProvider implements Reso
   }
 
   @Override
-  public List<ResourceContent> getContent(String id) {
-    final TransformationDefinition td = transformationDefinitionService.load(Long.parseLong(id));
+  public List<ResourceContent> getContent(String idVersionPipe) {
+    String[] pipe = PipeUtil.parsePipe(idVersionPipe);
+    final String id = pipe[0];
+    TransformationDefinition td;
+    if (StringUtils.isNumeric(id)) {
+      td = transformationDefinitionService.load(Long.parseLong(id));
+    } else {
+      td = transformationDefinitionService.search(new TransformationDefinitionQueryParams().setName(id).all())
+          .getData()
+          .stream()
+          .findFirst()
+          .orElseThrow(() -> new NotFoundException("TransformationDefinition not found: " + id));
+    }
     return getContent(td);
   }
 
