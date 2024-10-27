@@ -112,6 +112,11 @@ public class TransformationDefinitionRepository extends BaseRepository {
     sb.appendIfNotNull(params.getFhirDescriptionContains(), (s, p) -> s.and("td.fhir_resource ->> 'description' ilike '%' || ? || '%'", p));
     sb.appendIfNotNull(params.getFhirTitleContains(), (s, p) -> s.and("td.fhir_resource ->> 'title' ilike '%' || ? || '%'", p));
     sb.appendIfNotNull(params.getFhirStatuses(), (s, p) -> s.and().in("td.fhir_resource ->> 'status'", p));
+
+    // space
+    sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
+    sb.appendIfNotNull("and p.id = ?", params.getPackageId());
+    sb.appendIfNotNull("and s.id = ?", params.getSpaceId());
     return sb;
   }
 

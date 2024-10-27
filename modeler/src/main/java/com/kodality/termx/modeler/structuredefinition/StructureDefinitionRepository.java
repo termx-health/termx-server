@@ -84,6 +84,11 @@ public class StructureDefinitionRepository extends BaseRepository {
     sb.appendIfNotNull("and sd.version = ?", params.getVersion());
     sb.appendIfNotNull("and terminology.text_search(sd.code, sd.url) like '%' || terminology.search_translate(?) || '%'", params.getTextContains());
     sb.appendIfNotNull(params.getUrls(), (s, p) -> s.and().in("sd.url", p));
+
+    // space
+    sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());
+    sb.appendIfNotNull("and p.id = ?", params.getPackageId());
+    sb.appendIfNotNull("and s.id = ?", params.getSpaceId());
     return sb;
   }
 
