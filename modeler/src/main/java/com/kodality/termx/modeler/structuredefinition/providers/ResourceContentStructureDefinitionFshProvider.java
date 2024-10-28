@@ -1,22 +1,21 @@
 package com.kodality.termx.modeler.structuredefinition.providers;
 
-import com.kodality.commons.exception.NotFoundException;
 import com.kodality.termx.core.github.ResourceContentProvider;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinition;
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
 import jakarta.inject.Singleton;
-import lombok.RequiredArgsConstructor;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.kodality.termx.modeler.github.CompositeIdUtils.getFhirId;
 
 @Singleton
-@RequiredArgsConstructor
-public class ResourceContentStructureDefinitionFshProvider implements ResourceContentProvider {
+public class ResourceContentStructureDefinitionFshProvider extends ResourceContentStructureDefinitionBaseProvider {
 
-  private final StructureDefinitionService structureDefinitionService;
-
+  public ResourceContentStructureDefinitionFshProvider(StructureDefinitionService structureDefinitionService) {
+    super(structureDefinitionService);
+  }
 
   @Override
   public String getResourceType() {
@@ -28,10 +27,11 @@ public class ResourceContentStructureDefinitionFshProvider implements ResourceCo
     return "fsh";
   }
 
-  @Override
-  public List<ResourceContentProvider.ResourceContent> getContent(String id) {
-    final StructureDefinition sd = structureDefinitionService.load(Long.parseLong(id))
-        .orElseThrow(() -> new NotFoundException("StructureDefinition not found: " + id));
+  public List<ResourceContentProvider.ResourceContent> getContent(String id, String version) {
+    StructureDefinition sd = getStructureDefinition(id, version);
+    if (!"fsh".equals(sd.getContentFormat())) {
+      return Collections.emptyList();
+    }
     return getContent(sd);
   }
 

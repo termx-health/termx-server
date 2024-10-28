@@ -50,7 +50,7 @@ public class ImplementationGuideGithubService {
   private static final Map<String, Map<String, String>> PATHS = Map.of(
       "CodeSystem", Map.of("fhir", VOCABULARY + "/code-systems"/*, "fsh", FSH + "/code-systems"*/),
       "ValueSet", Map.of("fhir", VOCABULARY + "/value-sets"/*, "fsh", FSH + "/value-sets"*/),
-      "StructureDefinition", Map.of("fhir", VOCABULARY + "/structure-definitions"/*, "fsh", FSH + "/structure-definitions"*/),
+      "StructureDefinition", Map.of("fhir", VOCABULARY + "/structure-definitions", "fsh", VOCABULARY + "/fsh/structure-definitions"),
       "StructureMap", Map.of("fhir", VOCABULARY + "/transformation-definitions"/*, "fsh", FSH + "/transformation-definitions"*/),
       "WikiPage", Map.of("md", PAGECONTENT)
   );
@@ -136,23 +136,26 @@ public class ImplementationGuideGithubService {
     return Stream.concat(
         resources.stream().flatMap(r -> {
           Map<String, String> paths = PATHS.get(r.getType());
-          return paths == null ? Stream.empty() : paths.keySet().stream().flatMap(p -> {
-            return getProvider(r.getType(), p).getContent(PipeUtil.toPipe(r.getReference(), r.getVersion())).stream().map(content -> {
-              return new GithubContent()
-                  .setPath(paths.get(p) + "/" + content.getName())
-                  .setContent(content.getContent())
-                  .setEncoding(content.getEncoding());
-            });
-          });
+          return paths == null ? Stream.empty() : paths.keySet()
+              .stream()
+              .flatMap(p ->
+                  getProvider(r.getType(), p).getContent(PipeUtil.toPipe(r.getReference(), r.getVersion()))
+                      .stream()
+                      .map(content ->
+                          new GithubContent()
+                              .setPath(paths.get(p) + "/" + content.getName())
+                              .setContent(content.getContent())
+                              .setEncoding(content.getEncoding())));
         }),
         pages.stream().flatMap(p -> {
           String path = PATHS.get("WikiPage").get("md");
-          return getProvider("WikiPage", "md").getContent(PipeUtil.toPipe(p.getSpace().getId().toString(), p.getPage())).stream().map(content -> {
-            return new GithubContent()
-                .setPath(path + "/" + content.getName())
-                .setContent(content.getContent())
-                .setEncoding(content.getEncoding());
-          });
+          return getProvider("WikiPage", "md").getContent(PipeUtil.toPipe(p.getSpace().getId().toString(), p.getPage()))
+              .stream()
+              .map(content ->
+                  new GithubContent()
+                      .setPath(path + "/" + content.getName())
+                      .setContent(content.getContent())
+                      .setEncoding(content.getEncoding()));
         })
     ).toList();
   }
