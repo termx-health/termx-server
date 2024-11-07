@@ -69,7 +69,7 @@ public class ResourceContentTransformationDefinitionFhirProvider implements Reso
         if (StringUtils.isBlank(fml)) {
           return Optional.empty();
         }
-        return Optional.of(new ResourceContent(transformationDefinitionName + "-fml.txt", prepareFml(fml)));
+        return Optional.of(new ResourceContent(transformationDefinitionName + ".fml", prepareFml(fml)));
       });
     }
     return Optional.empty();
