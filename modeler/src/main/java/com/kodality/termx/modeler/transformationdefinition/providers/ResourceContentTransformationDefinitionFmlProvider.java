@@ -1,6 +1,7 @@
 package com.kodality.termx.modeler.transformationdefinition.providers;
 
 import com.kodality.commons.exception.NotFoundException;
+import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.PipeUtil;
 import com.kodality.termx.core.github.ResourceContentProvider;
 import com.kodality.termx.modeler.transformationdefinition.TransformationDefinition;
@@ -10,11 +11,16 @@ import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static java.util.Optional.ofNullable;
 
 @Singleton
 @RequiredArgsConstructor
-public class ResourceContentTransformationDefinitionFhirProvider implements ResourceContentProvider {
+public class ResourceContentTransformationDefinitionFmlProvider implements ResourceContentProvider {
 
   private final TransformationDefinitionService transformationDefinitionService;
 
@@ -25,7 +31,7 @@ public class ResourceContentTransformationDefinitionFhirProvider implements Reso
 
   @Override
   public String getContentType() {
-    return "fhir";
+    return "fml";
   }
 
   @Override
@@ -47,7 +53,31 @@ public class ResourceContentTransformationDefinitionFhirProvider implements Reso
 
   public List<ResourceContent> getContent(TransformationDefinition td) {
     final String content = td.getMapping().getReference().getContent();
-    final ResourceContent jsonResource = new ResourceContent(td.getName() + ".json", content);
-    return List.of(jsonResource);
+    final Optional<ResourceContent> fmlResource = getFmlResource(content, td.getName());
+    return fmlResource.map(List::of).orElse(Collections.emptyList());
+  }
+
+  private static Optional<ResourceContent> getFmlResource(String content, String transformationDefinitionName) {
+    if (content.startsWith("{")) {
+      final Map<String, Object> contentMap = JsonUtil.toMap(content);
+      final Optional<Map<String, Object>> text = ofNullable((Map<String, Object>) contentMap.get("text"));
+      return text.flatMap(txt -> {
+        final String fml = (String) txt.get("div");
+        if (StringUtils.isBlank(fml)) {
+          return Optional.empty();
+        }
+        return Optional.of(new ResourceContent(transformationDefinitionName + ".fml", prepareFml(fml)));
+      });
+    }
+    return Optional.empty();
+  }
+
+  private static String prepareFml(String fml) {
+    return fml.replaceAll("^<div>", "")
+        .replaceAll("</div>$", "")
+        .replaceAll("^\n", "")
+        .replaceAll("^\r", "")
+        .replaceAll("\n$", "")
+        .replaceAll("\r$", "");
   }
 }
