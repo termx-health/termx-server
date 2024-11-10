@@ -51,7 +51,7 @@ public class ImplementationGuideGithubService {
       "CodeSystem", Map.of("fhir", VOCABULARY + "/code-systems"/*, "fsh", FSH + "/code-systems"*/),
       "ValueSet", Map.of("fhir", VOCABULARY + "/value-sets"/*, "fsh", FSH + "/value-sets"*/),
       "StructureDefinition", Map.of("fhir", VOCABULARY + "/structure-definitions", "fsh", VOCABULARY + "/fsh/structure-definitions"),
-      "StructureMap", Map.of("fhir", VOCABULARY + "/transformation-definitions"/*, "fsh", FSH + "/transformation-definitions"*/),
+      "StructureMap", Map.of("fhir", VOCABULARY + "/transformation-definitions", "fml", VOCABULARY + "/transformation-definitions/fml"),
       "WikiPage", Map.of("md", PAGECONTENT)
   );
 
