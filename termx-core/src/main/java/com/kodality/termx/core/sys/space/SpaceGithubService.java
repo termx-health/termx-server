@@ -44,21 +44,21 @@ public class SpaceGithubService {
   public GithubStatus status(Long spaceId) {
     Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
-
-    final Stream<GithubStatus> githubStatusStream = getHandlers(space).map(h -> {
-      String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
-      return githubService.status(repo, MAIN, dir, h.getCurrentContent(space));
-    });
-    return githubStatusStream.reduce(new GithubStatus(), (a, b) -> {
-      a.setSha(b.getSha());
-      // path:status map
-      final Map<String, String> filtered = b.getFiles().entrySet()
-          .stream()
-          .filter(getExcludeDeletedPredicate(a))
-          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-      a.getFiles().putAll(filtered);
-      return a;
-    });
+    return getHandlers(space)
+        .map(h -> {
+          String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
+          return githubService.status(repo, MAIN, dir, h.getCurrentContent(space));
+        })
+        .reduce(new GithubStatus(), (a, b) -> {
+          a.setSha(b.getSha());
+          // path:status map
+          final Map<String, String> filtered = b.getFiles().entrySet()
+              .stream()
+              .filter(getExcludeDeletedPredicate(a))
+              .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+          a.getFiles().putAll(filtered);
+          return a;
+        });
   }
 
   public GithubDiff diff(Long spaceId, String file) {
