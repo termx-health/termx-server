@@ -11,6 +11,7 @@ import io.micronaut.context.annotation.Requires;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jakarta.inject.Singleton;
@@ -44,12 +45,18 @@ public class SpaceGithubService {
     Space space = loadSpace(spaceId);
     String repo = space.getIntegration().getGithub().getRepo();
 
-    return getHandlers(space).map(h -> {
+    final Stream<GithubStatus> githubStatusStream = getHandlers(space).map(h -> {
       String dir = space.getIntegration().getGithub().getDirs().get(h.getName());
       return githubService.status(repo, MAIN, dir, h.getCurrentContent(space));
-    }).reduce(new GithubStatus(), (a, b) -> {
+    });
+    return githubStatusStream.reduce(new GithubStatus(), (a, b) -> {
       a.setSha(b.getSha());
-      a.getFiles().putAll(b.getFiles());
+      // path:status map
+      final Map<String, String> filtered = b.getFiles().entrySet()
+          .stream()
+          .filter(getExcludeDeletedPredicate(a))
+          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+      a.getFiles().putAll(filtered);
       return a;
     });
   }
@@ -155,6 +162,25 @@ public class SpaceGithubService {
   private Stream<SpaceGithubDataHandler> getHandlers(Space space) {
     return dataHandlers.stream().filter(h -> space.getIntegration().getGithub().getDirs().containsKey(h.getName()));
   }
+
+
+  private static Predicate<Entry<String, String>> getExcludeDeletedPredicate(GithubStatus accumulatedStatus) {
+    /*
+      NOTE: This filter is needed because multiple file entries with the same path can exist,
+      with one marked as "D" (deleted) and another as "U" (unmodified) or "M" (modified).
+      This occurs due to handling subfolders: GitTree returns files from both the root folder and subfolders,
+      but the handler only works with files related to its configured folder. As a result, it is possible
+      to get two entries for the same file with different statuses. Since the same file cannot be both
+      existing and deleted simultaneously, and the order in which handlers are processed is unpredictable,
+      we cannot guarantee that the correct entry will overwrite the incorrect one. Therefore, we need
+      to remove "Deleted" entries if there is already an entry with another status.
+     */
+    return processingEntry -> {
+      final String filePath = processingEntry.getKey();
+      return !accumulatedStatus.getFiles().containsKey(filePath) || !processingEntry.getValue().equals("D");
+    };
+  }
+
 
   public record SpaceGithubAuthResult(boolean isAuthenticated, String redirectUrl) {}
 
