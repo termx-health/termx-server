@@ -1,17 +1,19 @@
-name: Build
+name: Build ARM + AMD
 
 on:
   workflow_dispatch:
-#  push:
-#    branches: [ "main" ]
-#    tags:
-#      - v*
-
-#  pull_request:
-#    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+    tags:
+      - '*'
 
 env:
+  REGISTRY: ghcr.io
   IMAGE_NAME: termx-server
+
+defaults:
+  run:
+    working-directory: ./termx-app
 
 jobs:
 
@@ -25,38 +27,55 @@ jobs:
       contents: read
 
     steps:
-    - name: Checkout sources
-      uses: actions/checkout@v4
+      - name: Checkout sources
+        uses: actions/checkout@v4
 
-    - name: Setup java
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
-      
-    - name: Build with Gradle
-      run: ./gradlew clean assemble
+      - name: Setup java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Test
-      run: ./gradlew check
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-    - name: Build the Docker image
-      working-directory: ./termx-app
-      run: docker build . --file ./Dockerfile --tag $IMAGE_NAME
+      - name: Build with Gradle
+        run: ./gradlew clean assemble
 
-    - name: Log in to registry
-      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Test
+        run: ./gradlew check
 
-    - name: Publish
-      run: |
-        IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
-        VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-        [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-        [ "$VERSION" == "main" ] && VERSION=latest
-        echo IMAGE_ID=$IMAGE_ID
-        echo VERSION=$VERSION
-        docker tag $IMAGE_NAME $IMAGE_ID:$VERSION 
-        docker push $IMAGE_ID:$VERSION
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+            type=ref,event=branch
+            type=ref,event=pr
+            type=raw,value=latest,enable={{is_default_branch}}
+          flavor: |
+            latest=auto
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./termx-app
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
