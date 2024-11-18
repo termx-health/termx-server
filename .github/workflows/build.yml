@@ -65,11 +65,21 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=tag
-            type=ref,event=branch
-            type=ref,event=pr
+#            type=ref,event=branch
+#            type=ref,event=pr
+            type=raw,value={{version_major}}
+            type=raw,value={{version_major}}.{{version_minor}}            
             type=raw,value=latest,enable={{is_default_branch}}
           flavor: |
             latest=auto
+
+      - name: Set major version tag
+        run: echo "MAJOR_TAG=${{ steps.meta.outputs.tags }}" | cut -d ',' -f 1 | cut -d '.' -f 1
+        id: major_tag
+
+      - name: Set minor version tag
+        run: echo "MINOR_TAG=${{ steps.meta.outputs.tags }}" | cut -d ',' -f 1 | cut -d '.' -f 1,2
+        id: minor_tag
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -77,5 +87,8 @@ jobs:
           context: ./termx-app
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags:
+            ${{ steps.meta.outputs.tags }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.major_tag.outputs.MAJOR_TAG }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.minor_tag.outputs.MINOR_TAG }}
           labels: ${{ steps.meta.outputs.labels }}
