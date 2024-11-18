@@ -57,7 +57,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
+        
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -65,19 +65,11 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=tag
-            type=raw,value={{version_major}}
-            type=raw,value={{version_major}}.{{version_minor}}                
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}         
             type=raw,value=latest,enable={{is_default_branch}}
           flavor: |
             latest=auto
-
-      - name: Set major version tag
-        run: echo "MAJOR_TAG=${{ steps.meta.outputs.tags }}" | cut -d ',' -f 1 | cut -d '.' -f 1
-        id: major_tag
-
-      - name: Set minor version tag
-        run: echo "MINOR_TAG=${{ steps.meta.outputs.tags }}" | cut -d ',' -f 1 | cut -d '.' -f 1,2
-        id: minor_tag
 
       - name: Build and push
         uses: docker/build-push-action@v6
