@@ -5,7 +5,7 @@ on:
   push:
     branches: [ "main" ]
     tags:
-      - '*'
+      - '*.*.*'
 
 env:
   REGISTRY: ghcr.io
@@ -65,8 +65,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=tag
-#            type=ref,event=branch
-#            type=ref,event=pr
             type=raw,value={{version_major}}
             type=raw,value={{version_major}}.{{version_minor}}            
             type=raw,value=latest,enable={{is_default_branch}}
