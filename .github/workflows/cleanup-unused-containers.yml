@@ -13,7 +13,7 @@ jobs:
         id: list_versions
         run: |
           curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/${{ github.event.inputs.package_name }}/versions" > versions.json
+            "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/termx-server/versions" > versions.json
           cat versions.json
 
       - name: Remove unused and untagged versions
@@ -29,6 +29,6 @@ jobs:
             if [ "$downloads" -eq 0 ] && [ "$tags" -eq 0 ]; then
               echo "Removing unused and untagged version: $version_id"
               curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/${{ github.event.inputs.package_name }}/versions/$version_id"
+                "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/termx-server/versions/$version_id"
             fi
           done
