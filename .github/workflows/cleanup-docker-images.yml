@@ -16,7 +16,7 @@ jobs:
         id: list_packages
         run: |
           curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/orgs/<org>/packages?package_type=<package_type>" > packages.json
+            "https://api.github.com/orgs/termx-health/packages?package_type=container" > packages.json
           cat packages.json
 
       - name: Remove unused and untagged packages
@@ -32,6 +32,6 @@ jobs:
             if [ "$downloads" -eq 0 ] && [ "$tags" -eq 0 ]; then
               echo "Removing unused and untagged package: $package_name"
               curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/orgs/<org>/packages/<package_type>/$package_name"
+                "https://api.github.com/orgs/termx-health/packages/container/termx-server"
             fi
           done
