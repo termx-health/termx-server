@@ -66,7 +66,7 @@ jobs:
           tags: |
             type=ref,event=tag
             type=raw,value={{version_major}}
-            type=raw,value={{version_major}}.{{version_minor}}            
+            type=raw,value={{version_major}}.{{version_minor}}                
             type=raw,value=latest,enable={{is_default_branch}}
           flavor: |
             latest=auto
@@ -85,8 +85,5 @@ jobs:
           context: ./termx-app
           platforms: linux/amd64,linux/arm64
           push: true
-          tags:
-            ${{ steps.meta.outputs.tags }}
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.major_tag.outputs.MAJOR_TAG }}
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.minor_tag.outputs.MINOR_TAG }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
