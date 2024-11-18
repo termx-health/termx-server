@@ -1,0 +1,37 @@
+name: Cleanup Unused Packages
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Runs weekly
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: List packages
+        id: list_packages
+        run: |
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/orgs/<org>/packages?package_type=<package_type>" > packages.json
+          cat packages.json
+
+      - name: Remove unused and untagged packages
+        run: |
+          for package in $(jq -r '.[] | @base64' packages.json); do
+            _jq() {
+              echo ${package} | base64 --decode | jq -r ${1}
+            }
+            package_name=$(_jq '.name')
+            downloads=$(_jq '.downloads')
+            tags=$(_jq '.metadata.container.tags | length')
+
+            if [ "$downloads" -eq 0 ] && [ "$tags" -eq 0 ]; then
+              echo "Removing unused and untagged package: $package_name"
+              curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                "https://api.github.com/orgs/<org>/packages/<package_type>/$package_name"
+            fi
+          done
