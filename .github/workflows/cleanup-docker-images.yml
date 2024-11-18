@@ -1,4 +1,4 @@
-name: Cleanup Unused Packages
+name: Cleanup Unused Container Versions
 
 on:
   schedule:
@@ -9,29 +9,26 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: List packages
-        id: list_packages
+      - name: List package versions
+        id: list_versions
         run: |
           curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/orgs/termx-health/packages?package_type=container" > packages.json
-          cat packages.json
+            "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/${{ github.event.inputs.package_name }}/versions" > versions.json
+          cat versions.json
 
-      - name: Remove unused and untagged packages
+      - name: Remove unused and untagged versions
         run: |
-          for package in $(jq -r '.[] | @base64' packages.json); do
+          for version in $(jq -r '.[] | @base64' versions.json); do
             _jq() {
-              echo ${package} | base64 --decode | jq -r ${1}
+              echo ${version} | base64 --decode | jq -r ${1}
             }
-            package_name=$(_jq '.name')
-            downloads=$(_jq '.downloads')
+            version_id=$(_jq '.id')
+            downloads=$(_jq '.metadata.container.downloads')
             tags=$(_jq '.metadata.container.tags | length')
 
             if [ "$downloads" -eq 0 ] && [ "$tags" -eq 0 ]; then
-              echo "Removing unused and untagged package: $package_name"
+              echo "Removing unused and untagged version: $version_id"
               curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/orgs/termx-health/packages/container/termx-server"
+                "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/${{ github.event.inputs.package_name }}/versions/$version_id"
             fi
           done
