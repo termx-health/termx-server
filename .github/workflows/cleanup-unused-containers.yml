@@ -2,7 +2,7 @@ name: Cleanup Unused Container Versions
 
 on:
   schedule:
-    - cron: '0 0 * * 0' # Runs weekly
+    - cron: '0 0 * * 0' # Runs weekly on Sunday 00:00
   workflow_dispatch:
 
 jobs:
