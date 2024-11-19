@@ -12,13 +12,14 @@ jobs:
       - name: List package versions
         id: list_versions
         run: |
-          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/termx-server/versions" > versions.json
-          cat versions.json
+          response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/termx-server/versions")
+          echo "$response" | tee response.json
+          echo "::set-output name=response::$response"
 
       - name: Remove unused and untagged versions
         run: |
-          for version in $(jq -r '.[] | @base64' versions.json); do
+          for version in $(jq -r '.[] | @base64' response.json); do
             _jq() {
               echo ${version} | base64 --decode | jq -r ${1}
             }
