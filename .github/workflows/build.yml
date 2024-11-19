@@ -59,9 +59,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Print github.base_ref
+        run: |
+          echo "Branch ref: ${{ github.ref }}"
+          echo "Base ref: ${{ github.base_ref }}"
+
       - name: Set latest tag
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'origin/main'
         run: echo "LATEST_TAG=latest" >> $GITHUB_ENV
+
 
       - name: Docker meta
         id: meta
