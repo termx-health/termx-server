@@ -9,26 +9,8 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: List package versions
-        id: list_versions
-        run: |
-          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/termx-server/versions" > versions.json
-          cat versions.json
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Remove unused and untagged versions
-        run: |
-          for version in $(jq -r '.[] | @base64' versions.json); do
-            _jq() {
-              echo ${version} | base64 --decode | jq -r ${1}
-            }
-            version_id=$(_jq '.id')
-            downloads=$(_jq '.metadata.container.downloads')
-            tags=$(_jq '.metadata.container.tags | length')
-
-            if [ "$downloads" -eq 0 ] && [ "$tags" -eq 0 ]; then
-              echo "Removing unused and untagged version: $version_id"
-              curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/termx-server/versions/$version_id"
-            fi
-          done
+      - name: Run cleanup script
+        run: ./github/cleanup.sh ${{ secrets.GITHUB_TOKEN }} ${{ github.repository_owner }} termx-server
