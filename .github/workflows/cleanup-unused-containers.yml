@@ -20,11 +20,13 @@ jobs:
       - name: Remove unused and untagged versions
         run: |
           response=${{ steps.curl_request.outputs.response }}
+          echo "$response"
           for version in $(echo "$response" | jq -r '.[] | @base64'); do
             _jq() {
               echo ${version} | base64 --decode | jq -r ${1}
             }
             version_id=$(_jq '.id')
+            echo "$version_id"
             downloads=$(_jq '.metadata.container.downloads')
             tags=$(_jq '.metadata.container.tags | length')
 
