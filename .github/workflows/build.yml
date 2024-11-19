@@ -79,7 +79,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}         
             type=raw,value=${{ env.LATEST_TAG }}
           flavor: |
-            latest=auto
+            latest=false
 
       - name: Build and push
         uses: docker/build-push-action@v6
