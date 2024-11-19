@@ -3,7 +3,8 @@ name: Build ARM + AMD
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches:
+      - "main"
     tags:
       - '*.*.*'
 
@@ -57,17 +58,26 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-        
+
+      - name: Print github.ref and github.base_ref
+        run: |
+          echo "Branch ref: ${{ github.ref }}"
+          echo "Base ref: ${{ github.base_ref }}"
+
+      - name: Set latest tag
+        if: github.ref == 'refs/heads/main'
+        run: echo "LATEST_TAG=latest" >> $GITHUB_ENV
+
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=tag
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}         
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ env.LATEST_TAG }}
           flavor: |
             latest=auto
 
