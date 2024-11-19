@@ -13,4 +13,4 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run cleanup script
-        run: ./github/cleanup.sh ${{ secrets.GITHUB_TOKEN }} ${{ github.repository_owner }} termx-server
+        run: ./etc/cleanup.sh ${{ secrets.GITHUB_TOKEN }} ${{ github.repository_owner }} termx-server
