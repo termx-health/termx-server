@@ -52,3 +52,13 @@ update terminology.value_set_version
    set version = '6.0.0'
  where version='6.0.0-cibuild';
 --rollback select 1;
+
+--changeset termx:kts-to-termx
+update terminology.concept
+   set code = 'termx'
+ where code='kts' and code_system='publisher';
+
+ update terminology.code_system_entity_version ev
+   set code = 'termx'
+ where code_system='publisher' and code='kts';
+--rollback select 1;
