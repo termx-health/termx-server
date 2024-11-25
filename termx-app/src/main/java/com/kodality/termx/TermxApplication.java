@@ -20,9 +20,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
     info = @Info(
         title = "TermX",
         description = "${openapi.description}",
-        contact = @Contact(url = "https://kodality.com", name = "Kodality support", email = "support@kodality.com")
+        contact = @Contact(url = "https://termx.org", name = "TermX support", email = "support@termx.org")
     ),
-    externalDocs = @ExternalDocumentation(description = "Read more about TermX", url = "https://wiki.kodality.dev/en/terminology-server")
+    externalDocs = @ExternalDocumentation(description = "Read more about TermX", url = "https://tutorial.termx.org/en/about")
 )
 @OpenAPIInclude(
     tags = @Tag(name = "Terminology"),
@@ -63,6 +63,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         com.kodality.termx.modeler.transformationdefinition.TransformationDefinitionController.class,
         com.kodality.termx.implementationguide.ig.ImplementationGuideController.class
     }
+)
+@OpenAPIInclude(
+    tags = @Tag(name = "Space"),
+    classes = {
+        com.kodality.termx.core.sys.space.SpaceController.class,
+        com.kodality.termx.core.sys.space.SpaceGithubController.class}
 )
 @OpenAPIInclude(
     tags = @Tag(name = "SNOMED"),
