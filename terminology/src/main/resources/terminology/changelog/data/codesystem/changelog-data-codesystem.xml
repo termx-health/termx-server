@@ -109,7 +109,7 @@
     </customChange>
   </changeSet>
 
-  <changeSet id="publisher" author="kodality">
+  <changeSet id="publisher" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/publisher.json"/>

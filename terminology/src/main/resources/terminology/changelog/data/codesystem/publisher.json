@@ -1,8 +1,8 @@
 {
   "resourceType": "CodeSystem",
   "id": "publisher",
-  "url": "http://tx.hl7.ee/CodeSystem/publisher",
-  "version": "1",
+  "url": "https://termx.org/fhir/CodeSystem/publisher",
+  "version": "2.0.0",
   "name": "Publisher",
   "title": "Publisher",
   "status": "active",
@@ -54,17 +54,17 @@
       "property": [
         {
           "code": "uri",
-          "valueString": "http://terminology.hl7.ee"
+          "valueString": "http://fhir.ee"
         }
       ]
     },
     {
-      "code": "kts",
-      "display": "KTS",
+      "code": "termx",
+      "display": "TermX",
       "property": [
         {
           "code": "uri",
-          "valueString": "https://kodality.org/fhir"
+          "valueString": "https://termx.org/fhir"
         }
       ]
     }
