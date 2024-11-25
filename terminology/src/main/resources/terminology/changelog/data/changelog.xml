@@ -9,4 +9,7 @@
   <include file="property/changelog-data-property.xml" relativeToChangelogFile="true"/>
   <include file="valueset/changelog-data-valueset.xml" relativeToChangelogFile="true"/>
 
+  <include file="11-migration.sql" relativeToChangelogFile="true"/>
+
+
 </databaseChangeLog>
