@@ -4,7 +4,7 @@ micronaut:
       enabled: true
 auth:
   oauth:
-    jwks-url: https://auth.kodality.dev/realms/terminology/protocol/openid-connect/certs
+    jwks-url: https://sso.termx.org/realms/termx/protocol/openid-connect/certs
 
 termx:
   web-url: http://localhost:4200
@@ -12,13 +12,13 @@ termx:
 
 github:
   client:
-    id: 'Iv1.b0be484dcc3c28ae'
-    secret: 'bffd5a32dcf31667974c09c429f690f057d4182f'
-  app-name: termx-dev-local-publisher
+    id: 'Iv23lipQQ7hPChW6Hv2P'
+    secret: '7df236c06b0ccb8cd7799d3547733a52fafaaed3'
+  app-name: termx-health-local-publisher
 
 
 keycloak:
-  url: https://auth.kodality.dev/admin/realms/terminology
-  sso-url: https://auth.kodality.dev/realms/terminology/protocol/openid-connect
-  client-id: term-service
+  url: https://sso.termx.org/admin/realms/termx
+  sso-url: https://sso.termx.org/realms/termx/protocol/openid-connect
+  client-id: termx-service
   client-secret: xxx
