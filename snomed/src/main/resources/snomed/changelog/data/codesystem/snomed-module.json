@@ -1,27 +1,42 @@
 {
-  "resourceType" : "CodeSystem",
-  "id" : "snomed-module",
-  "meta" : {
-    "lastUpdated" : "2023-05-09T10:01:24+11:00",
-    "profile" : ["http://hl7.org/fhir/StructureDefinition/shareablecodesystem"]
+  "resourceType": "CodeSystem",
+  "id": "snomed-module",
+  "language": "en",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>This code system <code>http://hl7.org/fhir/permitted-data-type</code> defines the following codes:</p><table class=\"codes\"><tr><td style=\"white-space:nowrap\"><b>Code</b></td><td><b>Definition</b></td></tr><tr><td style=\"white-space:nowrap\">Quantity<a name=\"permitted-data-type-Quantity\"> </a></td><td>A measured amount.</td></tr><tr><td style=\"white-space:nowrap\">CodeableConcept<a name=\"permitted-data-type-CodeableConcept\"> </a></td><td>A coded concept from a reference terminology and/or text.</td></tr><tr><td style=\"white-space:nowrap\">string<a name=\"permitted-data-type-string\"> </a></td><td>A sequence of Unicode characters.</td></tr><tr><td style=\"white-space:nowrap\">boolean<a name=\"permitted-data-type-boolean\"> </a></td><td>true or false.</td></tr><tr><td style=\"white-space:nowrap\">integer<a name=\"permitted-data-type-integer\"> </a></td><td>A signed integer.</td></tr><tr><td style=\"white-space:nowrap\">Range<a name=\"permitted-data-type-Range\"> </a></td><td>A set of values bounded by low and high.</td></tr><tr><td style=\"white-space:nowrap\">Ratio<a name=\"permitted-data-type-Ratio\"> </a></td><td>A ratio of two Quantity values - a numerator and a denominator.</td></tr><tr><td style=\"white-space:nowrap\">SampledData<a name=\"permitted-data-type-SampledData\"> </a></td><td>A series of measurements taken by a device.</td></tr><tr><td style=\"white-space:nowrap\">time<a name=\"permitted-data-type-time\"> </a></td><td>A time during the day, in the format hh:mm:ss.</td></tr><tr><td style=\"white-space:nowrap\">dateTime<a name=\"permitted-data-type-dateTime\"> </a></td><td>A date, date-time or partial date (e.g. just year or year + month) as used in human communication.</td></tr><tr><td style=\"white-space:nowrap\">Period<a name=\"permitted-data-type-Period\"> </a></td><td>A time range defined by start and end date/time.</td></tr></table></div>"
   },
-  "text" : {
-    "status" : "generated",
-    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>This code system <code>http://hl7.org/fhir/permitted-data-type</code> defines the following codes:</p><table class=\"codes\"><tr><td style=\"white-space:nowrap\"><b>Code</b></td><td><b>Definition</b></td></tr><tr><td style=\"white-space:nowrap\">Quantity<a name=\"permitted-data-type-Quantity\"> </a></td><td>A measured amount.</td></tr><tr><td style=\"white-space:nowrap\">CodeableConcept<a name=\"permitted-data-type-CodeableConcept\"> </a></td><td>A coded concept from a reference terminology and/or text.</td></tr><tr><td style=\"white-space:nowrap\">string<a name=\"permitted-data-type-string\"> </a></td><td>A sequence of Unicode characters.</td></tr><tr><td style=\"white-space:nowrap\">boolean<a name=\"permitted-data-type-boolean\"> </a></td><td>true or false.</td></tr><tr><td style=\"white-space:nowrap\">integer<a name=\"permitted-data-type-integer\"> </a></td><td>A signed integer.</td></tr><tr><td style=\"white-space:nowrap\">Range<a name=\"permitted-data-type-Range\"> </a></td><td>A set of values bounded by low and high.</td></tr><tr><td style=\"white-space:nowrap\">Ratio<a name=\"permitted-data-type-Ratio\"> </a></td><td>A ratio of two Quantity values - a numerator and a denominator.</td></tr><tr><td style=\"white-space:nowrap\">SampledData<a name=\"permitted-data-type-SampledData\"> </a></td><td>A series of measurements taken by a device.</td></tr><tr><td style=\"white-space:nowrap\">time<a name=\"permitted-data-type-time\"> </a></td><td>A time during the day, in the format hh:mm:ss.</td></tr><tr><td style=\"white-space:nowrap\">dateTime<a name=\"permitted-data-type-dateTime\"> </a></td><td>A date, date-time or partial date (e.g. just year or year + month) as used in human communication.</td></tr><tr><td style=\"white-space:nowrap\">Period<a name=\"permitted-data-type-Period\"> </a></td><td>A time range defined by start and end date/time.</td></tr></table></div>"
+  "url": "https://termx.org/fhir/CodeSystem/snomed-module",
+  "version": "1.0.0",
+  "name": "SNOMEDModule",
+  "title": "SNOMED module",
+  "status": "draft",
+  "experimental": false,
+  "date": "2024-08-09T13:28:27.329951Z",
+  "effectivePeriod": {
+    "start": "2024-05-06T00:00:00Z"
   },
-  "url" : "http://tx.hl7.ee/CodeSystem/snomed-module",
-  "version" : "1.0.0",
-  "title" : "SNOMED module",
-  "name" : "SNOMED-module",
-  "status" : "draft",
-  "experimental" : false,
-  "date" : "2023-05-09T10:01:24+11:00",
-  "caseSensitive" : true,
-  "valueSet" : "http://hl7.org/fhir/ValueSet/permitted-data-type",
-  "content" : "complete",
+  "caseSensitive": true,
+  "content": "complete",
   "property": [
     {
+      "code": "branchPath",
+      "type": "string"
+    },
+    {
+      "code": "definition",
+      "description": "Definition",
+      "type": "string"
+    },
+    {
+      "code": "display",
+      "uri": "http://terminology.hl7.org/CodeSystem/designation-usage|display",
+      "description": "Display",
+      "type": "string"
+    },
+    {
       "code": "language",
+      "description": "Language",
       "type": "Coding"
     },
     {
@@ -37,16 +52,11 @@
     {
       "code": "est",
       "display": "Estonian module",
-      "designation": [
-        {
-          "language": "en",
-          "use": {
-            "code": "display"
-          },
-          "value": "Estonian module"
-        }
-      ],
       "property": [
+        {
+          "code": "branchPath",
+          "valueString": "MAIN/SNOMEDCT-EE"
+        },
         {
           "code": "language",
           "valueCoding": {
@@ -61,6 +71,48 @@
         {
           "code": "refsetId",
           "valueString": "71000181105"
+        }
+      ]
+    },
+    {
+      "code": "int",
+      "display": "International Edition",
+      "property": [
+        {
+          "code": "branchPath",
+          "valueString": "MAIN"
+        },
+        {
+          "code": "language",
+          "valueCoding": {
+            "system": "v3-ietf3066",
+            "code": "en"
+          }
+        }
+      ]
+    },
+    {
+      "code": "ltu",
+      "display": "Lithuanian Edition",
+      "property": [
+        {
+          "code": "branchPath",
+          "valueString": "MAIN/SNOMEDCT-LT"
+        },
+        {
+          "code": "language",
+          "valueCoding": {
+            "system": "v3-ietf3066",
+            "code": "lt"
+          }
+        },
+        {
+          "code": "moduleId",
+          "valueString": "11000092103"
+        },
+        {
+          "code": "refsetId",
+          "valueString": "21000092105"
         }
       ]
     }

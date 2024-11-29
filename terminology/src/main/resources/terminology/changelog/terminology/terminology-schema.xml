@@ -35,7 +35,7 @@
         </sql>
     </changeSet>
 
-    <changeSet id="terminology-schema-extensions" author="kodality">
+    <changeSet id="terminology-schema-extensions" author="termx">
         <sql>
         CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA public;
       </sql>

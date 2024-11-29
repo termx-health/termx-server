@@ -1,68 +1,85 @@
 {
-  "resourceType" : "CodeSystem",
-  "id" : "definition-use",
-  "meta" : {
-    "lastUpdated" : "2020-04-09T21:10:28.568+00:00",
-    "profile" : ["http://hl7.org/fhir/StructureDefinition/shareablecodesystem"]
+  "resourceType": "CodeSystem",
+  "id": "definition-use",
+  "meta": {
+    "lastUpdated": "2020-04-09T21:10:28.568+00:00",
+    "profile": [
+      "http://hl7.org/fhir/StructureDefinition/shareablecodesystem"
+    ]
   },
-  "text" : {
-    "status" : "generated",
-    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>This code system <code>http://terminology.hl7.org/CodeSystem/definition-use</code> defines the following codes:</p><table class=\"codes\"><tr><td style=\"white-space:nowrap\"><b>Code</b></td><td><b>Display</b></td><td><b>Definition</b></td></tr><tr><td style=\"white-space:nowrap\">fhir-structure<a name=\"definition-use-fhir-structure\"> </a></td><td>FHIR Structure</td><td>This structure is defined as part of the base FHIR Specification</td></tr><tr><td style=\"white-space:nowrap\">custom-resource<a name=\"definition-use-custom-resource\"> </a></td><td>Custom Resource</td><td>This structure is intended to be treated like a FHIR resource (e.g. on the FHIR API)</td></tr><tr><td style=\"white-space:nowrap\">dam<a name=\"definition-use-dam\"> </a></td><td>Domain Analysis Model</td><td>This structure captures an analysis of a domain</td></tr><tr><td style=\"white-space:nowrap\">wire-format<a name=\"definition-use-wire-format\"> </a></td><td>Wire Format</td><td>This structure represents and existing structure (e.g. CDA, HL7 v2)</td></tr><tr><td style=\"white-space:nowrap\">archetype<a name=\"definition-use-archetype\"> </a></td><td>Domain Analysis Model</td><td>This structure captures an analysis of a domain</td></tr><tr><td style=\"white-space:nowrap\">template<a name=\"definition-use-template\"> </a></td><td>Template</td><td>This structure is a template (n.b: 'template' has many meanings)</td></tr></table></div>"
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: CodeSystem definition-use</b></p><a name=\"definition-use\"> </a><a name=\"hcdefinition-use\"> </a><a name=\"definition-use-en-US\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2020-04-09 21:10:28+0000</p><p style=\"margin-bottom: 0px\">Profile: <a href=\"http://hl7.org/fhir/R5/shareablecodesystem.html\">Shareable CodeSystem</a></p></div><p>This case-sensitive code system <code>http://terminology.hl7.org/CodeSystem/definition-use</code> defines the following codes:</p><table class=\"codes\"><tr><td style=\"white-space:nowrap\"><b>Code</b></td><td><b>Display</b></td><td><b>Definition</b></td></tr><tr><td style=\"white-space:nowrap\">fhir-structure<a name=\"definition-use-fhir-structure\"> </a></td><td>FHIR Structure</td><td>This structure is defined as part of the base FHIR Specification</td></tr><tr><td style=\"white-space:nowrap\">custom-resource<a name=\"definition-use-custom-resource\"> </a></td><td>Custom Resource</td><td>This structure is intended to be treated like a FHIR resource (e.g. on the FHIR API)</td></tr><tr><td style=\"white-space:nowrap\">dam<a name=\"definition-use-dam\"> </a></td><td>Domain Analysis Model</td><td>This structure captures an analysis of a domain</td></tr><tr><td style=\"white-space:nowrap\">wire-format<a name=\"definition-use-wire-format\"> </a></td><td>Wire Format</td><td>This structure represents and existing structure (e.g. CDA, HL7 v2)</td></tr><tr><td style=\"white-space:nowrap\">archetype<a name=\"definition-use-archetype\"> </a></td><td>Domain Analysis Model</td><td>This structure captures an analysis of a domain</td></tr><tr><td style=\"white-space:nowrap\">template<a name=\"definition-use-template\"> </a></td><td>Template</td><td>This structure is a template (n.b: 'template' has many meanings)</td></tr></table></div>"
   },
-  "extension" : [{
-    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
-    "valueCode" : "fhir"
-  }],
-  "url" : "http://terminology.hl7.org/CodeSystem/definition-use",
-  "identifier" : [{
-    "system" : "urn:ietf:rfc:3986",
-    "value" : "urn:oid:2.16.840.1.113883.4.642.1.1191"
-  }],
-  "version" : "1.0.0",
-  "name" : "DefinitionUseCodes",
-  "title" : "Structure Definition Use Codes / Keywords",
-  "status" : "active",
-  "experimental" : false,
-  "date" : "2023-02-25T11:07:30-07:00",
-  "publisher" : "FHIR Project team",
-  "contact" : [{
-    "telecom" : [{
-      "system" : "url",
-      "value" : "http://hl7.org/fhir"
-    }]
-  }],
-  "description" : "Structure Definition Use Codes / Keywords",
-  "caseSensitive" : true,
-  "valueSet" : "http://terminology.hl7.org/ValueSet/definition-use",
-  "content" : "complete",
-  "concept" : [{
-    "code" : "fhir-structure",
-    "display" : "FHIR Structure",
-    "definition" : "This structure is defined as part of the base FHIR Specification"
-  },
-  {
-    "code" : "custom-resource",
-    "display" : "Custom Resource",
-    "definition" : "This structure is intended to be treated like a FHIR resource (e.g. on the FHIR API)"
-  },
-  {
-    "code" : "dam",
-    "display" : "Domain Analysis Model",
-    "definition" : "This structure captures an analysis of a domain"
-  },
-  {
-    "code" : "wire-format",
-    "display" : "Wire Format",
-    "definition" : "This structure represents and existing structure (e.g. CDA, HL7 v2)"
-  },
-  {
-    "code" : "archetype",
-    "display" : "Domain Analysis Model",
-    "definition" : "This structure captures an analysis of a domain"
-  },
-  {
-    "code" : "template",
-    "display" : "Template",
-    "definition" : "This structure is a template (n.b: 'template' has many meanings)"
-  }]
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+      "valueCode": "fhir"
+    }
+  ],
+  "url": "http://terminology.hl7.org/CodeSystem/definition-use",
+  "identifier": [
+    {
+      "system": "urn:ietf:rfc:3986",
+      "value": "urn:oid:2.16.840.1.113883.4.642.1.1191"
+    }
+  ],
+  "version": "2.0.0",
+  "name": "DefinitionUseCodes",
+  "title": "Structure Definition Use Codes / Keywords",
+  "status": "active",
+  "experimental": false,
+  "date": "2024-11-17T10:31:17-07:00",
+  "publisher": "Health Level Seven International",
+  "contact": [
+    {
+      "telecom": [
+        {
+          "system": "url",
+          "value": "http://hl7.org"
+        },
+        {
+          "system": "email",
+          "value": "hq@HL7.org"
+        }
+      ]
+    }
+  ],
+  "description": "Structure Definition Use Codes / Keywords",
+  "copyright": "This material derives from the HL7 Terminology (THO). THO is copyright ©1989+ Health Level Seven International and is made available under the CC0 designation. For more licensing information see: https://terminology.hl7.org/license.html",
+  "caseSensitive": true,
+  "valueSet": "http://terminology.hl7.org/ValueSet/definition-use",
+  "content": "complete",
+  "concept": [
+    {
+      "code": "fhir-structure",
+      "display": "FHIR Structure",
+      "definition": "This structure is defined as part of the base FHIR Specification"
+    },
+    {
+      "code": "custom-resource",
+      "display": "Custom Resource",
+      "definition": "This structure is intended to be treated like a FHIR resource (e.g. on the FHIR API)"
+    },
+    {
+      "code": "dam",
+      "display": "Domain Analysis Model",
+      "definition": "This structure captures an analysis of a domain"
+    },
+    {
+      "code": "wire-format",
+      "display": "Wire Format",
+      "definition": "This structure represents and existing structure (e.g. CDA, HL7 v2)"
+    },
+    {
+      "code": "archetype",
+      "display": "Domain Analysis Model",
+      "definition": "This structure captures an analysis of a domain"
+    },
+    {
+      "code": "template",
+      "display": "Template",
+      "definition": "This structure is a template (n.b: 'template' has many meanings)"
+    }
+  ]
 }

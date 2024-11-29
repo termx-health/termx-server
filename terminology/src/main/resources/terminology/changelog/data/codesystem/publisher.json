@@ -2,7 +2,7 @@
   "resourceType": "CodeSystem",
   "id": "publisher",
   "url": "https://termx.org/fhir/CodeSystem/publisher",
-  "version": "2.0.0",
+  "version": "1",
   "name": "Publisher",
   "title": "Publisher",
   "status": "active",

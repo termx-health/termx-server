@@ -1,20 +1,13 @@
 {
   "id": "orpha-classification-level",
   "resourceType": "CodeSystem",
-  "extension": [
-    {
-      "url": "http://hl7.org/fhir/tools/StructureDefinition/web-source",
-      "valueUrl": "https://termx.kodality.dev/fhir/CodeSystem/orpha-classification-level"
-    }
-  ],
-  "url": "https://www.orphadata.com/classification/classification-level",
+  "url": "https://termx.org/fhir/CodeSystem/orpha-classification-level",
   "version": "1.0.0",
   "name": "ORPHAClassificationLevel",
   "title": "ORPHA Classification Level",
   "status": "draft",
   "date": "2023-08-02T00:00:00Z",
-  "description": "",
-  "purpose": "",
+  "publisher": "termx",
   "caseSensitive": false,
   "content": "complete",
   "property": [

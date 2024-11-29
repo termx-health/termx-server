@@ -4,112 +4,112 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
 
-  <changeSet id="publication-status" author="kodality">
+  <changeSet id="publication-status" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/publication-status.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="codesystem-content-mode" author="kodality">
+  <changeSet id="codesystem-content-mode" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/codesystem-content-mode.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="languages" author="kodality">
+  <changeSet id="languages" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/languages.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="concept-property-type" author="kodality">
+  <changeSet id="concept-property-type" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/concept-property-type.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="contact-point-system" author="kodality">
+  <changeSet id="contact-point-system" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/contact-point-system.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="contact-point-use" author="kodality">
+  <changeSet id="contact-point-use" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/contact-point-use.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="filter-operator" author="kodality">
+  <changeSet id="filter-operator" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/filter-operator.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="namingsystem-identifier-type" author="kodality">
+  <changeSet id="namingsystem-identifier-type" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/namingsystem-identifier-type.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="namingsystem-type" author="kodality">
+  <changeSet id="namingsystem-type" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/namingsystem-type.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="publisher" author="kodality">
+  <changeSet id="publisher" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/publisher.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="version-algorithm" author="kodality">
+  <changeSet id="version-algorithm" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/version-algorithm.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="jurisdiction" author="kodality">
+  <changeSet id="jurisdiction" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/jurisdiction.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="issue-severity" author="kodality">
+  <changeSet id="issue-severity" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/issue-severity.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="definition-use" author="kodality">
+  <changeSet id="definition-use" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/definition-use.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="definition-topic" author="kodality">
+  <changeSet id="definition-topic" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/definition-topic.json"/>
     </customChange>
   </changeSet>
 
-  <changeSet id="usage-context-type" author="kodality">
+  <changeSet id="usage-context-type" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/usage-context-type.json"/>
