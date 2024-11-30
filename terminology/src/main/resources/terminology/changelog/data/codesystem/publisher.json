@@ -8,7 +8,7 @@
   "status": "active",
   "experimental": false,
   "date": "2022-11-01T12:00:00+10:00",
-  "caseSensitive": true,
+  "caseSensitive": false,
   "content": "complete",
   "property": [
     {
