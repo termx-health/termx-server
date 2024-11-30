@@ -1,60 +1,76 @@
 {
-  "resourceType" : "ValueSet",
-  "id" : "permitted-data-type",
-  "meta" : {
-    "lastUpdated" : "2023-03-23T07:50:32.585+00:00",
-    "profile" : ["http://hl7.org/fhir/StructureDefinition/shareablevalueset"]
+  "resourceType": "ValueSet",
+  "id": "permitted-data-type",
+  "meta": {
+    "lastUpdated": "2024-11-27T19:21:04.917+00:00",
+    "profile": [
+      "http://hl7.org/fhir/StructureDefinition/shareablevalueset"
+    ]
   },
-  "text" : {
-    "status" : "generated",
-    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><ul><li>Include all codes defined in <a href=\"codesystem-permitted-data-type.html\"><code>http://hl7.org/fhir/permitted-data-type</code></a></li></ul></div>"
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: ValueSet permitted-data-type</b></p><a name=\"permitted-data-type\"> </a><a name=\"hcpermitted-data-type\"> </a><a name=\"permitted-data-type-en-US\"> </a><ul><li>Include all codes defined in <a href=\"codesystem-permitted-data-type.html\"><code>http://hl7.org/fhir/permitted-data-type</code></a></li></ul></div>"
   },
-  "extension" : [{
-    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
-    "valueCode" : "oo"
-  },
-  {
-    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
-    "valueCode" : "trial-use"
-  },
-  {
-    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
-    "valueInteger" : 1
-  }],
-  "url" : "http://hl7.org/fhir/ValueSet/permitted-data-type",
-  "identifier" : [{
-    "system" : "urn:ietf:rfc:3986",
-    "value" : "urn:oid:2.16.840.1.113883.4.642.3.1331"
-  }],
-  "version" : "5.0.0-cibuild",
-  "name" : "ObservationDataType",
-  "title" : "Observation Data Type",
-  "status" : "draft",
-  "experimental" : true,
-  "date" : "2020-12-28T16:55:11+11:00",
-  "publisher" : "HL7 (FHIR Project)",
-  "contact" : [{
-    "telecom" : [{
-      "system" : "url",
-      "value" : "http://hl7.org/fhir"
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+      "valueCode": "oo"
     },
     {
-      "system" : "email",
-      "value" : "fhir@lists.hl7.org"
-    }]
-  }],
-  "description" : "Permitted data type for observation value.",
-  "jurisdiction" : [{
-    "coding" : [{
-      "system" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
-      "code" : "001",
-      "display" : "World"
-    }]
-  }],
-  "immutable" : true,
-  "compose" : {
-    "include" : [{
-      "system" : "http://hl7.org/fhir/permitted-data-type"
-    }]
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+      "valueCode": "trial-use"
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+      "valueInteger": 1
+    }
+  ],
+  "url": "http://hl7.org/fhir/ValueSet/permitted-data-type",
+  "identifier": [
+    {
+      "system": "urn:ietf:rfc:3986",
+      "value": "urn:oid:2.16.840.1.113883.4.642.3.1331"
+    }
+  ],
+  "version": "6.0.0",
+  "name": "ObservationDataType",
+  "title": "Observation Data Type",
+  "status": "active",
+  "experimental": true,
+  "date": "2020-12-28T16:55:11+11:00",
+  "publisher": "HL7 (FHIR Project)",
+  "contact": [
+    {
+      "telecom": [
+        {
+          "system": "url",
+          "value": "http://hl7.org/fhir"
+        },
+        {
+          "system": "email",
+          "value": "fhir@lists.hl7.org"
+        }
+      ]
+    }
+  ],
+  "description": "Permitted data type for observation value.",
+  "jurisdiction": [
+    {
+      "coding": [
+        {
+          "system": "http://unstats.un.org/unsd/methods/m49/m49.htm",
+          "code": "001",
+          "display": "World"
+        }
+      ]
+    }
+  ],
+  "immutable": true,
+  "compose": {
+    "include": [
+      {
+        "system": "http://hl7.org/fhir/permitted-data-type"
+      }
+    ]
   }
 }

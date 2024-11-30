@@ -3,7 +3,7 @@
   "id": "v2-0487",
   "text": {
     "status": "generated",
-    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><ul><li>Include all codes defined in <a href=\"CodeSystem-v2-0487.html\"><code>http://terminology.hl7.org/CodeSystem/v2-0487</code></a></li></ul></div>"
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: ValueSet v2-0487</b></p><a name=\"v2-0487\"> </a><a name=\"hcv2-0487\"> </a><a name=\"v2-0487-en-US\"> </a><ul><li>Include all codes defined in <a href=\"CodeSystem-v2-0487.html\"><code>http://terminology.hl7.org/CodeSystem/v2-0487</code></a></li></ul></div>"
   },
   "url": "http://terminology.hl7.org/ValueSet/v2-0487",
   "identifier": [
@@ -17,25 +17,29 @@
   "title": "hl7VS-specimenType",
   "status": "active",
   "experimental": false,
-  "date": "2019-12-01T00:00:00-04:00",
-  "publisher": "HL7, Inc",
+  "date": "2019-12-01",
+  "publisher": "Health Level Seven International",
   "contact": [
     {
       "telecom": [
         {
           "system": "url",
-          "value": "https://github.com/HL7/UTG"
+          "value": "http://hl7.org"
+        },
+        {
+          "system": "email",
+          "value": "hq@HL7.org"
         }
       ]
     }
   ],
   "description": "Concepts that describe the precise nature of an entity that may be used as the source material for an observation.  This is one of two code systems that are used instead of table 0070 (code system xxxx) which conflated specimen types and specimen collection methods.   Used in Version 2 messaging in the SPM segment.",
-  "copyright": "Copyright HL7. Licensed under creative commons public domain",
+  "copyright": "This material derives from the HL7 Terminology (THO). THO is copyright ©1989+ Health Level Seven International and is made available under the CC0 designation. For more licensing information see: https://terminology.hl7.org/license.html",
   "compose": {
     "include": [
       {
         "system": "http://terminology.hl7.org/CodeSystem/v2-0487",
-        "version": "2.3.0"
+        "version": "2.0.0"
       }
     ]
   }
