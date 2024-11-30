@@ -19,8 +19,8 @@
     </customChange>
   </changeSet>
 
-  <changeSet id="device-type2" author="termx">
-    <validCheckSum>xANY</validCheckSum>
+  <changeSet id="device-type" author="termx">
+    <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="observation-definition/changelog/data/valueset/device-type.json"/>
     </customChange>
