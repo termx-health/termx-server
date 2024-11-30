@@ -35,7 +35,7 @@
   "version": "6.0.0",
   "name": "DefinitionUseCodes",
   "title": "Structure Definition Use Codes / Keywords",
-  "status": "draft",
+  "status": "active",
   "experimental": false,
   "publisher": "FHIR Project team",
   "contact": [

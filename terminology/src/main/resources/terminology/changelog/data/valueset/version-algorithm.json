@@ -35,7 +35,7 @@
   "version": "6.0.0",
   "name": "VersionAlgorithm",
   "title": "Version Algorithm",
-  "status": "draft",
+  "status": "active",
   "experimental": true,
   "date": "2020-12-28T16:55:11+11:00",
   "publisher": "HL7 (FHIR Project)",
