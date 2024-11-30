@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset termx:publisher
+--changeset termx:publisher-2
 update terminology.entity_property_value v
    set value='"https://termx.org/fhir"'
  where value='"https://kodality.org/fhir"';
@@ -35,7 +35,7 @@ update terminology.code_system
 --rollback select 1;
 
 
---changeset termx:fix-versions
+--changeset termx:fix-versions-2
 update terminology.code_system_version
    set version = '5.0.0'
  where version='5.0.0-cibuild';
@@ -53,7 +53,7 @@ update terminology.value_set_version
  where version='6.0.0-cibuild';
 --rollback select 1;
 
---changeset termx:kts-to-termx
+--changeset termx:kts-to-termx-2
 update terminology.concept
    set code = 'termx'
  where code='kts' and code_system='publisher';
