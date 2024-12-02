@@ -1,60 +1,71 @@
 {
-  "resourceType" : "CodeSystem",
-  "id" : "definition-topic",
-  "meta" : {
-    "lastUpdated" : "2020-04-09T21:10:28.568+00:00"
+  "resourceType": "CodeSystem",
+  "id": "definition-topic",
+  "meta": {
+    "lastUpdated": "2024-04-24T00:00:00+00:00"
   },
-  "text" : {
-    "status" : "generated",
-    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>This code system <code>http://terminology.hl7.org/CodeSystem/definition-topic</code> defines the following codes:</p><table class=\"codes\"><tr><td style=\"white-space:nowrap\"><b>Code</b></td><td><b>Display</b></td><td><b>Definition</b></td></tr><tr><td style=\"white-space:nowrap\">treatment<a name=\"definition-topic-treatment\"> </a></td><td>Treatment</td><td>The definition is related to treatment of the patient.</td></tr><tr><td style=\"white-space:nowrap\">education<a name=\"definition-topic-education\"> </a></td><td>Education</td><td>The definition is related to education of the patient.</td></tr><tr><td style=\"white-space:nowrap\">assessment<a name=\"definition-topic-assessment\"> </a></td><td>Assessment</td><td>The definition is related to assessment of the patient.</td></tr></table></div>"
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: CodeSystem definition-topic</b></p><a name=\"definition-topic\"> </a><a name=\"hcdefinition-topic\"> </a><a name=\"definition-topic-en-US\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Last updated: 2024-04-24 00:00:00+0000</p></div><p>This case-sensitive code system <code>http://terminology.hl7.org/CodeSystem/definition-topic</code> defines the following codes:</p><table class=\"codes\"><tr><td style=\"white-space:nowrap\"><b>Code</b></td><td><b>Display</b></td><td><b>Definition</b></td></tr><tr><td style=\"white-space:nowrap\">treatment<a name=\"definition-topic-treatment\"> </a></td><td>Treatment</td><td>The definition is related to treatment of the patient.</td></tr><tr><td style=\"white-space:nowrap\">education<a name=\"definition-topic-education\"> </a></td><td>Education</td><td>The definition is related to education of the patient.</td></tr><tr><td style=\"white-space:nowrap\">assessment<a name=\"definition-topic-assessment\"> </a></td><td>Assessment</td><td>The definition is related to assessment of the patient.</td></tr></table></div>"
   },
-  "extension" : [{
-    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
-    "valueCode" : "cds"
-  },
-  {
-    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
-    "valueInteger" : 1
-  }],
-  "url" : "http://terminology.hl7.org/CodeSystem/definition-topic",
-  "identifier" : [{
-    "system" : "urn:ietf:rfc:3986",
-    "value" : "urn:oid:2.16.840.1.113883.4.642.1.1244"
-  }],
-  "version" : "0.1.0",
-  "name" : "DefinitionTopic",
-  "title" : "DefinitionTopic",
-  "status" : "active",
-  "experimental" : false,
-  "date" : "2020-04-09T21:10:28+00:00",
-  "publisher" : "HL7 (FHIR Project)",
-  "contact" : [{
-    "telecom" : [{
-      "system" : "url",
-      "value" : "http://hl7.org/fhir"
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+      "valueCode": "cds"
     },
     {
-      "system" : "email",
-      "value" : "fhir@lists.hl7.org"
-    }]
-  }],
-  "description" : "High-level categorization of the definition, used for searching, sorting, and filtering.",
-  "caseSensitive" : true,
-  "valueSet" : "http://terminology.hl7.org/ValueSet/definition-topic",
-  "content" : "complete",
-  "concept" : [{
-    "code" : "treatment",
-    "display" : "Treatment",
-    "definition" : "The definition is related to treatment of the patient."
-  },
-  {
-    "code" : "education",
-    "display" : "Education",
-    "definition" : "The definition is related to education of the patient."
-  },
-  {
-    "code" : "assessment",
-    "display" : "Assessment",
-    "definition" : "The definition is related to assessment of the patient."
-  }]
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+      "valueInteger": 1
+    }
+  ],
+  "url": "http://terminology.hl7.org/CodeSystem/definition-topic",
+  "identifier": [
+    {
+      "system": "urn:ietf:rfc:3986",
+      "value": "urn:oid:2.16.840.1.113883.4.642.1.1244"
+    }
+  ],
+  "version": "1.0.1",
+  "name": "DefinitionTopic",
+  "title": "DefinitionTopic",
+  "status": "active",
+  "experimental": false,
+  "date": "2024-04-24T00:00:00+00:00",
+  "publisher": "Health Level Seven International",
+  "contact": [
+    {
+      "telecom": [
+        {
+          "system": "url",
+          "value": "http://hl7.org"
+        },
+        {
+          "system": "email",
+          "value": "hq@HL7.org"
+        }
+      ]
+    }
+  ],
+  "description": "High-level categorization of the definition, used for searching, sorting, and filtering.",
+  "copyright": "This material derives from the HL7 Terminology (THO). THO is copyright ©1989+ Health Level Seven International and is made available under the CC0 designation. For more licensing information see: https://terminology.hl7.org/license",
+  "caseSensitive": true,
+  "valueSet": "http://terminology.hl7.org/ValueSet/definition-topic",
+  "content": "complete",
+  "concept": [
+    {
+      "code": "treatment",
+      "display": "Treatment",
+      "definition": "The definition is related to treatment of the patient."
+    },
+    {
+      "code": "education",
+      "display": "Education",
+      "definition": "The definition is related to education of the patient."
+    },
+    {
+      "code": "assessment",
+      "display": "Assessment",
+      "definition": "The definition is related to assessment of the patient."
+    }
+  ]
 }

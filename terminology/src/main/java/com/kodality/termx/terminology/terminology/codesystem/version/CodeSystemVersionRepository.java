@@ -219,21 +219,26 @@ public class CodeSystemVersionRepository extends BaseRepository {
   }
 
   public CodeSystemVersion loadLastVersion(String codeSystem) {
-    String sql = select + "from terminology.code_system_version csv where csv.sys_status = 'A' and csv.code_system = ? and (csv.status = 'active' or csv.status = 'draft') order by csv.release_date desc";
+    String sql = select + "from terminology.code_system_version csv " +
+        "where csv.sys_status = 'A' and csv.code_system = ? and (csv.status = 'active' or csv.status = 'draft') " +
+        "order by coalesce(csv.release_date,now()) desc, version desc";
     return getBean(sql, bp, codeSystem);
   }
 
   public CodeSystemVersion loadLastVersionByUri(String uri) {
-    String sql = select + "from terminology.code_system_version csv where csv.sys_status = 'A' and " +
-                 "exists (select 1 from terminology.code_system cs where cs.id = csv.code_system and cs.uri = ? and cs.sys_status = 'A') " +
-                 "order by csv.release_date desc";
+    String sql = select + "from terminology.code_system_version csv " +
+        "where csv.sys_status = 'A' and " +
+                 "exists (select 1 from terminology.code_system cs " +
+                          "where cs.id = csv.code_system and cs.uri = ? and cs.sys_status = 'A') " +
+        "order by coalesce(csv.release_date,now()) desc, version desc";
     return getBean(sql, bp, uri);
   }
 
   public CodeSystemVersion loadPreviousVersion(String codeSystem, String version) {
-    String sql = "with current_version as (select release_date from terminology.code_system_version where code_system = ? and version = ? and sys_status = 'A') " +
+    String sql = "with current_version as (select coalesce(csv.release_date,now()) release_date " +
+        "from terminology.code_system_version where code_system = ? and version = ? and sys_status = 'A') " +
         select + "from terminology.code_system_version csv where csv.code_system = ? and csv.release_date < (select release_date from current_version) and csv.sys_status = 'A' " +
-        "order by csv.release_date desc";
+        "order by coalesce(csv.release_date,now()) desc, version desc";
     return getBean(sql, bp, codeSystem, version, codeSystem);
   }
 

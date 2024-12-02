@@ -1,66 +1,92 @@
 {
-  "resourceType" : "ValueSet",
-  "id" : "jurisdiction",
-  "meta" : {
-    "lastUpdated" : "2023-03-26T15:21:02.749+11:00",
-    "profile" : ["http://hl7.org/fhir/StructureDefinition/shareablevalueset"]
+  "resourceType": "ValueSet",
+  "id": "jurisdiction",
+  "meta": {
+    "lastUpdated": "2024-11-27T19:21:04.917+00:00",
+    "profile": [
+      "http://hl7.org/fhir/StructureDefinition/shareablevalueset"
+    ]
   },
-  "text" : {
-    "status" : "generated",
-    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>This value set includes codes based on the following rules:</p><ul><li>Include all codes defined in <a href=\"http://terminology.hl7.org/5.1.0/CodeSystem-ISO3166Part1.html\"><code>urn:iso:std:iso:3166</code></a></li><li>Include all codes defined in <a href=\"http://terminology.hl7.org/5.1.0/CodeSystem-v3-iso3166-2.html\"><code>urn:iso:std:iso:3166:-2</code></a></li><li>Include codes from <code>http://unstats.un.org/unsd/methods/m49/m49.htm</code> where class  =  region</li></ul></div>"
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: ValueSet jurisdiction</b></p><a name=\"jurisdiction\"> </a><a name=\"hcjurisdiction\"> </a><a name=\"jurisdiction-en-US\"> </a><p>This value set includes codes based on the following rules:</p><ul><li>Include all codes defined in <a href=\"http://terminology.hl7.org/6.1.0/CodeSystem-ISO3166Part1.html\"><code>urn:iso:std:iso:3166</code></a></li><li>Include all codes defined in <a href=\"http://terminology.hl7.org/6.1.0/CodeSystem-v3-iso3166-2.html\"><code>urn:iso:std:iso:3166:-2</code></a></li><li>Include codes from<code>http://unstats.un.org/unsd/methods/m49/m49.htm</code> where class  = region</li></ul></div>"
   },
-  "extension" : [{
-    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
-    "valueCode" : "vocab"
-  },
-  {
-    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
-    "valueCode" : "deprecated"
-  },
-  {
-    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
-    "valueInteger" : 5
-  }],
-  "url" : "http://hl7.org/fhir/ValueSet/jurisdiction",
-  "identifier" : [{
-    "system" : "urn:ietf:rfc:3986",
-    "value" : "urn:oid:2.16.840.1.113883.4.642.3.48"
-  }],
-  "version" : "5.0.0",
-  "name" : "JurisdictionValueSet",
-  "title" : "Jurisdiction ValueSet",
-  "status" : "draft",
-  "experimental" : true,
-  "date" : "2023-03-26T15:21:02+11:00",
-  "publisher" : "FHIR Project team",
-  "contact" : [{
-    "telecom" : [{
-      "system" : "url",
-      "value" : "http://hl7.org/fhir"
-    }]
-  }],
-  "description" : "This value set defines a base set of codes for country, country subdivision and region    for indicating where a resource is intended to be used.   \r\n   \r\n   Note: The codes for countries and country subdivisions are taken from    [ISO 3166](https://www.iso.org/iso-3166-country-codes.html)    while the codes for \"supra-national\" regions are from    [UN Standard country or area codes for statistical use (M49)](http://unstats.un.org/unsd/methods/m49/m49.htm).",
-  "jurisdiction" : [{
-    "coding" : [{
-      "system" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
-      "code" : "001",
-      "display" : "World"
-    }]
-  }],
-  "compose" : {
-    "include" : [{
-      "system" : "urn:iso:std:iso:3166"
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+      "valueCode": "vocab"
     },
     {
-      "system" : "urn:iso:std:iso:3166:-2"
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+      "valueCode": "deprecated"
     },
     {
-      "system" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
-      "filter" : [{
-        "property" : "class",
-        "op" : "=",
-        "value" : "region"
-      }]
-    }]
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+      "valueInteger": 5
+    }
+  ],
+  "url": "http://hl7.org/fhir/ValueSet/jurisdiction",
+  "identifier": [
+    {
+      "system": "urn:ietf:rfc:3986",
+      "value": "urn:oid:2.16.840.1.113883.4.642.3.48"
+    }
+  ],
+  "version": "6.0.0",
+  "name": "JurisdictionValueSet",
+  "title": "Jurisdiction ValueSet",
+  "status": "active",
+  "experimental": true,
+  "date": "2024-11-27T19:21:04+00:00",
+  "publisher": "HL7 International / Terminology Infrastructure",
+  "contact": [
+    {
+      "telecom": [
+        {
+          "system": "url",
+          "value": "http://hl7.org/fhir"
+        }
+      ]
+    },
+    {
+      "telecom": [
+        {
+          "system": "url",
+          "value": "http://www.hl7.org/Special/committees/Vocab"
+        }
+      ]
+    }
+  ],
+  "description": "This value set defines a base set of codes for country, country subdivision and region    for indicating where a resource is intended to be used.   \r\n   \r\n   Note: The codes for countries and country subdivisions are taken from    [ISO 3166](https://www.iso.org/iso-3166-country-codes.html)    while the codes for \"supra-national\" regions are from    [UN Standard country or area codes for statistical use (M49)](http://unstats.un.org/unsd/methods/m49/m49.htm).",
+  "jurisdiction": [
+    {
+      "coding": [
+        {
+          "system": "http://unstats.un.org/unsd/methods/m49/m49.htm",
+          "code": "001",
+          "display": "World"
+        }
+      ]
+    }
+  ],
+  "compose": {
+    "include": [
+      {
+        "system": "urn:iso:std:iso:3166"
+      },
+      {
+        "system": "urn:iso:std:iso:3166:-2"
+      },
+      {
+        "system": "http://unstats.un.org/unsd/methods/m49/m49.htm",
+        "filter": [
+          {
+            "property": "class",
+            "op": "=",
+            "value": "region"
+          }
+        ]
+      }
+    ]
   }
 }

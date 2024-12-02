@@ -38,7 +38,7 @@ update terminology.code_system
 --rollback select 1;
 
 
---changeset termx:fix-versions
+--changeset termx:fix-versions-2
 update terminology.code_system_version
    set version = '5.0.0'
  where version='5.0.0-cibuild';

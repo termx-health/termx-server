@@ -71,6 +71,12 @@
             "code": "definition"
           },
           "value": "Juhendmaterjal, mis kirjeldab muudatustega seotud korraldus"
+        },        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Description of the change management process"
         }
       ],
       "property": [
@@ -101,6 +107,13 @@
             "code": "definition"
           },
           "value": "Info koodipikkuse, hierarhia olemasolu ja olemuse kohta, jms."
+        },
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Coding principles"
         }
       ],
       "property": [
@@ -131,6 +144,13 @@
             "code": "definition"
           },
           "value": "Lühike tekst või viide veebilehele, kus on kõik vajalik info loendi/koodisüsteemi kasutamise kohta."
+        },
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Instructions for use."
         }
       ],
       "property": [
@@ -169,6 +189,13 @@
             "code": "definition"
           },
           "value": "Riigiteataja URL, nimi ja sisuline selgitus"
+        },
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Relation to legislation"
         }
       ],
       "property": [
@@ -207,6 +234,13 @@
             "code": "definition"
           },
           "value": "Alusklassifikaator võib olla nii rahvusvaheline kui ka riigisisene. Täidetakse kui kohaldub."
+        },
+        {
+          "language": "en",
+          "use": {
+            "code": "display"
+          },
+          "value": "Reference to base classifier"
         }
       ],
       "property": [
