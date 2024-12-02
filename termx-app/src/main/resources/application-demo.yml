@@ -1,0 +1,24 @@
+micronaut:
+  server:
+    cors:
+      enabled: true
+auth:
+  oauth:
+    jwks-url: https://sso.termx.org/realms/termx/protocol/openid-connect/certs
+
+termx:
+  web-url: http://localhost:4200
+
+
+github:
+  client:
+    id: 'Iv23lipQQ7hPChW6Hv2P'
+    secret: '7df236c06b0ccb8cd7799d3547733a52fafaaed3'
+  app-name: termx-health-local-publisher
+
+
+keycloak:
+  url: https://sso.termx.org/admin/realms/termx
+  sso-url: https://sso.termx.org/realms/termx/protocol/openid-connect
+  client-id: termx-service
+  client-secret: xxx
