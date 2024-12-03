@@ -57,9 +57,13 @@ public class ConceptMapTranslateOperation implements InstanceOperationDefinition
 
   public ResourceContent run(ResourceContent p) {
     Parameters req = FhirMapper.fromJson(p.getValue(), Parameters.class);
-    String url = req.findParameter("url").map(ParametersParameter::getValueString)
-        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
-    String conceptMapVersion = req.findParameter("conceptMapVersion").map(ParametersParameter::getValueString).orElse(null);
+    String url = req.findParameter("url").
+          map(c -> c.getValueString() != null ? c.getValueString() : c.getValueUrl()).orElse(null);
+    if (url == null) {
+      throw new FhirException(400, IssueType.INVALID, "url parameter required");
+    }
+    String conceptMapVersion = req.findParameter("conceptMapVersion").
+          map(c -> c.getValueString() != null ? c.getValueString() : c.getValueUrl()).orElse(null);
     Parameters resp = run(null, url, conceptMapVersion, req);
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }
@@ -67,8 +71,28 @@ public class ConceptMapTranslateOperation implements InstanceOperationDefinition
   private Parameters run(String cmId, String cmUrl, String cmVersion, Parameters req) {
     String sourceCode = req.findParameter("sourceCode").map(c -> c.getValueCode() == null ? c.getValueString() : c.getValueCode()).orElse(null);
     String targetCode = req.findParameter("targetCode").map(c -> c.getValueCode() == null ? c.getValueString() : c.getValueCode()).orElse(null);
-    String sourceSystem = req.findParameter("system").map(c -> c.getValueUri() == null ? c.getValueString() : c.getValueUri()).orElse(null);
-    String targetSystem = req.findParameter("targetSystem").map(c -> c.getValueUri() == null ? c.getValueString() : c.getValueUri()).orElse(null);
+    String sourceSystem = req.findParameter("system")
+          .map(c -> {
+          if (c.getValueUri() != null) {
+            return c.getValueUri();
+          } else if (c.getValueUrl() != null) {
+            return c.getValueUrl();
+          } else {
+            return c.getValueString();
+          }
+        })
+        .orElse(null);
+    String targetSystem = req.findParameter("targetSystem")
+        .map(c -> {
+          if (c.getValueUri() != null) {
+            return c.getValueUri();
+          } else if (c.getValueUrl() != null) {
+            return c.getValueUrl();
+          } else {
+            return c.getValueString();
+          }
+        })
+        .orElse(null);
 
     if (req.findParameter("sourceCoding").isPresent()) {
       sourceCode = req.findParameter("sourceCoding").map(ParametersParameter::getValueCoding).map(Coding::getCode).orElse(null);
