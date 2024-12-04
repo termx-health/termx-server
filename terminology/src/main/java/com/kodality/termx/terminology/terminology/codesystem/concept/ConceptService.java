@@ -133,7 +133,12 @@ public class ConceptService {
 
     String codeSystem = params.getCodeSystem();
     prepareParams(params);
-    QueryResult<Concept> concepts = repository.query(params);
+    QueryResult<Concept> concepts;
+    if(params.getAssociationRoot()==null){
+       concepts = repository.query(params);
+    } else {
+       concepts = repository.queryHierarchy(params);
+    }
     concepts.setData(decorate(concepts.getData(), codeSystem, params));
     return concepts;
   }

@@ -27,8 +27,12 @@ public class ConceptRepository extends BaseRepository {
 
   private final Map<String, String> orderMapping = Map.of("code", "c.code", "codeSystem", "c.code_system");
 
-  private final String select = "select distinct on (c.code) c.*, " +
-      "(exists (select 1 from terminology.code_system_entity_version csev where csev.code_system_entity_id = c.id and csev.sys_status = 'A' and csev.status in ('active', 'retired'))) as immutable ";
+  private final String select = """
+      select distinct on (c.code) c.*, 
+             (exists (select 1 from terminology.code_system_entity_version csev 
+                       where csev.code_system_entity_id = c.id and csev.sys_status = 'A' 
+                         and csev.status in ('active', 'retired'))) as immutable 
+      """;
 
   public void save(Concept concept) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -70,6 +74,39 @@ public class ConceptRepository extends BaseRepository {
       sb.append(filter(params));
       sb.append(") c ");
       sb.append(order(params, orderMapping));
+      sb.append(limit(params));
+      return getBeans(sb.getSql(), bp, sb.getParams());
+    });
+  }
+
+  public QueryResult<Concept> queryHierarchy(ConceptQueryParams params) {
+    return query(params, p -> {
+      SqlBuilder sb = new SqlBuilder("select count(1) from terminology.concepts(");
+      sb.append("p_code_system => ?", params.getCodeSystem());
+      sb.appendIfNotNull(", p_version => ?", params.getCodeSystemVersion());
+      sb.appendIfNotNull(", p_association_type => ?", params.getAssociationRoot());
+      sb.appendIfNotNull(", p_text => ?", params.getTextContains());
+      sb.appendIfNotNull(", p_codes => ?", params.getCode());
+      sb.append(") c where 1=1");
+      return queryForObject(sb.getSql(), Integer.class, sb.getParams());
+    }, p -> {
+      SqlBuilder sb = new SqlBuilder("""
+            with t as (
+              select *
+                from terminology.concepts(""");
+      sb.append("p_code_system => ?", params.getCodeSystem());
+      sb.appendIfNotNull(", p_version => ?", params.getCodeSystemVersion());
+      sb.appendIfNotNull(", p_association_type => ?", params.getAssociationRoot());
+      sb.appendIfNotNull(", p_text => ?", params.getTextContains());
+      sb.appendIfNotNull(", p_codes => ?", params.getCode());
+      sb.append("""
+          ))
+          select t1.concept_id id, t1.code, t1.leaf, t1.level, t1.path as description, t1.status, t1.concept_version_id,
+                 (case when t1.status in ('active', 'retired') then true else false end) as immutable,
+                 (select count(*) from t as t2 where t2.path like t1.path||'.%') as child_count
+          from t as t1 where 1=1
+      """);
+
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
