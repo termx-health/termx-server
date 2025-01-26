@@ -130,7 +130,11 @@ expressions as (
                   where d.sys_status = 'A' and c.csev_id = d.code_system_entity_version_id
                     and ep.sys_status = 'A' and ep.id = d.designation_type_id
                     and (t.filter_ -> 'property' ->> 'name')::text = ep.name
-                    and ((t.filter_ ->> 'value')::text = d.name))
+                    and ((t.filter_ ->> 'value')::text = d.name
+                          or
+                          d.name = any(regexp_match(d.name, (t.filter_ ->> 'value')::text||'$'))
+                        )
+                  )
    union
    -- all recursive concepts calculated before
    select c.*, r.rn, r.fcnt from r, c
