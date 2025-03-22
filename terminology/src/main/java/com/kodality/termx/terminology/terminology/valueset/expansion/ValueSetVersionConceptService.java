@@ -17,6 +17,7 @@ import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.termx.ts.property.PropertyReference;
+import com.kodality.termx.ts.valueset.ValueSetSnapshot;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
@@ -65,14 +66,20 @@ public class ValueSetVersionConceptService {
   }
 
   @Transactional
-  public List<ValueSetVersionConcept> expand(String vs, String vsVersion, String preferredLanguage) {
+  public ValueSetSnapshot expand(String vs, String vsVersion, String preferredLanguage) {
     ValueSetVersion version = getVersion(vs, vsVersion);
     if (version == null) {
-      return new ArrayList<>();
+      return null;
     }
+    ValueSetSnapshot snapshot = version.getSnapshot();
+    if (PublicationStatus.active.equals(version.getStatus()) && snapshot != null && snapshot.getExpansion() != null) {
+      return snapshot;
+    }
+    
     List<ValueSetVersionConcept> expansion = expand(version, preferredLanguage);
-    valueSetSnapshotService.createSnapshot(vs, version.getId(), expansion);
-    return expansion;
+    snapshot = valueSetSnapshotService.createSnapshot(vs, version.getId(), expansion);
+
+    return snapshot;
   }
 
   public List<ValueSetVersionConcept> expand(ValueSetVersion version, String preferredLanguage) {

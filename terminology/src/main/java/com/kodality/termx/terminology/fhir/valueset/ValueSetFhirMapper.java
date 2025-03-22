@@ -298,7 +298,15 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }).collect(toList());
   }
 
-  public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances, List<ValueSetVersionConcept> concepts, Parameters param) {
+  public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances, ValueSetSnapshot snapshot, Parameters param) {
+    com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = toFhir(valueSet, version, provenances);
+    fhirValueSet.setExpansion(toFhirExpansion(snapshot, fhirValueSet.getCompose().getProperty(), param));
+    return fhirValueSet;
+  }
+
+  private static ValueSetExpansion toFhirExpansion(ValueSetSnapshot snapshot, List<String> properties, Parameters param) {
+    List<ValueSetVersionConcept> concepts = snapshot.getExpansion();
+
     boolean active = Optional.ofNullable(param).map(p -> p.findParameter("activeOnly")
         .map(pp -> pp.getValueBoolean() != null ? pp.getValueBoolean() : "true".equals(pp.getValueString()))
         .orElse(false)).orElse(false);
@@ -306,12 +314,6 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       concepts = concepts.stream().filter(ValueSetVersionConcept::isActive).toList();
     }
 
-    com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = toFhir(valueSet, version, provenances);
-    fhirValueSet.setExpansion(toFhirExpansion(concepts, fhirValueSet.getCompose().getProperty(), param));
-    return fhirValueSet;
-  }
-
-  private static ValueSetExpansion toFhirExpansion(List<ValueSetVersionConcept> concepts, List<String> properties, Parameters param) {
     boolean flat = Optional.ofNullable(param).map(p -> p.findParameter("excludeNested")
         .map(pp -> pp.getValueBoolean() != null ? pp.getValueBoolean() : "true".equals(pp.getValueString())).orElse(false)).orElse(false);
 
@@ -321,6 +323,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }
     expansion.setTotal(concepts.size());
     expansion.setParameter(toValueSetParameter(param));
+    expansion.setTimestamp(snapshot.getCreatedAt());
 
     if (flat) {
       expansion.setContains(concepts.stream().map(c -> toFhirExpansionContains(c, properties, param)).collect(toList()));
@@ -578,7 +581,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     if (expansion == null || expansion.getContains() == null) {
       return null;
     }
-    return new ValueSetSnapshot().setExpansion(expansion.getContains().stream().map(c -> new ValueSetVersionConcept()
+    return new ValueSetSnapshot().setExpansion(expansion.setTimestamp(expansion.getTimestamp()).getContains().stream().map(c -> new ValueSetVersionConcept()
         .setConcept(new ValueSetVersionConceptValue().setCode(c.getCode()).setCodeSystemUri(c.getSystem()))
         .setDisplay(new Designation().setName(c.getDisplay()).setLanguage(Optional.ofNullable(valueSet.getLanguage()).orElse(Language.en)))
         .setAdditionalDesignations(Optional.ofNullable(c.getDesignation()).orElse(List.of()).stream().map(d -> new Designation().setName(d.getValue()).setLanguage(d.getLanguage())).toList())
