@@ -13,11 +13,7 @@ import com.kodality.termx.core.sys.provenance.ProvenanceService;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
 import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
-import com.kodality.termx.ts.valueset.ValueSet;
-import com.kodality.termx.ts.valueset.ValueSetQueryParams;
-import com.kodality.termx.ts.valueset.ValueSetVersion;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
-import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
+import com.kodality.termx.ts.valueset.*;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
@@ -100,7 +96,8 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     String displayLanguage = req == null ? null : req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
         .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString).orElse(null));
 
-    List<ValueSetVersionConcept> expandedConcepts = valueSetVersionConceptService.expand(vs.getId(), version.getVersion(), displayLanguage);
+    ValueSetSnapshot snapshot = valueSetVersionConceptService.expand(vs.getId(), version.getVersion(), displayLanguage);
+    List<ValueSetVersionConcept> expandedConcepts = snapshot.getExpansion();
     List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + version.getId());
 
 
@@ -115,7 +112,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       expandedConcepts = expandedConcepts.stream().limit(count).toList();
     }
 
-    return mapper.toFhir(vs, version, provenances, expandedConcepts, req);
+    return mapper.toFhir(vs, version, provenances, snapshot, req);
   }
 
 }

@@ -14,9 +14,9 @@ import lombok.RequiredArgsConstructor;
 public class ValueSetSnapshotService {
   private final ValueSetSnapshotRepository repository;
 
-  public void createSnapshot(String valueSet, Long versionId, List<ValueSetVersionConcept> expansion) {
+  public ValueSetSnapshot createSnapshot(String valueSet, Long versionId, List<ValueSetVersionConcept> expansion) {
     if (valueSet == null || versionId == null || expansion == null) {
-      return;
+      return null;
     }
     ValueSetSnapshot snapshot = load(valueSet, versionId);
     if (snapshot == null) {
@@ -27,6 +27,8 @@ public class ValueSetSnapshotService {
     snapshot.setCreatedAt(OffsetDateTime.now());
     snapshot.setCreatedBy(SessionStore.require().getUsername());
     repository.save(snapshot);
+
+    return snapshot;
   }
 
   public ValueSetSnapshot load(String valueSet, Long versionId) {
