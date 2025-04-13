@@ -1,4 +1,4 @@
-package com.kodality.termx.ucum;
+package org.termx.ucum;
 
 import com.kodality.termx.core.info.ModuleInfo;
 import io.micronaut.context.annotation.Bean;
@@ -7,6 +7,6 @@ import io.micronaut.context.annotation.Bean;
 public class ApiModuleInfo implements ModuleInfo {
   @Override
   public String getName() {
-    return "ucum-old";
+    return "ucum";
   }
 }

@@ -5,10 +5,11 @@ import org.fhir.ucum.Decimal;
 public interface UcumService {
     /**
      * Check if the provided unit string is a valid UCUM unit.
+     *
      * @param unit the unit string (e.g., "mg", "L/min")
      * @return true if valid; false otherwise.
      */
-    boolean isValidUnit(String unit);
+    boolean isUnitValid(String unit);
 
     /**
      * Convert a numeric value from one UCUM unit to another.

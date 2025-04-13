@@ -2,6 +2,7 @@ package com.kodality.termx;
 
 import com.kodality.termx.observationdefinition.observationdefinition.ObservationDefinitionController;
 import com.kodality.termx.ucum.measurementunit.MeasurementUnitController;
+import org.termx.ucum.UcumController;
 import io.micronaut.openapi.annotation.OpenAPIInclude;
 import io.micronaut.runtime.Micronaut;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -75,8 +76,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
     classes = {com.kodality.termx.snomed.snomed.SnomedController.class}
 )
 @OpenAPIInclude(
-    tags = @Tag(name = "UCUM"),
+    tags = @Tag(name = "UCUM-old"),
     classes = {MeasurementUnitController.class}
+)
+@OpenAPIInclude(
+    tags = @Tag(name = "UCUM"),
+    classes = {UcumController.class}
 )
 @OpenAPIInclude(
     tags = @Tag(name = "Editions"),
