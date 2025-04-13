@@ -20,4 +20,13 @@ public interface UcumService {
      * @throws Exception if conversion fails or if any unit is invalid.
      */
     Decimal convert(Decimal value, String sourceUnit, String targetUnit) throws Exception;
+
+    /**
+     * Analyse a UCUM code and return its description.
+     *
+     * @param ucumCode the UCUM code to analyse
+     * @return a string description of the UCUM code
+     * @throws Exception if analysis fails.
+     */
+    String analyse(String ucumCode) throws Exception;
 }

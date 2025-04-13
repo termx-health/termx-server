@@ -27,6 +27,16 @@ public class UcumController {
     }
 
     @Authorized(Privilege.UCUM_VIEW)
+    @Get("/analyse")
+    public String analyseUcumCode(@QueryValue String ucumCode) {
+        try {
+            return ucumService.analyse(ucumCode);
+        } catch (Exception e) {
+            return e.getMessage();
+        }
+    }
+
+    @Authorized(Privilege.UCUM_VIEW)
     @Get("/convert")
     public Map<String, Object> convert(@QueryValue String value,
                                        @QueryValue String sourceUnit,
@@ -41,7 +51,7 @@ public class UcumController {
             );
         } catch (Exception e) {
             return Map.of(
-                    "error", e.getMessage()
+                    "Error: ", e.getMessage()
             );
         }
     }
