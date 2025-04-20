@@ -38,22 +38,39 @@ update terminology.code_system
 --rollback select 1;
 
 
---changeset termx:fix-versions-2
-update terminology.code_system_version
+--changeset termx:fix-versions-2a
+update terminology.code_system_version as a
    set version = '5.0.0'
- where version='5.0.0-cibuild';
+ where version='5.0.0-cibuild'
+   and sys_status='A'
+   and not exists(select 1 from terminology.code_system_version b
+                          where b.code_system=a.code_system
+                            and b.version='5.0.0-cibuild');
 
-update terminology.code_system_version
+update terminology.code_system_version as a
    set version = '6.0.0'
- where version='6.0.0-cibuild';
+ where version='6.0.0-cibuild'
+   and sys_status='A'
+   and not exists(select 1 from terminology.code_system_version b
+                          where b.code_system=a.code_system
+                            and b.version='6.0.0-cibuild');
 
-update terminology.value_set_version
+update terminology.value_set_version as a
    set version = '5.0.0'
- where version='5.0.0-cibuild';
+ where version='5.0.0-cibuild'
+   and sys_status='A'
+   and not exists(select 1 from terminology.value_set_version b
+                          where b.value_set=a.value_set
+                            and b.version='5.0.0-cibuild');
 
- update terminology.value_set_version
+ update terminology.value_set_version as a
    set version = '6.0.0'
- where version='6.0.0-cibuild';
+ where version='6.0.0-cibuild'
+   and sys_status='A'
+   and not exists(select 1 from terminology.value_set_version b
+                          where b.value_set=a.value_set
+                            and b.version='6.0.0-cibuild');
+ ;
 --rollback select 1;
 
 --changeset termx:kts-to-termx-3
