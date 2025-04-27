@@ -7,6 +7,6 @@ import io.micronaut.context.annotation.Bean;
 public class ApiModuleInfo implements ModuleInfo {
   @Override
   public String getName() {
-    return "ucum-old";
+    return "measurementUnits";
   }
 }
