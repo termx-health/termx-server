@@ -44,11 +44,47 @@ public class UcumServiceImpl implements UcumService {
     }
 
     @Override
-    public String analyse(String ucumCode) throws Exception {
+    public String analyse(String unit) throws Exception {
         try {
-            return ucumService.analyse(ucumCode);
+            return ucumService.analyse(unit);
         } catch (UcumException e) {
-            throw new Exception("Error analysing unit: " + ucumCode, e);
+            throw new Exception("Error analysing unit: " + unit, e);
+        }
+    }
+
+    @Override
+    public Object getUcumVersionDetails() throws Exception {
+        try {
+            return ucumService.ucumIdentification();
+        } catch (Exception e) {
+            throw new Exception("Error getting UCUM version details", e);
+        }
+    }
+
+    @Override
+    public String getCanonicalUnits(String unit) throws Exception {
+        try {
+            return ucumService.getCanonicalUnits(unit);
+        } catch (Exception e) {
+            throw new Exception("Error getting canonical units", e);
+        }
+    }
+
+    @Override
+    public Object getUcumComponents() throws Exception {
+        try {
+            return ucumService.getModel();
+        } catch (Exception e) {
+            throw new Exception("Error getting UCUM components", e);
+        }
+    }
+
+    @Override
+    public Object searchComponent(String text) throws Exception {
+        try {
+            return ucumService.search(null, text, false);
+        } catch (Exception e) {
+            throw new Exception("Error getting UCUM component properties", e);
         }
     }
 }
