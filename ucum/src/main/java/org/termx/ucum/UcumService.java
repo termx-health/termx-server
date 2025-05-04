@@ -4,31 +4,31 @@ import org.fhir.ucum.Decimal;
 
 public interface UcumService {
     /**
-     * Check if the provided unit string is a valid UCUM unit.
+     * Check if the provided UCUM code is valid.
      *
-     * @param unit the unit string (e.g., "mg", "L/min")
+     * @param code the UCUM code string (e.g., "mg", "L/min")
      * @return true if valid; false otherwise.
      */
-    boolean isUnitValid(String unit);
+    boolean isCodeValid(String code);
 
     /**
-     * Convert a numeric value from one UCUM unit to another.
+     * Convert a numeric value from one UCUM code to another.
      * @param value the numeric value to convert
-     * @param sourceUnit the unit of the input value
-     * @param targetUnit the unit to convert to
+     * @param sourceCode the UCUM code of the input value
+     * @param targetCode the UCUM code to convert to
      * @return the converted value
-     * @throws Exception if conversion fails or if any unit is invalid.
+     * @throws Exception if conversion fails or if any UCUM code is invalid.
      */
-    Decimal convert(Decimal value, String sourceUnit, String targetUnit) throws Exception;
+    Decimal convert(Decimal value, String sourceCode, String targetCode) throws Exception;
 
     /**
      * Analyse a UCUM code and return its human-readable description.
      *
-     * @param unit the UCUM code to analyse (e.g., "10.uN.s/(cm5.m2)")
+     * @param code the UCUM code to analyse (e.g., "10.uN.s/(cm5.m2)")
      * @return a description of the UCUM code
      * @throws Exception if analysis fails
      */
-    String analyse(String unit) throws Exception;
+    String analyse(String code) throws Exception;
 
     /**
      * Retrieve details about the UCUM version, such as version number and release date.
@@ -39,13 +39,13 @@ public interface UcumService {
     Object getUcumVersionDetails() throws Exception;
 
     /**
-     * Get the canonical representation for a given UCUM unit code.
+     * Get the canonical representation for a given UCUM code.
      *
-     * @param unit the UCUM unit code to canonicalize (e.g., "mg", "L/min")
-     * @return the canonical unit string
-     * @throws Exception if canonicalization fails or the unit is invalid
+     * @param code the UCUM code to canonicalize (e.g., "mg", "L/min")
+     * @return the canonical unit representation string
+     * @throws Exception if canonicalization fails or the code is invalid
      */
-    String getCanonicalUnits(String unit) throws Exception;
+    String getCanonicalUnits(String code) throws Exception;
 
     /**
      * Fetch the list of UCUM components available in the model.
@@ -58,9 +58,9 @@ public interface UcumService {
     /**
      * Search for UCUM components matching the provided text.
      *
-     * @param text text to search within UCUM component properties
-     * @return an object containing matching UCUM component properties
+     * @param text text to search within UCUM components
+     * @return an object containing matching UCUM components
      * @throws Exception if search fails
      */
-    Object searchComponent(String text) throws Exception;
+    Object searchComponents(String text) throws Exception;
 }
