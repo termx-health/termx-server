@@ -3,7 +3,6 @@ package org.termx.ucum;
 import lombok.extern.slf4j.Slf4j;
 import org.fhir.ucum.Decimal;
 import org.fhir.ucum.UcumEssenceService;
-import org.fhir.ucum.UcumException;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
@@ -27,28 +26,26 @@ public class UcumServiceImpl implements UcumService {
     }
 
     @Override
-    public boolean isUnitValid(String unit) {
-        String errorMessage = ucumService.validate(unit);
+    public boolean isCodeValid(String code) {
+        String errorMessage = ucumService.validate(code);
         return errorMessage == null;
     }
 
     @Override
-    public Decimal convert(Decimal value, String sourceUnit, String targetUnit) throws Exception {
-        if (!isUnitValid(sourceUnit)) {
-            throw new Exception("Invalid source unit: " + sourceUnit);
+    public Decimal convert(Decimal value, String sourceCode, String targetCode) throws Exception {
+        try {
+            return ucumService.convert(value, sourceCode, targetCode);
+        } catch (Exception e) {
+            throw new Exception(String.format("Error converting UCUM code: %s", e.getMessage()));
         }
-        if (!isUnitValid(targetUnit)) {
-            throw new Exception("Invalid target unit: " + targetUnit);
-        }
-        return ucumService.convert(value, sourceUnit, targetUnit);
     }
 
     @Override
-    public String analyse(String unit) throws Exception {
+    public String analyse(String code) throws Exception {
         try {
-            return ucumService.analyse(unit);
-        } catch (UcumException e) {
-            throw new Exception("Error analysing unit: " + unit, e);
+            return ucumService.analyse(code);
+        } catch (Exception e) {
+            throw new Exception(String.format("Error analysing UCUM code: '%s': %s", code, e.getMessage()));
         }
     }
 
@@ -57,16 +54,16 @@ public class UcumServiceImpl implements UcumService {
         try {
             return ucumService.ucumIdentification();
         } catch (Exception e) {
-            throw new Exception("Error getting UCUM version details", e);
+            throw new Exception(String.format("Error getting UCUM version details: %s", e.getMessage()));
         }
     }
 
     @Override
-    public String getCanonicalUnits(String unit) throws Exception {
+    public String getCanonicalUnits(String code) throws Exception {
         try {
-            return ucumService.getCanonicalUnits(unit);
+            return ucumService.getCanonicalUnits(code);
         } catch (Exception e) {
-            throw new Exception("Error getting canonical units", e);
+            throw new Exception(String.format("Error getting canonical units for: '%s': %s", code, e.getMessage()));
         }
     }
 
@@ -75,16 +72,16 @@ public class UcumServiceImpl implements UcumService {
         try {
             return ucumService.getModel();
         } catch (Exception e) {
-            throw new Exception("Error getting UCUM components", e);
+            throw new Exception(String.format("Error getting UCUM components: %s", e.getMessage()));
         }
     }
 
     @Override
-    public Object searchComponent(String text) throws Exception {
+    public Object searchComponents(String text) throws Exception {
         try {
             return ucumService.search(null, text, false);
         } catch (Exception e) {
-            throw new Exception("Error getting UCUM component properties", e);
+            throw new Exception(String.format("Error searching UCUM components: %s", e.getMessage()));
         }
     }
 }

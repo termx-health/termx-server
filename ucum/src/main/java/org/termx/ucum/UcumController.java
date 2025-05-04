@@ -24,34 +24,34 @@ public class UcumController {
 
     @Authorized(Privilege.UCUM_VIEW)
     @Get("/validate")
-    public HttpResponse<Map<String, Boolean>> validateUnit(@QueryValue @NotBlank String unit) {
-        boolean isValid = ucumService.isUnitValid(unit);
+    public HttpResponse<Map<String, Boolean>> validate(@QueryValue @NotBlank String code) {
+        boolean isValid = ucumService.isCodeValid(code);
         return HttpResponse.ok(Map.of("valid", isValid));
     }
 
     @Authorized(Privilege.UCUM_VIEW)
     @Get("/analyse")
-    public HttpResponse<String> analyseUcumCode(@QueryValue @NotBlank String unit) {
+    public HttpResponse<Map<String, String>> analyse(@QueryValue @NotBlank String code) {
         try {
-            String result = ucumService.analyse(unit);
-            return HttpResponse.ok(result);
+            String result = ucumService.analyse(code);
+            return HttpResponse.ok(Map.of("result", result));
         } catch (Exception e) {
-            return HttpResponse.badRequest(e.getMessage());
+            return HttpResponse.badRequest(Map.of("error", e.getMessage()));
         }
     }
 
     @Authorized(Privilege.UCUM_VIEW)
     @Get("/convert")
     public HttpResponse<Map<String, Object>> convert(@QueryValue @NotBlank String value,
-                                                     @QueryValue @NotBlank String sourceUnit,
-                                                     @QueryValue @NotBlank String targetUnit) {
+                                                     @QueryValue @NotBlank String sourceCode,
+                                                     @QueryValue @NotBlank String targetCode) {
         try {
             Decimal decimalValue = new Decimal(value);
-            Decimal result = ucumService.convert(decimalValue, sourceUnit, targetUnit);
+            Decimal result = ucumService.convert(decimalValue, sourceCode, targetCode);
             return HttpResponse.ok(Map.of(
                     "value", result.toString(),
-                    "sourceUnit", sourceUnit,
-                    "targetUnit", targetUnit
+                    "sourceCode", sourceCode,
+                    "targetCode", targetCode
             ));
         } catch (Exception e) {
             return HttpResponse.badRequest(Map.of("error", e.getMessage()));
@@ -63,7 +63,7 @@ public class UcumController {
     public HttpResponse<Map<String, Object>> getUcumVersionDetails() {
         try {
             Object result = ucumService.getUcumVersionDetails();
-            return HttpResponse.ok(Map.of("ucumVersionDetails", result));
+            return HttpResponse.ok(Map.of("result", result));
         } catch (Exception e) {
             return HttpResponse.badRequest(Map.of("error", e.getMessage()));
         }
@@ -71,10 +71,10 @@ public class UcumController {
 
     @Authorized(Privilege.UCUM_VIEW)
     @Get("/canonical")
-    public HttpResponse<Map<String, Object>> getCanonicalUnits(@QueryValue @NotBlank String unit) {
+    public HttpResponse<Map<String, Object>> getCanonicalUnits(@QueryValue @NotBlank String code) {
         try {
-            String result = ucumService.getCanonicalUnits(unit);
-            return HttpResponse.ok(Map.of("canonicalUnits", result));
+            String result = ucumService.getCanonicalUnits(code);
+            return HttpResponse.ok(Map.of("result", result));
         } catch (Exception e) {
             return HttpResponse.badRequest(Map.of("error", e.getMessage()));
         }
@@ -85,7 +85,7 @@ public class UcumController {
     public HttpResponse<Map<String, Object>> getUcumComponents() {
         try {
             Object result = ucumService.getUcumComponents();
-            return HttpResponse.ok(Map.of("ucumComponents", result));
+            return HttpResponse.ok(Map.of("result", result));
         } catch (Exception e) {
             return HttpResponse.badRequest(Map.of("error", e.getMessage()));
         }
@@ -93,10 +93,10 @@ public class UcumController {
 
     @Authorized(Privilege.UCUM_VIEW)
     @Get("/search")
-    public HttpResponse<Map<String, Object>> searchComponent(@QueryValue @NotBlank String text) {
+    public HttpResponse<Map<String, Object>> search(@QueryValue @NotBlank String text) {
         try {
-            Object result = ucumService.searchComponent(text);
-            return HttpResponse.ok(Map.of("ucumComponentProperties", result));
+            Object result = ucumService.searchComponents(text);
+            return HttpResponse.ok(Map.of("result", result));
         } catch (Exception e) {
             return HttpResponse.badRequest(Map.of("error", e.getMessage()));
         }
