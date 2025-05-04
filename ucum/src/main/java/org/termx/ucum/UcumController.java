@@ -2,6 +2,7 @@ package org.termx.ucum;
 
 import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.ucum.Privilege;
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
@@ -93,9 +94,9 @@ public class UcumController {
 
     @Authorized(Privilege.UCUM_VIEW)
     @Get("/search")
-    public HttpResponse<Map<String, Object>> search(@QueryValue @NotBlank String text) {
+    public HttpResponse<Map<String, Object>> search(@QueryValue @Nullable String kind, @QueryValue @NotBlank String text) {
         try {
-            Object result = ucumService.searchComponents(text);
+            Object result = ucumService.searchComponents(kind, text);
             return HttpResponse.ok(Map.of("result", result));
         } catch (Exception e) {
             return HttpResponse.badRequest(Map.of("error", e.getMessage()));

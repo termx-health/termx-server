@@ -1,6 +1,7 @@
 package org.termx.ucum;
 
 import lombok.extern.slf4j.Slf4j;
+import org.fhir.ucum.ConceptKind;
 import org.fhir.ucum.Decimal;
 import org.fhir.ucum.UcumEssenceService;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ public class UcumServiceImpl implements UcumService {
     private final UcumEssenceService ucumService;
 
     public UcumServiceImpl() throws Exception {
+        // TODO: add possibility to load ucum-essence.xml from a different location e.g. official UCUM website
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("ucum-essence.xml");
         if (inputStream == null) {
             throw new Exception("Could not find ucum-essence.xml in classpath");
@@ -45,7 +47,7 @@ public class UcumServiceImpl implements UcumService {
         try {
             return ucumService.analyse(code);
         } catch (Exception e) {
-            throw new Exception(String.format("Error analysing UCUM code: '%s': %s", code, e.getMessage()));
+            throw new Exception(String.format("Error analysing UCUM code: %s", e.getMessage()));
         }
     }
 
@@ -63,7 +65,7 @@ public class UcumServiceImpl implements UcumService {
         try {
             return ucumService.getCanonicalUnits(code);
         } catch (Exception e) {
-            throw new Exception(String.format("Error getting canonical units for: '%s': %s", code, e.getMessage()));
+            throw new Exception(String.format("Error getting canonical units: %s", e.getMessage()));
         }
     }
 
@@ -77,9 +79,13 @@ public class UcumServiceImpl implements UcumService {
     }
 
     @Override
-    public Object searchComponents(String text) throws Exception {
+    public Object searchComponents(String kind, String text) throws Exception {
         try {
-            return ucumService.search(null, text, false);
+            ConceptKind conceptKind = null;
+            if (kind != null) {
+                conceptKind = ConceptKind.valueOf(kind);
+            }
+            return ucumService.search(conceptKind, text, false);
         } catch (Exception e) {
             throw new Exception(String.format("Error searching UCUM components: %s", e.getMessage()));
         }

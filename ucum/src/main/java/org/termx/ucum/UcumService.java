@@ -62,5 +62,5 @@ public interface UcumService {
      * @return an object containing matching UCUM components
      * @throws Exception if search fails
      */
-    Object searchComponents(String text) throws Exception;
+    Object searchComponents(String kind, String text) throws Exception;
 }
