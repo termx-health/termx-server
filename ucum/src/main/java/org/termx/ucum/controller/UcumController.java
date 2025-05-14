@@ -20,6 +20,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.fhir.ucum.*;
 import org.termx.ucum.dto.*;
+import org.termx.ucum.exception.InvalidUcumCodeException;
 import org.termx.ucum.service.UcumService;
 import org.termx.ucum.security.Privilege;
 
@@ -95,12 +96,12 @@ public class UcumController {
     @Get("/analyse")
     public HttpResponse<AnalyseResponseDto> analyse(
             @QueryValue(defaultValue = "") @NotBlank String code) throws UcumException {
-        ValidateResponseDto validation = ucumService.validate(code);
-        if (!validation.isValid()) {
-            throw new HttpStatusException(HttpStatus.BAD_REQUEST, validation.getErrorMessage());
+        try {
+            AnalyseResponseDto response = ucumService.analyse(code);
+            return HttpResponse.ok(response);
+        } catch (InvalidUcumCodeException e) {
+            throw new HttpStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
-        AnalyseResponseDto response = ucumService.analyse(code);
-        return HttpResponse.ok(response);
     }
 
     @Operation(summary = "Convert a value between units")
@@ -126,23 +127,12 @@ public class UcumController {
             @Nullable @NotNull @QueryValue BigDecimal value,
             @QueryValue(defaultValue = "") @NotBlank String sourceCode,
             @QueryValue(defaultValue = "") @NotBlank String targetCode) throws UcumException {
-
-        ValidateResponseDto validationSource = ucumService.validate(sourceCode);
-        if (!validationSource.isValid()) {
-            throw new HttpStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid source code: " + validationSource.getErrorMessage());
+        try {
+            ConvertResponseDto response = ucumService.convert(value, sourceCode, targetCode);
+            return HttpResponse.ok(response);
+        } catch (InvalidUcumCodeException e) {
+            throw new HttpStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
-
-        ValidateResponseDto validationTarget = ucumService.validate(targetCode);
-        if (!validationTarget.isValid()) {
-            throw new HttpStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid target code: " + validationTarget.getErrorMessage());
-        }
-
-        ConvertResponseDto response = ucumService.convert(value, sourceCode, targetCode);
-        return HttpResponse.ok(response);
     }
 
     @Operation(summary = "Get a UCUM code converted into its canonical form")
@@ -167,13 +157,12 @@ public class UcumController {
     public HttpResponse<CanonicaliseResponseDto> getCanonicalUnits(
             @QueryValue(defaultValue = "") @NotBlank String code) throws UcumException {
 
-        ValidateResponseDto validation = ucumService.validate(code);
-        if (!validation.isValid()) {
-            throw new HttpStatusException(HttpStatus.BAD_REQUEST, validation.getErrorMessage());
+        try {
+            CanonicaliseResponseDto response = ucumService.getCanonicalUnits(code);
+            return HttpResponse.ok(response);
+        } catch (InvalidUcumCodeException e) {
+            throw new HttpStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
-
-        CanonicaliseResponseDto response = ucumService.getCanonicalUnits(code);
-        return HttpResponse.ok(response);
     }
 
     @Operation(summary = "List all defined units")
@@ -326,11 +315,7 @@ public class UcumController {
 
     @Error(exception = HttpStatusException.class)
     public HttpResponse<ErrorDto> onStatusException(HttpRequest<?> request, HttpStatusException e) {
-        ErrorDto errorDto = new ErrorDto();
-        errorDto.setStatus(e.getStatus());
-        errorDto.setMessage(e.getMessage());
-        errorDto.setPath(request.getPath());
-
-        return HttpResponse.status(e.getStatus()).body(errorDto);
+        ErrorDto error = new ErrorDto(e.getStatus(), e.getMessage(), request.getPath());
+        return HttpResponse.status(e.getStatus()).body(error);
     }
 }
