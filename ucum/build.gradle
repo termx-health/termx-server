@@ -1,6 +1,8 @@
 dependencies {
     annotationProcessor "io.micronaut.openapi:micronaut-openapi"
     annotationProcessor "io.micronaut.spring:micronaut-spring-annotation"
+    compileOnly "io.micronaut.openapi:micronaut-openapi-annotations"
+    implementation "io.swagger.core.v3:swagger-annotations"
 
     implementation project(':termx-api')
     implementation project(':termx-core')
