@@ -9,6 +9,7 @@ import org.termx.ucum.dto.BaseUnitDto;
 import org.termx.ucum.dto.DefinedUnitDto;
 import org.termx.ucum.dto.PrefixDto;
 import org.termx.ucum.dto.UcumVersionDto;
+import org.termx.ucum.exception.InvalidUcumCodeException;
 import org.termx.ucum.mapper.BaseUnitMapper;
 import org.termx.ucum.mapper.DefinedUnitMapper;
 import org.termx.ucum.mapper.PrefixMapper;
@@ -89,18 +90,22 @@ public class UcumServiceImpl implements UcumService {
 
     @Override
     public AnalyseResponseDto analyse(String code) throws UcumException {
+        ensureValidUcumCode(code);
         String analysisResult = ucumService.analyse(code);
         return analyseMapper.toDto(analysisResult);
     }
 
     @Override
     public ConvertResponseDto convert(BigDecimal value, String sourceCode, String targetCode) throws UcumException {
+        ensureValidUcumCode(sourceCode);
+        ensureValidUcumCode(targetCode);
         Decimal conversionResult = ucumService.convert(new Decimal(value.toString()), sourceCode, targetCode);
         return convertMapper.toDto(conversionResult);
     }
 
     @Override
     public CanonicaliseResponseDto getCanonicalUnits(String code) throws UcumException {
+        ensureValidUcumCode(code);
         String canonicalExpression = ucumService.getCanonicalUnits(code);
         return canonicaliseMapper.toDto(canonicalExpression);
     }
@@ -153,6 +158,13 @@ public class UcumServiceImpl implements UcumService {
                 return prefixMapper.toDto(prefix);
         }
         return null;
+    }
+
+    private void ensureValidUcumCode(String code) {
+        String errorMessage = ucumService.validate(code);
+        if (errorMessage != null) {
+            throw new InvalidUcumCodeException(errorMessage);
+        }
     }
 
     @Override
