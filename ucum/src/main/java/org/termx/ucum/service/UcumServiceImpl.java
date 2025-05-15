@@ -1,10 +1,11 @@
 package org.termx.ucum.service;
 
+import jakarta.inject.Singleton;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fhir.ucum.*;
 import org.fhir.ucum.UcumService.UcumVersionDetails;
-import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.termx.ucum.dto.BaseUnitDto;
 import org.termx.ucum.dto.DefinedUnitDto;
 import org.termx.ucum.dto.PrefixDto;
@@ -25,13 +26,20 @@ import org.termx.ucum.mapper.ValidateResponseMapper;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.micronaut.context.annotation.Value;
+
 @Slf4j
-@Service
+@Singleton
+@RequiredArgsConstructor
 public class UcumServiceImpl implements UcumService {
+    @Value("${ucum.essence.url}")
+    private String essenceUrl;
+
     private final UcumVersionMapper versionMapper;
     private final ValidateResponseMapper validateMapper;
     private final AnalyseResponseMapper analyseMapper;
@@ -41,38 +49,28 @@ public class UcumServiceImpl implements UcumService {
     private final BaseUnitMapper baseUnitMapper;
     private final PrefixMapper prefixMapper;
 
-    private final UcumEssenceService ucumService;
+    private UcumEssenceService ucumService;
 
-    @Autowired
-    public UcumServiceImpl(
-            ValidateResponseMapper validateMapper,
-            UcumVersionMapper versionMapper,
-            AnalyseResponseMapper analyseMapper,
-            ConvertResponseMapper convertMapper,
-            CanonicaliseResponseMapper canonicaliseMapper,
-            DefinedUnitMapper definedUnitMapper,
-            BaseUnitMapper baseUnitMapper,
-            PrefixMapper prefixMapper) {
-        this.validateMapper = validateMapper;
-        this.versionMapper = versionMapper;
-        this.analyseMapper = analyseMapper;
-        this.convertMapper = convertMapper;
-        this.canonicaliseMapper = canonicaliseMapper;
-        this.definedUnitMapper = definedUnitMapper;
-        this.baseUnitMapper = baseUnitMapper;
-        this.prefixMapper = prefixMapper;
+    @PostConstruct
+    void initializeService() {
         this.ucumService = initUcumService();
     }
 
     private UcumEssenceService initUcumService() {
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("ucum-essence.xml");
-        if (inputStream == null) {
-            throw new IllegalStateException("Could not find ucum-essence.xml in classpath");
-        }
-        try {
-            return new UcumEssenceService(inputStream);
+        try (InputStream remoteStream = new URL(essenceUrl).openStream()) {
+            log.info("Attempting UCUM essence load from remote {}", essenceUrl);
+            return new UcumEssenceService(remoteStream);
         } catch (Exception e) {
-            throw new IllegalStateException("Error loading ucum-essence.xml", e);
+            log.warn("Remote UCUM essence load or initialization failed: {}. Falling back to local resource.", e.getMessage(), e);
+        }
+        try (InputStream localStream = getClass().getClassLoader().getResourceAsStream("ucum-essence.xml")) {
+            if (localStream == null) {
+                throw new IllegalStateException("Local ucum-essence.xml not found in classpath");
+            }
+            log.info("Loaded UCUM essence from local classpath resource");
+            return new UcumEssenceService(localStream);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to initialize UcumEssenceService from local resource", e);
         }
     }
 
