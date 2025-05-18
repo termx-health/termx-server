@@ -10,7 +10,7 @@ import org.termx.ucum.dto.BaseUnitDto;
 import org.termx.ucum.dto.DefinedUnitDto;
 import org.termx.ucum.dto.PrefixDto;
 import org.termx.ucum.dto.UcumVersionDto;
-import org.termx.ucum.exception.InvalidUcumCodeException;
+import org.termx.ucum.exception.InvalidUcumRequestException;
 import org.termx.ucum.mapper.BaseUnitMapper;
 import org.termx.ucum.mapper.DefinedUnitMapper;
 import org.termx.ucum.mapper.PrefixMapper;
@@ -88,22 +88,23 @@ public class UcumServiceImpl implements UcumService {
 
     @Override
     public AnalyseResponseDto analyse(String code) throws UcumException {
-        ensureValidUcumCode(code);
+        ensureCodeIsValid(code);
         String analysisResult = ucumService.analyse(code);
         return analyseMapper.toDto(analysisResult);
     }
 
     @Override
     public ConvertResponseDto convert(BigDecimal value, String sourceCode, String targetCode) throws UcumException {
-        ensureValidUcumCode(sourceCode);
-        ensureValidUcumCode(targetCode);
+        ensureCodeIsValid(sourceCode);
+        ensureCodeIsValid(targetCode);
+        ensureCodeIsComparable(sourceCode, targetCode);
         Decimal conversionResult = ucumService.convert(new Decimal(value.toString()), sourceCode, targetCode);
         return convertMapper.toDto(conversionResult);
     }
 
     @Override
     public CanonicaliseResponseDto getCanonicalUnits(String code) throws UcumException {
-        ensureValidUcumCode(code);
+        ensureCodeIsValid(code);
         String canonicalExpression = ucumService.getCanonicalUnits(code);
         return canonicaliseMapper.toDto(canonicalExpression);
     }
@@ -158,22 +159,20 @@ public class UcumServiceImpl implements UcumService {
         return null;
     }
 
-    private void ensureValidUcumCode(String code) {
+    private void ensureCodeIsValid(String code) {
         String errorMessage = ucumService.validate(code);
         if (errorMessage != null) {
-            throw new InvalidUcumCodeException(errorMessage);
+            throw new InvalidUcumRequestException(errorMessage);
         }
     }
 
-    @Override
-    public List<Concept> searchComponents(String kind, String text) throws Exception {
-        try {
-            ConceptKind conceptKind = Optional.ofNullable(kind)
-                .map(ConceptKind::valueOf)
-                .orElse(null);
-            return ucumService.search(conceptKind, text, false);
-        } catch (Exception e) {
-            throw new Exception(String.format("Error searching UCUM components: %s", e.getMessage()));
+    private void ensureCodeIsComparable(String sourceCode, String targetCode) throws UcumException {
+        boolean isComparable = ucumService.isComparable(sourceCode, targetCode);
+        if (!isComparable) {
+            String s = ucumService.getCanonicalUnits(sourceCode);
+            String t = ucumService.getCanonicalUnits(targetCode);
+            String message = String.format("Unable to convert between units %s and %s as they do not have matching canonical forms (%s and %s respectively)", sourceCode, targetCode, s, t);
+            throw new InvalidUcumRequestException(message);
         }
     }
 }

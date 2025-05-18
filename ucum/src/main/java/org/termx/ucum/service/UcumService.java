@@ -105,6 +105,4 @@ public interface UcumService {
      * @return a DTO representing the prefix details
      */
     PrefixDto getPrefixByCode(String code);
-
-    List<Concept> searchComponents(String kind, String text) throws Exception;
 }
