@@ -20,7 +20,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.fhir.ucum.*;
 import org.termx.ucum.dto.*;
-import org.termx.ucum.exception.InvalidUcumCodeException;
+import org.termx.ucum.exception.InvalidUcumRequestException;
 import org.termx.ucum.service.UcumService;
 import org.termx.ucum.security.Privilege;
 
@@ -99,7 +99,7 @@ public class UcumController {
         try {
             AnalyseResponseDto response = ucumService.analyse(code);
             return HttpResponse.ok(response);
-        } catch (InvalidUcumCodeException e) {
+        } catch (InvalidUcumRequestException e) {
             throw new HttpStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
@@ -130,7 +130,7 @@ public class UcumController {
         try {
             ConvertResponseDto response = ucumService.convert(value, sourceCode, targetCode);
             return HttpResponse.ok(response);
-        } catch (InvalidUcumCodeException e) {
+        } catch (InvalidUcumRequestException e) {
             throw new HttpStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
@@ -160,7 +160,7 @@ public class UcumController {
         try {
             CanonicaliseResponseDto response = ucumService.getCanonicalUnits(code);
             return HttpResponse.ok(response);
-        } catch (InvalidUcumCodeException e) {
+        } catch (InvalidUcumRequestException e) {
             throw new HttpStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
@@ -298,19 +298,6 @@ public class UcumController {
             );
         }
         return HttpResponse.ok(response);
-    }
-
-    @Authorized(Privilege.UCUM_VIEW)
-    @Get("/search")
-    public HttpResponse<Map<String, Object>> search(
-            @QueryValue @Nullable String kind,
-            @QueryValue(defaultValue = "") @NotBlank String text) {
-        try {
-            List<Concept> result = ucumService.searchComponents(kind, text);
-            return HttpResponse.ok(Map.of("data", result));
-        } catch (Exception e) {
-            return HttpResponse.badRequest(Map.of("error", e.getMessage()));
-        }
     }
 
     @Error(exception = HttpStatusException.class)
