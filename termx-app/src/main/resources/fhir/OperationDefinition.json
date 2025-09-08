@@ -1,0 +1,837 @@
+[
+  {
+    "resourceType": "OperationDefinition",
+    "id": "ValueSet-expand",
+    "url": "http://hl7.org/fhir/OperationDefinition/ValueSet-expand",
+    "version": "5.0.0",
+    "name": "expand",
+    "title": "Value Set Expansion",
+    "status": "active",
+    "kind": "operation",
+    "experimental": false,
+    "date": "2023-03-26T15:21:02+11:00",
+    "publisher": "HL7 (FHIR Project)",
+    "contact": [
+      {
+        "telecom": [
+          {
+            "system": "url",
+            "value": "http://hl7.org/fhir"
+          },
+          {
+            "system": "email",
+            "value": "fhir@lists.hl7.org"
+          }
+        ]
+      }
+    ],
+    "description": "The definition of a value set is used to create a simple collection of codes suitable for use for data entry or validation. This operation retrieves a collection of concepts from the value set, optionally filtered by supplied parameters.",
+    "jurisdiction": [
+      {
+        "coding": [
+          {
+            "system": "http://unstats.un.org/unsd/methods/m49/m49.htm",
+            "code": "001",
+            "display": "World"
+          }
+        ]
+      }
+    ],
+    "affectsState": false,
+    "code": "expand",
+    "comment": "The result of this operation is a resource of type ValueSet, which contains an expansion of the value set. If the server is unable to fully expand the value set, it returns an error with an OperationOutcome.",
+    "resource": [
+      "ValueSet"
+    ],
+    "system": false,
+    "type": true,
+    "instance": true,
+    "parameter": [
+      {
+        "name": "url",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "A canonical reference to a value set. The server must know the value set (e.g. it is defined explicitly in the server's value sets, or it is defined implicitly by some code system known to the server).",
+        "type": "canonical",
+        "targetProfile": [
+          "http://hl7.org/fhir/StructureDefinition/ValueSet"
+        ]
+      },
+      {
+        "name": "valueSet",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The value set is provided directly as part of the request. Servers may choose not to accept value sets in this fashion.",
+        "type": "ValueSet"
+      },
+      {
+        "name": "valueSetVersion",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The identifier that is used to identify a specific version of the value set to be used when generating the expansion. This is an arbitrary value managed by the value set author and is not expected to be globally unique. For example, it might be a timestamp (e.g. yyyymmdd) if value sets are updated daily or it might be a version number.",
+        "type": "string"
+      },
+      {
+        "name": "context",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The context of the value set, so that the server can resolve this to a value set to expand. The context is a canonical URL that identifies a ContextAware Value Set definition.",
+        "type": "uri"
+      },
+      {
+        "name": "contextDirection",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "If a context is provided, a context direction may also be provided. Valid values are 'incoming' and 'outgoing'.",
+        "type": "code"
+      },
+      {
+        "name": "filter",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "A text filter that is applied to display names of concepts in the value set. This is a \"contains\" search. The server applies the filter based on its own rules. The server may also search on designations, codes, and properties. The filter may also be a regular expression, if the server supports it.",
+        "type": "string"
+      },
+      {
+        "name": "date",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The date for which the expansion should be generated.  If a date is provided, it must be in the YYYY-MM-DD format.",
+        "type": "dateTime"
+      },
+      {
+        "name": "offset",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "Paging support - where to start if a subset is desired (default = 0). The server trims the structure of the expanded value set to only include concepts starting at the specified offset.",
+        "type": "integer"
+      },
+      {
+        "name": "count",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "Paging support - the number of records to return, if a subset is desired (default = 1000). The server trims the structure of the expanded value set to only include concepts starting at the specified offset.",
+        "type": "integer"
+      },
+      {
+        "name": "includeDefinition",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "Whether to include the definition of the value set in the output. If this is true, the value set resource returned will include the definition of the value set.",
+        "type": "boolean"
+      },
+      {
+        "name": "activeOnly",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "Specifies whether to include inactive concepts in the expansion. If this is true, the expansion will only include active concepts.",
+        "type": "boolean"
+      },
+      {
+        "name": "excludeNested",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "Nested codesystems are not expanded, where the value set is defined recursively. If this is true, the expansion will not include nested codesystems.",
+        "type": "boolean"
+      },
+      {
+        "name": "excludeNotForUI",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "Whether to exclude concepts that are not intended for user interface presentation. This is based on the [not-for-ui](extension-codesystem-not-for-ui.html) extension.",
+        "type": "boolean"
+      },
+      {
+        "name": "excludePostCoordinated",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "Whether to exclude concepts that are post-coordinated. This is based on the [post-coordinated](extension-codesystem-post-coordinated.html) extension.",
+        "type": "boolean"
+      },
+      {
+        "name": "displayLanguage",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "Specifies the language to be used for display names for German, French and English.",
+        "type": "code"
+      },
+      {
+        "name": "excludeSystem",
+        "use": "in",
+        "min": 0,
+        "max": "*",
+        "documentation": "A system to exclude from the expansion. This can be used to exclude whole code systems from the expansion.",
+        "type": "uri"
+      },
+      {
+        "name": "property",
+        "use": "in",
+        "min": 0,
+        "max": "*",
+        "documentation": "A property to return in the expansion, if the client wishes to receive them. If no properties are specified, the server SHOULD not return any properties. This is a key to control the inclusion of properties in the expansion.",
+        "type": "code"
+      },
+      {
+        "name": "return",
+        "use": "out",
+        "min": 1,
+        "max": "1",
+        "documentation": "The result of the expansion. The expansion is returned as a ValueSet resource.",
+        "type": "ValueSet"
+      }
+    ]
+  },
+  {
+    "resourceType": "OperationDefinition",
+    "id": "CodeSystem-lookup",
+    "url": "http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup",
+    "version": "5.0.0",
+    "name": "lookup",
+    "title": "Concept Look Up",
+    "status": "active",
+    "kind": "operation",
+    "experimental": false,
+    "date": "2023-03-26T15:21:02+11:00",
+    "publisher": "HL7 (FHIR Project)",
+    "description": "Given a code/system, or a Coding, get additional details about the concept.",
+    "jurisdiction": [
+      {
+        "coding": [
+          {
+            "system": "http://unstats.un.org/unsd/methods/m49/m49.htm",
+            "code": "001",
+            "display": "World"
+          }
+        ]
+      }
+    ],
+    "affectsState": false,
+    "code": "lookup",
+    "resource": [
+      "CodeSystem"
+    ],
+    "system": true,
+    "type": true,
+    "instance": true,
+    "parameter": [
+      {
+        "name": "code",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The code that is to be located. If a code is provided, a system must be provided",
+        "type": "code"
+      },
+      {
+        "name": "system",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The system for the code that is to be located",
+        "type": "uri"
+      },
+      {
+        "name": "version",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The version of the system, if one was provided in the source data",
+        "type": "string"
+      },
+      {
+        "name": "coding",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "A coding to look up",
+        "type": "Coding"
+      },
+      {
+        "name": "date",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The date for which the information should be returned. If no date is supplied, the server should return the information that is current.",
+        "type": "dateTime"
+      },
+      {
+        "name": "displayLanguage",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The requested language for display strings.",
+        "type": "code"
+      },
+      {
+        "name": "property",
+        "use": "in",
+        "min": 0,
+        "max": "*",
+        "documentation": "A property that the client wishes to be returned in the output. If no properties are specified, the server SHOULD return all properties. For the definitions of the properties available, see the CodeSystem resource.",
+        "type": "code"
+      },
+      {
+        "name": "name",
+        "use": "out",
+        "min": 1,
+        "max": "1",
+        "documentation": "A display name for the code system",
+        "type": "string"
+      },
+      {
+        "name": "version",
+        "use": "out",
+        "min": 0,
+        "max": "1",
+        "documentation": "The version that has been used to look up the code.",
+        "type": "string"
+      },
+      {
+        "name": "display",
+        "use": "out",
+        "min": 1,
+        "max": "1",
+        "documentation": "The preferred display for the code.",
+        "type": "string"
+      },
+      {
+        "name": "designation",
+        "use": "out",
+        "min": 0,
+        "max": "*",
+        "documentation": "Additional representations for the code.",
+        "part": [
+          {
+            "name": "language",
+            "use": "out",
+            "min": 0,
+            "max": "1",
+            "type": "code"
+          },
+          {
+            "name": "use",
+            "use": "out",
+            "min": 0,
+            "max": "1",
+            "type": "Coding"
+          },
+          {
+            "name": "value",
+            "use": "out",
+            "min": 1,
+            "max": "1",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "property",
+        "use": "out",
+        "min": 0,
+        "max": "*",
+        "documentation": "Properties of the concept.",
+        "part": [
+          {
+            "name": "code",
+            "use": "out",
+            "min": 1,
+            "max": "1",
+            "type": "code"
+          },
+          {
+            "name": "value",
+            "use": "out",
+            "min": 1,
+            "max": "1",
+            "type": "code"
+          },
+          {
+            "name": "description",
+            "use": "out",
+            "min": 0,
+            "max": "1",
+            "type": "string"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "resourceType": "OperationDefinition",
+    "id": "ValueSet-validate-code",
+    "url": "http://hl7.org/fhir/OperationDefinition/ValueSet-validate-code",
+    "version": "5.0.0",
+    "name": "validate-code",
+    "title": "Value Set based Validation",
+    "status": "active",
+    "kind": "operation",
+    "description": "Validate that a coded value is in a value set.",
+    "jurisdiction": [
+      {
+        "coding": [
+          {
+            "system": "http://unstats.un.org/unsd/methods/m49/m49.htm",
+            "code": "001",
+            "display": "World"
+          }
+        ]
+      }
+    ],
+    "affectsState": false,
+    "code": "validate-code",
+    "resource": [
+      "ValueSet"
+    ],
+    "system": true,
+    "type": true,
+    "instance": true,
+    "parameter": [
+      {
+        "name": "url",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "Value set Canonical URL. The server must know the value set (e.g. it is defined explicitly in the server's value sets, or it is defined implicitly by some code system known to the server).",
+        "type": "canonical",
+        "targetProfile": [
+          "http://hl7.org/fhir/StructureDefinition/ValueSet"
+        ]
+      },
+      {
+        "name": "valueSet",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The value set is provided directly as part of the request. Servers may choose not to accept value sets in this fashion",
+        "type": "ValueSet"
+      },
+      {
+        "name": "code",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The code to be validated. If a code is provided, a system must be provided.",
+        "type": "code"
+      },
+      {
+        "name": "system",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The system for the code.",
+        "type": "uri"
+      },
+      {
+        "name": "systemVersion",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The version of the system.",
+        "type": "string"
+      },
+      {
+        "name": "display",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The display associated with the code, if known.",
+        "type": "string"
+      },
+      {
+        "name": "coding",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "A coding to be validated. The system must be populated.",
+        "type": "Coding"
+      },
+      {
+        "name": "codeableConcept",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "A codeable concept to be validated. The server will validate each coding in the codeable concept.",
+        "type": "CodeableConcept"
+      },
+      {
+        "name": "date",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The date for which the validation should be performed.",
+        "type": "dateTime"
+      },
+      {
+        "name": "abstract",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "If true, the validation will fail if the code is abstract. If false, the validation will pass if the code is abstract. If not provided, the server's default behavior is used.",
+        "type": "boolean"
+      },
+      {
+        "name": "displayLanguage",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The language in which the display name of the code should be returned.",
+        "type": "code"
+      },
+      {
+        "name": "result",
+        "use": "out",
+        "min": 1,
+        "max": "1",
+        "documentation": "True if the concept is in the value set.",
+        "type": "boolean"
+      },
+      {
+        "name": "message",
+        "use": "out",
+        "min": 0,
+        "max": "1",
+        "documentation": "Error details, if result = false. If this is provided when result = true, it carries hints and warnings.",
+        "type": "string"
+      },
+      {
+        "name": "display",
+        "use": "out",
+        "min": 0,
+        "max": "1",
+        "documentation": "The display for the code, if the system can determine it.",
+        "type": "string"
+      }
+    ]
+  },
+  {
+    "resourceType": "OperationDefinition",
+    "id": "CodeSystem-subsumes",
+    "url": "http://hl7.org/fhir/OperationDefinition/CodeSystem-subsumes",
+    "version": "5.0.0",
+    "name": "subsumes",
+    "title": "Subsumption Testing",
+    "status": "active",
+    "kind": "operation",
+    "description": "Test if a code subsumes another code (e.g. if it is a super-concept of the other code).",
+    "jurisdiction": [
+      {
+        "coding": [
+          {
+            "system": "http://unstats.un.org/unsd/methods/m49/m49.htm",
+            "code": "001",
+            "display": "World"
+          }
+        ]
+      }
+    ],
+    "affectsState": false,
+    "code": "subsumes",
+    "resource": [
+      "CodeSystem"
+    ],
+    "system": true,
+    "type": true,
+    "instance": true,
+    "parameter": [
+      {
+        "name": "codeA",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The code that is to be tested as a subsumer.",
+        "type": "code"
+      },
+      {
+        "name": "codeB",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The code that is to be tested as a subsumee.",
+        "type": "code"
+      },
+      {
+        "name": "system",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The code system in which the subsumption test will be performed.",
+        "type": "canonical",
+        "targetProfile": [
+          "http://hl7.org/fhir/StructureDefinition/CodeSystem"
+        ]
+      },
+      {
+        "name": "version",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The version of the code system, if one was provided in the source data.",
+        "type": "string"
+      },
+      {
+        "name": "codingA",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The code that is to be tested as a subsumer.",
+        "type": "Coding"
+      },
+      {
+        "name": "codingB",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The code that is to be tested as a subsumee.",
+        "type": "Coding"
+      },
+      {
+        "name": "outcome",
+        "use": "out",
+        "min": 1,
+        "max": "1",
+        "documentation": "The outcome of the subsumption test.",
+        "type": "code",
+        "binding": {
+          "strength": "required",
+          "valueSet": "http://hl7.org/fhir/ValueSet/concept-subsumption-outcome"
+        }
+      }
+    ]
+  },
+  {
+    "resourceType": "OperationDefinition",
+    "id": "ConceptMap-translate",
+    "url": "http://hl7.org/fhir/OperationDefinition/ConceptMap-translate",
+    "version": "5.0.0",
+    "name": "translate",
+    "title": "Concept Translation",
+    "status": "active",
+    "kind": "operation",
+    "description": "Translate a code from one value set to another, based on the existing ConceptMap resources.",
+    "jurisdiction": [
+      {
+        "coding": [
+          {
+            "system": "http://unstats.un.org/unsd/methods/m49/m49.htm",
+            "code": "001",
+            "display": "World"
+          }
+        ]
+      }
+    ],
+    "affectsState": false,
+    "code": "translate",
+    "resource": [
+      "ConceptMap"
+    ],
+    "system": true,
+    "type": true,
+    "instance": true,
+    "parameter": [
+      {
+        "name": "url",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "A canonical URL for a ConceptMap.",
+        "type": "canonical",
+        "targetProfile": [
+          "http://hl7.org/fhir/StructureDefinition/ConceptMap"
+        ]
+      },
+      {
+        "name": "conceptMap",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The concept map is provided directly as a parameter.",
+        "type": "ConceptMap"
+      },
+      {
+        "name": "conceptMapVersion",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The version of the concept map to use.",
+        "type": "string"
+      },
+      {
+        "name": "code",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The code to translate.",
+        "type": "code"
+      },
+      {
+        "name": "system",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The system for the code.",
+        "type": "uri"
+      },
+      {
+        "name": "version",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "The version of the system.",
+        "type": "string"
+      },
+      {
+        "name": "sourceScope",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "A value set from which the concept to be translated is coming.",
+        "type": "uri"
+      },
+      {
+        "name": "coding",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "A coding to translate.",
+        "type": "Coding"
+      },
+      {
+        "name": "codeableConcept",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "A codeable concept to translate.",
+        "type": "CodeableConcept"
+      },
+      {
+        "name": "targetScope",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "A value set in which the translated code should be.",
+        "type": "uri"
+      },
+      {
+        "name": "dependency",
+        "use": "in",
+        "min": 0,
+        "max": "*",
+        "documentation": "Another element that may be used to determine the outcome of the mapping."
+      },
+      {
+        "name": "product",
+        "use": "in",
+        "min": 0,
+        "max": "*",
+        "documentation": "Another element that may be used to determine the outcome of the mapping."
+      },
+      {
+        "name": "reverse",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "If true, the mapping is reversed.",
+        "type": "boolean"
+      },
+      {
+        "name": "result",
+        "use": "out",
+        "min": 1,
+        "max": "1",
+        "documentation": "True if the translation was successful.",
+        "type": "boolean"
+      },
+      {
+        "name": "message",
+        "use": "out",
+        "min": 0,
+        "max": "1",
+        "documentation": "Error details, if result = false.",
+        "type": "string"
+      },
+      {
+        "name": "match",
+        "use": "out",
+        "min": 0,
+        "max": "*",
+        "documentation": "A concept map relationship between the source and target concepts."
+      }
+    ]
+  },
+  {
+    "resourceType": "OperationDefinition",
+    "id": "ConceptMap-closure",
+    "url": "http://hl7.org/fhir/OperationDefinition/ConceptMap-closure",
+    "version": "5.0.0",
+    "name": "closure",
+    "title": "Closure Table Maintenance",
+    "status": "active",
+    "kind": "operation",
+    "description": "This operation provides support for ongoing maintenance of a client-side transitive closure table.",
+    "jurisdiction": [
+      {
+        "coding": [
+          {
+            "system": "http://unstats.un.org/unsd/methods/m49/m49.htm",
+            "code": "001",
+            "display": "World"
+          }
+        ]
+      }
+    ],
+    "affectsState": true,
+    "code": "closure",
+    "system": true,
+    "type": false,
+    "instance": false,
+    "parameter": [
+      {
+        "name": "name",
+        "use": "in",
+        "min": 1,
+        "max": "1",
+        "documentation": "The name that defines the particular context for the subsumption based closure table.",
+        "type": "string"
+      },
+      {
+        "name": "concept",
+        "use": "in",
+        "min": 0,
+        "max": "*",
+        "documentation": "A list of concepts to add to the closure table.",
+        "type": "Coding"
+      },
+      {
+        "name": "version",
+        "use": "in",
+        "min": 0,
+        "max": "1",
+        "documentation": "A request to update the closure table.",
+        "type": "string"
+      },
+      {
+        "name": "map",
+        "use": "out",
+        "min": 1,
+        "max": "1",
+        "documentation": "A concept map with the transitive closure for the given concepts.",
+        "type": "ConceptMap"
+      }
+    ]
+  }
+]
