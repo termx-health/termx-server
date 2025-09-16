@@ -170,6 +170,24 @@
           ]
         },
         {
+          "type": "OperationDefinition",
+          "profile": "http://hl7.org/fhir/StructureDefinition/OperationDefinition",
+          "interaction": [
+            {
+              "code": "search-type"
+            }
+          ],
+          "searchParam": [
+            {
+              "name": "_count",
+              "type": "number"
+            }
+          ],
+          "operation": [
+
+          ]
+        },
+        {
           "type": "CodeSystem",
           "profile": "http://hl7.org/fhir/StructureDefinition/CodeSystem",
           "interaction": [
