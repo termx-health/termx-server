@@ -15,7 +15,7 @@
     <include file="07-association.sql" relativeToChangelogFile="true"/>
     <include file="08-code_system_supplement.sql" relativeToChangelogFile="true"/>
     <include file="09-naming_system.sql" relativeToChangelogFile="true"/>
-    <include file="10-code_system_update_external_web_source.sql" relativeToChangelogFile="true"/>
+    <include file="10-update_external_web_source_datatype.sql" relativeToChangelogFile="true"/>
 
     <include file="views/concept_closure.sql" relativeToChangelogFile="true"/>
     <include file="views/concept_name.sql" relativeToChangelogFile="true"/>
