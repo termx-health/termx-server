@@ -403,7 +403,7 @@ public class CodeSystemImportService {
     valueSet.setPublisher(codeSystem.getPublisher());
     valueSet.setCopyright(codeSystem.getCopyright());
     valueSet.setPermissions(codeSystem.getPermissions());
-    valueSet.setExternalWebSource(codeSystem.isExternalWebSource());
+    valueSet.setExternalWebSource(codeSystem.getExternalWebSource());
     return valueSet;
   }
 

@@ -68,7 +68,7 @@ public class CodeSystemFileImportRequest {
     private String supplementUri;
     private String admin;
     private String endorser;
-    private boolean externalWebSource;
+    private String externalWebSource;
   }
 
   @Getter

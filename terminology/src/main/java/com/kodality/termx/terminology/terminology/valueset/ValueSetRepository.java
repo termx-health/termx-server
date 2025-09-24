@@ -58,7 +58,7 @@ public class ValueSetRepository extends BaseRepository {
     ssb.property("narrative", valueSet.getNarrative());
     ssb.property("experimental", valueSet.getExperimental());
     ssb.property("source_reference", valueSet.getSourceReference());
-    ssb.property("external_web_source", valueSet.isExternalWebSource());
+    ssb.property("external_web_source", valueSet.getExternalWebSource());
     ssb.jsonProperty("settings", valueSet.getSettings());
     ssb.property("sys_status", "A");
 

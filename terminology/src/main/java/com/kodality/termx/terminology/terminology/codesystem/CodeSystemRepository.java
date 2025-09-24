@@ -88,7 +88,7 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.jsonProperty("configuration_attributes", codeSystem.getConfigurationAttributes());
     ssb.jsonProperty("contacts", codeSystem.getContacts());
     ssb.property("content", codeSystem.getContent());
-    ssb.property("external_web_source", codeSystem.isExternalWebSource());
+    ssb.property("external_web_source", codeSystem.getExternalWebSource());
     ssb.property("case_sensitive", codeSystem.getCaseSensitive() == null ? CaseSignificance.entire_term_case_insensitive : codeSystem.getCaseSensitive());
     ssb.property("sequence", codeSystem.getSequence());
     ssb.jsonProperty("copyright", codeSystem.getCopyright());
