@@ -232,3 +232,13 @@ create index value_set_replaces_idx on terminology.value_set(replaces);
 update terminology.value_set_version_rule_set set inactive = false where inactive is null;
 alter table terminology.value_set_version_rule_set alter column inactive set not null;
 --
+
+--changeset termx:value_set_update_external_web_source
+alter table terminology.value_set
+drop column if exists external_web_source,
+add column external_web_source text;
+
+--rollback  alter table terminology.value_set
+--rollback  drop column if exists external_web_source,
+--rollback  add column external_web_source boolean;
+--

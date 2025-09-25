@@ -148,3 +148,13 @@ alter table terminology.code_system_version add column base_code_system_version_
 alter table terminology.code_system_version add constraint code_system_version_base_code_system_version_fk foreign key (base_code_system_version_id) references terminology.code_system_version(id);
 create index code_system_version_base_code_system_version_idx on terminology.code_system_version(base_code_system_version_id);
 --
+
+--changeset termx:code_system_update_external_web_source
+alter table terminology.code_system
+drop column if exists external_web_source,
+add column external_web_source text;
+
+--rollback  alter table terminology.code_system
+--rollback  drop column if exists external_web_source,
+--rollback  add column external_web_source boolean;
+--
