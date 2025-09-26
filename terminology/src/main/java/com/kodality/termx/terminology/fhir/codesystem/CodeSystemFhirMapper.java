@@ -78,18 +78,16 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   private final CodeSystemRelatedArtifactService relatedArtifactService;
   private static final String DISPLAY = "display";
   private static final String DEFINITION = "definition";
-  private static Optional<String> termxWebUrl;
 
 
   public CodeSystemFhirMapper(ConceptService conceptService,
                               CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
-                              CodeSystemRelatedArtifactService relatedArtifactService, @Value("${termx.web-url}") Optional<String> termxWebUrl) {
+                              CodeSystemRelatedArtifactService relatedArtifactService) {
     this.conceptService = conceptService;
     this.codeSystemService = codeSystemService;
     this.valueSetService = valueSetService;
     this.mapSetService = mapSetService;
     this.relatedArtifactService = relatedArtifactService;
-    CodeSystemFhirMapper.termxWebUrl = termxWebUrl;
   }
 
   // -------------- TO FHIR --------------
@@ -104,8 +102,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   public com.kodality.zmei.fhir.resource.terminology.CodeSystem toFhir(CodeSystem codeSystem, CodeSystemVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem = new com.kodality.zmei.fhir.resource.terminology.CodeSystem();
-    if (!codeSystem.isExternalWebSource()) {
-      termxWebUrl.ifPresent(url -> fhirCodeSystem.addExtension(toFhirWebSourceExtension(url, codeSystem.getId(), "CodeSystem")));
+    if (StringUtils.isNotEmpty(codeSystem.getExternalWebSource())) {
+      fhirCodeSystem.addExtension(toFhirWebSourceExtension(codeSystem.getExternalWebSource()));
     }
     fhirCodeSystem.setId(toFhirId(codeSystem, version));
     fhirCodeSystem.setUrl(codeSystem.getUri());

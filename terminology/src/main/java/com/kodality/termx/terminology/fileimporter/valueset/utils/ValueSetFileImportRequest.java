@@ -54,7 +54,7 @@ public class ValueSetFileImportRequest {
     private Map<String, String> contact;
     private String admin;
     private String endorser;
-    private boolean externalWebSource;
+    private String externalWebSource;
   }
 
   @Getter

@@ -141,3 +141,13 @@ create index map_set_replaces_idx on terminology.map_set(replaces);
 --changeset kodality:map_set-external_web_source
 alter table terminology.map_set add column external_web_source boolean;
 --
+
+--changeset termx:map_set_update_external_web_source
+alter table terminology.map_set
+drop column if exists external_web_source,
+add column external_web_source text;
+
+--rollback  alter table terminology.value_set
+--rollback  drop column if exists external_web_source,
+--rollback  add column external_web_source boolean;
+--

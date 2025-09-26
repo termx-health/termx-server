@@ -86,19 +86,17 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   private final ValueSetService valueSetService;
   private final MapSetService mapSetService;
   private final ValueSetRelatedArtifactService relatedArtifactService;
-  private static Optional<String> termxWebUrl;
   private static final String concept_definition = "http://hl7.org/fhir/StructureDefinition/valueset-concept-definition";
   private static final String concept_order = "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder";
 
   public ValueSetFhirMapper(ConceptService conceptService,
                             CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
-                            ValueSetRelatedArtifactService relatedArtifactService, @Value("${termx.web-url}") Optional<String> termxWebUrl) {
+                            ValueSetRelatedArtifactService relatedArtifactService) {
     this.conceptService = conceptService;
     this.codeSystemService = codeSystemService;
     this.valueSetService = valueSetService;
     this.mapSetService = mapSetService;
     this.relatedArtifactService = relatedArtifactService;
-    ValueSetFhirMapper.termxWebUrl = termxWebUrl;
   }
 
 
@@ -114,8 +112,8 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
 
   public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
-    if (!valueSet.isExternalWebSource()) {
-      termxWebUrl.ifPresent(url -> fhirValueSet.addExtension(toFhirWebSourceExtension(url, valueSet.getId(), "ValueSet")));
+    if (StringUtils.isNotEmpty(valueSet.getExternalWebSource())) {
+      fhirValueSet.addExtension(toFhirWebSourceExtension(valueSet.getExternalWebSource()));
     }
     fhirValueSet.setId(toFhirId(valueSet, version));
     fhirValueSet.setUrl(valueSet.getUri());

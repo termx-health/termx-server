@@ -59,8 +59,8 @@ public abstract class BaseFhirMapper {
         .collect(Collectors.toMap(k -> k, k -> fhir.getRawParams().get(k).get(0)));
   }
 
-  protected static Extension toFhirWebSourceExtension(String url, String id, String resourceType) {
-    return new Extension("http://hl7.org/fhir/tools/StructureDefinition/web-source").setValueUrl(url + "/fhir/" + resourceType+ "/" + id);
+  protected static Extension toFhirWebSourceExtension(String url) {
+      return new Extension("http://hl7.org/fhir/StructureDefinition/web-source").setValueUrl(url);
   }
 
   protected static Extension toFhirSourceReferenceExtension(String url, String value) {

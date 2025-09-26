@@ -38,7 +38,7 @@ public class CodeSystem {
   private Boolean experimental;
   private String sourceReference;
   private String replaces;
-  private boolean externalWebSource;
+  private String externalWebSource;
   private List<Identifier> identifiers;
   private List<ConfigurationAttribute> configurationAttributes;
   private List<ContactDetail> contacts;

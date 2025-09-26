@@ -76,13 +76,10 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
   private final ValueSetVersionService valueSetVersionService;
   private final MapSetRelatedArtifactService relatedArtifactService;
 
-  private static Optional<String> termxWebUrl;
-
   public ConceptMapFhirMapper(ConceptService conceptService,
                               CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
                               CodeSystemVersionService codeSystemVersionService, ValueSetVersionService valueSetVersionService,
-                              MapSetRelatedArtifactService relatedArtifactService,
-                              @Value("${termx.web-url}") Optional<String> termxWebUrl) {
+                              MapSetRelatedArtifactService relatedArtifactService) {
     this.conceptService = conceptService;
     this.codeSystemService = codeSystemService;
     this.valueSetService = valueSetService;
@@ -90,7 +87,6 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     this.codeSystemVersionService = codeSystemVersionService;
     this.valueSetVersionService = valueSetVersionService;
     this.relatedArtifactService = relatedArtifactService;
-    ConceptMapFhirMapper.termxWebUrl = termxWebUrl;
   }
 
   // -------------- TO FHIR --------------
@@ -105,8 +101,8 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
 
   public com.kodality.zmei.fhir.resource.terminology.ConceptMap toFhir(MapSet mapSet, MapSetVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.ConceptMap fhirConceptMap = new com.kodality.zmei.fhir.resource.terminology.ConceptMap();
-    if (!mapSet.isExternalWebSource()) {
-      termxWebUrl.ifPresent(url -> fhirConceptMap.addExtension(toFhirWebSourceExtension(url, mapSet.getId(), "ConceptMap")));
+    if (StringUtils.isNotEmpty(mapSet.getExternalWebSource())) {
+        fhirConceptMap.addExtension(toFhirWebSourceExtension(mapSet.getExternalWebSource()));
     }
     fhirConceptMap.setId(toFhirId(mapSet, version));
     fhirConceptMap.setUrl(mapSet.getUri());
