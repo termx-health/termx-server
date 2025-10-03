@@ -1,4 +1,4 @@
-package com.kodality.termx.common;
+package com.kodality.termx.commons;
 
 import jakarta.validation.constraints.Pattern;
 

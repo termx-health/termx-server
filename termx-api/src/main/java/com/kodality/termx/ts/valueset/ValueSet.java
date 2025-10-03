@@ -3,7 +3,7 @@ package com.kodality.termx.ts.valueset;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.termx.common.UniqueResource;
+import com.kodality.termx.commons.UniqueResource;
 import com.kodality.termx.ts.ConfigurationAttribute;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.Copyright;
