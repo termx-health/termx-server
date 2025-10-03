@@ -2,6 +2,7 @@ package com.kodality.termx.ts.mapset;
 
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
+import com.kodality.termx.common.UniqueResource;
 import com.kodality.termx.ts.ConfigurationAttribute;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.Copyright;
@@ -11,7 +12,6 @@ import com.kodality.termx.ts.UseContext;
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
 
-import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -20,9 +20,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Introspected
 @Accessors(chain = true)
-public class MapSet {
-  @Pattern(regexp = "[A-Za-z0-9\\-\\.]{1,64}")
-  private String id;
+public class MapSet extends UniqueResource<MapSet> {
   private String uri;
   private String publisher;
   private String name;

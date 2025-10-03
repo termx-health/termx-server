@@ -3,6 +3,7 @@ package com.kodality.termx.ts.valueset;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
+import com.kodality.termx.common.UniqueResource;
 import com.kodality.termx.ts.ConfigurationAttribute;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.Copyright;
@@ -11,13 +12,11 @@ import com.kodality.termx.ts.Permissions;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.Topic;
 import com.kodality.termx.ts.UseContext;
-import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import io.micronaut.core.annotation.Introspected;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -26,9 +25,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Introspected
 @Accessors(chain = true)
-public class ValueSet {
-  @Pattern(regexp = "[A-Za-z0-9\\-\\.]{1,64}")
-  private String id;
+public class ValueSet extends UniqueResource<ValueSet> {
   private String uri;
   private String publisher;
   private String name;
