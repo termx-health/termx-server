@@ -6,6 +6,8 @@ import com.kodality.termx.implementationguide.ig.version.ImplementationGuideVers
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.Copyright;
 import java.util.List;
+
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -14,6 +16,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class ImplementationGuide {
+  @Pattern(regexp = "[A-Za-z0-9\\-\\.]{1,64}")
   private String id;
   private String uri;
   private String publisher;

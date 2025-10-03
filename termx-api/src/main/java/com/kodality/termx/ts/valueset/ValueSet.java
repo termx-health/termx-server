@@ -16,6 +16,8 @@ import io.micronaut.core.annotation.Introspected;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -25,6 +27,7 @@ import lombok.experimental.Accessors;
 @Introspected
 @Accessors(chain = true)
 public class ValueSet {
+  @Pattern(regexp = "[A-Za-z0-9\\-\\.]{1,64}")
   private String id;
   private String uri;
   private String publisher;

@@ -10,6 +10,8 @@ import com.kodality.termx.ts.Topic;
 import com.kodality.termx.ts.UseContext;
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
+
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -19,6 +21,7 @@ import lombok.experimental.Accessors;
 @Introspected
 @Accessors(chain = true)
 public class MapSet {
+  @Pattern(regexp = "[A-Za-z0-9\\-\\.]{1,64}")
   private String id;
   private String uri;
   private String publisher;
