@@ -3,6 +3,7 @@ package com.kodality.termx.terminology.terminology.mapset;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.commons.UniqueResource;
 import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.core.auth.SessionStore;
@@ -86,8 +87,8 @@ public class MapSetController {
 
   @Authorized(Privilege.MS_EDIT)
   @Post(uri = "/{mapSet}/change-id")
-  public HttpResponse<?> changeMapSetId(@PathVariable String mapSet, @Valid @Body Map<String, String> body) {
-    String newId = body.get("id");
+  public HttpResponse<?> changeMapSetId(@PathVariable String mapSet, @Valid @Body UniqueResource<?> body) {
+    String newId = body.getId();
     mapSetService.changeId(mapSet, newId);
     provenanceService.create(new Provenance("change-id", "MapSet", newId).setChanges(Map.of("id", ProvenanceChange.of(mapSet, newId))));
     return HttpResponse.ok();

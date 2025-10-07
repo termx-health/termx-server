@@ -2,7 +2,7 @@ package com.kodality.termx.commons;
 
 import jakarta.validation.constraints.Pattern;
 
-public abstract class UniqueResource<T> {
+public class UniqueResource<T> {
     /**
      * A unique identifier for the resource, which is used in URLs and references.
      * This ID must be unique within the context of the resource type.

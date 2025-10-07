@@ -3,6 +3,7 @@ package com.kodality.termx.terminology.terminology.valueset;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.commons.UniqueResource;
 import com.kodality.termx.core.sys.lorque.LorqueProcessService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.terminology.ApiError;
@@ -95,8 +96,8 @@ public class ValueSetController {
 
   @Authorized(Privilege.VS_EDIT)
   @Post(uri = "/{valueSet}/change-id")
-  public HttpResponse<?> changeValueSetId(@PathVariable String valueSet, @Valid @Body Map<String, String> body) {
-    String newId = body.get("id");
+  public HttpResponse<?> changeValueSetId(@PathVariable String valueSet, @Valid @Body UniqueResource<?> body) {
+    String newId = body.getId();
     valueSetService.changeId(valueSet, newId);
     provenanceService.create(new Provenance("change-id", "ValueSet", newId)
         .setChanges(Map.of("id", ProvenanceChange.of(valueSet, newId))));
