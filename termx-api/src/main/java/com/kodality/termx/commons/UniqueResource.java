@@ -1,8 +1,10 @@
 package com.kodality.termx.commons;
 
 import jakarta.validation.constraints.Pattern;
+import lombok.Getter;
 
-public class UniqueResource<T> {
+@Getter
+public class UniqueResource<T extends UniqueResource<T>> {
     /**
      * A unique identifier for the resource, which is used in URLs and references.
      * This ID must be unique within the context of the resource type.
@@ -10,10 +12,6 @@ public class UniqueResource<T> {
      */
     @Pattern(regexp = "[A-Za-z0-9\\-\\.]{1,64}")
     private String id;
-
-    public String getId() {
-        return id;
-    }
 
     public T setId(String id) {
         this.id = id;
