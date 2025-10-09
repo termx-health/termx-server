@@ -11,5 +11,6 @@ import lombok.Setter;
 public class ValueSetTransactionRequest {
   @Valid
   private ValueSet valueSet;
+  @Valid
   private ValueSetVersion version;
 }

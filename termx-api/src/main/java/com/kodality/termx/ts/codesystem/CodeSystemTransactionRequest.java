@@ -14,6 +14,7 @@ import lombok.Setter;
 public class CodeSystemTransactionRequest {
   @Valid
   private CodeSystem codeSystem;
+  @Valid
   private CodeSystemVersion version;
   private List<EntityProperty> properties;
 
