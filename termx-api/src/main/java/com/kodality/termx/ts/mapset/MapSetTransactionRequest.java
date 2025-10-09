@@ -15,6 +15,7 @@ import lombok.experimental.Accessors;
 public class MapSetTransactionRequest {
   @Valid
   private MapSet mapSet;
+  @Valid
   private MapSetVersion version;
   private List<MapSetProperty> properties;
   private List<MapSetAssociation> associations;
