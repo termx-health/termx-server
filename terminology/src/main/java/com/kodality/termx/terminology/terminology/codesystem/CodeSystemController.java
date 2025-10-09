@@ -2,6 +2,7 @@ package com.kodality.termx.terminology.terminology.codesystem;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.commons.UniqueResource;
 import com.kodality.termx.core.sys.lorque.LorqueProcessService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.terminology.Privilege;
@@ -116,8 +117,8 @@ public class CodeSystemController {
 
   @Authorized(Privilege.CS_EDIT)
   @Post(uri = "/{codeSystem}/change-id")
-  public HttpResponse<?> changeCodeSystemId(@PathVariable String codeSystem, @Valid @Body Map<String, String> body) {
-    String newId = body.get("id");
+  public HttpResponse<?> changeCodeSystemId(@PathVariable String codeSystem, @Valid @Body UniqueResource<?> body) {
+    String newId = body.getId();
     codeSystemService.changeId(codeSystem, newId);
     provenanceService.create(new Provenance("change-id", "CodeSystem", newId).setChanges(Map.of("id", ProvenanceChange.of(codeSystem, newId))));
     return HttpResponse.ok();

@@ -2,6 +2,7 @@ package com.kodality.termx.ts.mapset;
 
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
+import com.kodality.termx.commons.UniqueResource;
 import com.kodality.termx.ts.ConfigurationAttribute;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.Copyright;
@@ -10,6 +11,7 @@ import com.kodality.termx.ts.Topic;
 import com.kodality.termx.ts.UseContext;
 import io.micronaut.core.annotation.Introspected;
 import java.util.List;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -18,8 +20,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Introspected
 @Accessors(chain = true)
-public class MapSet {
-  private String id;
+public class MapSet extends UniqueResource<MapSet> {
   private String uri;
   private String publisher;
   private String name;
