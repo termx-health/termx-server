@@ -426,7 +426,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   }
 
   private static List<EntityProperty> fromFhirProperties(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
-    List<EntityProperty> properties = getDefEntityProperties();
+    List<EntityProperty> properties = getImplicitProperties();
 
     if (fhirCodeSystem.getProperty() != null) {
       properties.addAll(fhirCodeSystem.getProperty().stream()
@@ -444,22 +444,18 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return properties.stream().collect(Collectors.toMap(EntityProperty::getName, p -> p, (p, q) -> p)).values().stream().toList();
   }
 
-  private static List<EntityProperty> getDefEntityProperties() {
+  private static List<EntityProperty> getImplicitProperties() {
     List<EntityProperty> properties = new ArrayList<>();
 
-    EntityProperty display = new EntityProperty();
-    display.setName(DISPLAY);
-    display.setType(EntityPropertyType.string);
-    display.setKind(EntityPropertyKind.designation);
-    display.setStatus(PublicationStatus.active);
-    properties.add(display);
+    for (String implicitProperty : IMPLICIT_PROPERTY_DEFINITIONS) {
+      EntityProperty property = new EntityProperty();
+      property.setName(implicitProperty);
+      property.setType(EntityPropertyType.string);
+      property.setKind(EntityPropertyKind.designation);
+      property.setStatus(PublicationStatus.active);
+      properties.add(property);
+    }
 
-    EntityProperty definition = new EntityProperty();
-    definition.setName(DEFINITION);
-    definition.setType(EntityPropertyType.string);
-    definition.setKind(EntityPropertyKind.designation);
-    definition.setStatus(PublicationStatus.active);
-    properties.add(definition);
     return properties;
   }
 
