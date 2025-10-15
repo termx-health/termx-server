@@ -47,17 +47,11 @@ import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptD
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemProperty;
 import io.micronaut.context.annotation.Context;
-import io.micronaut.context.annotation.Value;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -78,7 +72,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   private final CodeSystemRelatedArtifactService relatedArtifactService;
   private static final String DISPLAY = "display";
   private static final String DEFINITION = "definition";
-
+  private static final Set<String> IMPLICIT_PROPERTY_DEFINITIONS = Set.of(DISPLAY, DEFINITION);
 
   public CodeSystemFhirMapper(ConceptService conceptService,
                               CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
@@ -267,12 +261,13 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (CollectionUtils.isEmpty(entityProperties)) {
       return List.of();
     }
-    return entityProperties.stream().map(p ->
-        new CodeSystemProperty()
-            .setCode(p.getName())
-            .setType(p.getType())
-            .setUri(p.getUri())
-            .setDescription(toFhirName(p.getDescription(), lang))
+    return entityProperties.stream()
+      .filter(p -> !IMPLICIT_PROPERTY_DEFINITIONS.contains(p.getName()))
+      .map(p -> new CodeSystemProperty()
+        .setCode(p.getName())
+        .setType(p.getType())
+        .setUri(p.getUri())
+        .setDescription(toFhirName(p.getDescription(), lang))
     ).sorted(Comparator.comparing(CodeSystemProperty::getCode)).toList();
   }
 
