@@ -122,6 +122,9 @@ public class CodeSystemImportService {
     return codeSystem;
   }
 
+  // We see here that baseCodeSystem should yield us with the base concepts as well
+  // So maybe there is a bug somewhere here? Some issue with importing concepts for versions from base?
+  // RE: indeed, it seems so, tried importing one supplement code system, but baseCodeSystem was null
   private List<Concept> prepareConcepts(List<Concept> concepts, String baseCodeSystem) {
     //remove duplicate codes
     concepts = concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new));

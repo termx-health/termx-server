@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CodeSystemFhirImportService {
   private final CodeSystemImportService importService;
+  private final CodeSystemFhirMapper codeSystemFhirMapper;
   private final BinaryHttpClient client = new BinaryHttpClient();
 
   @Transactional
@@ -36,7 +37,7 @@ public class CodeSystemFhirImportService {
         .setActivate(PublicationStatus.active.equals(codeSystem.getStatus()))
         .setRetire(PublicationStatus.retired.equals(codeSystem.getStatus()))
         .setCleanRun(true);
-    importService.importCodeSystem(CodeSystemFhirMapper.fromFhirCodeSystem(codeSystem), associationTypes, action);
+    importService.importCodeSystem(codeSystemFhirMapper.fromFhirCodeSystem(codeSystem), associationTypes, action);
   }
 
   public void importCodeSystemFromUrl(String url, String codeSystemId) {
