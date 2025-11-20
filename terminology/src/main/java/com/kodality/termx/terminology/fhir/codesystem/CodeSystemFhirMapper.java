@@ -357,7 +357,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   // -------------- FROM FHIR --------------
 
-  public CodeSystem fromFhirCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCS) {
+  public static CodeSystem fromFhirCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCS) {
     CodeSystem codeSystem = new CodeSystem();
     codeSystem.setId(CodeSystemFhirMapper.parseCompositeId(fhirCS.getId())[0]);
     codeSystem.setUri(fhirCS.getUrl());
@@ -375,19 +375,10 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         .setEditor(fromFhirContactsName(fhirCS.getEditor()))
         .setViewer(fromFhirContactsName(fhirCS.getReviewer()))
         .setEndorser(fromFhirContactsName(fhirCS.getEndorser())));
+
     if (!CodeSystemContent.supplement.equals(codeSystem.getContent())) {
       codeSystem.setHierarchyMeaning(fhirCS.getHierarchyMeaning());
-
-      // Potential fix
-      // But instead of URI from .getSupplements(), I need the actual code of the base codesystem
-      CodeSystemQueryParams params = new CodeSystemQueryParams();
-      params.setUri(fhirCS.getSupplements());
-
-      CodeSystem baseCodeSystem = codeSystemService.query(params).findFirst().orElse(null);
-
-      if (baseCodeSystem != null) {
-        codeSystem.setBaseCodeSystem(baseCodeSystem.getId());
-      }
+      codeSystem.setBaseCodeSystemUri(fhirCS.getSupplements());
     }
     codeSystem.setContent(fhirCS.getContent());
     codeSystem.setCaseSensitive(fhirCS.getCaseSensitive() != null && fhirCS.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :

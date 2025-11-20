@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CodeSystemFhirImportService {
   private final CodeSystemImportService importService;
-  private final CodeSystemFhirMapper codeSystemFhirMapper;
   private final BinaryHttpClient client = new BinaryHttpClient();
 
   @Transactional
@@ -37,7 +36,7 @@ public class CodeSystemFhirImportService {
         .setActivate(PublicationStatus.active.equals(codeSystem.getStatus()))
         .setRetire(PublicationStatus.retired.equals(codeSystem.getStatus()))
         .setCleanRun(true);
-    importService.importCodeSystem(codeSystemFhirMapper.fromFhirCodeSystem(codeSystem), associationTypes, action);
+    importService.importCodeSystem(CodeSystemFhirMapper.fromFhirCodeSystem(codeSystem), associationTypes, action);
   }
 
   public void importCodeSystemFromUrl(String url, String codeSystemId) {
@@ -49,6 +48,8 @@ public class CodeSystemFhirImportService {
     Resource res = FhirMapper.fromJson(resource, Resource.class);
     if ("Bundle".equals(res.getResourceType())) {
       Bundle bundle = FhirMapper.fromJson(resource, Bundle.class);
+      // TODO: there might be a bug here if multiple code systems are in the bundle and one before is a supplement of the later
+      // I should test this out
       bundle.getEntry().forEach(e -> importCodeSystem((CodeSystem) e.getResource()));
     } else {
       com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
