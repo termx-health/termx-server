@@ -59,8 +59,6 @@ public class CodeSystemFhirImportService {
 
       List<CodeSystem> sortedCodeSystems = getCodeSystemsTopologicallySortedBySupplements(codeSystems);
       sortedCodeSystems.forEach(this::importCodeSystem);
-      // TODO: there might be a bug here if multiple code systems are in the bundle and one before is a supplement of the later
-      //bundle.getEntry().forEach(e -> importCodeSystem((CodeSystem) e.getResource()));
     } else {
       com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
       codeSystem.setId(codeSystemId);
