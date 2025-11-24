@@ -375,8 +375,10 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         .setEditor(fromFhirContactsName(fhirCS.getEditor()))
         .setViewer(fromFhirContactsName(fhirCS.getReviewer()))
         .setEndorser(fromFhirContactsName(fhirCS.getEndorser())));
+
     if (!CodeSystemContent.supplement.equals(codeSystem.getContent())) {
       codeSystem.setHierarchyMeaning(fhirCS.getHierarchyMeaning());
+      codeSystem.setBaseCodeSystemUri(fhirCS.getSupplements());
     }
     codeSystem.setContent(fhirCS.getContent());
     codeSystem.setCaseSensitive(fhirCS.getCaseSensitive() != null && fhirCS.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :

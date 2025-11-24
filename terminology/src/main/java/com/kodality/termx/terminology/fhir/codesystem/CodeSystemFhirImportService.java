@@ -14,7 +14,9 @@ import com.kodality.zmei.fhir.resource.other.Bundle;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import jakarta.inject.Singleton;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,12 +50,55 @@ public class CodeSystemFhirImportService {
     Resource res = FhirMapper.fromJson(resource, Resource.class);
     if ("Bundle".equals(res.getResourceType())) {
       Bundle bundle = FhirMapper.fromJson(resource, Bundle.class);
-      bundle.getEntry().forEach(e -> importCodeSystem((CodeSystem) e.getResource()));
+
+      List<CodeSystem> codeSystems = bundle.getEntry().stream()
+              .map(Bundle.BundleEntry::getResource)
+              .filter(r -> r instanceof CodeSystem)
+              .map(r -> (CodeSystem) r)
+              .toList();
+
+      List<CodeSystem> sortedCodeSystems = getCodeSystemsTopologicallySortedBySupplements(codeSystems);
+      sortedCodeSystems.forEach(this::importCodeSystem);
     } else {
       com.kodality.zmei.fhir.resource.terminology.CodeSystem codeSystem = FhirMapper.fromJson(resource, com.kodality.zmei.fhir.resource.terminology.CodeSystem.class);
       codeSystem.setId(codeSystemId);
       importCodeSystem(codeSystem);
     }
+  }
+
+  private List<CodeSystem> getCodeSystemsTopologicallySortedBySupplements(List<CodeSystem> codeSystems) {
+    Map<String, CodeSystem> byUrl = codeSystems.stream().collect(Collectors.toMap(CodeSystem::getUrl, cs -> cs));
+
+      List<CodeSystem> ordered = new ArrayList<>();
+      Set<String> visited = new HashSet<>();
+      Set<String> visiting = new HashSet<>();
+
+      for (CodeSystem cs : codeSystems) {
+          topologicalVisit(cs, byUrl, visited, visiting, ordered);
+      }
+
+    return ordered;
+  }
+
+  private void topologicalVisit(CodeSystem cs, Map<String, CodeSystem> byUrl, Set<String> visited, Set<String> visiting, List<CodeSystem> ordered) {
+      String url = cs.getUrl();
+
+      if (visited.contains(url)) {
+          return;
+      }
+
+      visiting.add(url);
+
+      if (cs.getSupplements() != null) {
+          CodeSystem base = byUrl.get(cs.getSupplements());
+          if (base != null) {
+              topologicalVisit(base, byUrl, visited, visiting, ordered);
+          }
+      }
+
+      visiting.remove(url);
+      visited.add(url);
+      ordered.add(cs);
   }
 
   private String getResource(String url) {
