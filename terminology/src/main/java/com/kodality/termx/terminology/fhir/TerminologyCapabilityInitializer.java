@@ -23,12 +23,16 @@ import org.hl7.fhir.r5.model.TerminologyCapabilities.TerminologyCapabilitiesExpa
 import org.hl7.fhir.r5.model.TerminologyCapabilities.TerminologyCapabilitiesExpansionParameterComponent;
 import org.hl7.fhir.r5.model.TerminologyCapabilities.TerminologyCapabilitiesTranslationComponent;
 import org.hl7.fhir.r5.model.TerminologyCapabilities.TerminologyCapabilitiesValidateCodeComponent;
+import io.micronaut.context.annotation.Value;
 
 @Singleton
 @RequiredArgsConstructor
 public class TerminologyCapabilityInitializer implements TermxGeneratedConformanceProvider {
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
+
+  @Value("${termx.apiUrl}")
+  String apiUrl;
 
   @Override
   public Resource generate(String name) {
@@ -40,7 +44,7 @@ public class TerminologyCapabilityInitializer implements TermxGeneratedConforman
 
   private TerminologyCapabilities generateTerminologyCapabilities() {
     TerminologyCapabilities tc = new TerminologyCapabilities();
-    tc.setUrl("https://demo.termx.org/api/fhir/metadata");
+    tc.setUrl(this.apiUrl + "/fhir/metadata");
     tc.setVersion("1");
     tc.setName("TermX Terminology Statement");
     tc.setTitle("TermX Terminology Statement");
