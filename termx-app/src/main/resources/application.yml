@@ -73,3 +73,7 @@ chef.url: https://demo.termx.org/chef
 #    id: 'client-id'
 #    secret: 'secret'
 #  app-name: ${GITHUB_APP_NAME}
+
+termx:
+  web-url: https://demo.termx.org
+  api-url: https://demo.termx.org/api
