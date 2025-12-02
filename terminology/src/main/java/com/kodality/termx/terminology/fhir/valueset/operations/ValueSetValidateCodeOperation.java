@@ -122,7 +122,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     }
 
     Parameters parameters = new Parameters();
-    String conceptDisplay = findDisplay(concept, display);
+    String conceptDisplay = findDisplay(concept, display, displayLanguage);
     parameters.addParameter(new ParametersParameter("result").setValueBoolean(display == null || display.equals(conceptDisplay)));
     parameters.addParameter(new ParametersParameter("code").setValueCode(concept.getConcept().getCode()));
     parameters.addParameter(new ParametersParameter("system").setValueUri(concept.getConcept().getCodeSystemUri()));
@@ -150,19 +150,37 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
                     p.getValueString()).orElse(null);
   }
 
-  private String findDisplay(ValueSetVersionConcept c, String paramDisplay) {
+  private String findDisplay(ValueSetVersionConcept c, String paramDisplay, String displayLanguage) {
+    // 1. Determine the language to use for validation/return.
+    String validationLanguage = (displayLanguage != null) ? displayLanguage : c.getDisplay().getLanguage();
+
+    // 2. Handle the case where no specific display is requested (paramDisplay == null)
     if (paramDisplay == null) {
+      // Return the primary display name if available, otherwise return the concept code.
       return c.getDisplay() == null || StringUtils.isEmpty(c.getDisplay().getName()) ? c.getConcept().getCode() : c.getDisplay().getName();
     }
-    if (c.getDisplay() != null && paramDisplay.equals(c.getDisplay().getName())) {
+
+    // 3. Check the primary display for a match by text and language
+    if (c.getDisplay() != null && paramDisplay.equals(c.getDisplay().getName()) && c.getDisplay().getLanguage().equals(validationLanguage)) {
       return paramDisplay;
     }
+
+    // 4. Check additional designations for a match on name AND language
     if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
-      Optional<Designation> d = c.getAdditionalDesignations().stream().filter(ad -> ad != null && paramDisplay.equals(ad.getName())).findFirst();
-      if (d.isPresent()) {
-        return paramDisplay;
+      Optional<Designation> matchingDesignation = c.getAdditionalDesignations().stream()
+          .filter(ad -> ad != null &&
+              "display".equals(ad.getDesignationType()) && // Matches the designations of the type "display"
+              validationLanguage.equals(ad.getLanguage())) // Matches the required language
+          .findFirst();
+
+      // if matching designation present return it name
+      if (matchingDesignation.isPresent()) {
+        return matchingDesignation.get().getName();
       }
     }
+
+    // 5. Fallback: No match was found for the requested paramDisplay and language.
+    // Return the default display value (primary display or code).
     return c.getDisplay() == null || StringUtils.isEmpty(c.getDisplay().getName()) ? c.getConcept().getCode() : c.getDisplay().getName();
   }
 

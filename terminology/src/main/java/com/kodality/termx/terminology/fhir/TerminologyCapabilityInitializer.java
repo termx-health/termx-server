@@ -31,7 +31,7 @@ public class TerminologyCapabilityInitializer implements TermxGeneratedConforman
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
 
-  @Value("${termx.apiUrl}")
+  @Value("${termx.api-url}")
   String apiUrl;
 
   @Override

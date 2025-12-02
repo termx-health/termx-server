@@ -8,7 +8,7 @@ auth:
 
 termx:
   web-url: http://localhost:4200
-
+  api-url: https://localhost:8200
 
 github:
   client:
