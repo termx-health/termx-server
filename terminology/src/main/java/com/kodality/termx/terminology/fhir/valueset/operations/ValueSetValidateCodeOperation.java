@@ -151,7 +151,8 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   private String findDisplay(ValueSetVersionConcept c, String paramDisplay, String displayLanguage) {
-    // 1. Determine the language to use for validation/returnString validationLanguage = (displayLanguage != null) ? displayLanguage : c.getDisplay().getLanguage();
+    // 1. Determine the language to use for validation/return
+    String validationLanguage = (displayLanguage != null) ? displayLanguage : c.getDisplay().getLanguage();
 
     // 2. Handle the case where no specific display is requested (paramDisplay == null)
     if (paramDisplay == null) {
