@@ -203,13 +203,31 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         codeSystemService.query(new CodeSystemQueryParams().setIds(String.join(",", propertySystems)).limit(propertySystems.size())).getData().stream()
             .collect(Collectors.toMap(CodeSystem::getId, CodeSystem::getUri));
 
-    fhirCodeSystem.setConcept(version.getEntities() == null ? null : version.getEntities().stream()
-        .filter(e -> codeSystem.getHierarchyMeaning() == null || e.getAssociations() == null ||
-            e.getAssociations().stream().noneMatch(a -> a.getAssociationType().equals(codeSystem.getHierarchyMeaning())))
+//    fhirCodeSystem.setConcept(version.getEntities() == null ? null : version.getEntities().stream()
+//        .filter(e -> codeSystem.getHierarchyMeaning() == null || e.getAssociations() == null ||
+//            e.getAssociations().stream().noneMatch(a -> a.getAssociationType().equals(codeSystem.getHierarchyMeaning())))
+//        .map(e -> toFhir(e, codeSystem, version, childMap, parentMap, propertySystemUri))
+//        .sorted(Comparator.comparing(CodeSystemConcept::getCode))
+//        .collect(Collectors.toList()));
+
+    List<CodeSystemConcept> rootConcepts = version.getEntities() == null ? null : version.getEntities().stream()
+        .filter(e -> isRoot(e, codeSystem.getHierarchyMeaning()))
         .map(e -> toFhir(e, codeSystem, version, childMap, parentMap, propertySystemUri))
         .sorted(Comparator.comparing(CodeSystemConcept::getCode))
-        .collect(Collectors.toList()));
+        .toList();
+
+    fhirCodeSystem.setConcept(rootConcepts);
+
     return fhirCodeSystem;
+  }
+
+  private boolean isRoot(CodeSystemEntityVersion version, String hierarchyMeaning) {
+    if (hierarchyMeaning == null || version.getAssociations() == null) {
+      return true;
+    }
+    // If no association matches the hierarchy meaning, it's a root
+    return version.getAssociations().stream()
+        .noneMatch(a -> a.getAssociationType().equals(hierarchyMeaning));
   }
 
   private static String toFhirSupplement(CodeSystem codeSystem, CodeSystemVersion version) {
@@ -331,6 +349,13 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
             if (concept.getCodeSystem() == null || concept.getCode() == null) {
               return null;
             }
+
+            Optional<Concept> code = conceptService.load(concept.getCodeSystem(), concept.getCode());
+            Optional<String> display = code
+                .flatMap(c -> Optional.ofNullable(c.getVersions()).flatMap(l -> l.stream().findFirst()))
+                .flatMap(v -> Optional.ofNullable(v.getDesignations()).flatMap(l -> l.stream().findFirst()))
+                .map(Designation::getName);
+
             fhir.setValueCoding(new Coding(propertySystemUri.getOrDefault(concept.getCodeSystem(), concept.getCodeSystem()), concept.getCode()));
           }
           case EntityPropertyType.dateTime -> {
