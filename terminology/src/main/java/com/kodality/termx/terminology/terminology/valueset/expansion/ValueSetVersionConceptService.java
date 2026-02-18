@@ -25,12 +25,7 @@ import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -156,8 +151,33 @@ public class ValueSetVersionConceptService {
           c.setStatus(versions.stream().findFirst().map(CodeSystemEntityVersion::getStatus).orElse(PublicationStatus.active));
           c.setAssociations(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getAssociations()))
               .flatMap(v -> v.getAssociations().stream()).collect(Collectors.toList()));
-          c.setPropertyValues(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getPropertyValues())).flatMap(v -> v.getPropertyValues().stream())
-              .filter(p -> properties.containsKey(p.getEntityProperty())).collect(Collectors.toList()));
+          // Optimization of simple EntityPropertyValue (versions excluded)
+          c.setPropertyValues(versions.stream()
+                    .filter(v -> CollectionUtils.isNotEmpty(v.getPropertyValues()))
+                    .flatMap(v -> v.getPropertyValues().stream())
+                    .filter(p -> properties.containsKey(p.getEntityProperty()))
+                    .peek(p -> {
+                        Object val = p.getValue();
+                        if (val instanceof Map<?, ?> map) {
+                            if (map.containsKey("id")) {
+                                // new map only with code and system
+                                Map<String, Object> newVal = new LinkedHashMap<>();
+                                newVal.put("code", map.get("code"));
+                                newVal.put("system", map.get("codeSystem"));
+                                newVal.put("codeSystem", map.get("codeSystem"));
+                                p.setValue(newVal);
+                            }
+                        }
+                    })
+                    // merge duplicity
+                    .filter(distinctByKey(p -> Arrays.asList(
+                            p.getValue(),
+                            p.getEntityPropertyId(),
+                            p.getCodeSystemEntityVersionId(),
+                            p.getEntityProperty(),
+                            p.getEntityPropertyType()
+                    )))
+                    .collect(Collectors.toList()));
           if (properties.containsKey("modifiedAt")) {
             c.getPropertyValues().add(new EntityPropertyValue()
                 .setValue(versions.stream().findFirst().map(CodeSystemEntityVersion::getSysModifiedAt).orElse(null))
