@@ -12,6 +12,7 @@ import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptUtil;
 import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystemContent;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
@@ -29,15 +30,21 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Singleton
 @RequiredArgsConstructor
 public class CodeSystemLookupOperation implements InstanceOperationDefinition, TypeOperationDefinition {
+  private static final String UCUM = "ucum";
+  private static final String UCUM_URI = "http://unitsofmeasure.org";
+
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
 
@@ -61,18 +68,28 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
 
   public ResourceContent run(ResourceContent c) {
     Parameters req = FhirMapper.fromJson(c.getValue(), Parameters.class);
-    String system = req.findParameter("system").map(ParametersParameter::getValueString)
+    String system = req.findParameter("system")
+        .map(p -> p.getValueUrl() != null ? p.getValueUrl() :
+            p.getValueUri() != null ? p.getValueUri() :
+                p.getValueCanonical() != null ? p.getValueCanonical() :
+                    p.getValueString())
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "system parameter required"));
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
 
-    String csId = codeSystemService.query(new CodeSystemQueryParams().setUri(system).limit(1)).findFirst().map(CodeSystem::getId)
-        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "CodeSystem not found"));
+    String csId = codeSystemService.query(new CodeSystemQueryParams().setUri(system).limit(1)).findFirst().map(CodeSystem::getId).orElse(null);
+    if (csId == null && UCUM_URI.equals(system)) {
+      csId = UCUM;
+    }
+    if (csId == null) {
+      throw new FhirException(404, IssueType.NOTFOUND, "CodeSystem not found");
+    }
     Parameters resp = run(csId, version, req);
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }
 
   private Parameters run(String csId, String version, Parameters req) {
     String code = req.findParameter("code").map(ParametersParameter::getValueString)
+        .or(() -> req.findParameter("code").map(ParametersParameter::getValueCode))
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
     LocalDate date = req.findParameter("date").map(pp -> LocalDateTime.parse(pp.getValueString()).toLocalDate()).orElse(null);
 
@@ -88,6 +105,13 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
     Concept c = conceptService.query(cQueryParams).findFirst()
         .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "Concept not found"));
 
+    String displayLanguage = req.findParameter("displayLanguage")
+        .map(p -> StringUtils.firstNonBlank(p.getValueCode(), p.getValueString()))
+        .orElse(null);
+
+    List<Designation> designations = new ArrayList<>(c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getDesignations).orElse(List.of()));
+    designations.addAll(loadSupplementDesignations(csId, code, displayLanguage, req));
+
     Parameters resp = new Parameters();
     resp.addParameter(new ParametersParameter().setName("name").setValueString(c.getCodeSystem()));
 
@@ -97,11 +121,13 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
       resp.addParameter(new ParametersParameter().setName("version").setValueString(csVersion.map(CodeSystemVersionReference::getVersion).orElse(null)));
     }
 
-    String preferredLanguage = csVersion.map(CodeSystemVersionReference::getPreferredLanguage).orElse(null);
-    List<Designation> designations = c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getDesignations).orElse(List.of());
+    String preferredLanguage = StringUtils.firstNonBlank(displayLanguage, csVersion.map(CodeSystemVersionReference::getPreferredLanguage).orElse(null));
     Designation display = ConceptUtil.getDisplay(designations, preferredLanguage, List.of());
+    List<Designation> responseDesignations = designations.stream()
+        .filter(d -> languageMatches(d.getLanguage(), displayLanguage))
+        .toList();
     resp.addParameter(new ParametersParameter().setName("display").setValueString(display != null ? display.getName() : null));
-    designations.stream().filter(d -> display != d).forEach(d -> {
+    responseDesignations.stream().filter(d -> display != d).forEach(d -> {
       resp.addParameter(new ParametersParameter("designation")
           .addPart(new ParametersParameter("use").setValueCoding(new Coding(d.getDesignationType())))
           .addPart(new ParametersParameter("value").setValueString(d.getName()))
@@ -117,6 +143,57 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
           .addPart(toParameter(pv.getEntityPropertyType(), pv)));
     });
     return resp;
+  }
+
+  private List<Designation> loadSupplementDesignations(String csId, String code, String displayLanguage, Parameters req) {
+    List<String> requestedSupplements = req.getParameter().stream()
+        .filter(p -> "useSupplement".equals(p.getName()))
+        .map(p -> p.getValueCanonical() != null ? p.getValueCanonical() :
+            p.getValueUri() != null ? p.getValueUri() :
+                p.getValueUrl() != null ? p.getValueUrl() :
+                    p.getValueString())
+        .filter(s -> s != null && !s.isBlank())
+        .toList();
+
+    List<String> discoveredSupplements = StringUtils.isBlank(displayLanguage) ? List.of() :
+        codeSystemService.query(new CodeSystemQueryParams()
+            .setBaseCodeSystem(csId)
+            .setContent(CodeSystemContent.supplement)
+            .all()).getData().stream()
+            .map(CodeSystem::getUri)
+            .filter(StringUtils::isNotBlank)
+            .toList();
+
+    LinkedHashSet<String> supplementRefs = new LinkedHashSet<>();
+    supplementRefs.addAll(requestedSupplements);
+    supplementRefs.addAll(discoveredSupplements);
+    List<String> supplements = new ArrayList<>(supplementRefs);
+    if (supplements.isEmpty()) {
+      return List.of();
+    }
+    return supplements.stream().map(s -> {
+      String[] sv = s.split("\\|", 2);
+      String uri = sv[0];
+      String version = sv.length > 1 ? sv[1] : null;
+      CodeSystem supplement = codeSystemService.query(new CodeSystemQueryParams().setUri(uri).limit(1)).findFirst().orElse(null);
+      if (supplement == null || !csId.equals(supplement.getBaseCodeSystem())) {
+        return null;
+      }
+      Concept concept = conceptService.query(new ConceptQueryParams()
+          .setCodeSystem(supplement.getId())
+          .setCodeEq(code)
+          .setCodeSystemVersion(version)
+          .limit(1)).findFirst().orElse(null);
+      return concept != null && concept.getVersions() != null && !concept.getVersions().isEmpty() ?
+          concept.getVersions().get(0).getDesignations() : null;
+    }).filter(ds -> ds != null).flatMap(List::stream)
+        .filter(d -> languageMatches(d.getLanguage(), displayLanguage))
+        .toList();
+  }
+
+  private static boolean languageMatches(String language, String displayLanguage) {
+    return StringUtils.isBlank(displayLanguage) || language != null &&
+        (language.equals(displayLanguage) || language.startsWith(displayLanguage + "-"));
   }
 
   private static ParametersParameter toParameter(String type, Object value) {
