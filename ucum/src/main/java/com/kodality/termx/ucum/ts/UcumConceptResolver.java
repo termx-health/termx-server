@@ -96,7 +96,6 @@ public class UcumConceptResolver {
         c.setAdditionalDesignations(concept.getVersions().stream().findFirst().map(v -> v.getDesignations()).orElse(List.of()));
       }
       c.setActive(true);
-      c.getConcept().setCodeSystem("ucum");
     });
     if (!isValidCode(c.getConcept().getCode())) {
       c.setActive(false);

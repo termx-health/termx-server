@@ -90,7 +90,7 @@ public class ValueSetVersionConceptService {
       return snapshot;
     }
     
-    List<ValueSetVersionConcept> expansion = expand(version, preferredLanguage, includeDesignations);
+    List<ValueSetVersionConcept> expansion = expand(version, preferredLanguage);
     snapshot = valueSetSnapshotService.createSnapshot(vs, version.getId(), expansion);
 
     return snapshot;
