@@ -9,6 +9,7 @@ import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
+import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptUtil;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.PublicationStatus;
@@ -27,6 +28,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
@@ -34,6 +40,9 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 @Factory
 @RequiredArgsConstructor
 public class CodeSystemValidateCodeOperation implements InstanceOperationDefinition, TypeOperationDefinition {
+  private static final String UCUM = "ucum";
+  private static final String UCUM_URI = "http://unitsofmeasure.org";
+
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
@@ -65,7 +74,10 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
   }
 
   private Parameters run(Parameters req) {
-    String url = req.findParameter("url").map(pp -> StringUtils.firstNonBlank(pp.getValueUrl(), pp.getValueString()))
+    String url = req.findParameter("url")
+        .map(pp -> StringUtils.firstNonBlank(pp.getValueUrl(), pp.getValueCanonical(), pp.getValueUri(), pp.getValueString()))
+        .or(() -> req.findParameter("system")
+            .map(pp -> StringUtils.firstNonBlank(pp.getValueUrl(), pp.getValueCanonical(), pp.getValueUri(), pp.getValueString())))
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
 
@@ -73,6 +85,9 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     csp.setUri(url);
     csp.setLimit(1);
     CodeSystem cs = codeSystemService.query(csp).findFirst().orElse(null);
+    if (cs == null && UCUM_URI.equals(url)) {
+      cs = codeSystemService.load(UCUM).orElse(null);
+    }
     if (cs == null) {
       return error("CodeSystem not found by url " + url);
     }
@@ -97,6 +112,9 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     String code = req.findParameter("code").map(pp -> StringUtils.firstNonBlank(pp.getValueCode(), pp.getValueString()))
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
+    String displayLanguage = req.findParameter("displayLanguage")
+        .map(pp -> StringUtils.firstNonBlank(pp.getValueCode(), pp.getValueString()))
+        .orElse(null);
 
 
     ConceptQueryParams cp = new ConceptQueryParams();
@@ -110,8 +128,10 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
       return error("Code '" + code + "' is invalid");
     }
 
-    String conceptDisplay = extractDisplay(concept);
-    if (display != null && !display.equals(conceptDisplay)) {
+    Concept merged = mergeSupplements(csId, versionId, code, concept, req);
+    Set<String> validDisplays = extractDisplays(merged, displayLanguage);
+    String conceptDisplay = validDisplays.stream().findFirst().orElse(null);
+    if (display != null && !validDisplays.contains(display)) {
       return new Parameters()
           .addParameter(new ParametersParameter("result").setValueBoolean(false))
           .addParameter(new ParametersParameter("display").setValueString(conceptDisplay))
@@ -128,9 +148,71 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
         .addParameter(new ParametersParameter("message").setValueString(message));
   }
 
-  public static String extractDisplay(Concept c) {
-    return CollectionUtils.isEmpty(c.getVersions()) || c.getVersions().get(0).getDesignations() == null ? null :
-        c.getVersions().get(0).getDesignations().stream().filter(Designation::isPreferred).findFirst().map(Designation::getName).orElse(null);
+  private Concept mergeSupplements(String csId, Long versionId, String code, Concept concept, Parameters req) {
+    List<Concept> supplements = loadSupplementConcepts(csId, versionId, code, req);
+    if (CollectionUtils.isEmpty(supplements)) {
+      return concept;
+    }
+    List<Designation> designations = new ArrayList<>(CollectionUtils.isEmpty(concept.getVersions()) ? List.of() :
+        Optional.ofNullable(concept.getVersions().get(0).getDesignations()).orElse(List.of()));
+    supplements.stream().filter(c -> CollectionUtils.isNotEmpty(c.getVersions())).forEach(c ->
+        designations.addAll(Optional.ofNullable(c.getVersions().get(0).getDesignations()).orElse(List.of())));
+    concept.getVersions().get(0).setDesignations(designations.stream()
+        .collect(java.util.stream.Collectors.collectingAndThen(
+            java.util.stream.Collectors.toMap(
+                d -> String.join("|", StringUtils.defaultString(d.getDesignationType()), StringUtils.defaultString(d.getLanguage()), StringUtils.defaultString(d.getName())),
+                d -> d,
+                (a, b) -> a,
+                java.util.LinkedHashMap::new),
+            m -> new ArrayList<>(m.values()))));
+    return concept;
+  }
+
+  private List<Concept> loadSupplementConcepts(String csId, Long versionId, String code, Parameters req) {
+    List<String> supplements = req.getParameter().stream()
+        .filter(p -> "useSupplement".equals(p.getName()))
+        .map(p -> StringUtils.firstNonBlank(p.getValueCanonical(), p.getValueUri(), p.getValueUrl(), p.getValueString()))
+        .filter(StringUtils::isNotBlank)
+        .toList();
+    if (CollectionUtils.isEmpty(supplements)) {
+      return List.of();
+    }
+    return supplements.stream().map(s -> {
+      String[] sv = s.split("\\|", 2);
+      String uri = sv[0];
+      String version = sv.length > 1 ? sv[1] : null;
+      CodeSystem supplement = codeSystemService.query(new CodeSystemQueryParams().setUri(uri).limit(1)).findFirst().orElse(null);
+      if (supplement == null || !csId.equals(supplement.getBaseCodeSystem())) {
+        return null;
+      }
+      ConceptQueryParams cp = new ConceptQueryParams()
+          .setCodeSystem(supplement.getId())
+          .setCodeEq(code)
+          .setCodeSystemVersion(version)
+          .setCodeSystemVersionId(version == null ? versionId : null)
+          .setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW))
+          .limit(1);
+      return conceptService.query(cp).findFirst().orElse(null);
+    }).filter(c -> c != null && CollectionUtils.isNotEmpty(c.getVersions())).toList();
+  }
+
+  public static Set<String> extractDisplays(Concept c, String displayLanguage) {
+    if (CollectionUtils.isEmpty(c.getVersions()) || c.getVersions().get(0).getDesignations() == null) {
+      return Set.of();
+    }
+    List<Designation> designations = c.getVersions().get(0).getDesignations();
+    LinkedHashSet<String> displays = new LinkedHashSet<>();
+    Designation primary = ConceptUtil.getDisplay(designations, displayLanguage, List.of());
+    if (primary != null && primary.getName() != null) {
+      displays.add(primary.getName());
+    }
+    designations.stream()
+        .filter(d -> d.getName() != null)
+        .filter(d -> displayLanguage == null || displayLanguage.equals(d.getLanguage()) || (d.getLanguage() != null && d.getLanguage().startsWith(displayLanguage)))
+        .filter(d -> "display".equals(d.getDesignationType()) || "abbreviation".equals(d.getDesignationType()) || "definition".equals(d.getDesignationType()))
+        .map(Designation::getName)
+        .forEach(displays::add);
+    return displays;
   }
 
 }
