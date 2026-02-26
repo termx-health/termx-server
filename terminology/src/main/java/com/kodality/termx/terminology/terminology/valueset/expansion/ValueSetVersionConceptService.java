@@ -1,16 +1,23 @@
 package com.kodality.termx.terminology.terminology.valueset.expansion;
 
 import com.kodality.commons.util.DateUtil;
+import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptUtil;
+import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
 import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionRepository;
 import com.kodality.termx.terminology.terminology.valueset.snapshot.ValueSetSnapshotService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.core.ts.ValueSetExternalExpandProvider;
+import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystemContent;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
+import com.kodality.termx.ts.codesystem.Concept;
+import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
@@ -43,11 +50,15 @@ public class ValueSetVersionConceptService {
   private final ValueSetSnapshotService valueSetSnapshotService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final EntityPropertyService entityPropertyService;
+  private final CodeSystemService codeSystemService;
+  private final ConceptService conceptService;
 
   private static final String DEPRECATION_DATE = "deprecationDate";
   private static final String INACTIVE = "inactive";
   private static final String STATUS = "status";
   private static final String RETIREMENT_DATE = "retirementDate";
+  private static final String UCUM = "ucum";
+  private static final String UCUM_URI = "http://unitsofmeasure.org";
 
   @Transactional
   public List<ValueSetVersionConcept> expand(String vs, String vsVersion) {
@@ -67,7 +78,9 @@ public class ValueSetVersionConceptService {
       return null;
     }
     ValueSetSnapshot snapshot = version.getSnapshot();
-    if (PublicationStatus.active.equals(version.getStatus()) && snapshot != null && snapshot.getExpansion() != null) {
+    if (StringUtils.isEmpty(preferredLanguage) &&
+        PublicationStatus.active.equals(version.getStatus()) &&
+        snapshot != null && snapshot.getExpansion() != null) {
       return snapshot;
     }
     
@@ -82,7 +95,9 @@ public class ValueSetVersionConceptService {
       return new ArrayList<>();
     }
 
-    if (PublicationStatus.active.equals(version.getStatus()) && version.getSnapshot() != null && version.getSnapshot().getExpansion() != null) {
+    if (StringUtils.isEmpty(preferredLanguage) &&
+        PublicationStatus.active.equals(version.getStatus()) &&
+        version.getSnapshot() != null && version.getSnapshot().getExpansion() != null) {
       return version.getSnapshot().getExpansion();
     }
 
@@ -90,13 +105,74 @@ public class ValueSetVersionConceptService {
         .filter(e -> e.isEnumerated() || e.getConcept().getConceptVersionId() != null)
         .collect(Collectors.toList());
     ValueSetVersionRuleSet ruleSet = version.getRuleSet();
+    List<ValueSetVersionConcept> externalExpansion = new ArrayList<>();
     for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
-      expansion.addAll(provider.expand(ruleSet, version, preferredLanguage));
+      externalExpansion.addAll(provider.expand(ruleSet, version, preferredLanguage));
     }
+    expansion.addAll(externalExpansion);
+    enrichUcumSupplementDesignations(expansion, preferredLanguage);
     if (!ruleSet.isInactive()) {
       return expansion.stream().filter(ValueSetVersionConcept::isActive).collect(Collectors.toList());
     }
     return expansion;
+  }
+
+  private void enrichUcumSupplementDesignations(List<ValueSetVersionConcept> concepts, String preferredLanguage) {
+    if (CollectionUtils.isEmpty(concepts) || org.apache.commons.lang3.StringUtils.isBlank(preferredLanguage)) {
+      return;
+    }
+    List<ValueSetVersionConcept> ucumConcepts = concepts.stream()
+        .filter(c -> c != null && c.getConcept() != null)
+        .filter(c -> UCUM.equals(c.getConcept().getCodeSystem()) || "http://unitsofmeasure.org".equals(c.getConcept().getCodeSystemUri()))
+        .filter(c -> org.apache.commons.lang3.StringUtils.isNotBlank(c.getConcept().getCode()))
+        .toList();
+    if (CollectionUtils.isEmpty(ucumConcepts)) {
+      return;
+    }
+
+    List<CodeSystem> supplements = codeSystemService.query(new CodeSystemQueryParams()
+        .setContent(CodeSystemContent.supplement)
+        .all()).getData().stream()
+        .filter(cs -> UCUM.equals(cs.getBaseCodeSystem()) || UCUM_URI.equals(cs.getBaseCodeSystemUri()))
+        .toList();
+    if (CollectionUtils.isEmpty(supplements)) {
+      return;
+    }
+
+    List<String> codes = ucumConcepts.stream().map(c -> c.getConcept().getCode()).distinct().toList();
+    Map<String, List<Designation>> supplementDesignations = supplements.stream()
+        .map(CodeSystem::getId)
+        .filter(org.apache.commons.lang3.StringUtils::isNotBlank)
+        .flatMap(cs -> conceptService.query(new ConceptQueryParams()
+            .setCodeSystem(cs)
+            .setCodes(codes)
+            .all()).getData().stream())
+        .filter(c -> CollectionUtils.isNotEmpty(c.getVersions()))
+        .flatMap(c -> c.getVersions().stream().flatMap(v -> Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream()
+            .filter(d -> languageMatches(d.getLanguage(), preferredLanguage))
+            .map(d -> Map.entry(c.getCode(), d))))
+        .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+
+    ucumConcepts.forEach(c -> {
+      List<Designation> additional = Optional.ofNullable(c.getAdditionalDesignations()).orElse(new ArrayList<>());
+      additional.addAll(supplementDesignations.getOrDefault(c.getConcept().getCode(), List.of()));
+      c.setAdditionalDesignations(distinctDesignations(additional));
+    });
+  }
+
+  private static boolean languageMatches(String language, String preferredLanguage) {
+    return org.apache.commons.lang3.StringUtils.isBlank(preferredLanguage) || language != null &&
+        (language.equals(preferredLanguage) || language.startsWith(preferredLanguage + "-"));
+  }
+
+  private static List<Designation> distinctDesignations(List<Designation> designations) {
+    return designations.stream().collect(Collectors.collectingAndThen(
+        Collectors.toMap(d -> String.join("|",
+                org.apache.commons.lang3.StringUtils.defaultString(d.getDesignationType()),
+                org.apache.commons.lang3.StringUtils.defaultString(d.getLanguage()),
+                org.apache.commons.lang3.StringUtils.defaultString(d.getName())),
+            d -> d, (a, b) -> a, java.util.LinkedHashMap::new),
+        m -> new ArrayList<>(m.values())));
   }
 
   private List<ValueSetVersionConcept> internalExpand(ValueSetVersion version, String preferredLanguage) {
