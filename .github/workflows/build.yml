@@ -68,6 +68,10 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: echo "LATEST_TAG=latest" >> $GITHUB_ENV
 
+      - name: Set latest-ucum tag
+        if: github.ref == 'refs/heads/switch-units-to-ucum'
+        run: echo "LATEST_TAG=latest-ucum" >> $GITHUB_ENV
+
 
       - name: Docker meta
         id: meta

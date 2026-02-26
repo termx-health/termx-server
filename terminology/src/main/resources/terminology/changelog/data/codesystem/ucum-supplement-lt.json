@@ -1,0 +1,1422 @@
+{
+  "resourceType" : "CodeSystem",
+  "id" : "ucum-lt",
+  "language" : "en",
+  "text" : {
+    "status" : "generated",
+    "div" : "<div xml:lang=\"en\" lang=\"en\"><hr/><p><b>English</b></p><hr/><p class=\"res-header-id\"><b>Generated Narrative: CodeSystem ucum-lt</b></p><a name=\"ucum-lt\"> </a><a name=\"hcucum-lt\"> </a><div style=\"display: inline-block; background-color: #d9e0e7; padding: 6px; margin: 4px; border: 1px solid #8da1b4; border-radius: 5px; line-height: 60%\"><p style=\"margin-bottom: 0px\">Language: en</p></div><p>This code system supplement <code>https://tx.hl7.lt/CodeSystem/ucum</code> defines displays on the following codes:</p><table class=\"codes\"><tr><td style=\"white-space:nowrap\"><b>Code</b></td><td><b>Display</b></td><td><b>Lithuanian (lt)</b></td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-kPa\">kPa</a><a name=\"ucum-lt-kPa\"> </a></td><td>KiloPascal</td><td>Kilopaskalis</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-pg.47mL\">pg/mL</a><a name=\"ucum-lt-pg.47mL\"> </a></td><td>PicoGramsPerMilliLiter</td><td>Pikogramai Mililitre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-ng.47mL\">ng/mL</a><a name=\"ucum-lt-ng.47mL\"> </a></td><td>NanoGramsPerMilliLiter</td><td>Nanogramai Mililitre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-g.47L\">g/L</a><a name=\"ucum-lt-g.47L\"> </a></td><td>GramsPerLiter</td><td>Gramai Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-pmol.47L\">pmol/L</a><a name=\"ucum-lt-pmol.47L\"> </a></td><td>PicoMolesPerLiter</td><td>Pikomoliai Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-nmol.47L\">nmol/L</a><a name=\"ucum-lt-nmol.47L\"> </a></td><td>NanoMolesPerLiter</td><td>Nanomoliai Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-g.47mL\">g/mL</a><a name=\"ucum-lt-g.47mL\"> </a></td><td>GramsPerMilliLiter</td><td>Gramai Mililitre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-umol.47L\">umol/L</a><a name=\"ucum-lt-umol.47L\"> </a></td><td>MicroMolesPerLiter</td><td>Mikromoliai Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.47uL\">/uL</a><a name=\"ucum-lt-.47uL\"> </a></td><td>PerMicroLiter</td><td>Mikrolitre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mm.91Hg.93\">mm[Hg]</a><a name=\"ucum-lt-mm.91Hg.93\"> </a></td><td>MilliMetersOfMercury</td><td>Milimetrai Gyvsidabrio stulpelio</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.37\">%</a><a name=\"ucum-lt-.37\"> </a></td><td>Percent</td><td>Procentas</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-fL\">fL</a><a name=\"ucum-lt-fL\"> </a></td><td>FemtoLiter</td><td>Femtolitras</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-10.426\">10*6</a><a name=\"ucum-lt-10.426\"> </a></td><td>Million</td><td>Milijonas</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mmol.47mol\">mmol/mol</a><a name=\"ucum-lt-mmol.47mol\"> </a></td><td>MilliMolesPerMole</td><td>Milimoliai Molyje</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-deg\">deg</a><a name=\"ucum-lt-deg\"> </a></td><td>DegreesOfArc</td><td>Laipsnis (plokštumos kampas)</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-Cel\">Cel</a><a name=\"ucum-lt-Cel\"> </a></td><td>DegreesCelsius</td><td>Laipsniai Celsijaus</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-cm\">cm</a><a name=\"ucum-lt-cm\"> </a></td><td>CentiMeter</td><td>Centimetras</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-min\">min</a><a name=\"ucum-lt-min\"> </a></td><td>Minute</td><td>Minutė</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-h\">h</a><a name=\"ucum-lt-h\"> </a></td><td>Hour</td><td>Valanda</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mL\">mL</a><a name=\"ucum-lt-mL\"> </a></td><td>MilliLiter</td><td>Mililitras</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.47mL\">/mL</a><a name=\"ucum-lt-.47mL\"> </a></td><td>PerMilliLiter</td><td>Mililitre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-10.426.47mL\">10*6/mL</a><a name=\"ucum-lt-10.426.47mL\"> </a></td><td>MillionPerMilliLiter</td><td>Milijonas Mililitre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-10.423.47L\">10*3/L</a><a name=\"ucum-lt-10.423.47L\"> </a></td><td>ThousandPerLiter</td><td>Tūkstantis Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-10.426.47L\">10*6/L</a><a name=\"ucum-lt-10.426.47L\"> </a></td><td>MillionPerLiter</td><td>Milijonas Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-10.4212.47L\">10*12/L</a><a name=\"ucum-lt-10.4212.47L\"> </a></td><td>TrillionPerLiter</td><td>Trilijonas Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-ng.47L\">ng/L</a><a name=\"ucum-lt-ng.47L\"> </a></td><td>NanoGramsPerLiter</td><td>Nanogramai Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-ng.47dL\">ng/dL</a><a name=\"ucum-lt-ng.47dL\"> </a></td><td>NanoGramsPerDeciLiter</td><td>Nanogramai Decilitre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-nmol.47.4024.46h.41\">nmol/(24.h)</a><a name=\"ucum-lt-nmol.47.4024.46h.41\"> </a></td><td>nanomole per 24 hour</td><td>Nanomoliai per 24 val</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mmol.47.4024.46h.41\">mmol/(24.h)</a><a name=\"ucum-lt-mmol.47.4024.46h.41\"> </a></td><td>Millimole per 24 hour</td><td>Milimoliai per 24 val</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-g.47.4024.46h.41\">g/(24.h)</a><a name=\"ucum-lt-g.47.4024.46h.41\"> </a></td><td>Gram per 24 hour</td><td>Gramai per 24 val</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-g.47mmol\">g/mmol</a><a name=\"ucum-lt-g.47mmol\"> </a></td><td>Gram per millimole</td><td>Gramai milimolyje</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-umol.47.4024.46h.41\">umol/(24.h)</a><a name=\"ucum-lt-umol.47.4024.46h.41\"> </a></td><td>Micromole per 24 hour</td><td>Mikromoliai per 24 val</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-U.47.4024.46h.41\">U/(24.h)</a><a name=\"ucum-lt-U.47.4024.46h.41\"> </a></td><td>Enzyme unit per 24 hour</td><td>Fermento vienetas per 24 val</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-L.47.4024.46h.41\">L/(24.h)</a><a name=\"ucum-lt-L.47.4024.46h.41\"> </a></td><td>Liter per 24 hour</td><td>Litrai per 24 val</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-ug.47.4024.46h.41\">ug/(24.h)</a><a name=\"ucum-lt-ug.47.4024.46h.41\"> </a></td><td>Microgram per 24 hour</td><td>Mikrogramai per 24 val</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123titer.125\">{titer}</a><a name=\"ucum-lt-.123titer.125\"> </a></td><td>Titer</td><td>Titras</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123ratio.125\">{ratio}</a><a name=\"ucum-lt-.123ratio.125\"> </a></td><td>Ratio</td><td>Santykis</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123index.125\">{index}</a><a name=\"ucum-lt-.123index.125\"> </a></td><td>Index</td><td>Indeksas</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123copies.125\">{copies}</a><a name=\"ucum-lt-.123copies.125\"> </a></td><td>Copies</td><td>Kopijų skaičius</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-ug.47.4024.46h.41-bad\">ug/(24.h)-bad</a><a name=\"ucum-lt-ug.47.4024.46h.41-bad\"> </a></td><td>Microgram per 24 hour</td><td>Mikrogramai per 24 val</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mmol.47L\">mmol/L</a><a name=\"ucum-lt-mmol.47L\"> </a></td><td>MilliMolesPerLiter</td><td>Milimoliai litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mmol.47mol.123creat.125-1\">mmol/mol{creat}-1</a><a name=\"ucum-lt-mmol.47mol.123creat.125-1\"> </a></td><td>Millimole per mole of creatinine</td><td>Milimoliai molyje creatinino</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mL.47min\">mL/min</a><a name=\"ucum-lt-mL.47min\"> </a></td><td>Milliliter per minute</td><td>Mililitrai per minutę</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-um.47s\">um/s</a><a name=\"ucum-lt-um.47s\"> </a></td><td>Micrometer per second</td><td>Mikrometras per sekundę</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mL.47min.47.1231.4673_m2.125\">mL/min/{1.73_m2}</a><a name=\"ucum-lt-mL.47min.47.1231.4673_m2.125\"> </a></td><td>Milliliter per minute per 1.73 square meter</td><td>Mililitrai per minutę per 1,73 m2</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123.35.125\">{#}</a><a name=\"ucum-lt-.123.35.125\"> </a></td><td>Number</td><td>Skaičius</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mm.47h\">mm/h</a><a name=\"ucum-lt-mm.47h\"> </a></td><td>Millimeter per hour</td><td>Milimetrai per valandą</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123CAG_repeats.125\">{CAG_repeats}</a><a name=\"ucum-lt-.123CAG_repeats.125\"> </a></td><td>CAG trinucleotide repeats</td><td>CAG pasikartojimų skaičius</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mg.47mmol\">mg/mmol</a><a name=\"ucum-lt-mg.47mmol\"> </a></td><td>Milligram per millimole</td><td>Miligramai milimolyje</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-Ohm\">Ohm</a><a name=\"ucum-lt-Ohm\"> </a></td><td>Ohm</td><td>Omas</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-Ohm.47min\">Ohm/min</a><a name=\"ucum-lt-Ohm.47min\"> </a></td><td>Ohm per minute</td><td>Ω/min</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-Ohm.42min\">Ohm*min</a><a name=\"ucum-lt-Ohm.42min\"> </a></td><td>Ohm times minute</td><td>Ω*min</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123ARU.125\">{ARU}</a><a name=\"ucum-lt-.123ARU.125\"> </a></td><td>Aspirin response unit</td><td>Atsako į aspiriną vienetai</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123PRU.125\">{PRU}</a><a name=\"ucum-lt-.123PRU.125\"> </a></td><td>P2Y12 response units</td><td>P2Y12 atsako vienetai</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123CCTG_repeats.125\">{CCTG_repeats}</a><a name=\"ucum-lt-.123CCTG_repeats.125\"> </a></td><td>CCTG repeats</td><td>CCTG pasikartojimų skaičius</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-ug.47g\">ug/g</a><a name=\"ucum-lt-ug.47g\"> </a></td><td>MicroGramsPerGram</td><td>Mikrogramai Grame</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123OD_unit.125\">{OD_unit}</a><a name=\"ucum-lt-.123OD_unit.125\"> </a></td><td>Optical density unit</td><td>Optinis tankis</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.91CFU.93\">[CFU]</a><a name=\"ucum-lt-.91CFU.93\"> </a></td><td>ColonyFormingUnits</td><td>Koloniją formuojantis vienetas</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.91CFU.93.47mL\">[CFU]/mL</a><a name=\"ucum-lt-.91CFU.93.47mL\"> </a></td><td>ColonyFormingUnitsPerMilliLiter</td><td>Koloniją formuojantys vienetai mėginio mililitre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.91CFU.93.47L\">[CFU]/L</a><a name=\"ucum-lt-.91CFU.93.47L\"> </a></td><td>ColonyFormingUnitsPerLiter</td><td>Koloniją formuojantys vienetai mėginio litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-pg\">pg</a><a name=\"ucum-lt-pg\"> </a></td><td>PicoGram</td><td>Pikogramas</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.91IU.93\">[IU]</a><a name=\"ucum-lt-.91IU.93\"> </a></td><td>InternationalUnit</td><td>Tarptautinis vienetas</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mmol.47mol.123creat.125\">mmol/mol{creat}</a><a name=\"ucum-lt-mmol.47mol.123creat.125\"> </a></td><td>MilliMolesPerMoleCreatinine</td><td>Milimoliai Molyje Kreatinino</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mm\">mm</a><a name=\"ucum-lt-mm\"> </a></td><td>MilliMeter</td><td>Milimetras</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-s\">s</a><a name=\"ucum-lt-s\"> </a></td><td>Second</td><td>Sekundė</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-U.47L\">U/L</a><a name=\"ucum-lt-U.47L\"> </a></td><td>UnitsPerLiter</td><td>Vienetai litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-ug.47L\">ug/L</a><a name=\"ucum-lt-ug.47L\"> </a></td><td>MicroGramsPerLiter</td><td>Mikrogramai Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-umol.47mol\">umol/mol</a><a name=\"ucum-lt-umol.47mol\"> </a></td><td>MicroMolesPerMole</td><td>Mikromoliai Molyje</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.91beth.39U.93\">[beth'U]</a><a name=\"ucum-lt-.91beth.39U.93\"> </a></td><td>Bethesda unit</td><td>Betesda vienetai</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123CTG_repeats.125\">{CTG_repeats}</a><a name=\"ucum-lt-.123CTG_repeats.125\"> </a></td><td>CTG trinucleotide repeats</td><td>CTG pasikartojimų skaičius</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123GGGGCC_repeats.125\">{GGGGCC_repeats}</a><a name=\"ucum-lt-.123GGGGCC_repeats.125\"> </a></td><td>GGGGCC repeats</td><td>GGGGCC pasikartojimų skaičius</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-10.426.47kg\">10*6/kg</a><a name=\"ucum-lt-10.426.47kg\"> </a></td><td>Million per kilogram</td><td>Milijonas kilogramui</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.47.91LPF.93\">/[LPF]</a><a name=\"ucum-lt-.47.91LPF.93\"> </a></td><td>Per low power field</td><td>Mažajame padidinimo lauke</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.47.91HPF.93\">/[HPF]</a><a name=\"ucum-lt-.47.91HPF.93\"> </a></td><td>Per high power field</td><td>Didžajame padidinimo lauke</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mg.47.4024.46h.41\">mg/(24.h)</a><a name=\"ucum-lt-mg.47.4024.46h.41\"> </a></td><td>Milligram per 24 hour</td><td>Miligramai per 24 valandą</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123CGG_repeats.125\">{CGG_repeats}</a><a name=\"ucum-lt-.123CGG_repeats.125\"> </a></td><td>CGG trinucleotide repeats</td><td>CGG pasikartojimų skaičius</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-k.91IU.93.47L\">k[IU]/L</a><a name=\"ucum-lt-k.91IU.93.47L\"> </a></td><td>Kilo international unit per liter</td><td>Kilo tarptautiniai vienetai litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.91IU.93.47L\">[IU]/L</a><a name=\"ucum-lt-.91IU.93.47L\"> </a></td><td>InternationalUnitsPerLiter</td><td>Tarptautiniai vienetai litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mosm.47kg\">mosm/kg</a><a name=\"ucum-lt-mosm.47kg\"> </a></td><td>MilliOsmolesPerKiloGram</td><td>MiliOsmoliai Kilograme</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.123copies.125.47mL\">{copies}/mL</a><a name=\"ucum-lt-.123copies.125.47mL\"> </a></td><td>CopiesPerMilliLiter</td><td>Kopijos Mililitre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-10.429.47L\">10*9/L</a><a name=\"ucum-lt-10.429.47L\"> </a></td><td>BillionPerLiter</td><td>Milijardas litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-mg.47L\">mg/L</a><a name=\"ucum-lt-mg.47L\"> </a></td><td>MilliGramsPerLiter</td><td>Miligramai Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.91IU.93.47mL\">[IU]/mL</a><a name=\"ucum-lt-.91IU.93.47mL\"> </a></td><td>InternationalUnitsPerMilliLiter</td><td>Tarptautiniai vienetai Mililitre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-m.91IU.93.47L\">m[IU]/L</a><a name=\"ucum-lt-m.91IU.93.47L\"> </a></td><td>MilliInternationalUnitsPerLiter</td><td>MiliTarptautiniai vienetai Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-.47100.123WBCs.125\">/100{WBCs}</a><a name=\"ucum-lt-.47100.123WBCs.125\"> </a></td><td>Per100WBC</td><td>100 Leukocitų</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-kU.47L\">kU/L</a><a name=\"ucum-lt-kU.47L\"> </a></td><td>KiloUnitsPerLiter</td><td>Kilo vienetai Litre</td></tr><tr><td><a style=\"white-space:nowrap\" href=\"http://terminology.hl7.org/6.5.0/CodeSystem-v3-ucum.html#v3-ucum-k.91arb.39U.93.47L\">k[arb'U]/L</a><a name=\"ucum-lt-k.91arb.39U.93.47L\"> </a></td><td>KiloArbitraryUnitsPerLiter</td><td>Kilo Arbitrary Vienetai Litre</td></tr></table></div>"
+  },
+  "url" : "https://tx.hl7.lt/CodeSystem/ucum",
+  "version" : "0.0.1",
+  "name" : "UCUMLt",
+  "title" : "Lithuanian UCUM localisation",
+  "status" : "active",
+  "date" : "2026-02-23T10:49:22+00:00",
+  "publisher" : "Lithuanian Medical Library",
+  "contact" : [{
+    "name" : "Lithuanian Medical Library",
+    "telecom" : [{
+      "system" : "url",
+      "value" : "https://medicinosnk.lt"
+    },
+      {
+        "system" : "email",
+        "value" : "info@medicinosnk.lt"
+      }]
+  }],
+  "description" : "Localized Lithuanian UCUM units described as display designation and alternative code as synonym",
+  "jurisdiction" : [{
+    "coding" : [{
+      "system" : "urn:iso:std:iso:3166",
+      "code" : "LT"
+    }]
+  }],
+  "content" : "supplement",
+  "supplements" : "http://unitsofmeasure.org",
+  "concept" : [{
+    "code" : "kPa",
+    "display" : "KiloPascal",
+    "designation" : [{
+      "language" : "lt",
+      "value" : "Kilopaskalis"
+    }]
+  },
+    {
+      "code" : "pg/mL",
+      "display" : "PicoGramsPerMilliLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Pikogramai Mililitre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "pg/ml"
+        }]
+    },
+    {
+      "code" : "ng/mL",
+      "display" : "NanoGramsPerMilliLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Nanogramai Mililitre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "ng/ml"
+        }]
+    },
+    {
+      "code" : "g/L",
+      "display" : "GramsPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "value" : "Gramai Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "g/l"
+        }]
+    },
+    {
+      "code" : "pmol/L",
+      "display" : "PicoMolesPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Pikomoliai Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "pmol/l"
+        }]
+    },
+    {
+      "code" : "nmol/L",
+      "display" : "NanoMolesPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "value" : "Nanomoliai Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "nmol/l"
+        }]
+    },
+    {
+      "code" : "g/mL",
+      "display" : "GramsPerMilliLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Gramai Mililitre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "g/ml"
+        }]
+    },
+    {
+      "code" : "umol/L",
+      "display" : "MicroMolesPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mikromoliai Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "μmol/l"
+        }]
+    },
+    {
+      "code" : "/uL",
+      "display" : "PerMicroLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mikrolitre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "µl"
+        }]
+    },
+    {
+      "code" : "mm[Hg]",
+      "display" : "MilliMetersOfMercury",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milimetrai Gyvsidabrio stulpelio"
+      }]
+    },
+    {
+      "code" : "%",
+      "display" : "Percent",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Procentas"
+      }]
+    },
+    {
+      "code" : "fL",
+      "display" : "FemtoLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Femtolitras"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "fl"
+        }]
+    },
+    {
+      "code" : "10*6",
+      "display" : "Million",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milijonas"
+      }]
+    },
+    {
+      "code" : "mmol/mol",
+      "display" : "MilliMolesPerMole",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milimoliai Molyje"
+      }]
+    },
+    {
+      "code" : "deg",
+      "display" : "DegreesOfArc",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Laipsnis (plokštumos kampas)"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "Laipsnis"
+        }]
+    },
+    {
+      "code" : "Cel",
+      "display" : "DegreesCelsius",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Laipsniai Celsijaus"
+      }]
+    },
+    {
+      "code" : "cm",
+      "display" : "CentiMeter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Centimetras"
+      }]
+    },
+    {
+      "code" : "min",
+      "display" : "Minute",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Minutė"
+      }]
+    },
+    {
+      "code" : "h",
+      "display" : "Hour",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Valanda"
+      }]
+    },
+    {
+      "code" : "mL",
+      "display" : "MilliLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mililitras"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "ml"
+        }]
+    },
+    {
+      "code" : "/mL",
+      "display" : "PerMilliLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mililitre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "/ml"
+        }]
+    },
+    {
+      "code" : "10*6/mL",
+      "display" : "MillionPerMilliLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milijonas Mililitre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "10^6/ml"
+        }]
+    },
+    {
+      "code" : "10*3/L",
+      "display" : "ThousandPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Tūkstantis Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "10^3/l"
+        }]
+    },
+    {
+      "code" : "10*6/L",
+      "display" : "MillionPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milijonas Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "10^6/l"
+        }]
+    },
+    {
+      "code" : "10*12/L",
+      "display" : "TrillionPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Trilijonas Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "10^12/l"
+        }]
+    },
+    {
+      "code" : "ng/L",
+      "display" : "NanoGramsPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Nanogramai Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "ng/l"
+        }]
+    },
+    {
+      "code" : "ng/dL",
+      "display" : "NanoGramsPerDeciLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Nanogramai Decilitre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "ng/dl"
+        }]
+    },
+    {
+      "code" : "nmol/(24.h)",
+      "display" : "nanomole per 24 hour",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Nanomoliai per 24 val"
+      }]
+    },
+    {
+      "code" : "mmol/(24.h)",
+      "display" : "Millimole per 24 hour",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milimoliai per 24 val"
+      }]
+    },
+    {
+      "code" : "g/(24.h)",
+      "display" : "Gram per 24 hour",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Gramai per 24 val"
+      }]
+    },
+    {
+      "code" : "g/mmol",
+      "display" : "Gram per millimole",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Gramai milimolyje"
+      }]
+    },
+    {
+      "code" : "umol/(24.h)",
+      "display" : "Micromole per 24 hour",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mikromoliai per 24 val"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "µmol/24h"
+        }]
+    },
+    {
+      "code" : "U/(24.h)",
+      "display" : "Enzyme unit per 24 hour",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Fermento vienetas per 24 val"
+      }]
+    },
+    {
+      "code" : "L/(24.h)",
+      "display" : "Liter per 24 hour",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Litrai per 24 val"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "l/24h"
+        }]
+    },
+    {
+      "code" : "ug/(24.h)",
+      "display" : "Microgram per 24 hour",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mikrogramai per 24 val"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "μg/24h"
+        }]
+    },
+    {
+      "code" : "{titer}",
+      "display" : "Titer",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Titras"
+      }]
+    },
+    {
+      "code" : "{ratio}",
+      "display" : "Ratio",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Santykis"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "santykis"
+        }]
+    },
+    {
+      "code" : "{index}",
+      "display" : "Index",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Indeksas"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "indeksas"
+        }]
+    },
+    {
+      "code" : "{copies}",
+      "display" : "Copies",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Kopijų skaičius"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "kopijos"
+        }]
+    },
+    {
+      "code" : "ug/(24.h)-bad",
+      "display" : "Microgram per 24 hour",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mikrogramai per 24 val"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "µg/24h-bad"
+        }]
+    },
+    {
+      "code" : "mmol/L",
+      "display" : "MilliMolesPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milimoliai litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "mmol/l"
+        }]
+    },
+    {
+      "code" : "mmol/mol{creat}-1",
+      "display" : "Millimole per mole of creatinine",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milimoliai molyje creatinino"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "mmol/mol\u00a0kreatinino"
+        }]
+    },
+    {
+      "code" : "mL/min",
+      "display" : "Milliliter per minute",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mililitrai per minutę"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "ml/min"
+        }]
+    },
+    {
+      "code" : "um/s",
+      "display" : "Micrometer per second",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mikrometras per sekundę"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "µm/s"
+        }]
+    },
+    {
+      "code" : "mL/min/{1.73_m2}",
+      "display" : "Milliliter per minute per 1.73 square meter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mililitrai per minutę per 1,73 m2"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "ml/min/1,73m^2"
+        }]
+    },
+    {
+      "code" : "{#}",
+      "display" : "Number",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Skaičius"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "skaičius"
+        }]
+    },
+    {
+      "code" : "mm/h",
+      "display" : "Millimeter per hour",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milimetrai per valandą"
+      }]
+    },
+    {
+      "code" : "{CAG_repeats}",
+      "display" : "CAG trinucleotide repeats",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "CAG pasikartojimų skaičius"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "CAG pasikartojimai"
+        }]
+    },
+    {
+      "code" : "mg/mmol",
+      "display" : "Milligram per millimole",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Miligramai milimolyje"
+      }]
+    },
+    {
+      "code" : "Ohm",
+      "display" : "Ohm",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Omas"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "Ω"
+        }]
+    },
+    {
+      "code" : "Ohm/min",
+      "display" : "Ohm per minute",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Ω/min"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "Ω/min"
+        }]
+    },
+    {
+      "code" : "Ohm*min",
+      "display" : "Ohm times minute",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Ω*min"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "Ω*min"
+        }]
+    },
+    {
+      "code" : "{ARU}",
+      "display" : "Aspirin response unit",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Atsako į aspiriną vienetai"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "ARU"
+        }]
+    },
+    {
+      "code" : "{PRU}",
+      "display" : "P2Y12 response units",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "P2Y12 atsako vienetai"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "PRU"
+        }]
+    },
+    {
+      "code" : "{CCTG_repeats}",
+      "display" : "CCTG repeats",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "CCTG pasikartojimų skaičius"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "CCTG pasikartojimai"
+        }]
+    },
+    {
+      "code" : "ug/g",
+      "display" : "MicroGramsPerGram",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mikrogramai Grame"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "µg/g"
+        }]
+    },
+    {
+      "code" : "{OD_unit}",
+      "display" : "Optical density unit",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Optinis tankis"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "OD"
+        }]
+    },
+    {
+      "code" : "[CFU]",
+      "display" : "ColonyFormingUnits",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Koloniją formuojantis vienetas"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "KFV"
+        }]
+    },
+    {
+      "code" : "[CFU]/mL",
+      "display" : "ColonyFormingUnitsPerMilliLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Koloniją formuojantys vienetai mėginio mililitre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "KFV/mL"
+        }]
+    },
+    {
+      "code" : "[CFU]/L",
+      "display" : "ColonyFormingUnitsPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Koloniją formuojantys vienetai mėginio litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "KFV/L"
+        }]
+    },
+    {
+      "code" : "pg",
+      "display" : "PicoGram",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Pikogramas"
+      }]
+    },
+    {
+      "code" : "[IU]",
+      "display" : "InternationalUnit",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Tarptautinis vienetas"
+      }]
+    },
+    {
+      "code" : "mmol/mol{creat}",
+      "display" : "MilliMolesPerMoleCreatinine",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milimoliai Molyje Kreatinino"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "mmol/mol Kreatinino"
+        }]
+    },
+    {
+      "code" : "mm",
+      "display" : "MilliMeter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milimetras"
+      }]
+    },
+    {
+      "code" : "s",
+      "display" : "Second",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Sekundė"
+      }]
+    },
+    {
+      "code" : "U/L",
+      "display" : "UnitsPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Vienetai litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "U/l"
+        }]
+    },
+    {
+      "code" : "ug/L",
+      "display" : "MicroGramsPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mikrogramai Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "μg/l"
+        }]
+    },
+    {
+      "code" : "umol/mol",
+      "display" : "MicroMolesPerMole",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Mikromoliai Molyje"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "μmol/mol"
+        }]
+    },
+    {
+      "code" : "[beth'U]",
+      "display" : "Bethesda unit",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Betesda vienetai"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "beth'U"
+        }]
+    },
+    {
+      "code" : "{CTG_repeats}",
+      "display" : "CTG trinucleotide repeats",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "CTG pasikartojimų skaičius"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "CTG pasikartojimai"
+        }]
+    },
+    {
+      "code" : "{GGGGCC_repeats}",
+      "display" : "GGGGCC repeats",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "GGGGCC pasikartojimų skaičius"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "GGGGCC pasikartojimai"
+        }]
+    },
+    {
+      "code" : "10*6/kg",
+      "display" : "Million per kilogram",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milijonas kilogramui"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "10^6/kg"
+        }]
+    },
+    {
+      "code" : "/[LPF]",
+      "display" : "Per low power field",
+      "designation" : [{
+        "language" : "lt",
+        "value" : "Mažajame padidinimo lauke"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "/MPF"
+        }]
+    },
+    {
+      "code" : "/[HPF]",
+      "display" : "Per high power field",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Didžajame padidinimo lauke"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "/DPL"
+        }]
+    },
+    {
+      "code" : "mg/(24.h)",
+      "display" : "Milligram per 24 hour",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Miligramai per 24 valandą"
+      }]
+    },
+    {
+      "code" : "{CGG_repeats}",
+      "display" : "CGG trinucleotide repeats",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "CGG pasikartojimų skaičius"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "CGG pasikartojimai"
+        }]
+    },
+    {
+      "code" : "k[IU]/L",
+      "display" : "Kilo international unit per liter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Kilo tarptautiniai vienetai litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "kIU/l"
+        }]
+    },
+    {
+      "code" : "[IU]/L",
+      "display" : "InternationalUnitsPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Tarptautiniai vienetai litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "IU/l"
+        }]
+    },
+    {
+      "code" : "mosm/kg",
+      "display" : "MilliOsmolesPerKiloGram",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "MiliOsmoliai Kilograme"
+      }]
+    },
+    {
+      "code" : "{copies}/mL",
+      "display" : "CopiesPerMilliLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Kopijos Mililitre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "Kopijos/ml"
+        }]
+    },
+    {
+      "code" : "10*9/L",
+      "display" : "BillionPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Milijardas litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "10^9/l"
+        }]
+    },
+    {
+      "code" : "mg/L",
+      "display" : "MilliGramsPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Miligramai Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "mg/l"
+        }]
+    },
+    {
+      "code" : "[IU]/mL",
+      "display" : "InternationalUnitsPerMilliLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Tarptautiniai vienetai Mililitre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "IU/ml"
+        }]
+    },
+    {
+      "code" : "m[IU]/L",
+      "display" : "MilliInternationalUnitsPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "MiliTarptautiniai vienetai Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "mIU/l"
+        }]
+    },
+    {
+      "code" : "/100{WBCs}",
+      "display" : "Per100WBC",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "100 Leukocitų"
+      }]
+    },
+    {
+      "code" : "kU/L",
+      "display" : "KiloUnitsPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Kilo vienetai Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "kU/l"
+        }]
+    },
+    {
+      "code" : "k[arb'U]/L",
+      "display" : "KiloArbitraryUnitsPerLiter",
+      "designation" : [{
+        "language" : "lt",
+        "use" : {
+          "code" : "display"
+        },
+        "value" : "Kilo Arbitrary Vienetai Litre"
+      },
+        {
+          "language" : "lt",
+          "use" : {
+            "code" : "alias"
+          },
+          "value" : "k[arb'U]/l"
+        }]
+    }]
+}

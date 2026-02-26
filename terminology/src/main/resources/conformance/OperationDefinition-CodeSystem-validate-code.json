@@ -55,6 +55,22 @@
     },
     {
       "max": "1",
+      "min": 0,
+      "use": "in",
+      "name": "displayLanguage",
+      "type": "code",
+      "documentation": "The requested language for display strings."
+    },
+    {
+      "max": "*",
+      "min": 0,
+      "use": "in",
+      "name": "useSupplement",
+      "type": "canonical",
+      "documentation": "Supplement resources to use when validating display and properties."
+    },
+    {
+      "max": "1",
       "min": 1,
       "use": "out",
       "name": "result",
