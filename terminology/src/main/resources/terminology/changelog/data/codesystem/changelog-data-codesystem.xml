@@ -11,10 +11,17 @@
     </customChange>
   </changeSet>
 
-  <changeSet id="ucum" author="termx">
+  <changeSet id="ucum-2" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/ucum.json"/>
+    </customChange>
+  </changeSet>
+
+  <changeSet id="ucum-supplement-lt" author="termx">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/ucum-supplement-lt.json"/>
     </customChange>
   </changeSet>
 
