@@ -48,7 +48,7 @@ public class XlsxUtil {
 
     public static List<String[]> readRows(Sheet sheet, int firstRowNum, int lastRowNum, int width, DataFormatter formatter, FormulaEvaluator evaluator) {
         List<String[]> rows = new ArrayList<>();
-        for (int r = firstRowNum + 1; r <= lastRowNum; r++) {
+        for (int r = firstRowNum; r <= lastRowNum; r++) {
             Row row = sheet.getRow(r);
             if (row == null) {
                 continue;
@@ -67,7 +67,8 @@ public class XlsxUtil {
         String[] values = new String[width];
         for (int c = 0; c < width; c++) {
             Cell cell = row.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-            values[c] = defaultIfNull(getCellValue(cell, formatter, evaluator), "");
+            String cellValue = getCellValue(cell, formatter, evaluator);
+            values[c] = cellValue.isEmpty() ? null : cellValue;
         }
         return values;
     }
