@@ -7,6 +7,7 @@ import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.fileimporter.association.utils.AssociationFileImportRequest;
 import com.kodality.termx.terminology.fileimporter.association.utils.AssociationFileImportRow;
 import com.kodality.termx.terminology.fileimporter.association.utils.AssociationFileImportRowMapper;
+import com.kodality.termx.terminology.fileimporter.fileparser.CsvFileParser;
 import com.kodality.termx.terminology.terminology.codesystem.association.CodeSystemAssociationService;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.ts.PublicationStatus;
@@ -14,7 +15,6 @@ import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociationQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
-import com.univocity.parsers.common.processor.RowListProcessor;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
 import jakarta.inject.Singleton;
@@ -31,8 +31,6 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
-import static com.kodality.termx.terminology.fileimporter.FileParser.csvParser;
-
 @Validated
 @Singleton
 @RequiredArgsConstructor
@@ -43,8 +41,8 @@ public class AssociationFileImportService {
   public void process(@Valid AssociationFileImportRequest req, byte[] file) {
     Long codeSystemVersionId = req.getCodeSystemVersionId();
 
-    RowListProcessor parser = csvParser(file);
-    List<String> headers = Arrays.asList(parser.getHeaders());
+    CsvFileParser parser = new CsvFileParser(file);
+    List<String> headers = parser.getHeaders();
     List<String[]> rows = parser.getRows();
     validateRequestColumns(req, headers);
 

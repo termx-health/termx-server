@@ -5,6 +5,7 @@ import com.kodality.termx.core.sys.job.logger.ImportLog;
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.fhir.FhirFshConverter;
 import com.kodality.termx.terminology.fhir.conceptmap.ConceptMapFhirImportService;
+import com.kodality.termx.terminology.fileimporter.fileparser.CsvFileParser;
 import com.kodality.termx.terminology.fileimporter.mapset.utils.MapSetFileImportRequest;
 import com.kodality.termx.terminology.fileimporter.mapset.utils.MapSetFileImportRow;
 import com.kodality.termx.terminology.fileimporter.mapset.utils.MapSetFileProcessingMapper;
@@ -33,9 +34,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
-
-import static com.kodality.termx.terminology.fileimporter.FileParser.csvParser;
-
 
 @Singleton
 @RequiredArgsConstructor
@@ -195,8 +193,8 @@ public class MapSetFileImportService {
   }
 
   private List<MapSetFileImportRow> parseRows(byte[] csvFile) {
-    RowListProcessor parser = csvParser(csvFile);
-    List<String> headers = Arrays.asList(parser.getHeaders());
+      CsvFileParser parser = new CsvFileParser(csvFile);
+    List<String> headers = parser.getHeaders();
     List<String[]> rows = parser.getRows();
 
     Set<String> VALID_HEADERS = Set.of("sourceCode", "targetCode", "equivalence");

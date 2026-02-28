@@ -1,28 +1,26 @@
 package com.kodality.termx.terminology.fileimporter.valueset.utils;
 
 import com.kodality.termx.terminology.ApiError;
+import com.kodality.termx.terminology.fileimporter.fileparser.FileParserFactory;
+import com.kodality.termx.terminology.fileimporter.fileparser.IFileParser;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
-import com.univocity.parsers.common.processor.RowListProcessor;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
-import java.util.Arrays;
+
 import java.util.List;
 import java.util.Objects;
-
-import static com.kodality.termx.terminology.fileimporter.FileParser.csvParser;
-import static com.kodality.termx.terminology.fileimporter.FileParser.tsvParser;
 
 public class ValueSetFileImportProcessor {
 
   public static List<ValueSetVersionConcept> process(ValueSetFileImportRequest request, ValueSetVersionRule existingRule, byte[] file) {
     String type = request.getType();
 
-    RowListProcessor parser = getParser(type, file);
-    List<String> headers = Arrays.asList(parser.getHeaders());
+    IFileParser parser = FileParserFactory.getParser(type, file);
+    List<String> headers = parser.getHeaders();
     List<String[]> rows = parser.getRows();
 
     String cs = request.getVersion() != null && request.getVersion().getRule() != null && request.getVersion().getRule().getCodeSystem() != null ?
@@ -51,9 +49,4 @@ public class ValueSetFileImportProcessor {
           return concept;
         }).filter(Objects::nonNull).toList();
   }
-
-  private static RowListProcessor getParser(String type, byte[] file) {
-    return "tsv".equals(type) ? tsvParser(file) : csvParser(file);
-  }
-
 }

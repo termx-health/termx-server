@@ -3,10 +3,11 @@ package com.kodality.termx.terminology.fileimporter.analyze;
 import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.fileimporter.analyze.FileAnalysisResponse.FileAnalysisColumn;
 import com.kodality.termx.core.http.BinaryHttpClient;
-import com.univocity.parsers.common.processor.RowListProcessor;
+import com.kodality.termx.terminology.fileimporter.fileparser.FileParserFactory;
+import com.kodality.termx.terminology.fileimporter.fileparser.IFileParser;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-import static com.kodality.termx.terminology.fileimporter.FileParser.csvParser;
-import static com.kodality.termx.terminology.fileimporter.FileParser.tsvParser;
 import static java.util.stream.IntStream.range;
 
 @Slf4j
@@ -34,6 +33,7 @@ public class FileAnalysisService {
   private static String decimal = "decimal";
   private static String integer = "integer";
   private static final List<String> DATE_FORMATS = List.of("dd.MM.yyyy", "MM/dd/yyyy", "yyyy-MM-dd", "dd.MM.yy");
+  private static final List<String> SUPPORTED_TYPES = List.of("csv", "tsv", "xlsx");
 
   private final BinaryHttpClient client = new BinaryHttpClient();
 
@@ -48,12 +48,12 @@ public class FileAnalysisService {
   }
 
   public static FileAnalysisResponse analyze(String type, byte[] file) {
-    if (!List.of("csv", "tsv").contains(type)) {
+    if (!SUPPORTED_TYPES.contains(type)) {
       throw new IllegalArgumentException("unknown type: " + type);
     }
 
-    RowListProcessor parser = getParser(type, file);
-    List<String> headers = Arrays.asList(parser.getHeaders());
+    IFileParser parser = FileParserFactory.getParser(type, file);
+    List<String> headers = parser.getHeaders();
     List<String[]> rows = parser.getRows();
 
     Map<String, List<String>> columnValues = new HashMap<>();
@@ -119,12 +119,6 @@ public class FileAnalysisService {
     }
     return null;
   }
-
-
-  private static RowListProcessor getParser(String type, byte[] file) {
-    return "tsv".equals(type) ? tsvParser(file) : csvParser(file);
-  }
-
 
   // utils
 

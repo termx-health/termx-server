@@ -1,0 +1,25 @@
+code,display#et,gender,gender#system,parent,status
+1.,üldanesteesia,,,,active
+1.1.,"endotrahheaalne  anesteesia (intub. toru, trahheostoomia)",male,administrative-gender,1.,active
+1.2.,"supraglottiline hingamistee e. kõrimask (LMA,i-Gel, jt.)",,,1.,active
+1.3.,näomask (lühiajaliseks protseduuriks ),,,1.,active
+1.4.,"muu üldanesteesia (jugaventilatsioon, jms.), täpsustada",,,1.,active
+2.,regionaalanesteesia  (koos sedatsiooniga või ilma),,,,active
+2.1.,tsentraalne regionaalanesteesia,,,2.,active
+2.1.1.,spinaalanesteesia,,,2.1.,active
+2.1.1.1.,spinaalanesteesia kateeter-meetodil (CSA),,,2.1.1.,active
+2.1.2.,epiduraalanesteesia,,,2.1.,active
+2.1.2.1,sakraalruumi blokaad,,,2.1.2.,active
+2.1.3.,kombineeritud spinaal-epiduraalanesteesia (CSE),,,2.1.,active
+2.2.,perifeerne regionaalanesteesia,,,2.,active
+2.2.1.,tservikaalpleksuse blokaad,,,2.2.,active
+2.2.2.,brahhiaalpleksuse blokaad,,,2.2.,active
+2.2.3.,lumbosakraalpleksuse blokaad,,,2.2.,active
+2.2.4.,paravertebraal blokaad,,,2.2.,active
+2.2.5.,silmablokaad,,,2.2.,active
+2.2.6.,"muu regionaalanesteesia (TAP, üksiknärvi blokaad, jms.)",,,2.2.,active
+2.3.,intravenoosne regionaalanesteesia (Bier´i blokaad),,,2.,active
+2.4.,lokaalanesteesia (lokaalanesteetikumi infiltratsioon või limaskestale aplitseerimine),,,2.,active
+3.,ainult sedatsioon (i/v või i/m),,,,active
+3.1.,sedatsioon operatsioonitoas,,,3.,active
+3.2.,"sedatsioon mujal, täpsustada",,,3.,active

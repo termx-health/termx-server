@@ -4,9 +4,10 @@ import com.kodality.termx.terminology.ApiError;
 import com.kodality.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportRequest.FileProcessingProperty;
 import com.kodality.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingEntityPropertyValue;
 import com.kodality.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingResponseProperty;
+import com.kodality.termx.terminology.fileimporter.fileparser.FileParserFactory;
+import com.kodality.termx.terminology.fileimporter.fileparser.IFileParser;
 import com.kodality.termx.ts.codesystem.EntityPropertyKind;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
-import com.univocity.parsers.common.processor.RowListProcessor;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.text.ParseException;
@@ -26,10 +27,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.security.auth.login.Configuration.Parameters;
 
-import static com.kodality.termx.terminology.fileimporter.FileParser.csvParser;
-import static com.kodality.termx.terminology.fileimporter.FileParser.tsvParser;
 import static com.kodality.termx.ts.codesystem.EntityPropertyType.bool;
 import static com.kodality.termx.ts.codesystem.EntityPropertyType.coding;
 import static com.kodality.termx.ts.codesystem.EntityPropertyType.dateTime;
@@ -69,8 +67,8 @@ public class CodeSystemFileImportProcessor {
         .toList();
 
 
-    RowListProcessor parser = getParser(type, file);
-    List<String> headers = Arrays.asList(parser.getHeaders());
+    IFileParser parser = FileParserFactory.getParser(type, file);
+    List<String> headers = parser.getHeaders();
     List<String[]> rows = parser.getRows();
 
     var entities = rows.stream().map(r -> {
@@ -184,10 +182,4 @@ public class CodeSystemFileImportProcessor {
     Set<Object> seen = ConcurrentHashMap.newKeySet();
     return t -> seen.add(keyExtractor.apply(t));
   }
-
-
-  private static RowListProcessor getParser(String type, byte[] file) {
-    return "tsv".equals(type) ? tsvParser(file) : csvParser(file);
-  }
-
 }
