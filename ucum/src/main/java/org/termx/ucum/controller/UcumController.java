@@ -1,6 +1,11 @@
 package org.termx.ucum.controller;
 
+import com.kodality.commons.exception.ApiException;
+import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.auth.Authorized;
+import com.kodality.termx.core.sys.job.logger.ImportLogger;
+import com.kodality.termx.core.utils.FileUtil;
+import com.kodality.termx.sys.job.JobLogResponse;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.core.version.annotation.Version;
 import io.micronaut.http.HttpRequest;
@@ -10,8 +15,12 @@ import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
+import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Produces;
 import io.micronaut.http.annotation.QueryValue;
+import io.micronaut.http.annotation.Body;
+import io.micronaut.http.annotation.Part;
+import io.micronaut.http.multipart.CompletedFileUpload;
 import io.micronaut.validation.Validated;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.exceptions.HttpStatusException;
@@ -21,12 +30,15 @@ import lombok.RequiredArgsConstructor;
 import org.fhir.ucum.*;
 import org.termx.ucum.dto.*;
 import org.termx.ucum.exception.InvalidUcumRequestException;
+import org.termx.ucum.service.UcumAdministrationService;
+import org.termx.ucum.service.UcumExportService;
 import org.termx.ucum.service.UcumService;
 import org.termx.ucum.security.Privilege;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -43,6 +55,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 public class UcumController {
     private final UcumService ucumService;
+    private final UcumAdministrationService ucumAdministrationService;
+    private final UcumExportService ucumExportService;
+    private final ImportLogger importLogger;
 
     @Operation(summary = "Get UCUM version details")
     @ApiResponse(
@@ -298,6 +313,61 @@ public class UcumController {
             );
         }
         return HttpResponse.ok(response);
+    }
+
+    @Operation(summary = "Import a UCUM essence XML and activate it")
+    @ApiResponses({
+      @ApiResponse(
+        responseCode = "200",
+        description = "Import job created",
+        content = @Content(
+          schema = @Schema(implementation = JobLogResponse.class)
+        )
+      ),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid UCUM essence XML",
+        content = @Content(
+          schema = @Schema(implementation = ErrorDto.class)
+        )
+      )
+    })
+    @Authorized(Privilege.UCUM_EDIT)
+    @Post(value = "/essence/import", consumes = MediaType.MULTIPART_FORM_DATA)
+    public JobLogResponse importEssence(@Part("file") CompletedFileUpload file) {
+        byte[] xml = FileUtil.readBytes(file);
+        JobLogResponse job = importLogger.createJob("ucum", "UCUM-ESSENCE-IMPORT");
+        CompletableFuture.runAsync(SessionStore.wrap(() -> {
+            try {
+                ucumAdministrationService.importEssence(xml);
+                importLogger.logImport(job.getJobId());
+            } catch (ApiException e) {
+                importLogger.logImport(job.getJobId(), e);
+            } catch (IllegalArgumentException e) {
+                importLogger.logImport(job.getJobId(), null, null, List.of(e.getMessage()));
+            } catch (Exception e) {
+                importLogger.logImport(job.getJobId(), null, null, List.of(e.getMessage()));
+            }
+        }));
+        return job;
+    }
+
+    @Operation(summary = "Export UCUM base units, defined units, and selected supplements")
+    @ApiResponse(
+      responseCode = "200",
+      description = "UCUM export response",
+      content = @Content(
+        schema = @Schema(implementation = UcumExportResponseDto.class)
+      )
+    )
+    @Authorized(Privilege.UCUM_VIEW)
+    @Post("/export")
+    public HttpResponse<UcumExportResponseDto> export(@Nullable @Body UcumExportRequestDto request) {
+        try {
+            return HttpResponse.ok(ucumExportService.export(request));
+        } catch (IllegalArgumentException e) {
+            throw new HttpStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @Error(exception = HttpStatusException.class)

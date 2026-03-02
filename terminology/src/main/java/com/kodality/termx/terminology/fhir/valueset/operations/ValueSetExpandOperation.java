@@ -95,8 +95,11 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
     String displayLanguage = req == null ? null : req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
         .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString).orElse(null));
+    boolean includeDesignations = req != null && req.findParameter("includeDesignations")
+        .map(pr -> pr.getValueBoolean() != null && pr.getValueBoolean() || "true".equals(pr.getValueString()))
+        .orElse(false);
 
-    ValueSetSnapshot snapshot = valueSetVersionConceptService.expand(vs.getId(), version.getVersion(), displayLanguage);
+    ValueSetSnapshot snapshot = valueSetVersionConceptService.expand(vs.getId(), version.getVersion(), displayLanguage, includeDesignations);
     List<ValueSetVersionConcept> expandedConcepts = snapshot.getExpansion();
     List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + version.getId());
 

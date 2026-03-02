@@ -73,29 +73,40 @@ public class ValueSetVersionConceptService {
 
   @Transactional
   public ValueSetSnapshot expand(String vs, String vsVersion, String preferredLanguage) {
+    return expand(vs, vsVersion, preferredLanguage, false);
+  }
+
+  @Transactional
+  public ValueSetSnapshot expand(String vs, String vsVersion, String preferredLanguage, boolean includeDesignations) {
     ValueSetVersion version = getVersion(vs, vsVersion);
     if (version == null) {
       return null;
     }
     ValueSetSnapshot snapshot = version.getSnapshot();
-    if (StringUtils.isEmpty(preferredLanguage) &&
+    if (!includeDesignations &&
+        StringUtils.isEmpty(preferredLanguage) &&
         PublicationStatus.active.equals(version.getStatus()) &&
         snapshot != null && snapshot.getExpansion() != null) {
       return snapshot;
     }
     
-    List<ValueSetVersionConcept> expansion = expand(version, preferredLanguage);
+    List<ValueSetVersionConcept> expansion = expand(version, preferredLanguage, includeDesignations);
     snapshot = valueSetSnapshotService.createSnapshot(vs, version.getId(), expansion);
 
     return snapshot;
   }
 
   public List<ValueSetVersionConcept> expand(ValueSetVersion version, String preferredLanguage) {
+    return expand(version, preferredLanguage, false);
+  }
+
+  public List<ValueSetVersionConcept> expand(ValueSetVersion version, String preferredLanguage, boolean includeDesignations) {
     if (version == null || version.getId() == null) {
       return new ArrayList<>();
     }
 
-    if (StringUtils.isEmpty(preferredLanguage) &&
+    if (!includeDesignations &&
+        StringUtils.isEmpty(preferredLanguage) &&
         PublicationStatus.active.equals(version.getStatus()) &&
         version.getSnapshot() != null && version.getSnapshot().getExpansion() != null) {
       return version.getSnapshot().getExpansion();
@@ -110,15 +121,15 @@ public class ValueSetVersionConceptService {
       externalExpansion.addAll(provider.expand(ruleSet, version, preferredLanguage));
     }
     expansion.addAll(externalExpansion);
-    enrichUcumSupplementDesignations(expansion, preferredLanguage);
+    enrichUcumSupplementDesignations(expansion, preferredLanguage, includeDesignations);
     if (!ruleSet.isInactive()) {
       return expansion.stream().filter(ValueSetVersionConcept::isActive).collect(Collectors.toList());
     }
     return expansion;
   }
 
-  private void enrichUcumSupplementDesignations(List<ValueSetVersionConcept> concepts, String preferredLanguage) {
-    if (CollectionUtils.isEmpty(concepts) || org.apache.commons.lang3.StringUtils.isBlank(preferredLanguage)) {
+  private void enrichUcumSupplementDesignations(List<ValueSetVersionConcept> concepts, String preferredLanguage, boolean includeDesignations) {
+    if (CollectionUtils.isEmpty(concepts) || (!includeDesignations && org.apache.commons.lang3.StringUtils.isBlank(preferredLanguage))) {
       return;
     }
     List<ValueSetVersionConcept> ucumConcepts = concepts.stream()
@@ -149,12 +160,12 @@ public class ValueSetVersionConceptService {
             .all()).getData().stream())
         .filter(c -> CollectionUtils.isNotEmpty(c.getVersions()))
         .flatMap(c -> c.getVersions().stream().flatMap(v -> Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream()
-            .filter(d -> languageMatches(d.getLanguage(), preferredLanguage))
+            .filter(d -> includeDesignations || languageMatches(d.getLanguage(), preferredLanguage))
             .map(d -> Map.entry(c.getCode(), d))))
         .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
 
     ucumConcepts.forEach(c -> {
-      List<Designation> additional = Optional.ofNullable(c.getAdditionalDesignations()).orElse(new ArrayList<>());
+      List<Designation> additional = new ArrayList<>(Optional.ofNullable(c.getAdditionalDesignations()).orElse(new ArrayList<>()));
       additional.addAll(supplementDesignations.getOrDefault(c.getConcept().getCode(), List.of()));
       c.setAdditionalDesignations(distinctDesignations(additional));
     });

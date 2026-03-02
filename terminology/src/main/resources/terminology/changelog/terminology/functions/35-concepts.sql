@@ -1,4 +1,4 @@
-DROP FUNCTION terminology.concepts(text, text, text, text, text, text);
+DROP FUNCTION if exists terminology.concepts(text, text, text, text, text, text);
 
 CREATE OR REPLACE FUNCTION terminology.concepts(p_code_system text, p_version text DEFAULT NULL::text, p_association_type text DEFAULT NULL::text, p_ids text DEFAULT NULL::text, p_codes text DEFAULT NULL::text, p_text text DEFAULT NULL::text)
  RETURNS TABLE(code_system text, version text, concept_id bigint, code text, concept_version_id bigint, level integer, leaf boolean, parent_id bigint, parent_code text, status text, path text, display jsonb, property jsonb)
