@@ -43,6 +43,7 @@
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/32-change_code_system_id.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/33-change_value_set_id.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/34-change_map_set_id.sql"/>
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/35-concepts.sql"/>
     </changeSet>
 
     <changeSet id="terminology_function_indexes_7" author="kodality">
