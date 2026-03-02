@@ -8,5 +8,6 @@
 
   <include file="10-measurement_unit.sql" relativeToChangelogFile="true" />
   <include file="11-measurement_unit_mapping.sql" relativeToChangelogFile="true" />
+  <include file="12-ucum_essence.sql" relativeToChangelogFile="true" />
 
 </databaseChangeLog>

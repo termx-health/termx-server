@@ -1,5 +1,6 @@
 package org.termx.ucum.service;
 
+import com.kodality.termx.ucum.essence.UcumEssenceStorageService;
 import jakarta.inject.Singleton;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ import org.termx.ucum.mapper.ValidateResponseMapper;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -48,18 +50,40 @@ public class UcumServiceImpl implements UcumService {
     private final DefinedUnitMapper definedUnitMapper;
     private final BaseUnitMapper baseUnitMapper;
     private final PrefixMapper prefixMapper;
+    private final UcumEssenceStorageService essenceStorageService;
 
-    private UcumEssenceService ucumService;
+    private org.fhir.ucum.UcumEssenceService ucumService;
 
     @PostConstruct
     void initializeService() {
+        reload();
+    }
+
+    public synchronized void reload() {
         this.ucumService = initUcumService();
     }
 
-    private UcumEssenceService initUcumService() {
+    private org.fhir.ucum.UcumEssenceService initUcumService() {
+        try {
+            Optional<org.fhir.ucum.UcumEssenceService> databaseEssence = essenceStorageService.loadActive()
+                    .map(essence -> {
+                        try {
+                            log.info("Loaded UCUM essence from database version {}", essence.getVersion());
+                            return new org.fhir.ucum.UcumEssenceService(
+                                    new java.io.ByteArrayInputStream(essence.getXml().getBytes(StandardCharsets.UTF_8)));
+                        } catch (Exception e) {
+                            throw new IllegalStateException("Failed to initialize UcumEssenceService from database", e);
+                        }
+                    });
+            if (databaseEssence.isPresent()) {
+                return databaseEssence.get();
+            }
+        } catch (Exception e) {
+            log.warn("Database UCUM essence load failed: {}. Falling back to configured sources.", e.getMessage(), e);
+        }
         try (InputStream remoteStream = new URL(essenceUrl).openStream()) {
             log.info("Attempting UCUM essence load from remote {}", essenceUrl);
-            return new UcumEssenceService(remoteStream);
+            return new org.fhir.ucum.UcumEssenceService(remoteStream);
         } catch (Exception e) {
             log.warn("Remote UCUM essence load or initialization failed: {}. Falling back to local resource.", e.getMessage(), e);
         }
@@ -68,7 +92,7 @@ public class UcumServiceImpl implements UcumService {
                 throw new IllegalStateException("Local ucum-essence.xml not found in classpath");
             }
             log.info("Loaded UCUM essence from local classpath resource");
-            return new UcumEssenceService(localStream);
+            return new org.fhir.ucum.UcumEssenceService(localStream);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to initialize UcumEssenceService from local resource", e);
         }

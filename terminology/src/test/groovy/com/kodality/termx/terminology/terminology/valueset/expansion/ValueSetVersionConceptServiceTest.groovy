@@ -173,6 +173,42 @@ class ValueSetVersionConceptServiceTest extends Specification {
     expanded.first().additionalDesignations.find { it.language == "lt" }?.name == "ml"
   }
 
+  def "expand enriches UCUM supplement designations when includeDesignations is true without preferred language"() {
+    given:
+    repository.expand(1L) >> [vsConcept("mL", [designation("display", "en", "milliliter")]).setEnumerated(true)]
+    codeSystemEntityVersionService.query(_) >> QueryResult.empty()
+    entityPropertyService.query(_) >> QueryResult.empty()
+    codeSystemService.query(_) >> new QueryResult([
+        new CodeSystem().setId("ucum-supplement-lt").setBaseCodeSystem("ucum").setContent(CodeSystemContent.supplement)
+    ])
+    conceptService.query(_) >> new QueryResult([
+        new Concept()
+            .setCode("mL")
+            .setVersions([new CodeSystemEntityVersion().setDesignations([
+                designation("abbreviation", "lt", "ml"),
+                designation("definition", "lt", "Milliliter")
+            ])])
+    ])
+
+    def service = new ValueSetVersionConceptService(
+        [],
+        repository,
+        valueSetVersionRepository,
+        valueSetSnapshotService,
+        codeSystemEntityVersionService,
+        entityPropertyService,
+        codeSystemService,
+        conceptService
+    )
+
+    when:
+    def expanded = service.expand(valueSetVersion(), null, true)
+
+    then:
+    expanded.first().additionalDesignations.find { it.language == "lt" && it.designationType == "abbreviation" }?.name == "ml"
+    expanded.first().additionalDesignations.find { it.language == "lt" && it.designationType == "definition" }?.name == "Milliliter"
+  }
+
   private static ValueSetVersion valueSetVersion() {
     return new ValueSetVersion()
         .setId(1L)

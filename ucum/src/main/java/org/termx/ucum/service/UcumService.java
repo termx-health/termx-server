@@ -15,6 +15,9 @@ import java.util.List;
 
 public interface UcumService {
 
+    default void reload() {
+    }
+
     /**
      * Retrieves details about the UCUM specification version used by the service,
      * including version number and release metadata.
