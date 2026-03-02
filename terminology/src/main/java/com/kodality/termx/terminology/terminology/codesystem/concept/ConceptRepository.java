@@ -56,6 +56,26 @@ public class ConceptRepository extends BaseRepository {
     return getBean(sb.getSql(), bp, sb.getParams());
   }
 
+  public List<Concept> batchLoad(Map<String, List<String>> codeSystemToCodes) {
+    if (codeSystemToCodes == null || codeSystemToCodes.isEmpty()) {
+      return List.of();
+    }
+    
+    SqlBuilder sb = new SqlBuilder(select + "from terminology.concept c where c.sys_status = 'A' and (");
+    boolean first = true;
+    for (Map.Entry<String, List<String>> entry : codeSystemToCodes.entrySet()) {
+      if (!first) {
+        sb.append(" or ");
+      }
+      sb.append("(c.code_system = ?", entry.getKey());
+      sb.and().in("c.code", entry.getValue());
+      sb.append(")");
+      first = false;
+    }
+    sb.append(")");
+    return getBeans(sb.getSql(), bp, sb.getParams());
+  }
+
   public QueryResult<Concept> query(ConceptQueryParams params) {
     String join = getJoin(params);
     return query(params, p -> {
