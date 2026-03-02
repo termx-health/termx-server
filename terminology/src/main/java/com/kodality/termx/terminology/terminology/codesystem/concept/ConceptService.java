@@ -150,6 +150,33 @@ public class ConceptService {
     return Optional.ofNullable(repository.load(codeSystems, code)).map(c -> decorate(c, codeSystem, null));
   }
 
+  public Map<String, Concept> batchLoad(List<Pair<String, String>> codeSystemCodePairs) {
+    if (CollectionUtils.isEmpty(codeSystemCodePairs)) {
+      return Map.of();
+    }
+    
+    Map<String, List<String>> codeSystemToCodes = codeSystemCodePairs.stream()
+        .collect(Collectors.groupingBy(
+            Pair::getLeft,
+            Collectors.mapping(Pair::getRight, Collectors.toList())
+        ));
+    
+    List<Concept> concepts = repository.batchLoad(codeSystemToCodes);
+    
+    if (CollectionUtils.isEmpty(concepts)) {
+      return Map.of();
+    }
+    
+    List<Concept> decorated = decorate(concepts, null, new ConceptQueryParams());
+    
+    return decorated.stream()
+        .collect(Collectors.toMap(
+            c -> c.getCodeSystem() + "|" + c.getCode(),
+            c -> c,
+            (c1, c2) -> c1
+        ));
+  }
+
   public Optional<Concept> loadByUri(String codeSystemUri, String code) {
     Optional<String> codeSystem = codeSystemRepository.query(new CodeSystemQueryParams().setUri(codeSystemUri).limit(1)).findFirst().map(CodeSystem::getId);
     return codeSystem.flatMap(cs -> load(cs, code));
