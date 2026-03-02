@@ -83,14 +83,31 @@ public class ConceptExportService {
   private List<String> composeHeaders(CodeSystem codeSystem, List<Concept> concepts) {
     List<String> fields = new ArrayList<>();
     fields.add("code");
-    fields.addAll(concepts.stream().flatMap(c -> c.getVersions().stream())
-        .flatMap(v -> Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream().filter(d -> PublicationStatus.active.equals(d.getStatus())))
-        .collect(Collectors.groupingBy(d -> d.getDesignationType() + "#" + d.getLanguage())).keySet());
-    fields.addAll(concepts.stream().flatMap(c -> c.getVersions().stream()).flatMap(v -> Optional.ofNullable(v.getPropertyValues()).orElse(List.of()).stream())
-        .flatMap(pv -> pv.getEntityPropertyType().equals(EntityPropertyType.coding) ?
-            Stream.of(pv.getEntityProperty(), pv.getEntityProperty() + "#system") :
-            Stream.of(pv.getEntityProperty()))
-        .collect(Collectors.groupingBy(v -> v)).keySet().stream().sorted().toList());
+    
+    java.util.Set<String> designations = new java.util.LinkedHashSet<>();
+    java.util.Set<String> properties = new java.util.TreeSet<>();
+    
+    int conceptLimit = Math.min(concepts.size(), 1000);
+    for (int i = 0; i < conceptLimit; i++) {
+      Concept c = concepts.get(i);
+      for (CodeSystemEntityVersion v : c.getVersions()) {
+        Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream()
+            .filter(d -> PublicationStatus.active.equals(d.getStatus()))
+            .forEach(d -> designations.add(d.getDesignationType() + "#" + d.getLanguage()));
+        
+        Optional.ofNullable(v.getPropertyValues()).orElse(List.of()).forEach(pv -> {
+          if (pv.getEntityPropertyType().equals(EntityPropertyType.coding)) {
+            properties.add(pv.getEntityProperty());
+            properties.add(pv.getEntityProperty() + "#system");
+          } else {
+            properties.add(pv.getEntityProperty());
+          }
+        });
+      }
+    }
+    
+    fields.addAll(designations);
+    fields.addAll(properties);
     fields.addAll(Optional.ofNullable(codeSystem.getProperties()).orElse(List.of()).stream()
         .map(PropertyReference::getName)
         .filter(p -> List.of("status", "is-a", "parent", "child", "partOf", "groupedBy", "classifiedWith").contains(p)).toList());

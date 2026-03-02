@@ -6,12 +6,13 @@ CREATE OR REPLACE FUNCTION terminology.concepts(p_code_system text, p_version te
 AS $function$
 with recursive st as (
   SELECT terminology.search_translate(trim(unnest(string_to_array(p_text, ' ')))) AS value
-), r as (
+), root as (
   select c.code_system, csv.version, c.id concept_id, c.code, csev.id concept_version_id, 1 level,
          true leaf, null::bigint parent_id, null::text parent_code, csev.status, c.code as path
     from terminology.concept c
          inner join terminology.code_system_version csv on csv.code_system  = c.code_system and csv.sys_status = 'A'
          inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A'
+         inner join terminology.code_system_entity cse on csev.code_system_entity_id = cse.id and cse.sys_status = 'A'
          inner join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.sys_status = 'A'
                 and evcsvm.code_system_entity_version_id = csev.id and csv.id = evcsvm.code_system_version_id
   where c.sys_status = 'A'
@@ -33,6 +34,10 @@ with recursive st as (
                         where csa.source_code_system_entity_version_id = csev.id and csa.sys_status = 'A'
                           and csa.association_type = p_association_type )
         ))
+), r as (
+  select distinct t.code_system, t.version, t.concept_id, t.code, t.concept_version_id, t.level,
+         t.leaf, t.parent_id, t.parent_code, t.status, t.path
+    from root t
   union all
   select c.code_system, csv.version, c.id concept_id, c.code, csev.id concept_version_id, r.level + 1,
          not exists(select 1
@@ -44,9 +49,11 @@ with recursive st as (
         inner join terminology.code_system_association csa on csa.code_system=r.code_system and
               csa.target_code_system_entity_version_id = r.concept_version_id and csa.sys_status = 'A' --and csa.association_type = 'is-a'
         inner join terminology.code_system_entity_version csev on csa.source_code_system_entity_version_id = csev.id and csev.sys_status = 'A'
+        inner join terminology.code_system_entity cse on csev.code_system_entity_id = cse.id and cse.sys_status = 'A'
         inner join terminology.concept c on csev.code_system_entity_id = c.id and c.sys_status = 'A'
         left outer join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.code_system_entity_version_id = csev.id  and evcsvm.sys_status = 'A'
         left outer join terminology.code_system_version csv on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A'
+  where not exists (select 1 from root where csev.id = root.concept_version_id)
 ),
 t as (
   -- list of the concepts with associations
@@ -58,7 +65,8 @@ t as (
     from terminology.concept c
         inner join terminology.code_system_version csv on csv.code_system  = c.code_system and csv.sys_status = 'A'
         inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A'
-        left join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.sys_status = 'A'
+        inner join terminology.code_system_entity cse on csev.code_system_entity_id = cse.id and cse.sys_status = 'A'
+        inner join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.sys_status = 'A'
              and evcsvm.code_system_entity_version_id = csev.id and csv.id = evcsvm.code_system_version_id
   where c.sys_status = 'A'
     and c.code_system = p_code_system
@@ -78,14 +86,18 @@ t as (
     ))
 ), prop as (
 select t.concept_version_id,
-       jsonb_agg(jsonb_build_object('pcode', ep.name, 'value',epv.value::text,'pid',epv.entity_property_id)) properties
+       jsonb_agg(jsonb_build_object('pcode', ep.name, 'value',epv.value::text,'pid',epv.entity_property_id)
+                 order by ep.name
+       ) properties
   from t inner join terminology.entity_property_value epv on
               epv.code_system_entity_version_id = t.concept_version_id and epv.sys_status = 'A'
          inner join terminology.entity_property ep on ep.id = epv.entity_property_id and ep.sys_status='A'
 group by t.concept_version_id
 )
 select t.*,
-       jsonb_agg(jsonb_build_object('language',d.language,'name',d.name,'type',ep.name)),
+       jsonb_agg(jsonb_build_object('language',d.language,'name',d.name,'type',ep.name)
+                 order by d.language, d.name
+       ) designations,
        prop.properties
   from t
        left outer join terminology.designation d on
@@ -98,4 +110,3 @@ order by t.path;
 
 $function$
 ;
-
