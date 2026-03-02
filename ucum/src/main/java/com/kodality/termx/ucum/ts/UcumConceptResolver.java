@@ -68,6 +68,13 @@ public class UcumConceptResolver {
     return isValidCode(code) ? Optional.of(mapper.toExpressionConcept(code)) : Optional.empty();
   }
 
+  public Optional<UcumUnitDefinition> findUnitDefinition(String code) {
+    if (StringUtils.isEmpty(code)) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(getUnitByCode().get(code));
+  }
+
   public List<ValueSetVersionConcept> expandByKind(Object filterValue) {
     Set<String> requested = asNormalizedValueSet(filterValue);
     return getUnits().stream()
@@ -89,6 +96,7 @@ public class UcumConceptResolver {
         c.setAdditionalDesignations(concept.getVersions().stream().findFirst().map(v -> v.getDesignations()).orElse(List.of()));
       }
       c.setActive(true);
+      c.getConcept().setCodeSystem("ucum");
     });
     if (!isValidCode(c.getConcept().getCode())) {
       c.setActive(false);
