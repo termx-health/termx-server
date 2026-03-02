@@ -1,7 +1,7 @@
--- DROP FUNCTION terminology.concepts(text, text, text, text, text, text);
+DROP FUNCTION terminology.concepts(text, text, text, text, text, text);
 
 CREATE OR REPLACE FUNCTION terminology.concepts(p_code_system text, p_version text DEFAULT NULL::text, p_association_type text DEFAULT NULL::text, p_ids text DEFAULT NULL::text, p_codes text DEFAULT NULL::text, p_text text DEFAULT NULL::text)
- RETURNS TABLE(code_system text, version text, concept_id bigint, code text, concept_version_id bigint, level integer, leaf boolean, parent_id bigint, parent_code text, status text, path text, display jsonb)
+ RETURNS TABLE(code_system text, version text, concept_id bigint, code text, concept_version_id bigint, level integer, leaf boolean, parent_id bigint, parent_code text, status text, path text, display jsonb, property jsonb)
  LANGUAGE sql
 AS $function$
 with recursive st as (
@@ -76,15 +76,26 @@ t as (
         and not exists(select 1 from terminology.code_system_association csa
                     where csa.source_code_system_entity_version_id = csev.id and csa.sys_status = 'A' and csa.association_type = p_association_type )
     ))
+), prop as (
+select t.concept_version_id,
+       jsonb_agg(jsonb_build_object('pcode', ep.name, 'value',epv.value::text,'pid',epv.entity_property_id)) properties
+  from t inner join terminology.entity_property_value epv on
+              epv.code_system_entity_version_id = t.concept_version_id and epv.sys_status = 'A'
+         inner join terminology.entity_property ep on ep.id = epv.entity_property_id and ep.sys_status='A'
+group by t.concept_version_id
 )
 select t.*,
-       jsonb_agg(jsonb_build_object('language',d.language,'name',d.name,'type',ep.name))
-  from t left outer join terminology.designation d on
+       jsonb_agg(jsonb_build_object('language',d.language,'name',d.name,'type',ep.name)),
+       prop.properties
+  from t
+       left outer join terminology.designation d on
               d.code_system_entity_version_id = t.concept_version_id and d.sys_status = 'A'
-         left outer join terminology.entity_property ep on ep.id = d.designation_type_id
+       left outer join terminology.entity_property ep on ep.id = d.designation_type_id
+       left outer join prop on prop.concept_version_id = t.concept_version_id
 group by t.code_system, t.version, t.concept_id, t.code, t.concept_version_id, t.level, t.leaf,
-         t.parent_id, t.parent_code, t.status, t.path
+         t.parent_id, t.parent_code, t.status, t.path, prop.properties
 order by t.path;
 
 $function$
 ;
+
