@@ -1,6 +1,8 @@
 DROP FUNCTION if exists terminology.concepts(text, text, text, text, text, text);
 
-CREATE OR REPLACE FUNCTION terminology.concepts(p_code_system text, p_version text DEFAULT NULL::text, p_association_type text DEFAULT NULL::text, p_ids text DEFAULT NULL::text, p_codes text DEFAULT NULL::text, p_text text DEFAULT NULL::text)
+DROP FUNCTION if exists terminology.concepts(text, text, text, text, text, text, boolean);
+
+CREATE OR REPLACE FUNCTION terminology.concepts(p_code_system text, p_version text DEFAULT NULL::text, p_association_type text DEFAULT NULL::text, p_ids text DEFAULT NULL::text, p_codes text DEFAULT NULL::text, p_text text DEFAULT NULL::text, p_include_property boolean DEFAULT false)
  RETURNS TABLE(code_system text, version text, concept_id bigint, code text, concept_version_id bigint, level integer, leaf boolean, parent_id bigint, parent_code text, status text, path text, display jsonb, property jsonb)
  LANGUAGE sql
 AS $function$
@@ -84,14 +86,26 @@ t as (
         and not exists(select 1 from terminology.code_system_association csa
                     where csa.source_code_system_entity_version_id = csev.id and csa.sys_status = 'A' and csa.association_type = p_association_type )
     ))
+), csval as (
+select code_system, term.code, term.concept_version_id, term.concept_status, term.concept_version , term.display
+from (
+  select epv.value ->> 'codeSystem' code_system, string_agg(epv.value ->> 'code', ', ') AS codes
+    from t inner join terminology.entity_property_value epv on
+                epv.code_system_entity_version_id = t.concept_version_id and epv.sys_status = 'A'
+   where epv.value ->> 'codeSystem' is not null and epv.value ->> 'code' is not null
+   group by epv.value ->> 'codeSystem'
+ ) x cross join lateral terminology.concept_info(p_code_system => code_system, p_codes => codes) as term
+ where p_include_property is true
 ), prop as (
 select t.concept_version_id,
-       jsonb_agg(jsonb_build_object('pcode', ep.name, 'value',epv.value::text,'pid',epv.entity_property_id)
-                 order by ep.name
+       jsonb_agg(jsonb_build_object('pcode', ep.name, 'value',epv.value::text,'pid', epv.entity_property_id,
+         'cdisplay', csval.display, 'cstatus', csval.concept_status, 'cversion', csval.concept_version)
+         order by ep.name
        ) properties
   from t inner join terminology.entity_property_value epv on
               epv.code_system_entity_version_id = t.concept_version_id and epv.sys_status = 'A'
          inner join terminology.entity_property ep on ep.id = epv.entity_property_id and ep.sys_status='A'
+         left outer join csval on csval.code_system = (epv.value ->> 'codeSystem') and csval.code = (epv.value ->> 'code')
 group by t.concept_version_id
 )
 select t.*,
