@@ -172,3 +172,7 @@ alter table terminology.entity_property rename column description_temp to descri
 --changeset kodality:entity_property-show_in_list
 alter table terminology.entity_property add column show_in_list boolean not null default true;
 --
+
+--changeset termx:code_system_entity_version-snapshot
+alter table terminology.code_system_entity_version add column if not exists snapshot jsonb;
+--
