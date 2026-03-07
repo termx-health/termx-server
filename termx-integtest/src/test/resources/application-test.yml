@@ -1,6 +1,10 @@
 micronaut:
   server:
     port: -1
+  email:
+    enabled: false
+    from:
+      email: test@test.com
 
 datasources:
   default:
@@ -27,3 +31,22 @@ netty:
   default:
     allocator:
       max-order: 3
+
+termx:
+  web-url: http://localhost:8200
+  api-url: http://localhost:8200/api
+
+auth:
+  dev:
+    allowed: true
+
+javamail:
+  authentication:
+    username: test
+    password: test
+  properties:
+    mail:
+      smtp:
+        host: localhost
+        port: 1025
+        auth: false

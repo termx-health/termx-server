@@ -59,6 +59,7 @@ auth:
       - '/swagger'
       - '/github/cb'
       - '/pages/static'
+      - '/management/email'
 
 snowstorm:
   url: https://snowstorm.termx.org/
@@ -77,3 +78,22 @@ chef.url: https://demo.termx.org/chef
 termx:
   web-url: https://demo.termx.org
   api-url: https://demo.termx.org/api
+
+micronaut:
+  email:
+    enabled: ${SMTP_ENABLED:false}
+    from:
+      email: ${SMTP_FROM:noreply@termx.org}
+
+javamail:
+  authentication:
+    username: ${SMTP_USERNAME:no-auth-required}
+    password: ${SMTP_PASSWORD:no-auth-required}
+  properties:
+    mail:
+      smtp:
+        host: ${SMTP_HOST:}
+        port: ${SMTP_PORT:587}
+        auth: ${SMTP_AUTH:true}
+        starttls:
+          enable: ${SMTP_STARTTLS:true}
