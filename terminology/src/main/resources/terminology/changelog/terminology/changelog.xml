@@ -44,6 +44,7 @@
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/33-change_value_set_id.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/34-change_map_set_id.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/35-concepts.sql"/>
+        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/37-value_set_expand_jsonb.sql"/>
     </changeSet>
 
     <changeSet id="terminology_function_indexes_7" author="kodality">
