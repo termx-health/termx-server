@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
@@ -14,8 +15,11 @@ import static org.apache.commons.lang3.StringUtils.isAllBlank;
 public class XlsxUtil {
 
   public static byte[] composeXlsx(List<String> headers, List<Object[]> rows, String sheetName) {
+    return composeXlsx(headers, rows, sheetName, true);
+  }
 
-    Workbook workbook = new XSSFWorkbook();
+  public static byte[] composeXlsx(List<String> headers, List<Object[]> rows, String sheetName, boolean streaming) {
+    Workbook workbook = streaming ? new SXSSFWorkbook(100) : new XSSFWorkbook();
     Sheet sheet = workbook.createSheet(sheetName);
 
     int rowNum = 0;
@@ -28,6 +32,10 @@ public class XlsxUtil {
     try {
       workbook.write(bos);
       bos.close();
+      if (streaming) {
+        ((SXSSFWorkbook) workbook).dispose();
+      }
+      workbook.close();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

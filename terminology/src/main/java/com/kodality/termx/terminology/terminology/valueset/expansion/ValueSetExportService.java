@@ -13,6 +13,7 @@ import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptUtil
 import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityPropertyType;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
@@ -53,7 +54,11 @@ public class ValueSetExportService {
     List<ValueSetVersionConcept> concepts = Optional.ofNullable(vsv.getSnapshot()).map(ValueSetSnapshot::getExpansion).orElse(List.of());
 
     List<String> headers = composeHeaders(concepts, vsv);
-    List<Object[]> rows = concepts.stream().map(c -> composeRow(c, headers)).toList();
+    
+    List<Pair<String, String>> codingPairs = collectCodingPropertyPairs(concepts);
+    Map<String, Concept> conceptMap = conceptService.batchLoad(codingPairs);
+    
+    List<Object[]> rows = concepts.stream().map(c -> composeRow(c, headers, conceptMap)).toList();
 
     String format = params.get("format");
     if ("csv".equals(format)) {
@@ -65,34 +70,62 @@ public class ValueSetExportService {
     throw ApiError.TE807.toApiException();
   }
 
+  private List<Pair<String, String>> collectCodingPropertyPairs(List<ValueSetVersionConcept> concepts) {
+    return concepts.stream()
+        .flatMap(c -> Optional.ofNullable(c.getPropertyValues()).orElse(List.of()).stream())
+        .filter(pv -> pv.getEntityPropertyType().equals(EntityPropertyType.coding))
+        .map(pv -> Pair.of(pv.asCodingValue().getCodeSystem(), pv.asCodingValue().getCode()))
+        .distinct()
+        .toList();
+  }
+
   private List<String> composeHeaders(List<ValueSetVersionConcept> concepts, ValueSetVersion vsv) {
     List<String> fields = new ArrayList<>();
     fields.add("code");
 
-    List<String> displayLangs = concepts.stream()
-        .map(c -> Optional.ofNullable(c.getDisplay()).map(Designation::getLanguage).orElse(null))
-        .distinct().toList();
-    displayLangs.forEach(l -> fields.add(Stream.of("display", l).filter(Objects::nonNull).collect(Collectors.joining("#"))));
+    java.util.Set<String> displayLangs = new java.util.LinkedHashSet<>();
+    java.util.Set<String> additionalDesignations = new java.util.LinkedHashSet<>();
+    java.util.Set<String> properties = new java.util.TreeSet<>();
+    
+    int conceptLimit = Math.min(concepts.size(), 1000);
+    for (int i = 0; i < conceptLimit; i++) {
+      ValueSetVersionConcept c = concepts.get(i);
+      
+      if (c.getDisplay() != null) {
+        String lang = c.getDisplay().getLanguage();
+        displayLangs.add(Stream.of("display", lang).filter(Objects::nonNull).collect(Collectors.joining("#")));
+      }
+      
+      Optional.ofNullable(c.getAdditionalDesignations()).orElse(List.of()).forEach(d -> 
+          additionalDesignations.add("additionalDesignation#" + d.getLanguage())
+      );
+      
+      Optional.ofNullable(c.getPropertyValues()).orElse(List.of()).forEach(pv -> {
+        if (pv.getEntityPropertyType().equals(EntityPropertyType.coding)) {
+          properties.add(pv.getEntityProperty());
+          properties.add(pv.getEntityProperty() + "#system");
+          properties.add(pv.getEntityProperty() + "#display");
+        } else {
+          properties.add(pv.getEntityProperty());
+        }
+      });
+    }
+    
+    fields.addAll(displayLangs);
+    fields.addAll(additionalDesignations);
+    fields.addAll(properties);
 
-    fields.addAll(concepts.stream()
-        .flatMap(c -> Optional.ofNullable(c.getAdditionalDesignations()).orElse(List.of()).stream())
-        .collect(Collectors.groupingBy(d -> "additionalDesignation#" + d.getLanguage())).keySet().stream()
-        .filter(filed -> fields.stream().noneMatch(f -> f.equals(filed))).toList());
-
-    fields.addAll(concepts.stream().flatMap(v -> Optional.ofNullable(v.getPropertyValues()).orElse(List.of()).stream())
-        .flatMap(pv -> pv.getEntityPropertyType().equals(EntityPropertyType.coding) ?
-            Stream.of(pv.getEntityProperty(), pv.getEntityProperty() + "#system", pv.getEntityProperty() + "#display") :
-            Stream.of(pv.getEntityProperty()))
-        .collect(Collectors.groupingBy(v -> v)).keySet().stream().sorted().toList());
-
-    fields.addAll(vsv.getRuleSet().getRules().stream().flatMap(r -> Optional.ofNullable(r.getProperties()).orElse(List.of()).stream())
-        .filter(p -> fields.stream().noneMatch(f -> f.equals(p))).toList());
+    vsv.getRuleSet().getRules().stream()
+        .flatMap(r -> Optional.ofNullable(r.getProperties()).orElse(List.of()).stream())
+        .filter(p -> !fields.contains(p))
+        .forEach(fields::add);
+        
     fields.add("codeSystem");
     fields.add("codeSystemVersion");
     return fields;
   }
 
-  private Object[] composeRow(ValueSetVersionConcept c, List<String> headers) {
+  private Object[] composeRow(ValueSetVersionConcept c, List<String> headers, Map<String, Concept> conceptMap) {
     List<Object> row = new ArrayList<>();
     Map<String, List<Designation>> designations = Optional.ofNullable(c.getAdditionalDesignations()).orElse(List.of()).stream()
         .collect(Collectors.groupingBy(d -> "additionalDesignation#" + d.getLanguage()));
@@ -116,9 +149,17 @@ public class ValueSetExportService {
               return pv.asCodingValue().getCodeSystem();
             }
             if (h.contains("#display")) {
-              return conceptService.load(pv.asCodingValue().getCodeSystem(), pv.asCodingValue().getCode())
-                  .map(cv -> ConceptUtil.getDisplay(cv.getLastVersion().map(CodeSystemEntityVersion::getDesignations)
-                      .orElse(List.of()), SessionStore.require().getLang(), null).getName()).orElse("");
+              String key = pv.asCodingValue().getCodeSystem() + "|" + pv.asCodingValue().getCode();
+              Concept concept = conceptMap.get(key);
+              if (concept != null) {
+                Designation display = ConceptUtil.getDisplay(
+                    concept.getLastVersion().map(CodeSystemEntityVersion::getDesignations).orElse(List.of()),
+                    SessionStore.require().getLang(),
+                    null
+                );
+                return display != null ? display.getName() : "";
+              }
+              return "";
             }
             return pv.asCodingValue().getCode();
           }
