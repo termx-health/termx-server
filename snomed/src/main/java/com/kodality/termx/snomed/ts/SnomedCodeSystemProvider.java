@@ -3,7 +3,7 @@ package com.kodality.termx.snomed.ts;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
-import com.kodality.termx.snomed.snomed.SnomedService;
+import com.kodality.termx.snomed.integration.SnomedService;
 import com.kodality.termx.core.ts.CodeSystemExternalProvider;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;

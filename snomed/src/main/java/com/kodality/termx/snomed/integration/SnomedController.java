@@ -1,4 +1,4 @@
-package com.kodality.termx.snomed.snomed;
+package com.kodality.termx.snomed.integration;
 
 
 import com.kodality.commons.util.AsyncHelper;
@@ -27,11 +27,11 @@ import com.kodality.termx.snomed.rf2.SnomedExportRequest;
 import com.kodality.termx.snomed.rf2.SnomedImportJob;
 import com.kodality.termx.snomed.rf2.SnomedImportRequest;
 import com.kodality.termx.snomed.search.SnomedSearchResult;
-import com.kodality.termx.snomed.snomed.csv.SnomedConceptCsvService;
-import com.kodality.termx.snomed.snomed.rf2.SnomedRF2Service;
-import com.kodality.termx.snomed.snomed.translation.SnomedTranslationActionService;
-import com.kodality.termx.snomed.snomed.translation.SnomedTranslationProvenanceService;
-import com.kodality.termx.snomed.snomed.translation.SnomedTranslationService;
+import com.kodality.termx.snomed.integration.csv.SnomedConceptCsvService;
+import com.kodality.termx.snomed.integration.rf2.SnomedRF2Service;
+import com.kodality.termx.snomed.integration.translation.SnomedTranslationActionService;
+import com.kodality.termx.snomed.integration.translation.SnomedTranslationProvenanceService;
+import com.kodality.termx.snomed.integration.translation.SnomedTranslationService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.core.sys.lorque.LorqueProcessService;
 import com.kodality.termx.core.sys.provenance.Provenance;

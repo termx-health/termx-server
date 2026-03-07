@@ -3,6 +3,7 @@ package com.kodality.termx.core.sys.job;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.termx.core.sys.job.logger.ImportNotificationService;
 import com.kodality.termx.sys.ExecutionStatus;
 import com.kodality.termx.sys.job.JobLog;
 import com.kodality.termx.sys.job.JobLog.JobDefinition;
@@ -10,12 +11,15 @@ import com.kodality.termx.sys.job.JobLogQueryParams;
 import java.util.List;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Singleton
 @RequiredArgsConstructor
 public class JobLogService {
   private final JobLogRepository jobLogRepository;
+  private final ImportNotificationService importNotificationService;
 
   @Transactional
   public Long create(JobDefinition definition) {
@@ -47,6 +51,23 @@ public class JobLogService {
     jobLog.setErrors(errors);
     String status = resolveStatus(jobLog);
     jobLogRepository.finish(jobLog, status);
+    
+    JobLog finishedJob = get(id);
+    if (finishedJob != null && isImportJob(finishedJob.getDefinition().getType())) {
+      try {
+        importNotificationService.sendImportCompletionNotification(finishedJob);
+      } catch (Exception e) {
+        log.error("Failed to send import notification for job " + id, e);
+      }
+    }
+  }
+
+  private boolean isImportJob(String jobType) {
+    if (jobType == null) {
+      return false;
+    }
+    String lowerJobType = jobType.toLowerCase();
+    return lowerJobType.contains("import") || lowerJobType.contains("sync");
   }
 
   private String resolveStatus(JobLog jobLog) {

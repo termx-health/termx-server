@@ -73,7 +73,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 )
 @OpenAPIInclude(
     tags = @Tag(name = "SNOMED"),
-    classes = {com.kodality.termx.snomed.snomed.SnomedController.class}
+    classes = {com.kodality.termx.snomed.integration.SnomedController.class}
 )
 @OpenAPIInclude(
     tags = @Tag(name = "MeasurementUnits"),

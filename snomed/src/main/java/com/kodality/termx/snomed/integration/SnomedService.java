@@ -1,4 +1,4 @@
-package com.kodality.termx.snomed.snomed;
+package com.kodality.termx.snomed.integration;
 
 import com.kodality.termx.snomed.ApiError;
 import com.kodality.termx.snomed.client.SnowstormClient;
@@ -8,10 +8,12 @@ import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.description.SnomedDescription;
 import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
 import com.kodality.termx.snomed.rf2.SnomedImportRequest;
+import com.kodality.termx.snomed.rf2.SnomedImportTracking;
 import com.kodality.termx.snomed.search.SnomedSearchResult;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.io.FileNotFoundException;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SnomedService {
   private final SnowstormClient snowstormClient;
+  private final SnomedImportTrackingRepository trackingRepository;
 
   private static final int MAX_COUNT = 9999;
   private static final int MAX_CONCEPT_COUNT = 100;
@@ -121,6 +124,18 @@ public class SnomedService {
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
+    
+    SnomedImportTracking tracking = new SnomedImportTracking()
+        .setSnowstormJobId(jobId)
+        .setBranchPath(req.getBranchPath())
+        .setType(req.getType())
+        .setStatus("RUNNING")
+        .setStarted(OffsetDateTime.now())
+        .setNotified(false);
+    trackingRepository.save(tracking);
+    
+    log.info("Created SNOMED import tracking record for Snowstorm job: {}", jobId);
+    
     return Map.of("jobId", jobId);
   }
 

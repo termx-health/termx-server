@@ -5,7 +5,7 @@ import com.kodality.termx.core.ts.ValueSetExternalExpandProvider;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.description.SnomedDescription;
-import com.kodality.termx.snomed.snomed.SnomedService;
+import com.kodality.termx.snomed.integration.SnomedService;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
