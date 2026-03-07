@@ -26,6 +26,7 @@ public class MapSetRepository extends BaseRepository {
     bp.addColumnProcessor("title", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("purpose", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("topic", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("settings", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("copyright", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("use_context", PgBeanProcessor.fromJson(JsonUtil.getListType(UseContext.class)));

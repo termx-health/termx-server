@@ -402,11 +402,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         .setViewer(fromFhirContactsName(fhirCS.getReviewer()))
         .setEndorser(fromFhirContactsName(fhirCS.getEndorser())));
 
+    codeSystem.setContent(fhirCS.getContent());
     if (!CodeSystemContent.supplement.equals(codeSystem.getContent())) {
       codeSystem.setHierarchyMeaning(fhirCS.getHierarchyMeaning());
+    } else {
       codeSystem.setBaseCodeSystemUri(fhirCS.getSupplements());
     }
-    codeSystem.setContent(fhirCS.getContent());
     codeSystem.setCaseSensitive(fhirCS.getCaseSensitive() != null && fhirCS.getCaseSensitive() ? CaseSignificance.entire_term_case_sensitive :
         CaseSignificance.entire_term_case_insensitive);
 
