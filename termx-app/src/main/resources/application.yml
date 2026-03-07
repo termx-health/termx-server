@@ -17,7 +17,9 @@ micronaut:
   email:
     enabled: ${SMTP_ENABLED:false}
     from:
-      email: ${SMTP_FROM:noreply@termx.org}
+      email: ${SMTP_FROM:noreply@termx.dev}
+    import:
+      recipients: ${SMTP_TO_IMPORT:}
 endpoints:
   health:
     enabled: true

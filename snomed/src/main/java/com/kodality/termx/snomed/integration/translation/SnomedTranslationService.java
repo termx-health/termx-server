@@ -1,12 +1,12 @@
-package com.kodality.termx.snomed.snomed.translation;
+package com.kodality.termx.snomed.integration.translation;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.snomed.concept.SnomedTranslation;
 import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
 import com.kodality.termx.snomed.description.SnomedDescription;
-import com.kodality.termx.snomed.snomed.SnomedInterceptor;
-import com.kodality.termx.snomed.snomed.SnomedService;
+import com.kodality.termx.snomed.integration.SnomedInterceptor;
+import com.kodality.termx.snomed.integration.SnomedService;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;

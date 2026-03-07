@@ -1,4 +1,4 @@
-package com.kodality.termx.snomed.snomed.csv;
+package com.kodality.termx.snomed.integration.csv;
 
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.sys.lorque.LorqueProcessService;
@@ -6,7 +6,7 @@ import com.kodality.termx.core.utils.CsvUtil;
 import com.kodality.termx.snomed.concept.SnomedConcept;
 import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
 import com.kodality.termx.snomed.description.SnomedDescription;
-import com.kodality.termx.snomed.snomed.SnomedService;
+import com.kodality.termx.snomed.integration.SnomedService;
 import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.sys.lorque.ProcessResult;
 import io.micronaut.core.util.CollectionUtils;

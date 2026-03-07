@@ -1,4 +1,4 @@
-package com.kodality.termx.snomed.snomed;
+package com.kodality.termx.snomed.integration;
 
 import com.kodality.termx.snomed.concept.SnomedTranslation;
 import java.util.List;

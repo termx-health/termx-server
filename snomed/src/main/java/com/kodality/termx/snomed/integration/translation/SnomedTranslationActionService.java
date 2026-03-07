@@ -1,4 +1,4 @@
-package com.kodality.termx.snomed.snomed.translation;
+package com.kodality.termx.snomed.integration.translation;
 
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.ProvenanceService;

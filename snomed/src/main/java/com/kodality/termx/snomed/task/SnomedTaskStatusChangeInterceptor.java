@@ -1,7 +1,7 @@
 package com.kodality.termx.snomed.task;
 
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
-import com.kodality.termx.snomed.snomed.translation.SnomedTranslationActionService;
+import com.kodality.termx.snomed.integration.translation.SnomedTranslationActionService;
 import com.kodality.termx.task.Task;
 import com.kodality.termx.task.TaskStatus;
 import com.kodality.termx.task.api.TaskStatusChangeInterceptor;

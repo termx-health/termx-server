@@ -1,4 +1,4 @@
-package com.kodality.termx.snomed.snomed.translation;
+package com.kodality.termx.snomed.integration.translation;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
