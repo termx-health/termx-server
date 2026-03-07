@@ -14,6 +14,10 @@ micronaut:
 #      swagger-ui:
 #        paths: classpath:META-INF/swagger/views/swagger-ui
 #        mapping: /swagger-ui/**
+  email:
+    enabled: ${SMTP_ENABLED:false}
+    from:
+      email: ${SMTP_FROM:noreply@termx.org}
 endpoints:
   health:
     enabled: true
@@ -78,12 +82,6 @@ chef.url: https://demo.termx.org/chef
 termx:
   web-url: https://demo.termx.org
   api-url: https://demo.termx.org/api
-
-micronaut:
-  email:
-    enabled: ${SMTP_ENABLED:false}
-    from:
-      email: ${SMTP_FROM:noreply@termx.org}
 
 javamail:
   authentication:
