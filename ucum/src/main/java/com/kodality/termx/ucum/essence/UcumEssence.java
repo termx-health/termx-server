@@ -1,7 +1,6 @@
-package com.kodality.termx.ts;
+package com.kodality.termx.ucum.essence;
 
 import io.micronaut.core.annotation.Introspected;
-import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -10,7 +9,8 @@ import lombok.experimental.Accessors;
 @Setter
 @Introspected
 @Accessors(chain = true)
-public class Topic {
-  private String text;
-  private List<String> tags;
+public class UcumEssence {
+  private Long id;
+  private String version;
+  private String xml;
 }

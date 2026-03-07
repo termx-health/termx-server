@@ -11,6 +11,7 @@ import com.kodality.termx.core.ts.ValueSetExternalExpandProvider;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
+import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.Designation;
 import com.kodality.termx.ts.codesystem.EntityProperty;
 import com.kodality.termx.ts.codesystem.EntityPropertyQueryParams;
@@ -48,7 +49,6 @@ public class ValueSetVersionConceptService {
   private static final String INACTIVE = "inactive";
   private static final String STATUS = "status";
   private static final String RETIREMENT_DATE = "retirementDate";
-
   @Transactional
   public List<ValueSetVersionConcept> expand(String vs, String vsVersion) {
     ValueSetVersion version = getVersion(vs, vsVersion);
@@ -62,27 +62,42 @@ public class ValueSetVersionConceptService {
 
   @Transactional
   public ValueSetSnapshot expand(String vs, String vsVersion, String preferredLanguage) {
+    return expand(vs, vsVersion, preferredLanguage, false);
+  }
+
+  @Transactional
+  public ValueSetSnapshot expand(String vs, String vsVersion, String preferredLanguage, boolean includeDesignations) {
     ValueSetVersion version = getVersion(vs, vsVersion);
     if (version == null) {
       return null;
     }
     ValueSetSnapshot snapshot = version.getSnapshot();
-    if (PublicationStatus.active.equals(version.getStatus()) && snapshot != null && snapshot.getExpansion() != null) {
+    if (!includeDesignations &&
+        StringUtils.isEmpty(preferredLanguage) &&
+        PublicationStatus.active.equals(version.getStatus()) &&
+        snapshot != null && snapshot.getExpansion() != null) {
       return snapshot;
     }
     
-    List<ValueSetVersionConcept> expansion = expand(version, preferredLanguage);
+    List<ValueSetVersionConcept> expansion = expand(version, preferredLanguage, includeDesignations);
     snapshot = valueSetSnapshotService.createSnapshot(vs, version.getId(), expansion);
 
     return snapshot;
   }
 
   public List<ValueSetVersionConcept> expand(ValueSetVersion version, String preferredLanguage) {
+    return expand(version, preferredLanguage, false);
+  }
+
+  public List<ValueSetVersionConcept> expand(ValueSetVersion version, String preferredLanguage, boolean includeDesignations) {
     if (version == null || version.getId() == null) {
       return new ArrayList<>();
     }
 
-    if (PublicationStatus.active.equals(version.getStatus()) && version.getSnapshot() != null && version.getSnapshot().getExpansion() != null) {
+    if (!includeDesignations &&
+        StringUtils.isEmpty(preferredLanguage) &&
+        PublicationStatus.active.equals(version.getStatus()) &&
+        version.getSnapshot() != null && version.getSnapshot().getExpansion() != null) {
       return version.getSnapshot().getExpansion();
     }
 
@@ -90,9 +105,11 @@ public class ValueSetVersionConceptService {
         .filter(e -> e.isEnumerated() || e.getConcept().getConceptVersionId() != null)
         .collect(Collectors.toList());
     ValueSetVersionRuleSet ruleSet = version.getRuleSet();
+    List<ValueSetVersionConcept> externalExpansion = new ArrayList<>();
     for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
-      expansion.addAll(provider.expand(ruleSet, version, preferredLanguage));
+      externalExpansion.addAll(provider.expand(ruleSet, version, preferredLanguage));
     }
+    expansion.addAll(externalExpansion);
     if (!ruleSet.isInactive()) {
       return expansion.stream().filter(ValueSetVersionConcept::isActive).collect(Collectors.toList());
     }

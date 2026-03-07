@@ -9,8 +9,9 @@
     </appender>
 
 <!--    <logger name="com.zaxxer.hikari" level="DEBUG"/>-->
+    <logger name="liquibase" level="${LIQUIBASE_LOG_LEVEL:-INFO}"/>
+    <logger name="io.micronaut.liquibase" level="${MICRONAUT_LIQUIBASE_LOG_LEVEL:-INFO}"/>
     <root level="${LOGBACK_LOG_LEVEL:-INFO}">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>
-

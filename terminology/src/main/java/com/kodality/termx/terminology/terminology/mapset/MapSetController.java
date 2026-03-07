@@ -9,10 +9,13 @@ import com.kodality.termx.core.auth.Authorized;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.sys.job.JobLogResponse;
 import com.kodality.termx.core.sys.job.logger.ImportLogger;
+import com.kodality.termx.core.sys.lorque.LorqueProcessService;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceChange;
+import com.kodality.termx.sys.lorque.LorqueProcess;
 import com.kodality.termx.terminology.terminology.mapset.association.MapSetAssociationService;
 import com.kodality.termx.terminology.terminology.mapset.association.MapSetAutomapService;
+import com.kodality.termx.terminology.terminology.mapset.association.MapSetExportService;
 import com.kodality.termx.terminology.terminology.mapset.concept.MapSetConceptService;
 import com.kodality.termx.terminology.terminology.mapset.statistics.MapSetStatisticsService;
 import com.kodality.termx.terminology.terminology.mapset.version.MapSetVersionService;
@@ -27,7 +30,10 @@ import com.kodality.termx.ts.mapset.MapSetTransactionRequest;
 import com.kodality.termx.ts.mapset.MapSetVersion;
 import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
 import io.micronaut.core.annotation.Nullable;
+import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MediaType;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Delete;
@@ -56,6 +62,8 @@ public class MapSetController {
   private final MapSetAutomapService mapSetAutomapService;
   private final MapSetStatisticsService mapSetStatisticsService;
   private final MapSetProvenanceService provenanceService;
+  private final MapSetExportService mapSetExportService;
+  private final LorqueProcessService lorqueProcessService;
 
   private final ImportLogger importLogger;
 
@@ -267,6 +275,32 @@ public class MapSetController {
       mapSetAssociationService.cancel(request.get("ids"), mapSet, version);
     });
     return HttpResponse.ok();
+  }
+
+  //----------------MapSet Export----------------
+
+  @Authorized(Privilege.MS_VIEW)
+  @Get(uri = "/{mapSet}/versions/{version}/associations-export{?params*}")
+  public LorqueProcess exportAssociations(@PathVariable String mapSet, @PathVariable String version, Map<String, String> params) {
+    return mapSetExportService.export(mapSet, version, params.getOrDefault("format", "csv"));
+  }
+
+  @Authorized(Privilege.MS_VIEW)
+  @Get(value = "/associations-export-csv/result/{lorqueProcessId}", produces = "application/csv")
+  public HttpResponse<?> getAssociationExportCSV(Long lorqueProcessId) {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=associations.csv")
+        .contentType(MediaType.of("application/csv"));
+  }
+
+  @Authorized(Privilege.MS_VIEW)
+  @Get(value = "/associations-export-xlsx/result/{lorqueProcessId}", produces = "application/vnd.ms-excel")
+  public HttpResponse<?> getAssociationExportXLSX(Long lorqueProcessId) {
+    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
+    return response
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=associations.xlsx")
+        .contentType(MediaType.of("application/vnd.ms-excel"));
   }
 
   //----------------Provenances----------------
