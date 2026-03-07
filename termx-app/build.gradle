@@ -43,6 +43,7 @@ dependencies {
   implementation("io.micronaut:micronaut-management")
   implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
   implementation("io.micronaut.openapi:micronaut-openapi")
+  implementation("io.micronaut.email:micronaut-email-javamail")
 
   implementation("com.fasterxml.jackson.core:jackson-core:${rootProject.jacksonVersion}")
   implementation("com.fasterxml.jackson.core:jackson-databind:${rootProject.jacksonVersion}")

@@ -12,6 +12,7 @@ dependencies {
     testImplementation project(':terminology')
 
     testImplementation("io.micronaut.data:micronaut-data-spring-jdbc")
+    testImplementation("io.micronaut.email:micronaut-email-javamail")
     testImplementation("org.testcontainers:spock")
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("org.testcontainers:postgresql")
