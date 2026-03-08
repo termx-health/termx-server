@@ -477,3 +477,111 @@ The service will validate:
 4. From address is valid email format
 
 If validation fails, service reports as "not configured" with specific missing parameters.
+
+## Testing SMTP Connectivity
+
+Before configuring TermX, verify your SMTP server connectivity:
+
+### Test Port Connectivity
+```bash
+# Test port 25 (plain SMTP)
+nc -zv smtp-relay.gmail.com 25
+
+# Test port 587 (STARTTLS)
+nc -zv smtp-relay.gmail.com 587
+
+# Test port 465 (SSL/TLS - legacy)
+nc -zv smtp.gmail.com 465
+```
+
+### Test STARTTLS Capability
+```bash
+# Verify STARTTLS works on port 587
+openssl s_client -connect smtp-relay.gmail.com:587 -starttls smtp
+
+# Expected output should show:
+# - CONNECTED
+# - SSL handshake successful
+# - 250 SMTPUTF8 (or similar success response)
+```
+
+### Test Plain SMTP (Port 25)
+```bash
+# Manual SMTP test
+telnet smtp-relay.gmail.com 25
+
+# Commands to type after connection:
+# EHLO localhost
+# MAIL FROM:<test@example.com>
+# RCPT TO:<your-email@example.com>
+# QUIT
+```
+
+### Common SMTP Ports
+- **Port 25**: Plain SMTP, typically for server-to-server (may be blocked by ISPs)
+- **Port 587**: Submission port with STARTTLS (recommended for most modern setups)
+- **Port 465**: SMTP over SSL/TLS (legacy, use 587 instead)
+
+## Troubleshooting SMTP Issues
+
+### Issue: `[EOF]` or Connection Timeout
+
+**Cause**: Port mismatch or STARTTLS misconfiguration
+
+**Solutions**:
+1. Verify port is open: `nc -zv smtp-relay.gmail.com 587`
+2. Enable STARTTLS for port 587: `SMTP_STARTTLS=true`
+3. Try port 25 instead: `SMTP_PORT=25` and `SMTP_STARTTLS=false`
+4. Check firewall/network policies
+
+### Issue: Authentication Failed
+
+**Cause**: Credentials required but not provided
+
+**Solutions**:
+1. Set `SMTP_AUTH=true`
+2. Provide valid credentials: `SMTP_USERNAME` and `SMTP_PASSWORD`
+3. For Gmail: Use App Passwords, not regular password
+
+### Issue: Timeout on Port 25
+
+**Cause**: Many ISPs block outbound port 25
+
+**Solutions**:
+1. Use port 587 with STARTTLS instead
+2. Configure ISP/hosting provider to allow port 25
+3. Use mail relay service
+
+### Issue: Certificate Validation Errors
+
+**Cause**: SSL certificate trust issues
+
+**Solutions**:
+- TermX automatically trusts configured SMTP hosts when STARTTLS is enabled
+- Verify hostname matches certificate: `openssl s_client -connect <host>:587 -starttls smtp`
+
+### Issue: Google Workspace "Invalid credentials for relay" (Error 550-5.7.1)
+
+**Cause**: The `FROM` email domain doesn't match domains registered in Google Workspace SMTP Relay
+
+**Error message example**:
+```
+550-5.7.1 Invalid credentials for relay [YOUR_IP]. The IP address you've
+registered in your Workspace SMTP Relay service doesn't match the
+domain of the account this email is being sent from.
+```
+
+**Solutions**:
+1. **Use a registered domain** (Recommended): Update `SMTP_FROM` to use a domain that's registered in your Google Workspace
+   ```bash
+   # If your Workspace manages termx.org, use:
+   SMTP_FROM=noreply@termx.org
+   
+   # NOT: noreply@termx.dev (if termx.dev isn't in your Workspace)
+   ```
+
+2. **Add domain to Google Workspace**: Go to [Google Admin Console → Apps → Google Workspace → Gmail → Routing → SMTP relay service](https://admin.google.com/ac/apps/gmail/smtprelay) and add the sender domain to allowed domains for your IP address
+
+3. **Use SMTP authentication**: If you can't control the relay settings, use authenticated SMTP instead
+
+**Important**: The EHLO domain and FROM email domain must both be registered in your Google Workspace when using IP-based relay authentication.
