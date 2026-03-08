@@ -1,4 +1,4 @@
-package com.kodality.termx.uam.privilege;
+package org.termx.uam.privilege;
 
 import com.kodality.commons.cache.CacheManager;
 import com.kodality.termx.auth.Privilege;

@@ -1,4 +1,4 @@
-package com.kodality.termx.uam.privilege;
+package org.termx.uam.privilege;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Privilege;
@@ -15,8 +15,8 @@ import io.micronaut.http.annotation.Put;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-import static com.kodality.termx.uam.Privileges.P_EDIT;
-import static com.kodality.termx.uam.Privileges.P_VIEW;
+import static org.termx.uam.Privileges.P_EDIT;
+import static org.termx.uam.Privileges.P_VIEW;
 
 @Controller("/uam/privileges")
 @RequiredArgsConstructor

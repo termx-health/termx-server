@@ -15,6 +15,8 @@
   <include file="31-task_execution.sql" relativeToChangelogFile="true" />
   <include file="33-task_read_log.sql" relativeToChangelogFile="true" />
 
+  <include file="90-migrate-from-taskflow.sql" relativeToChangelogFile="true" />
+
   <changeSet id="taskforge_functions_1" runOnChange="true" author="termx">
     <sqlFile splitStatements="false" path="functions/task_action_trigger.sql" relativeToChangelogFile="true" />
   </changeSet>

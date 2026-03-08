@@ -72,8 +72,9 @@ auth:
 | Profile key  | Username     | Privileges                                                                          |
 |--------------|--------------|-------------------------------------------------------------------------------------|
 | `admin`      | `admin`      | `*.*.*` (full access)                                                               |
-| `publisher`  | `publisher1` | `*.*.view`, `*.Task.publish`, `icd-10.CodeSystem.publish`, `disorders.ValueSet.publish`, `icd-snomed.MapSet.publish` |
-| `editor`     | `editor1`    | `*.*.view`, `*.Task.edit`, `icd-10.CodeSystem.edit`, `disorders.ValueSet.edit`       |
+| `publisher`  | `publisher1` | `*.*.view`, `*.Task.publish`, `*.CodeSystem.publish`, `*.ValueSet.publish`, `*.MapSet.publish` |
+| `editor`     | `editor1`    | `*.*.view`, `*.Task.edit`, `*.CodeSystem.edit`, `*.ValueSet.edit`, `*.MapSet.edit`   |
+| `editor2`    | `editor2`    | `*.*.view`, `*.Task.edit`, `icd-10.CodeSystem.edit`, `disorders.ValueSet.edit`       |
 | `viewer`     | `viewer1`    | `*.*.view`                                                                          |
 
 ### mock/users-demo.json (demo/showcase)

@@ -1,4 +1,4 @@
-package com.kodality.termx.uam.privilegeresource;
+package org.termx.uam.privilegeresource;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;

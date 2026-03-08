@@ -29,6 +29,6 @@ public enum ApiError {
   }
 
   public ApiException toApiException(String... params) {
-    return new ApiClientException(Issue.error(code, message).setParams(MapUtil.toMap(params)));
+    return new ApiClientException(Issue.error(code, message).setParams(MapUtil.toMap((Object[]) params)));
   }
 }

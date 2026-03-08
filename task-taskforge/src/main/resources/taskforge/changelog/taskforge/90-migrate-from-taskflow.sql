@@ -1,80 +1,131 @@
 --liquibase formatted sql
 
 -- =============================================================================
--- Migration script: taskflow -> taskforge
+-- Smart migration: taskflow -> taskforge (project and workflow only)
 --
--- Copies all data from the old taskflow schema into the new taskforge schema,
--- preserving original IDs. After migration, resets identity sequences so new
--- inserts get IDs beyond the migrated range.
+-- If the old taskflow schema exists: copies project and workflow data,
+-- preserving original IDs. ACLs in core.acl already reference the same
+-- project IDs, so they carry over automatically.
 --
--- To use: uncomment the include line in changelog.xml
+-- If taskflow does not exist: creates default project (with ACL) and
+-- workflow records so the system works on a fresh install.
+--
+-- In both cases, advances core.seq_id past any migrated IDs.
+-- The data script (00-taskforge-data.sql) runs after this and fills in
+-- any missing workflow types via WHERE NOT EXISTS.
 -- =============================================================================
 
---changeset termx:migrate-project runOnChange:false
-insert into taskforge.project (id, institution, code, names, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by)
-select id, institution, code, names, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by
-from taskflow.project
-where not exists (select 1 from taskforge.project tp where tp.id = taskflow.project.id)
-on conflict do nothing;
---
+--changeset termx:smart-migrate-project-workflow splitStatements:false runOnChange:false
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'taskflow') THEN
+    -- ── Migrate projects from taskflow (preserving IDs) ──
+    INSERT INTO taskforge.project (id, institution, code, names, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by)
+    SELECT id, institution, code, names, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by
+    FROM taskflow.project
+    ON CONFLICT DO NOTHING;
 
---changeset termx:migrate-workflow runOnChange:false
-insert into taskforge.workflow (id, project_id, task_type, transitions, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by)
-select id, project_id, task_type, transitions, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by
-from taskflow.workflow
-where not exists (select 1 from taskforge.workflow tw where tw.id = taskflow.workflow.id)
-on conflict do nothing;
---
+    -- ── Migrate workflows from taskflow (preserving IDs) ──
+    INSERT INTO taskforge.workflow (id, project_id, task_type, transitions, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by)
+    SELECT id, project_id, task_type, transitions, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by
+    FROM taskflow.workflow
+    ON CONFLICT DO NOTHING;
 
---changeset termx:migrate-task runOnChange:false
-insert into taskforge.task (id, project_id, workflow_id, parent_id, number, type, status, business_status, priority, created_by, created_at, updated_at, updated_by, assignee, title, content, context, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by)
-select id, project_id, workflow_id, parent_id, number, type, status, business_status, priority, created_by, created_at, updated_at, updated_by, assignee, title, content, context, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by
-from taskflow.task
-where not exists (select 1 from taskforge.task tt where tt.id = taskflow.task.id)
-on conflict do nothing;
---
+    RAISE NOTICE 'taskforge: migrated % projects and % workflows from taskflow',
+      (SELECT count(*) FROM taskforge.project),
+      (SELECT count(*) FROM taskforge.workflow);
 
---changeset termx:migrate-task_activity runOnChange:false
-insert into taskforge.task_activity (id, task_id, note, transition, context, updated_by, updated_at, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by)
-select id, task_id, note, transition, context, updated_by, updated_at, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by
-from taskflow.task_activity
-where not exists (select 1 from taskforge.task_activity ta where ta.id = taskflow.task_activity.id)
-on conflict do nothing;
---
+  ELSE
+    -- ── No taskflow schema — create default project ──
+    IF NOT EXISTS (SELECT 1 FROM taskforge.project WHERE institution = '1' AND code = 'termx') THEN
+      INSERT INTO taskforge.project (institution, code, names)
+      VALUES ('1', 'termx', '{"en": "TermX"}'::jsonb);
 
---changeset termx:migrate-task_attachment runOnChange:false
-insert into taskforge.task_attachment (id, task_id, file_id, file_name, description, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by, sys_status, sys_version)
-select id, task_id, file_id, file_name, description, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by, sys_status, sys_version
-from taskflow.task_attachment
-where not exists (select 1 from taskforge.task_attachment ta where ta.id = taskflow.task_attachment.id)
-on conflict do nothing;
---
+      INSERT INTO core.acl (s_id, tenant, access)
+      SELECT p.id, null, 'consume'
+      FROM taskforge.project p
+      WHERE p.institution = '1' AND p.code = 'termx'
+        AND NOT core.aclchk(p.id, null, 'consume');
+    END IF;
 
---changeset termx:migrate-task_execution runOnChange:false
-insert into taskforge.task_execution (id, task_id, period_start, period_end, duration, performer, created_by, created_at, updated_at, updated_by, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by)
-select id, task_id, period_start, period_end, duration, performer, created_by, created_at, updated_at, updated_by, sys_status, sys_version, sys_created_at, sys_created_by, sys_modified_at, sys_modified_by
-from taskflow.task_execution
-where not exists (select 1 from taskforge.task_execution te where te.id = taskflow.task_execution.id)
-on conflict do nothing;
---
+    -- ── Create default workflows for the project ──
+    WITH proj AS (
+      SELECT id FROM taskforge.project WHERE institution = '1' AND code = 'termx'
+    ),
+    vals(task_type, transitions) AS (VALUES
+      ('task', jsonb_build_array(
+        '{"from": null, "to": "draft"}'::jsonb,
+        '{"from": "draft", "to": "requested"}'::jsonb,
+        '{"from": "requested", "to": "accepted"}'::jsonb,
+        '{"from": "requested", "to": "rejected"}'::jsonb,
+        '{"from": "requested", "to": "cancelled"}'::jsonb,
+        '{"from": "accepted", "to": "in-progress"}'::jsonb,
+        '{"from": "accepted", "to": "cancelled"}'::jsonb,
+        '{"from": "in-progress", "to": "completed"}'::jsonb,
+        '{"from": "in-progress", "to": "on-hold"}'::jsonb,
+        '{"from": "in-progress", "to": "cancelled"}'::jsonb,
+        '{"from": "on-hold", "to": "in-progress"}'::jsonb,
+        '{"from": "on-hold", "to": "cancelled"}'::jsonb,
+        '{"from": "rejected", "to": "cancelled"}'::jsonb
+      )),
+      ('version-review', jsonb_build_array(
+        '{"from": null, "to": "requested"}'::jsonb,
+        '{"from": "requested", "to": "accepted"}'::jsonb,
+        '{"from": "requested", "to": "rejected"}'::jsonb,
+        '{"from": "requested", "to": "cancelled"}'::jsonb,
+        '{"from": "accepted", "to": "cancelled"}'::jsonb,
+        '{"from": "rejected", "to": "cancelled"}'::jsonb
+      )),
+      ('version-approval', jsonb_build_array(
+        '{"from": null, "to": "requested"}'::jsonb,
+        '{"from": "requested", "to": "accepted"}'::jsonb,
+        '{"from": "requested", "to": "rejected"}'::jsonb,
+        '{"from": "requested", "to": "cancelled"}'::jsonb,
+        '{"from": "accepted", "to": "cancelled"}'::jsonb,
+        '{"from": "rejected", "to": "cancelled"}'::jsonb
+      )),
+      ('concept-review', jsonb_build_array(
+        '{"from": null, "to": "requested"}'::jsonb,
+        '{"from": "requested", "to": "accepted"}'::jsonb,
+        '{"from": "requested", "to": "rejected"}'::jsonb,
+        '{"from": "requested", "to": "cancelled"}'::jsonb,
+        '{"from": "accepted", "to": "cancelled"}'::jsonb,
+        '{"from": "rejected", "to": "cancelled"}'::jsonb
+      )),
+      ('concept-approval', jsonb_build_array(
+        '{"from": null, "to": "requested"}'::jsonb,
+        '{"from": "requested", "to": "accepted"}'::jsonb,
+        '{"from": "requested", "to": "rejected"}'::jsonb,
+        '{"from": "requested", "to": "cancelled"}'::jsonb,
+        '{"from": "accepted", "to": "cancelled"}'::jsonb,
+        '{"from": "rejected", "to": "cancelled"}'::jsonb
+      )),
+      ('wiki-page-comment', jsonb_build_array(
+        '{"from": null, "to": "requested"}'::jsonb,
+        '{"from": "requested", "to": "cancelled"}'::jsonb,
+        '{"from": "requested", "to": "accepted"}'::jsonb,
+        '{"from": "requested", "to": "completed"}'::jsonb,
+        '{"from": "accepted", "to": "completed"}'::jsonb,
+        '{"from": "accepted", "to": "cancelled"}'::jsonb
+      ))
+    )
+    INSERT INTO taskforge.workflow (project_id, task_type, transitions)
+    SELECT proj.id, vals.task_type, vals.transitions
+    FROM proj, vals
+    WHERE NOT EXISTS (
+      SELECT 1 FROM taskforge.workflow w WHERE w.task_type = vals.task_type AND w.project_id = proj.id
+    );
 
---changeset termx:migrate-project-acl runOnChange:false
-insert into core.acl (s_id, tenant, access)
-select distinct s_id, tenant, access
-from core.acl as a1
-where not exists (
-    select 1 
-    from taskflow.project p 
-    where p.id = a1.s_id
-);
---
+    RAISE NOTICE 'taskforge: created default project and % workflows (no taskflow schema found)',
+      (SELECT count(*) FROM taskforge.workflow);
+  END IF;
 
-
--- Reset identity sequences so new rows get IDs beyond the migrated data.
--- Tables using identity columns: task_activity, task_attachment, task_execution
-
---changeset termx:migrate-reset-sequences runOnChange:false
-select setval(pg_get_serial_sequence('taskforge.task_activity', 'id'), coalesce((select max(id) from taskforge.task_activity), 0) + 1, false);
-select setval(pg_get_serial_sequence('taskforge.task_attachment', 'id'), coalesce((select max(id) from taskforge.task_attachment), 0) + 1, false);
-select setval(pg_get_serial_sequence('taskforge.task_execution', 'id'), coalesce((select max(id) from taskforge.task_execution), 0) + 1, false);
+  -- ── Advance core.seq_id past any migrated project/workflow IDs ──
+  PERFORM setval('core.seq_id', GREATEST(
+    (SELECT coalesce(max(id), 0) FROM taskforge.project),
+    (SELECT coalesce(max(id), 0) FROM taskforge.workflow),
+    (SELECT last_value FROM core.seq_id)
+  ));
+END;
+$$;
 --

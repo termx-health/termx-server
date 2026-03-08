@@ -8,13 +8,23 @@
     "privileges": [
       "*.*.view",
       "*.Task.publish",
-      "icd-10.CodeSystem.publish",
-      "disorders.ValueSet.publish",
-      "icd-snomed.MapSet.publish"
+      "*.CodeSystem.publish",
+      "*.ValueSet.publish",
+      "*.MapSet.publish"
     ]
   },
   "editor": {
     "username": "editor1",
+    "privileges": [
+      "*.*.view",
+      "*.Task.edit",
+      "*.CodeSystem.edit",
+      "*.ValueSet.edit",
+      "*.MapSet.edit"
+    ]
+  },
+  "editor2": {
+    "username": "editor2",
     "privileges": [
       "*.*.view",
       "*.Task.edit",

@@ -1,4 +1,4 @@
-package com.kodality.termx.uam;
+package org.termx.uam;
 
 public interface Privileges {
   String P_VIEW = "Privilege.view";

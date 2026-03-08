@@ -27,11 +27,11 @@ todos:
     content: Add POST /tm/tasks/{number}/opened endpoint and unseenChanges filter
     status: completed
   - id: web-routing
-    content: (Future) Update web routing to hide tasks for view-only users, add unseen changes indicator
-    status: pending
+    content: Keep web routing at *.Task.view (backend handles filtering), add unseen changes indicator
+    status: completed
   - id: web-widget
-    content: (Future) Update resource task widget to respect privilege-based visibility
-    status: pending
+    content: Resource task widget unchanged (backend handles privilege-based filtering)
+    status: completed
 isProject: false
 ---
 
@@ -385,40 +385,29 @@ This requires a LEFT JOIN on `taskforge.task_read_log` in the task query.
 
 Add `lastOpenedTime` to the Task model and populate it from the LEFT JOIN.
 
-## Phase 5: Web UI Changes (future - after backend testing)
+## Phase 5: Web UI Changes
 
-### 5.1 Hide task list for view-only users
+All routing and landing page privileges remain at `*.Task.view` -- the backend handles privilege-based filtering (editors see own tasks, publishers see all, viewers see whatever the backend returns).
 
-In `[app/src/app/root-routing.module.ts](../termx-web/app/src/app/root-routing.module.ts)` (line 41), change privilege from `*.Task.view` to `*.Task.edit`:
+### 5.1 Task routing and landing page -- no privilege changes
 
-```typescript
-{path: 'tasks', children: TASK_ROUTES, data: {privilege: ['*.Task.edit']}},
-```
+Routing stays at `*.Task.view`. The backend `TaskController` applies filtering based on the user's actual privileges, so the frontend does not need to restrict visibility.
 
-### 5.2 Update landing page task cards
+### 5.2 Resource task widget -- no changes
 
-In the landing page component, conditionally show task cards only if user has `*.Task.edit` privilege.
+The widget is unchanged; the backend filters tasks by access level.
 
-### 5.3 Update resource task widget
+### 5.3 Update task models
 
-In `[resource-tasks-widget.component.ts](../termx-web/app/src/app/resources/resource/components/resource-tasks-widget.component.ts)`:
-
-- Only render the widget if user has at least `edit` privilege on the resource
-- The backend filtering handles the rest (editors see own tasks, publishers see all)
+In `task-search-params.ts`, added `unseenChanges?: boolean`.
+In `task.ts`, added `lastOpenedTime?: Date`.
 
 ### 5.4 Add "unseen changes" indicator
 
-- Add eye icon to task list rows for tasks with changes since last opened
-- Call `POST /tm/tasks/{number}/opened` when a task is viewed
-- Add `unseenChanges` filter option to task list
-
-### 5.5 Update task search params model
-
-In `[task-search-params.ts](../termx-web/app/src/app/task/_lib/model/task-search-params.ts)`, add `unseenChanges?: boolean`.
-
-### 5.6 Update task model
-
-In `[task.ts](../termx-web/app/src/app/task/_lib/model/task.ts)`, add `lastOpenedTime?: Date`.
+- Added eye icon column to task list rows for tasks with changes since last opened (`lastOpenedTime` is null or earlier than `updatedAt`)
+- Added `unseenChanges` filter checkbox in the task list filter panel
+- `TaskService.logTaskOpened(number)` calls `POST /tm/tasks/{number}/opened` when a task is viewed (called from `TaskEditComponent.loadTask()`)
+- Translation keys added to `en.json`
 
 ## Architecture Summary
 

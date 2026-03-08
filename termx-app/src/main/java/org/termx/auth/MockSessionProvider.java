@@ -76,5 +76,9 @@ public class MockSessionProvider extends SessionProvider {
     }
   }
 
+  public Map<String, MockUser> getUsers() {
+    return users;
+  }
+
   public record MockUser(String username, Set<String> privileges) {}
 }

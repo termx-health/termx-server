@@ -1,4 +1,4 @@
-package com.kodality.termx.uam.privilegeresource;
+package org.termx.uam.privilegeresource;
 
 import com.kodality.termx.auth.PrivilegeResource;
 import io.micronaut.core.util.CollectionUtils;

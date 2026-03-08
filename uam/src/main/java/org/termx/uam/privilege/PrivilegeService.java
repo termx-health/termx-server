@@ -1,9 +1,9 @@
-package com.kodality.termx.uam.privilege;
+package org.termx.uam.privilege;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.auth.Privilege;
 import com.kodality.termx.auth.PrivilegeQueryParams;
-import com.kodality.termx.uam.privilegeresource.PrivilegeResourceService;
+import org.termx.uam.privilegeresource.PrivilegeResourceService;
 import java.util.List;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
