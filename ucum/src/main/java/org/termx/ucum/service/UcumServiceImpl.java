@@ -79,7 +79,7 @@ public class UcumServiceImpl implements UcumService {
                 return databaseEssence.get();
             }
         } catch (Exception e) {
-            log.warn("Database UCUM essence load failed: {}. Falling back to configured sources.", e.getMessage(), e);
+            log.debug("Database UCUM essence load skipped: {}. Falling back to configured sources.", e.getMessage());
         }
         try (InputStream remoteStream = new URL(essenceUrl).openStream()) {
             log.info("Attempting UCUM essence load from remote {}", essenceUrl);

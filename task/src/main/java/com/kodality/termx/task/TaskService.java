@@ -101,4 +101,7 @@ public class TaskService {
     return taskProvider.findActivities(context);
   }
 
+  public void logTaskOpened(String taskNumber, String userId) {
+    taskProvider.logTaskOpened(taskNumber, userId);
+  }
 }

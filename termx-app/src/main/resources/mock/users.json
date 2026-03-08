@@ -1,0 +1,29 @@
+{
+  "admin": {
+    "username": "admin",
+    "privileges": ["*.*.*"]
+  },
+  "publisher": {
+    "username": "publisher1",
+    "privileges": [
+      "*.*.view",
+      "*.Task.publish",
+      "icd-10.CodeSystem.publish",
+      "disorders.ValueSet.publish",
+      "icd-snomed.MapSet.publish"
+    ]
+  },
+  "editor": {
+    "username": "editor1",
+    "privileges": [
+      "*.*.view",
+      "*.Task.edit",
+      "icd-10.CodeSystem.edit",
+      "disorders.ValueSet.edit"
+    ]
+  },
+  "viewer": {
+    "username": "viewer1",
+    "privileges": ["*.*.view"]
+  }
+}

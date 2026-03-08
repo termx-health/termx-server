@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+  <include file="taskforge-schema.xml" relativeToChangelogFile="true" />
+
+  <include file="00-drop-all.sql" relativeToChangelogFile="true" />
+  <include file="10-project.sql" relativeToChangelogFile="true" />
+  <include file="20-workflow.sql" relativeToChangelogFile="true" />
+  <include file="30-task.sql" relativeToChangelogFile="true" />
+  <include file="31-task_activity.sql" relativeToChangelogFile="true" />
+  <include file="31-task_attachment.sql" relativeToChangelogFile="true" />
+  <include file="31-task_execution.sql" relativeToChangelogFile="true" />
+  <include file="33-task_read_log.sql" relativeToChangelogFile="true" />
+
+  <changeSet id="taskforge_functions_1" runOnChange="true" author="termx">
+    <sqlFile splitStatements="false" path="functions/task_action_trigger.sql" relativeToChangelogFile="true" />
+  </changeSet>
+
+  <changeSet id="taskforge_triggers_2" runOnChange="true" author="termx">
+    <sql>
+    CREATE TRIGGER tr_task_action_trigger AFTER INSERT OR UPDATE ON taskforge.task
+    FOR EACH ROW EXECUTE PROCEDURE taskforge.task_action_trigger();
+    </sql>
+  </changeSet>
+
+</databaseChangeLog>

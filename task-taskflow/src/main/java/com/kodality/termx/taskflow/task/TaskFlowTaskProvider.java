@@ -113,4 +113,9 @@ public class TaskFlowTaskProvider extends TaskProvider {
     params.setProjectCodes(code);
     return workflowService.search(params).getData().stream().map(mapper::map).toList();
   }
+
+  @Override
+  public void logTaskOpened(String taskNumber, String userId) {
+    // not supported in the old taskflow module
+  }
 }

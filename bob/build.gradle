@@ -7,7 +7,6 @@ dependencies {
   api project(':termx-core')
 
   implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}")
-  implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}")
   implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
 
   implementation("io.micronaut:micronaut-runtime")

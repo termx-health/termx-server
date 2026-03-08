@@ -20,4 +20,5 @@ public abstract class TaskProvider {
   public abstract void cancelTaskActivity(String taskNumber, String activityId);
   public abstract List<CodeName> loadProjects();
   public abstract List<Workflow> loadProjectWorkFlows(String code);
+  public abstract void logTaskOpened(String taskNumber, String userId);
 }

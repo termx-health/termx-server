@@ -57,6 +57,10 @@ liquibase:
       parameters:
         app-username: ${datasources.default.username}
 auth:
+  mock:
+    enabled: ${AUTH_MOCK_ENABLED:false}
+    default-user: ${AUTH_MOCK_DEFAULT_USER:admin}
+    users-file: ${AUTH_MOCK_USERS_FILE:mock/users.json}
   oauth:
     jwks-url: ${OAUTH_JWKS_URL:fixme}
   public:

@@ -7,7 +7,6 @@ dependencies {
     implementation project(':terminology')
 
     implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
-    implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-cache:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}")
