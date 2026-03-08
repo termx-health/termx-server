@@ -16,6 +16,7 @@ dependencies {
   implementation project(':observation-definition')
   implementation project(':wiki')
   implementation project(':task-taskflow')
+  implementation project(':task-taskforge')
   implementation project(':modeler')
   implementation project(':implementation-guide')
   implementation project(':uam')

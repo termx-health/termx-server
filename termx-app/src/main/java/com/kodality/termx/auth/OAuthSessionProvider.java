@@ -12,7 +12,8 @@ import com.kodality.commons.cache.CacheManager;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.core.auth.SessionInfo;
-import com.kodality.termx.uam.privilege.PrivilegeStore;
+import org.termx.uam.privilege.PrivilegeStore;
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.cookie.Cookie;
@@ -26,6 +27,7 @@ import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@Requires(property = "auth.mock.enabled", notEquals = io.micronaut.core.util.StringUtils.TRUE)
 @Slf4j
 @Singleton
 public class OAuthSessionProvider extends SessionProvider {

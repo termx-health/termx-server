@@ -4,7 +4,7 @@ import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.ApiException;
 import com.kodality.commons.model.Issue;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.commons.sequence.SequenceService;
+import org.termx.core.sequence.SequenceService;
 import com.kodality.termx.sequence.SysSequence;
 import com.kodality.termx.sequence.SysSequenceQueryParams;
 import java.time.LocalDate;

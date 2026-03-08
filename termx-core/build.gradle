@@ -5,13 +5,12 @@ dependencies {
     implementation project(':termx-api')
 
     implementation("com.kodality.commons:commons-util:${rootProject.commonsVersion}")
-    implementation("com.kodality.commons:commons-db-core:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-cache:${rootProject.commonsVersion}")
     implementation("com.kodality.commons:commons-micronaut:${rootProject.commonsMicronautVersion}")
     implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.commonsMicronautVersion}")
-    implementation("com.kodality.commons:commons-sequence:${rootProject.commonsMicronautVersion}")
+
     implementation("com.kodality.commons:commons-util-spring:${rootProject.commonsMicronautVersion}")
 
     implementation("io.micronaut.spring:micronaut-spring")

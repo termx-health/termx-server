@@ -3,9 +3,11 @@ package com.kodality.termx.user;
 import com.kodality.commons.oauth.OAuthTokenClient;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Value;
+import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 
 @Requires(property = "keycloak.sso-url")
+@Requires(property = "auth.mock.enabled", notEquals = StringUtils.TRUE)
 @Singleton
 public class TermxOAuthTokenClient extends OAuthTokenClient {
   public TermxOAuthTokenClient(@Value("${keycloak.sso-url}") String ssoUrl,

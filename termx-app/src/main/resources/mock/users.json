@@ -1,0 +1,39 @@
+{
+  "admin": {
+    "username": "admin",
+    "privileges": ["*.*.*"]
+  },
+  "publisher": {
+    "username": "publisher1",
+    "privileges": [
+      "*.*.view",
+      "*.Task.publish",
+      "*.CodeSystem.publish",
+      "*.ValueSet.publish",
+      "*.MapSet.publish"
+    ]
+  },
+  "editor": {
+    "username": "editor1",
+    "privileges": [
+      "*.*.view",
+      "*.Task.edit",
+      "*.CodeSystem.edit",
+      "*.ValueSet.edit",
+      "*.MapSet.edit"
+    ]
+  },
+  "editor2": {
+    "username": "editor2",
+    "privileges": [
+      "*.*.view",
+      "*.Task.edit",
+      "icd-10.CodeSystem.edit",
+      "disorders.ValueSet.edit"
+    ]
+  },
+  "viewer": {
+    "username": "viewer1",
+    "privileges": ["*.*.view"]
+  }
+}

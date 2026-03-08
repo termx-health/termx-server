@@ -1,6 +1,7 @@
 package com.kodality.termx.task;
 
 import com.kodality.commons.model.QueryParams;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -21,4 +22,8 @@ public class TaskQueryParams extends QueryParams {
   private String modifiedLe;
   private String assignees;
   private String context;
+  private String createdByOrAssignee;
+  private List<String> permittedContexts; // type|id pairs the user has access to; null means all contexts
+  private Boolean unseenChanges;
+  private String unseenChangesUser;
 }

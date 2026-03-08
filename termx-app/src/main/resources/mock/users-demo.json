@@ -1,0 +1,54 @@
+{
+  "admin": {
+    "username": "demo-admin",
+    "privileges": ["*.*.*"]
+  },
+  "terminology-manager": {
+    "username": "demo-tm",
+    "privileges": [
+      "*.*.view",
+      "*.Task.publish",
+      "*.CodeSystem.publish",
+      "*.ValueSet.publish",
+      "*.MapSet.publish"
+    ]
+  },
+  "publisher": {
+    "username": "demo-publisher",
+    "privileges": [
+      "*.*.view",
+      "*.Task.publish",
+      "icd-10.CodeSystem.publish",
+      "icd-11.CodeSystem.publish",
+      "disorders.ValueSet.publish",
+      "icd-snomed.MapSet.publish"
+    ]
+  },
+  "editor": {
+    "username": "demo-editor",
+    "privileges": [
+      "*.*.view",
+      "*.Task.edit",
+      "icd-10.CodeSystem.edit",
+      "icd-11.CodeSystem.edit",
+      "disorders.ValueSet.edit",
+      "icd-snomed.MapSet.edit"
+    ]
+  },
+  "reviewer": {
+    "username": "demo-reviewer",
+    "privileges": [
+      "*.*.view",
+      "*.Task.edit",
+      "icd-10.CodeSystem.edit"
+    ]
+  },
+  "viewer": {
+    "username": "demo-viewer",
+    "privileges": ["*.*.view"]
+  },
+  "guest": {
+    "username": "guest",
+    "privileges": ["*.*.view"]
+  }
+}

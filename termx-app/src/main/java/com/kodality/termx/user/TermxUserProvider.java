@@ -4,13 +4,16 @@ import com.kodality.commons.cache.CacheManager;
 import com.kodality.termx.auth.Privilege;
 import com.kodality.termx.core.user.User;
 import com.kodality.termx.core.user.UserProvider;
-import com.kodality.termx.uam.privilege.PrivilegeDataHandler;
-import com.kodality.termx.uam.privilege.PrivilegeStore;
+import org.termx.uam.privilege.PrivilegeDataHandler;
+import org.termx.uam.privilege.PrivilegeStore;
+import io.micronaut.context.annotation.Requires;
+import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+@Requires(property = "auth.mock.enabled", notEquals = StringUtils.TRUE)
 @Singleton
 public class TermxUserProvider extends UserProvider implements PrivilegeDataHandler {
   private final Optional<OAuthUserHttpClient> authUserHttpClient;

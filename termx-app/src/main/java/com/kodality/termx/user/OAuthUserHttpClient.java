@@ -4,6 +4,7 @@ import com.kodality.commons.oauth.OAuthenticatedHttpClient;
 import com.kodality.commons.util.JsonUtil;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Value;
+import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.Collection;
 import java.util.List;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @Requires(property = "keycloak.url")
+@Requires(property = "auth.mock.enabled", notEquals = StringUtils.TRUE)
 @Singleton
 @RequiredArgsConstructor
 public class OAuthUserHttpClient {

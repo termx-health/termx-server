@@ -1,0 +1,20 @@
+---
+description: Use org.termx for all new Java packages instead of com.kodality
+globs: **/*.java
+alwaysApply: false
+---
+
+# Java Package Convention
+
+All **new** Java classes must use `org.termx` as the root package.
+
+- New code: `org.termx.<module>.<subpackage>`
+- Existing code in `com.kodality.termx.*` is legacy; do not create new classes there.
+
+Examples:
+- `org.termx.auth` (authentication)
+- `org.termx.core.sequence` (core utilities)
+- `org.termx.taskforge.task` (taskforge module)
+
+When extending or importing existing `com.kodality.*` classes from new `org.termx.*` code,
+use fully qualified imports -- this is expected during the migration period.
