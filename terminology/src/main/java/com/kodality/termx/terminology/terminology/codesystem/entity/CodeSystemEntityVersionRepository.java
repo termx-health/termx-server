@@ -79,6 +79,19 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     });
   }
 
+  public Map<String, Long> findCodeToIdMap(Long codeSystemVersionId) {
+    SqlBuilder sb = new SqlBuilder("select csev.code, MIN(csev.id) as id from terminology.code_system_entity_version csev ");
+    sb.append("where csev.sys_status = 'A'");
+    sb.appendIfNotNull("and exists (select 1 from terminology.entity_version_code_system_version_membership evcsvm " +
+            "where evcsvm.code_system_entity_version_id = csev.id and evcsvm.sys_status = 'A' and evcsvm.code_system_version_id = ?)", codeSystemVersionId);
+    sb.append("GROUP BY csev.code");
+    List<Map<String, Object>> rows = getJdbcTemplate().queryForList(sb.getSql(), sb.getParams());
+    return rows.stream().collect(Collectors.toMap(
+            row -> (String) row.get("code"),
+            row -> ((Number) row.get("id")).longValue()
+    ));
+  }
+
   private SqlBuilder filter(CodeSystemEntityVersionQueryParams params) {
     SqlBuilder sb = new SqlBuilder();
     sb.append("where csev.sys_status = 'A'");

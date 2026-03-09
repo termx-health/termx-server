@@ -47,7 +47,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import jakarta.validation.Valid;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -61,6 +63,7 @@ public class MapSetController {
   private final MapSetAssociationService mapSetAssociationService;
   private final MapSetAutomapService mapSetAutomapService;
   private final MapSetStatisticsService mapSetStatisticsService;
+  private final MapSetDuplicateService mapSetDuplicateService;
   private final MapSetProvenanceService provenanceService;
   private final MapSetExportService mapSetExportService;
   private final LorqueProcessService lorqueProcessService;
@@ -183,6 +186,17 @@ public class MapSetController {
     mapSetVersionService.cancel(msv.getId());
     provenanceService.create(new Provenance("deleted", "MapSetVersion", msv.getId().toString(), msv.getVersion())
         .addContext("part-of", "MapSet", msv.getMapSet()));
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.MS_EDIT)
+  @Post(uri = "/{mapSet}/versions/{version}/duplicate")
+  public HttpResponse<?> duplicateMapSetVersion(@PathVariable String mapSet, @PathVariable String version,
+                                                @Body @Valid MapSetVersionDuplicateRequest request) {
+    SessionStore.require().checkPermitted(request.getMapSet(), Privilege.MS_EDIT);
+    provenanceService.provenanceMapSetVersion("duplicate", mapSet, request.getVersion(), () -> {
+      mapSetDuplicateService.duplicateMapSetVersion(request.getVersion(), request.getMapSet(), version, mapSet);
+    });
     return HttpResponse.ok();
   }
 
@@ -331,5 +345,12 @@ public class MapSetController {
       }
     }));
     return jobLogResponse;
+  }
+
+  @Getter
+  @Setter
+  public static class MapSetVersionDuplicateRequest {
+    private String mapSet;
+    private String version;
   }
 }

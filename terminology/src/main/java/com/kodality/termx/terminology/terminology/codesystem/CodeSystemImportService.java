@@ -48,6 +48,7 @@ import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,7 +60,6 @@ import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
 import static java.util.Comparator.comparing;
@@ -223,9 +223,13 @@ public class CodeSystemImportService {
             .map(CodeSystemEntity::getId).toList();
     List<Long> retiredConceptIds =
         concepts.stream().filter(c -> PublicationStatus.retired.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
-    Map<Long, List<CodeSystemEntityVersion>> entityVersionMap = concepts.stream()
-        .map(concept -> Pair.of(concept.getId(), prepareEntityVersion(concept.getVersions().get(0), entityProperties)))
-        .collect(Collectors.toMap(Pair::getKey, p -> List.of(p.getValue())));
+    
+    Map<Long, List<CodeSystemEntityVersion>> entityVersionMap = new HashMap<>();
+    final Map<String, Optional<Concept>> conceptCache = new HashMap<>();
+    for (CodeSystemEntity concept : concepts) {
+      var partialVersion = prepareEntityVersion(concept.getVersions().get(0), entityProperties, conceptCache);
+      entityVersionMap.put(concept.getId(), List.of(partialVersion));
+    }
     if (!cleanRun) {
       mergeWithCurrentVersions(getCurrentCodeSystemVersion(version).getId(), entityVersionMap);
     } else {
@@ -263,10 +267,10 @@ public class CodeSystemImportService {
     return version;
   }
 
-  private CodeSystemEntityVersion prepareEntityVersion(CodeSystemEntityVersion entityVersion, List<EntityProperty> properties) {
+  private CodeSystemEntityVersion prepareEntityVersion(CodeSystemEntityVersion entityVersion, List<EntityProperty> properties, Map<String, Optional<Concept>> conceptCache) {
     entityVersion.setStatus(PublicationStatus.draft);
     if (CollectionUtils.isNotEmpty(entityVersion.getPropertyValues())) {
-      entityVersion.setPropertyValues(prepareEntityVersionProperties(entityVersion.getPropertyValues(), properties));
+      entityVersion.setPropertyValues(prepareEntityVersionProperties(entityVersion.getPropertyValues(), properties, conceptCache));
     }
     if (CollectionUtils.isNotEmpty(entityVersion.getDesignations())) {
       entityVersion.setDesignations(prepareEntityVersionDesignations(entityVersion.getDesignations(), properties));
@@ -274,7 +278,7 @@ public class CodeSystemImportService {
     return entityVersion;
   }
 
-  private List<EntityPropertyValue> prepareEntityVersionProperties(List<EntityPropertyValue> propertyValues, List<EntityProperty> properties) {
+  private List<EntityPropertyValue> prepareEntityVersionProperties(List<EntityPropertyValue> propertyValues, List<EntityProperty> properties, Map<String, Optional<Concept>> conceptCache) {
     propertyValues.forEach(pv -> {
       Optional<EntityProperty> property =
           properties.stream().filter(p -> p.getName().equals(pv.getEntityProperty()) || p.getId().equals(pv.getEntityPropertyId())).findFirst();
@@ -283,11 +287,12 @@ public class CodeSystemImportService {
         if (property.get().getType().equals(EntityPropertyType.coding)) {
           try {
             Coding coding = (Coding) pv.getValue();
-            Optional<Concept> concept = conceptService.load(coding.getSystem(), coding.getCode());
-            concept.ifPresentOrElse(
-                pv::setValue,
-                () -> conceptService.loadByUri(coding.getSystem(), coding.getCode()).ifPresent(pv::setValue)
+            String key = coding.getSystem() + "|" + coding.getCode();
+            Optional<Concept> conceptOpt = conceptCache.computeIfAbsent(key, k ->
+                conceptService.load(coding.getSystem(), coding.getCode())
+                    .or(() -> conceptService.loadByUri(coding.getSystem(), coding.getCode()))
             );
+            conceptOpt.ifPresent(pv::setValue);
           } catch (RuntimeException ignored) {
           }
         }
@@ -305,15 +310,11 @@ public class CodeSystemImportService {
   }
 
   private void prepareCodeSystemAssociations(Map<Long, List<CodeSystemAssociation>> associations, Long versionId) {
-    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams().setCodeSystemVersionId(versionId).all();
-    Map<String, List<CodeSystemEntityVersion>> versions =
-        codeSystemEntityVersionService.query(params).getData().stream().collect(Collectors.groupingBy(CodeSystemEntityVersion::getCode));
+    final Map<String, Long> codeToId = codeSystemEntityVersionService.findCodeToIdMap(versionId);
     associations.values().stream()
         .flatMap(Collection::stream)
         .filter(a -> a.getTargetId() == null && a.getTargetCode() != null)
-        .forEach(a -> a.setTargetId(
-            Optional.ofNullable(versions.getOrDefault(a.getTargetCode(), null)).flatMap(v -> v.stream().findFirst().map(CodeSystemEntityVersion::getId))
-                .orElse(null)));
+        .forEach(a -> a.setTargetId(codeToId.get(a.getTargetCode())));
     associations.keySet().forEach(k -> associations.put(k, associations.get(k).stream().filter(a -> a.getTargetId() != null).toList()));
   }
 

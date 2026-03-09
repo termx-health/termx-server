@@ -20,6 +20,7 @@ public enum ApiError {
   TE111("TE111", "Value set '{{vs}}' does not exist."),
   TE112("TE112", "Package version not found for space '{{space}}' and package '{{package}}'."),
   TE113("TE113", "Id is not allowed to contain '{{symbols}}'"),
+  TE119("TE119", "Resource ID does not match regex: [A-Za-z0-9\\-\\.]{1,64}"),
   TE114("TE114", "Concept has non draft version, can not be deleted."),
   TE115("TE115", "Concept is linked to non draft code system version, can not be deleted."),
   TE116("TE116", "Code system '{{codeSystem}}' is not valid. Please check the data you've submitted and ensure that it adheres to the required format."),
