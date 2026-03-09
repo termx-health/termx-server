@@ -1,15 +1,15 @@
 plugins {
-    id("groovy")
+    groovy
     id("io.micronaut.minimal.library") apply false
     id("io.micronaut.minimal.application")
 }
 
 dependencies {
-    testCompileOnly "org.projectlombok:lombok:1.18.30"
-    testAnnotationProcessor "org.projectlombok:lombok:1.18.30"
+    testCompileOnly("org.projectlombok:lombok:1.18.42")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.42")
     testAnnotationProcessor("io.micronaut.spring:micronaut-spring-annotation")
 
-    testImplementation project(':terminology')
+    testImplementation(project(":terminology"))
 
     testImplementation("io.micronaut.data:micronaut-data-spring-jdbc")
     testImplementation("io.micronaut.email:micronaut-email-javamail")
@@ -18,9 +18,8 @@ dependencies {
     testImplementation("org.testcontainers:postgresql")
     testImplementation("io.micronaut:micronaut-inject-groovy")
     testImplementation("io.micronaut:micronaut-jackson-databind")
-//    testImplementation("jakarta.annotation:jakarta.annotation-api")
-    testImplementation("com.kodality.commons:commons-http-client:${rootProject.commonsVersion}")
-    testImplementation("com.kodality.commons:commons-db:${rootProject.commonsVersion}")
+    testImplementation("com.kodality.commons:commons-http-client:${rootProject.extra["commonsVersion"]}")
+    testImplementation("com.kodality.commons:commons-db:${rootProject.extra["commonsVersion"]}")
 
     testRuntimeOnly("ch.qos.logback:logback-classic:1.5.6")
 }
@@ -30,14 +29,13 @@ application {
 }
 
 java {
-    sourceCompatibility = JavaVersion.toVersion("17")
-    targetCompatibility = JavaVersion.toVersion("17")
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
-//graalvmNative.toolchainDetection = false
 micronaut {
     runtime("netty")
 }
-
-
-

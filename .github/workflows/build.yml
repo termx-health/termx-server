@@ -41,10 +41,19 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Build with Gradle
+        working-directory: .
         run: ./gradlew clean assemble
 
       - name: Test
+        working-directory: .
         run: ./gradlew check
+
+      - name: Publish to GitHub Packages
+        working-directory: .
+        run: ./gradlew publish
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
