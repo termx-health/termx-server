@@ -20,6 +20,7 @@ public class CodeSystemEntityVersion {
   private String codeSystemBase;
   private String description;
   private String status;
+  private ConceptSnapshot snapshot;
   private OffsetDateTime created;
 
   private List<EntityPropertyValue> propertyValues;

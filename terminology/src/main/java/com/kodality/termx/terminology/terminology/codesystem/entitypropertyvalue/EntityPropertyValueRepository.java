@@ -9,18 +9,21 @@ import com.kodality.commons.util.JsonUtil;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.termx.ts.codesystem.EntityPropertyValueQueryParams;
 import io.micronaut.core.util.StringUtils;
+import jakarta.inject.Singleton;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Stream;
-import jakarta.inject.Singleton;
-import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 @Singleton
 public class EntityPropertyValueRepository extends BaseRepository {
+  private static final int INSERT_CHUNK_SIZE = 500;
   private final PgBeanProcessor bp = new PgBeanProcessor(EntityPropertyValue.class, bp -> bp.addColumnProcessor("value", PgBeanProcessor.fromJson()));
 
   String select = "select epv.*, ep.name as entity_property, ep.type as entity_property_type ";
@@ -107,22 +110,63 @@ public class EntityPropertyValueRepository extends BaseRepository {
 
   public void save(List<Pair<Long, EntityPropertyValue>> values) {
     List<Pair<Long, EntityPropertyValue>> valuesToInsert = values.stream().filter(p -> p.getValue().getId() == null).toList();
-    String query = "insert into terminology.entity_property_value (code_system_entity_version_id, entity_property_id, value) values (?,?,?::jsonb)";
-    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
-      @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
-        EntityPropertyValueRepository.this.setValues(ps, i, valuesToInsert);
+    for (List<Pair<Long, EntityPropertyValue>> chunk : ListUtils.partition(valuesToInsert, INSERT_CHUNK_SIZE)) {
+      SqlBuilder sb = new SqlBuilder("insert into terminology.entity_property_value (code_system_entity_version_id, entity_property_id, value) values ");
+      for (Pair<Long, EntityPropertyValue> pair : chunk) {
+        sb.append("(?, ?, ?::jsonb),", pair.getKey(), pair.getValue().getEntityPropertyId(), JsonUtil.toJson(pair.getValue().getValue()));
       }
-      @Override public int getBatchSize() {return valuesToInsert.size();}
-    });
+      String sql = sb.getSql();
+      sql = sql.substring(0, sql.length() - 1) + " returning id";
+      List<Long> ids = jdbcTemplate.queryForList(sql, Long.class, sb.getParams());
+      for (int i = 0; i < chunk.size(); i++) {
+        chunk.get(i).getValue().setId(ids.get(i));
+      }
+    }
 
     List<Pair<Long, EntityPropertyValue>> valuesToUpdate = values.stream().filter(p -> p.getValue().getId() != null).toList();
-    query = "update terminology.entity_property_value SET code_system_entity_version_id = ?, entity_property_id = ? , value = ?::jsonb where id = ?";
+    String query = "update terminology.entity_property_value SET code_system_entity_version_id = ?, entity_property_id = ? , value = ?::jsonb where id = ?";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
         EntityPropertyValueRepository.this.setValues(ps, i, valuesToUpdate);
         ps.setLong(4, valuesToUpdate.get(i).getValue().getId());
       }
       @Override public int getBatchSize() {return valuesToUpdate.size();}
+    });
+  }
+
+  public List<EntityPropertyValue> loadCodingValuesByCodeSystemEntityVersionId(Long codeSystemEntityVersionId) {
+    SqlBuilder sb = new SqlBuilder(select + from + "where epv.sys_status = 'A'");
+    sb.append("and epv.code_system_entity_version_id = ?", codeSystemEntityVersionId);
+    sb.append("and ep.type = 'Coding'");
+    return getBeans(sb.getSql(), bp, sb.getParams());
+  }
+
+  public List<EntityPropertyValue> loadCodingValuesByCodeSystemEntityVersionIds(List<Long> codeSystemEntityVersionIds) {
+    if (codeSystemEntityVersionIds == null || codeSystemEntityVersionIds.isEmpty()) {
+      return List.of();
+    }
+    SqlBuilder sb = new SqlBuilder(select + from + "where epv.sys_status = 'A'");
+    sb.and().in("epv.code_system_entity_version_id", codeSystemEntityVersionIds);
+    sb.append("and ep.type = 'Coding'");
+    return getBeans(sb.getSql(), bp, sb.getParams());
+  }
+
+  public void updateValues(List<EntityPropertyValue> values) {
+    if (values == null || values.isEmpty()) {
+      return;
+    }
+    String sql = "update terminology.entity_property_value set value = ?::jsonb where id = ? and sys_status = 'A'";
+    jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+      @Override
+      public void setValues(PreparedStatement ps, int i) throws SQLException {
+        ps.setString(1, JsonUtil.toJson(values.get(i).getValue()));
+        ps.setLong(2, values.get(i).getId());
+      }
+
+      @Override
+      public int getBatchSize() {
+        return values.size();
+      }
     });
   }
 
