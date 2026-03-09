@@ -113,7 +113,7 @@ public class CodeSystemEntityVersionService {
     if (associations == null) {
       return new ArrayList<>();
     }
-    return associations.stream().filter(a -> a.getTargetId() != null).collect(Collectors.toList());
+    return associations.stream().filter(a -> a.getTargetId() != null).toList();
   }
 
   public CodeSystemEntityVersion decorate(CodeSystemEntityVersion version) {
@@ -163,7 +163,7 @@ public class CodeSystemEntityVersionService {
       codeSystemProviders.forEach(provider -> {
         Map<String, List<CodeSystemEntityVersion>> concepts = provider.searchConcepts(es.getKey(), new ConceptQueryParams()
             .setCodeSystem(es.getKey())
-            .setCodes(es.getValue().stream().map(CodeSystemEntityVersion::getCode).collect(Collectors.toList()))
+            .setCodes(es.getValue().stream().map(CodeSystemEntityVersion::getCode).toList())
             .all()).getData().stream().flatMap(c -> c.getVersions().stream()).collect(Collectors.groupingBy(CodeSystemEntityVersion::getCode));
         es.getValue().forEach(version -> {
           version.getDesignations().addAll(concepts.getOrDefault(version.getCode(), List.of()).stream()

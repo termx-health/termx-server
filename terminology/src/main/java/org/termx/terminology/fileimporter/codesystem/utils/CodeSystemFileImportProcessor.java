@@ -122,7 +122,7 @@ public class CodeSystemFileImportProcessor {
               .setPropertyCodeSystem(p.getPropertyCodeSystem());
         })
         .filter(distinctByKey(FileProcessingResponseProperty::getPropertyName))
-        .collect(Collectors.toList());
+        .toList();
     if (request.isAutoConceptOrder()) {
       properties.add(new FileProcessingResponseProperty().setPropertyName("conceptOrder").setPropertyType(integer).setPropertyKind(EntityPropertyKind.property));
     }
@@ -150,7 +150,7 @@ public class CodeSystemFileImportProcessor {
       ep.setLang(prop.getLanguage());
       ep.setValue(transformedValue);
       return ep;
-    }).collect(Collectors.toList());
+    }).toList();
   }
 
 

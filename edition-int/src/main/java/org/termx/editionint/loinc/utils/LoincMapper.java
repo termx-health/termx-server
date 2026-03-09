@@ -61,7 +61,7 @@ public class LoincMapper {
         .flatMap(c -> c.getProperties().stream()).collect(Collectors.toSet()).stream()
         .collect(Collectors.toMap(LoincConceptProperty::getName, p -> p, (p, q) -> p)).values().stream()
         .map(property -> new CodeSystemImportRequestProperty().setName(property.getName()).setType(property.getType()).setKind(EntityPropertyKind.property))
-        .collect(Collectors.toList());
+        .toList();
     properties.add(new CodeSystemImportRequestProperty().setName(DISPLAY).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation));
     properties.add(new CodeSystemImportRequestProperty().setName(KEY_WORDS).setType(EntityPropertyType.string).setKind(EntityPropertyKind.property));
     return properties;
@@ -121,7 +121,7 @@ public class LoincMapper {
         .setAssociationType(PART_OF)
         .setStatus(PublicationStatus.active)
         .setOrderNumber(a.getOrder())
-        .setTargetCode(a.getTargetCode())).collect(Collectors.toList());
+        .setTargetCode(a.getTargetCode())).toList();
   }
 
 }

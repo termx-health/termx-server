@@ -7,6 +7,7 @@ import org.termx.commons.UniqueResource;
 import org.termx.terminology.Privilege;
 import org.termx.core.auth.Authorized;
 import org.termx.core.auth.SessionStore;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.sys.job.JobLogResponse;
 import org.termx.core.sys.job.logger.ImportLogger;
 import org.termx.core.sys.lorque.LorqueProcessService;
@@ -221,7 +222,7 @@ public class MapSetController {
         log.error("Error while MapSet '{}' statistics calculation ", mapSet, e);
         importLogger.logImport(jobLogResponse.getJobId(), null, null, List.of(ExceptionUtils.getStackTrace(e)));
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return jobLogResponse;
   }
 
@@ -343,7 +344,7 @@ public class MapSetController {
         log.error("Error while MapSet '{}' automap ", mapSet, e);
         importLogger.logImport(jobLogResponse.getJobId(), null, null, List.of(ExceptionUtils.getStackTrace(e)));
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return jobLogResponse;
   }
 

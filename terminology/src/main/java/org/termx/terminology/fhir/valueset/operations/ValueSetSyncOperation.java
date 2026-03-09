@@ -6,6 +6,7 @@ import com.kodality.kefhir.structure.api.ResourceContent;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.Privilege;
 import org.termx.core.auth.SessionStore;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.terminology.fhir.valueset.ValueSetFhirImportService;
 import org.termx.sys.job.JobLogResponse;
 import org.termx.core.sys.job.logger.ImportLogger;
@@ -79,7 +80,7 @@ public class ValueSetSyncOperation implements TypeOperationDefinition {
         log.error("Error while importing fhir value set (TE700)", e);
         importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
       }
-    }));
+    }), VirtualThreadExecutor.get());
     Parameters resp = new Parameters().setParameter(List.of(new ParametersParameter("jobId").setValueString(jobLogResponse.getJobId().toString())));
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }

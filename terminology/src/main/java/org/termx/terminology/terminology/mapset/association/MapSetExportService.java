@@ -99,45 +99,27 @@ public class MapSetExportService {
         .collect(Collectors.groupingBy(MapSetPropertyValue::getMapSetPropertyName));
 
     for (String header : headers) {
-      switch (header) {
-        case "sourceCode":
-          row.add(association.getSource() != null ? association.getSource().getCode() : "");
-          break;
-        case "sourceCodeSystem":
-          row.add(association.getSource() != null ? association.getSource().getCodeSystem() : "");
-          break;
-        case "sourceDisplay":
-          row.add(association.getSource() != null ? association.getSource().getDisplay() : "");
-          break;
-        case "targetCode":
-          row.add(association.getTarget() != null ? association.getTarget().getCode() : "");
-          break;
-        case "targetCodeSystem":
-          row.add(association.getTarget() != null ? association.getTarget().getCodeSystem() : "");
-          break;
-        case "targetDisplay":
-          row.add(association.getTarget() != null ? association.getTarget().getDisplay() : "");
-          break;
-        case "relationship":
-          row.add(association.getRelationship() != null ? association.getRelationship() : "");
-          break;
-        case "verified":
-          row.add(association.isVerified());
-          break;
-        case "noMap":
-          row.add(association.isNoMap());
-          break;
-        default:
+      Object value = switch (header) {
+        case "sourceCode" -> association.getSource() != null ? association.getSource().getCode() : "";
+        case "sourceCodeSystem" -> association.getSource() != null ? association.getSource().getCodeSystem() : "";
+        case "sourceDisplay" -> association.getSource() != null ? association.getSource().getDisplay() : "";
+        case "targetCode" -> association.getTarget() != null ? association.getTarget().getCode() : "";
+        case "targetCodeSystem" -> association.getTarget() != null ? association.getTarget().getCodeSystem() : "";
+        case "targetDisplay" -> association.getTarget() != null ? association.getTarget().getDisplay() : "";
+        case "relationship" -> association.getRelationship() != null ? association.getRelationship() : "";
+        case "verified" -> association.isVerified();
+        case "noMap" -> association.isNoMap();
+        default -> {
           if (propertyValueMap.containsKey(header)) {
-            String value = propertyValueMap.get(header).stream()
-                .map(pv -> pv.getValue() != null ? (pv.getValue() instanceof String ? (String) pv.getValue() : JsonUtil.toJson(pv.getValue())) : "")
+            yield propertyValueMap.get(header).stream()
+                .map(pv -> pv.getValue() != null ? (pv.getValue() instanceof String s ? s : JsonUtil.toJson(pv.getValue())) : "")
                 .collect(Collectors.joining("#"));
-            row.add(value);
           } else {
-            row.add("");
+            yield "";
           }
-          break;
-      }
+        }
+      };
+      row.add(value);
     }
     
     return row.toArray();

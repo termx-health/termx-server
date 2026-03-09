@@ -198,7 +198,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 //            e.getAssociations().stream().noneMatch(a -> a.getAssociationType().equals(codeSystem.getHierarchyMeaning())))
 //        .map(e -> toFhir(e, codeSystem, version, childMap, parentMap, propertySystemUri))
 //        .sorted(Comparator.comparing(CodeSystemConcept::getCode))
-//        .collect(Collectors.toList()));
+//        .toList());
 
     List<CodeSystemConcept> rootConcepts = version.getEntities() == null ? null : version.getEntities().stream()
         .filter(e -> isRoot(e, codeSystem.getHierarchyMeaning()))
@@ -338,8 +338,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         CodeSystemConceptProperty fhir = new CodeSystemConceptProperty();
         fhir.setCode(entityProperty.getName());
         switch (entityProperty.getType()) {
-          case EntityPropertyType.code -> fhir.setValueCode(pv.getValue() instanceof String ? (String) pv.getValue() : String.valueOf(pv.getValue()));
-          case EntityPropertyType.string -> fhir.setValueString(pv.getValue() instanceof String ? (String) pv.getValue() : String.valueOf(pv.getValue()));
+          case EntityPropertyType.code -> fhir.setValueCode(pv.getValue() instanceof String s ? s : String.valueOf(pv.getValue()));
+          case EntityPropertyType.string -> fhir.setValueString(pv.getValue() instanceof String s ? s : String.valueOf(pv.getValue()));
           case EntityPropertyType.bool -> fhir.setValueBoolean((Boolean) pv.getValue());
           case EntityPropertyType.decimal -> fhir.setValueDecimal(new BigDecimal(String.valueOf(pv.getValue())));
           case EntityPropertyType.integer -> fhir.setValueInteger(Integer.valueOf(String.valueOf(pv.getValue())));
@@ -365,10 +365,10 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
             fhir.setValueCoding(coding);
           }
           case EntityPropertyType.dateTime -> {
-            if (pv.getValue() instanceof OffsetDateTime) {
-              fhir.setValueDateTime((OffsetDateTime) pv.getValue());
+            if (pv.getValue() instanceof OffsetDateTime odt) {
+              fhir.setValueDateTime(odt);
             } else {
-              OffsetDateTime dateTime = DateUtil.parseOffsetDateTime(pv.getValue() instanceof String ? (String) pv.getValue() : String.valueOf(pv.getValue()));
+              OffsetDateTime dateTime = DateUtil.parseOffsetDateTime(pv.getValue() instanceof String s ? s : String.valueOf(pv.getValue()));
               fhir.setValueDateTime(dateTime.withHour(0).withMinute(0).withSecond(0).withNano(0));
             }
           }
@@ -406,7 +406,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
                                                  Long targetId, CodeSystem codeSystem, CodeSystemVersion version,
                                                  Map<String, String> propertySystemUri) {
     List<CodeSystemConcept> result = childMap.getOrDefault(targetId, List.of()).stream()
-        .map(e -> toFhir(e, codeSystem, version, childMap, parentMap, propertySystemUri)).collect(Collectors.toList());
+        .map(e -> toFhir(e, codeSystem, version, childMap, parentMap, propertySystemUri)).toList();
     return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
   }
 
@@ -469,7 +469,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     version.setSupportedLanguages(Optional.ofNullable(fhirCodeSystem.getConcept()).orElse(new ArrayList<>()).stream()
         .filter(c -> c.getDesignation() != null)
         .flatMap(c -> c.getDesignation().stream().map(CodeSystemConceptDesignation::getLanguage)).filter(Objects::nonNull).distinct()
-        .collect(Collectors.toList()));
+        .toList());
     if (!version.getSupportedLanguages().contains(version.getPreferredLanguage())) {
       version.getSupportedLanguages().add(version.getPreferredLanguage());
     }
@@ -601,7 +601,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       designation.setDesignationKind("text");
       designation.setStatus("active");
       return designation;
-    }).collect(Collectors.toList());
+    }).toList();
 
     Designation display = new Designation();
     display.setDesignationType(DISPLAY);
@@ -648,7 +648,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
           ).filter(Objects::nonNull).findFirst().orElse(null));
           value.setEntityProperty(v.getCode());
           return value;
-        }).collect(Collectors.toList());
+        }).toList();
   }
 
   private static List<CodeSystemAssociation> fromFhirAssociations(CodeSystemConcept parent, List<String> parents,

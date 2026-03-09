@@ -2,6 +2,7 @@ package org.termx.terminology.terminology.codesystem.validator;
 
 import com.kodality.commons.util.JsonUtil;
 import org.termx.core.auth.SessionStore;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.sys.lorque.LorqueProcess;
 import org.termx.core.sys.lorque.LorqueProcessService;
 import org.termx.sys.lorque.ProcessResult;
@@ -40,7 +41,7 @@ public class CodeSystemUniquenessValidatorService {
         ProcessResult result = ProcessResult.text(ExceptionUtils.getMessage(e) + "\n" + ExceptionUtils.getStackTrace(e));
         lorqueProcessService.fail(lorqueProcess.getId(), result);
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return lorqueProcess;
   }
 

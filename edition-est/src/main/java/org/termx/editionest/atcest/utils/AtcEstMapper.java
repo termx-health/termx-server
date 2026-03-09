@@ -52,7 +52,7 @@ public class AtcEstMapper {
       concept.setDesignations(mapDesignations(a));
       concept.setAssociations(mapAssociations(a, atc));
       return concept;
-    }).collect(Collectors.toList());
+    }).toList();
   }
 
   private static List<Designation> mapDesignations(AtcEst atc) {

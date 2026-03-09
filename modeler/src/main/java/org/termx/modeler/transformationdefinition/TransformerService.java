@@ -278,7 +278,7 @@ public class TransformerService {
       definitions.subList(0, definitions.size() - 1).forEach(source -> {
         rows.add("uses \"" + source.getUrl() + "\" alias " + source.getName() + " as source");
       });
-      StructureDefinition target = definitions.get(definitions.size() - 1);
+      StructureDefinition target = definitions.getLast();
       rows.add("uses \"" + target.getUrl() + "\" alias " + target.getName() + " as target");
 
 
@@ -291,7 +291,7 @@ public class TransformerService {
       }
 
       rows.add("");
-      rows.add("group example(source src : " + definitions.get(0).getName() + ", target tgt : " + target.getName() + ") {");
+      rows.add("group example(source src : " + definitions.getFirst().getName() + ", target tgt : " + target.getName() + ") {");
       rows.add("  ");
       rows.add("}");
     }

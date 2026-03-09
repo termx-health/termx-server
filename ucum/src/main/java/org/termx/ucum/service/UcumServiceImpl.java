@@ -138,7 +138,7 @@ public class UcumServiceImpl implements UcumService {
         List<BaseUnit> baseUnits = ucumService.getModel().getBaseUnits();
         return baseUnits.stream()
                 .map(baseUnitMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -152,7 +152,7 @@ public class UcumServiceImpl implements UcumService {
         List<DefinedUnit> definedUnits = ucumService.getModel().getDefinedUnits();
         return definedUnits.stream()
                     .map(definedUnitMapper::toDto)
-                    .collect(Collectors.toList());
+                    .toList();
     }
 
     @Override
@@ -170,7 +170,7 @@ public class UcumServiceImpl implements UcumService {
         List<Prefix> prefixes = ucumService.getModel().getPrefixes();
         return prefixes.stream()
                 .map(prefixMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

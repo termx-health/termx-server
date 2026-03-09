@@ -224,9 +224,9 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
                   .setDisplay(getDisplay(t.getTarget(), targetDisplays))
                   .setRelationship(t.getRelationship())
                   .setProperty(toFhirPropertyValues(t.getPropertyValues()))).toList()))
-          .collect(Collectors.toList()));
+          .toList());
       return group;
-    }).collect(Collectors.toList());
+    }).toList();
   }
 
   private String getDisplay(MapSetAssociationEntity entity, Map<String, String> displayLookup) {
@@ -314,8 +314,8 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
           fhir.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
         }
         case EntityPropertyType.dateTime -> {
-          if (pv.getValue() instanceof OffsetDateTime) {
-            fhir.setValueDateTime((OffsetDateTime) pv.getValue());
+          if (pv.getValue() instanceof OffsetDateTime odt) {
+            fhir.setValueDateTime(odt);
           } else {
             fhir.setValueDateTime(DateUtil.parseOffsetDateTime((String) pv.getValue()));
           }

@@ -62,7 +62,7 @@ public class FileAnalysisService {
       columnValues.put(headers.get(i), vals);
     });
 
-    List<FileAnalysisColumn> properties = headers.stream().map(k -> createHeaderProp(k, columnValues.get(k))).collect(Collectors.toList());
+    List<FileAnalysisColumn> properties = headers.stream().map(k -> createHeaderProp(k, columnValues.get(k))).toList();
 
     return new FileAnalysisResponse().setColumns(properties);
   }

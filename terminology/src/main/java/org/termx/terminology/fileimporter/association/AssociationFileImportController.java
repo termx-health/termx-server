@@ -7,6 +7,7 @@ import org.termx.terminology.Privilege;
 import org.termx.core.auth.Authorized;
 import org.termx.core.auth.SessionStore;
 import org.termx.core.utils.FileUtil;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.terminology.fileimporter.association.utils.AssociationFileImportRequest;
 import org.termx.sys.job.JobLogResponse;
 import org.termx.core.sys.job.logger.ImportLogger;
@@ -59,7 +60,7 @@ public class AssociationFileImportController {
         log.error("Error while importing Association file (TE700)", e);
         importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE700.toApiException());
       }
-    }));
+    }), VirtualThreadExecutor.get());
 
     return jobLogResponse;
   }

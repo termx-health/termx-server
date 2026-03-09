@@ -167,8 +167,8 @@ public class CodeSystemFileImportService {
         log.info("\tSource version is not set");
       }
 
-      log.info("\tFinding the target version by version code '{}'", copy.getVersions().get(0).getVersion());
-      Long targetVersionId = findVersion(reqCodeSystem.getId(), copy.getVersions().get(0).getVersion()).map(CodeSystemVersion::getId).orElseThrow();
+      log.info("\tFinding the target version by version code '{}'", copy.getVersions().getFirst().getVersion());
+      Long targetVersionId = findVersion(reqCodeSystem.getId(), copy.getVersions().getFirst().getVersion()).map(CodeSystemVersion::getId).orElseThrow();
 
       log.info("\tComparing two versions: '{}' and '{}'", sourceVersionId, targetVersionId);
       CodeSystemCompareResult compare = codeSystemCompareService.compare(sourceVersionId, targetVersionId);

@@ -7,6 +7,7 @@ import org.termx.terminology.Privilege;
 import org.termx.core.auth.Authorized;
 import org.termx.core.auth.SessionStore;
 import org.termx.core.utils.FileUtil;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportRequest;
 import org.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportResponse;
 import org.termx.sys.job.JobLogResponse;
@@ -72,7 +73,7 @@ public class CodeSystemFileImportController {
         log.error("Error while importing code system file " + req.getCodeSystem().getId(), e);
         importLogger.logImport(jobLogResponse.getJobId(), null, null, List.of(ExceptionUtils.getStackTrace(e)));
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return jobLogResponse;
   }
 }

@@ -34,6 +34,6 @@ dependencies {
         exclude(group = "org.codehaus.groovy", module = "groovy-all")
     }
     testImplementation("io.micronaut.test:micronaut-test-spock")
-    testRuntimeOnly("net.bytebuddy:byte-buddy:1.14.7")
+    testRuntimeOnly("net.bytebuddy:byte-buddy:1.17.0")
     testRuntimeOnly("org.objenesis:objenesis:3.3")
 }

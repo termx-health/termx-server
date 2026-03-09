@@ -57,7 +57,7 @@ public class IchiUzMapper {
 
   private static List<CodeSystemImportRequestConcept> toConcepts(List<IchiUz> actions) {
     Map<String, String> parents = new HashMap<>();
-    return actions.stream().map(a -> mapConcept(a, parents)).collect(Collectors.toList());
+    return actions.stream().map(a -> mapConcept(a, parents)).toList();
   }
 
   private static CodeSystemImportRequestConcept mapConcept(IchiUz a, Map<String, String> parents) {

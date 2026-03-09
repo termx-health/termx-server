@@ -84,7 +84,7 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
 
   private List<ValueSetVersionConcept> prepare(List<ValueSetVersionConcept> concepts, List<String> preferredLanguages, List<String> supportedLanguages, String branch) {
     Map<String, List<SnomedConcept>> snomedConcepts =
-        snomedService.loadConcepts(concepts.stream().map(c -> c.getConcept().getCode()).collect(Collectors.toList()), branch).stream()
+        snomedService.loadConcepts(concepts.stream().map(c -> c.getConcept().getCode()).toList(), branch).stream()
             .collect(Collectors.groupingBy(SnomedConcept::getConceptId));
 
     Map<String, List<SnomedDescription>> snomedDescriptions = getDescriptions(snomedConcepts.keySet().stream().toList(), branch);

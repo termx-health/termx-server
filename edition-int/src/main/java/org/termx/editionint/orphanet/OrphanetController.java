@@ -7,6 +7,7 @@ import com.kodality.commons.util.JsonUtil;
 import org.termx.editionint.Privilege;
 import org.termx.core.auth.Authorized;
 import org.termx.core.auth.SessionStore;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.sys.job.JobLogResponse;
 import org.termx.core.sys.job.logger.ImportLogger;
 import org.termx.ts.codesystem.CodeSystemImportConfiguration;
@@ -59,7 +60,7 @@ public class OrphanetController {
         log.error("Error while importing Orphanet", e);
         importLogger.logImport(jobLogResponse.getJobId(), new ApiException(500, Issue.error(e.getMessage())));
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return jobLogResponse;
   }
 }

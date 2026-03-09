@@ -67,9 +67,9 @@ public class SnomedMapper {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(snomedConcept.getConceptId());
     version.setCodeSystem(SNOMED);
-//    version.setAssociations(snomedConcept.getRelationships() == null ? new ArrayList<>() : snomedConcept.getRelationships().stream().map(this::toConceptAssociation).collect(Collectors.toList()));
+//    version.setAssociations(snomedConcept.getRelationships() == null ? new ArrayList<>() : snomedConcept.getRelationships().stream().map(this::toConceptAssociation).toList());
     if (CollectionUtils.isNotEmpty(snomedConcept.getDescriptions())) {
-      version.setDesignations(snomedConcept.getDescriptions().stream().map(this::toConceptDesignation).collect(Collectors.toList()));
+      version.setDesignations(snomedConcept.getDescriptions().stream().map(this::toConceptDesignation).toList());
     } else  {
       version.setDesignations(toConceptDesignations(snomedConcept.getPt(), snomedConcept.getFsn()));
     }
@@ -120,6 +120,6 @@ public class SnomedMapper {
       property.setDescription(t.getPt().getTerm() != null ? new LocalizedName(Map.of(t.getPt().getLang(), t.getPt().getTerm())) : null);
       property.setStatus(t.isActive() ? PublicationStatus.active : PublicationStatus.retired);
       return property;
-    }).collect(Collectors.toList());
+    }).toList();
   }
 }

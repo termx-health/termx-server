@@ -51,7 +51,7 @@ public class ObservationDefinitionMapper {
       designation.setCaseSignificance(CaseSignificance.entire_term_case_insensitive);
       designation.setStatus(PublicationStatus.active);
       return designation;
-    }).collect(Collectors.toList());
+    }).toList();
   }
 
 }

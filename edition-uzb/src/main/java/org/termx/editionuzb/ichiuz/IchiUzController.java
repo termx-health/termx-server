@@ -6,6 +6,7 @@ import org.termx.editionuzb.ApiError;
 import org.termx.editionuzb.Privilege;
 import org.termx.core.auth.Authorized;
 import org.termx.core.auth.SessionStore;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.ts.codesystem.CodeSystemImportConfiguration;
 import org.termx.sys.job.JobLogResponse;
 import org.termx.core.sys.job.logger.ImportLogger;
@@ -46,7 +47,7 @@ public class IchiUzController {
         log.error("Error while importing ICHI uz (EU000)", e);
         importLogger.logImport(jobLogResponse.getJobId(), ApiError.EU000.toApiException());
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return jobLogResponse;
   }
 }

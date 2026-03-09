@@ -79,7 +79,7 @@ public class LoincAnswerListMapper {
   }
 
   private static List<CodeSystemImportRequestConcept> toConcepts(List<LoincAnswerList> answerLists, String type) {
-    return answerLists.stream().map(c -> mapConcept(c, type)).collect(Collectors.toList());
+    return answerLists.stream().map(c -> mapConcept(c, type)).toList();
   }
 
   private static CodeSystemImportRequestConcept mapConcept(LoincAnswerList answerList, String type) {
@@ -121,7 +121,7 @@ public class LoincAnswerListMapper {
         .setAssociationType(IS_A)
         .setStatus(PublicationStatus.active)
         .setOrderNumber(a.getValue())
-        .setTargetCode(a.getKey())).collect(Collectors.toList());
+        .setTargetCode(a.getKey())).toList();
   }
 
   public static MapSetTransactionRequest toRequest(LoincImportRequest request, List<Pair<String, String>> mappings) {

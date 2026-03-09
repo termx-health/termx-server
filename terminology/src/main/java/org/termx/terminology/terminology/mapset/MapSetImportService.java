@@ -48,7 +48,7 @@ public class MapSetImportService {
     associationTypeService.createIfNotExist(associationTypes);
 
     saveMapSet(mapSet);
-    MapSetVersion mapSetVersion = mapSet.getVersions().get(0);
+    MapSetVersion mapSetVersion = mapSet.getVersions().getFirst();
     saveMapSetVersion(mapSetVersion, action.isCleanRun());
 
     List<MapSetProperty> properties = saveProperties(mapSet.getProperties(), mapSet.getId());

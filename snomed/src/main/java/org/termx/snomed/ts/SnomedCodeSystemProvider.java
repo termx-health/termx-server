@@ -33,7 +33,7 @@ public class SnomedCodeSystemProvider extends CodeSystemExternalProvider {
       List<Concept> concepts = Arrays.stream(params.getDesignationCiEq().split(",")).filter(term -> term.length() >= 3).distinct().flatMap(term -> {
         SnomedConceptSearchParams p = snomedMapper.toSnomedParams(params).setTerm(term).limit(1);
         return searchConcepts(p).stream().filter(c -> {
-          List<Designation> designations = c.getVersions().get(0).getDesignations();
+          List<Designation> designations = c.getVersions().getFirst().getDesignations();
           return designations != null && designations.stream().anyMatch(d -> d.getName() != null && params.getDesignationCiEq().equalsIgnoreCase(d.getName()));
         });
       }).toList();

@@ -154,10 +154,10 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
       return concept;
     }
     List<Designation> designations = new ArrayList<>(CollectionUtils.isEmpty(concept.getVersions()) ? List.of() :
-        Optional.ofNullable(concept.getVersions().get(0).getDesignations()).orElse(List.of()));
+        Optional.ofNullable(concept.getVersions().getFirst().getDesignations()).orElse(List.of()));
     supplements.stream().filter(c -> CollectionUtils.isNotEmpty(c.getVersions())).forEach(c ->
-        designations.addAll(Optional.ofNullable(c.getVersions().get(0).getDesignations()).orElse(List.of())));
-    concept.getVersions().get(0).setDesignations(designations.stream()
+        designations.addAll(Optional.ofNullable(c.getVersions().getFirst().getDesignations()).orElse(List.of())));
+    concept.getVersions().getFirst().setDesignations(designations.stream()
         .collect(java.util.stream.Collectors.collectingAndThen(
             java.util.stream.Collectors.toMap(
                 d -> String.join("|", StringUtils.defaultString(d.getDesignationType()), StringUtils.defaultString(d.getLanguage()), StringUtils.defaultString(d.getName())),
@@ -197,10 +197,10 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
   }
 
   public static Set<String> extractDisplays(Concept c, String displayLanguage) {
-    if (CollectionUtils.isEmpty(c.getVersions()) || c.getVersions().get(0).getDesignations() == null) {
+    if (CollectionUtils.isEmpty(c.getVersions()) || c.getVersions().getFirst().getDesignations() == null) {
       return Set.of();
     }
-    List<Designation> designations = c.getVersions().get(0).getDesignations();
+    List<Designation> designations = c.getVersions().getFirst().getDesignations();
     LinkedHashSet<String> displays = new LinkedHashSet<>();
     Designation primary = ConceptUtil.getDisplay(designations, displayLanguage, List.of());
     if (primary != null && primary.getName() != null) {

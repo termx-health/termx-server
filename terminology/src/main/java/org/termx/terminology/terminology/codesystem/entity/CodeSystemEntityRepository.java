@@ -51,7 +51,7 @@ public class CodeSystemEntityRepository extends BaseRepository {
     });
 
     List<Long> currentIds = jdbcTemplate.queryForList("select id from terminology.code_system_entity where sys_status = 'A' and code_system = ?", Long.class, codeSystem);
-    List<Long> newIds = currentIds.stream().filter(id -> !existingIds.contains(id)).collect(Collectors.toList());
+    List<Long> newIds = currentIds.stream().filter(id -> !existingIds.contains(id)).toList();
 
     entities.forEach(e -> {
       if (e.getId() == null && CollectionUtils.isNotEmpty(newIds)) {

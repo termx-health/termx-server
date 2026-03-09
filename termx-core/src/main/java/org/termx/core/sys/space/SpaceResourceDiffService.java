@@ -5,6 +5,7 @@ import org.termx.core.ApiError;
 import org.termx.core.auth.SessionStore;
 import org.termx.core.sys.lorque.LorqueProcessService;
 import org.termx.core.sys.resource.ResourceDiffService;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.sys.lorque.LorqueProcess;
 import org.termx.sys.lorque.ProcessResult;
 import org.termx.sys.server.TerminologyServer;
@@ -51,7 +52,7 @@ public class SpaceResourceDiffService extends ResourceDiffService {
         ProcessResult result = ProcessResult.text(ExceptionUtils.getMessage(e) + "\n" + ExceptionUtils.getStackTrace(e));
         lorqueProcessService.fail(lorqueProcess.getId(), result);
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return lorqueProcess;
   }
 

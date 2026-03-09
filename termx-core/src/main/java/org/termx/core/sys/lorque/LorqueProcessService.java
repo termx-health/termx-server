@@ -1,6 +1,7 @@
 package org.termx.core.sys.lorque;
 
 import org.termx.core.auth.SessionStore;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.sys.ExecutionStatus;
 import org.termx.sys.lorque.LorqueProcess;
 import org.termx.sys.lorque.ProcessResult;
@@ -30,7 +31,7 @@ public class LorqueProcessService {
         ProcessResult result = ProcessResult.text(ExceptionUtils.getMessage(e) + "\n" + ExceptionUtils.getStackTrace(e));
         fail(lorqueProcess.getId(), result);
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return lorqueProcess;
   }
 

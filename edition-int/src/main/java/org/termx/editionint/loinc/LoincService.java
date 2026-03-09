@@ -98,7 +98,7 @@ public class LoincService {
                 .setName(r[headers.indexOf("PartTypeName")])
                 .setType(EntityPropertyType.coding)
                 .setValue(new Concept().setCode(r[headers.indexOf("PartNumber")]).setCodeSystem("loinc-part")))
-                .collect(Collectors.toList())))
+                .toList()))
         .collect(Collectors.toMap(LoincConcept::getCode, c -> c));
   }
 

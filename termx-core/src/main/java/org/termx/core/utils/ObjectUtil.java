@@ -31,13 +31,13 @@ public class ObjectUtil {
       String key = entry.getKey();
       JsonNode value = entry.getValue();
 
-      if (value instanceof ObjectNode) {
+      if (value instanceof ObjectNode objNode) {
         Map<String, ObjectNode> map = new HashMap<>();
-        map.put(key, removeEmptyFields((ObjectNode)value));
+        map.put(key, removeEmptyFields(objNode));
         ret.setAll(map);
       }
-      else if (value instanceof ArrayNode && !value.isEmpty()) {
-        ret.set(key, removeEmptyFields((ArrayNode)value));
+      else if (value instanceof ArrayNode arrNode && !arrNode.isEmpty()) {
+        ret.set(key, removeEmptyFields(arrNode));
       }
       else if (value.asText() != null && !value.asText().isEmpty()) {
         ret.set(key, value);
@@ -54,11 +54,11 @@ public class ObjectUtil {
     while (iter.hasNext()) {
       JsonNode value = iter.next();
 
-      if (value instanceof ArrayNode) {
-        ret.add(removeEmptyFields((ArrayNode)(value)));
+      if (value instanceof ArrayNode arrNode) {
+        ret.add(removeEmptyFields(arrNode));
       }
-      else if (value instanceof ObjectNode) {
-        ret.add(removeEmptyFields((ObjectNode)(value)));
+      else if (value instanceof ObjectNode objNode) {
+        ret.add(removeEmptyFields(objNode));
       }
       else if (value != null && !value.textValue().isEmpty()){
         ret.add(value);

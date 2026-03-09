@@ -5,6 +5,7 @@ import org.termx.editionest.ApiError;
 import org.termx.editionest.Privilege;
 import org.termx.core.auth.Authorized;
 import org.termx.core.auth.SessionStore;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.sys.job.JobLogResponse;
 import org.termx.core.sys.job.logger.ImportLogger;
 import org.termx.ts.codesystem.CodeSystemImportConfiguration;
@@ -45,7 +46,7 @@ public class Icd10EstController {
         log.error("Error while importing ICD-10 est (TE700)", e);
         importLogger.logImport(jobLogResponse.getJobId(), ApiError.EE000.toApiException());
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return jobLogResponse;
   }
 }
