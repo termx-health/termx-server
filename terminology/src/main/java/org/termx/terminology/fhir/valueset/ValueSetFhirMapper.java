@@ -289,7 +289,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }
     return filters.stream().map(f -> {
       ValueSetComposeIncludeFilter filter = new ValueSetComposeIncludeFilter();
-      filter.setValue(f.getValue() instanceof String ? (String) f.getValue() : JsonUtil.toJson(f.getValue()));
+      filter.setValue(f.getValue() instanceof String s ? s : JsonUtil.toJson(f.getValue()));
       filter.setOp(f.getOperator());
       filter.setProperty(f.getProperty().getName());
       return filter;
@@ -399,8 +399,8 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
               property.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
             }
             case EntityPropertyType.dateTime -> {
-              if (p.getValue() instanceof OffsetDateTime) {
-                property.setValueDateTime((OffsetDateTime) p.getValue());
+              if (p.getValue() instanceof OffsetDateTime odt) {
+                property.setValueDateTime(odt);
               } else {
                 property.setValueDateTime(DateUtil.parseOffsetDateTime((String) p.getValue()));
               }
@@ -656,7 +656,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       concept.setDisplay(c.getDisplay() != null ? new Designation().setName(c.getDisplay()) : null);
       concept.setAdditionalDesignations(fromFhirDesignations(c.getDesignation()));
       return concept;
-    }).collect(Collectors.toList());
+    }).toList();
   }
 
   private static List<Designation> fromFhirDesignations(List<ValueSetComposeIncludeConceptDesignation> designation) {
@@ -668,7 +668,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         .setName(d.getValue())
         .setDesignationKind("text")
         .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)
-        .setStatus(PublicationStatus.active)).collect(Collectors.toList());
+        .setStatus(PublicationStatus.active)).toList();
   }
 
   private static List<ValueSetRuleFilter> fromFhirFilters(List<ValueSetComposeIncludeFilter> filters) {
@@ -684,6 +684,6 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       filter.setOperator(f.getOp());
       filter.setValue(f.getValue());
       return filter;
-    }).collect(Collectors.toList());
+    }).toList();
   }
 }

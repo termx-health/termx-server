@@ -5,6 +5,7 @@ import com.kodality.commons.exception.ApiException;
 import org.termx.core.ApiError;
 import org.termx.core.auth.SessionStore;
 import org.termx.core.sys.job.JobLogService;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.sys.job.JobLog.JobDefinition;
 import org.termx.sys.job.JobLogResponse;
 import io.micronaut.core.util.CollectionUtils;
@@ -45,7 +46,7 @@ public class ImportLogger {
         log.error("Job {} resulted in Exception: {}", type, e.getMessage());
         logImport(job.getJobId(), ApiError.TC200.toApiException(Map.of("type", type, "error", e.getMessage())));
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return job;
   }
 

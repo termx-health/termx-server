@@ -7,6 +7,7 @@ import org.termx.observationdefinition.ApiError;
 import org.termx.observationdefinition.Privilege;
 import org.termx.core.auth.Authorized;
 import org.termx.core.auth.SessionStore;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.observationdefintion.ObservationDefinition;
 import org.termx.observationdefintion.ObservationDefinitionImportRequest;
 import org.termx.observationdefintion.ObservationDefinitionSearchParams;
@@ -83,7 +84,7 @@ public class ObservationDefinitionController {
         log.error("Error while importing observation definition", e);
         importLogger.logImport(jobLogResponse.getJobId(), ApiError.OD002.toApiException());
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return jobLogResponse;
   }
 

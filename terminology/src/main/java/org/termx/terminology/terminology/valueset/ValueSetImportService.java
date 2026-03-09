@@ -60,7 +60,7 @@ public class ValueSetImportService {
     prepare(valueSet);
 
     saveValueSet(valueSet);
-    ValueSetVersion valueSetVersion = valueSet.getVersions().get(0);
+    ValueSetVersion valueSetVersion = valueSet.getVersions().getFirst();
     saveValueSetVersion(valueSetVersion, valueSetVersion.getSnapshot(), action.isCleanRun());
 
     if (action.isActivate()) {
@@ -106,11 +106,11 @@ public class ValueSetImportService {
   }
 
   private ValueSet prepare(ValueSet valueSet) {
-    if (CollectionUtils.isNotEmpty(valueSet.getVersions()) && valueSet.getVersions().get(0) != null && valueSet.getVersions().get(0).getRuleSet() != null) {
-      prepareRules(valueSet.getVersions().get(0).getRuleSet().getRules());
+    if (CollectionUtils.isNotEmpty(valueSet.getVersions()) && valueSet.getVersions().getFirst() != null && valueSet.getVersions().getFirst().getRuleSet() != null) {
+      prepareRules(valueSet.getVersions().getFirst().getRuleSet().getRules());
     }
-    if (CollectionUtils.isNotEmpty(valueSet.getVersions()) && valueSet.getVersions().get(0) != null && valueSet.getVersions().get(0).getSnapshot() != null) {
-      prepareSnapshot(valueSet.getVersions().get(0).getSnapshot().getExpansion());
+    if (CollectionUtils.isNotEmpty(valueSet.getVersions()) && valueSet.getVersions().getFirst() != null && valueSet.getVersions().getFirst().getSnapshot() != null) {
+      prepareSnapshot(valueSet.getVersions().getFirst().getSnapshot().getExpansion());
     }
     return valueSet;
   }

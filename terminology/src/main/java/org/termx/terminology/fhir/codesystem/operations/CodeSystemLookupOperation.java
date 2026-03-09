@@ -185,7 +185,7 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
           .setCodeSystemVersion(version)
           .limit(1)).findFirst().orElse(null);
       return concept != null && concept.getVersions() != null && !concept.getVersions().isEmpty() ?
-          concept.getVersions().get(0).getDesignations() : null;
+          concept.getVersions().getFirst().getDesignations() : null;
     }).filter(ds -> ds != null).flatMap(List::stream)
         .filter(d -> languageMatches(d.getLanguage(), displayLanguage))
         .toList();

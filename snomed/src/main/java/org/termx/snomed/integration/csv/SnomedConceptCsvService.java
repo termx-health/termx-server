@@ -3,6 +3,7 @@ package org.termx.snomed.integration.csv;
 import org.termx.core.auth.SessionStore;
 import org.termx.core.sys.lorque.LorqueProcessService;
 import org.termx.core.utils.CsvUtil;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.snomed.concept.SnomedConcept;
 import org.termx.snomed.concept.SnomedConceptSearchParams;
 import org.termx.snomed.description.SnomedDescription;
@@ -38,7 +39,7 @@ public class SnomedConceptCsvService {
         ProcessResult result = ProcessResult.text(ExceptionUtils.getMessage(e) + "\n" + ExceptionUtils.getStackTrace(e));
         lorqueProcessService.fail(lorqueProcess.getId(), result);
       }
-    }));
+    }), VirtualThreadExecutor.get());
 
     return lorqueProcess;
   }

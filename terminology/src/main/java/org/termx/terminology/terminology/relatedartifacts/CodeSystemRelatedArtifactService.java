@@ -52,7 +52,7 @@ public class CodeSystemRelatedArtifactService extends RelatedArtifactService {
 
   private List<RelatedArtifact> findSupplement(String id) {
     Optional<String> supplementCs = codeSystemService.load(id).map(CodeSystem::getBaseCodeSystem);
-    List<RelatedArtifact> ra = supplementCs.map(cs -> new RelatedArtifact().setType(RelatedArtifactType.cs).setId(cs)).stream().collect(Collectors.toList());
+    List<RelatedArtifact> ra = supplementCs.map(cs -> new RelatedArtifact().setType(RelatedArtifactType.cs).setId(cs)).stream().toList();
     ra.addAll(codeSystemService.query(new CodeSystemQueryParams().setBaseCodeSystem(id).all()).getData().stream()
         .map(cs -> new RelatedArtifact().setType(RelatedArtifactType.cs).setId(cs.getId())).toList());
     return ra;
@@ -60,14 +60,14 @@ public class CodeSystemRelatedArtifactService extends RelatedArtifactService {
 
   private List<RelatedArtifact> findValueSets(String id) {
     List<ValueSet> valueSets = valueSetService.query(new ValueSetQueryParams().setCodeSystem(id).all()).getData();
-    return valueSets.stream().map(vs -> new RelatedArtifact().setId(vs.getId()).setType(RelatedArtifactType.vs)).collect(Collectors.toList());
+    return valueSets.stream().map(vs -> new RelatedArtifact().setId(vs.getId()).setType(RelatedArtifactType.vs)).toList();
   }
 
   private List<RelatedArtifact> findMapSets(String id) {
     List<MapSetVersion> versions = new ArrayList<>();
     versions.addAll(mapSetVersionService.query(new MapSetVersionQueryParams().setScopeSourceCodeSystem(id).all()).getData());
     versions.addAll(mapSetVersionService.query(new MapSetVersionQueryParams().setScopeTargetCodeSystem(id).all()).getData());
-    return versions.stream().map(v -> new RelatedArtifact().setId(v.getMapSet()).setType(RelatedArtifactType.ms)).collect(Collectors.toList());
+    return versions.stream().map(v -> new RelatedArtifact().setId(v.getMapSet()).setType(RelatedArtifactType.ms)).toList();
   }
 
   private List<RelatedArtifact> findPages(String id) {
@@ -77,7 +77,7 @@ public class CodeSystemRelatedArtifactService extends RelatedArtifactService {
     Map<Long, String> spaces = spaceService.query(new SpaceQueryParams().setIds(spaceIds).limit(spaceIds.split(",").length))
         .getData().stream().collect(Collectors.toMap(Space::getId, Space::getCode));
 
-    return pages.stream().map(p -> new RelatedArtifact().setId(spaces.get(p.getSpaceId()) + "|" + p.getSlug()).setType(RelatedArtifactType.p)).collect(Collectors.toList());
+    return pages.stream().map(p -> new RelatedArtifact().setId(spaces.get(p.getSpaceId()) + "|" + p.getSlug()).setType(RelatedArtifactType.p)).toList();
   }
 
   private List<RelatedArtifact> findSpaces(String id) {

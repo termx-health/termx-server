@@ -24,7 +24,7 @@ public abstract class ValueSetExternalExpandProvider {
         .filter(r -> getCodeSystemId().equals(r.getCodeSystem()) && r.getType().equals("exclude"))
         .flatMap(rule -> ruleExpand(rule, version, preferredLanguage).stream()).toList();
     return include.stream().filter(ic -> exclude.stream().noneMatch(ec -> ec.getConcept().getCode().equals(ic.getConcept().getCode())))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public abstract List<ValueSetVersionConcept> ruleExpand(ValueSetVersionRule rule, ValueSetVersion version, String preferredLanguage);

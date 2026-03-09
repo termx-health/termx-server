@@ -42,7 +42,7 @@ public class MapSetRelatedArtifactService extends RelatedArtifactService {
     Map<Long, String> spaces = spaceService.query(new SpaceQueryParams().setIds(spaceIds).limit(spaceIds.split(",").length))
         .getData().stream().collect(Collectors.toMap(Space::getId, Space::getCode));
 
-    return pages.stream().map(p -> new RelatedArtifact().setId(spaces.get(p.getSpaceId()) + "|" + p.getSlug()).setType(RelatedArtifactType.p)).collect(Collectors.toList());
+    return pages.stream().map(p -> new RelatedArtifact().setId(spaces.get(p.getSpaceId()) + "|" + p.getSlug()).setType(RelatedArtifactType.p)).toList();
   }
 
   private List<RelatedArtifact> findSpaces(String id) {

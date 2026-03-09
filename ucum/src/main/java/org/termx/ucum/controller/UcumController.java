@@ -5,6 +5,7 @@ import org.termx.core.auth.SessionStore;
 import org.termx.core.auth.Authorized;
 import org.termx.core.sys.job.logger.ImportLogger;
 import org.termx.core.utils.FileUtil;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.sys.job.JobLogResponse;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.core.version.annotation.Version;
@@ -348,7 +349,7 @@ public class UcumController {
             } catch (Exception e) {
                 importLogger.logImport(job.getJobId(), null, null, List.of(e.getMessage()));
             }
-        }));
+        }), VirtualThreadExecutor.get());
         return job;
     }
 

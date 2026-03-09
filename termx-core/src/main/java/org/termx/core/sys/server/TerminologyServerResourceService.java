@@ -34,7 +34,7 @@ public class TerminologyServerResourceService {
       Object resource = provider.getResource(server.getId(), id);
       response.setResource(JsonUtil.toPrettyJson(resource));
     } catch (CompletionException e) {
-      if (!(e.getCause() instanceof FhirClientError) || 404 != ((FhirClientError) e.getCause()).getResponse().statusCode()) {
+      if (!(e.getCause() instanceof FhirClientError err) || 404 != err.getResponse().statusCode()) {
         throw e;
       }
     }

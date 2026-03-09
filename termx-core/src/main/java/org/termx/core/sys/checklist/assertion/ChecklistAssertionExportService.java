@@ -4,6 +4,7 @@ import org.termx.core.auth.SessionStore;
 import org.termx.core.sys.checklist.ChecklistService;
 import org.termx.core.sys.lorque.LorqueProcessService;
 import org.termx.core.utils.CsvUtil;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.sys.checklist.Checklist;
 import org.termx.sys.checklist.ChecklistAssertion.ChecklistAssertionError;
 import org.termx.sys.checklist.ChecklistQueryParams;
@@ -37,7 +38,7 @@ public class ChecklistAssertionExportService {
         ProcessResult result = ProcessResult.text(ExceptionUtils.getMessage(e) + "\n" + ExceptionUtils.getStackTrace(e));
         lorqueProcessService.fail(lorqueProcess.getId(), result);
       }
-    }));
+    }), VirtualThreadExecutor.get());
 
     return lorqueProcess;
   }
@@ -51,7 +52,7 @@ public class ChecklistAssertionExportService {
 
     List<String> headers = List.of("rule_code", "rule_title", "rule_description", "errors");
     List<Object[]> rows = checklists.stream()
-        .filter(checklist -> CollectionUtils.isNotEmpty(checklist.getAssertions()) && !checklist.getAssertions().get(0).isPassed())
+        .filter(checklist -> CollectionUtils.isNotEmpty(checklist.getAssertions()) && !checklist.getAssertions().getFirst().isPassed())
         .map(this::composeRow).toList();
 
     return CsvUtil.composeCsv(headers, rows, ",").toString().getBytes();
@@ -62,7 +63,7 @@ public class ChecklistAssertionExportService {
     row.add(checklist.getRule().getCode());
     row.add(checklist.getRule().getTitle().getOrDefault(SessionStore.require().getLang(), ""));
     row.add(checklist.getRule().getDescription().getOrDefault(SessionStore.require().getLang(), ""));
-    row.add(Optional.ofNullable(checklist.getAssertions().get(0).getErrors()).orElse(List.of()).stream()
+    row.add(Optional.ofNullable(checklist.getAssertions().getFirst().getErrors()).orElse(List.of()).stream()
         .map(ChecklistAssertionError::getError).collect(Collectors.joining("\n")));
     return row.toArray();
   }

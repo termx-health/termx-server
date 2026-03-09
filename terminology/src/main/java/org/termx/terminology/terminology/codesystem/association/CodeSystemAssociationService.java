@@ -103,7 +103,7 @@ public class CodeSystemAssociationService {
       }
     }));
 
-    List<Long> sourceIds = entries.stream().map(Entry::getKey).collect(Collectors.toList());
+    List<Long> sourceIds = entries.stream().map(Entry::getKey).toList();
     sourceIds.addAll(entries.stream().flatMap(e -> e.getValue().stream().map(CodeSystemAssociation::getTargetId)).toList());
 
     List<Long> entityVersionIds = sourceIds.stream().distinct().toList();

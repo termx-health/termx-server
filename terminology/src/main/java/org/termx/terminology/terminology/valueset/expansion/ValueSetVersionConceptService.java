@@ -104,7 +104,7 @@ public class ValueSetVersionConceptService {
 
     List<ValueSetVersionConcept> expansion = internalExpand(version, preferredLanguage).stream()
         .filter(e -> e.isEnumerated() || e.getConcept().getConceptVersionId() != null)
-        .collect(Collectors.toList());
+        .toList();
     ValueSetVersionRuleSet ruleSet = version.getRuleSet();
     List<ValueSetVersionConcept> externalExpansion = new ArrayList<>();
     for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
@@ -112,7 +112,7 @@ public class ValueSetVersionConceptService {
     }
     expansion.addAll(externalExpansion);
     if (!ruleSet.isInactive()) {
-      return expansion.stream().filter(ValueSetVersionConcept::isActive).collect(Collectors.toList());
+      return expansion.stream().filter(ValueSetVersionConcept::isActive).toList();
     }
     return expansion;
   }
@@ -170,7 +170,7 @@ public class ValueSetVersionConceptService {
           c.setActive(calculatedActive(versions));
           c.setStatus(versions.stream().findFirst().map(CodeSystemEntityVersion::getStatus).orElse(PublicationStatus.active));
           c.setAssociations(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getAssociations()))
-              .flatMap(v -> v.getAssociations().stream()).collect(Collectors.toList()));
+              .flatMap(v -> v.getAssociations().stream()).toList());
           // Optimization of simple EntityPropertyValue (versions excluded)
           c.setPropertyValues(versions.stream()
                     .filter(v -> CollectionUtils.isNotEmpty(v.getPropertyValues()))
@@ -197,7 +197,7 @@ public class ValueSetVersionConceptService {
                             p.getEntityProperty(),
                             p.getEntityPropertyType()
                     )))
-                    .collect(Collectors.toList()));
+                    .toList());
           if (properties.containsKey("modifiedAt")) {
             c.getPropertyValues().add(new EntityPropertyValue()
                 .setValue(versions.stream().findFirst().map(CodeSystemEntityVersion::getSysModifiedAt).orElse(null))
@@ -210,7 +210,7 @@ public class ValueSetVersionConceptService {
                 .setEntityProperty("modifiedBy")
                 .setEntityPropertyType(properties.get("modifiedBy").getType()));
           }
-        }).collect(Collectors.toList());
+        }).toList();
     return res;
   }
 
@@ -230,7 +230,7 @@ public class ValueSetVersionConceptService {
   private boolean dateIsAfter(List<CodeSystemEntityVersion> versions, String prop) {
     return versions.stream().anyMatch(v -> v.getPropertyValues() != null &&
         v.getPropertyValues().stream().filter(pv -> pv.getEntityProperty().equals(prop)).anyMatch(pv -> {
-          OffsetDateTime date = pv.getValue() instanceof OffsetDateTime ? (OffsetDateTime) pv.getValue() : DateUtil.parseOffsetDateTime((String) pv.getValue());
+          OffsetDateTime date = pv.getValue() instanceof OffsetDateTime odt ? odt : DateUtil.parseOffsetDateTime((String) pv.getValue());
           return date.isBefore(OffsetDateTime.now());
         }));
   }

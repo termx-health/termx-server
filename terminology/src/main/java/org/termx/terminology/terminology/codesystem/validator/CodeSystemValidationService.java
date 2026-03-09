@@ -93,7 +93,7 @@ public class CodeSystemValidationService {
     return csConcepts.stream()
         .flatMap(concept -> concept.getVersions().stream())
         .flatMap(versionToValidate -> validateConceptVersion(versionToValidate, csProperties, externalConcepts).stream())
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private List<Issue> validateConceptVersion(CodeSystemEntityVersion conceptVersion, List<EntityProperty> csProperties, Map<String, List<ValueSetVersionConceptValue>> epExternalConcepts) {

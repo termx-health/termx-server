@@ -16,7 +16,7 @@ public class PageTagService {
   private final PageTagRepository repository;
 
   public List<PageTag> loadAll(Long pageId) {
-    return repository.loadAll(pageId).stream().map(this::decorate).collect(Collectors.toList());
+    return repository.loadAll(pageId).stream().map(this::decorate).toList();
   }
 
   @Transactional

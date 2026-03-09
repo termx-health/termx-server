@@ -125,7 +125,7 @@ public class ReleaseNotesService {
         .filter(r -> "CodeSystem".equals(r.getResourceType()))
         .map(r -> codeSystemProvider.compareWithPreviousVersion(r.getResourceId(), r.getResourceVersion()))
         .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private Stream<Object[]> composeCsCsvRow(Entry<CodeSystem, CodeSystemCompareResult> entry) {
@@ -245,7 +245,7 @@ public class ReleaseNotesService {
     return release.getResources().stream()
         .filter(r -> "ValueSet".equals(r.getResourceType()))
         .map(r -> valueSetProvider.compareWithPreviousVersion(r.getResourceId(), r.getResourceVersion()))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private Stream<Object[]> composeVsCsvRow(Entry<ValueSet, ValueSetCompareResult> entry) {

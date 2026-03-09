@@ -24,7 +24,7 @@ public class PageLinkService {
 
   public List<Long> getPath(Long targetId) {
     Optional<String> path = repository.getPath(targetId).stream().findFirst();
-    return path.isEmpty() ? List.of() : Arrays.stream(path.get().split("\\.")).filter(StringUtils::isNotEmpty).map(Long::valueOf).collect(Collectors.toList());
+    return path.isEmpty() ? List.of() : Arrays.stream(path.get().split("\\.")).filter(StringUtils::isNotEmpty).map(Long::valueOf).toList();
   }
 
   public QueryResult<PageLink> query(PageLinkQueryParams params) {

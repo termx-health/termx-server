@@ -95,7 +95,7 @@ public class ReleaseService {
             .setResourceId(r.getResourceId())
             .setResourceType(r.getResourceType())
             .setResourceVersion(r.getResourceVersion()).all()).getData().stream())
-        .filter(checklist -> CollectionUtils.isEmpty(checklist.getAssertions()) || !checklist.getAssertions().get(0).isPassed()).toList();
+        .filter(checklist -> CollectionUtils.isEmpty(checklist.getAssertions()) || !checklist.getAssertions().getFirst().isPassed()).toList();
     if (CollectionUtils.isNotEmpty(unaccomplishedChecks)) {
       throw ApiError.TC114.toApiException();
     }

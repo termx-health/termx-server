@@ -133,7 +133,7 @@ public class CodeSystemFileImportMapper {
             property.setRule(new EntityPropertyRule().setCodeSystems(List.of(fpProperty.getPropertyCodeSystem())));
           }
           return property;
-        }).collect(Collectors.toList());
+        }).toList();
   }
 
   private static Concept toCsConcept(String codeSystem, Map<String, List<FileProcessingEntityPropertyValue>> entity,
@@ -188,7 +188,7 @@ public class CodeSystemFileImportMapper {
             designation.setDesignationType(fpPropertyValue.getPropertyName());
             return designation;
           });
-        }).collect(Collectors.toList());
+        }).toList();
   }
 
   private static List<EntityPropertyValue> toConceptVersionPropertyValues(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
@@ -204,7 +204,7 @@ public class CodeSystemFileImportMapper {
             propertyValue.setEntityProperty(fpPropertyValue.getPropertyName());
             return propertyValue;
           });
-        }).collect(Collectors.toList());
+        }).toList();
   }
 
   private static List<CodeSystemAssociation> toConceptVersionAssociations(String code, Map<String, List<FileProcessingEntityPropertyValue>> entity,
@@ -225,7 +225,7 @@ public class CodeSystemFileImportMapper {
         association.setTargetCode(p);
         association.setStatus(PublicationStatus.active);
         return association;
-      }).collect(Collectors.toList());
+      }).toList();
     }
 
     return entity.keySet().stream().filter(key -> List.of(CONCEPT_IS_A, CONCEPT_PARENT, CONCEPT_PART_OF, CONCEPT_GROUPED_BY, CONCEPT_CLASSIFIED_WITH).contains(key)).flatMap(key -> {
@@ -237,7 +237,7 @@ public class CodeSystemFileImportMapper {
         association.setStatus(PublicationStatus.active);
         return association;
       });
-    }).collect(Collectors.toList());
+    }).toList();
   }
 
   private static List<String> findParents(String child, List<Map<String, List<FileProcessingEntityPropertyValue>>> entities) {

@@ -96,7 +96,7 @@ public class CodeSystemImportService {
     associationTypeService.createIfNotExist(associationTypes);
 
     saveCodeSystem(codeSystem);
-    CodeSystemVersion codeSystemVersion = codeSystem.getVersions().get(0);
+    CodeSystemVersion codeSystemVersion = codeSystem.getVersions().getFirst();
     saveCodeSystemVersion(codeSystemVersion, action.isCleanRun());
 
     List<EntityProperty> entityProperties = saveProperties(codeSystem.getProperties(), codeSystem.getId());
@@ -127,10 +127,10 @@ public class CodeSystemImportService {
     concepts = concepts.stream().collect(collectingAndThen(toCollection(() -> new TreeSet<>(comparing(Concept::getCode))), ArrayList::new));
 
     if (baseCodeSystem != null) {
-      List<String> codes = concepts.stream().map(Concept::getCode).collect(Collectors.toList());
+      List<String> codes = concepts.stream().map(Concept::getCode).toList();
       Map<String, Optional<Long>> baseVersionIds = conceptService.query(new ConceptQueryParams().setCodes(codes).setCodeSystem(baseCodeSystem).limit(concepts.size())).getData().stream()
               .collect(toMap(Concept::getCode, c -> c.getLastVersion().map(CodeSystemEntityVersion::getId)));
-      concepts.forEach(c -> baseVersionIds.getOrDefault(c.getCode(), Optional.empty()).ifPresent(baseVersionId -> c.getVersions().get(0).setBaseEntityVersionId(baseVersionId)));
+      concepts.forEach(c -> baseVersionIds.getOrDefault(c.getCode(), Optional.empty()).ifPresent(baseVersionId -> c.getVersions().getFirst().setBaseEntityVersionId(baseVersionId)));
     }
     return concepts;
   }
@@ -219,15 +219,15 @@ public class CodeSystemImportService {
     log.info("Creating '{}' concept versions", concepts.size());
     start = System.currentTimeMillis();
     List<Long> activeConceptIds =
-        concepts.stream().filter(c -> c.getVersions().get(0).getStatus() == null || PublicationStatus.active.equals(c.getVersions().get(0).getStatus()))
+        concepts.stream().filter(c -> c.getVersions().getFirst().getStatus() == null || PublicationStatus.active.equals(c.getVersions().getFirst().getStatus()))
             .map(CodeSystemEntity::getId).toList();
     List<Long> retiredConceptIds =
-        concepts.stream().filter(c -> PublicationStatus.retired.equals(c.getVersions().get(0).getStatus())).map(CodeSystemEntity::getId).toList();
-    
+        concepts.stream().filter(c -> PublicationStatus.retired.equals(c.getVersions().getFirst().getStatus())).map(CodeSystemEntity::getId).toList();
+
     Map<Long, List<CodeSystemEntityVersion>> entityVersionMap = new HashMap<>();
     final Map<String, Optional<Concept>> conceptCache = new HashMap<>();
     for (CodeSystemEntity concept : concepts) {
-      var partialVersion = prepareEntityVersion(concept.getVersions().get(0), entityProperties, conceptCache);
+      var partialVersion = prepareEntityVersion(concept.getVersions().getFirst(), entityProperties, conceptCache);
       entityVersionMap.put(concept.getId(), List.of(partialVersion));
     }
     if (!cleanRun) {
@@ -240,11 +240,11 @@ public class CodeSystemImportService {
 
     log.info("Activating entity versions and linking them with code system version");
     start = System.currentTimeMillis();
-    List<Long> entityVersionIds = concepts.stream().map(concept -> concept.getVersions().get(0).getId()).toList();
+    List<Long> entityVersionIds = concepts.stream().map(concept -> concept.getVersions().getFirst().getId()).toList();
     List<Long> activeVersionIds =
-        concepts.stream().filter(c -> activeConceptIds.contains(c.getId())).map(concept -> concept.getVersions().get(0).getId()).toList();
+        concepts.stream().filter(c -> activeConceptIds.contains(c.getId())).map(concept -> concept.getVersions().getFirst().getId()).toList();
     List<Long> retiredVersionIds =
-        concepts.stream().filter(c -> retiredConceptIds.contains(c.getId())).map(concept -> concept.getVersions().get(0).getId()).toList();
+        concepts.stream().filter(c -> retiredConceptIds.contains(c.getId())).map(concept -> concept.getVersions().getFirst().getId()).toList();
     codeSystemEntityVersionService.activate(version.getCodeSystem(), activeVersionIds);
     codeSystemEntityVersionService.retire(version.getCodeSystem(), retiredVersionIds);
     codeSystemVersionService.linkEntityVersions(version.getId(), entityVersionIds);
@@ -298,7 +298,7 @@ public class CodeSystemImportService {
         }
       }
     });
-    return propertyValues.stream().filter(pv -> pv.getEntityPropertyId() != null).collect(Collectors.toList());
+    return propertyValues.stream().filter(pv -> pv.getEntityPropertyId() != null).toList();
   }
 
   private List<Designation> prepareEntityVersionDesignations(List<Designation> designations, List<EntityProperty> properties) {
@@ -306,7 +306,7 @@ public class CodeSystemImportService {
         d.getDesignationTypeId() != null ? d.getDesignationTypeId() :
             d.getDesignationType() != null ?
                 properties.stream().filter(p -> d.getDesignationType().equals(p.getName())).findFirst().map(EntityProperty::getId).orElse(null) : null));
-    return designations.stream().filter(d -> d.getDesignationTypeId() != null).collect(Collectors.toList());
+    return designations.stream().filter(d -> d.getDesignationTypeId() != null).toList();
   }
 
   private void prepareCodeSystemAssociations(Map<Long, List<CodeSystemAssociation>> associations, Long versionId) {
@@ -409,7 +409,7 @@ public class CodeSystemImportService {
   }
 
   public static ValueSetVersion toValueSetVersion(CodeSystem codeSystem, List<String> properties) {
-    CodeSystemVersion codeSystemVersion = codeSystem.getVersions().get(0);
+    CodeSystemVersion codeSystemVersion = codeSystem.getVersions().getFirst();
 
     ValueSetVersion version = new ValueSetVersion();
     version.setValueSet(codeSystem.getId());
@@ -434,7 +434,7 @@ public class CodeSystemImportService {
   private static ValueSetVersionConcept toValueSetConcept(Concept concept) {
     ValueSetVersionConcept vsConcept = new ValueSetVersionConcept();
     vsConcept.setConcept(new ValueSetVersionConceptValue()
-        .setConceptVersionId(concept.getVersions().get(0).getId())
+        .setConceptVersionId(concept.getVersions().getFirst().getId())
         .setCode(concept.getCode())
         .setCodeSystem(concept.getCodeSystem()));
     return vsConcept;

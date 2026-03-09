@@ -106,7 +106,7 @@ public abstract class BaseFhirMapper {
       return null;
     }
     List<Identifier> fhirIdentifiers = Optional.ofNullable(identifiers).orElse(new ArrayList<>()).stream()
-        .map(i -> new Identifier().setSystem(i.getSystem()).setValue(i.getValue())).collect(Collectors.toList());
+        .map(i -> new Identifier().setSystem(i.getSystem()).setValue(i.getValue())).toList();
     fhirIdentifiers.addAll(Optional.ofNullable(versionIdentifiers).orElse(new ArrayList<>()).stream()
         .filter(vi -> identifiers == null || identifiers.stream().noneMatch(i -> (i.getSystem() + i.getValue()).equals(vi.getSystem() + vi.getValue())))
         .map(vi -> new Identifier().setSystem(vi.getSystem()).setValue(vi.getValue()).setType(new CodeableConcept(new Coding(VERSION_IDENTIFIER_TYPE))))
@@ -172,7 +172,7 @@ public abstract class BaseFhirMapper {
     }
     return identifiers.stream().filter(i -> i.getType() == null || i.getType().getCoding() == null ||
             i.getType().getCoding().stream().noneMatch(c -> VERSION_IDENTIFIER_TYPE.equals(c.getCode())))
-        .map(i -> new com.kodality.commons.model.Identifier(i.getSystem(), i.getValue())).collect(Collectors.toList());
+        .map(i -> new com.kodality.commons.model.Identifier(i.getSystem(), i.getValue())).toList();
   }
 
   protected static List<com.kodality.commons.model.Identifier> fromFhirVersionIdentifiers(List<com.kodality.zmei.fhir.datatypes.Identifier> identifiers) {
@@ -181,7 +181,7 @@ public abstract class BaseFhirMapper {
     }
     return identifiers.stream().filter(i -> i.getType() != null && i.getType().getCoding() != null &&
             i.getType().getCoding().stream().anyMatch(c -> VERSION_IDENTIFIER_TYPE.equals(c.getCode())))
-        .map(i -> new com.kodality.commons.model.Identifier(i.getSystem(), i.getValue())).collect(Collectors.toList());
+        .map(i -> new com.kodality.commons.model.Identifier(i.getSystem(), i.getValue())).toList();
   }
 
   protected static List<ContactDetail> fromFhirContacts(List<com.kodality.zmei.fhir.datatypes.ContactDetail> details) {

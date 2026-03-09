@@ -5,6 +5,7 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import org.termx.commons.UniqueResource;
 import org.termx.core.sys.lorque.LorqueProcessService;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.sys.lorque.LorqueProcess;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.Privilege;
@@ -226,7 +227,7 @@ public class ValueSetController {
         log.error("Error while ValueSet '{}' expand", request.getValueSet(), e);
         importLogger.logImport(jobLogResponse.getJobId(), ApiError.TE307.toApiException());
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return jobLogResponse;
   }
 

@@ -52,7 +52,7 @@ public class AtcMapper {
       concept.setAssociations(mapAssociations(a, atc));
       return concept;
 
-    }).collect(Collectors.toList());
+    }).toList();
   }
 
   private static List<Designation> mapDesignations(Entry<String, String> atc) {

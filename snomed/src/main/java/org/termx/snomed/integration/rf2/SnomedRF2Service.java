@@ -1,6 +1,7 @@
 package org.termx.snomed.integration.rf2;
 
 import org.termx.core.auth.SessionStore;
+import org.termx.core.utils.VirtualThreadExecutor;
 import org.termx.snomed.client.SnowstormClient;
 import org.termx.snomed.concept.SnomedTranslationSearchParams;
 import org.termx.snomed.concept.SnomedTranslationStatus;
@@ -69,7 +70,7 @@ public class SnomedRF2Service {
         ProcessResult result = ProcessResult.text(ExceptionUtils.getMessage(e) + "\n" + ExceptionUtils.getStackTrace(e));
         lorqueProcessService.fail(lorqueProcess.getId(), result);
       }
-    }));
+    }), VirtualThreadExecutor.get());
     return lorqueProcess;
   }
 
@@ -83,7 +84,7 @@ public class SnomedRF2Service {
         ProcessResult result = ProcessResult.text(ExceptionUtils.getMessage(e) + "\n" + ExceptionUtils.getStackTrace(e));
         lorqueProcessService.fail(lorqueProcess.getId(), result);
       }
-    }));
+    }), VirtualThreadExecutor.get());
 
     return lorqueProcess;
   }
@@ -114,7 +115,7 @@ public class SnomedRF2Service {
   }
 
   private List<SnomedConcept> loadConcepts(List<SnomedTranslation> translations) {
-    List<String> conceptIds = translations.stream().map(SnomedTranslation::getConceptId).collect(Collectors.toList());
+    List<String> conceptIds = translations.stream().map(SnomedTranslation::getConceptId).toList();
     if (CollectionUtils.isEmpty(conceptIds)) {
       return List.of();
     }

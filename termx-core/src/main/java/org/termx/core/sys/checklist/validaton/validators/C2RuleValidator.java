@@ -43,6 +43,6 @@ public class C2RuleValidator implements CodeSystemRuleValidator {
             }
             return null;
           });
-        }).filter(Objects::nonNull).collect(Collectors.toList());
+        }).filter(Objects::nonNull).toList();
   }
 }
