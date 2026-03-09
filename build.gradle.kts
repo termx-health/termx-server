@@ -17,6 +17,9 @@ allprojects {
     apply(plugin = "com.github.spotbugs")
     apply(plugin = "pmd")
 
+    // SpotBugs: run only via manual task spotbugsCheck (not part of check) to speed up CI/Docker builds
+    extensions.findByType<com.github.spotbugs.snom.SpotBugsExtension>()?.runOnCheck?.set(false)
+
     version = rootProject.version
     group = rootProject.group
 
@@ -62,6 +65,19 @@ allprojects {
         reports {
             xml.required.set(false)
             html.required.set(true)
+        }
+    }
+}
+
+// Manual SpotBugs verification: ./gradlew spotbugsCheck (not run during check/CI)
+tasks.register("spotbugsCheck") {
+    group = "verification"
+    description = "Runs SpotBugs on all projects. Use manually; not part of check or CI."
+}
+allprojects {
+    afterEvaluate {
+        rootProject.tasks.named("spotbugsCheck").configure {
+            dependsOn(tasks.withType<com.github.spotbugs.snom.SpotBugsTask>())
         }
     }
 }
