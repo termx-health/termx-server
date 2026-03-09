@@ -26,7 +26,7 @@ public class SnomedTaskStatusChangeInterceptor implements TaskStatusChangeInterc
     if (task == null || task.getContext() == null || task.getStatus() == null) {
       return;
     }
-    task.getContext().stream().filter(ctx -> TaskFlowSnomedInterceptor.TASK_CTX_TYPE.equals(ctx.getType())).forEach(ctx -> {
+    task.getContext().stream().filter(ctx -> SnomedTranslationTaskInterceptor.TASK_CTX_TYPE.equals(ctx.getType())).forEach(ctx -> {
       Optional<String> status = Optional.ofNullable(statusMap.get(task.getStatus()));
       status.ifPresent(s -> {
         translationService.updateStatus((Long) ctx.getId(), s);

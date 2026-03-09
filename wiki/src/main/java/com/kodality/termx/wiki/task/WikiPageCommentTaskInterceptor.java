@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 
 @Singleton
 @RequiredArgsConstructor
-public class WikiPageCommentTaskFlowInterceptor
+public class WikiPageCommentTaskInterceptor
     implements PageCommentCreateInterceptor, PageCommentUpdateInterceptor, PageCommentDeleteInterceptor, PageCommentStatusChangeInterceptor {
   private final TaskService taskService;
   private final Provider<PageContentService> pageContentService;

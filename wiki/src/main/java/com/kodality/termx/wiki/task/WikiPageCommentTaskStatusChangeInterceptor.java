@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 @Singleton
 @RequiredArgsConstructor
-public class WikiPageCommentTaskFlowStatusChangeInterceptor implements TaskStatusChangeInterceptor {
+public class WikiPageCommentTaskStatusChangeInterceptor implements TaskStatusChangeInterceptor {
   private final Provider<PageCommentService> commentService;
 
   public static final String TASK_CTX_TYPE = "page-comment";

@@ -15,7 +15,6 @@ include 'termx-integtest'
 //include 'gatling'
 
 include 'task'
-include 'task-taskflow'
 include 'task-taskforge'
 include 'wiki'
 include 'observation-definition'

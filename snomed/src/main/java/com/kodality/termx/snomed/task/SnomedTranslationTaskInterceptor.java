@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 
 @Singleton
 @RequiredArgsConstructor
-public class TaskFlowSnomedInterceptor extends SnomedInterceptor {
+public class SnomedTranslationTaskInterceptor extends SnomedInterceptor {
   private final TaskService taskService;
   private final SnomedService snomedService;
 
