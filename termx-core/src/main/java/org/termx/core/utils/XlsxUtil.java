@@ -19,27 +19,24 @@ public class XlsxUtil {
   }
 
   public static byte[] composeXlsx(List<String> headers, List<Object[]> rows, String sheetName, boolean streaming) {
-    Workbook workbook = streaming ? new SXSSFWorkbook(100) : new XSSFWorkbook();
-    Sheet sheet = workbook.createSheet(sheetName);
+    try (Workbook workbook = streaming ? new SXSSFWorkbook(100) : new XSSFWorkbook();
+         ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+      Sheet sheet = workbook.createSheet(sheetName);
 
-    int rowNum = 0;
-    rowNum = addXlsxRow(headers.toArray(), sheet, rowNum);
-    for (Object[] row : rows) {
-      rowNum = addXlsxRow(row, sheet, rowNum);
-    }
+      int rowNum = 0;
+      rowNum = addXlsxRow(headers.toArray(), sheet, rowNum);
+      for (Object[] row : rows) {
+        rowNum = addXlsxRow(row, sheet, rowNum);
+      }
 
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    try {
       workbook.write(bos);
-      bos.close();
       if (streaming) {
         ((SXSSFWorkbook) workbook).dispose();
       }
-      workbook.close();
+      return bos.toByteArray();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    return bos.toByteArray();
   }
 
   private static int addXlsxRow(Object[] array, Sheet sheet, int rowNum) {

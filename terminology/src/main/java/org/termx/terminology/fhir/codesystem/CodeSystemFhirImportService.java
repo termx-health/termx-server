@@ -46,6 +46,7 @@ public class CodeSystemFhirImportService {
     importCodeSystem(resource, codeSystemId);
   }
 
+  @Transactional
   public void importCodeSystem(String resource, String codeSystemId) {
     Resource res = FhirMapper.fromJson(resource, Resource.class);
     if ("Bundle".equals(res.getResourceType())) {

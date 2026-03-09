@@ -66,6 +66,7 @@ public class ValueSetFileImportService {
     return process(request, file);
   }
 
+  @Transactional
   public ValueSetFileImportResponse process(ValueSetFileImportRequest request, byte[] file) {
     if ("json".equals(request.getType())) {
       valueSetFhirImportService.importValueSet(new String(file, StandardCharsets.UTF_8), request.getValueSet().getId());

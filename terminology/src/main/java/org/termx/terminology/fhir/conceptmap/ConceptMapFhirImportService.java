@@ -45,6 +45,7 @@ public class ConceptMapFhirImportService {
     importMapSet(resource, mapSetId, action);
   }
 
+  @Transactional
   public void importMapSet(String resource, String mapSetId, MapSetImportAction action) {
     Resource res = FhirMapper.fromJson(resource, Resource.class);
     if ("Bundle".equals(res.getResourceType())) {
