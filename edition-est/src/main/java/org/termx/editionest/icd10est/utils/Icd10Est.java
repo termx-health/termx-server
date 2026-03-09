@@ -110,7 +110,9 @@ public class Icd10Est {
     private List<IncludeExclude> exclude;
 
     @Override
-    public List<Sub> getChildren() {return sub;}
+    public List<Sub> getChildren() {
+      return sub == null ? null : List.copyOf(sub);
+    }
   }
 
   @Getter

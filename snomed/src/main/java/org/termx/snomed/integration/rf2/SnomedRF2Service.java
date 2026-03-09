@@ -138,7 +138,7 @@ public class SnomedRF2Service {
       sb.append(concept.getConceptId()).append("\t");
       sb.append(("FULLY_DEFINED".equals(concept.getDefinitionStatus()) ? FULLY_DEFINED : PRIMITIVE)).append("\t").append("\n");
     });
-    return sb.toString().getBytes();
+    return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
   }
 
   private byte[] composeDescriptionContent(List<SnomedTranslation> translations, Map<String, Concept> modules) {
@@ -156,11 +156,11 @@ public class SnomedRF2Service {
       sb.append(translation.getTerm()).append("\t");
       sb.append(CASE_INSENSITIVE).append("\t").append("\n");
     });
-    return sb.toString().getBytes();
+    return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
   }
 
   private byte[] composeRelationshipContent() {
-    return "id\teffectiveTime\tactive\tmoduleId\tsourceId\tdestinationId\trelationshipGroup\ttypeId\t\n".getBytes();
+    return "id\teffectiveTime\tactive\tmoduleId\tsourceId\tdestinationId\trelationshipGroup\ttypeId\t\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
   }
 
   private byte[] composeRefsetLanguageContent(List<SnomedTranslation> translations, Map<String, Concept> modules) {
@@ -175,7 +175,7 @@ public class SnomedRF2Service {
       sb.append(translation.getDescriptionId()).append("\t");
       sb.append("preferred".equals(translation.getAcceptability()) ? PREFERRED : ACCEPTABLE).append("\t").append("\n");
     });
-    return sb.toString().getBytes();
+    return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
   }
 
   private String getPropertyValue(Concept concept, String property) {

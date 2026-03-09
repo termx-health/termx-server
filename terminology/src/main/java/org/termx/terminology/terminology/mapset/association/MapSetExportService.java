@@ -55,7 +55,7 @@ public class MapSetExportService {
 
     String format = params.get("format");
     if ("csv".equals(format)) {
-      return ProcessResult.binary(CsvUtil.composeCsv(headers, rows, ",").toString().getBytes());
+      return ProcessResult.binary(CsvUtil.composeCsv(headers, rows, ",").toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
     if ("xlsx".equals(format)) {
       return ProcessResult.binary(XlsxUtil.composeXlsx(headers, rows, "associations"));

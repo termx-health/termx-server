@@ -49,7 +49,7 @@ public class SpaceImportService {
 
   @Transactional
   public ImportLog importSpace(Publisher<CompletedFileUpload> file) {
-    String yaml = new String(FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()));
+    String yaml = new String(FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet()), java.nio.charset.StandardCharsets.UTF_8);
     SpaceOverview overview = fromYaml(yaml);
 
     if (overview == null || overview.getCode() == null) {

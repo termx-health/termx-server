@@ -88,7 +88,7 @@ public class ReleaseNotesService {
     rows.addAll(csCompare.stream().filter(es -> es.getValue() != null).flatMap(this::composeCsCsvRow).toList());
     rows.addAll(vsCompare.stream().filter(es -> es.getValue() != null).flatMap(this::composeVsCsvRow).toList());
 
-    attachment.setContent(CsvUtil.composeCsv(headers, rows, ";").toString().getBytes());
+    attachment.setContent(CsvUtil.composeCsv(headers, rows, ";").toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
     attachment.setContentLength((long) attachment.getContent().length);
     return attachment;
   }
@@ -114,7 +114,7 @@ public class ReleaseNotesService {
 
     txtBlocks.entrySet().stream().sorted(Entry.comparingByKey()).forEach(es -> sb.append("\n\n").append(es.getValue()));
 
-    attachment.setContent(sb.toString().getBytes());
+    attachment.setContent(sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
     attachment.setContentLength((long) attachment.getContent().length);
     return attachment;
   }

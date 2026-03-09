@@ -190,7 +190,7 @@ public class GithubService {
       String resp = get("/repos/" + repo + "/contents/" + path + "?ref="+branch);
       GithubContent content = JsonUtil.fromJson(resp, GithubContent.class);
       if ("base64".equals(JsonUtil.read(resp, "$.encoding"))) {
-        content.setContent(new String(Base64.getDecoder().decode(content.getContent().replaceAll("\n", ""))));
+        content.setContent(new String(Base64.getDecoder().decode(content.getContent().replaceAll("\n", "")), java.nio.charset.StandardCharsets.UTF_8));
       }
       return content;
     } catch (HttpClientError e) {
@@ -219,7 +219,7 @@ public class GithubService {
     try {
       Map<String, Object> resp = JsonUtil.toMap(get(url));
       if ("base64".equals(resp.get("encoding"))) {
-        return new String(Base64.getDecoder().decode(((String) resp.get("content")).replaceAll("\n", "")));
+        return new String(Base64.getDecoder().decode(((String) resp.get("content")).replaceAll("\n", "")), java.nio.charset.StandardCharsets.UTF_8);
       }
       return (String) resp.get("content");
     } catch (HttpClientError e) {
@@ -342,7 +342,7 @@ public class GithubService {
   private String calculateSha(byte[] bytes) {
     try {
       MessageDigest md = MessageDigest.getInstance("SHA1");
-      md.update(String.format("%s %d\u0000", "blob", bytes.length).getBytes());
+      md.update(String.format("%s %d\u0000", "blob", bytes.length).getBytes(java.nio.charset.StandardCharsets.UTF_8));
       md.update(bytes);
       return Hex.encodeHexString((md.digest()));
     } catch (NoSuchAlgorithmException e) {
@@ -453,11 +453,11 @@ public class GithubService {
   @Setter
   @Accessors(chain = true)
   public static class GithubStatus {
-    public static String M = "M";
-    public static String U = "U";
-    public static String D = "D";
-    public static String A = "A";
-    public static String K = "K";
+    public static final String M = "M";
+    public static final String U = "U";
+    public static final String D = "D";
+    public static final String A = "A";
+    public static final String K = "K";
     private String sha;
     private Map<String, String> files = new LinkedHashMap<>();
   }
