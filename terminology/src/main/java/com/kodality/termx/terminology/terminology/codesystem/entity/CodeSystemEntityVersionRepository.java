@@ -11,6 +11,7 @@ import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionReference;
+import com.kodality.termx.ts.codesystem.ConceptSnapshot;
 import io.micronaut.core.util.StringUtils;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -29,6 +30,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 public class CodeSystemEntityVersionRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(CodeSystemEntityVersion.class, p -> {
     p.addColumnProcessor("versions", PgBeanProcessor.fromJson(JsonUtil.getListType(CodeSystemVersionReference.class)));
+    p.addColumnProcessor("snapshot", PgBeanProcessor.fromJson());
   });
 
   private final static String select =
@@ -256,5 +258,31 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     ps.setString(6, versionsToInsert.get(i).getValue().getCreated().toString());
     ps.setLong(7, versionsToInsert.get(i).getValue().getBaseEntityVersionId() == null ? 0 : versionsToInsert.get(i).getValue().getBaseEntityVersionId());
   }
-}
 
+  public void updateSnapshot(Long codeSystemEntityVersionId, ConceptSnapshot snapshot) {
+    String sql = "update terminology.code_system_entity_version set snapshot = ?::jsonb where id = ? and sys_status = 'A'";
+    jdbcTemplate.update(sql, JsonUtil.toJson(snapshot), codeSystemEntityVersionId);
+  }
+
+  public void updateSnapshots(Map<Long, ConceptSnapshot> snapshots) {
+    if (snapshots == null || snapshots.isEmpty()) {
+      return;
+    }
+    List<Pair<Long, ConceptSnapshot>> items = snapshots.entrySet().stream()
+        .map(e -> Pair.of(e.getKey(), e.getValue()))
+        .toList();
+    String sql = "update terminology.code_system_entity_version set snapshot = ?::jsonb where id = ? and sys_status = 'A'";
+    jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+      @Override
+      public void setValues(PreparedStatement ps, int i) throws SQLException {
+        ps.setString(1, JsonUtil.toJson(items.get(i).getRight()));
+        ps.setLong(2, items.get(i).getLeft());
+      }
+
+      @Override
+      public int getBatchSize() {
+        return items.size();
+      }
+    });
+  }
+}

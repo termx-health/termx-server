@@ -1,5 +1,7 @@
 package com.kodality.termx.terminology.fhir.codesystem;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.Maps;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
@@ -10,6 +12,7 @@ import com.kodality.termx.core.fhir.BaseFhirMapper;
 import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
+import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptRepository;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.terminology.terminology.mapset.MapSetService;
 import com.kodality.termx.terminology.terminology.relatedartifacts.CodeSystemRelatedArtifactService;
@@ -19,20 +22,7 @@ import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
 import com.kodality.termx.ts.Permissions;
 import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.codesystem.CodeSystem;
-import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
-import com.kodality.termx.ts.codesystem.CodeSystemContent;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
-import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
-import com.kodality.termx.ts.codesystem.CodeSystemVersion;
-import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
-import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.codesystem.ConceptQueryParams;
-import com.kodality.termx.ts.codesystem.Designation;
-import com.kodality.termx.ts.codesystem.EntityProperty;
-import com.kodality.termx.ts.codesystem.EntityPropertyKind;
-import com.kodality.termx.ts.codesystem.EntityPropertyType;
-import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import com.kodality.termx.ts.codesystem.*;
 import com.kodality.termx.ts.mapset.MapSet;
 import com.kodality.termx.ts.property.PropertyReference;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
@@ -164,17 +154,17 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       toFhir(fhirCodeSystem, codeSystem.getConfigurationAttributes(), concepts);
     }
 
-    List<String> relatedArtifacts = relatedArtifactService.findRelatedArtifacts(codeSystem.getId()).stream()
-        .map(a -> {
-          if (RelatedArtifactType.cs.equals(a.getType())) {
-            return codeSystemService.load(a.getId()).map(CodeSystem::getUri).orElse(null);
-          } else if (RelatedArtifactType.vs.equals(a.getType())) {
-            return Optional.ofNullable(valueSetService.load(a.getId())).map(ValueSet::getUri).orElse(null);
-          } else if (RelatedArtifactType.ms.equals(a.getType())) {
-            return mapSetService.load(a.getId()).map(MapSet::getUri).orElse(null);
-          }
-          return null;
-        }).filter(Objects::nonNull).toList();
+//    List<String> relatedArtifacts = relatedArtifactService.findRelatedArtifacts(codeSystem.getId()).stream()
+//        .map(a -> {
+//          if (RelatedArtifactType.cs.equals(a.getType())) {
+//            return codeSystemService.load(a.getId()).map(CodeSystem::getUri).orElse(null);
+//          } else if (RelatedArtifactType.vs.equals(a.getType())) {
+//            return Optional.ofNullable(valueSetService.load(a.getId())).map(ValueSet::getUri).orElse(null);
+//          } else if (RelatedArtifactType.ms.equals(a.getType())) {
+//            return mapSetService.load(a.getId()).map(MapSet::getUri).orElse(null);
+//          }
+//          return null;
+//        }).filter(Objects::nonNull).toList();
 //    toFhirRelatedArtifacts(fhirCodeSystem, relatedArtifacts);
 
     fhirCodeSystem.setVersion(version.getVersion());
@@ -246,7 +236,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     CodeSystemConcept concept = new CodeSystemConcept();
     concept.setCode(e.getCode());
     setDesignations(concept, e.getDesignations(), version.getPreferredLanguage());
-    concept.setProperty(toFhirConceptProperties(e, codeSystem, childMap, parentMap, propertySystemUri));
+    concept.setProperty(toFhirConceptProperties(e, codeSystem, childMap, parentMap, propertySystemUri, version.getPreferredLanguage()));
     if (codeSystem.getHierarchyMeaning() != null) {
       concept.setConcept(toFhirConcepts(childMap, parentMap, e.getId(), codeSystem, version, propertySystemUri));
     }
@@ -299,7 +289,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
                                                                   CodeSystem codeSystem,
                                                                   Map<Long, List<CodeSystemEntityVersion>> childMap,
                                                                   Map<Long, List<String>> parentMap,
-                                                                  Map<String, String> propertySystemUri) {
+                                                                  Map<String, String> propertySystemUri,
+                                                                  String language) {
     List<EntityProperty> properties = codeSystem.getProperties();
 
     List<CodeSystemConceptProperty> conceptProperties = new ArrayList<>();
@@ -330,6 +321,14 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       conceptProperties.add(new CodeSystemConceptProperty().setCode("modifiedBy").setValueString(entityVersion.getSysModifiedBy()));
     }
     if (CollectionUtils.isNotEmpty(entityVersion.getPropertyValues())) {
+      var snapshotCodings = Optional.ofNullable(entityVersion.getSnapshot())
+              .map(ConceptSnapshot::getProperties).stream()
+              .flatMap(List::stream)
+              .filter(Objects::nonNull)
+              .map(ConceptSnapshot.SnapshotProperty::valueCoding)
+              .filter(Objects::nonNull)
+              .toList();
+
       Map<String, List<EntityProperty>> entityProperties = properties.stream().collect(Collectors.groupingBy(PropertyReference::getName));
       conceptProperties.addAll(entityVersion.getPropertyValues().stream().map(pv -> {
         EntityProperty entityProperty = entityProperties.getOrDefault(pv.getEntityProperty(), List.of()).stream().findFirst().orElse(null);
@@ -350,13 +349,20 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
               return null;
             }
 
-            Optional<Concept> code = conceptService.load(concept.getCodeSystem(), concept.getCode());
-            Optional<String> display = code
-                .flatMap(c -> Optional.ofNullable(c.getVersions()).flatMap(l -> l.stream().findFirst()))
-                .flatMap(v -> Optional.ofNullable(v.getDesignations()).flatMap(l -> l.stream().findFirst()))
-                .map(Designation::getName);
+            var coding = new Coding(
+                    propertySystemUri.getOrDefault(concept.getCodeSystem(), concept.getCodeSystem()),
+                    concept.getCode());
 
-            fhir.setValueCoding(new Coding(propertySystemUri.getOrDefault(concept.getCodeSystem(), concept.getCodeSystem()), concept.getCode()));
+            snapshotCodings.stream()
+                    .filter(propertyCoding -> concept.getCode().equals(propertyCoding.code())
+                            && concept.getCodeSystem().equals(propertyCoding.system()))
+                    .findFirst()
+                    .ifPresent(propertyCoding -> {
+                      coding.setDisplay(getDisplay(propertyCoding.display(), language));
+                      coding.setVersion(propertyCoding.version());
+                    });
+
+            fhir.setValueCoding(coding);
           }
           case EntityPropertyType.dateTime -> {
             if (pv.getValue() instanceof OffsetDateTime) {
@@ -371,6 +377,29 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       }).filter(Objects::nonNull).sorted(Comparator.comparing(CodeSystemConceptProperty::getCode)).toList());
     }
     return conceptProperties;
+  }
+
+  record LocalName(String language, String name) {}
+  private String getDisplay(String display, String language) {
+    if (display == null) {
+      return null;
+    }
+    try {
+      List<LocalName> jsonList = JsonUtil.getObjectMapper().readValue(display, JsonUtil.getListType(LocalName.class));
+      if (jsonList.isEmpty()) {
+        return null;
+      }
+      if (language == null) {
+        return jsonList.get(0).name();
+      }
+      return jsonList.stream()
+              .filter(localName -> language.equals(localName.language()))
+              .map(LocalName::name)
+              .findFirst()
+              .orElseGet(() -> jsonList.get(0).name());
+    } catch (JsonProcessingException e) {
+      return display;
+    }
   }
 
   private List<CodeSystemConcept> toFhirConcepts(Map<Long, List<CodeSystemEntityVersion>> childMap, Map<Long, List<String>> parentMap,

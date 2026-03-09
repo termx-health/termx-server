@@ -42,10 +42,21 @@ public class EntityPropertyValue {
   public static class EntityPropertyValueCodingValue {
     private String code;
     private String codeSystem;
+    private Object display;
+    private String version;
 
     public EntityPropertyValueCodingValue(String code, String codeSystem) {
       this.code = code;
       this.codeSystem = codeSystem;
     }
+  }
+
+  @Getter
+  @Setter
+  @NoArgsConstructor
+  public static class EntityPropertyValueCodingDesignationValue {
+    private String name;
+    private String language;
+    private String use;
   }
 }

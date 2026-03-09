@@ -204,7 +204,7 @@ public class CodeSystemValidationService {
   private boolean isCodingValue(Object o) {
     String json = JsonUtil.toJson(o);
     Map<String, Object> map = JsonUtil.toMap(json);
-    return map.keySet().size() == 2 && map.containsKey("code") && map.containsKey("codeSystem");
+    return map.containsKey("code") && map.containsKey("codeSystem");
   }
 
   private Issue error(String message, Map<String, Object> params) {

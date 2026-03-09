@@ -3,19 +3,21 @@ package com.kodality.termx.terminology.terminology.codesystem.entitypropertyvalu
 import com.kodality.commons.model.QueryResult;
 import com.kodality.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.termx.ts.codesystem.EntityPropertyValueQueryParams;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+
 @Singleton
 @RequiredArgsConstructor
 public class EntityPropertyValueService {
   private final EntityPropertyValueRepository repository;
+  private final EntityPropertyValueUpdateQueueService updateQueueService;
 
   public List<EntityPropertyValue> loadAll(Long codeSystemEntityVersionId, Long baseEntityVersionId) {
     return repository.loadAll(codeSystemEntityVersionId, baseEntityVersionId);
@@ -37,12 +39,16 @@ public class EntityPropertyValueService {
   public void batchUpsert(Map<Long, List<EntityPropertyValue>> values) {
     List<Entry<Long, List<EntityPropertyValue>>> entries = values.entrySet().stream().toList();
     repository.retain(entries);
-    repository.save(entries.stream().flatMap(e -> e.getValue().stream().map(v -> Pair.of(e.getKey(), v))).toList());
+    List<Pair<Long, EntityPropertyValue>> pairs = entries.stream().flatMap(e -> e.getValue().stream().map(v -> Pair.of(e.getKey(), v))).toList();
+    repository.save(pairs);
+    updateQueueService.markCodingValuesForUpdatePairs(pairs);
   }
 
   @Transactional
   public void save(EntityPropertyValue value, Long codeSystemEntityVersionId) {
+    value.setCodeSystemEntityVersionId(codeSystemEntityVersionId);
     repository.save(value, codeSystemEntityVersionId);
+    updateQueueService.markCodingValuesForUpdate(List.of(value));
   }
 
   @Transactional

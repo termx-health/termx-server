@@ -30,8 +30,13 @@ with t as (
 , p as (
   select epv.code_system_entity_version_id, 
          jsonb_agg(jsonb_build_object(
-            'value',epv.value,'concept_version_id',pv.concept_version_id,
-            'concept_version',pv.concept_version, 'display', pv.display
+            'valueCoding', jsonb_build_object(
+                'code', epv.value->> 'code',
+                'system', epv.value->>'codeSystem',
+                'version', pv.version,
+                'display', pv.display),
+            'concept_version_id',pv.concept_version_id,
+            'concept_version',pv.concept_version
           )) val
     from t 
          inner join terminology.entity_property_value epv on epv.code_system_entity_version_id = t.id
