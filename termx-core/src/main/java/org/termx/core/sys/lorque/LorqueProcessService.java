@@ -48,7 +48,7 @@ public class LorqueProcessService {
 
   private LorqueProcess decorate(LorqueProcess process) {
     if (process.getResult() != null && ProcessResultType.text.equals(process.getResultType())) {
-      process.setResultText(new String(process.getResult()));
+      process.setResultText(new String(process.getResult(), java.nio.charset.StandardCharsets.UTF_8));
     }
     return process;
   }

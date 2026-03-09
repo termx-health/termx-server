@@ -24,7 +24,7 @@ public class ImplementationGuideProvenanceService {
 
   public List<Provenance> find(String ig, String versionCode) {
     if (versionCode == null) {
-      return provenanceService.find("ImplementationGuide|" + versionCode);
+      return provenanceService.find("ImplementationGuide|" + ig);
     }
     return igVersionService.load(ig, versionCode).map(csv ->
         provenanceService.find("ImplementationGuideVersion|" + csv.getId().toString())

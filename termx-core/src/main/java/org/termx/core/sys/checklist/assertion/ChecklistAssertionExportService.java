@@ -55,7 +55,7 @@ public class ChecklistAssertionExportService {
         .filter(checklist -> CollectionUtils.isNotEmpty(checklist.getAssertions()) && !checklist.getAssertions().getFirst().isPassed())
         .map(this::composeRow).toList();
 
-    return CsvUtil.composeCsv(headers, rows, ",").toString().getBytes();
+    return CsvUtil.composeCsv(headers, rows, ",").toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
   }
 
   private Object[] composeRow(Checklist checklist) {

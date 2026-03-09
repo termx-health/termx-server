@@ -77,7 +77,7 @@ public class StructureMapTransformOperationHack implements KefhirRequestFilter, 
         factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
         factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
         DocumentBuilder builder = factory.newDocumentBuilder();
-        Document document = builder.parse(new ByteArrayInputStream(content.getBytes()));
+        Document document = builder.parse(new ByteArrayInputStream(content.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         Element root = document.getDocumentElement();
         return root.getTagName();
       } catch (Exception e) {
