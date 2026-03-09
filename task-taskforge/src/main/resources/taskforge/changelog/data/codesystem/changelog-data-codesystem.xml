@@ -6,14 +6,14 @@
 
   <changeSet id="task-status" author="termx">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
+    <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="taskforge/changelog/data/codesystem/task-status.json"/>
     </customChange>
   </changeSet>
 
   <changeSet id="request-priority" author="termx">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
+    <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="taskforge/changelog/data/codesystem/request-priority.json"/>
     </customChange>
   </changeSet>

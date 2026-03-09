@@ -1,15 +1,15 @@
 package org.termx.ucum.service;
 
-import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
-import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
+import org.termx.terminology.terminology.codesystem.CodeSystemService;
+import org.termx.terminology.terminology.codesystem.concept.ConceptService;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemContent;
 import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
 import com.kodality.termx.ts.codesystem.Concept;
 import com.kodality.termx.ts.codesystem.ConceptQueryParams;
 import com.kodality.termx.ts.codesystem.Designation;
-import com.kodality.termx.ucum.ts.UcumConceptResolver;
-import com.kodality.termx.ucum.ts.UcumUnitDefinition;
+import org.termx.ucum.ts.UcumConceptResolver;
+import org.termx.ucum.ts.UcumUnitDefinition;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

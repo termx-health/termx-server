@@ -1,0 +1,529 @@
+package org.termx.terminology.fhir.conceptmap;
+
+import com.kodality.commons.exception.ApiClientException;
+import com.kodality.commons.util.DateUtil;
+import com.kodality.commons.util.JsonUtil;
+import com.kodality.kefhir.core.model.search.SearchCriterion;
+import com.kodality.termx.core.auth.SessionStore;
+import com.kodality.termx.core.fhir.BaseFhirMapper;
+import com.kodality.termx.core.sys.provenance.Provenance;
+import org.termx.terminology.Privilege;
+import org.termx.terminology.terminology.codesystem.CodeSystemService;
+import org.termx.terminology.terminology.codesystem.concept.ConceptService;
+import org.termx.terminology.terminology.codesystem.concept.ConceptUtil;
+import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
+import org.termx.terminology.terminology.mapset.MapSetService;
+import org.termx.terminology.terminology.relatedartifacts.MapSetRelatedArtifactService;
+import org.termx.terminology.terminology.valueset.ValueSetService;
+import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
+import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
+import com.kodality.termx.ts.Copyright;
+import com.kodality.termx.ts.Language;
+import com.kodality.termx.ts.PublicationStatus;
+import com.kodality.termx.ts.association.AssociationKind;
+import com.kodality.termx.ts.association.AssociationType;
+import com.kodality.termx.ts.codesystem.CodeSystem;
+import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
+import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
+import com.kodality.termx.ts.codesystem.Concept;
+import com.kodality.termx.ts.codesystem.ConceptQueryParams;
+import com.kodality.termx.ts.codesystem.EntityPropertyType;
+import com.kodality.termx.ts.mapset.MapSet;
+import com.kodality.termx.ts.mapset.MapSetAssociation;
+import com.kodality.termx.ts.mapset.MapSetAssociation.MapSetAssociationEntity;
+import com.kodality.termx.ts.mapset.MapSetProperty;
+import com.kodality.termx.ts.mapset.MapSetPropertyValue;
+import com.kodality.termx.ts.mapset.MapSetQueryParams;
+import com.kodality.termx.ts.mapset.MapSetVersion;
+import com.kodality.termx.ts.mapset.MapSetVersion.MapSetResourceReference;
+import com.kodality.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
+import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
+import com.kodality.termx.ts.valueset.ValueSet;
+import com.kodality.termx.ts.valueset.ValueSetVersion;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
+import com.kodality.zmei.fhir.FhirMapper;
+import com.kodality.zmei.fhir.datatypes.CodeableConcept;
+import com.kodality.zmei.fhir.datatypes.Coding;
+import com.kodality.zmei.fhir.datatypes.Period;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroup;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElement;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElementTarget;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapGroupElementTargetProperty;
+import com.kodality.zmei.fhir.resource.terminology.ConceptMap.ConceptMapProperty;
+import io.micronaut.context.annotation.Context;
+import io.micronaut.context.annotation.Value;
+import io.micronaut.core.util.CollectionUtils;
+import io.micronaut.core.util.StringUtils;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
+
+
+@Context
+public class ConceptMapFhirMapper extends BaseFhirMapper {
+  private final ConceptService conceptService;
+  private final CodeSystemService codeSystemService;
+  private final ValueSetService valueSetService;
+  private final MapSetService mapSetService;
+  private final CodeSystemVersionService codeSystemVersionService;
+  private final ValueSetVersionService valueSetVersionService;
+  private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final MapSetRelatedArtifactService relatedArtifactService;
+
+  public ConceptMapFhirMapper(ConceptService conceptService,
+                              CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
+                              CodeSystemVersionService codeSystemVersionService, ValueSetVersionService valueSetVersionService,
+                              ValueSetVersionConceptService valueSetVersionConceptService,
+                              MapSetRelatedArtifactService relatedArtifactService) {
+    this.conceptService = conceptService;
+    this.codeSystemService = codeSystemService;
+    this.valueSetService = valueSetService;
+    this.mapSetService = mapSetService;
+    this.codeSystemVersionService = codeSystemVersionService;
+    this.valueSetVersionService = valueSetVersionService;
+    this.valueSetVersionConceptService = valueSetVersionConceptService;
+    this.relatedArtifactService = relatedArtifactService;
+  }
+
+  // -------------- TO FHIR --------------
+
+  public static String toFhirId(MapSet mapSet, MapSetVersion version) {
+    return mapSet.getId() + BaseFhirMapper.SEPARATOR + version.getVersion();
+  }
+
+  public String toFhirJson(MapSet ms, MapSetVersion msv, List<Provenance> provenances) {
+    return FhirMapper.toJson(toFhir(ms, msv, provenances));
+  }
+
+  public com.kodality.zmei.fhir.resource.terminology.ConceptMap toFhir(MapSet mapSet, MapSetVersion version, List<Provenance> provenances) {
+    com.kodality.zmei.fhir.resource.terminology.ConceptMap fhirConceptMap = new com.kodality.zmei.fhir.resource.terminology.ConceptMap();
+    if (StringUtils.isNotEmpty(mapSet.getExternalWebSource())) {
+        fhirConceptMap.addExtension(toFhirWebSourceExtension(mapSet.getExternalWebSource()));
+    }
+    fhirConceptMap.setId(toFhirId(mapSet, version));
+    fhirConceptMap.setUrl(mapSet.getUri());
+    fhirConceptMap.setPublisher(conceptService.load("publisher", mapSet.getPublisher()).flatMap(Concept::getLastVersion).flatMap(CodeSystemEntityVersion::getDisplay).orElse(mapSet.getPublisher()));
+    fhirConceptMap.setName(mapSet.getName());
+    if (CollectionUtils.isNotEmpty(mapSet.getOtherTitle())) {
+      mapSet.getOtherTitle().forEach(otherName -> fhirConceptMap.addExtension(
+          toFhirOtherTitleExtension("http://hl7.org/fhir/StructureDefinition/conceptmap-otherTitle", otherName)));
+    }
+    fhirConceptMap.setTitle(toFhirName(mapSet.getTitle(), version.getPreferredLanguage()));
+    fhirConceptMap.setPrimitiveExtensions("title", toFhirTranslationExtension(mapSet.getTitle(), version.getPreferredLanguage()));
+    fhirConceptMap.setDescription(toFhirName(mapSet.getDescription(), version.getPreferredLanguage()));
+    fhirConceptMap.setPrimitiveExtensions("description", toFhirTranslationExtension(mapSet.getDescription(), version.getPreferredLanguage()));
+    String versionDescription = toFhirName(version.getDescription(), version.getPreferredLanguage());
+    if (StringUtils.isNotEmpty(versionDescription)) {
+      fhirConceptMap.addExtension(toFhirVersionDescriptionExtension(versionDescription));
+    }
+    fhirConceptMap.setPurpose(toFhirName(mapSet.getPurpose(), version.getPreferredLanguage()));
+    fhirConceptMap.setTopic(toFhirTopic(mapSet.getTopic()));
+    fhirConceptMap.setUseContext(toFhirUseContext(mapSet.getUseContext()));
+    fhirConceptMap.setPrimitiveExtensions("purpose", toFhirTranslationExtension(mapSet.getPurpose(), version.getPreferredLanguage()));
+    fhirConceptMap.setText(toFhirText(mapSet.getNarrative()));
+    fhirConceptMap.setExperimental(mapSet.getExperimental() != null && mapSet.getExperimental());
+    Optional.ofNullable(mapSet.getSourceReference()).ifPresent(ref -> fhirConceptMap.addExtension(toFhirSourceReferenceExtension("http://hl7.org/fhir/StructureDefinition/conceptmap-sourceReference", ref)));
+    Optional.ofNullable(mapSet.getReplaces()).flatMap(id -> mapSetService.load(id).map(MapSet::getUri)).ifPresent(uri -> fhirConceptMap.addExtension(toFhirReplacesExtension(uri)));
+    fhirConceptMap.setIdentifier(toFhirIdentifiers(mapSet.getIdentifiers(), version.getIdentifiers()));
+    fhirConceptMap.setContact(toFhirContacts(mapSet.getContacts()));
+    fhirConceptMap.setDate(toFhirOffsetDateTime(provenances));
+    fhirConceptMap.setLastReviewDate(toFhirDate(provenances, "reviewed"));
+    fhirConceptMap.setApprovalDate(toFhirDate(provenances, "approved"));
+    fhirConceptMap.setCopyright(mapSet.getCopyright() != null ? mapSet.getCopyright().getHolder() : null);
+    fhirConceptMap.setCopyrightLabel(mapSet.getCopyright() != null ? mapSet.getCopyright().getStatement() : null);
+    fhirConceptMap.setJurisdiction(mapSet.getCopyright() != null && mapSet.getCopyright().getJurisdiction() != null ?
+        List.of(new CodeableConcept().setText(mapSet.getCopyright().getJurisdiction())) : null);
+    if (CollectionUtils.isNotEmpty(mapSet.getConfigurationAttributes())) {
+      Map<String, Concept> concepts = conceptService.query(new ConceptQueryParams().setCodeSystem("termx-resource-configuration").all()).getData().stream()
+          .collect(Collectors.toMap(Concept::getCode, c -> c));
+      toFhir(fhirConceptMap, mapSet.getConfigurationAttributes(), concepts);
+    }
+    List<String> relatedArtifacts = relatedArtifactService.findRelatedArtifacts(mapSet.getId()).stream()
+        .map(a -> {
+          if (RelatedArtifactType.cs.equals(a.getType())) {
+            return codeSystemService.load(a.getId()).map(CodeSystem::getUri).orElse(null);
+          } else if (RelatedArtifactType.vs.equals(a.getType())) {
+            return Optional.ofNullable(valueSetService.load(a.getId())).map(ValueSet::getUri).orElse(null);
+          } else if (RelatedArtifactType.ms.equals(a.getType())) {
+            return mapSetService.load(a.getId()).map(MapSet::getUri).orElse(null);
+          }
+          return null;
+        }).filter(Objects::nonNull).toList();
+//    toFhirRelatedArtifacts(fhirConceptMap, relatedArtifacts);
+
+    fhirConceptMap.setVersion(version.getVersion());
+    fhirConceptMap.setLanguage(version.getPreferredLanguage());
+    fhirConceptMap.setEffectivePeriod(new Period(
+        OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC),
+        version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getExpirationDate().atTime(23, 59), ZoneOffset.UTC)));
+    fhirConceptMap.setStatus(version.getStatus());
+    fhirConceptMap.setSourceScopeUri(version.getScope().getSourceValueSet() == null ? null : version.getScope().getSourceValueSet().getUri());
+    fhirConceptMap.setTargetScopeUri(version.getScope().getTargetValueSet() == null ? null : version.getScope().getTargetValueSet().getUri());
+    fhirConceptMap.setGroup(toFhirGroup(version.getAssociations(), version.getScope(), version.getPreferredLanguage()));
+    fhirConceptMap.setProperty(toFhirProperties(mapSet.getProperties(), version.getPreferredLanguage()));
+    return fhirConceptMap;
+  }
+
+  private List<ConceptMapProperty> toFhirProperties(List<MapSetProperty> properties, String lang) {
+    if (properties == null) {
+      return new ArrayList<>();
+    }
+    return properties.stream().map(p -> new ConceptMapProperty()
+        .setCode(p.getName())
+        .setUri(p.getUri())
+        .setType(p.getType())
+        .setDescription(toFhirName(p.getDescription(), lang))
+    ).toList();
+  }
+
+  private List<ConceptMapGroup> toFhirGroup(List<MapSetAssociation> associations, MapSetVersionScope scope, String preferredLanguage) {
+    if (associations == null) {
+      return new ArrayList<>();
+    }
+    List<MapSetResourceReference> allCS = new ArrayList<>();
+    allCS.addAll(scope.getSourceCodeSystems() != null ? scope.getSourceCodeSystems() : List.of());
+    allCS.addAll(scope.getTargetCodeSystems() != null ? scope.getTargetCodeSystems() : List.of());
+
+    Map<String, String> csUri = associations.stream()
+        .flatMap(a -> Stream.of(a.getSource().getCodeSystem(), a.getTarget() == null ? null : a.getTarget().getCodeSystem()).filter(Objects::nonNull))
+        .distinct().map(cs -> {
+          String uri = allCS.stream().filter(scs -> scs.getId().equals(cs)).findFirst().map(MapSetResourceReference::getUri).orElse(null);
+          uri = uri == null ? codeSystemService.load(cs).map(CodeSystem::getUri).orElse(null) : uri;
+          return Pair.of(cs, uri);
+        }).filter(p -> p.getKey() != null && p.getValue() != null).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+
+    Map<String, String> sourceDisplays = buildDisplayMap(scope, true, preferredLanguage);
+    Map<String, String> targetDisplays = buildDisplayMap(scope, false, preferredLanguage);
+
+    Map<String, List<MapSetAssociation>> groups = associations.stream()
+        .collect(Collectors.groupingBy(a -> a.getSource().getCodeSystem() + a.getTarget().getCodeSystem()));
+    return groups.values().stream().map(a -> {
+      ConceptMapGroup group = new ConceptMapGroup();
+      String scs = a.get(0).getSource().getCodeSystem();
+      String tcs = a.get(0).getTarget().getCodeSystem();
+      group.setSource(scs == null ? null : csUri.getOrDefault(scs, scs));
+      group.setTarget(tcs == null ? null : csUri.getOrDefault(tcs, tcs));
+      Map<String, List<MapSetAssociation>> elements = a.stream().collect(Collectors.groupingBy(el -> el.getSource().getCode()));
+      group.setElement(elements.values().stream().map(el -> new ConceptMapGroupElement()
+              .setCode(el.get(0).getSource().getCode())
+              .setDisplay(getDisplay(el.get(0).getSource(), sourceDisplays))
+              .setNoMap(el.get(0).isNoMap() ? true : null)
+              .setTarget(el.stream().map(t -> new ConceptMapGroupElementTarget()
+                  .setCode(t.getTarget().getCode())
+                  .setDisplay(getDisplay(t.getTarget(), targetDisplays))
+                  .setRelationship(t.getRelationship())
+                  .setProperty(toFhirPropertyValues(t.getPropertyValues()))).toList()))
+          .collect(Collectors.toList()));
+      return group;
+    }).collect(Collectors.toList());
+  }
+
+  private String getDisplay(MapSetAssociationEntity entity, Map<String, String> displayLookup) {
+    if (entity == null) {
+      return null;
+    }
+    if (StringUtils.isNotEmpty(entity.getDisplay())) {
+      return entity.getDisplay();
+    }
+    return displayLookup.get(entity.getCodeSystem() + "|" + entity.getCode());
+  }
+
+  private Map<String, String> buildDisplayMap(MapSetVersionScope scope, boolean isSource, String preferredLanguage) {
+    Map<String, String> displayMap = new HashMap<>();
+    if (isSource) {
+      if ("value-set".equals(scope.getSourceType()) && scope.getSourceValueSet() != null) {
+        loadDisplaysFromValueSet(scope.getSourceValueSet(), displayMap, preferredLanguage);
+      } else if ("code-system".equals(scope.getSourceType()) && CollectionUtils.isNotEmpty(scope.getSourceCodeSystems())) {
+        for (MapSetResourceReference csRef : scope.getSourceCodeSystems()) {
+          loadDisplaysFromCodeSystem(csRef, displayMap, preferredLanguage);
+        }
+      }
+    } else {
+      if ("value-set".equals(scope.getTargetType()) && scope.getTargetValueSet() != null) {
+        loadDisplaysFromValueSet(scope.getTargetValueSet(), displayMap, preferredLanguage);
+      } else if ("code-system".equals(scope.getTargetType()) && CollectionUtils.isNotEmpty(scope.getTargetCodeSystems())) {
+        for (MapSetResourceReference csRef : scope.getTargetCodeSystems()) {
+          loadDisplaysFromCodeSystem(csRef, displayMap, preferredLanguage);
+        }
+      }
+    }
+    return displayMap;
+  }
+
+  private void loadDisplaysFromCodeSystem(MapSetResourceReference csRef, Map<String, String> displayMap, String preferredLanguage) {
+    if (csRef == null || csRef.getId() == null) {
+      return;
+    }
+    ConceptQueryParams params = new ConceptQueryParams()
+        .setCodeSystem(csRef.getId())
+        .setCodeSystemVersions(csRef.getId() + "|" + csRef.getVersion())
+        .all();
+    conceptService.query(params).getData().forEach(concept -> {
+      String display = concept.getVersions().stream()
+          .flatMap(v -> v.getDesignations().stream())
+          .filter(Objects::nonNull)
+          .collect(Collectors.collectingAndThen(Collectors.toList(), designations -> {
+            var d = ConceptUtil.getDisplay(designations, preferredLanguage, List.of());
+            return d != null ? d.getName() : null;
+          }));
+      if (display != null) {
+        displayMap.put(csRef.getId() + "|" + concept.getCode(), display);
+      }
+    });
+  }
+
+  private void loadDisplaysFromValueSet(MapSetResourceReference vsRef, Map<String, String> displayMap, String preferredLanguage) {
+    if (vsRef == null || vsRef.getId() == null) {
+      return;
+    }
+    var snapshot = valueSetVersionConceptService.expand(vsRef.getId(), vsRef.getVersion(), preferredLanguage);
+    List<ValueSetVersionConcept> concepts = snapshot != null && snapshot.getExpansion() != null ? snapshot.getExpansion() : List.of();
+    concepts.forEach(vsConcept -> {
+      String display = vsConcept.getDisplay() != null ? vsConcept.getDisplay().getName() : null;
+      if (display != null && vsConcept.getConcept() != null) {
+        displayMap.put(vsConcept.getConcept().getCodeSystem() + "|" + vsConcept.getConcept().getCode(), display);
+      }
+    });
+  }
+
+  private List<ConceptMapGroupElementTargetProperty> toFhirPropertyValues(List<MapSetPropertyValue> propertyValues) {
+    if (propertyValues == null) {
+      return new ArrayList<>();
+    }
+    return propertyValues.stream().map(pv -> {
+      ConceptMapGroupElementTargetProperty fhir = new ConceptMapGroupElementTargetProperty().setCode(pv.getMapSetPropertyName());
+      switch (pv.getMapSetPropertyType()) {
+        case EntityPropertyType.code -> fhir.setValueCode((String) pv.getValue());
+        case EntityPropertyType.string -> fhir.setValueString((String) pv.getValue());
+        case EntityPropertyType.bool -> fhir.setValueBoolean((Boolean) pv.getValue());
+        case EntityPropertyType.decimal -> fhir.setValueDecimal(new BigDecimal(String.valueOf(pv.getValue())));
+        case EntityPropertyType.integer -> fhir.setValueInteger(Integer.valueOf(String.valueOf(pv.getValue())));
+        case EntityPropertyType.coding -> {
+          Concept concept = JsonUtil.getObjectMapper().convertValue(pv.getValue(), Concept.class);
+          fhir.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
+        }
+        case EntityPropertyType.dateTime -> {
+          if (pv.getValue() instanceof OffsetDateTime) {
+            fhir.setValueDateTime((OffsetDateTime) pv.getValue());
+          } else {
+            fhir.setValueDateTime(DateUtil.parseOffsetDateTime((String) pv.getValue()));
+          }
+        }
+      }
+      return fhir;
+    }).toList();
+  }
+
+  // -------------- FROM FHIR --------------
+
+  public MapSet fromFhir(ConceptMap cm) {
+    MapSet ms = new MapSet();
+    ms.setId(ConceptMapFhirMapper.parseCompositeId(cm.getId())[0]);
+    ms.setUri(cm.getUrl());
+    ms.setPublisher(cm.getPublisher());
+    ms.setName(cm.getName());
+    ms.setTitle(fromFhirName(cm.getTitle(), cm.getLanguage(), cm.getPrimitiveElement("title")));
+    ms.setDescription(fromFhirName(cm.getDescription(), cm.getLanguage(), cm.getPrimitiveElement("description")));
+    ms.setPurpose(fromFhirName(cm.getPurpose(), cm.getLanguage(), cm.getPrimitiveElement("purpose")));
+    ms.setNarrative(cm.getText() == null ? null : cm.getText().getDiv());
+    ms.setExperimental(cm.getExperimental());
+    ms.setIdentifiers(fromFhirIdentifiers(cm.getIdentifier()));
+    ms.setContacts(fromFhirContacts(cm.getContact()));
+    ms.setCopyright(new Copyright().setHolder(cm.getCopyright()).setStatement(cm.getCopyrightLabel()));
+    ms.setProperties(fromFhirProperties(cm.getProperty(), cm.getLanguage()));
+
+    ms.setVersions(List.of(fromFhirVersion(cm)));
+    return ms;
+  }
+
+  private List<MapSetProperty> fromFhirProperties(List<ConceptMapProperty> properties, String lang) {
+    if (properties == null) {
+      return new ArrayList<>();
+    }
+    return properties.stream().map(p -> {
+      MapSetProperty property = new MapSetProperty();
+      property.setDescription(fromFhirName(p.getDescription(), lang, null));
+      property.setStatus(PublicationStatus.active);
+      property.setName(p.getCode());
+      property.setUri(p.getUri());
+      property.setType(p.getType());
+      return property;
+    }).toList();
+  }
+
+  private MapSetVersion fromFhirVersion(ConceptMap conceptMap) {
+    MapSetVersion version = new MapSetVersion();
+    version.setMapSet(conceptMap.getId());
+    version.setVersion(conceptMap.getVersion());
+    version.setStatus(PublicationStatus.draft);
+    version.setPreferredLanguage(conceptMap.getLanguage() == null ? Language.en : conceptMap.getLanguage());
+    version.setAlgorithm(conceptMap.getVersionAlgorithmString());
+    version.setReleaseDate(conceptMap.getEffectivePeriod() == null || conceptMap.getEffectivePeriod().getStart() == null ? LocalDate.now() :
+        LocalDate.from(conceptMap.getEffectivePeriod().getStart()));
+    version.setExpirationDate(conceptMap.getEffectivePeriod() == null || conceptMap.getEffectivePeriod().getEnd() == null ? null :
+        LocalDate.from(conceptMap.getEffectivePeriod().getEnd()));
+    version.setScope(fromFhirScope(conceptMap));
+    version.setAssociations(fromFhirAssociations(conceptMap));
+    version.setIdentifiers(fromFhirVersionIdentifiers(conceptMap.getIdentifier()));
+    return version;
+  }
+
+  private MapSetVersionScope fromFhirScope(ConceptMap conceptMap) {
+    MapSetVersionScope scope = new MapSetVersionScope();
+    if (conceptMap.getSourceScopeUri() != null) {
+      ValueSetVersion svsv = valueSetVersionService.loadLastVersionByUri(conceptMap.getSourceScopeUri());
+      if (svsv != null) {
+        scope.setSourceType("value-set");
+        scope.setSourceValueSet(new MapSetResourceReference().setId(svsv.getValueSet()).setVersion(svsv.getVersion()));
+      } else {
+        scope.setSourceType("external-canonical-uri");
+        scope.setSourceValueSet(new MapSetResourceReference().setUri(conceptMap.getSourceScopeUri()));
+      }
+    }
+    if (conceptMap.getTargetScopeUri() != null) {
+      ValueSetVersion tvsv = valueSetVersionService.loadLastVersionByUri(conceptMap.getTargetScopeUri());
+      if (tvsv != null) {
+        scope.setTargetType("value-set");
+        scope.setTargetValueSet(new MapSetResourceReference().setId(tvsv.getValueSet()).setVersion(tvsv.getVersion()));
+      } else {
+        scope.setTargetType("external-canonical-uri");
+        scope.setTargetValueSet(new MapSetResourceReference().setUri(conceptMap.getTargetScopeUri()));
+      }
+    }
+    if (scope.getSourceType() == null) {
+      List<MapSetResourceReference> cs = Optional.ofNullable(conceptMap.getGroup()).orElse(List.of()).stream()
+          .map(ConceptMapGroup::getSource).distinct().map(codeSystemVersionService::loadLastVersionByUri).filter(Objects::nonNull)
+          .map(v -> new MapSetResourceReference().setId(v.getCodeSystem()).setVersion(v.getVersion())).toList();
+      scope.setSourceType("code-system");
+      scope.setSourceCodeSystems(cs);
+    }
+    if (scope.getTargetType() == null) {
+      List<MapSetResourceReference> cs = Optional.ofNullable(conceptMap.getGroup()).orElse(List.of()).stream()
+          .map(ConceptMapGroup::getTarget).distinct().map(codeSystemVersionService::loadLastVersionByUri).filter(Objects::nonNull)
+          .map(v -> new MapSetResourceReference().setId(v.getCodeSystem()).setVersion(v.getVersion())).toList();
+      scope.setTargetType("code-system");
+      scope.setTargetCodeSystems(cs);
+    }
+    return scope;
+  }
+
+  private List<MapSetAssociation> fromFhirAssociations(ConceptMap conceptMap) {
+    List<MapSetAssociation> associations = new ArrayList<>();
+    if (CollectionUtils.isEmpty(conceptMap.getGroup())) {
+      return associations;
+    }
+
+    List<String> csUri = conceptMap.getGroup().stream().flatMap(g -> Stream.of(g.getSource(), g.getTarget())).filter(Objects::nonNull).distinct().toList();
+    CodeSystemQueryParams params = new CodeSystemQueryParams().setUri(String.join(",", csUri)).limit(csUri.size());
+    Map<String, String> codeSystems = codeSystemService.query(params).getData().stream().collect(Collectors.toMap(CodeSystem::getUri, CodeSystem::getId));
+
+    conceptMap.getGroup().forEach(g -> g.getElement().forEach(s -> {
+      if (s.getNoMap() != null && s.getNoMap()) {
+        MapSetAssociation a = new MapSetAssociation();
+        a.setSource(new MapSetAssociationEntity().setCode(s.getCode()).setDisplay(s.getDisplay())
+            .setCodeSystem(g.getSource() == null ? null : codeSystems.getOrDefault(g.getSource(), g.getSource())));
+        associations.add(a);
+      }
+      Optional.ofNullable(s.getTarget()).orElse(List.of()).forEach(t -> {
+        MapSetAssociation a = new MapSetAssociation();
+        a.setSource(new MapSetAssociationEntity().setCode(s.getCode()).setDisplay(s.getDisplay())
+            .setCodeSystem(g.getSource() == null ? null : codeSystems.getOrDefault(g.getSource(), g.getSource())));
+        a.setTarget(new MapSetAssociationEntity().setCode(t.getCode()).setDisplay(t.getDisplay())
+            .setCodeSystem(g.getTarget() == null ? null : codeSystems.getOrDefault(g.getTarget(), g.getTarget())));
+        a.setRelationship(t.getRelationship());
+        a.setPropertyValues(fromFhirPropertyValues(t.getProperty()));
+        associations.add(a);
+      });
+    }));
+    return associations;
+  }
+
+  private List<MapSetPropertyValue> fromFhirPropertyValues(List<ConceptMapGroupElementTargetProperty> propertyValues) {
+    if (propertyValues == null) {
+      return new ArrayList<>();
+    }
+    return propertyValues.stream().map(pv -> new MapSetPropertyValue()
+        .setMapSetPropertyName(pv.getCode())
+        .setValue(Stream.of(pv.getValueCode(), pv.getValueCoding(),
+            pv.getValueString(), pv.getValueInteger(),
+            pv.getValueBoolean(), pv.getValueDateTime(), pv.getValueDecimal()
+        ).filter(Objects::nonNull).findFirst().orElse(null))).toList();
+  }
+
+  public List<AssociationType> fromFhirAssociationTypes(ConceptMap conceptMap) {
+    List<AssociationType> associationTypes = new ArrayList<>();
+    if (CollectionUtils.isEmpty(conceptMap.getGroup())) {
+      return associationTypes;
+    }
+    conceptMap.getGroup().forEach(g -> g.getElement().forEach(element -> element.getTarget().forEach(target -> {
+      if (target.getCode() == null) {
+        return;
+      }
+      associationTypes.add(new AssociationType(target.getRelationship(), AssociationKind.conceptMapEquivalence, true));
+    })));
+    return associationTypes;
+  }
+
+  public static MapSetQueryParams fromFhir(SearchCriterion fhir) {
+    MapSetQueryParams params = new MapSetQueryParams();
+    getSimpleParams(fhir).forEach((k, v) -> {
+      switch (k) {
+        case SearchCriterion._COUNT -> params.setLimit(fhir.getCount());
+        case SearchCriterion._PAGE -> params.setOffset(getOffset(fhir));
+        case "_id" -> params.setIds(ConceptMapFhirMapper.parseCompositeId(v)[0]);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.26
+        case "date" -> {
+          if (v.startsWith("ge")) {
+            params.setVersionReleaseDateGe(LocalDate.parse(v.substring(2)));
+          } else {
+            params.setVersionReleaseDate(LocalDate.parse(v));
+          }
+        }
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.28 :string
+        case "description:exact" -> params.setDescription(v);
+        case "description" -> params.setDescriptionStarts(v);
+        case "description:contains" -> params.setDescriptionContains(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.30 :token
+        case "identifier" -> params.setIdentifier(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.33 :string
+        case "name:exact" -> params.setName(v);
+        case "name" -> params.setNameStarts(v);
+        case "name:contains" -> params.setNameContains(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.46 :string
+        case "title:exact" -> params.setTitle(v);
+        case "title" -> params.setTitleStarts(v);
+        case "title:contains" -> params.setTitleContains(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.36 :string
+        case "publisher:exact" -> params.setPublisher(v);
+        case "publisher" -> params.setPublisherStarts(v);
+        case "publisher:contains" -> params.setPublisherContains(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.41 :token
+        case "status" -> params.setVersionStatus(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.37 :token
+        case "source-code" -> params.setVersionConceptSourceCode(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.42 :token
+        case "target-code" -> params.setVersionConceptTargetCode(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.48 :uri
+        case "url" -> params.setUri(v);
+        // https://www.hl7.org/fhir/conceptmap-search.html#4.10.49 :token
+        case "version" -> params.setVersionVersion(v);
+
+        default -> throw new ApiClientException("Search by '" + k + "' not supported");
+      }
+    });
+    params.setVersionsDecorated(true);
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.MS_VIEW));
+    return params;
+  }
+}

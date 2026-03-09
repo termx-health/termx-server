@@ -1,15 +1,15 @@
-package com.kodality.termx.terminology.fhir
+package org.termx.terminology.fhir
 
 import com.kodality.commons.util.JsonUtil
 import com.kodality.termx.TermxIntegTest
 import com.kodality.termx.core.auth.SessionInfo
 import com.kodality.termx.core.auth.SessionStore
-import com.kodality.termx.terminology.fhir.codesystem.CodeSystemFhirImportService
-import com.kodality.termx.terminology.fhir.valueset.ValueSetFhirImportService
-import com.kodality.termx.terminology.fhir.valueset.operations.ValueSetExpandOperation
-import com.kodality.termx.terminology.fhir.valueset.operations.ValueSetValidateCodeOperation
-import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService
-import com.kodality.termx.terminology.terminology.valueset.ValueSetService
+import org.termx.terminology.fhir.codesystem.CodeSystemFhirImportService
+import org.termx.terminology.fhir.valueset.ValueSetFhirImportService
+import org.termx.terminology.fhir.valueset.operations.ValueSetExpandOperation
+import org.termx.terminology.fhir.valueset.operations.ValueSetValidateCodeOperation
+import org.termx.terminology.terminology.codesystem.CodeSystemService
+import org.termx.terminology.terminology.valueset.ValueSetService
 import com.kodality.zmei.fhir.FhirMapper
 import com.kodality.zmei.fhir.resource.Resource
 import com.kodality.zmei.fhir.resource.other.Parameters

@@ -1,6 +1,6 @@
 package org.termx.ucum.service;
 
-import com.kodality.termx.ucum.essence.UcumEssenceStorageService;
+import org.termx.ucum.essence.UcumEssenceStorageService;
 import jakarta.inject.Singleton;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
