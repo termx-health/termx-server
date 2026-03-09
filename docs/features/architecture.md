@@ -1,5 +1,23 @@
 # TermX Server — Package Architecture
 
+## Build System
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| Gradle | 9.4.0 | Build automation with Kotlin DSL |
+| Java | 25 (LTS) | Java toolchain auto-provisioning enabled |
+| Shadow Plugin | 9.3.2 | Fat JAR packaging |
+| Micronaut Plugin | 4.6.2 | Micronaut framework integration |
+| Lombok | 1.18.42 | Annotation processing |
+
+**Build files:** All build configuration uses Gradle Kotlin DSL (`.gradle.kts` format).
+
+**Publishing:** Maven artifacts publish to [GitHub Packages](https://github.com/termx-health/termx-server/packages) as `org.termx:termx-server:x.y.z`.
+
+**Java Toolchain:** Gradle automatically provisions JDK 25 using the Foojay Disco API if not installed locally.
+
+---
+
 ## Overview
 
 TermX Server uses two Java package root namespaces:
@@ -101,7 +119,39 @@ termx-api
   └── (no internal dependencies)
 ```
 
-Cross-module dependencies between feature modules are allowed only when declared in `build.gradle` — e.g., `ucum` depends on `terminology` for code system administration; `wiki` depends on `bob` for attachment storage.
+Cross-module dependencies between feature modules are allowed only when declared in `build.gradle.kts` — e.g., `ucum` depends on `terminology` for code system administration; `wiki` depends on `bob` for attachment storage.
+
+---
+
+## Build Configuration
+
+### Gradle Kotlin DSL
+
+All build files use Gradle Kotlin DSL for type-safe configuration:
+- `settings.gradle.kts` — Project structure and toolchain resolver
+- `build.gradle.kts` — Root configuration with Java toolchain and publishing
+- `[module]/build.gradle.kts` — Module-specific dependencies
+
+### Maven Coordinates
+
+**Group ID:** `org.termx`
+
+**Modules published:**
+- `org.termx:termx-api` — Shared DTOs and contracts
+- `org.termx:termx-core` — Infrastructure and common services
+- `org.termx:terminology` — Terminology module
+- `org.termx:termx-app` — Main application (shadow JAR)
+- All other feature modules
+
+### Deployment
+
+**Docker Image:** `eclipse-temurin:25-jre`
+- Published to GitHub Container Registry: `ghcr.io/termx-health/termx-server`
+- Multi-platform: `linux/amd64`, `linux/arm64`
+
+**CI/CD:** GitHub Actions
+- Builds on push to `main` or version tags
+- Publishes Maven artifacts and Docker images automatically
 
 ---
 

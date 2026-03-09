@@ -1,0 +1,31 @@
+dependencies {
+    annotationProcessor("io.micronaut.openapi:micronaut-openapi")
+    annotationProcessor("io.micronaut.spring:micronaut-spring-annotation")
+    compileOnly("io.micronaut.openapi:micronaut-openapi-annotations")
+    implementation("io.swagger.core.v3:swagger-annotations")
+
+    implementation(project(":termx-api"))
+    implementation(project(":termx-core"))
+    implementation(project(":terminology"))
+
+    implementation("com.kodality.commons:commons-util:${rootProject.extra["commonsVersion"]}")
+    implementation("com.kodality.commons:commons-db:${rootProject.extra["commonsVersion"]}")
+    implementation("com.kodality.commons:commons-http-client:${rootProject.extra["commonsVersion"]}")
+    implementation("com.kodality.commons:commons-cache:${rootProject.extra["commonsVersion"]}")
+    implementation("com.kodality.commons:commons-micronaut:${rootProject.extra["commonsMicronautVersion"]}")
+    implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.extra["commonsMicronautVersion"]}")
+    implementation("commons-io:commons-io:2.16.1")
+
+    implementation("io.micronaut.spring:micronaut-spring")
+    implementation("io.micronaut.validation:micronaut-validation")
+    implementation("io.micronaut.beanvalidation:micronaut-hibernate-validator")
+    implementation("io.micronaut:micronaut-management")
+    implementation("io.micronaut:micronaut-http-server")
+
+    implementation("com.univocity:univocity-parsers:2.9.1")
+    implementation("com.kodality.zmei:zmei-fhir:${rootProject.extra["zmeiVersion"]}") { isChanging = true }
+    implementation("com.kodality.zmei:zmei-fhir-client:${rootProject.extra["zmeiVersion"]}") { isChanging = true }
+    implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.extra["zmeiVersion"]}") { isChanging = true }
+
+    implementation("org.fhir:ucum:1.0.10")
+}

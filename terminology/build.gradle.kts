@@ -1,0 +1,39 @@
+dependencies {
+    annotationProcessor("io.micronaut.openapi:micronaut-openapi")
+    annotationProcessor("io.micronaut.spring:micronaut-spring-annotation")
+
+    api(project(":termx-api"))
+    api(project(":termx-core"))
+    api(project(":task"))
+
+    implementation("com.kodality.commons:commons-util:${rootProject.extra["commonsVersion"]}")
+    implementation("com.kodality.commons:commons-db:${rootProject.extra["commonsVersion"]}")
+    implementation("com.kodality.commons:commons-http-client:${rootProject.extra["commonsVersion"]}")
+    implementation("com.kodality.commons:commons-cache:${rootProject.extra["commonsVersion"]}")
+    implementation("com.kodality.commons:commons-micronaut:${rootProject.extra["commonsMicronautVersion"]}")
+    implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.extra["commonsMicronautVersion"]}")
+
+    implementation("commons-io:commons-io:2.16.1")
+
+    implementation("io.micronaut.spring:micronaut-spring")
+    implementation("io.micronaut.validation:micronaut-validation")
+    implementation("io.micronaut.beanvalidation:micronaut-hibernate-validator")
+    implementation("io.micronaut:micronaut-management")
+    implementation("io.micronaut:micronaut-http-server")
+    implementation("io.reactivex.rxjava3:rxjava:3.1.8")
+    implementation("com.univocity:univocity-parsers:2.9.1")
+    implementation("org.apache.poi:poi:5.2.5")
+    implementation("org.apache.poi:poi-ooxml:5.2.5")
+
+    api("com.kodality.kefhir:kefhir-core:${rootProject.extra["kefhirVersion"]}") { isChanging = true }
+    api("com.kodality.zmei:zmei-fhir:${rootProject.extra["zmeiVersion"]}") { isChanging = true }
+    api("com.kodality.zmei:zmei-fhir-client:${rootProject.extra["zmeiVersion"]}") { isChanging = true }
+    api("com.kodality.zmei:zmei-fhir-jackson:${rootProject.extra["zmeiVersion"]}") { isChanging = true }
+
+    testImplementation("org.spockframework:spock-core") {
+        exclude(group = "org.codehaus.groovy", module = "groovy-all")
+    }
+    testImplementation("io.micronaut.test:micronaut-test-spock")
+    testRuntimeOnly("net.bytebuddy:byte-buddy:1.14.7")
+    testRuntimeOnly("org.objenesis:objenesis:3.3")
+}
