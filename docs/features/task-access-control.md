@@ -1,290 +1,344 @@
----
-name: Task Access Control
-overview: Inline the taskflow-service library into termx-server as "taskforge" (new DB schema, org.termx packages), add privilege-based task filtering (viewer=hidden, editor=own tasks, publisher=all tasks, admin=all), add task_read_log support, and plan corresponding web UI changes.
-todos:
-  - id: inline-taskforge
-    content: Copy taskflow-service source into task-taskforge module with package org.termx.taskforge, rename all taskflow->taskforge in DB schema/classes/resources, inline SequenceService from kodality-commons into termx-core, remove external JAR and commons-sequence dependencies
-    status: completed
-  - id: update-imports
-    content: Update all existing TermX code to use new org.termx.taskforge package imports, update SysSequenceService to use inlined org.termx.core.sequence.SequenceService
-    status: completed
-  - id: add-publish-privilege
-    content: Add Task.publish privilege and update default privilege data migration
-    status: completed
-  - id: add-createdby-or-assignee
-    content: Add createdByOrAssignee filter to TaskSearchParams, TaskRepository, TaskQueryParams, and TaskMapper
-    status: completed
-  - id: implement-controller-filtering
-    content: Implement privilege-based task filtering in TaskController (admin=all, publisher=all for accessible resources, editor=own tasks, viewer=empty)
-    status: completed
-  - id: resource-level-check
-    content: Implement resource-level privilege check for task context items (verify user has edit/publish on referenced CodeSystem/ValueSet/MapSet)
-    status: completed
-  - id: db-migration-read-log
-    content: Create task_read_log table migration and implement TaskReadLogService/Repository
-    status: completed
-  - id: add-opened-endpoint
-    content: Add POST /tm/tasks/{number}/opened endpoint and unseenChanges filter
-    status: completed
-  - id: web-routing
-    content: Keep web routing at *.Task.view (backend handles filtering), add unseen changes indicator
-    status: completed
-  - id: web-widget
-    content: Resource task widget unchanged (backend handles privilege-based filtering)
-    status: completed
-isProject: false
----
+# Task Access Control
 
-# Task Access Control Migration Plan
+## Description
 
-## Context
+Task access control provides privilege-based visibility and filtering of tasks in TermX. Different user roles see different subsets of tasks based on their privileges and resource access levels. This ensures users only see tasks relevant to their responsibilities.
 
-Currently, TermX task management has two privilege levels (`Task.view`, `Task.edit`) with no resource-level filtering. All users with `Task.view` see all tasks. The CCM project implements role-based task visibility (ICT/AUDITOR see all, PRACTITIONER sees only own tasks) via a security rules engine.
+**Role-based visibility:**
 
-The goal: implement privilege-based task visibility in TermX where:
+- **Admin** - Sees all tasks across all resources
+- **Publisher** - Sees all tasks for resources they have publish access to
+- **Editor** - Sees only tasks they created or are assigned to, for resources they have edit access to
+- **Viewer** - Cannot see tasks in the task list (no task access)
 
-- **Viewer** (only `*.ResourceType.view`): cannot see tasks
-- **Editor** (`*.ResourceType.edit`): sees only tasks they created or are assigned to, for resources they have edit access to
-- **Publisher** (`*.ResourceType.publish`): sees all tasks for resources they have access to
-- **Admin**: sees all tasks
+**Key capabilities:**
 
-### Naming: taskflow -> taskforge
+- Privilege-based task filtering at the database level
+- Resource-level access control using context items
+- Unseen changes tracking per user
+- Automatic filtering in all API endpoints (query, load, widget)
+- Support for complex privilege patterns (wildcards, resource-specific)
 
-All references to "taskflow" are renamed to **"taskforge"** throughout the codebase and database. A brand-new DB schema `taskforge` is created with fresh tables. The old `taskflow` schema remains untouched; data migration from `taskflow` to `taskforge` is done manually outside of this plan.
+## Configuration
 
-## Phase 1: Inline taskflow-service and SequenceService into termx-server
+Task access control is automatically enabled and requires no configuration. It is built into the TaskForge module and uses the TermX privilege system.
 
-Two external libraries are inlined: `com.kodality.taskflow:taskflow-service:1.1-SNAPSHOT` and `com.kodality.commons:commons-sequence`. All new code uses `org.termx.`* packages (no "kodality" in new package names). All "taskflow" naming becomes "taskforge".
+### Privilege System
 
-### 1.1 Inline SequenceService into termx-core
+Task access is controlled by three privilege levels:
 
-The `com.kodality.commons:commons-sequence` JAR contains only 2 classes (`SequenceService`, `SequenceRepository`) that wrap PostgreSQL functions `core.sequence_id()` and `core.sequence_nextval()`. The DB schema/functions are already loaded by TermX via the JAR's Liquibase changelog.
+| Privilege | Scope | Task Visibility |
+|-----------|-------|-----------------|
+| `*.*.publish` or `*.*.*` | Global admin/publisher | All tasks |
+| `*.Task.publish` | Task publisher | All tasks for accessible resources |
+| `*.ResourceType.publish` | Resource publisher | All tasks for that resource type |
+| `*.Task.edit` or `*.ResourceType.edit` | Editor | Only own/assigned tasks for accessible resources |
+| `*.Task.view` or `*.ResourceType.view` | Viewer | No task list access (empty results) |
 
-**Step 1:** Create two new files in `termx-core` under `org.termx.core.sequence`:
+### Default Role Configuration
 
-- `termx-core/src/main/java/org/termx/core/sequence/SequenceService.java` - thin wrapper calling `SequenceRepository`
-- `termx-core/src/main/java/org/termx/core/sequence/SequenceRepository.java` - calls `core.sequence_id(?, ?, ?)` and `core.sequence_nextval(?, ?)`
+Default roles in TermX:
 
-Source (from helex-commons, which is identical in logic to kodality-commons but cleaner to copy):
+- **admin**: `*.*.*` (all privileges)
+- **publisher**: `*.*.publish` (publish on all resources)
+- **editor**: `*.*.edit` (edit on all resources)
+- **viewer**: `*.*.view` (view-only on all resources)
 
-```java
-// SequenceService.java
-package org.termx.core.sequence;
+See [Mock Authentication](mock-auth.md) for testing with mock user profiles.
 
-@Singleton
-@RequiredArgsConstructor
-public class SequenceService {
-  private final SequenceRepository sequenceRepository;
+### Resource-Level Access
 
-  public String getNextValue(String sequence, String scope, LocalDate date, String tenant) {
-    return sequenceRepository.getNextValue(sequence, scope, date, tenant);
-  }
-}
+Tasks are linked to resources via context items (e.g., CodeSystem, ValueSet, MapSet). Access control considers:
+
+1. **User's privileges** on the resource type
+2. **Specific resource ID** from task context
+3. **Task ownership** (created by or assigned to user)
+
+Example: A user with privilege `icd-10.CodeSystem.edit` can see tasks with context `{type: "code-system", id: "icd-10"}` that they created or are assigned to.
+
+## Use-Cases
+
+### Scenario 1: Editor Creating and Viewing Own Task
+
+**Context:** Junior editor needs to create a review task for ICD-10 concepts they're working on.
+
+**Steps:**
+1. Editor logs in with `icd-10.CodeSystem.edit` privilege
+2. Creates task: "Review new diabetes concepts" with context `{type: "code-system", id: "icd-10"}`
+3. Task is assigned to themselves
+4. Query task list - sees the newly created task
+5. Another editor queries task list - does NOT see this task (not their task)
+
+**Outcome:** Editor can manage their own tasks without seeing unrelated tasks from other editors.
+
+### Scenario 2: Publisher Monitoring All Resource Tasks
+
+**Context:** Senior publisher needs to see all review tasks for ICD-10 and ICD-11 code systems.
+
+**Steps:**
+1. Publisher logs in with `icd-10.CodeSystem.publish` and `icd-11.CodeSystem.publish` privileges
+2. Query task list - sees ALL tasks (from all users) for ICD-10 and ICD-11
+3. Can view task details even if created by other users
+4. Can reassign tasks and monitor progress
+
+**Outcome:** Publisher has oversight of all tasks for resources they manage, enabling effective coordination.
+
+### Scenario 3: Admin Full Visibility
+
+**Context:** System administrator needs to troubleshoot task-related issues and view all tasks.
+
+**Steps:**
+1. Admin logs in with `*.*.*` privilege
+2. Query task list - sees ALL tasks across all resources
+3. Can view and edit any task regardless of assignee or creator
+4. Can diagnose issues and reassign stuck tasks
+
+**Outcome:** Admin has complete system visibility for support and troubleshooting.
+
+### Scenario 4: Viewer Restricted Access
+
+**Context:** Read-only user (reports/auditing role) should not see task management interface.
+
+**Steps:**
+1. Viewer logs in with only `*.*.view` privileges (no Task.edit or Task.publish)
+2. Query task list - receives empty result
+3. Attempts to load specific task - receives 403 Forbidden
+4. Task menu items hidden in UI
+
+**Outcome:** Viewer cannot access task system, maintaining separation of concerns.
+
+### Scenario 5: Resource-Specific Task Filtering
+
+**Context:** Editor has edit access to multiple code systems but should only see tasks for those specific resources.
+
+**Steps:**
+1. Editor has privileges: `icd-10.CodeSystem.edit`, `disorders.ValueSet.edit`
+2. Query task list - sees only tasks where:
+   - Context references ICD-10 or disorders
+   - AND (created by editor OR assigned to editor)
+3. Tasks for other resources (e.g., SNOMED) are not visible
+4. Tasks for ICD-10 created by others and not assigned to this editor are not visible
+
+**Outcome:** Fine-grained access control based on both resource access and task ownership.
+
+## API
+
+Task access control is transparent - all task endpoints automatically apply privilege-based filtering.
+
+### Filtered Endpoints
+
+All endpoints under `/api/tm` apply access control:
+
+| Method | Path | Filtering Behavior |
+|--------|------|-------------------|
+| GET | `/tasks{?params*}` | Returns only tasks user can access based on privileges |
+| GET | `/tasks/{number}` | Returns 403 if user cannot access the task |
+| POST | `/tasks` | Validates user has edit access to resources in task context |
+| PUT/PATCH | `/tasks/{number}` | Validates user can edit the task |
+
+### Query Parameters
+
+The `createdByOrAssignee` filter is automatically applied for editors - it cannot be overridden via query parameters.
+
+### Response Behavior
+
+- **Admin/Publisher**: Full task list for accessible resources
+- **Editor**: Only tasks where `createdBy = username OR assignee = username`
+- **Viewer**: Empty result set (`QueryResult.empty()`)
+
+## Testing
+
+### Test privilege-based filtering
+
+```bash
+# Start with mock authentication enabled
+MICRONAUT_ENVIRONMENTS=local ./gradlew :termx-app:run
+
+# Query as admin (sees all tasks)
+curl http://localhost:8200/api/tm/tasks
+# Expected: All tasks in the system
+
+# Query as publisher (sees all tasks for accessible resources)
+curl -H "Authorization: Bearer publisher" http://localhost:8200/api/tm/tasks
+# Expected: All tasks for resources with publish access
+
+# Query as editor (sees only own/assigned tasks)
+curl -H "Authorization: Bearer editor" http://localhost:8200/api/tm/tasks
+# Expected: Only tasks created by or assigned to editor1
+
+# Query as viewer (no task access)
+curl -H "Authorization: Bearer viewer" http://localhost:8200/api/tm/tasks
+# Expected: Empty result []
 ```
 
-```java
-// SequenceRepository.java
-package org.termx.core.sequence;
+### Test resource-level access
 
-@Singleton
-public class SequenceRepository extends BaseRepository {
-  public String getNextValue(String code, String scope, LocalDate date, String tenant) {
-    Long sequenceId = jdbcTemplate.queryForObject("select core.sequence_id(?, ?, ?)", Long.class, code, scope, tenant);
-    return jdbcTemplate.queryForObject("select core.sequence_nextval(?, ?)", String.class, sequenceId, date);
-  }
-}
+```bash
+# Create task as editor with icd-10 context
+curl -X POST -H "Authorization: Bearer editor" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "title": "Review ICD-10 Mapping",
+       "type": "concept-review",
+       "workflow": "concept-review",
+       "project": "termx",
+       "priority": "routine",
+       "context": [{"type": "code-system", "id": "icd-10"}]
+     }' \
+     http://localhost:8200/api/tm/tasks
+
+# Same editor should see their own task
+curl -H "Authorization: Bearer editor" http://localhost:8200/api/tm/tasks
+# Expected: Task appears in results
+
+# Different editor (no access to icd-10) should NOT see it
+# (if they don't have icd-10.CodeSystem.edit privilege)
+
+# Publisher with icd-10 publish access should see it
+curl -H "Authorization: Bearer publisher" http://localhost:8200/api/tm/tasks
+# Expected: Task appears (publisher has publish access)
 ```
 
-**Step 2:** Copy the Liquibase SQL migrations from the JAR into `termx-core/src/main/resources/sys_sequence/changelog/`:
+### Test unseen changes tracking
 
-- `01-sys_sequence.sql`, `sequence_id.sql`, `sequence_nextval.sql`, `sequence_nextvala.sql`, `changelog.xml`
+```bash
+# 1. Get task list and identify a task
+curl http://localhost:8200/api/tm/tasks
 
-These files are already included by `termx-app/changelog.xml` via `<include file="sys_sequence/changelog/changelog.xml" relativeToChangelogFile="false"/>`, so they will be picked up from the classpath.
+# 2. Mark task as opened
+curl -X POST http://localhost:8200/api/tm/tasks/TASK-123/opened
 
-**Step 3:** Update `[termx-core/src/main/java/com/kodality/termx/core/sequence/SysSequenceService.java](termx-core/src/main/java/com/kodality/termx/core/sequence/SysSequenceService.java)`:
+# 3. Update the task (triggers unseen change)
+curl -X PATCH -H "Content-Type: application/json" \
+     -d '{"title": "Updated Title"}' \
+     http://localhost:8200/api/tm/tasks/TASK-123
 
-- Change import from `com.kodality.commons.sequence.SequenceService` to `org.termx.core.sequence.SequenceService`
-
-**Step 4:** Remove from `[termx-core/build.gradle](termx-core/build.gradle)`:
-
-- `implementation("com.kodality.commons:commons-sequence:${rootProject.commonsMicronautVersion}")`
-
-### 1.2 Rename module: task-taskflow -> task-taskforge
-
-Rename the Gradle module directory and update references:
-
-- Rename directory `task-taskflow/` to `task-taskforge/`
-- In `[settings.gradle](settings.gradle)`: change `include 'task-taskflow'` to `include 'task-taskforge'`
-- In `[termx-app/build.gradle](termx-app/build.gradle)` (or wherever task-taskflow is referenced): update project references
-
-### 1.3 Copy taskflow-service source files
-
-Source: `/tmp/taskflow-service/src/main/java/com/kodality/taskflow/` (33 Java files)
-Destination: `task-taskforge/src/main/java/org/termx/taskforge/`
-
-Sub-packages and class renames (`Taskflow` -> `Taskforge` in class names):
-
-- `api/` — `TaskforgeUserProvider`, `TaskInterceptor`, `TaskStatusChangeInterceptor`, `TaskforgeAttachmentStorageHandler`
-- `auth/` — `TaskforgeSessionProvider`, `TaskforgeSessionInfo`
-- `user/` — `TaskforgeUser`, `TaskforgeUserController`
-- `project/` — `Project`, `ProjectService`, `ProjectRepository`, `ProjectController`
-- `workflow/` — `Workflow`, `WorkflowService`, `WorkflowRepository`, `WorkflowController`, `WorkflowSearchParams`
-- `task/` — `Task`, `TaskService`, `TaskRepository`, `TaskSearchParams`, `TaskController`
-- `task/activity/` — `TaskActivity`, `TaskActivityService`, `TaskActivityRepository`, `TaskActivityController`, `TaskActivitySearchParams`
-- `task/attachment/` — `TaskAttachmentService`, `TaskAttachmentRepository`
-- `task/execution/` — `TaskExecution`, `TaskExecutionService`, `TaskExecutionRepository`, `TaskExecutionController`
-- Root: `ApiError`
-
-### 1.4 Copy and adapt Liquibase resources
-
-Copy from `/tmp/taskflow-service/src/main/resources/taskflow/` into `task-taskforge/src/main/resources/taskforge/` and perform the following renames:
-
-**Directory structure:**
-
-```
-task-taskforge/src/main/resources/taskforge/
-  changelog/
-    changelog.xml
-    01-init-user.sql
-    10-sequences.sql
-    taskforge/
-      taskforge-schema.xml          (was taskflow-schema.xml)
-      changelog.xml
-      10-project.sql
-      20-workflow.sql
-      30-task.sql
-      31-task_activity.sql
-      31-task_attachment.sql
-      31-task_execution.sql
-      33-task_read_log.sql          (new, from Phase 4)
-      functions/
-        task_action_trigger.sql
+# 4. Query with unseenChanges filter
+curl "http://localhost:8200/api/tm/tasks?unseenChanges=true"
+# Expected: Task appears in results
 ```
 
-**SQL content changes** in all `.sql` and `.xml` files:
+## Data Model
 
-- Schema name: `taskflow` -> `taskforge` (e.g., `create table taskforge.task`, `taskforge.project`, etc.)
-- Constraint names: `taskflow` prefix in names -> `taskforge` where applicable
-- Schema creation: `CREATE SCHEMA IF NOT EXISTS taskforge`
-- The `taskforge-schema.xml` file should create the `taskforge` schema instead of `taskflow`
+### TaskQueryParams
 
-**Changeset IDs:** should use unique IDs (e.g., prefix `taskforge:` instead of `taskflow:`) to avoid Liquibase conflicts with the already-executed `taskflow` changesets in the `databasechangelog` table.
+Query parameters used for filtering tasks at the API level.
 
-### 1.5 Refactor all Java code
+| Field | Type | Description |
+|-------|------|-------------|
+| createdByOrAssignee | String | Username filter (tasks created by OR assigned to this user) |
+| permittedContexts | List<String> | Resource IDs user has access to |
+| unseenChanges | Boolean | Filter for tasks updated since last opened |
+| text | String | Full-text search |
+| project | String | Project code filter |
+| status | String | Task status filter |
+| assignee | String | Assigned user filter |
 
-In all 33 inlined files plus the 6 existing TermX files:
+**Applied automatically by controller:**
 
-- Package: `com.kodality.taskflow` -> `org.termx.taskforge`
-- Class names: `Taskflow`* -> `Taskforge*` (e.g., `TaskflowUser` -> `TaskforgeUser`, `TaskflowSessionProvider` -> `TaskforgeSessionProvider`, etc.)
-- All internal references, field names, variable names containing "taskflow" -> "taskforge"
-- Import: `com.kodality.commons.sequence.SequenceService` -> `org.termx.core.sequence.SequenceService`
-- SQL string literals: `taskflow.task` -> `taskforge.task`, etc.
+- `createdByOrAssignee` - set for editors based on session username
+- `permittedContexts` - set for editors/publishers based on session privileges
 
-### 1.6 Update build.gradle
+### SessionInfo
 
-In `[task-taskforge/build.gradle](task-taskforge/build.gradle)` (renamed from task-taskflow):
+Session information used for access control decisions.
 
-- **Remove** the external dependency: `api("com.kodality.taskflow:taskflow-service:${taskflowVersion}")`
-- No new dependencies needed: all deps are available transitively through `termx-core`.
+| Field | Type | Description |
+|-------|------|-------------|
+| username | String | Current user's username |
+| privileges | List<String> | User's privilege strings |
+| authenticated | boolean | Whether user is authenticated |
 
-Remove `taskflowVersion` from `[gradle.properties](gradle.properties)`.
+**Key methods:**
 
-### 1.7 Refactor existing TermX taskforge code
+- `hasPrivilege(String privilege)` - Check if user has specific privilege
+- `hasAnyPrivilege(List<String> privileges)` - Check if user has any of the privileges
+- `getPermittedResourceIds(String action)` - Get resource IDs user can perform action on
 
-Move and rename existing files:
+### Privilege Pattern
 
-- `TaskFlowTaskProvider.java` -> `org.termx.taskforge.task.TaskForgeTaskProvider`
-- `TaskMapper.java` -> `org.termx.taskforge.task.TaskMapper`
-- `TaskChangeInterceptor.java` -> `org.termx.taskforge.task.TaskChangeInterceptor`
-- `TermxTaskflowSessionProvider.java` -> `org.termx.taskforge.TermxTaskforgeSessionProvider`
-- `TermxTaskflowUserProvider.java` -> `org.termx.taskforge.TermxTaskforgeUserProvider`
-- `ApiModuleInfo.java` -> `org.termx.taskforge.ApiModuleInfo`
+Privilege strings follow: `<resourceId>.<ResourceType>.<action>`
 
-Note: The inlined `TaskController` (from taskflow-service, originally at path `/taskflow/tasks`) and the TermX `TaskController` (at path `/tm/tasks`) may conflict. The inlined taskforge controllers should either be disabled (remove `@Controller`) or their paths should be prefixed to avoid collision. The TermX-level controllers at `/tm` are the ones that should remain as the public API.
+| Component | Examples | Wildcard |
+|-----------|----------|----------|
+| resourceId | `icd-10`, `disorders`, `snomed-ct` | `*` = all resources |
+| ResourceType | `CodeSystem`, `ValueSet`, `MapSet`, `Task` | `*` = all types |
+| action | `view`, `edit`, `publish` | `*` = all actions |
 
-### 1.8 Update taskforge data migration
+**Privilege hierarchy for task access:**
 
-In `[task-taskforge/src/main/resources/taskforge/changelog/data/00-taskforge-data.sql](task-taskforge/src/main/resources/task-taskflow/changelog/data/00-taskflow-data.sql)` (renamed from `00-taskflow-data.sql`):
+1. `*.*.*` - Admin, sees all tasks
+2. `*.*.publish` - Global publisher, sees all tasks
+3. `icd-10.CodeSystem.publish` - ICD-10 publisher, sees all ICD-10 tasks
+4. `*.Task.edit` - Task editor, sees own tasks across all resources
+5. `icd-10.CodeSystem.edit` - ICD-10 editor, sees own ICD-10 tasks
+6. `*.Task.view` - Task viewer, cannot access task list
 
-- Change all `taskflow.project` -> `taskforge.project`
-- Change all `taskflow.workflow` -> `taskforge.workflow`
-- Update changeset IDs to `taskforge:` prefix
-- The project code remains `termx`
+### TaskSearchParams (Backend)
 
-### 1.9 Update other modules referencing taskflow imports
+Internal search parameters passed to TaskForge repository.
 
-Search all other modules for imports from `com.kodality.taskflow.`* or `com.kodality.termx.taskflow.*` and update to `org.termx.taskforge.*`:
+| Field | Type | Description |
+|-------|------|-------------|
+| createdByOrAssignee | String | SQL filter: `created_by = ? OR assignee = ?` |
+| permittedContexts | List<String> | SQL filter: context resource IDs must be in this list |
+| unseenChanges | Boolean | JOIN with task_read_log, filter where last_opened < updated_at |
 
-- `[terminology/.../CodeSystemTaskStatusChangeInterceptor.java](terminology/src/main/java/com/kodality/termx/terminology/task/CodeSystemTaskStatusChangeInterceptor.java)`
-- `[terminology/.../ValueSetTaskStatusChangeInterceptor.java](terminology/src/main/java/com/kodality/termx/terminology/task/ValueSetTaskStatusChangeInterceptor.java)`
-- `[terminology/.../MapSetTaskStatusChangeInterceptor.java](terminology/src/main/java/com/kodality/termx/terminology/task/MapSetTaskStatusChangeInterceptor.java)`
-- `[wiki/.../WikiPageCommentTaskFlowInterceptor.java](wiki/src/main/java/com/kodality/termx/wiki/task/WikiPageCommentTaskFlowInterceptor.java)` (also rename class to `WikiPageCommentTaskForgeInterceptor`)
-- `[wiki/.../WikiPageCommentTaskFlowStatusChangeInterceptor.java](wiki/src/main/java/com/kodality/termx/wiki/task/WikiPageCommentTaskFlowStatusChangeInterceptor.java)` (also rename)
-- `[snomed/.../TaskFlowSnomedInterceptor.java](snomed/src/main/java/com/kodality/termx/snomed/task/TaskFlowSnomedInterceptor.java)` (also rename to `TaskForgeSnomedInterceptor`)
+These parameters are mapped from `TaskQueryParams` by the controller after applying privilege checks.
 
-## Phase 2: Add Task.publish privilege and update defaults
+## Architecture
 
-### 2.1 Add Task.publish to Privilege interface
-
-In `[task/src/main/java/com/kodality/termx/task/Privilege.java](task/src/main/java/com/kodality/termx/task/Privilege.java)`:
-
-```java
-public interface Privilege {
-  String T_VIEW = "Task.view";
-  String T_EDIT = "Task.edit";
-  String T_PUBLISH = "Task.publish";
-}
+```mermaid
+flowchart TD
+    Request[API Request] --> Controller[TaskController]
+    Controller --> CheckRole{Check User Role}
+    
+    CheckRole -->|Admin| AllTasks[Query All Tasks]
+    CheckRole -->|Publisher| PublisherFilter[Filter by Permitted Resources]
+    CheckRole -->|Editor| EditorFilter[Filter by Created/Assigned + Permitted Resources]
+    CheckRole -->|Viewer| Empty[Return Empty Result]
+    
+    PublisherFilter --> GetPermitted[Get Permitted Resource IDs]
+    EditorFilter --> GetPermitted
+    
+    GetPermitted --> Session[SessionInfo.getPermittedResourceIds]
+    Session --> FilterContext[Filter tasks by context.resourceId IN permitted]
+    
+    EditorFilter --> AddOwnership[Add createdBy/assignee filter]
+    AddOwnership --> FilterContext
+    
+    FilterContext --> Repository[TaskRepository]
+    Repository --> Database[(taskforge.task)]
+    Database --> Results[Filtered Results]
 ```
 
-### 2.2 Update default privilege data migration
+**Privilege resolution flow:**
 
-In `[termx-app/src/main/resources/db/changelog/uam/01-privilege-defaults.sql](termx-app/src/main/resources/db/changelog/uam/01-privilege-defaults.sql)`, add a new changeset that grants `Task.publish` to the `publisher` and `admin` roles. The existing `editor` role should have `Task.edit` (it already has `edit` on `Any` resource type, so this may already be covered). Verify the mapping:
+1. **Request arrives**: Extract session from OAuth/mock provider
+2. **Check admin**: If `*.*.*` or `*.*.publish`, return all tasks
+3. **Check publisher**: If has publish on any resource type, get permitted resource IDs and filter by context
+4. **Check editor**: If has edit on any resource type, apply `createdByOrAssignee` filter plus permitted resources
+5. **Default (viewer)**: Return empty result
 
-- `viewer` role: `Task.view` only (via `Any.view`)
-- `editor` role: `Task.view` + `Task.edit` (via `Any.view` + `Any.edit`)
-- `publisher` role: `Task.view` + `Task.edit` + `Task.publish` (via `Any.view` + `Any.edit` + `Any.publish`)
-- `admin`: all (via `Admin` + wildcard)
+**Database filtering:**
 
-Currently `Task` is not registered as a resource type in the `Any` wildcard system. Check if the `Any` resource type with `view`/`edit`/`publish` actions covers `Task` or if `Task` needs its own `privilege_resource` entries.
+Filtering happens at the SQL level for performance:
 
-## Phase 3: Implement privilege-based task filtering
-
-### 3.1 Add `createdByOrAssignee` to TaskSearchParams
-
-In the inlined `TaskSearchParams` (`org.termx.taskforge.task.TaskSearchParams`), add:
-
-```java
-private String createdByOrAssignee; // user sub - filters: created_by = ? OR assignee = ?
+```sql
+-- Editor query
+SELECT * FROM taskforge.task t
+WHERE (t.created_by = ? OR t.assignee = ?)
+  AND EXISTS (
+    SELECT 1 FROM jsonb_array_elements(t.context) ctx
+    WHERE (ctx->>'type', ctx->>'id') IN (permitted_resources)
+  )
 ```
 
-### 3.2 Update TaskRepository filter
+## Technical Implementation
 
-In the inlined `TaskRepository` (`org.termx.taskforge.task.TaskRepository`), add to the `filter()` method:
+### Key Components
 
-```java
-sb.appendIfNotNull(params.getCreatedByOrAssignee(), (s, p) -> 
-    s.append("and (t.created_by = ? or t.assignee = ?)", p, p));
-```
-
-### 3.3 Add `createdByOrAssignee` to TermX TaskQueryParams
-
-In `[task/src/main/java/com/kodality/termx/task/TaskQueryParams.java](task/src/main/java/com/kodality/termx/task/TaskQueryParams.java)`:
-
-```java
-private String createdByOrAssignee;
-```
-
-### 3.4 Update TaskMapper to pass new filter
-
-In `TaskMapper.java` (now at `org.termx.taskforge.task.TaskMapper`), add to the `map(TaskQueryParams)` method:
-
-```java
-searchParams.setCreatedByOrAssignee(params.getCreatedByOrAssignee());
-```
-
-### 3.5 Implement filtering logic in TaskController
-
-In `[task/src/main/java/com/kodality/termx/task/TaskController.java](task/src/main/java/com/kodality/termx/task/TaskController.java)`, modify `queryTasks()`:
+**TaskController filtering logic:**
 
 ```java
 @Authorized(privilege = Privilege.T_VIEW)
@@ -297,214 +351,62 @@ public QueryResult<Task> queryTasks(TaskQueryParams params) {
         return taskService.queryTasks(params);
     }
     
-    // Editor: see only own tasks (created by me or assigned to me)
-    if (session.hasAnyPrivilege(List.of("*.Task.edit", "*.*.edit"))) {
-        params.setCreatedByOrAssignee(session.getUsername());
+    // Publisher sees all tasks for accessible resources
+    if (session.hasAnyPrivilege(List.of("*.Task.publish", "*.*.publish"))) {
+        List<String> permittedResources = session.getPermittedResourceIds("*.publish");
+        params.setPermittedContexts(permittedResources);
         return taskService.queryTasks(params);
     }
     
-    // Viewer only: return empty
+    // Editor sees only own tasks for accessible resources
+    if (session.hasAnyPrivilege(List.of("*.Task.edit", "*.*.edit"))) {
+        params.setCreatedByOrAssignee(session.getUsername());
+        List<String> permittedResources = session.getPermittedResourceIds("*.edit");
+        params.setPermittedContexts(permittedResources);
+        return taskService.queryTasks(params);
+    }
+    
+    // Viewer: return empty
     return QueryResult.empty();
 }
 ```
 
-Additionally, the same logic should apply in `loadTask()` - an editor should only be able to load a task they created or are assigned to. A viewer should get 403.
+### Database Schema
 
-### 3.6 Resource-level privilege check
-
-When a task has `context` items (e.g., `code-system|icd-10`), the system should verify the user has at least `edit` privilege on the referenced resource. This means:
-
-- Extract context items from task (or from query params)
-- Use `session.getPermittedResourceIds("CodeSystem.edit")` to get the list of resources the user can edit
-- Filter tasks whose context references resources the user has access to
-
-This is more complex and could be implemented as a post-filter or by passing permitted resource IDs into the query. The approach:
-
-1. In `queryTasks()`, compute the set of resources the user can edit/publish
-2. Pass this as an additional filter or post-filter the results
-3. For tasks without context: apply the createdByOrAssignee filter only
-
-## Phase 4: DB Migration - task_read_log and full parity
-
-### 4.1 Add task_read_log table
-
-Create new Liquibase changeset in `task-taskforge/src/main/resources/taskforge/changelog/taskforge/33-task_read_log.sql`:
+**task_read_log table:**
 
 ```sql
---liquibase formatted sql
-
---changeset taskforge:task_read_log-1
-create table taskforge.task_read_log (
-  id                    bigint not null generated by default as identity primary key,
-  task_id               bigint not null,
-  user_id               text not null,
-  last_opened_time      timestamptz not null,
-  sys_status            char(1) default 'A' not null,
-  sys_version           integer not null,
-  sys_created_at        timestamptz not null,
-  sys_created_by        text not null,
-  sys_modified_at       timestamptz not null,
-  sys_modified_by       text not null,
-  constraint task_read_log_task_fkey foreign key (task_id) references taskforge.task (id),
-  constraint task_read_log_ukey unique (task_id, user_id)
+CREATE TABLE taskforge.task_read_log (
+  id                    bigint PRIMARY KEY,
+  task_id               bigint NOT NULL REFERENCES taskforge.task(id),
+  user_id               text NOT NULL,
+  last_opened_time      timestamptz NOT NULL,
+  CONSTRAINT task_read_log_ukey UNIQUE (task_id, user_id)
 );
-select core.create_table_metadata('taskforge.task_read_log');
---
 ```
 
-Include this new file in `task-taskforge/src/main/resources/taskforge/changelog/taskforge/changelog.xml`.
+Used for tracking when users last opened tasks to show unseen changes indicator.
 
-### 4.2 Add TaskReadLog service and repository
+### Context Types and Resource Access
 
-Create new classes in `task-taskforge` module under `org.termx.taskforge.task.readlog`:
+Task context items link tasks to resources:
 
-- `TaskReadLogRepository` - upsert method (same as CCM pattern)
-- `TaskReadLogService` - `logTaskRead(Long taskId)` method
+| Context Type | Resource | Privilege Pattern |
+|--------------|----------|-------------------|
+| `code-system` | CodeSystem | `<resourceId>.CodeSystem.edit/publish` |
+| `value-set` | ValueSet | `<resourceId>.ValueSet.edit/publish` |
+| `map-set` | MapSet | `<resourceId>.MapSet.edit/publish` |
+| `wiki` | Wiki space | `<resourceId>.Wiki.edit/publish` |
 
-### 4.3 Add "opened" endpoint
+The system extracts resource IDs from task context and checks user privileges against those specific resources.
 
-In `TaskController`, add:
+### Migration from Taskflow
 
-```java
-@Authorized(privilege = Privilege.T_VIEW)
-@Post("/tasks/{number}/opened")
-public void logTaskRead(@PathVariable String number) { ... }
-```
+TaskForge is an inlined version of the external `taskflow-service` library. Key changes:
 
-### 4.4 Add unseen changes filter
+- Package: `com.kodality.taskflow` → `org.termx.taskforge`
+- Schema: `taskflow` → `taskforge`
+- Module: `task-taskflow` → `task-taskforge`
+- Added privilege-based filtering (not present in original taskflow)
 
-Add `unseenChanges` (Boolean) to `TaskSearchParams` and wire it into the query:
-
-```sql
-AND (trl.last_opened_time IS NULL OR trl.last_opened_time < t.updated_at)
-```
-
-This requires a LEFT JOIN on `taskforge.task_read_log` in the task query.
-
-### 4.5 Add lastOpenedTime to Task model
-
-Add `lastOpenedTime` to the Task model and populate it from the LEFT JOIN.
-
-## Phase 5: Web UI Changes
-
-All routing and landing page privileges remain at `*.Task.view` -- the backend handles privilege-based filtering (editors see own tasks, publishers see all, viewers see whatever the backend returns).
-
-### 5.1 Task routing and landing page -- no privilege changes
-
-Routing stays at `*.Task.view`. The backend `TaskController` applies filtering based on the user's actual privileges, so the frontend does not need to restrict visibility.
-
-### 5.2 Resource task widget -- no changes
-
-The widget is unchanged; the backend filters tasks by access level.
-
-### 5.3 Update task models
-
-In `task-search-params.ts`, added `unseenChanges?: boolean`.
-In `task.ts`, added `lastOpenedTime?: Date`.
-
-### 5.4 Add "unseen changes" indicator
-
-- Added eye icon column to task list rows for tasks with changes since last opened (`lastOpenedTime` is null or earlier than `updatedAt`)
-- Added `unseenChanges` filter checkbox in the task list filter panel
-- `TaskService.logTaskOpened(number)` calls `POST /tm/tasks/{number}/opened` when a task is viewed (called from `TaskEditComponent.loadTask()`)
-- Translation keys added to `en.json`
-
-## Architecture Summary
-
-```mermaid
-flowchart TD
-    subgraph currentFlow [Current Flow]
-        TC1["TaskController /tm"] --> TS1[TaskService]
-        TS1 --> TFP[TaskFlowTaskProvider]
-        TFP --> ExtLib["External JAR taskflow-service"]
-        ExtLib --> DB1[("taskflow schema (old)")]
-    end
-    
-    subgraph newFlow [New Flow]
-        TC2["TaskController /tm"] --> PF[Privilege Filter]
-        PF --> TS2[TaskService]
-        TS2 --> TFP2[TaskForgeTaskProvider]
-        TFP2 --> Inlined["Inlined code in task-taskforge module"]
-        Inlined --> DB2[("taskforge schema (new)")]
-    end
-    
-    currentFlow -.-> |migrates to| newFlow
-    DB1 -.-> |manual data migration| DB2
-```
-
-
-
-```mermaid
-flowchart TD
-    Request[API Request] --> CheckAdmin{Admin?}
-    CheckAdmin -->|Yes| AllTasks[Return all tasks]
-    CheckAdmin -->|No| CheckPublish{Has publish on resource?}
-    CheckPublish -->|Yes| AllResourceTasks[Return all tasks for accessible resources]
-    CheckPublish -->|No| CheckEdit{Has edit on resource?}
-    CheckEdit -->|Yes| OwnTasks[Return tasks created by or assigned to user]
-    CheckEdit -->|No| Empty[Return empty / 403]
-```
-
-
-
-## Key Files to Modify
-
-
-| Module              | File                                                               | Change                                                                           |
-| ------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| `termx-core`        | New: `org/termx/core/sequence/SequenceService.java`                | Inlined from kodality-commons                                                    |
-| `termx-core`        | New: `org/termx/core/sequence/SequenceRepository.java`             | Inlined from kodality-commons                                                    |
-| `termx-core`        | `SysSequenceService.java`                                          | Update import to `org.termx.core.sequence`                                       |
-| `termx-core`        | `build.gradle`                                                     | Remove `commons-sequence` dependency                                             |
-| `task`              | `Privilege.java`                                                   | Add `T_PUBLISH`                                                                  |
-| `task`              | `TaskController.java`                                              | Add privilege-based filtering logic                                              |
-| `task`              | `TaskQueryParams.java`                                             | Add `createdByOrAssignee`                                                        |
-| `settings.gradle`   | Rename module                                                      | `task-taskflow` -> `task-taskforge`                                              |
-| `task-taskforge`    | `build.gradle`                                                     | Remove external JAR dependency                                                   |
-| `task-taskforge`    | 33 inlined files under `org/termx/taskforge/`                      | Copied from taskflow-service, `taskflow`->`taskforge`, `org.termx` packages      |
-| `task-taskforge`    | 6 existing files                                                   | Move from `com.kodality.termx.taskflow` to `org.termx.taskforge`, rename classes |
-| `task-taskforge`    | All Liquibase `.sql`/`.xml` resources                              | Schema `taskflow`->`taskforge`, new changeset IDs                                |
-| `task-taskforge`    | `TaskSearchParams.java` (inlined)                                  | Add `createdByOrAssignee`                                                        |
-| `task-taskforge`    | `TaskRepository.java` (inlined)                                    | Add filter for `createdByOrAssignee`, LEFT JOIN read_log                         |
-| `task-taskforge`    | `TaskMapper.java`                                                  | Map new params                                                                   |
-| `task-taskforge`    | New: `org/termx/taskforge/task/readlog/TaskReadLogRepository.java` | Read log support                                                                 |
-| `task-taskforge`    | New: `org/termx/taskforge/task/readlog/TaskReadLogService.java`    | Read log support                                                                 |
-| `task-taskforge`    | New: `33-task_read_log.sql`                                        | DB migration in `taskforge` schema                                               |
-| `terminology`       | 3 interceptor files                                                | Update imports                                                                   |
-| `wiki`              | 2 interceptor files                                                | Update imports, rename classes `TaskFlow`->`TaskForge`                           |
-| `snomed`            | 1 interceptor file                                                 | Update imports, rename class `TaskFlow`->`TaskForge`                             |
-| `termx-app`         | New changeset in UAM                                               | Task.publish privilege data                                                      |
-| `gradle.properties` | Remove `taskflowVersion`                                           |                                                                                  |
-
-
-## Naming Convention Summary
-
-
-| Old                                                    | New                                                     |
-| ------------------------------------------------------ | ------------------------------------------------------- |
-| DB schema `taskflow`                                   | DB schema `taskforge`                                   |
-| Package `com.kodality.taskflow.*`                      | Package `org.termx.taskforge.*`                         |
-| Package `com.kodality.termx.taskflow.*`                | Package `org.termx.taskforge.*`                         |
-| Class `TaskflowUser`                                   | Class `TaskforgeUser`                                   |
-| Class `TaskflowUserProvider`                           | Class `TaskforgeUserProvider`                           |
-| Class `TaskflowSessionProvider`                        | Class `TaskforgeSessionProvider`                        |
-| Class `TaskflowSessionInfo`                            | Class `TaskforgeSessionInfo`                            |
-| Class `TaskflowAttachmentStorageHandler`               | Class `TaskforgeAttachmentStorageHandler`               |
-| Class `TaskFlowTaskProvider`                           | Class `TaskForgeTaskProvider`                           |
-| Class `TermxTaskflowSessionProvider`                   | Class `TermxTaskforgeSessionProvider`                   |
-| Class `TermxTaskflowUserProvider`                      | Class `TermxTaskforgeUserProvider`                      |
-| Class `TaskflowUserController`                         | Class `TaskforgeUserController`                         |
-| Class `WikiPageCommentTaskFlowInterceptor`             | Class `WikiPageCommentTaskForgeInterceptor`             |
-| Class `WikiPageCommentTaskFlowStatusChangeInterceptor` | Class `WikiPageCommentTaskForgeStatusChangeInterceptor` |
-| Class `TaskFlowSnomedInterceptor`                      | Class `TaskForgeSnomedInterceptor`                      |
-| Module `task-taskflow`                                 | Module `task-taskforge`                                 |
-| Resources `taskflow/changelog/`                        | Resources `taskforge/changelog/`                        |
-| SQL `taskflow.task`                                    | SQL `taskforge.task`                                    |
-| SQL `taskflow.project`                                 | SQL `taskforge.project`                                 |
-| SQL `taskflow.workflow`                                | SQL `taskforge.workflow`                                |
-| SQL `taskflow.task_activity`                           | SQL `taskforge.task_activity`                           |
-| SQL `taskflow.task_attachment`                         | SQL `taskforge.task_attachment`                         |
-| SQL `taskflow.task_execution`                          | SQL `taskforge.task_execution`                          |
-| SQL `taskflow.task_read_log`                           | SQL `taskforge.task_read_log`                           |
-
-
+Migration script `90-migrate-from-taskflow.sql` handles both fresh installations and migrations from existing taskflow schema.

@@ -1,188 +1,306 @@
----
-name: MapSet Excel Export
-overview: Add Excel and CSV export functionality for MapSet associations, following the same pattern as CodeSystem and ValueSet exports with optimized performance.
-todos:
-  - id: create-export-service
-    content: Create MapSetExportService with composeResult, composeHeaders, and composeRow methods
-    status: completed
-  - id: add-controller-endpoints
-    content: Add 3 export endpoints to MapSetController (initiate, CSV download, XLSX download)
-    status: completed
-  - id: test-export
-    content: Test with sample MapSet data in various sizes and formats
-    status: completed
-isProject: false
----
+# MapSet Excel Export
 
-# Add MapSet Excel Export Functionality
+## Description
 
-## Overview
+MapSet Excel export allows users to download MapSet associations (concept mappings) in Excel (XLSX) or CSV format. This feature is essential for sharing mapping data with external systems, offline review, and data analysis.
 
-Implement Excel (XLSX) and CSV export for MapSet associations, following the established pattern used in ValueSetExportService and ConceptExportService. MapSets represent concept mappings between code systems, and the export will include source concepts, target concepts, relationships, and custom property values.
+**Key capabilities:**
 
-## Current Implementation Pattern
+- Export all associations from a MapSet version
+- Support for both Excel (XLSX) and CSV formats
+- Includes source concepts, target concepts, relationships, and custom properties
+- Handles noMap cases (unmappable concepts)
+- Async processing for large datasets
+- Optimized performance with streaming Excel generation
 
-Both ValueSet and CodeSystem use the same export architecture:
+**Use cases:**
 
-1. **Export Service** - Contains business logic for composing headers and rows
-2. **Async Processing** - Uses `LorqueProcessService` for background processing
-3. **Controller Endpoints** - Three endpoints:
-  - Initiate export: `/{resource}/versions/{version}/export{?params*}`
-  - Download CSV: `/export-csv/result/{lorqueProcessId}`
-  - Download XLSX: `/export-xlsx/result/{lorqueProcessId}`
-4. **Performance Optimizations** - Streaming Excel generation, batch loading, single-pass header composition
+- Data interchange with external terminology systems
+- Offline mapping review and validation
+- Bulk data analysis in spreadsheet applications
+- Backup and archival of mapping data
+- Sharing mappings with collaborators
 
-## MapSet Data Structure
+## Configuration
 
-A MapSet association contains:
+No configuration is required. MapSet export is automatically available for all MapSet resources.
 
-- **Source**: code, codeSystem, display
-- **Target**: code, codeSystem, display (nullable for noMap)
-- **Relationship**: equivalence type (equivalent, broader, narrower, etc.)
-- **Verified**: boolean flag
-- **NoMap**: boolean flag (indicates unmappable concept)
-- **Property Values**: custom properties specific to the MapSet
+### Performance Settings
 
-## Implementation Plan
+Export uses the Lorque async processing system with default settings:
 
-### 1. Create MapSetExportService
+- **Async processing**: Prevents blocking for large exports
+- **Streaming mode**: Constant memory usage regardless of MapSet size
+- **Single-pass processing**: Headers collected from first 1000 associations
 
-**File:** `[terminology/src/main/java/com/kodality/termx/terminology/terminology/mapset/association/MapSetExportService.java](terminology/src/main/java/com/kodality/termx/terminology/terminology/mapset/association/MapSetExportService.java)`
+## Use-Cases
 
-**Structure:**
+### Scenario 1: Export ICD-10 to ICD-11 Mapping
 
-```java
-@Singleton
-@RequiredArgsConstructor
-public class MapSetExportService {
-  private final LorqueProcessService lorqueProcessService;
-  private final MapSetAssociationService mapSetAssociationService;
-  private final MapSetVersionService mapSetVersionService;
-  
-  private static final String process = "ms-association-export";
-  
-  public LorqueProcess export(String mapSet, String version, String format);
-  private ProcessResult composeResult(Map<String, String> params);
-  private List<String> composeHeaders(List<MapSetAssociation> associations, MapSet mapSet);
-  private Object[] composeRow(MapSetAssociation association, List<String> headers);
+**Context:** Organization needs to share ICD-10 to ICD-11 mapping with external partner.
+
+**Steps:**
+1. Navigate to ICD-SNOMED MapSet version page
+2. Click "Export to Excel" button
+3. Select format: XLSX
+4. Wait for async processing to complete (5-10 seconds for 10k mappings)
+5. Download Excel file
+6. Send file to partner via email
+
+**Outcome:** Partner receives complete mapping data in Excel format with all relationships and custom properties.
+
+### Scenario 2: Offline Mapping Review
+
+**Context:** Subject matter expert needs to review mappings offline without TermX access.
+
+**Steps:**
+1. Export MapSet to Excel
+2. Open in Microsoft Excel or Google Sheets
+3. Filter and sort by relationship type, verification status
+4. Add comments in spreadsheet for corrections
+5. Send annotated file back to terminology team
+6. Team imports corrections into TermX
+
+**Outcome:** Expert can review hundreds of mappings efficiently using familiar spreadsheet tools.
+
+### Scenario 3: Bulk Data Analysis
+
+**Context:** Data analyst needs to calculate statistics on mapping quality across multiple MapSets.
+
+**Steps:**
+1. Export 3 different MapSets to CSV format
+2. Import all CSVs into analysis tool (R, Python, Excel)
+3. Aggregate data: count by relationship type, verification rate, noMap percentage
+4. Generate charts and reports
+5. Present findings to terminology governance committee
+
+**Outcome:** Data-driven insights into mapping coverage and quality across the terminology system.
+
+### Scenario 4: Backup Before Major Changes
+
+**Context:** Team planning to update MapSet associations needs backup of current state.
+
+**Steps:**
+1. Export current MapSet version to Excel before making changes
+2. Save file with timestamp in backup folder
+3. Make extensive updates to MapSet
+4. If issues found, reference backup to restore or compare
+5. Keep backup for audit trail
+
+**Outcome:** Safe fallback available if changes need to be reverted. Historical snapshot preserved.
+
+### Scenario 5: Custom Property Export
+
+**Context:** MapSet has custom properties (confidence scores, mapping methods) that need to be shared.
+
+**Steps:**
+1. MapSet contains associations with custom properties: confidence, methodology, reviewer
+2. Export to Excel - custom properties automatically included as columns
+3. Recipient can see and filter by confidence scores
+4. High-confidence mappings identified for automated use
+
+**Outcome:** Rich metadata preserved in export. Custom properties available for downstream processing.
+
+## API
+
+All endpoints are under `/api/ts/map-sets`.
+
+| Method | Path | Privilege | Description |
+|--------|------|-----------|-------------|
+| GET | `/{mapSet}/versions/{version}/associations-export{?params*}` | `MapSet.view` | Initiate async export, returns process ID |
+| GET | `/associations-export-csv/result/{lorqueProcessId}` | `MapSet.view` | Download CSV result |
+| GET | `/associations-export-xlsx/result/{lorqueProcessId}` | `MapSet.view` | Download Excel result |
+
+### Initiate Export
+
+**Request:**
+
+```bash
+GET /api/ts/map-sets/icd-snomed/versions/1.0/associations-export?format=xlsx
+```
+
+**Query parameters:**
+
+- `format`: `csv` or `xlsx` (default: `csv`)
+
+**Response:**
+
+```json
+{
+  "id": 12345,
+  "process": "ms-association-export",
+  "status": "running",
+  "started": "2026-03-09T10:30:00Z"
 }
 ```
 
-**Header Composition Logic:**
+### Download Export Result
 
-Standard columns (always included):
+**CSV download:**
 
-1. `sourceCode` - Source concept code
-2. `sourceCodeSystem` - Source code system
-3. `sourceDisplay` - Source concept display name
-4. `targetCode` - Target concept code (empty if noMap)
-5. `targetCodeSystem` - Target code system (empty if noMap)
-6. `targetDisplay` - Target concept display name (empty if noMap)
-7. `relationship` - Relationship type
-8. `verified` - Verification status (true/false)
-9. `noMap` - No mapping flag (true/false)
+```bash
+GET /api/ts/map-sets/associations-export-csv/result/12345
+```
+
+**Excel download:**
+
+```bash
+GET /api/ts/map-sets/associations-export-xlsx/result/12345
+```
+
+**Response:**
+
+Binary file download with appropriate headers:
+
+- CSV: `Content-Type: application/csv`, `Content-Disposition: attachment; filename=associations.csv`
+- Excel: `Content-Type: application/vnd.ms-excel`, `Content-Disposition: attachment; filename=associations.xlsx`
+
+## Testing
+
+### Quick start
+
+```bash
+# 1. Initiate Excel export
+curl http://localhost:8200/api/ts/map-sets/icd-snomed/versions/1.0/associations-export?format=xlsx
+
+# Response includes processId, e.g., 12345
+
+# 2. Wait a few seconds for processing (poll status if needed)
+
+# 3. Download Excel file
+curl -o associations.xlsx \
+     http://localhost:8200/api/ts/map-sets/associations-export-xlsx/result/12345
+```
+
+### Test with CSV format
+
+```bash
+# 1. Initiate CSV export
+curl http://localhost:8200/api/ts/map-sets/icd-snomed/versions/1.0/associations-export?format=csv
+
+# 2. Download CSV file
+curl -o associations.csv \
+     http://localhost:8200/api/ts/map-sets/associations-export-csv/result/12345
+```
+
+### Test with various MapSet sizes
+
+**Small MapSet (10 associations):**
+
+- Verify all columns are present
+- Check custom properties are exported correctly
+- Validate noMap cases show empty target fields
+
+**Medium MapSet (1000 associations):**
+
+- Verify performance (should complete in < 5 seconds)
+- Check file opens correctly in Excel
+
+**Large MapSet (10000+ associations):**
+
+- Stress test memory usage
+- Verify streaming works (no OutOfMemoryError)
+- Confirm all data exported correctly
+
+### Verify export content
+
+**Expected columns:**
+
+Standard columns (always present):
+1. `sourceCode`
+2. `sourceCodeSystem`
+3. `sourceDisplay`
+4. `targetCode`
+5. `targetCodeSystem`
+6. `targetDisplay`
+7. `relationship`
+8. `verified`
+9. `noMap`
 
 Dynamic columns (based on MapSet properties):
-
 - One column per custom property defined in the MapSet
-- Property names extracted from first 1000 associations for efficiency
 
-**Row Composition Logic:**
+**Sample output:**
 
-For each association:
+```csv
+sourceCode,sourceCodeSystem,sourceDisplay,targetCode,targetCodeSystem,targetDisplay,relationship,verified,noMap,customProp1,customProp2
+250.1,ICD10,Diabetes Type 1,E10,ICD11,Type 1 diabetes mellitus,equivalent,true,false,high-confidence,auto-mapped
+999.9,ICD10,Obsolete code,,,,,,true,,
+```
 
-- Map source entity fields
-- Map target entity fields (handle noMap case)
-- Include relationship and flags
-- Extract property values by matching property names to headers
-- Handle missing values with empty strings
+## Data Model
 
-**Optimizations Applied:**
+### MapSetAssociation
 
-- Single-pass header composition (scan first 1000 associations)
-- Streaming Excel generation with SXSSFWorkbook
-- No N+1 queries needed (associations already contain all data)
+The primary entity exported to Excel/CSV.
 
-### 2. Add Controller Endpoints
+| Field | Type | Description |
+|-------|------|-------------|
+| source | Entity | Source concept (code, codeSystem, display) |
+| target | Entity | Target concept (code, codeSystem, display) - null if noMap |
+| relationship | String | Equivalence type: `equivalent`, `broader`, `narrower`, `related`, `inexact` |
+| verified | Boolean | Whether mapping has been verified by expert |
+| noMap | Boolean | Indicates concept is unmappable (no equivalent in target) |
+| propertyValues | PropertyValue[] | Custom properties specific to this MapSet |
 
-**File:** `[terminology/src/main/java/com/kodality/termx/terminology/terminology/mapset/MapSetController.java](terminology/src/main/java/com/kodality/termx/terminology/terminology/mapset/MapSetController.java)`
+**Entity structure:**
 
-**Location:** After associations section (around line 270), before provenances section
-
-**Add three endpoints:**
-
-```java
-// Inject service
-private final MapSetExportService mapSetExportService;
-
-// Initiate export
-@Authorized(Privilege.MS_VIEW)
-@Get(uri = "/{mapSet}/versions/{version}/associations-export{?params*}")
-public LorqueProcess exportAssociations(
-    @PathVariable String mapSet, 
-    @PathVariable String version, 
-    Map<String, String> params
-) {
-    return mapSetExportService.export(mapSet, version, params.getOrDefault("format", "csv"));
-}
-
-// Download CSV result
-@Authorized(Privilege.MS_VIEW)
-@Get(value = "/associations-export-csv/result/{lorqueProcessId}", produces = "application/csv")
-public HttpResponse<?> getAssociationExportCSV(Long lorqueProcessId) {
-    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
-    return response
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=associations.csv")
-        .contentType(MediaType.of("application/csv"));
-}
-
-// Download XLSX result
-@Authorized(Privilege.MS_VIEW)
-@Get(value = "/associations-export-xlsx/result/{lorqueProcessId}", produces = "application/vnd.ms-excel")
-public HttpResponse<?> getAssociationExportXLSX(Long lorqueProcessId) {
-    MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
-    return response
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=associations.xlsx")
-        .contentType(MediaType.of("application/vnd.ms-excel"));
+```json
+{
+  "code": "250.1",
+  "codeSystem": "ICD10",
+  "display": "Diabetes Type 1"
 }
 ```
 
-**Required imports:**
+### PropertyValue
 
-- `com.kodality.termx.core.sys.lorque.LorqueProcessService`
-- `io.micronaut.http.HttpHeaders`
-- `io.micronaut.http.MediaType`
-- `io.micronaut.http.MutableHttpResponse`
+Custom property attached to a MapSet association.
 
-### 3. Query Associations for Export
+| Field | Type | Description |
+|-------|------|-------------|
+| mapSetPropertyName | String | Property identifier (becomes column header) |
+| value | Object | Property value (string, number, boolean, etc.) |
+| mapSetPropertyType | String | Data type of the property |
 
-Use existing `MapSetAssociationService.query()` method with appropriate parameters:
+**Example:**
 
-```java
-MapSetAssociationQueryParams params = new MapSetAssociationQueryParams()
-    .setMapSet(mapSet)
-    .setMapSetVersionId(mapSetVersionId)
-    .all();
-QueryResult<MapSetAssociation> result = mapSetAssociationService.query(params);
-List<MapSetAssociation> associations = result.getData();
+```json
+{
+  "mapSetPropertyName": "confidence",
+  "value": "high",
+  "mapSetPropertyType": "string"
+}
 ```
 
-### 4. Handle Property Values
+### Export Column Mapping
 
-MapSet property values are custom properties attached to associations. Each property has:
+**Standard columns** (always present in order):
 
-- `mapSetPropertyName` - The property identifier
-- `value` - The actual value (can be any type)
-- `mapSetPropertyType` - The data type
+1. `sourceCode` ← `association.source.code`
+2. `sourceCodeSystem` ← `association.source.codeSystem`
+3. `sourceDisplay` ← `association.source.display`
+4. `targetCode` ← `association.target.code` (empty if noMap)
+5. `targetCodeSystem` ← `association.target.codeSystem` (empty if noMap)
+6. `targetDisplay` ← `association.target.display` (empty if noMap)
+7. `relationship` ← `association.relationship`
+8. `verified` ← `association.verified` (true/false)
+9. `noMap` ← `association.noMap` (true/false)
 
-**Processing logic:**
+**Dynamic columns** (based on MapSet properties):
 
-1. Collect all unique property names from associations
-2. Create one column per property in the headers
-3. For each row, extract property values and match to column headers
-4. Convert values to strings for Excel output
+- Extracted from first 1000 associations for efficiency
+- One column per unique property name
+- Property values matched by name during row composition
 
-## Data Flow Diagram
+**Example with custom properties:**
+
+```csv
+sourceCode,sourceCodeSystem,sourceDisplay,targetCode,targetCodeSystem,targetDisplay,relationship,verified,noMap,confidence,methodology,reviewer
+250.1,ICD10,Diabetes Type 1,E10,ICD11,Type 1 diabetes mellitus,equivalent,true,false,high,automated,john-doe
+```
+
+## Architecture
 
 ```mermaid
 sequenceDiagram
@@ -202,7 +320,7 @@ sequenceDiagram
     Note over LorqueProcess: Async execution starts
     
     LorqueProcess->>ExportService: composeResult(params)
-    ExportService->>AssociationService: query(params)
+    ExportService->>AssociationService: query(mapSet, version).all()
     AssociationService-->>ExportService: List of MapSetAssociations
     ExportService->>ExportService: composeHeaders(associations)
     ExportService->>ExportService: composeRow() for each association
@@ -217,79 +335,151 @@ sequenceDiagram
     Controller-->>Client: Download Excel file
 ```
 
+**Processing steps:**
 
+1. **Initiate**: Controller receives export request, starts async Lorque process
+2. **Query**: Load all associations for the MapSet version
+3. **Headers**: Compose headers from standard columns + custom properties (scan first 1000)
+4. **Rows**: Transform each association to row array matching headers
+5. **Generate**: Create Excel/CSV file using XlsxUtil/CsvUtil
+6. **Store**: Save binary result in Lorque process
+7. **Download**: Client retrieves file via result endpoint
 
-## Example Export Output
+### Performance Optimizations
 
-**Headers:**
+**Streaming Excel generation:**
 
-```
-sourceCode | sourceCodeSystem | sourceDisplay | targetCode | targetCodeSystem | targetDisplay | relationship | verified | noMap | customProp1 | customProp2
-```
+Uses Apache POI's `SXSSFWorkbook` to keep only a small window of rows in memory:
 
-**Sample Row:**
-
-```
-250.1 | ICD10 | Diabetes Type 1 | E10 | ICD11 | Type 1 diabetes mellitus | equivalent | true | false | high-confidence | auto-mapped
-```
-
-**Sample Row (noMap):**
-
-```
-999.9 | ICD10 | Obsolete code | | | | | false | true | | 
+```java
+SXSSFWorkbook workbook = new SXSSFWorkbook(100); // Keep 100 rows in memory
 ```
 
-## Testing Recommendations
+**Single-pass header composition:**
 
-1. **Small MapSet** (10 associations) - Verify correctness, all columns present
-2. **Medium MapSet** (1000 associations) - Verify performance, check memory usage
-3. **Large MapSet** (10000+ associations) - Stress test, ensure streaming works
-4. **Custom Properties** - Test with various property types (string, number, date)
-5. **NoMap Cases** - Verify empty target fields handled correctly
-6. **Both Formats** - Test CSV and XLSX separately
+Headers are collected from the first 1000 associations to avoid scanning entire dataset:
 
-## Files to Create
+```java
+associations.stream()
+  .limit(1000)
+  .flatMap(a -> a.getPropertyValues().stream())
+  .map(PropertyValue::getMapSetPropertyName)
+  .distinct()
+  .collect(Collectors.toList());
+```
 
-1. **MapSetExportService.java** - New service implementing export logic
-  - Location: `terminology/src/main/java/com/kodality/termx/terminology/terminology/mapset/association/`
+**No N+1 queries:**
 
-## Files to Modify
+MapSet associations already contain all required data (source, target, properties). No additional database queries are needed during export.
 
-1. **MapSetController.java** - Add export endpoints
-  - Add `MapSetExportService` dependency
-  - Add 3 new GET endpoints (export initiation, CSV download, XLSX download)
-  - Add required imports
+## Technical Implementation
 
-## Dependencies
+### MapSetExportService
 
-All required dependencies are already available:
+**Core methods:**
 
-- ✅ `LorqueProcessService` - For async processing
-- ✅ `MapSetAssociationService` - For querying associations
-- ✅ `XlsxUtil` - For Excel generation (with streaming support)
-- ✅ `CsvUtil` - For CSV generation
-- ✅ `MapSetVersionService` - For loading MapSet version details
+```java
+@Singleton
+@RequiredArgsConstructor
+public class MapSetExportService {
+  private final LorqueProcessService lorqueProcessService;
+  private final MapSetAssociationService associationService;
+  
+  public LorqueProcess export(String mapSet, String version, String format) {
+    // Start async process
+  }
+  
+  private ProcessResult composeResult(Map<String, String> params) {
+    // Load associations and generate file
+  }
+  
+  private List<String> composeHeaders(List<MapSetAssociation> associations) {
+    // Standard columns + dynamic properties
+  }
+  
+  private Object[] composeRow(MapSetAssociation assoc, List<String> headers) {
+    // Map association to row array
+  }
+}
+```
 
-## Performance Considerations
+**Row composition logic:**
 
-**Already Optimized:**
+```java
+private Object[] composeRow(MapSetAssociation assoc, List<String> headers) {
+  Object[] row = new Object[headers.size()];
+  
+  // Standard columns
+  row[0] = assoc.getSource().getCode();
+  row[1] = assoc.getSource().getCodeSystem();
+  row[2] = assoc.getSource().getDisplay();
+  
+  if (assoc.isNoMap()) {
+    row[3] = row[4] = row[5] = ""; // Empty target
+  } else {
+    row[3] = assoc.getTarget().getCode();
+    row[4] = assoc.getTarget().getCodeSystem();
+    row[5] = assoc.getTarget().getDisplay();
+  }
+  
+  row[6] = assoc.getRelationship();
+  row[7] = assoc.isVerified();
+  row[8] = assoc.isNoMap();
+  
+  // Custom properties
+  Map<String, Object> propMap = assoc.getPropertyValues().stream()
+    .collect(Collectors.toMap(PropertyValue::getMapSetPropertyName, PropertyValue::getValue));
+  
+  for (int i = 9; i < headers.size(); i++) {
+    row[i] = propMap.getOrDefault(headers.get(i), "");
+  }
+  
+  return row;
+}
+```
 
-- ✅ Streaming Excel generation (from recent optimization work)
-- ✅ Async processing prevents blocking
-- ✅ Single-pass header composition
+### Controller Integration
 
-**No Additional Optimization Needed:**
+**MapSetController endpoints:**
 
-- MapSet associations are already fully loaded with all data
-- No N+1 query problem (unlike ValueSet export which loads concept displays)
-- Property values are part of the association object
+Location: After associations section (around line 270)
 
-**Expected Performance:**
+```java
+private final MapSetExportService mapSetExportService;
 
-- 10k associations: ~5-10 seconds export time
-- Memory: Constant O(1) due to streaming Excel generation
-- No database query overhead during export (only initial load)
+@Authorized(Privilege.MS_VIEW)
+@Get(uri = "/{mapSet}/versions/{version}/associations-export{?params*}")
+public LorqueProcess exportAssociations(
+    @PathVariable String mapSet, 
+    @PathVariable String version, 
+    Map<String, String> params
+) {
+    return mapSetExportService.export(mapSet, version, params.getOrDefault("format", "csv"));
+}
 
-## Privileges
+@Authorized(Privilege.MS_VIEW)
+@Get(value = "/associations-export-csv/result/{lorqueProcessId}", produces = "application/csv")
+public HttpResponse<?> getAssociationExportCSV(Long lorqueProcessId) {
+    byte[] result = lorqueProcessService.load(lorqueProcessId).getResult();
+    return HttpResponse.ok(result)
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=associations.csv")
+        .contentType(MediaType.of("application/csv"));
+}
 
-Use existing MapSet privilege: `Privilege.MS_VIEW` for all export endpoints.
+@Authorized(Privilege.MS_VIEW)
+@Get(value = "/associations-export-xlsx/result/{lorqueProcessId}", produces = "application/vnd.ms-excel")
+public HttpResponse<?> getAssociationExportXLSX(Long lorqueProcessId) {
+    byte[] result = lorqueProcessService.load(lorqueProcessId).getResult();
+    return HttpResponse.ok(result)
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=associations.xlsx")
+        .contentType(MediaType.of("application/vnd.ms-excel"));
+}
+```
+
+### Expected Performance
+
+- **Small (10 associations)**: < 1 second
+- **Medium (1000 associations)**: 2-5 seconds
+- **Large (10000 associations)**: 5-10 seconds
+- **Memory usage**: Constant O(1) due to streaming (100 rows in memory)
+- **Database queries**: Single query to load all associations

@@ -1,0 +1,210 @@
+---
+description: Feature documentation structure for docs/features/
+globs: docs/features/*.md
+alwaysApply: false
+---
+
+# Feature Documentation Structure
+
+All feature documentation files in `docs/features/` must follow this standard structure:
+
+## 1. Business Description
+
+**First section** - Explain what the feature does from a business/user perspective.
+
+- What problem does it solve?
+- Who uses this feature?
+- What are the key capabilities?
+- Keep it accessible to non-technical stakeholders
+
+```markdown
+# Feature Name
+
+## Description (or Overview)
+
+[Business-level explanation of the feature, its purpose, and value]
+```
+
+## 2. Configuration Options
+
+Document all configuration properties, environment variables, and setup instructions.
+
+**Required elements:**
+
+- Configuration properties table with: property name, env variable, default, description
+- Examples for common scenarios
+- Instructions for enabling/configuring the feature
+
+```markdown
+## Configuration
+
+### Properties
+
+| Property | Env variable | Default | Description |
+|----------|--------------|---------|-------------|
+| ... | ... | ... | ... |
+
+### Enabling [feature]
+
+[Step-by-step instructions with code examples]
+```
+
+## 3. Functional Use-Cases / Scenarios
+
+Describe concrete scenarios and workflows where the feature is used.
+
+**Required elements:**
+
+- Real-world use-case descriptions
+- Step-by-step user workflows
+- Common scenarios and their outcomes
+- Integration with other features
+
+```markdown
+## Use-Cases
+
+### Scenario 1: [Name]
+
+[Description of the scenario]
+
+**Steps:**
+1. User does X
+2. System does Y
+3. Result is Z
+
+### Scenario 2: [Name]
+
+[Another concrete example]
+```
+
+## 4. API
+
+Document all REST endpoints, parameters, and responses.
+
+**Required elements:**
+
+- Endpoint table with: HTTP method, path, privilege/auth, description
+- Request/response examples for key endpoints
+- Query parameters and their effects
+
+```markdown
+## API
+
+All endpoints are under `/api/[module]`.
+
+| Method | Path | Privilege | Description |
+|--------|------|-----------|-------------|
+| ... | ... | ... | ... |
+
+[Include request/response examples if helpful]
+```
+
+## 5. Testing Options
+
+Provide concrete testing instructions and examples.
+
+**Required elements:**
+
+- Manual testing steps with curl/httpie examples
+- Expected behavior for different scenarios
+- Test data or setup instructions if needed
+
+```markdown
+## Testing
+
+### Quick start
+
+[Concrete curl/httpie examples]
+
+### Test scenarios
+
+[Step-by-step test cases with expected outcomes]
+```
+
+## 6. Data Model
+
+Document the data structures, entities, and their relationships.
+
+**Required elements:**
+
+- Entity/model descriptions with field tables
+- Field types and constraints
+- Relationships between entities
+- JSON/database schema examples
+
+```markdown
+## Data Model
+
+### [Entity Name]
+
+| Field | Type | Description |
+|-------|------|-------------|
+| ... | ... | ... |
+
+### Relationships
+
+[How entities relate to each other]
+
+### Example
+
+[JSON or database schema example]
+```
+
+## 7. Architecture
+
+Visual and textual explanation of how the feature works internally.
+
+**Preferred elements:**
+
+- Mermaid diagrams showing component interactions
+- Data flow diagrams
+- Module dependencies
+- Database schema overview
+
+```markdown
+## Architecture
+
+[Mermaid diagram showing key components and their relationships]
+
+### Module dependencies
+
+[Explanation of which modules are involved]
+```
+
+## 8. Technical Implementation
+
+Low-level implementation details for developers.
+
+**Required elements:**
+
+- Key source files with descriptions
+- Important classes/services and their responsibilities
+- Database tables and migrations
+- Integration points with other modules
+
+```markdown
+## Technical Implementation
+
+### Source files
+
+| File | Description |
+|------|-------------|
+| ... | ... |
+
+### Key components
+
+[Explanation of main classes and their roles]
+
+### Database schema
+
+[Tables and their purpose]
+```
+
+## Notes
+
+- Not every feature needs all sections - use judgment
+- Implementation plan docs (with frontmatter todos) should be converted to this structure once the feature is completed
+- Keep sections concise but complete
+- Use tables for structured data
+- Use code blocks with syntax highlighting
+- Use mermaid diagrams for architecture

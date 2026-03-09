@@ -11,42 +11,108 @@ former external `taskflow-service` library. The public REST API is exposed at `/
 privilege-based filtering. The frontend is an Angular module with a task list, task editor, resource
 task widget, and resource task modal.
 
-## Architecture
+## Configuration
 
-```mermaid
-flowchart TD
-    subgraph frontend [Web UI]
-        TL[TaskListComponent] --> TS_FE[TaskService]
-        TE[TaskEditComponent] --> TS_FE
-        RTW[ResourceTasksWidget] --> TLS[TaskLibService]
-        RTM[ResourceTaskModal] --> TS_FE
-    end
+TaskForge is automatically enabled when the `task-taskforge` module is included in the application. No feature flags are required.
 
-    subgraph api [Public API – /api/tm]
-        TC[TaskController] --> TS_BE[TaskService]
-    end
+### Database Configuration
 
-    subgraph taskforge [task-taskforge module]
-        TS_BE --> TFP[TaskForgeTaskProvider]
-        TFP --> TM[TaskMapper]
-        TM --> TFS[Taskforge TaskService]
-        TFS --> TR[TaskRepository]
-        TR --> DB[(taskforge schema)]
-    end
+TaskForge uses the `taskforge` database schema which is created automatically via Liquibase migrations on application startup.
 
-    TS_FE --> TC
-    TLS --> TC
-```
+**Required database functions:**
 
-### Module dependencies
+- `core.sequence_id()` and `core.sequence_nextval()` for task number generation
+- These are provided by the `termx-core` module
 
-- **task** -- defines the public API (`TaskController`, `TaskService`, `TaskProvider`, `Privilege`,
-  models). Has no implementation of its own.
-- **task-taskforge** -- implements `TaskProvider` via `TaskForgeTaskProvider`. Contains all domain
-  logic, repositories, Liquibase migrations, and the `taskforge` database schema.
-- **termx-app** -- wires both modules together.
+### Project and Workflow Configuration
 
-## API Endpoints
+Projects and workflows are configured via database records (see migration `90-migrate-from-taskflow.sql`).
+
+**Default configuration:**
+
+- Project: `termx` (created automatically)
+- Default workflows: `task`, `version-review`, `version-approval`, `concept-review`, `concept-approval`, `wiki-page-comment`
+
+**Custom projects and workflows:**
+
+Projects and workflows can be added via the API or directly in the database. Each project can define custom workflow types with specific status transitions.
+
+### Environment Variables
+
+No environment variables are required. TaskForge uses the main application database connection.
+
+## Use-Cases
+
+### Scenario 1: Manual Task Creation for CodeSystem Review
+
+**Context:** Terminology editor needs to create a review task for a CodeSystem version before publication.
+
+**Steps:**
+1. Navigate to task list page (`/tasks`)
+2. Click "Create Task" button
+3. Select task type: "concept-review"
+4. Select workflow: "version-review"
+5. Select resource type: "CodeSystem" and specific resource: "icd-10"
+6. Assign to reviewer and add description
+7. Save task
+
+**Outcome:** Task appears in assignee's task list, linked to ICD-10 CodeSystem. Assignee receives notification and can track review progress.
+
+### Scenario 2: Automatic Version Approval Task
+
+**Context:** Publisher wants to request approval before publishing a ValueSet version.
+
+**Steps:**
+1. Navigate to ValueSet version page
+2. Click "Create Approval Task" button
+3. Modal opens with pre-filled context (ValueSet + version)
+4. Select approver from list (restricted to users with publish privilege)
+5. Add optional comment
+6. Submit
+
+**Outcome:** Approval task created automatically with correct workflow and context. Approver sees task in their list and can approve/reject.
+
+### Scenario 3: Concept Review Workflow
+
+**Context:** Senior editor needs to review new concepts added by junior editor before they are published.
+
+**Steps:**
+1. Junior editor adds new concepts to CodeSystem
+2. Junior editor creates "Concept Review" task from concept page
+3. Task is assigned to senior editor with context linking to specific concepts
+4. Senior editor opens task, clicks context link to view concepts
+5. Senior editor adds comments via task activities
+6. Senior editor changes task status to "approved" or "rejected"
+
+**Outcome:** Structured review process with full audit trail. Task activity log shows all comments and status transitions.
+
+### Scenario 4: Tracking Unseen Task Changes
+
+**Context:** Publisher wants to quickly find tasks that have been updated since they last viewed them.
+
+**Steps:**
+1. Open task list page
+2. Enable "Show only tasks with unseen changes" filter
+3. See tasks with eye icon indicator
+4. Open a task (automatically marked as "seen")
+5. Refresh list - task no longer shows eye icon
+
+**Outcome:** Efficient way to stay updated on task changes without manually checking every task.
+
+### Scenario 5: Privilege-Based Task Visibility
+
+**Context:** Organization has editors who should only see their own tasks, not all tasks in the system.
+
+**Steps:**
+1. Configure user with `*.CodeSystem.edit` privilege (not publish)
+2. User logs in and navigates to task list
+3. System automatically filters to show only tasks:
+   - Created by the user OR assigned to the user
+   - For CodeSystems the user has edit access to
+
+**Outcome:** Users see only relevant tasks, reducing clutter and protecting sensitive information.
+
+## API
 
 All endpoints are under `/api/tm`.
 
@@ -54,7 +120,7 @@ All endpoints are under `/api/tm`.
 
 | Method | Path | Privilege | Description |
 |--------|------|-----------|-------------|
-| GET | `/tasks` | Task.view | Query tasks (privilege-filtered) |
+| GET | `/tasks{?params*}` | Task.view | Query tasks (privilege-filtered) |
 | GET | `/tasks/{number}` | Task.view | Load single task by number |
 | POST | `/tasks` | Task.edit | Create task |
 | PUT | `/tasks/{number}` | Task.edit | Update task |
@@ -70,6 +136,103 @@ All endpoints are under `/api/tm`.
 |--------|------|-----------|-------------|
 | GET | `/projects` | Task.view | List all projects |
 | GET | `/projects/{code}/workflows` | Task.view | List workflows for a project |
+
+### Query Parameters
+
+Common query parameters for `/tasks{?params*}`:
+
+- `text` - Full-text search across title and content
+- `project` - Filter by project code
+- `status` - Filter by status (open/closed/specific status codes)
+- `assignee` - Filter by assigned user
+- `priority` - Filter by priority level
+- `type` - Filter by task type
+- `createdBy` - Filter by author
+- `createdAfter`, `createdBefore` - Date range filters
+- `unseenChanges` - Show only tasks with updates since last view
+- `context` - Filter by resource context (`type|id` format)
+
+### Privilege-Based Filtering
+
+All task queries automatically apply privilege-based filtering:
+
+| Privilege | Tasks Returned |
+|-----------|----------------|
+| `*.*.*` or `*.*.publish` | All tasks |
+| `*.Task.publish` or `*.ResourceType.publish` | All tasks for resources with publish access |
+| `*.Task.edit` or `*.ResourceType.edit` | Only tasks created by or assigned to current user, for permitted resources |
+| `*.Task.view` only | Empty result |
+
+## Testing
+
+### Quick start
+
+```bash
+# Start application with mock auth enabled
+MICRONAUT_ENVIRONMENTS=local ./gradlew :termx-app:run
+
+# Query tasks as admin (sees all tasks)
+curl http://localhost:8200/api/tm/tasks
+
+# Query tasks as editor (sees only own/assigned tasks)
+curl -H "Authorization: Bearer editor" http://localhost:8200/api/tm/tasks
+
+# Query tasks as publisher (sees all tasks for accessible resources)
+curl -H "Authorization: Bearer publisher" http://localhost:8200/api/tm/tasks
+
+# Query tasks as viewer (empty result)
+curl -H "Authorization: Bearer viewer" http://localhost:8200/api/tm/tasks
+```
+
+### Test scenario: Task creation and access control
+
+```bash
+# 1. Create a task as editor
+curl -X POST -H "Authorization: Bearer editor" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "title": "Review ICD-10 Mapping",
+       "type": "concept-review",
+       "workflow": "concept-review",
+       "project": "termx",
+       "priority": "routine",
+       "context": [{"type": "code-system", "id": "icd-10"}]
+     }' \
+     http://localhost:8200/api/tm/tasks
+
+# 2. Query as the same editor (should see the task)
+curl -H "Authorization: Bearer editor" http://localhost:8200/api/tm/tasks
+
+# 3. Query as different editor (should NOT see the task)
+curl -H "Authorization: Bearer editor" http://localhost:8200/api/tm/tasks
+
+# 4. Query as publisher with icd-10 publish access (should see the task)
+curl -H "Authorization: Bearer publisher" http://localhost:8200/api/tm/tasks
+
+# 5. Query as viewer (should see empty result)
+curl -H "Authorization: Bearer viewer" http://localhost:8200/api/tm/tasks
+```
+
+### Test scenario: Unseen changes tracking
+
+```bash
+# 1. Get task list and note a task number
+curl -H "Authorization: Bearer admin" http://localhost:8200/api/tm/tasks
+
+# 2. Mark task as opened
+curl -X POST -H "Authorization: Bearer admin" \
+     http://localhost:8200/api/tm/tasks/TASK-123/opened
+
+# 3. Update the task (as different user)
+curl -X PATCH -H "Authorization: Bearer editor" \
+     -H "Content-Type: application/json" \
+     -d '{"title": "Updated Title"}' \
+     http://localhost:8200/api/tm/tasks/TASK-123
+
+# 4. Query with unseenChanges filter (should include the task)
+curl -H "Authorization: Bearer admin" \
+     "http://localhost:8200/api/tm/tasks?unseenChanges=true"
+```
 
 ## Data Model
 
@@ -100,6 +263,24 @@ All endpoints are under `/api/tm`.
 |-------|------|-------------|
 | type | String | Resource type key (see Context Types below) |
 | id | String/Number | Resource identifier |
+
+**Context types:**
+
+| Context type | Resource | Frontend selector |
+|-------------|----------|-------------------|
+| `code-system` | CodeSystem | `tw-code-system-search` |
+| `code-system-version` | CodeSystem version | (set by resource modal) |
+| `concept-version` | Concept version | (set by concept review) |
+| `value-set` | ValueSet | `tw-value-set-search` |
+| `value-set-version` | ValueSet version | (set by resource modal) |
+| `map-set` | MapSet | `tw-map-set-search` |
+| `map-set-version` | MapSet version | (set by resource modal) |
+| `wiki` | Wiki space | `tw-space-select` |
+| `snomed-concept` | SNOMED CT concept | (set by SNOMED integration) |
+| `snomed-translation` | SNOMED translation | (set by SNOMED integration) |
+| `page-comment` | Wiki page comment | (set by wiki comment flow) |
+
+Context is mandatory when creating a task manually. It links the task to specific terminology resources and is used for privilege-based filtering.
 
 ### TaskActivity
 
@@ -135,28 +316,66 @@ Activities are created in two ways:
 Default workflow types: `task`, `version-review`, `version-approval`, `concept-review`,
 `concept-approval`, `wiki-page-comment`.
 
-## Context Types
+## Architecture
 
-Tasks are linked to resources via context items. The `type` field maps to a resource category:
+```mermaid
+flowchart TD
+    subgraph frontend [Web UI]
+        TL[TaskListComponent] --> TS_FE[TaskService]
+        TE[TaskEditComponent] --> TS_FE
+        RTW[ResourceTasksWidget] --> TLS[TaskLibService]
+        RTM[ResourceTaskModal] --> TS_FE
+    end
 
-| Context type | Resource | Frontend selector |
-|-------------|----------|-------------------|
-| `code-system` | CodeSystem | `tw-code-system-search` |
-| `code-system-version` | CodeSystem version | (set by resource modal) |
-| `concept-version` | Concept version | (set by concept review) |
-| `value-set` | ValueSet | `tw-value-set-search` |
-| `value-set-version` | ValueSet version | (set by resource modal) |
-| `map-set` | MapSet | `tw-map-set-search` |
-| `map-set-version` | MapSet version | (set by resource modal) |
-| `wiki` | Wiki space | `tw-space-select` |
-| `snomed-concept` | SNOMED CT concept | (set by SNOMED integration) |
-| `snomed-translation` | SNOMED translation | (set by SNOMED integration) |
-| `page-comment` | Wiki page comment | (set by wiki comment flow) |
+    subgraph api [Public API – /api/tm]
+        TC[TaskController] --> TS_BE[TaskService]
+    end
 
-When creating a task manually (from `/tasks/add`), the user must select a resource type and
-a specific resource instance. Context is mandatory and cannot be changed after creation.
+    subgraph taskforge [task-taskforge module]
+        TS_BE --> TFP[TaskForgeTaskProvider]
+        TFP --> TM[TaskMapper]
+        TM --> TFS[Taskforge TaskService]
+        TFS --> TR[TaskRepository]
+        TR --> DB[(taskforge schema)]
+    end
 
-## Privilege-Based Access Control
+    TS_FE --> TC
+    TLS --> TC
+```
+
+### Module dependencies
+
+- **task** -- defines the public API (`TaskController`, `TaskService`, `TaskProvider`, `Privilege`,
+  models). Has no implementation of its own.
+- **task-taskforge** -- implements `TaskProvider` via `TaskForgeTaskProvider`. Contains all domain
+  logic, repositories, Liquibase migrations, and the `taskforge` database schema.
+- **termx-app** -- wires both modules together.
+
+### Privilege-Based Access Control Flow
+
+```mermaid
+flowchart TD
+    Request[API Request] --> Controller[TaskController]
+    Controller --> CheckRole{Check User Role}
+    
+    CheckRole -->|Admin| AllTasks[Query All Tasks]
+    CheckRole -->|Publisher| PublisherFilter[Filter by Permitted Resources]
+    CheckRole -->|Editor| EditorFilter[Filter by Created/Assigned + Permitted Resources]
+    CheckRole -->|Viewer| Empty[Return Empty Result]
+    
+    PublisherFilter --> GetPermitted[Get Permitted Resource IDs]
+    EditorFilter --> GetPermitted
+    
+    GetPermitted --> Session[SessionInfo.getPermittedResourceIds]
+    Session --> FilterContext[Filter tasks by context.resourceId IN permitted]
+    
+    EditorFilter --> AddOwnership[Add createdBy/assignee filter]
+    AddOwnership --> FilterContext
+    
+    FilterContext --> Repository[TaskRepository]
+    Repository --> Database[(taskforge.task)]
+    Database --> Results[Filtered Results]
+```
 
 Three privilege levels control task visibility:
 
@@ -167,7 +386,7 @@ Three privilege levels control task visibility:
 | `*.Task.edit` or `*.*.edit` | Editor | Only tasks they created or are assigned to, for resources they have edit access to |
 | `*.Task.view` only | Viewer | Empty result |
 
-### How filtering works
+**How filtering works:**
 
 1. **Admin** -- no filters applied, returns all tasks.
 2. **Publisher** -- `permittedContexts` computed from `session.getPermittedResourceIds("*.publish")`;
@@ -179,11 +398,36 @@ Three privilege levels control task visibility:
 Single task load applies the same logic: admins can load any task, publishers can load tasks for
 their permitted resources, editors can only load their own tasks for permitted resources.
 
-## Unseen Changes
+## Technical Implementation
+
+### Database Schema
+
+**Tables:**
+
+```
+taskforge.project          -- Projects (multi-tenant, ACL-protected)
+taskforge.workflow         -- Workflow definitions per project
+taskforge.task             -- Tasks with JSONB context
+taskforge.task_activity    -- Activity log (comments + field-change transitions)
+taskforge.task_execution   -- Time tracking (period, duration, performer)
+taskforge.task_attachment   -- File attachments
+taskforge.task_read_log    -- Per-user last-opened timestamp
+```
+
+**Migration from taskflow:**
+
+A smart migration script (`90-migrate-from-taskflow.sql`) handles two scenarios:
+- **taskflow schema exists**: migrates `project` and `workflow` records preserving IDs
+- **taskflow schema does not exist**: creates a default `termx` project with ACL and default
+  workflow definitions
+
+In both cases, `core.seq_id` is advanced past the highest migrated ID to prevent conflicts.
+
+### Unseen Changes Implementation
 
 The system tracks when each user last viewed a task via the `taskforge.task_read_log` table.
 
-### Backend
+**Backend:**
 
 - `POST /tm/tasks/{number}/opened` upserts a record in `task_read_log` with the current timestamp.
 - The `unseenChanges` search parameter adds a filter:
@@ -191,16 +435,16 @@ The system tracks when each user last viewed a task via the `taskforge.task_read
 - The `lastOpenedTime` field is populated via a LEFT JOIN on `task_read_log` and returned with the
   task model.
 
-### Frontend
+**Frontend:**
 
 - **Eye icon** in the task list's first column for tasks where
   `!lastOpenedTime || lastOpenedTime < updatedAt`.
 - **Filter checkbox** "Show only tasks with unseen changes" sends `unseenChanges=true` to the API.
 - **Auto-mark as seen** when opening a task (`TaskEditComponent` calls `logTaskOpened` on load).
 
-## Frontend Components
+### Frontend Components
 
-### TaskListComponent
+**TaskListComponent:**
 
 Paginated, filterable task list. Filters:
 - Text search, project, status (open/closed/specific), assignee, priority, type, author
@@ -210,7 +454,7 @@ Paginated, filterable task list. Filters:
 
 State is persisted in `ComponentStateStore` across navigation.
 
-### TaskEditComponent
+**TaskEditComponent:**
 
 Dual-mode form for creating and editing tasks.
 
@@ -228,14 +472,14 @@ Dual-mode form for creating and editing tasks.
 - Context displayed read-only with clickable links to resources
 - Marks task as "seen" on load
 
-### ResourceTasksWidgetComponent (`tw-resource-tasks-widget`)
+**ResourceTasksWidgetComponent** (`tw-resource-tasks-widget`):
 
 Displays tasks related to a specific resource. Used in resource summary pages.
 - Inputs: `resourceId`, `resourceType`, `taskFilters`
 - Searches tasks by `context: type|id`
 - Supports aggregated views for releases (across linked resources) and SNOMED concepts
 
-### ResourceTaskModalComponent (`tw-resource-task-modal`)
+**ResourceTaskModalComponent** (`tw-resource-task-modal`):
 
 Modal for creating review/approval tasks from resource pages.
 - Inputs: `resourceType` (CodeSystem, ValueSet, MapSet)
@@ -244,66 +488,43 @@ Modal for creating review/approval tasks from resource pages.
 - Composes title and markdown content with resource links
 - Used by version summary pages and resource action buttons
 
-### TaskContextLinkService
+**TaskContextLinkService:**
 
 Injectable service that opens context items in the appropriate route. Handles navigation to
 code systems, value sets, map sets, SNOMED concepts, wiki page comments, and their versions.
 
-## Task Creation Flows
+### Task Creation Flows
 
-### 1. Manual creation (task list page)
+**1. Manual creation (task list page):**
 
 User navigates to `/tasks/add`, fills in the form including mandatory context (resource type +
 resource), and saves. The `TaskEditComponent` builds a `Task` object with `context` from the
 selected type and resource ID.
 
-### 2. Version review/approval (resource pages)
+**2. Version review/approval (resource pages):**
 
 From a CodeSystem, ValueSet, or MapSet summary/version page, the user clicks "Create review"
 or "Create approval". The `ResourceTaskModalComponent` opens with pre-filled context (resource ID
 + version ID), assignee selection, and an optional comment. Workflow is set to `version-review`
 or `version-approval`.
 
-### 3. Concept review (code system concept pages)
+**3. Concept review (code system concept pages):**
 
 From the concept list or concept edit page, the user creates a concept review task. Context is
 set to `[code-system, concept-version, code-system-version]`. Workflow is `concept-review` or
 `concept-approval`.
 
-### 4. SNOMED concept review
+**4. SNOMED concept review:**
 
 From the SNOMED dashboard, a review task is created with context
 `[{type: 'code-system', id: 'snomed-ct'}, {type: 'snomed-concept', id: conceptId}]`.
 
-### 5. Wiki page comments
+**5. Wiki page comments:**
 
 Wiki page comments can create tasks with `page-comment` context type. Status changes on these
 tasks are handled by `WikiPageCommentTaskForgeStatusChangeInterceptor`.
 
-## Database Schema
-
-### Tables
-
-```
-taskforge.project          -- Projects (multi-tenant, ACL-protected)
-taskforge.workflow         -- Workflow definitions per project
-taskforge.task             -- Tasks with JSONB context
-taskforge.task_activity    -- Activity log (comments + field-change transitions)
-taskforge.task_execution   -- Time tracking (period, duration, performer)
-taskforge.task_attachment   -- File attachments
-taskforge.task_read_log    -- Per-user last-opened timestamp
-```
-
-### Migration from taskflow
-
-A smart migration script (`90-migrate-from-taskflow.sql`) handles two scenarios:
-- **taskflow schema exists**: migrates `project` and `workflow` records preserving IDs
-- **taskflow schema does not exist**: creates a default `termx` project with ACL and default
-  workflow definitions
-
-In both cases, `core.seq_id` is advanced past the highest migrated ID to prevent conflicts.
-
-## Status Change Interceptors
+### Status Change Interceptors
 
 When a task's status changes, interceptor beans are notified. These handle side effects in other
 modules:
@@ -316,9 +537,9 @@ modules:
 | wiki | `WikiPageCommentTaskForgeStatusChangeInterceptor` | Page comment resolution |
 | snomed | `TaskForgeSnomedInterceptor` | SNOMED translation status sync |
 
-## Files
+### Source Files
 
-### Backend
+**Backend:**
 
 | Module | Path | Description |
 |--------|------|-------------|
@@ -326,7 +547,7 @@ modules:
 | task-taskforge | `task-taskforge/src/main/java/org/termx/taskforge/` | Implementation: services, repositories, mapper |
 | task-taskforge | `task-taskforge/src/main/resources/taskforge/changelog/` | Liquibase migrations |
 
-### Frontend
+**Frontend:**
 
 | Path | Description |
 |------|-------------|
@@ -337,7 +558,7 @@ modules:
 | `app/src/app/resources/resource/components/resource-tasks-widget*` | Resource task widget |
 | `app/src/app/resources/resource/components/resource-task-modal*` | Resource task modal |
 
-### Related documents
+### Related Documentation
 
-- [Task Access Control](task-access-control.md) -- detailed migration plan for taskflow -> taskforge and privilege-based filtering
-- [Mock Authentication](mock-auth.md) -- mock user profiles for testing task access control
+- [Task Access Control](task-access-control.md) - Detailed guide on privilege-based filtering
+- [Mock Authentication](mock-auth.md) - Mock user profiles for testing task access control
