@@ -51,6 +51,6 @@ public class SnowstormClientFactory {
   }
 
   private static String basicAuth(String username, String password) {
-    return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+    return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes(java.nio.charset.StandardCharsets.UTF_8));
   }
 }

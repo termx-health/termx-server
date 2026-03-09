@@ -73,7 +73,7 @@ public class OAuthSessionProvider extends SessionProvider {
       if (jwt.getExpiresAt().before(new Date())) {
         return null;
       }
-      String payload = new String(Base64.getUrlDecoder().decode(jwt.getPayload()));
+      String payload = new String(Base64.getUrlDecoder().decode(jwt.getPayload()), java.nio.charset.StandardCharsets.UTF_8);
       Map<String, Object> map = JsonUtil.toMap(payload);
       SessionInfo info = new SessionInfo();
       info.setPrivileges(privilegeStore.getPrivileges((List<String>) map.get("roles")));
