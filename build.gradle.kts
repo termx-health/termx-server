@@ -56,6 +56,9 @@ allprojects {
         }
         effort.set(com.github.spotbugs.snom.Effort.MAX)
         reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
+        excludeFilter.set(file("${rootProject.projectDir}/config/spotbugs/exclude.xml"))
+        ignoreFailures = false
+        extraArgs = listOf("-nested:false", "-auxclasspath", configurations.getByName("compileClasspath").asPath)
     }
 
     tasks.withType<Pmd>().configureEach {

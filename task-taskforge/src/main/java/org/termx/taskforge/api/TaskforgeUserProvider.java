@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class TaskforgeUserProvider {
-  protected static String select = "jsonb_build_object('sub', %s)";
+  protected static final String select = "jsonb_build_object('sub', %s)";
 
   public static String select(String ref) {
     return String.format(select, ref);

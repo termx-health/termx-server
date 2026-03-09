@@ -104,7 +104,7 @@ public class ValueSetVersionConceptService {
 
     List<ValueSetVersionConcept> expansion = internalExpand(version, preferredLanguage).stream()
         .filter(e -> e.isEnumerated() || e.getConcept().getConceptVersionId() != null)
-        .toList();
+        .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
     ValueSetVersionRuleSet ruleSet = version.getRuleSet();
     List<ValueSetVersionConcept> externalExpansion = new ArrayList<>();
     for (ValueSetExternalExpandProvider provider : externalExpandProviders) {

@@ -109,7 +109,7 @@ public class TransformerService {
 
   public Bundle loadBaseResources() {
     try (InputStream is = resourceLoader.getResources("conformance/base/profiles-types.json").findFirst().orElseThrow().openStream()) {
-      return parse(new String(is.readAllBytes()));
+      return parse(new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -262,7 +262,8 @@ public class TransformerService {
     map.getText().setStatus(NarrativeStatus.GENERATED);
     map.getText().setDiv(new XhtmlNode(NodeType.Element, "div"));
     String render = StructureMapUtilities.render(map);
-    map.getText().getDiv().addTag("pre").addText(render);
+    XhtmlNode pre = map.getText().getDiv().addTag("pre");
+    pre.addText(render);
     return map;
   }
 

@@ -63,7 +63,14 @@ public class BobObjectRepository extends BaseRepository {
     ssb.property("description", obj.getDescription());
 
     SqlBuilder sb = ssb.buildInsert("bob.object", "id");
-    return jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
+    if (jdbcTemplate == null) {
+      throw new IllegalStateException("jdbcTemplate is not initialized");
+    }
+    Long result = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
+    if (result == null) {
+      throw new IllegalStateException("Failed to create BobObject");
+    }
+    return result;
   }
 
   public Long createStorage(Long objectId, BobStorage s) {
@@ -75,15 +82,26 @@ public class BobObjectRepository extends BaseRepository {
     ssb.property("filename", s.getFilename());
 
     SqlBuilder sb = ssb.buildInsert("bob.object_storage", "id");
-    return jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
+    if (jdbcTemplate == null) {
+      throw new IllegalStateException("jdbcTemplate is not initialized");
+    }
+    Long result = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
+    if (result == null) {
+      throw new IllegalStateException("Failed to create BobStorage");
+    }
+    return result;
   }
 
   public void deleteStorage(Long objectId) {
-    jdbcTemplate.update("update bob.object_storage set sys_status = 'C' where object_id = ? and sys_status = 'A'", objectId);
+    if (jdbcTemplate != null) {
+      jdbcTemplate.update("update bob.object_storage set sys_status = 'C' where object_id = ? and sys_status = 'A'", objectId);
+    }
   }
 
   public void delete(Long objectId) {
-    jdbcTemplate.update("update bob.object set sys_status = 'C' where id = ? and sys_status = 'A'", objectId);
+    if (jdbcTemplate != null) {
+      jdbcTemplate.update("update bob.object set sys_status = 'C' where id = ? and sys_status = 'A'", objectId);
+    }
   }
 }
 

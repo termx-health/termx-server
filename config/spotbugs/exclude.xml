@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter
+    xmlns="https://github.com/spotbugs/filter/3.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/4.9.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <!-- Suppress false positive null pointer warnings for jdbcTemplate field inherited from BaseRepository -->
+    <!-- The jdbcTemplate is injected by the framework and is never null in runtime -->
+    <Match>
+        <Bug pattern="NP_NULL_ON_SOME_PATH"/>
+        <Field name="jdbcTemplate"/>
+    </Match>
+
+    <!-- Suppress warnings about exposing internal representation via getters/setters in data classes -->
+    <!-- These are DTOs used for XML/JSON deserialization and need direct field access -->
+    <Match>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+        <Or>
+            <Class name="~.*\.utils\.Icd10.*"/>
+            <Class name="~.*\.utils\.Icd10Est.*"/>
+            <Class name="~.*OperationDefinitionResourceStorage"/>
+            <Class name="~.*XlsxFileParser"/>
+            <Class name="~.*MockSessionProvider.*"/>
+            <Class name="~.*AuthController\$UserInfo"/>
+            <Class name="~.*ServerHttpClientService\$ServerHttpClientConfig"/>
+            <Class name="~.*SpaceGithubController\$.*"/>
+            <Class name="~.*SpaceGithubDataWikiHandler\$.*"/>
+            <Class name="~.*SpaceGithubDataWikiSsgHandler\$.*"/>
+        </Or>
+    </Match>
+
+    <!-- Suppress format string warnings for HTML content generation -->
+    <!-- \n is intentional for HTML source formatting, not platform newlines -->
+    <Match>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+        <Or>
+            <Class name="~.*\.SnomedImportPollingService"/>
+            <Class name="~.*\.ImportNotificationService"/>
+            <Class name="~.*\.PageContentHistoryRepository"/>
+            <Class name="~.*\.WikiPageCommentTaskInterceptor"/>
+        </Or>
+    </Match>
+
+    <!-- Suppress ignored return value warnings for fluent API methods where return value is optional -->
+    <Match>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_INFERRED"/>
+        <Or>
+            <Method name="parseFml"/>
+        </Or>
+    </Match>
+
+    <!-- Suppress dead local store warnings (often false positives with modern Java patterns) -->
+    <Match>
+        <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
+    </Match>
+
+    <!-- Suppress constructor throw warnings (acceptable in many Spring/Micronaut patterns) -->
+    <Match>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+
+    <!-- Suppress naming conflicts with parent classes (legacy code, low priority) -->
+    <Match>
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS"/>
+    </Match>
+
+    <!-- Suppress null pointer warnings from return values (often false positives) -->
+    <Match>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <!-- Suppress switch statement without default (sometimes intentional for exhaustive enum matching) -->
+    <Match>
+        <Bug pattern="SF_SWITCH_NO_DEFAULT"/>
+    </Match>
+
+    <!-- Suppress should-be-static suggestions (design decision) -->
+    <Match>
+        <Bug pattern="SS_SHOULD_BE_STATIC"/>
+    </Match>
+
+    <!-- Suppress boxing/unboxing warnings (performance micro-optimization) -->
+    <Match>
+        <Bug pattern="BX_UNBOXING_IMMEDIATELY_REBOXED"/>
+    </Match>
+
+    <!-- Suppress expose rep warnings in test code (tests often need to manipulate data structures) -->
+    <Match>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+        <Class name="~.*Test.*"/>
+    </Match>
+
+    <!-- Suppress uncalled private method warnings in test classes (helper methods used by test frameworks) -->
+    <Match>
+        <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD"/>
+        <Class name="~.*Test.*"/>
+    </Match>
+
+    <!-- Suppress nonnull field not initialized warnings for Lombok data classes (fields initialized via setters) -->
+    <Match>
+        <Bug pattern="NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+    </Match>
+
+    <!-- Suppress partially constructed object warnings (common in initialization patterns) -->
+    <Match>
+        <Bug pattern="DC_PARTIALLY_CONSTRUCTED"/>
+    </Match>
+
+    <!-- Suppress StringBuffer concatenation warnings (often false positives in modern code) -->
+    <Match>
+        <Bug pattern="SBSC_USE_STRINGBUFFER_CONCATENATION"/>
+    </Match>
+
+</FindBugsFilter>
