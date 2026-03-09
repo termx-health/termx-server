@@ -1,14 +1,14 @@
 package org.termx.ucum.service;
 
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
-import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
+import org.termx.terminology.terminology.codesystem.CodeSystemService;
+import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.ts.PublicationStatus;
 import com.kodality.termx.ts.codesystem.CodeSystem;
 import com.kodality.termx.ts.codesystem.CodeSystemContent;
 import com.kodality.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
-import com.kodality.termx.ucum.essence.UcumEssenceStorageService;
+import org.termx.ucum.essence.UcumEssenceStorageService;
 import jakarta.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;

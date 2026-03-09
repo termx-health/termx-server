@@ -1,8 +1,9 @@
 package com.kodality.termx.wiki;
 
 import com.kodality.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinitionService;
-import com.kodality.termx.terminology.fhir.FhirFshConverter;
+import org.termx.wiki.WikiPageRelatedResourceProvider;
+import org.termx.modeler.structuredefinition.StructureDefinitionService;
+import org.termx.terminology.fhir.FhirFshConverter;
 import java.util.Optional;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

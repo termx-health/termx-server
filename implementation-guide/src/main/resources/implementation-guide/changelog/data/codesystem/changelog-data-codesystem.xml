@@ -6,7 +6,7 @@
 
   <changeSet id="FHIR-version" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.terminology.liquibase.CodeSystemFhirImport">
+    <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="implementation-guide/changelog/data/codesystem/FHIR-version.json"/>
     </customChange>
   </changeSet>

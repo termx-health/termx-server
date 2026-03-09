@@ -1,6 +1,6 @@
 package com.kodality.termx.wiki;
 
-import com.kodality.termx.wiki.pagerelation.PageRelationServiceConfig;
+import org.termx.wiki.pagerelation.PageRelationServiceConfig;
 import java.util.List;
 import jakarta.inject.Singleton;
 

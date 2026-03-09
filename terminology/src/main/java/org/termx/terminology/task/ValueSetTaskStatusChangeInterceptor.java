@@ -1,0 +1,40 @@
+package org.termx.terminology.task;
+
+import org.termx.task.Task;
+import org.termx.task.TaskStatus;
+import org.termx.task.TaskType;
+import org.termx.task.api.TaskStatusChangeInterceptor;
+import org.termx.terminology.terminology.valueset.provenance.ValueSetProvenanceService;
+import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
+import com.kodality.termx.ts.valueset.ValueSetVersion;
+import java.util.Optional;
+import jakarta.inject.Singleton;
+import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
+
+@Singleton
+@RequiredArgsConstructor
+public class ValueSetTaskStatusChangeInterceptor implements TaskStatusChangeInterceptor {
+  private final ValueSetProvenanceService provenanceService;
+  private final ValueSetVersionService valueSetVersionService;
+  public static final String VS_VERSION = "value-set-version";
+
+  @Override
+  @Transactional
+  public void afterStatusChange(Task task, String previousStatus) {
+    if (task == null || task.getWorkflow() == null || task.getContext() == null || !TaskStatus.accepted.equals(task.getStatus())) {
+      return;
+    }
+    Optional<Long> vsVersionId = task.getContext().stream().filter(ctx -> VS_VERSION.equals(ctx.getType())).findFirst().map(t -> (Long) t.getId());
+
+    if (task.getWorkflow().equals(TaskType.version_review) && vsVersionId.isPresent()) {
+      ValueSetVersion vsv = valueSetVersionService.load(vsVersionId.get());
+      provenanceService.provenanceValueSetVersion("reviewed",vsv.getValueSet(), vsv.getVersion(), () -> {});
+    }
+    if (task.getWorkflow().equals(TaskType.version_approval) && vsVersionId.isPresent()) {
+      ValueSetVersion vsv = valueSetVersionService.load(vsVersionId.get());
+      provenanceService.provenanceValueSetVersion("approved", vsv.getValueSet(), vsv.getVersion(),
+          () -> valueSetVersionService.activate(vsv.getValueSet(), vsv.getVersion()));
+    }
+  }
+}

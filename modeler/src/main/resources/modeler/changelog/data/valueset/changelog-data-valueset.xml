@@ -6,7 +6,7 @@
 
   <changeSet id="elementdefinition-types" author="kodality">
     <validCheckSum>ANY</validCheckSum>
-    <customChange class="com.kodality.termx.terminology.liquibase.ValueSetFhirImport">
+    <customChange class="org.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="modeler/changelog/data/valueset/elementdefinition-types.json"/>
     </customChange>
   </changeSet>

@@ -1,4 +1,4 @@
-package com.kodality.termx.terminology.fhir;
+package org.termx.terminology.fhir;
 
 import java.util.List;
 import lombok.Getter;
