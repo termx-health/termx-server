@@ -105,12 +105,15 @@ No environment variables are required. TaskForge uses the main application datab
 
 **Steps:**
 1. Configure user with `*.CodeSystem.edit` privilege (not publish)
-2. User logs in and navigates to task list
-3. System automatically filters to show only tasks:
+2. User logs in - system automatically derives `*.Task.view` and `*.Task.edit` privileges
+3. User navigates to task list (now accessible with Task.view)
+4. System automatically filters to show only tasks:
    - Created by the user OR assigned to the user
-   - For CodeSystems the user has edit access to
+5. User with `icd-10.CodeSystem.publish` sees:
+   - Tasks created by OR assigned to them (any resource)
+   - PLUS all ICD-10 tasks (publisher oversight)
 
-**Outcome:** Users see only relevant tasks, reducing clutter and protecting sensitive information.
+**Outcome:** Users see only relevant tasks via automatic privilege derivation and OR-based filtering, reducing clutter and protecting sensitive information.
 
 ## API
 
@@ -154,14 +157,20 @@ Common query parameters for `/tasks{?params*}`:
 
 ### Privilege-Based Filtering
 
-All task queries automatically apply privilege-based filtering:
+**Virtual privilege derivation at login:**
+- Any resource edit privilege (e.g., `*.CodeSystem.edit`) → derives `*.Task.view` and `*.Task.edit`
+- Any resource publish privilege (e.g., `*.ValueSet.publish`) → derives `*.Task.view`, `*.Task.edit`, and `*.Task.publish`
+- View-only privileges → no Task privileges (task list hidden)
 
-| Privilege | Tasks Returned |
-|-----------|----------------|
-| `*.*.*` or `*.*.publish` | All tasks |
-| `*.Task.publish` or `*.ResourceType.publish` | All tasks for resources with publish access |
-| `*.Task.edit` or `*.ResourceType.edit` | Only tasks created by or assigned to current user, for permitted resources |
-| `*.Task.view` only | Empty result |
+**Task visibility rules (OR logic):**
+
+| User Privilege | Task List Accessible? | Tasks Visible |
+|----------------|----------------------|---------------|
+| `*.CodeSystem.view` only | ❌ No | None (no Task privileges) |
+| `icd-10.CodeSystem.edit` | ✅ Yes | Tasks created by OR assigned to user |
+| `icd-10.CodeSystem.publish` | ✅ Yes | (Created by OR assigned to user) OR (context = code-system\|icd-10) |
+| `*.*.publish` | ✅ Yes | (Created by OR assigned to user) OR (all contexts) |
+| `*.*.*` (admin) | ✅ Yes | All tasks (no filter) |
 
 ## Testing
 
@@ -355,48 +364,49 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Request[API Request] --> Controller[TaskController]
-    Controller --> CheckRole{Check User Role}
+    Login[User Login] --> DerivePrivs[Derive Task Privileges]
+    DerivePrivs -->|*.*.edit or *.*.publish| TaskPrivs[*.Task.view/edit/publish]
     
-    CheckRole -->|Admin| AllTasks[Query All Tasks]
-    CheckRole -->|Publisher| PublisherFilter[Filter by Permitted Resources]
-    CheckRole -->|Editor| EditorFilter[Filter by Created/Assigned + Permitted Resources]
-    CheckRole -->|Viewer| Empty[Return Empty Result]
+    Request[API Request] --> Auth[@Authorized Task.view]
+    Auth -->|No Task.view| Forbidden[403 Forbidden]
+    Auth -->|Has Task.view| Controller[TaskController]
     
-    PublisherFilter --> GetPermitted[Get Permitted Resource IDs]
-    EditorFilter --> GetPermitted
+    Controller --> CheckAdmin{Is Admin?}
+    CheckAdmin -->|Yes| AllTasks[No Filter]
+    CheckAdmin -->|No| BuildFilter[Build Visibility Filter]
     
-    GetPermitted --> Session[SessionInfo.getPermittedResourceIds]
-    Session --> FilterContext[Filter tasks by context.resourceId IN permitted]
+    BuildFilter --> SetUsername[username = session.username]
+    BuildFilter --> GetPublisher[publisherContexts = publish resources]
     
-    EditorFilter --> AddOwnership[Add createdBy/assignee filter]
-    AddOwnership --> FilterContext
+    AllTasks --> Repository[TaskRepository]
+    SetUsername --> Repository
+    GetPublisher --> Repository
     
-    FilterContext --> Repository[TaskRepository]
-    Repository --> Database[(taskforge.task)]
+    Repository --> SQL[WHERE own tasks OR publisher context]
+    SQL --> Database[(taskforge.task)]
     Database --> Results[Filtered Results]
 ```
 
-Three privilege levels control task visibility:
+Task privileges are automatically derived from resource privileges at login:
 
-| Privilege | Role | Tasks visible |
-|-----------|------|---------------|
-| `*.*.*` | Admin | All tasks |
-| `*.Task.publish` or `*.*.publish` | Publisher | All tasks for resources the user has publish access to |
-| `*.Task.edit` or `*.*.edit` | Editor | Only tasks they created or are assigned to, for resources they have edit access to |
-| `*.Task.view` only | Viewer | Empty result |
+| Resource Privilege | Derived Task Privileges | Tasks Visible |
+|--------------------|------------------------|---------------|
+| `*.*.*` | `*.*.*` | All tasks |
+| `*.*.publish` (any publish) | `*.Task.view/edit/publish` | Own tasks + all publisher context tasks |
+| `*.CodeSystem.publish` | `*.Task.view/edit/publish` | Own tasks + CodeSystem tasks |
+| `*.*.edit` (any edit) | `*.Task.view/edit` | Own tasks only |
+| `*.*.view` only | None | No task access (403) |
 
 **How filtering works:**
 
-1. **Admin** -- no filters applied, returns all tasks.
-2. **Publisher** -- `permittedContexts` computed from `session.getPermittedResourceIds("*.publish")`;
-   SQL filters tasks to those whose context references permitted resources.
-3. **Editor** -- `createdByOrAssignee` set to the current username, plus `permittedContexts` from
-   `session.getPermittedResourceIds("*.edit")`.
-4. **Viewer** -- returns empty result set.
+1. **Login** -- `SessionFilter.deriveTaskPrivileges()` adds Task privileges based on resource privileges
+2. **Gate check** -- `@Authorized(privilege = Privilege.T_VIEW)` verifies Task.view exists
+3. **Visibility filter** -- Controller builds `TaskVisibilityFilter` with:
+   - `username` for creator/assignee matching
+   - `publisherContexts` for publisher resource matching
+4. **SQL filtering** -- Repository applies OR logic: `(own tasks) OR (publisher context match)`
 
-Single task load applies the same logic: admins can load any task, publishers can load tasks for
-their permitted resources, editors can only load their own tasks for permitted resources.
+Single task load applies the same logic: admins see all, others see tasks matching own OR publisher criteria.
 
 ## Technical Implementation
 

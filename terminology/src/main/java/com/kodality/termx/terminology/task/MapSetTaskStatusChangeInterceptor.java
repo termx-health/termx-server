@@ -1,9 +1,9 @@
 package com.kodality.termx.terminology.task;
 
-import com.kodality.termx.task.Task;
-import com.kodality.termx.task.TaskStatus;
-import com.kodality.termx.task.TaskType;
-import com.kodality.termx.task.api.TaskStatusChangeInterceptor;
+import org.termx.task.Task;
+import org.termx.task.TaskStatus;
+import org.termx.task.TaskType;
+import org.termx.task.api.TaskStatusChangeInterceptor;
 import com.kodality.termx.terminology.terminology.mapset.MapSetProvenanceService;
 import com.kodality.termx.terminology.terminology.mapset.version.MapSetVersionService;
 import com.kodality.termx.ts.mapset.MapSetVersion;

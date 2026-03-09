@@ -1,8 +1,8 @@
 package com.kodality.termx.wiki.task;
 
-import com.kodality.termx.task.Task;
-import com.kodality.termx.task.TaskStatus;
-import com.kodality.termx.task.api.TaskStatusChangeInterceptor;
+import org.termx.task.Task;
+import org.termx.task.TaskStatus;
+import org.termx.task.api.TaskStatusChangeInterceptor;
 import com.kodality.termx.wiki.page.PageComment;
 import com.kodality.termx.wiki.page.PageCommentStatus;
 import com.kodality.termx.wiki.pagecomment.PageCommentService;

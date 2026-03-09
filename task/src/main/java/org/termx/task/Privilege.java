@@ -1,4 +1,4 @@
-package com.kodality.termx.task;
+package org.termx.task;
 
 public interface Privilege {
   String T_VIEW = "Task.view";

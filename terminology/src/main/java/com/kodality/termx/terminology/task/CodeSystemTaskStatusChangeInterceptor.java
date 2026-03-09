@@ -1,9 +1,9 @@
 package com.kodality.termx.terminology.task;
 
-import com.kodality.termx.task.Task;
-import com.kodality.termx.task.TaskStatus;
-import com.kodality.termx.task.TaskType;
-import com.kodality.termx.task.api.TaskStatusChangeInterceptor;
+import org.termx.task.Task;
+import org.termx.task.TaskStatus;
+import org.termx.task.TaskType;
+import org.termx.task.api.TaskStatusChangeInterceptor;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemProvenanceService;
 import com.kodality.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;

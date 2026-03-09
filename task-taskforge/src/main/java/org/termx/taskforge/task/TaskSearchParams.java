@@ -24,10 +24,17 @@ public class TaskSearchParams extends QueryParams {
   private String modifiedLe;
   private String assignees;
   private String context; //type1|id1,type2|id2
-  private String createdByOrAssignee;
-  private List<String> permittedContexts; // type|id pairs the user has access to; null means all
   private Boolean unseenChanges;
   private String unseenChangesUser;
+  private TaskVisibilityFilter visibilityFilter;
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class TaskVisibilityFilter {
+    private String username;                  // creator OR assignee match
+    private List<String> publisherContexts;   // null = all contexts (wildcard publisher), empty = no publisher access
+  }
 
   public interface Ordering {
     String number = "number";

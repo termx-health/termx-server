@@ -1,4 +1,4 @@
-package com.kodality.termx.task;
+package org.termx.task;
 
 import com.kodality.commons.model.CodeName;
 import com.kodality.commons.model.QueryResult;
@@ -7,7 +7,7 @@ import com.kodality.termx.core.auth.SessionInfo;
 import com.kodality.termx.core.auth.SessionStore;
 import com.kodality.termx.core.utils.PatchUtil;
 import com.kodality.termx.core.utils.PatchUtil.PatchRequest;
-import com.kodality.termx.task.Task.TaskActivity;
+import org.termx.task.Task.TaskActivity;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -41,19 +41,13 @@ public class TaskController {
       params.setUnseenChangesUser(session.getUsername());
     }
 
-    if (isAdmin(session)) {
-      return taskService.queryTasks(params);
+    if (!isAdmin(session)) {
+      TaskQueryParams.TaskVisibilityFilter filter = new TaskQueryParams.TaskVisibilityFilter();
+      filter.setUsername(session.getUsername());
+      filter.setPublisherContexts(getPermittedContexts(session, "publish"));
+      params.setVisibilityFilter(filter);
     }
-    if (isPublisher(session)) {
-      params.setPermittedContexts(getPermittedContexts(session, "publish"));
-      return taskService.queryTasks(params);
-    }
-    if (isEditor(session)) {
-      params.setCreatedByOrAssignee(session.getUsername());
-      params.setPermittedContexts(getPermittedContexts(session, "edit"));
-      return taskService.queryTasks(params);
-    }
-    return QueryResult.empty();
+    return taskService.queryTasks(params);
   }
 
   @Authorized(privilege = Privilege.T_VIEW)
@@ -61,32 +55,21 @@ public class TaskController {
   public Task loadTask(@PathVariable String number) {
     SessionInfo session = SessionStore.require();
 
-    if (isAdmin(session)) {
-      return taskService.loadTask(number);
-    }
     Task task = taskService.loadTask(number);
     if (task == null) {
       return null;
     }
-    if (isPublisher(session)) {
-      return isContextPermitted(task, session, "publish") ? task : null;
+    if (isAdmin(session)) {
+      return task;
     }
-    if (isEditor(session)) {
-      return isOwnTask(task, session) && isContextPermitted(task, session, "edit") ? task : null;
+    if (isOwnTask(task, session) || isContextPermitted(task, session, "publish")) {
+      return task;
     }
     return null;
   }
 
   private boolean isAdmin(SessionInfo session) {
     return session.hasPrivilege("*.*.*");
-  }
-
-  private boolean isPublisher(SessionInfo session) {
-    return session.hasAnyPrivilege(List.of("*.Task.publish", "*.*.publish"));
-  }
-
-  private boolean isEditor(SessionInfo session) {
-    return session.hasAnyPrivilege(List.of("*.Task.edit", "*.*.edit"));
   }
 
   private boolean isOwnTask(Task task, SessionInfo session) {

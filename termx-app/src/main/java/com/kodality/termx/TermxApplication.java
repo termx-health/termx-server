@@ -108,7 +108,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @OpenAPIInclude(
     tags = @Tag(name = "Task management"),
     classes = {
-        com.kodality.termx.task.TaskController.class
+        org.termx.task.TaskController.class
     }
 )
 @SecurityScheme(name = "openid",

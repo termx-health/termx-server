@@ -48,12 +48,30 @@ public class SessionFilter implements HttpServerFilter {
     for (SessionProvider provider : providers) {
       SessionInfo user = provider.authenticate(request);
       if (user != null) {
+        deriveTaskPrivileges(user);
         request.setAttribute(SessionStore.KEY, user);
         setLang(user, request);
         return true;
       }
     }
     return false;
+  }
+
+  private void deriveTaskPrivileges(SessionInfo session) {
+    if (session.getPrivileges() == null) {
+      return;
+    }
+    java.util.Set<String> derived = new java.util.HashSet<>(session.getPrivileges());
+    boolean hasEdit = session.hasPrivilege("*.*.edit");
+    boolean hasPublish = session.hasPrivilege("*.*.publish");
+    if (hasEdit || hasPublish) {
+      derived.add("*.Task.view");
+      derived.add("*.Task.edit");
+    }
+    if (hasPublish) {
+      derived.add("*.Task.publish");
+    }
+    session.setPrivileges(derived);
   }
 
   private void setLang(SessionInfo user, HttpRequest<?> request) {

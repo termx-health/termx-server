@@ -2,7 +2,7 @@ package org.termx.taskforge.task;
 
 import org.termx.taskforge.api.TaskInterceptor;
 import org.termx.taskforge.task.Task;
-import com.kodality.termx.task.api.TaskStatusChangeInterceptor;
+import org.termx.task.api.TaskStatusChangeInterceptor;
 import jakarta.inject.Singleton;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

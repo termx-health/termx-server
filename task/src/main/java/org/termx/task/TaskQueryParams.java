@@ -1,4 +1,4 @@
-package com.kodality.termx.task;
+package org.termx.task;
 
 import com.kodality.commons.model.QueryParams;
 import java.util.List;
@@ -22,8 +22,15 @@ public class TaskQueryParams extends QueryParams {
   private String modifiedLe;
   private String assignees;
   private String context;
-  private String createdByOrAssignee;
-  private List<String> permittedContexts; // type|id pairs the user has access to; null means all contexts
   private Boolean unseenChanges;
   private String unseenChangesUser;
+  private TaskVisibilityFilter visibilityFilter;
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class TaskVisibilityFilter {
+    private String username;                  // creator OR assignee match
+    private List<String> publisherContexts;   // null = all contexts (wildcard publisher), empty = no publisher access
+  }
 }

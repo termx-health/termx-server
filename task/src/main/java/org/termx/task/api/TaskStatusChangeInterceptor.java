@@ -1,7 +1,7 @@
-package com.kodality.termx.task.api;
+package org.termx.task.api;
 
 
-import com.kodality.termx.task.Task;
+import org.termx.task.Task;
 
 public interface TaskStatusChangeInterceptor {
 
