@@ -258,6 +258,8 @@ In addition to SonarQube, we ran several other free static analysis and security
 
 **Assessment:** All SpotBugs findings are LOW priority. The "malicious code vulnerability" category refers to design patterns (e.g., mutable static fields, non-private fields) that could theoretically be exploited, not actual security vulnerabilities. None require immediate action.
 
+**CI Integration:** SpotBugs has been added to the Gradle build (version 6.4.8) with `ignoreFailures = true` to generate reports without blocking builds.
+
 ---
 
 #### PMD 7.13.0 Analysis
@@ -284,6 +286,8 @@ In addition to SonarQube, we ran several other free static analysis and security
 - **Use ConcurrentHashMap** (8 occurrences) -- potential thread-safety issue, but the flagged code paths are not performance-critical
 
 No HIGH or CRITICAL severity issues were found.
+
+**CI Integration:** PMD has been added to the Gradle build (version 7.13.0) with `ignoreFailures = true` to generate reports without blocking builds.
 
 ---
 
@@ -390,7 +394,13 @@ No HIGH or CRITICAL severity issues were found.
 
 ### Backend (termx-server)
 
-**Files changed: 8**
+**Files changed: 9** (8 source files + build configuration)
+
+**Build configuration:**
+- Added SpotBugs 6.4.8 and PMD 7.13.0 plugins to `build.gradle.kts` with `ignoreFailures = true` for continuous quality monitoring without blocking CI builds
+- Created PMD ruleset configuration at `config/pmd/ruleset.xml`
+
+**Source code fixes:**
 
 1. `modeler/.../StructureMapTransformOperationHack.java`
    - **Fix:** Hardened `DocumentBuilderFactory` against XXE attacks
