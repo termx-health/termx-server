@@ -40,17 +40,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Build with Gradle
+      - name: Build, test, and publish
         working-directory: .
-        run: ./gradlew clean assemble
-
-      - name: Test
-        working-directory: .
-        run: ./gradlew check
-
-      - name: Publish to GitHub Packages
-        working-directory: .
-        run: ./gradlew publish
+        run: ./gradlew clean assemble check publish
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

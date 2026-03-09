@@ -47,7 +47,7 @@ allprojects {
     }
 
     configurations.all {
-        resolutionStrategy.cacheChangingModulesFor(0, "seconds")
+        resolutionStrategy.cacheChangingModulesFor(5, "minutes")
     }
 
     tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
@@ -78,10 +78,23 @@ tasks.register("spotbugsCheck") {
     group = "verification"
     description = "Runs SpotBugs on all projects. Use manually; not part of check or CI."
 }
+
+tasks.register("pmdCheck") {
+    group = "verification"
+    description = "Runs PMD on all projects. Use manually; not part of check or CI."
+}
+
+// PMD: run only when pmdCheck is requested (skipped during check/CI) to speed up CI
 allprojects {
     afterEvaluate {
+        tasks.withType<Pmd>().configureEach {
+            onlyIf { gradle.taskGraph.hasTask(rootProject.tasks.named("pmdCheck").get().path) }
+        }
         rootProject.tasks.named("spotbugsCheck").configure {
             dependsOn(tasks.withType<com.github.spotbugs.snom.SpotBugsTask>())
+        }
+        rootProject.tasks.named("pmdCheck").configure {
+            dependsOn(tasks.withType<Pmd>())
         }
     }
 }
