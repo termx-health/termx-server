@@ -6,15 +6,12 @@
 
   <include file="core-db/changelog/core/changelog.xml" relativeToChangelogFile="false"/>
   <include file="core-db/changelog/audit/changelog.xml" relativeToChangelogFile="false"/>
-  <include file="sys_sequence/changelog/changelog.xml" relativeToChangelogFile="false"/>
 
   <include file="sys/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="terminology/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="wiki/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="snomed/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="observation-definition/changelog/changelog.xml" relativeToChangelogFile="false"/>
-  <include file="taskflow/changelog/changelog.xml" relativeToChangelogFile="false"/>
-  <include file="task-taskflow/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="taskforge/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="modeler/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="bob/changelog/changelog.xml" relativeToChangelogFile="false"/>
