@@ -24,6 +24,10 @@ allprojects {
     dependencies {
         compileOnly("org.projectlombok:lombok:1.18.42")
         annotationProcessor("org.projectlombok:lombok:1.18.42")
+        
+        implementation(platform("org.apache.groovy:groovy-bom:5.0.3"))
+        testImplementation(platform("org.apache.groovy:groovy-bom:5.0.3"))
+        testImplementation(platform("org.spockframework:spock-bom:2.4-groovy-5.0"))
     }
 
     java {
@@ -48,7 +52,7 @@ subprojects {
         testRuntime("spock2")
         processing {
             incremental(true)
-            annotations("com.kodality.termx.*", "org.termx.*")
+            annotations("org.termx.*")
         }
     }
 

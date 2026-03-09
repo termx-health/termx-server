@@ -1,7 +1,7 @@
 package org.termx.terminology.fileimporter.mapset.utils;
 
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
+import org.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
 import io.micronaut.core.annotation.Introspected;
 import java.time.LocalDate;
 import lombok.Getter;

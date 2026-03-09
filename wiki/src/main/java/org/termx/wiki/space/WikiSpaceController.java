@@ -1,11 +1,11 @@
 package org.termx.wiki.space;
 
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.core.sys.space.SpaceService;
-import com.kodality.termx.sys.space.Space;
-import com.kodality.termx.sys.space.SpaceQueryParams;
+import org.termx.core.auth.Authorized;
+import org.termx.core.auth.SessionStore;
+import org.termx.core.sys.space.SpaceService;
+import org.termx.sys.space.Space;
+import org.termx.sys.space.SpaceQueryParams;
 import org.termx.wiki.Privilege;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;

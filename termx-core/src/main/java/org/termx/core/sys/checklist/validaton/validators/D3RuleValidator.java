@@ -1,0 +1,37 @@
+package org.termx.core.sys.checklist.validaton.validators;
+
+import org.termx.core.sys.checklist.validaton.CodeSystemRuleValidator;
+import org.termx.sys.checklist.Checklist.ChecklistWhitelist;
+import org.termx.sys.checklist.ChecklistAssertion.ChecklistAssertionError;
+import org.termx.sys.checklist.ChecklistAssertion.ChecklistAssertionErrorResource;
+import org.termx.ts.codesystem.CodeSystem;
+import org.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.EntityProperty;
+import io.micronaut.core.util.CollectionUtils;
+import jakarta.inject.Singleton;
+import java.util.List;
+import java.util.Optional;
+
+@Singleton
+public class D3RuleValidator implements CodeSystemRuleValidator {
+  @Override
+  public String getRuleCode() {
+    return "D3";
+  }
+
+  @Override
+  public List<ChecklistAssertionError> validate(CodeSystem codeSystem, List<Concept> concepts, List<ChecklistWhitelist> whitelists) {
+    List<EntityProperty> properties = Optional.ofNullable(codeSystem.getProperties()).orElse(List.of()).stream().filter(p -> "property".equals(p.getKind())).toList();
+    if (CollectionUtils.isEmpty(properties)) {
+      return List.of(new ChecklistAssertionError().setError("The properties are not defined within a CodeSystem"));
+    }
+    List<Concept> notDefinedConcepts = concepts.stream().filter(c -> whitelists.stream().noneMatch(wl -> "Concept".equals(wl.getResourceType()) && c.getCode().equals(wl.getResourceId())))
+        .filter(c -> Optional.ofNullable(c.getVersions()).orElse(List.of()).stream().anyMatch(v -> CollectionUtils.isEmpty(v.getPropertyValues()) && CollectionUtils.isEmpty(v.getAssociations())))
+        .toList();
+    return notDefinedConcepts.stream()
+        .map(c -> new ChecklistAssertionError()
+            .setError(String.format("The concept '%s' definition does not use properties or associations.", c.getCode()))
+            .setResources(List.of(new ChecklistAssertionErrorResource().setResourceType("Concept").setResourceId(c.getCode())))
+        ).toList();
+  }
+}

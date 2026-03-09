@@ -1,6 +1,6 @@
 package org.termx.taskforge;
 
-import com.kodality.termx.core.info.ModuleInfo;
+import org.termx.core.info.ModuleInfo;
 import io.micronaut.context.annotation.Bean;
 
 @Bean

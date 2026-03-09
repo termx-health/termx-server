@@ -1,8 +1,8 @@
 package org.termx.terminology.terminology.association;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.ts.association.AssociationType;
-import com.kodality.termx.ts.association.AssociationTypeQueryParams;
+import org.termx.ts.association.AssociationType;
+import org.termx.ts.association.AssociationTypeQueryParams;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;

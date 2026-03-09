@@ -7,7 +7,7 @@ import org.termx.task.api.TaskStatusChangeInterceptor;
 import org.termx.terminology.terminology.codesystem.CodeSystemProvenanceService;
 import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
-import com.kodality.termx.ts.codesystem.CodeSystemVersion;
+import org.termx.ts.codesystem.CodeSystemVersion;
 import java.util.List;
 import java.util.Optional;
 import jakarta.inject.Singleton;

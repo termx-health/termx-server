@@ -1,7 +1,7 @@
 package org.termx.modeler.structuredefinition;
 
-import com.kodality.termx.modeler.structuredefinition.StructureDefinition;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
+import org.termx.modeler.structuredefinition.StructureDefinition;
+import org.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
 
 import lombok.experimental.UtilityClass;
 import org.hl7.fhir.r4b.formats.JsonParser;

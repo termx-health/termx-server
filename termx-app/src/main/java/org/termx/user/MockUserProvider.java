@@ -1,7 +1,7 @@
 package org.termx.user;
 
-import com.kodality.termx.core.user.User;
-import com.kodality.termx.core.user.UserProvider;
+import org.termx.core.user.User;
+import org.termx.core.user.UserProvider;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;

@@ -1,6 +1,6 @@
 package org.termx.terminology.terminology;
 
-import com.kodality.termx.core.auth.SessionStore;
+import org.termx.core.auth.SessionStore;
 import java.net.http.HttpRequest.Builder;
 
 public class FhirClient extends com.kodality.zmei.fhir.client.FhirClient {

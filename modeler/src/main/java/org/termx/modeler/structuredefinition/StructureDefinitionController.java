@@ -1,12 +1,12 @@
 package org.termx.modeler.structuredefinition;
 
-import com.kodality.termx.modeler.structuredefinition.StructureDefinition;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
+import org.termx.modeler.structuredefinition.StructureDefinition;
+import org.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionStore;
+import org.termx.core.auth.Authorized;
+import org.termx.core.auth.SessionStore;
 import org.termx.modeler.Privilege;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;

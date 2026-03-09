@@ -1,6 +1,6 @@
 package org.termx.editionint.loinc;
 
-import com.kodality.termx.core.treminology.LoincImportProvider;
+import org.termx.core.treminology.LoincImportProvider;
 import org.termx.editionint.loinc.utils.LoincImportRequest;
 import org.termx.editionint.loinc.utils.LoincZipReader;
 import java.util.List;

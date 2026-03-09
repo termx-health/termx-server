@@ -4,8 +4,8 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
-import com.kodality.termx.wiki.page.PageTag;
-import com.kodality.termx.wiki.tag.Tag;
+import org.termx.wiki.page.PageTag;
+import org.termx.wiki.tag.Tag;
 import java.util.List;
 import jakarta.inject.Singleton;
 

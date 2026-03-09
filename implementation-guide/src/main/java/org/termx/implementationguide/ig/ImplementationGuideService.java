@@ -1,7 +1,7 @@
 package org.termx.implementationguide.ig;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.fhir.BaseFhirMapper;
+import org.termx.core.fhir.BaseFhirMapper;
 import org.termx.implementationguide.ApiError;
 import org.termx.implementationguide.ig.version.ImplementationGuideVersion;
 import org.termx.implementationguide.ig.version.ImplementationGuideVersionQueryParams;

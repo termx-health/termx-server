@@ -1,12 +1,12 @@
 package org.termx.editionuzb.ichiuz;
 
 
-import com.kodality.termx.core.http.BinaryHttpClient;
+import org.termx.core.http.BinaryHttpClient;
 import org.termx.editionuzb.ichiuz.utils.IchiUz;
 import org.termx.editionuzb.ichiuz.utils.IchiUzCsvReader;
 import org.termx.editionuzb.ichiuz.utils.IchiUzMapper;
-import com.kodality.termx.core.ts.CodeSystemImportProvider;
-import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration;
+import org.termx.core.ts.CodeSystemImportProvider;
+import org.termx.ts.codesystem.CodeSystemImportConfiguration;
 import jakarta.inject.Singleton;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

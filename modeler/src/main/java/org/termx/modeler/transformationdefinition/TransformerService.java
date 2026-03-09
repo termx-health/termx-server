@@ -3,7 +3,7 @@ package org.termx.modeler.transformationdefinition;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.client.HttpClientError;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.core.sys.server.httpclient.TerminologyServerHttpClientService;
+import org.termx.core.sys.server.httpclient.TerminologyServerHttpClientService;
 import org.termx.modeler.ApiError;
 import org.termx.modeler.structuredefinition.StructureDefinitionService;
 import org.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;

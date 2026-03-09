@@ -2,8 +2,8 @@ package org.termx.terminology.terminology.mapset.property;
 
 import com.kodality.commons.model.QueryResult;
 import org.termx.terminology.ApiError;
-import com.kodality.termx.ts.mapset.MapSetProperty;
-import com.kodality.termx.ts.mapset.MapSetPropertyQueryParams;
+import org.termx.ts.mapset.MapSetProperty;
+import org.termx.ts.mapset.MapSetPropertyQueryParams;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;

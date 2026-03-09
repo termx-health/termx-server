@@ -1,9 +1,9 @@
 package org.termx.ucum.ts;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.codesystem.ConceptQueryParams;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
+import org.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.ConceptQueryParams;
+import org.termx.ts.valueset.ValueSetVersionConcept;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;

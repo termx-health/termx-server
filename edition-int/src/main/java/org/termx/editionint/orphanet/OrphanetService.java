@@ -1,12 +1,12 @@
 package org.termx.editionint.orphanet;
 
-import com.kodality.termx.core.http.BinaryHttpClient;
+import org.termx.core.http.BinaryHttpClient;
 import org.termx.editionint.orphanet.utils.ClassificationList;
 import org.termx.editionint.orphanet.utils.DisorderList;
 import org.termx.editionint.orphanet.utils.OrphanetMapper;
 import org.termx.editionint.orphanet.utils.OrphanetXmlReader;
-import com.kodality.termx.core.ts.CodeSystemImportProvider;
-import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration;
+import org.termx.core.ts.CodeSystemImportProvider;
+import org.termx.ts.codesystem.CodeSystemImportConfiguration;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

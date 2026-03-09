@@ -1,8 +1,8 @@
 package org.termx.terminology.terminology.mapset.providers;
 
-import com.kodality.termx.core.ts.MapSetImportProvider;
+import org.termx.core.ts.MapSetImportProvider;
 import org.termx.terminology.terminology.mapset.MapSetService;
-import com.kodality.termx.ts.mapset.MapSetTransactionRequest;
+import org.termx.ts.mapset.MapSetTransactionRequest;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 

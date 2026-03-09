@@ -1,7 +1,7 @@
 package org.termx.wiki.tag;
-import com.kodality.termx.wiki.tag.Tag;
+import org.termx.wiki.tag.Tag;
 
-import com.kodality.termx.core.auth.Authorized;
+import org.termx.core.auth.Authorized;
 import org.termx.wiki.Privilege;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;

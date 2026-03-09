@@ -1,13 +1,13 @@
 package org.termx.terminology.terminology.mapset;
 
-import com.kodality.termx.core.sys.provenance.Provenance;
-import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceChange;
-import com.kodality.termx.core.sys.provenance.ProvenanceService;
-import com.kodality.termx.core.sys.provenance.ProvenanceUtil;
+import org.termx.core.sys.provenance.Provenance;
+import org.termx.core.sys.provenance.Provenance.ProvenanceChange;
+import org.termx.core.sys.provenance.ProvenanceService;
+import org.termx.core.sys.provenance.ProvenanceUtil;
 import org.termx.terminology.terminology.mapset.version.MapSetVersionService;
-import com.kodality.termx.ts.mapset.MapSet;
-import com.kodality.termx.ts.mapset.MapSetTransactionRequest;
-import com.kodality.termx.ts.mapset.MapSetVersion;
+import org.termx.ts.mapset.MapSet;
+import org.termx.ts.mapset.MapSetTransactionRequest;
+import org.termx.ts.mapset.MapSetVersion;
 import java.util.List;
 import java.util.Map;
 import jakarta.inject.Singleton;

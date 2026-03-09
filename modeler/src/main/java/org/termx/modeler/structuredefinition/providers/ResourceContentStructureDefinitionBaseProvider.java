@@ -2,9 +2,9 @@ package org.termx.modeler.structuredefinition.providers;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.util.PipeUtil;
-import com.kodality.termx.core.github.ResourceContentProvider;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinition;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
+import org.termx.core.github.ResourceContentProvider;
+import org.termx.modeler.structuredefinition.StructureDefinition;
+import org.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
 import org.termx.modeler.structuredefinition.StructureDefinitionService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;

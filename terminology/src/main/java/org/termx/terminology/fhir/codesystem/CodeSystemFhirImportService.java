@@ -1,12 +1,12 @@
 package org.termx.terminology.fhir.codesystem;
 
-import com.kodality.termx.core.http.BinaryHttpClient;
+import org.termx.core.http.BinaryHttpClient;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.terminology.codesystem.CodeSystemImportService;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.association.AssociationKind;
-import com.kodality.termx.ts.association.AssociationType;
-import com.kodality.termx.ts.codesystem.CodeSystemImportAction;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.association.AssociationKind;
+import org.termx.ts.association.AssociationType;
+import org.termx.ts.codesystem.CodeSystemImportAction;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.Resource;
 import com.kodality.zmei.fhir.resource.ResourceType;

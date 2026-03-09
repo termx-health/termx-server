@@ -1,12 +1,12 @@
 package org.termx.editionint.loinc;
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.sys.job.logger.ImportLogger;
-import com.kodality.termx.core.utils.FileUtil;
+import org.termx.core.auth.Authorized;
+import org.termx.core.sys.job.logger.ImportLogger;
+import org.termx.core.utils.FileUtil;
 import org.termx.editionint.Privilege;
 import org.termx.editionint.loinc.utils.LoincImportRequest;
-import com.kodality.termx.sys.job.JobLogResponse;
+import org.termx.sys.job.JobLogResponse;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;

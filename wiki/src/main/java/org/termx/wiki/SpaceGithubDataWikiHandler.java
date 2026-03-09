@@ -2,14 +2,14 @@ package org.termx.wiki;
 
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.core.github.ResourceContentProvider.ResourceContent;
-import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
+import org.termx.core.github.ResourceContentProvider.ResourceContent;
+import org.termx.core.sys.space.SpaceGithubDataHandler;
 import org.termx.wiki.SpaceGithubDataWikiHandler.SpaceGithubPage.SpaceGithubPageContent;
-import com.kodality.termx.wiki.page.Page;
-import com.kodality.termx.wiki.page.PageContent;
-import com.kodality.termx.wiki.page.PageLink;
-import com.kodality.termx.wiki.page.PageLinkQueryParams;
-import com.kodality.termx.wiki.page.PageQueryParams;
+import org.termx.wiki.page.Page;
+import org.termx.wiki.page.PageContent;
+import org.termx.wiki.page.PageLink;
+import org.termx.wiki.page.PageLinkQueryParams;
+import org.termx.wiki.page.PageQueryParams;
 import org.termx.wiki.page.PageService;
 import org.termx.wiki.pagecontent.PageContentService;
 import org.termx.wiki.pagelink.PageLinkService;

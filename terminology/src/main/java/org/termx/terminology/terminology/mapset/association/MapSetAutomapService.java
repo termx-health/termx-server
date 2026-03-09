@@ -2,11 +2,11 @@ package org.termx.terminology.terminology.mapset.association;
 
 
 import org.termx.terminology.terminology.mapset.concept.MapSetConceptService;
-import com.kodality.termx.ts.mapset.MapSetAssociation;
-import com.kodality.termx.ts.mapset.MapSetAssociation.MapSetAssociationEntity;
-import com.kodality.termx.ts.mapset.MapSetAutomapRequest;
-import com.kodality.termx.ts.mapset.MapSetConcept;
-import com.kodality.termx.ts.mapset.MapSetConceptQueryParams;
+import org.termx.ts.mapset.MapSetAssociation;
+import org.termx.ts.mapset.MapSetAssociation.MapSetAssociationEntity;
+import org.termx.ts.mapset.MapSetAutomapRequest;
+import org.termx.ts.mapset.MapSetConcept;
+import org.termx.ts.mapset.MapSetConceptQueryParams;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

@@ -1,9 +1,9 @@
 package org.termx.wiki;
 
 
-import com.kodality.termx.core.wiki.PageProvider;
-import com.kodality.termx.wiki.page.PageContent;
-import com.kodality.termx.wiki.page.PageContentQueryParams;
+import org.termx.core.wiki.PageProvider;
+import org.termx.wiki.page.PageContent;
+import org.termx.wiki.page.PageContentQueryParams;
 import org.termx.wiki.pagecontent.PageContentService;
 import java.util.List;
 import jakarta.inject.Singleton;

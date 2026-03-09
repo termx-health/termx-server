@@ -1,9 +1,9 @@
 package org.termx.ucum.ts;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.ts.CodeSystemExternalProvider;
-import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.codesystem.ConceptQueryParams;
+import org.termx.core.ts.CodeSystemExternalProvider;
+import org.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.ConceptQueryParams;
 import jakarta.inject.Singleton;
 
 @Singleton

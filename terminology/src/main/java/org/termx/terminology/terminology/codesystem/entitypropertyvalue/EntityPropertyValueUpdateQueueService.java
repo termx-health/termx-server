@@ -1,7 +1,7 @@
 package org.termx.terminology.terminology.codesystem.entitypropertyvalue;
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import org.termx.ts.codesystem.EntityPropertyValue;
 import jakarta.inject.Singleton;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;

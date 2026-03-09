@@ -1,7 +1,7 @@
 package org.termx.terminology.terminology.valueset.ruleset;
 
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionRepository;
-import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
+import org.termx.ts.valueset.ValueSetVersionRuleSet;
 import java.util.Optional;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

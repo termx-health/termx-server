@@ -25,7 +25,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.kodality.termx.TermxTestApplication")
+    mainClass.set("org.termx.TermxTestApplication")
 }
 
 java {

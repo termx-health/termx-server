@@ -1,7 +1,7 @@
 package org.termx.modeler.structuredefinition.providers;
 
-import com.kodality.termx.core.github.ResourceContentProvider;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinition;
+import org.termx.core.github.ResourceContentProvider;
+import org.termx.modeler.structuredefinition.StructureDefinition;
 import org.termx.modeler.structuredefinition.StructureDefinitionService;
 import jakarta.inject.Singleton;
 

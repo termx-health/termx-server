@@ -1,6 +1,6 @@
 package org.termx.modeler.github;
 
-import com.kodality.termx.core.fhir.BaseFhirMapper;
+import org.termx.core.fhir.BaseFhirMapper;
 import jakarta.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;

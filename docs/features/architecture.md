@@ -24,29 +24,31 @@ TermX Server uses two Java package root namespaces:
 
 | Namespace | Purpose |
 |-----------|---------|
-| `org.termx.*` | Active namespace for all feature modules and new code |
-| `com.kodality.termx.*` | Foundation libraries: `termx-api` (shared DTOs) and `termx-core` (infrastructure) |
+| `org.termx.*` | All modules (API contracts, core infrastructure, and feature implementations) |
 
-All new code must use `org.termx.*`. The `com.kodality.termx.*` namespace is frozen — only `termx-api` and `termx-core` remain there and are not expected to be renamed due to their central role as stable contract libraries.
+All code uses `org.termx.*` namespace. The migration from `com.kodality.termx.*` to `org.termx.*` has been completed for all modules including `termx-api` and `termx-core`.
 
 ---
 
 ## Module Map
 
-### Foundation (com.kodality.termx.*)
+### Foundation (org.termx.*)
 
-These two modules define the shared contract and infrastructure consumed by all feature modules. They intentionally remain under `com.kodality.termx.*`.
+These two modules define the shared contract and infrastructure consumed by all feature modules.
 
 | Gradle module | Package | Description |
 |---------------|---------|-------------|
-| `termx-api` | `com.kodality.termx.ts.*` | Terminology Service API DTOs (CodeSystem, ValueSet, MapSet, Concept, …) |
-| `termx-api` | `com.kodality.termx.sys.*` | System-level API DTOs (Space, Release, Provenance, …) |
-| `termx-api` | `com.kodality.termx.wiki.page.*` | Wiki page DTOs (Page, PageContent, PageRelation, PageTag, …) |
-| `termx-api` | `com.kodality.termx.snomed.*` | SNOMED CT API DTOs |
-| `termx-api` | `com.kodality.termx.ucum.*` | UCUM / Measurement Unit DTOs |
-| `termx-api` | `com.kodality.termx.modeler.structuredefinition.*` | Structure Definition DTOs |
-| `termx-api` | `com.kodality.termx.auth.*` | Authentication API types |
-| `termx-core` | `com.kodality.termx.core.*` | Infrastructure: auth, FHIR base, provenance, space/github/server services |
+| `termx-api` | `org.termx.ts.*` | Terminology Service API DTOs (CodeSystem, ValueSet, MapSet, Concept, …) |
+| `termx-api` | `org.termx.sys.*` | System-level API DTOs (Space, Release, Provenance, …) |
+| `termx-api` | `org.termx.wiki.*` | Wiki page DTOs (Page, PageContent, PageRelation, PageTag, …) |
+| `termx-api` | `org.termx.snomed.*` | SNOMED CT API DTOs |
+| `termx-api` | `org.termx.ucum.*` | UCUM / Measurement Unit DTOs |
+| `termx-api` | `org.termx.modeler.*` | Structure Definition DTOs |
+| `termx-api` | `org.termx.auth.*` | Authentication API types |
+| `termx-api` | `org.termx.commons.*` | Common utilities and interfaces |
+| `termx-api` | `org.termx.sequence.*` | Sequence DTOs |
+| `termx-api` | `org.termx.observationdefintion.*` | Observation Definition DTOs |
+| `termx-core` | `org.termx.core.*` | Infrastructure: auth, FHIR base, provenance, space/github/server services |
 
 ### Feature Modules (org.termx.*)
 
@@ -68,7 +70,7 @@ All business logic lives here. Each Gradle subproject maps to a single top-level
 | `edition-est` | `org.termx.editionest` | Estonian national edition extensions |
 | `edition-uzb` | `org.termx.editionuzb` | Uzbek national edition extensions (IchiUz) |
 | `uam` | `org.termx.uam` | User and Access Management |
-| `termx-app` | `com.kodality.termx` | Application entry point, Micronaut bootstrap, OpenAPI aggregation |
+| `termx-app` | `org.termx` | Application entry point, Micronaut bootstrap, OpenAPI aggregation |
 
 ---
 
@@ -108,8 +110,8 @@ termx-app
   └── termx-core
 
 feature modules (org.termx.*)
-  ├── termx-api       (com.kodality.termx.ts.*, sys.*, wiki.page.*, ...)
-  ├── termx-core      (com.kodality.termx.core.*)
+  ├── termx-api       (org.termx.ts.*, sys.*, wiki.*, snomed.*, ucum.*, modeler.*, auth.*, ...)
+  ├── termx-core      (org.termx.core.*)
   └── other feature modules (when explicitly declared in build.gradle)
 
 termx-core
@@ -157,7 +159,7 @@ All build files use Gradle Kotlin DSL for type-safe configuration:
 
 ## Migration Status
 
-The table below tracks which modules have completed migration from the legacy `com.kodality.termx.*` namespace to `org.termx.*`.
+All modules have completed migration to the `org.termx.*` namespace.
 
 | Module | Status |
 |--------|--------|
@@ -175,6 +177,7 @@ The table below tracks which modules have completed migration from the legacy `c
 | `edition-est` | ✅ `org.termx.editionest` |
 | `edition-uzb` | ✅ `org.termx.editionuzb` |
 | `uam` | ✅ `org.termx.uam` |
-| `termx-api` | 🔒 Stays `com.kodality.termx.*` (public contract) |
-| `termx-core` | 🔒 Stays `com.kodality.termx.core.*` (infrastructure) |
-| `termx-app` | 🔒 Stays `com.kodality.termx` (bootstrap entry point) |
+| `termx-api` | ✅ `org.termx.*` (public contract DTOs) |
+| `termx-core` | ✅ `org.termx.core.*` (infrastructure) |
+| `termx-app` | ✅ `org.termx.*` (application bootstrap) |
+| `termx-client` | ✅ `org.termx.ts.*` (HTTP client library) |

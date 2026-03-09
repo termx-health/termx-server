@@ -1,7 +1,7 @@
 package org.termx.terminology.terminology.codesystem.concept;
 
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.codesystem.Designation;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.codesystem.Designation;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.Comparator;

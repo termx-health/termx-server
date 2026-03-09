@@ -1,7 +1,7 @@
 package org.termx.modeler.transformationdefinition.providers;
 
-import com.kodality.termx.core.github.ResourceContentProvider.ResourceContent;
-import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
+import org.termx.core.github.ResourceContentProvider.ResourceContent;
+import org.termx.core.sys.space.SpaceGithubDataHandler;
 import org.termx.modeler.transformationdefinition.TransformationDefinition;
 import org.termx.modeler.transformationdefinition.TransformationDefinitionQueryParams;
 import org.termx.modeler.transformationdefinition.TransformationDefinitionService;

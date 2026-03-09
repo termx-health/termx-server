@@ -1,10 +1,10 @@
 package org.termx.modeler.structuredefinition.providers;
 
-import com.kodality.termx.core.github.ResourceContentProvider;
-import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
+import org.termx.core.github.ResourceContentProvider;
+import org.termx.core.sys.space.SpaceGithubDataHandler;
 import org.termx.modeler.github.CompositeIdUtils.CompositeId;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinition;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
+import org.termx.modeler.structuredefinition.StructureDefinition;
+import org.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
 import org.termx.modeler.structuredefinition.StructureDefinitionService;
 import org.termx.terminology.fhir.FhirFshConverter;
 import jakarta.inject.Singleton;

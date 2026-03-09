@@ -5,8 +5,8 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.wiki.page.PageComment;
-import com.kodality.termx.wiki.page.PageCommentQueryParams;
+import org.termx.wiki.page.PageComment;
+import org.termx.wiki.page.PageCommentQueryParams;
 import java.util.List;
 import jakarta.inject.Singleton;
 

@@ -8,10 +8,10 @@ import org.termx.observationdefinition.observationdefinition.mapping.Observation
 import org.termx.observationdefinition.observationdefinition.member.ObservationDefinitionMemberService;
 import org.termx.observationdefinition.observationdefinition.protocol.ObservationDefinitionProtocolService;
 import org.termx.observationdefinition.observationdefinition.value.ObservationDefinitionValueService;
-import com.kodality.termx.observationdefintion.ObservationDefinition;
-import com.kodality.termx.observationdefintion.ObservationDefinitionComponentSectionType;
-import com.kodality.termx.observationdefintion.ObservationDefinitionSearchParams;
-import com.kodality.termx.observationdefintion.ObservationDefinitionStructure;
+import org.termx.observationdefintion.ObservationDefinition;
+import org.termx.observationdefintion.ObservationDefinitionComponentSectionType;
+import org.termx.observationdefintion.ObservationDefinitionSearchParams;
+import org.termx.observationdefintion.ObservationDefinitionStructure;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
 import jakarta.inject.Singleton;

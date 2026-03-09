@@ -1,7 +1,7 @@
 package org.termx.terminology.terminology.codesystem.entitypropertysummary;
 
 import org.termx.terminology.Privilege;
-import com.kodality.termx.core.auth.Authorized;
+import org.termx.core.auth.Authorized;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;

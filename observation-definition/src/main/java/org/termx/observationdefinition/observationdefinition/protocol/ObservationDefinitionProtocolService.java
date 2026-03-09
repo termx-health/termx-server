@@ -1,8 +1,8 @@
 package org.termx.observationdefinition.observationdefinition.protocol;
 
 import org.termx.observationdefinition.observationdefinition.component.ObservationDefinitionComponentService;
-import com.kodality.termx.observationdefintion.ObservationDefinitionComponentSectionType;
-import com.kodality.termx.observationdefintion.ObservationDefinitionProtocol;
+import org.termx.observationdefintion.ObservationDefinitionComponentSectionType;
+import org.termx.observationdefintion.ObservationDefinitionProtocol;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;

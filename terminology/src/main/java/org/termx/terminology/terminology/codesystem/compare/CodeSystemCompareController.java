@@ -1,10 +1,10 @@
 package org.termx.terminology.terminology.codesystem.compare;
 
 import org.termx.terminology.Privilege;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionStore;
+import org.termx.core.auth.Authorized;
+import org.termx.core.auth.SessionStore;
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
-import com.kodality.termx.ts.codesystem.CodeSystemCompareResult;
+import org.termx.ts.codesystem.CodeSystemCompareResult;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.QueryValue;

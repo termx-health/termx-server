@@ -1,6 +1,6 @@
 package org.termx.terminology.terminology.valueset.compare;
 
-import com.kodality.termx.ts.valueset.ValueSetCompareResult;
+import org.termx.ts.valueset.ValueSetCompareResult;
 import java.util.Objects;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

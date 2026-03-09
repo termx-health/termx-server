@@ -1,8 +1,8 @@
 package org.termx.implementationguide.github;
 
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.github.GithubService.GithubDiff;
-import com.kodality.termx.core.sys.space.SpaceGithubService.SpaceGithubAuthResult;
+import org.termx.core.auth.Authorized;
+import org.termx.core.github.GithubService.GithubDiff;
+import org.termx.core.sys.space.SpaceGithubService.SpaceGithubAuthResult;
 import org.termx.implementationguide.Privilege;
 import org.termx.implementationguide.github.ImplementationGuideGithubService.IgGithubStatus;
 import io.micronaut.http.HttpResponse;

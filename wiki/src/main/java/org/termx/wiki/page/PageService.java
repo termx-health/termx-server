@@ -1,9 +1,9 @@
 package org.termx.wiki.page;
-import com.kodality.termx.wiki.page.Page;
-import com.kodality.termx.wiki.page.PageContent;
-import com.kodality.termx.wiki.page.PageLink;
-import com.kodality.termx.wiki.page.PageQueryParams;
-import com.kodality.termx.wiki.page.PageTreeItem;
+import org.termx.wiki.page.Page;
+import org.termx.wiki.page.PageContent;
+import org.termx.wiki.page.PageLink;
+import org.termx.wiki.page.PageQueryParams;
+import org.termx.wiki.page.PageTreeItem;
 
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.stream.Collectors;

@@ -9,8 +9,8 @@ import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.PipeUtil;
-import com.kodality.termx.ts.valueset.ValueSetVersion;
-import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
+import org.termx.ts.valueset.ValueSetVersion;
+import org.termx.ts.valueset.ValueSetVersionQueryParams;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 

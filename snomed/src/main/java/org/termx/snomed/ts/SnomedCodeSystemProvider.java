@@ -1,13 +1,13 @@
 package org.termx.snomed.ts;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.snomed.concept.SnomedConcept;
-import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
+import org.termx.snomed.concept.SnomedConcept;
+import org.termx.snomed.concept.SnomedConceptSearchParams;
 import org.termx.snomed.integration.SnomedService;
-import com.kodality.termx.core.ts.CodeSystemExternalProvider;
-import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.codesystem.ConceptQueryParams;
-import com.kodality.termx.ts.codesystem.Designation;
+import org.termx.core.ts.CodeSystemExternalProvider;
+import org.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.ConceptQueryParams;
+import org.termx.ts.codesystem.Designation;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.Arrays;

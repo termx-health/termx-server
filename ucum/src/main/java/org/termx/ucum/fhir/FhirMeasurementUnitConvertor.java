@@ -3,7 +3,7 @@ package org.termx.ucum.fhir;
 import com.kodality.commons.exception.ApiException;
 import org.termx.ucum.measurementunit.MeasurementUnitService;
 import org.termx.ucum.measurementunit.converter.MeasurementUnitConverter;
-import com.kodality.termx.ucum.MeasurementUnit;
+import org.termx.ucum.MeasurementUnit;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import jakarta.inject.Singleton;

@@ -2,9 +2,9 @@ package org.termx.terminology.terminology.namingsystem;
 
 import com.kodality.commons.model.QueryResult;
 import org.termx.terminology.ApiError;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.namingsystem.NamingSystem;
-import com.kodality.termx.ts.namingsystem.NamingSystemQueryParams;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.namingsystem.NamingSystem;
+import org.termx.ts.namingsystem.NamingSystemQueryParams;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Optional;

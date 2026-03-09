@@ -8,7 +8,7 @@ import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import org.termx.implementationguide.ig.ImplementationGuideQueryParams.Ordering;
-import com.kodality.termx.ts.ContactDetail;
+import org.termx.ts.ContactDetail;
 import io.micronaut.core.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;

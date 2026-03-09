@@ -1,10 +1,10 @@
 package org.termx.wiki.template;
-import com.kodality.termx.wiki.template.Template;
-import com.kodality.termx.wiki.template.TemplateQueryParams;
+import org.termx.wiki.template.Template;
+import org.termx.wiki.template.TemplateQueryParams;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.auth.Authorized;
+import org.termx.core.auth.Authorized;
 import org.termx.wiki.Privilege;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;

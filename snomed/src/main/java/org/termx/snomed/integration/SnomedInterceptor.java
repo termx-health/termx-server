@@ -1,6 +1,6 @@
 package org.termx.snomed.integration;
 
-import com.kodality.termx.snomed.concept.SnomedTranslation;
+import org.termx.snomed.concept.SnomedTranslation;
 import java.util.List;
 
 public abstract class SnomedInterceptor {

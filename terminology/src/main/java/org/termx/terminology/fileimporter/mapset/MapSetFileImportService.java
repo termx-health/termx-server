@@ -1,7 +1,7 @@
 package org.termx.terminology.fileimporter.mapset;
 
 import com.kodality.commons.model.Issue;
-import com.kodality.termx.core.sys.job.logger.ImportLog;
+import org.termx.core.sys.job.logger.ImportLog;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.fhir.FhirFshConverter;
 import org.termx.terminology.fhir.conceptmap.ConceptMapFhirImportService;
@@ -12,13 +12,13 @@ import org.termx.terminology.fileimporter.mapset.utils.MapSetFileProcessingMappe
 import org.termx.terminology.terminology.mapset.MapSetImportService;
 import org.termx.terminology.terminology.mapset.MapSetService;
 import org.termx.terminology.terminology.mapset.version.MapSetVersionService;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.association.AssociationType;
-import com.kodality.termx.ts.mapset.MapSet;
-import com.kodality.termx.ts.mapset.MapSetImportAction;
-import com.kodality.termx.ts.mapset.MapSetVersion;
-import com.kodality.termx.ts.mapset.MapSetVersion.MapSetResourceReference;
-import com.kodality.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.association.AssociationType;
+import org.termx.ts.mapset.MapSet;
+import org.termx.ts.mapset.MapSetImportAction;
+import org.termx.ts.mapset.MapSetVersion;
+import org.termx.ts.mapset.MapSetVersion.MapSetResourceReference;
+import org.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;

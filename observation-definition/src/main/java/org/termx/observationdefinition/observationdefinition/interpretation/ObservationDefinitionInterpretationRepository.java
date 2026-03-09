@@ -4,8 +4,8 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
-import com.kodality.termx.observationdefintion.ObservationDefinitionInterpretation;
-import com.kodality.termx.observationdefintion.ObservationDefinitionInterpretation.ObservationDefinitionInterpretationTarget;
+import org.termx.observationdefintion.ObservationDefinitionInterpretation;
+import org.termx.observationdefintion.ObservationDefinitionInterpretation.ObservationDefinitionInterpretationTarget;
 import java.util.List;
 import jakarta.inject.Singleton;
 

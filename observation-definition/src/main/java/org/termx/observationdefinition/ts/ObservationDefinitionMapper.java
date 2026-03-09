@@ -1,12 +1,12 @@
 package org.termx.observationdefinition.ts;
 
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.termx.observationdefintion.ObservationDefinition;
-import com.kodality.termx.ts.CaseSignificance;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
-import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.codesystem.Designation;
+import org.termx.observationdefintion.ObservationDefinition;
+import org.termx.ts.CaseSignificance;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.codesystem.CodeSystemEntityVersion;
+import org.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.Designation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;

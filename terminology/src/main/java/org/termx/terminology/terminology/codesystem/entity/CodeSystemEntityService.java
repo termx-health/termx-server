@@ -1,6 +1,6 @@
 package org.termx.terminology.terminology.codesystem.entity;
 
-import com.kodality.termx.ts.codesystem.CodeSystemEntity;
+import org.termx.ts.codesystem.CodeSystemEntity;
 import java.util.List;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

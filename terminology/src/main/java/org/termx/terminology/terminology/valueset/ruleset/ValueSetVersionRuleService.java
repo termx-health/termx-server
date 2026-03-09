@@ -2,10 +2,10 @@ package org.termx.terminology.terminology.valueset.ruleset;
 
 import com.kodality.commons.model.QueryResult;
 import org.termx.terminology.ApiError;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
-import com.kodality.termx.ts.valueset.ValueSetVersionRuleQueryParams;
-import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet;
-import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import org.termx.ts.valueset.ValueSetVersionConcept;
+import org.termx.ts.valueset.ValueSetVersionRuleQueryParams;
+import org.termx.ts.valueset.ValueSetVersionRuleSet;
+import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;

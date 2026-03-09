@@ -7,9 +7,9 @@ import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.mapset.MapSetVersion;
-import com.kodality.termx.ts.mapset.MapSetVersionQueryParams;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.mapset.MapSetVersion;
+import org.termx.ts.mapset.MapSetVersionQueryParams;
 import jakarta.inject.Singleton;
 
 @Singleton

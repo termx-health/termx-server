@@ -1,23 +1,23 @@
 package org.termx.terminology.terminology.mapset;
 
 
-import com.kodality.termx.core.auth.SessionStore;
+import org.termx.core.auth.SessionStore;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.Privilege;
 import org.termx.terminology.terminology.association.AssociationTypeService;
 import org.termx.terminology.terminology.mapset.association.MapSetAssociationService;
 import org.termx.terminology.terminology.mapset.property.MapSetPropertyService;
 import org.termx.terminology.terminology.mapset.version.MapSetVersionService;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.association.AssociationType;
-import com.kodality.termx.ts.mapset.MapSet;
-import com.kodality.termx.ts.mapset.MapSetAssociation;
-import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
-import com.kodality.termx.ts.mapset.MapSetImportAction;
-import com.kodality.termx.ts.mapset.MapSetProperty;
-import com.kodality.termx.ts.mapset.MapSetPropertyQueryParams;
-import com.kodality.termx.ts.mapset.MapSetVersion;
-import com.kodality.termx.ts.property.PropertyReference;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.association.AssociationType;
+import org.termx.ts.mapset.MapSet;
+import org.termx.ts.mapset.MapSetAssociation;
+import org.termx.ts.mapset.MapSetAssociationQueryParams;
+import org.termx.ts.mapset.MapSetImportAction;
+import org.termx.ts.mapset.MapSetProperty;
+import org.termx.ts.mapset.MapSetPropertyQueryParams;
+import org.termx.ts.mapset.MapSetVersion;
+import org.termx.ts.property.PropertyReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

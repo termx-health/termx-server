@@ -10,7 +10,7 @@ import com.kodality.kefhir.core.model.VersionId;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
 import com.kodality.kefhir.core.model.search.SearchResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
-import com.kodality.termx.core.fhir.BaseFhirResourceHandler;
+import org.termx.core.fhir.BaseFhirResourceHandler;
 import io.micronaut.core.io.ResourceLoader;
 import jakarta.inject.Singleton;
 import java.io.InputStream;

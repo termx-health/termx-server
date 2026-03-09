@@ -2,7 +2,7 @@ package org.termx.editionuzb.ichiuz.utils;
 
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import com.kodality.termx.core.utils.CsvUtil;
+import org.termx.core.utils.CsvUtil;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;

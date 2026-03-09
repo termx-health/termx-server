@@ -1,13 +1,13 @@
 package org.termx.terminology.fileimporter.mapset.utils;
 
-import com.kodality.termx.ts.Language;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.association.AssociationKind;
-import com.kodality.termx.ts.association.AssociationType;
-import com.kodality.termx.ts.mapset.MapSet;
-import com.kodality.termx.ts.mapset.MapSetAssociation;
-import com.kodality.termx.ts.mapset.MapSetAssociation.MapSetAssociationEntity;
-import com.kodality.termx.ts.mapset.MapSetVersion;
+import org.termx.ts.Language;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.association.AssociationKind;
+import org.termx.ts.association.AssociationType;
+import org.termx.ts.mapset.MapSet;
+import org.termx.ts.mapset.MapSetAssociation;
+import org.termx.ts.mapset.MapSetAssociation.MapSetAssociationEntity;
+import org.termx.ts.mapset.MapSetVersion;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,7 +1,7 @@
 package org.termx.terminology.terminology.valueset.compare;
 
 import com.kodality.commons.db.repo.BaseRepository;
-import com.kodality.termx.ts.valueset.ValueSetCompareResult;
+import org.termx.ts.valueset.ValueSetCompareResult;
 import jakarta.inject.Singleton;
 
 @Singleton

@@ -1,11 +1,11 @@
 package org.termx.wiki.pagecontent;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionStore;
+import org.termx.core.auth.Authorized;
+import org.termx.core.auth.SessionStore;
 import org.termx.wiki.Privilege;
-import com.kodality.termx.wiki.page.PageContent;
-import com.kodality.termx.wiki.page.PageContentQueryParams;
+import org.termx.wiki.page.PageContent;
+import org.termx.wiki.page.PageContentQueryParams;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import lombok.RequiredArgsConstructor;

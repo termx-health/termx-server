@@ -1,7 +1,7 @@
 package org.termx.terminology.terminology.relatedartifacts;
 
-import com.kodality.termx.ts.relatedartifact.RelatedArtifact;
-import com.kodality.termx.ts.relatedartifact.RelatedArtifactRequest;
+import org.termx.ts.relatedartifact.RelatedArtifact;
+import org.termx.ts.relatedartifact.RelatedArtifactRequest;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,8 +1,8 @@
 package org.termx.terminology.terminology.relatedartifacts;
 
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.ts.relatedartifact.RelatedArtifact;
-import com.kodality.termx.ts.relatedartifact.RelatedArtifactRequest;
+import org.termx.core.auth.Authorized;
+import org.termx.ts.relatedartifact.RelatedArtifact;
+import org.termx.ts.relatedartifact.RelatedArtifactRequest;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Post;

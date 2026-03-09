@@ -1,10 +1,10 @@
 package org.termx.terminology.fileimporter.mapset;
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.sys.job.logger.ImportLogger;
-import com.kodality.termx.core.utils.FileUtil;
-import com.kodality.termx.sys.job.JobLogResponse;
+import org.termx.core.auth.Authorized;
+import org.termx.core.sys.job.logger.ImportLogger;
+import org.termx.core.utils.FileUtil;
+import org.termx.sys.job.JobLogResponse;
 import org.termx.terminology.Privilege;
 import org.termx.terminology.fileimporter.mapset.utils.MapSetFileImportRequest;
 import io.micronaut.http.HttpHeaders;

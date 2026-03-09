@@ -1,15 +1,15 @@
 package org.termx.terminology.terminology.valueset.provenance;
 
-import com.kodality.termx.core.sys.provenance.Provenance;
-import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceChange;
-import com.kodality.termx.core.sys.provenance.ProvenanceService;
-import com.kodality.termx.core.sys.provenance.ProvenanceUtil;
+import org.termx.core.sys.provenance.Provenance;
+import org.termx.core.sys.provenance.Provenance.ProvenanceChange;
+import org.termx.core.sys.provenance.ProvenanceService;
+import org.termx.core.sys.provenance.ProvenanceUtil;
 import org.termx.terminology.terminology.valueset.ValueSetService;
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
-import com.kodality.termx.ts.valueset.ValueSet;
-import com.kodality.termx.ts.valueset.ValueSetTransactionRequest;
-import com.kodality.termx.ts.valueset.ValueSetVersion;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
+import org.termx.ts.valueset.ValueSet;
+import org.termx.ts.valueset.ValueSetTransactionRequest;
+import org.termx.ts.valueset.ValueSetVersion;
+import org.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;

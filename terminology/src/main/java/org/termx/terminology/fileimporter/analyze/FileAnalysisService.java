@@ -2,7 +2,7 @@ package org.termx.terminology.fileimporter.analyze;
 
 import org.termx.terminology.ApiError;
 import org.termx.terminology.fileimporter.analyze.FileAnalysisResponse.FileAnalysisColumn;
-import com.kodality.termx.core.http.BinaryHttpClient;
+import org.termx.core.http.BinaryHttpClient;
 import org.termx.terminology.fileimporter.fileparser.FileParserFactory;
 import org.termx.terminology.fileimporter.fileparser.IFileParser;
 

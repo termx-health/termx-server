@@ -1,9 +1,9 @@
 package org.termx.wiki.template;
-import com.kodality.termx.wiki.template.Template;
-import com.kodality.termx.wiki.template.TemplateQueryParams;
+import org.termx.wiki.template.Template;
+import org.termx.wiki.template.TemplateQueryParams;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.utils.TextUtil;
+import org.termx.core.utils.TextUtil;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.Optional;
 import jakarta.inject.Singleton;

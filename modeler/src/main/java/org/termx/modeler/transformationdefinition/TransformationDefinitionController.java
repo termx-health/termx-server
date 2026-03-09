@@ -1,10 +1,10 @@
 package org.termx.modeler.transformationdefinition;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.core.sys.provenance.Provenance;
-import com.kodality.termx.core.sys.provenance.ProvenanceService;
+import org.termx.core.auth.Authorized;
+import org.termx.core.auth.SessionStore;
+import org.termx.core.sys.provenance.Provenance;
+import org.termx.core.sys.provenance.ProvenanceService;
 import org.termx.modeler.Privilege;
 import org.termx.modeler.transformationdefinition.TransformationDefinition.TransformationDefinitionResource;
 import io.micronaut.http.HttpResponse;

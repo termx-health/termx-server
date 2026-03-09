@@ -5,9 +5,9 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.wiki.page.PageContent;
-import com.kodality.termx.wiki.page.PageContentHistoryItem;
-import com.kodality.termx.wiki.page.PageContentHistoryQueryParams;
+import org.termx.wiki.page.PageContent;
+import org.termx.wiki.page.PageContentHistoryItem;
+import org.termx.wiki.page.PageContentHistoryQueryParams;
 import java.util.Map;
 import jakarta.inject.Singleton;
 

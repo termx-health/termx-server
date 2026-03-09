@@ -1,11 +1,11 @@
 package org.termx.wiki.pagecomment;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionStore;
+import org.termx.core.auth.Authorized;
+import org.termx.core.auth.SessionStore;
 import org.termx.wiki.Privilege;
-import com.kodality.termx.wiki.page.PageComment;
-import com.kodality.termx.wiki.page.PageCommentQueryParams;
+import org.termx.wiki.page.PageComment;
+import org.termx.wiki.page.PageCommentQueryParams;
 import org.termx.wiki.pagecontent.PageContentService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;

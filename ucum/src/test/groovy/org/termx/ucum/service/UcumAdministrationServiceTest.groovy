@@ -1,14 +1,14 @@
 package org.termx.ucum.service
 
 import com.kodality.commons.model.QueryResult
-import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService
-import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService
-import com.kodality.termx.ts.codesystem.CodeSystem
-import com.kodality.termx.ts.codesystem.CodeSystemVersion
-import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams
-import com.kodality.termx.ucum.essence.UcumEssence
-import com.kodality.termx.ucum.essence.UcumEssenceRepository
-import com.kodality.termx.ucum.essence.UcumEssenceStorageService
+import org.termx.terminology.terminology.codesystem.CodeSystemService
+import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService
+import org.termx.ts.codesystem.CodeSystem
+import org.termx.ts.codesystem.CodeSystemVersion
+import org.termx.ts.codesystem.CodeSystemVersionQueryParams
+import org.termx.ucum.essence.UcumEssence
+import org.termx.ucum.essence.UcumEssenceRepository
+import org.termx.ucum.essence.UcumEssenceStorageService
 import org.termx.ucum.mapper.UcumVersionMapper
 import spock.lang.Specification
 

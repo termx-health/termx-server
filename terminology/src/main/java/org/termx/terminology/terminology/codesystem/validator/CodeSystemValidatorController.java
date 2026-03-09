@@ -1,8 +1,8 @@
 package org.termx.terminology.terminology.codesystem.validator;
 
 import org.termx.terminology.Privilege;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.sys.lorque.LorqueProcess;
+import org.termx.core.auth.Authorized;
+import org.termx.sys.lorque.LorqueProcess;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;

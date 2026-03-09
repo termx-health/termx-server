@@ -7,8 +7,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 
-import static com.kodality.termx.core.utils.XlsxUtil.readRow;
-import static com.kodality.termx.core.utils.XlsxUtil.readRows;
+import static org.termx.core.utils.XlsxUtil.readRow;
+import static org.termx.core.utils.XlsxUtil.readRows;
 
 public class XlsxFileParser implements IFileParser {
 

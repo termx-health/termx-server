@@ -2,10 +2,10 @@ package org.termx.terminology.terminology.definedproperty;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.auth.Authorized;
+import org.termx.core.auth.Authorized;
 import org.termx.terminology.Privilege;
-import com.kodality.termx.ts.property.DefinedProperty;
-import com.kodality.termx.ts.property.DefinedPropertyQueryParams;
+import org.termx.ts.property.DefinedProperty;
+import org.termx.ts.property.DefinedPropertyQueryParams;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;

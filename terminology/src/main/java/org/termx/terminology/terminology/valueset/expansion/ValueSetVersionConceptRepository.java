@@ -4,8 +4,8 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.ts.codesystem.Designation;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
+import org.termx.ts.codesystem.Designation;
+import org.termx.ts.valueset.ValueSetVersionConcept;
 import java.util.List;
 import jakarta.inject.Singleton;
 

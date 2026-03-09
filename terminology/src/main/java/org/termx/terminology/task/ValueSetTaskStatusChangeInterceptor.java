@@ -6,7 +6,7 @@ import org.termx.task.TaskType;
 import org.termx.task.api.TaskStatusChangeInterceptor;
 import org.termx.terminology.terminology.valueset.provenance.ValueSetProvenanceService;
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
-import com.kodality.termx.ts.valueset.ValueSetVersion;
+import org.termx.ts.valueset.ValueSetVersion;
 import java.util.Optional;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

@@ -1,9 +1,9 @@
 package org.termx.wiki.pagelink;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.wiki.page.PageLink;
-import com.kodality.termx.wiki.page.PageLinkMoveRequest;
-import com.kodality.termx.wiki.page.PageLinkQueryParams;
+import org.termx.wiki.page.PageLink;
+import org.termx.wiki.page.PageLinkMoveRequest;
+import org.termx.wiki.page.PageLinkQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.Arrays;

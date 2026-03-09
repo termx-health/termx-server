@@ -1,10 +1,10 @@
 package org.termx.ucum.ts;
 
-import com.kodality.termx.core.ts.ValueSetExternalExpandProvider;
-import com.kodality.termx.ts.valueset.ValueSetVersion;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
-import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
-import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
+import org.termx.core.ts.ValueSetExternalExpandProvider;
+import org.termx.ts.valueset.ValueSetVersion;
+import org.termx.ts.valueset.ValueSetVersionConcept;
+import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;

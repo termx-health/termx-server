@@ -1,5 +1,5 @@
 package org.termx.wiki.template;
-import com.kodality.termx.wiki.template.TemplateContent;
+import org.termx.wiki.template.TemplateContent;
 
 import java.util.List;
 import java.util.Optional;
