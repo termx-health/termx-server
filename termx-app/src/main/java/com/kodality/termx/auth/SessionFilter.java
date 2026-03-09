@@ -62,16 +62,61 @@ public class SessionFilter implements HttpServerFilter {
       return;
     }
     java.util.Set<String> derived = new java.util.HashSet<>(session.getPrivileges());
-    boolean hasEdit = session.hasPrivilege("*.*.edit");
-    boolean hasPublish = session.hasPrivilege("*.*.publish");
-    if (hasEdit || hasPublish) {
-      derived.add("*.Task.view");
-      derived.add("*.Task.edit");
+    
+    // Keep admin unchanged
+    if (session.hasPrivilege("*.*.*")) {
+      session.setPrivileges(derived);
+      return;
     }
-    if (hasPublish) {
-      derived.add("*.Task.publish");
+    
+    // Map resource types to context types (kebab-case)
+    java.util.Map<String, String> resourceTypeToContextType = java.util.Map.of(
+        "CodeSystem", "code-system",
+        "ValueSet", "value-set",
+        "MapSet", "map-set",
+        "ConceptMap", "map-set"  // ConceptMap uses same context type as MapSet
+    );
+    
+    // Derive Task privileges for each resource privilege
+    for (String privilege : session.getPrivileges()) {
+      String[] parts = splitPrivilege(privilege); // [resourceId, resourceType, action]
+      if (parts == null || parts.length != 3) {
+        continue;
+      }
+      
+      String resourceId = parts[0];
+      String resourceType = parts[1];
+      String action = parts[2];
+      
+      String contextType = resourceTypeToContextType.get(resourceType);
+      if (contextType == null) {
+        continue; // Not a resource type we derive from
+      }
+      
+      if ("edit".equals(action)) {
+        derived.add(contextType + "#" + resourceId + ".Task.view");
+        derived.add(contextType + "#" + resourceId + ".Task.edit");
+      } else if ("publish".equals(action)) {
+        derived.add(contextType + "#" + resourceId + ".Task.view");
+        derived.add(contextType + "#" + resourceId + ".Task.edit");
+        derived.add(contextType + "#" + resourceId + ".Task.publish");
+      }
     }
+    
     session.setPrivileges(derived);
+  }
+
+  private String[] splitPrivilege(String privilege) {
+    // Split "resourceId.ResourceType.action" into [resourceId, resourceType, action]
+    String[] parts = privilege.split("\\.");
+    if (parts.length < 3) {
+      return null;
+    }
+    return new String[]{
+        String.join(".", java.util.Arrays.copyOfRange(parts, 0, parts.length - 2)),
+        parts[parts.length - 2],
+        parts[parts.length - 1]
+    };
   }
 
   private void setLang(SessionInfo user, HttpRequest<?> request) {

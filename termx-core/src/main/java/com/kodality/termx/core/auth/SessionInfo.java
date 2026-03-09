@@ -47,6 +47,9 @@ public class SessionInfo {
   }
 
   private String[] split(String p) {
+    // Splits privilege into [resourceId, resourceType, action]
+    // Handles both standard format: "icd-10.CodeSystem.edit" → ["icd-10", "CodeSystem", "edit"]
+    // And hash format: "code-system#icd-10.Task.edit" → ["code-system#icd-10", "Task", "edit"]
     String[] parts = p.split("\\.");
     return new String[]{String.join(".", ArrayUtils.subarray(parts, 0, parts.length - 2)), parts[parts.length - 2], parts[parts.length - 1]};
   }

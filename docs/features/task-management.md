@@ -105,15 +105,15 @@ No environment variables are required. TaskForge uses the main application datab
 
 **Steps:**
 1. Configure user with `*.CodeSystem.edit` privilege (not publish)
-2. User logs in - system automatically derives `*.Task.view` and `*.Task.edit` privileges
-3. User navigates to task list (now accessible with Task.view)
+2. User logs in - system automatically derives `code-system#*.Task.view` and `code-system#*.Task.edit` privileges (resource-specific)
+3. User navigates to task list (now accessible with derived Task.view privilege)
 4. System automatically filters to show only tasks:
    - Created by the user OR assigned to the user
 5. User with `icd-10.CodeSystem.publish` sees:
    - Tasks created by OR assigned to them (any resource)
-   - PLUS all ICD-10 tasks (publisher oversight)
+   - PLUS all ICD-10 CodeSystem tasks (publisher oversight via `code-system#icd-10.Task.publish`)
 
-**Outcome:** Users see only relevant tasks via automatic privilege derivation and OR-based filtering, reducing clutter and protecting sensitive information.
+**Outcome:** Users see only relevant tasks via automatic resource-specific privilege derivation and OR-based filtering, reducing clutter and protecting sensitive information.
 
 ## API
 
@@ -157,20 +157,20 @@ Common query parameters for `/tasks{?params*}`:
 
 ### Privilege-Based Filtering
 
-**Virtual privilege derivation at login:**
-- Any resource edit privilege (e.g., `*.CodeSystem.edit`) → derives `*.Task.view` and `*.Task.edit`
-- Any resource publish privilege (e.g., `*.ValueSet.publish`) → derives `*.Task.view`, `*.Task.edit`, and `*.Task.publish`
+**Resource-specific privilege derivation at login:**
+- Any resource edit privilege (e.g., `icd-10.CodeSystem.edit`) → derives `code-system#icd-10.Task.view` and `code-system#icd-10.Task.edit`
+- Any resource publish privilege (e.g., `*.ValueSet.publish`) → derives `value-set#*.Task.view`, `value-set#*.Task.edit`, and `value-set#*.Task.publish`
 - View-only privileges → no Task privileges (task list hidden)
 
 **Task visibility rules (OR logic):**
 
-| User Privilege | Task List Accessible? | Tasks Visible |
-|----------------|----------------------|---------------|
-| `*.CodeSystem.view` only | ❌ No | None (no Task privileges) |
-| `icd-10.CodeSystem.edit` | ✅ Yes | Tasks created by OR assigned to user |
-| `icd-10.CodeSystem.publish` | ✅ Yes | (Created by OR assigned to user) OR (context = code-system\|icd-10) |
-| `*.*.publish` | ✅ Yes | (Created by OR assigned to user) OR (all contexts) |
-| `*.*.*` (admin) | ✅ Yes | All tasks (no filter) |
+| User Privilege | Task List Accessible? | Derived Privileges | Tasks Visible |
+|----------------|----------------------|-------------------|---------------|
+| `*.CodeSystem.view` only | ❌ No | None | None (no Task privileges) |
+| `icd-10.CodeSystem.edit` | ✅ Yes | `code-system#icd-10.Task.view`, `code-system#icd-10.Task.edit` | Tasks created by OR assigned to user |
+| `icd-10.CodeSystem.publish` | ✅ Yes | `code-system#icd-10.Task.view`, `code-system#icd-10.Task.edit`, `code-system#icd-10.Task.publish` | (Created by OR assigned to user) OR (context = code-system\|icd-10) |
+| `*.CodeSystem.publish` | ✅ Yes | `code-system#*.Task.view`, `code-system#*.Task.edit`, `code-system#*.Task.publish` | (Created by OR assigned to user) OR (all CodeSystem contexts) |
+| `*.*.*` (admin) | ✅ Yes | (no derivation) | All tasks (no filter) |
 
 ## Testing
 
@@ -387,23 +387,30 @@ flowchart TD
     Database --> Results[Filtered Results]
 ```
 
-Task privileges are automatically derived from resource privileges at login:
+Task privileges are automatically derived from resource privileges at login using hash format:
 
 | Resource Privilege | Derived Task Privileges | Tasks Visible |
 |--------------------|------------------------|---------------|
-| `*.*.*` | `*.*.*` | All tasks |
-| `*.*.publish` (any publish) | `*.Task.view/edit/publish` | Own tasks + all publisher context tasks |
-| `*.CodeSystem.publish` | `*.Task.view/edit/publish` | Own tasks + CodeSystem tasks |
-| `*.*.edit` (any edit) | `*.Task.view/edit` | Own tasks only |
+| `*.*.*` | (no derivation) | All tasks |
+| `icd-10.CodeSystem.publish` | `code-system#icd-10.Task.view/edit/publish` | Own tasks + ICD-10 CodeSystem tasks |
+| `*.CodeSystem.publish` | `code-system#*.Task.view/edit/publish` | Own tasks + all CodeSystem tasks |
+| `icd-10.CodeSystem.edit` | `code-system#icd-10.Task.view/edit` | Own tasks only |
 | `*.*.view` only | None | No task access (403) |
+
+**Privilege format:** `contextType#resourceId.Task.action`
+
+Examples:
+- `code-system#icd-10.Task.edit`
+- `value-set#disorders.Task.publish`
+- `code-system#*.Task.edit` (wildcard)
 
 **How filtering works:**
 
-1. **Login** -- `SessionFilter.deriveTaskPrivileges()` adds Task privileges based on resource privileges
-2. **Gate check** -- `@Authorized(privilege = Privilege.T_VIEW)` verifies Task.view exists
+1. **Login** -- `SessionFilter.deriveTaskPrivileges()` adds resource-specific Task privileges
+2. **Gate check** -- `@Authorized(privilege = Privilege.T_VIEW)` verifies any Task.view privilege exists
 3. **Visibility filter** -- Controller builds `TaskVisibilityFilter` with:
    - `username` for creator/assignee matching
-   - `publisherContexts` for publisher resource matching
+   - `publisherContexts` extracted from hash-format privileges (e.g., `code-system#icd-10.Task.publish` → `code-system|icd-10`)
 4. **SQL filtering** -- Repository applies OR logic: `(own tasks) OR (publisher context match)`
 
 Single task load applies the same logic: admins see all, others see tasks matching own OR publisher criteria.

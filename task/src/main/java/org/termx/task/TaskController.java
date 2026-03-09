@@ -77,11 +77,7 @@ public class TaskController {
     return username.equals(task.getCreatedBy()) || username.equals(task.getAssignee());
   }
 
-  private static final Map<String, String> CONTEXT_TYPE_TO_RESOURCE = Map.of(
-      "code-system", "CodeSystem",
-      "value-set", "ValueSet",
-      "map-set", "MapSet"
-  );
+  private static final List<String> CONTEXT_TYPES = List.of("code-system", "value-set", "map-set");
 
   /**
    * Returns null if the user has access to all resources (wildcard); otherwise returns the list of
@@ -90,17 +86,40 @@ public class TaskController {
   private List<String> getPermittedContexts(SessionInfo session, String action) {
     List<String> result = new ArrayList<>();
     boolean allPermitted = true;
-    for (var entry : CONTEXT_TYPE_TO_RESOURCE.entrySet()) {
-      List<String> ids = session.getPermittedResourceIds(entry.getValue(), action);
+    
+    for (String contextType : CONTEXT_TYPES) {
+      // Check for privileges like code-system#icd-10.Task.publish
+      List<String> ids = getPermittedResourceIds(session, contextType, action);
       if (ids == null) {
-        continue; // null = all resources of this type are accessible
+        continue; // null = all resources of this type (code-system#*.Task.publish)
       }
       allPermitted = false;
       for (String id : ids) {
-        result.add(entry.getKey() + "|" + id);
+        result.add(contextType + "|" + id);
       }
     }
     return allPermitted ? null : result;
+  }
+
+  private List<String> getPermittedResourceIds(SessionInfo session, String contextType, String action) {
+    if (session.getPrivileges() == null) {
+      return List.of();
+    }
+    
+    // Check for wildcard: code-system#*.Task.publish
+    String wildcardPrivilege = contextType + "#*.Task." + action;
+    if (session.hasPrivilege(wildcardPrivilege)) {
+      return null; // null = all resources
+    }
+    
+    // Extract resource IDs from privileges like code-system#icd-10.Task.publish
+    String suffix = ".Task." + action;
+    String prefix = contextType + "#";
+    
+    return session.getPrivileges().stream()
+        .filter(p -> p.startsWith(prefix) && p.endsWith(suffix))
+        .map(p -> p.substring(prefix.length(), p.length() - suffix.length()))
+        .toList();
   }
 
   private boolean isContextPermitted(Task task, SessionInfo session, String action) {
@@ -108,12 +127,9 @@ public class TaskController {
       return true;
     }
     return task.getContext().stream().allMatch(ctx -> {
-      String resourceType = CONTEXT_TYPE_TO_RESOURCE.get(ctx.getType());
-      if (resourceType == null) {
-        return true;
-      }
-      List<String> permitted = session.getPermittedResourceIds(resourceType, action);
-      return permitted == null || permitted.contains(ctx.getId());
+      // Build privilege string using context type directly: code-system#icd-10.Task.publish
+      String privilege = ctx.getType() + "#" + ctx.getId() + ".Task." + action;
+      return session.hasPrivilege(privilege);
     });
   }
 
