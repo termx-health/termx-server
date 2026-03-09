@@ -287,6 +287,10 @@ public class CodeSystemEntityVersionService {
     entityVersions.forEach(ev -> repository.cancel(ev.getId()));
   }
 
+  public Map<String, Long> findCodeToIdMap(Long codeSystemVersionId) {
+    return repository.findCodeToIdMap(codeSystemVersionId);
+  }
+
   private void prepare(CodeSystemEntityVersion version) {
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
   }

@@ -8,6 +8,7 @@ import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.PipeUtil;
+import com.kodality.termx.ts.ConfigurationAttribute;
 import com.kodality.termx.ts.ContactDetail;
 import com.kodality.termx.ts.OtherTitle;
 import com.kodality.termx.ts.UseContext;
@@ -34,6 +35,7 @@ public class MapSetRepository extends BaseRepository {
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
     bp.addColumnProcessor("properties", PgBeanProcessor.fromJson(JsonUtil.getListType(MapSetProperty.class)));
+    bp.addColumnProcessor("configuration_attributes", PgBeanProcessor.fromJson(JsonUtil.getListType(ConfigurationAttribute.class)));
   });
 
   private static final String select = "select distinct on (ms.id) ms.*, " +
