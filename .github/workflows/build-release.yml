@@ -1,0 +1,33 @@
+name: Build and publish on release
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    name: Build, check, publish
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "25"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build, run all checks, and publish
+        working-directory: .
+        run: ./gradlew clean assemble check pmdCheck spotbugsCheck dependencyCheckAggregate publish
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
