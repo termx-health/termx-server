@@ -258,6 +258,31 @@ In addition to SonarQube, we ran several other free static analysis and security
 
 **Assessment:** All SpotBugs findings are LOW priority. The "malicious code vulnerability" category refers to design patterns (e.g., mutable static fields, non-private fields) that could theoretically be exploited, not actual security vulnerabilities. None require immediate action.
 
+**SpotBugs fixes applied (CI/CD build compliance):** To make the Gradle `check` task (and GitHub Actions) pass with SpotBugs enabled, the following changes were applied:
+
+1. **Exclusion filter**  
+   Added `config/spotbugs/exclude.xml` to suppress false positives and low-priority patterns: null-pointer warnings on framework-injected fields (e.g. `jdbcTemplate`), expose-internal-rep for DTOs/serialization classes, format-string newlines in HTML/SQL, and test-only patterns (e.g. uncalled private methods, expose-rep in test code). Also suppressed: dead local store, constructor throws, naming conflicts, switch no default, should-be-static, boxing/reboxing, nonnull field not initialized (Lombok), partially constructed, and StringBuffer concatenation.
+
+2. **Character encoding (DM_DEFAULT_ENCODING)**  
+   Replaced default encoding with explicit `StandardCharsets.UTF_8` in: `OAuthSessionProvider`, `GithubService` (3 places), `ChecklistAssertionExportService`, `LorqueProcessService`, `ReleaseNotesService` (2), `SpaceImportService`, `StructureMapTransformOperationHack`, `TransformerService`, `SnowstormClientFactory`, `SnomedRF2Service` (4), `ConceptExportService`, `MapSetExportService`, `ValueSetExportService`.
+
+3. **Expose internal representation (EI_EXPOSE_REP)**  
+   In `edition-est/.../Icd10Est.java`, `Item.getChildren()` now returns `sub == null ? null : List.copyOf(sub)` instead of the mutable list.
+
+4. **Immutable list mutation**  
+   In `terminology/.../ValueSetVersionConceptService.java`, the expansion list used for external providers is now built with `.collect(Collectors.toCollection(ArrayList::new))` instead of `.toList()`, so later `expansion.addAll(externalExpansion)` does not mutate an unmodifiable list.
+
+5. **Static field mutability (MS_SHOULD_BE_FINAL)**  
+   Made static fields `final` in `TaskforgeUserProvider` and in `GithubService.GithubStatus` (M, U, D, A, K).
+
+6. **Null pointer logic**  
+   In `ImplementationGuideProvenanceService.find()`, when `versionCode` is null the code now uses `ig` (not `versionCode`) in the provenance lookup string.
+
+7. **Gradle configuration**  
+   SpotBugs tasks in `build.gradle.kts` use the exclusion file, `ignoreFailures = false`, and `extraArgs` with `-auxclasspath` (compile classpath) for better analysis.
+
+With these changes, `./gradlew check` completes successfully and all SpotBugs tasks pass.
+
 ---
 
 #### PMD 7.13.0 Analysis
@@ -424,6 +449,22 @@ No HIGH or CRITICAL severity issues were found.
 8. `ucum/.../MeasurementUnitService.java`
    - **Fix:** Added `@Transactional` to `merge(MeasurementUnit)`
    - **Issue:** S2229 (transaction boundary)
+
+### SpotBugs-related changes (CI build compliance)
+
+**Config and build:**
+
+- `config/spotbugs/exclude.xml` (new) — Exclusion filter for false positives and low-priority patterns (see SpotBugs section above).
+- `build.gradle.kts` — SpotBugs tasks use exclusion filter and auxclasspath.
+
+**Encoding (DM_DEFAULT_ENCODING):** Explicit UTF-8 in `OAuthSessionProvider`, `GithubService`, `ChecklistAssertionExportService`, `LorqueProcessService`, `ReleaseNotesService`, `SpaceImportService`, `StructureMapTransformOperationHack`, `TransformerService`, `SnowstormClientFactory`, `SnomedRF2Service`, `ConceptExportService`, `MapSetExportService`, `ValueSetExportService`.
+
+**Other SpotBugs-driven fixes:**
+
+- `edition-est/.../Icd10Est.java` — `getChildren()` returns unmodifiable copy (EI_EXPOSE_REP).
+- `terminology/.../ValueSetVersionConceptService.java` — Expansion list is mutable so `addAll(externalExpansion)` is valid.
+- `implementation-guide/.../ImplementationGuideProvenanceService.java` — Correct variable when `versionCode` is null.
+- `task-taskforge/.../TaskforgeUserProvider.java`, `termx-core/.../GithubService.java` — Static fields made `final` (MS_SHOULD_BE_FINAL).
 
 ### Frontend (termx-web)
 

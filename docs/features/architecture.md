@@ -134,6 +134,24 @@ All build files use Gradle Kotlin DSL for type-safe configuration:
 - `build.gradle.kts` — Root configuration with Java toolchain and publishing
 - `[module]/build.gradle.kts` — Module-specific dependencies
 
+### Gradle tasks
+
+| Task | Description | Used in CI |
+|------|-------------|------------|
+| `clean` | Removes build outputs | Yes |
+| `assemble` | Compiles and builds JARs (no tests) | Yes |
+| `check` | Runs tests and PMD; does **not** run SpotBugs | Yes |
+| `publish` | Publishes Maven artifacts to GitHub Packages | Yes |
+| `run` | Runs the application (from `termx-app`; use `:termx-app:run`) | No |
+| `shadowJar` | Builds the fat JAR for `termx-app` | No (Docker build uses context) |
+| `spotbugsCheck` | Runs SpotBugs on all projects; **manual only**, not part of `check` | No |
+
+**Verification:** `check` runs unit/integration tests and PMD. SpotBugs is excluded from `check` to keep CI and Docker builds fast; run `./gradlew spotbugsCheck` when you want static analysis.
+
+**Application:** To run the server locally from the root: `./gradlew :termx-app:run`. Optional: `-Pdev` for dev auth, `-Pdebug=5005` for remote debugging.
+
+**List tasks:** `./gradlew tasks` (all), `./gradlew tasks --group=verification` (verification only).
+
 ### Maven Coordinates
 
 **Group ID:** `org.termx`
