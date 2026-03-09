@@ -10,7 +10,7 @@
 | Micronaut Plugin | 4.6.2 | Micronaut framework integration |
 | Lombok | 1.18.42 | Annotation processing |
 
-**Build files:** All build configuration uses Gradle Kotlin DSL (`.gradle.kts` format).
+**Build files:** All build configuration uses Gradle Kotlin DSL (`.gradle.kts` format). Build cache is enabled (`org.gradle.caching=true`) for faster incremental and CI builds.
 
 **Publishing:** Maven artifacts publish to [GitHub Packages](https://github.com/termx-health/termx-server/packages) as `org.termx:termx-server:x.y.z`.
 
@@ -140,13 +140,14 @@ All build files use Gradle Kotlin DSL for type-safe configuration:
 |------|-------------|------------|
 | `clean` | Removes build outputs | Yes |
 | `assemble` | Compiles and builds JARs (no tests) | Yes |
-| `check` | Runs tests and PMD; does **not** run SpotBugs | Yes |
+| `check` | Runs unit/integration tests only (no SpotBugs, no PMD) | Yes |
 | `publish` | Publishes Maven artifacts to GitHub Packages | Yes |
 | `run` | Runs the application (from `termx-app`; use `:termx-app:run`) | No |
 | `shadowJar` | Builds the fat JAR for `termx-app` | No (Docker build uses context) |
 | `spotbugsCheck` | Runs SpotBugs on all projects; **manual only**, not part of `check` | No |
+| `pmdCheck` | Runs PMD on all projects; **manual only**, not part of `check` | No |
 
-**Verification:** `check` runs unit/integration tests and PMD. SpotBugs is excluded from `check` to keep CI and Docker builds fast; run `./gradlew spotbugsCheck` when you want static analysis.
+**Verification:** `check` runs only tests. SpotBugs and PMD are excluded from `check` to keep CI fast; run `./gradlew spotbugsCheck` or `./gradlew pmdCheck` when you want static analysis.
 
 **Application:** To run the server locally from the root: `./gradlew :termx-app:run`. Optional: `-Pdev` for dev auth, `-Pdebug=5005` for remote debugging.
 
@@ -171,6 +172,7 @@ All build files use Gradle Kotlin DSL for type-safe configuration:
 
 **CI/CD:** GitHub Actions
 - Builds on push to `main` or version tags
+- Single Gradle step: `clean assemble check publish` (then Docker build and push)
 - Publishes Maven artifacts and Docker images automatically
 
 ---
