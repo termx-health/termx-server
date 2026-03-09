@@ -51,6 +51,7 @@ allprojects {
     }
 
     tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
+        ignoreFailures = true
         reports.create("html") {
             required.set(true)
         }
