@@ -30,6 +30,7 @@ import io.micronaut.core.io.ResourceLoader;
 import jakarta.inject.Singleton;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -43,8 +44,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
@@ -107,8 +108,8 @@ public class TransformerService {
   }
 
   public Bundle loadBaseResources() {
-    try {
-      return parse(new String(resourceLoader.getResources("conformance/base/profiles-types.json").findFirst().orElseThrow().openStream().readAllBytes()));
+    try (InputStream is = resourceLoader.getResources("conformance/base/profiles-types.json").findFirst().orElseThrow().openStream()) {
+      return parse(new String(is.readAllBytes()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -348,9 +349,9 @@ public class TransformerService {
       case "dateTime", "instant" -> OffsetDateTime.now();
       case "date" -> LocalDate.now();
       case "time" -> LocalTime.now();
-      case "boolean" -> new Random().nextBoolean();
-      case "integer", "integer64", "unsignedInt", "positiveInt" -> Math.abs(new Random().nextInt());
-      case "decimal" -> new Random().nextFloat();
+      case "boolean" -> ThreadLocalRandom.current().nextBoolean();
+      case "integer", "integer64", "unsignedInt", "positiveInt" -> Math.abs(ThreadLocalRandom.current().nextInt());
+      case "decimal" -> ThreadLocalRandom.current().nextFloat();
 
       case "BackboneElement" -> new LinkedHashMap<>();
       case "Identifier" -> new Identifier().setValue(randomString(16));
@@ -383,7 +384,7 @@ public class TransformerService {
   }
 
   private static BigDecimal randomBigDecimal() {
-    return new BigDecimal(Float.toString(new Random().nextFloat()));
+    return new BigDecimal(Float.toString(ThreadLocalRandom.current().nextFloat()));
   }
 
   private static String randomString() {

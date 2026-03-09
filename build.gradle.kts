@@ -4,6 +4,8 @@ plugins {
     id("io.micronaut.minimal.library") version "4.6.2"
     id("io.micronaut.minimal.application") version "4.6.2"
     id("com.gradleup.shadow") version "9.3.2" apply false
+    id("com.github.spotbugs") version "6.4.8" apply false
+    pmd
 }
 
 group = "org.termx"
@@ -12,6 +14,8 @@ allprojects {
     apply(plugin = "java-library")
     apply(plugin = "groovy")
     apply(plugin = "org.owasp.dependencycheck")
+    apply(plugin = "com.github.spotbugs")
+    apply(plugin = "pmd")
 
     version = rootProject.version
     group = rootProject.group
@@ -41,6 +45,24 @@ allprojects {
 
     configurations.all {
         resolutionStrategy.cacheChangingModulesFor(0, "seconds")
+    }
+
+    tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
+        reports.create("html") {
+            required.set(true)
+        }
+        effort.set(com.github.spotbugs.snom.Effort.MAX)
+        reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
+    }
+
+    tasks.withType<Pmd>().configureEach {
+        ruleSetFiles = files("${rootProject.projectDir}/config/pmd/ruleset.xml")
+        ruleSets = listOf()
+        ignoreFailures = true
+        reports {
+            xml.required.set(false)
+            html.required.set(true)
+        }
     }
 }
 

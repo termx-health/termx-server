@@ -65,6 +65,7 @@ public class MeasurementUnitService {
     return query(params);
   }
 
+  @Transactional
   public void merge(MeasurementUnit unit) {
     MeasurementUnitQueryParams params = new MeasurementUnitQueryParams();
     params.setCode(unit.getCode());

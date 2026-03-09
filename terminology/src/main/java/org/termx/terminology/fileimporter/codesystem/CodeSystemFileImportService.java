@@ -95,6 +95,7 @@ public class CodeSystemFileImportService {
     return process(request, file);
   }
 
+  @Transactional
   public CodeSystemFileImportResponse process(CodeSystemFileImportRequest request, byte[] file) {
     if ("json".equals(request.getType())) {
       codeSystemFhirImportService.importCodeSystem(new String(file, StandardCharsets.UTF_8), request.getCodeSystem().getId());
