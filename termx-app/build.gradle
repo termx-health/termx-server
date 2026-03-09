@@ -1,7 +1,7 @@
 plugins {
   id("io.micronaut.minimal.library") apply false
   id("io.micronaut.minimal.application")
-  id("com.github.johnrengelman.shadow")
+  id("com.gradleup.shadow")
 }
 
 dependencies {
@@ -55,8 +55,8 @@ dependencies {
   runtimeOnly 'io.micronaut:micronaut-jackson-databind'
   runtimeOnly "ch.qos.logback:logback-classic:1.5.6"
 
-  testCompileOnly("org.projectlombok:lombok:1.18.30")
-  testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
+  testCompileOnly("org.projectlombok:lombok:1.18.42")
+  testAnnotationProcessor("org.projectlombok:lombok:1.18.42")
   testImplementation("io.micronaut.test:micronaut-test-spock:3.9.2")
   testImplementation("org.spockframework:spock-core:2.3-groovy-3.0") {
     exclude group: "org.codehaus.groovy", module: "groovy-all"
@@ -78,7 +78,7 @@ micronaut {
 }
 
 shadowJar {
-  zip64 true
+  zip64 = true
   mergeServiceFiles {
     exclude 'META-INF/services/org.xmlpull.v1.XmlPullParserFactory'
   }

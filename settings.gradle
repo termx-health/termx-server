@@ -1,5 +1,9 @@
 //includeBuild '../taskflow-service'
 
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
 rootProject.name="termx-server"
 
 include 'edition-int'

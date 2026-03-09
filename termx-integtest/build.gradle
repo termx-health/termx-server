@@ -5,8 +5,8 @@ plugins {
 }
 
 dependencies {
-    testCompileOnly "org.projectlombok:lombok:1.18.30"
-    testAnnotationProcessor "org.projectlombok:lombok:1.18.30"
+    testCompileOnly "org.projectlombok:lombok:1.18.42"
+    testAnnotationProcessor "org.projectlombok:lombok:1.18.42"
     testAnnotationProcessor("io.micronaut.spring:micronaut-spring-annotation")
 
     testImplementation project(':terminology')
@@ -30,8 +30,11 @@ application {
 }
 
 java {
-    sourceCompatibility = JavaVersion.toVersion("17")
-    targetCompatibility = JavaVersion.toVersion("17")
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    sourceCompatibility = JavaVersion.toVersion("25")
+    targetCompatibility = JavaVersion.toVersion("25")
 }
 
 //graalvmNative.toolchainDetection = false
