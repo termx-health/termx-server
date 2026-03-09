@@ -130,13 +130,20 @@ public class TaskRepository extends BaseRepository {
       });
       sb.append(")");
     }
-    sb.appendIfNotNull(params.getCreatedByOrAssignee(), (s, p) ->
-        s.append("and (t.created_by = ? or t.assignee = ?)", p, p));
-    if (params.getPermittedContexts() != null) {
-      sb.append("and (t.context is null");
-      for (String ctx : params.getPermittedContexts()) {
-        String[] pipe = PipeUtil.parsePipe(ctx);
-        sb.append("or exists(select 1 from jsonb_array_elements(t.context) c where (c->>'type')::text = ? and (c->>'id')::text = ?)", pipe[0], pipe[1]);
+    if (params.getVisibilityFilter() != null) {
+      var vf = params.getVisibilityFilter();
+      sb.append("and (");
+      // Rule A: user is creator or assignee
+      sb.append("(t.created_by = ? or t.assignee = ?)", vf.getUsername(), vf.getUsername());
+      // Rule B: context matches publisher permissions
+      if (vf.getPublisherContexts() == null) {
+        sb.append("or 1=1"); // wildcard publisher sees everything
+      } else if (!vf.getPublisherContexts().isEmpty()) {
+        sb.append("or t.context is null");
+        for (String ctx : vf.getPublisherContexts()) {
+          String[] pipe = PipeUtil.parsePipe(ctx);
+          sb.append("or exists(select 1 from jsonb_array_elements(t.context) c where (c->>'type')::text = ? and (c->>'id')::text = ?)", pipe[0], pipe[1]);
+        }
       }
       sb.append(")");
     }

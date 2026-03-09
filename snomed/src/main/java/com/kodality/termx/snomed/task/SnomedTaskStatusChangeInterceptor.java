@@ -2,9 +2,9 @@ package com.kodality.termx.snomed.task;
 
 import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
 import com.kodality.termx.snomed.integration.translation.SnomedTranslationActionService;
-import com.kodality.termx.task.Task;
-import com.kodality.termx.task.TaskStatus;
-import com.kodality.termx.task.api.TaskStatusChangeInterceptor;
+import org.termx.task.Task;
+import org.termx.task.TaskStatus;
+import org.termx.task.api.TaskStatusChangeInterceptor;
 import java.util.Map;
 import java.util.Optional;
 import jakarta.inject.Singleton;

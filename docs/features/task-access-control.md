@@ -7,13 +7,14 @@ Task access control provides privilege-based visibility and filtering of tasks i
 **Role-based visibility:**
 
 - **Admin** - Sees all tasks across all resources
-- **Publisher** - Sees all tasks for resources they have publish access to
-- **Editor** - Sees only tasks they created or are assigned to, for resources they have edit access to
+- **Publisher** - Sees tasks they created/are assigned to, PLUS all tasks for resources they have publish access to
+- **Editor** - Sees only tasks they created or are assigned to
 - **Viewer** - Cannot see tasks in the task list (no task access)
 
 **Key capabilities:**
 
-- Privilege-based task filtering at the database level
+- Automatic virtual privilege derivation at login (resource edit/publish privileges grant Task privileges)
+- Privilege-based task filtering at the database level with OR logic (own tasks OR publisher access)
 - Resource-level access control using context items
 - Unseen changes tracking per user
 - Automatic filtering in all API endpoints (query, load, widget)
@@ -25,15 +26,22 @@ Task access control is automatically enabled and requires no configuration. It i
 
 ### Privilege System
 
-Task access is controlled by three privilege levels:
+Task access is controlled through **virtual privilege derivation**. When a user logs in, their resource privileges are automatically translated into Task privileges:
 
-| Privilege | Scope | Task Visibility |
-|-----------|-------|-----------------|
-| `*.*.publish` or `*.*.*` | Global admin/publisher | All tasks |
-| `*.Task.publish` | Task publisher | All tasks for accessible resources |
-| `*.ResourceType.publish` | Resource publisher | All tasks for that resource type |
-| `*.Task.edit` or `*.ResourceType.edit` | Editor | Only own/assigned tasks for accessible resources |
-| `*.Task.view` or `*.ResourceType.view` | Viewer | No task list access (empty results) |
+**Privilege derivation at login:**
+- Any `*.*.edit` privilege (e.g., `icd-10.CodeSystem.edit`) → automatically grants `*.Task.view` and `*.Task.edit`
+- Any `*.*.publish` privilege (e.g., `*.ValueSet.publish`) → automatically grants `*.Task.view`, `*.Task.edit`, and `*.Task.publish`
+- View-only privileges (e.g., `*.CodeSystem.view`) → no Task privileges, task list is hidden
+
+**Task visibility rules:**
+
+| User Privilege | Task List Accessible? | Tasks Visible |
+|----------------|----------------------|---------------|
+| `*.CodeSystem.view` only | ❌ No | None (no Task privileges derived) |
+| `icd-10.CodeSystem.edit` | ✅ Yes | Tasks created by OR assigned to user |
+| `icd-10.CodeSystem.publish` | ✅ Yes | Tasks created by OR assigned to user, PLUS all tasks with context `code-system\|icd-10` |
+| `*.*.publish` | ✅ Yes | Tasks created by OR assigned to user, PLUS all tasks (wildcard publisher) |
+| `*.*.*` (admin) | ✅ Yes | All tasks (no filter) |
 
 ### Default Role Configuration
 
@@ -64,10 +72,12 @@ Example: A user with privilege `icd-10.CodeSystem.edit` can see tasks with conte
 
 **Steps:**
 1. Editor logs in with `icd-10.CodeSystem.edit` privilege
-2. Creates task: "Review new diabetes concepts" with context `{type: "code-system", id: "icd-10"}`
-3. Task is assigned to themselves
-4. Query task list - sees the newly created task
-5. Another editor queries task list - does NOT see this task (not their task)
+2. System automatically derives `*.Task.view` and `*.Task.edit` privileges at login
+3. Task list becomes visible (gate check passes)
+4. Creates task: "Review new diabetes concepts" with context `{type: "code-system", id: "icd-10"}`
+5. Task is assigned to themselves
+6. Query task list - sees the newly created task (creator match)
+7. Another editor queries task list - does NOT see this task (not their task, no publish privilege)
 
 **Outcome:** Editor can manage their own tasks without seeing unrelated tasks from other editors.
 
@@ -77,9 +87,13 @@ Example: A user with privilege `icd-10.CodeSystem.edit` can see tasks with conte
 
 **Steps:**
 1. Publisher logs in with `icd-10.CodeSystem.publish` and `icd-11.CodeSystem.publish` privileges
-2. Query task list - sees ALL tasks (from all users) for ICD-10 and ICD-11
-3. Can view task details even if created by other users
-4. Can reassign tasks and monitor progress
+2. System automatically derives `*.Task.view`, `*.Task.edit`, and `*.Task.publish` privileges at login
+3. Query task list - sees:
+   - ALL tasks with context `code-system|icd-10` (from all users)
+   - ALL tasks with context `code-system|icd-11` (from all users)
+   - Plus any tasks they created or are assigned to (regardless of context)
+4. Can view task details even if created by other users
+5. Can reassign tasks and monitor progress
 
 **Outcome:** Publisher has oversight of all tasks for resources they manage, enabling effective coordination.
 
@@ -100,26 +114,30 @@ Example: A user with privilege `icd-10.CodeSystem.edit` can see tasks with conte
 **Context:** Read-only user (reports/auditing role) should not see task management interface.
 
 **Steps:**
-1. Viewer logs in with only `*.*.view` privileges (no Task.edit or Task.publish)
-2. Query task list - receives empty result
-3. Attempts to load specific task - receives 403 Forbidden
-4. Task menu items hidden in UI
+1. Viewer logs in with only `*.*.view` privileges (no edit or publish on any resource)
+2. System does NOT derive any Task privileges (no `*.Task.view`)
+3. Query task list - receives 403 Forbidden (gate check fails)
+4. Task menu items hidden in UI (no Task privileges)
 
-**Outcome:** Viewer cannot access task system, maintaining separation of concerns.
+**Outcome:** Viewer cannot access task system, maintaining separation of concerns. The virtual privilege derivation ensures task access is automatically tied to edit/publish privileges.
 
 ### Scenario 5: Resource-Specific Task Filtering
 
-**Context:** Editor has edit access to multiple code systems but should only see tasks for those specific resources.
+**Context:** Mixed publisher/editor privileges on different resources.
 
 **Steps:**
-1. Editor has privileges: `icd-10.CodeSystem.edit`, `disorders.ValueSet.edit`
-2. Query task list - sees only tasks where:
-   - Context references ICD-10 or disorders
-   - AND (created by editor OR assigned to editor)
-3. Tasks for other resources (e.g., SNOMED) are not visible
-4. Tasks for ICD-10 created by others and not assigned to this editor are not visible
+1. User has privileges: `icd-10.CodeSystem.publish`, `disorders.ValueSet.edit`
+2. System derives `*.Task.view`, `*.Task.edit`, and `*.Task.publish` at login
+3. Query task list - sees tasks where:
+   - **(Rule A)** Created by user OR assigned to user (any resource)
+   - **OR (Rule B)** Context references ICD-10 (publisher access, sees all ICD-10 tasks)
+4. Specifically:
+   - ✅ Own tasks for disorders (creator/assignee match)
+   - ✅ All ICD-10 tasks (publisher context match)
+   - ❌ Other users' disorders tasks (no publish access, not own task)
+   - ❌ Other resources' tasks (no access, not own task)
 
-**Outcome:** Fine-grained access control based on both resource access and task ownership.
+**Outcome:** Fine-grained access control with OR logic - users see their own work across all resources PLUS supervisory view of resources they publish.
 
 ## API
 
@@ -138,13 +156,13 @@ All endpoints under `/api/tm` apply access control:
 
 ### Query Parameters
 
-The `createdByOrAssignee` filter is automatically applied for editors - it cannot be overridden via query parameters.
+The `visibilityFilter` is automatically applied for non-admin users - it cannot be overridden via query parameters.
 
 ### Response Behavior
 
-- **Admin/Publisher**: Full task list for accessible resources
-- **Editor**: Only tasks where `createdBy = username OR assignee = username`
-- **Viewer**: Empty result set (`QueryResult.empty()`)
+- **Admin**: All tasks (no filter)
+- **Publisher/Editor**: Tasks matching visibility filter (own tasks OR publisher context match)
+- **Viewer**: 403 Forbidden (no Task.view privilege)
 
 ## Testing
 
@@ -226,18 +244,23 @@ Query parameters used for filtering tasks at the API level.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| createdByOrAssignee | String | Username filter (tasks created by OR assigned to this user) |
-| permittedContexts | List<String> | Resource IDs user has access to |
+| visibilityFilter | TaskVisibilityFilter | Combined filter (username + publisher contexts) |
 | unseenChanges | Boolean | Filter for tasks updated since last opened |
 | text | String | Full-text search |
 | project | String | Project code filter |
 | status | String | Task status filter |
 | assignee | String | Assigned user filter |
 
+**TaskVisibilityFilter (nested class):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| username | String | User for creator/assignee matching |
+| publisherContexts | List<String> | Context resources user has publish access to (null = all, empty = none) |
+
 **Applied automatically by controller:**
 
-- `createdByOrAssignee` - set for editors based on session username
-- `permittedContexts` - set for editors/publishers based on session privileges
+- `visibilityFilter` - set for non-admin users with username and publisher contexts based on session privileges
 
 ### SessionInfo
 
@@ -265,14 +288,16 @@ Privilege strings follow: `<resourceId>.<ResourceType>.<action>`
 | ResourceType | `CodeSystem`, `ValueSet`, `MapSet`, `Task` | `*` = all types |
 | action | `view`, `edit`, `publish` | `*` = all actions |
 
-**Privilege hierarchy for task access:**
+**Virtual Task privilege derivation:**
 
-1. `*.*.*` - Admin, sees all tasks
-2. `*.*.publish` - Global publisher, sees all tasks
-3. `icd-10.CodeSystem.publish` - ICD-10 publisher, sees all ICD-10 tasks
-4. `*.Task.edit` - Task editor, sees own tasks across all resources
-5. `icd-10.CodeSystem.edit` - ICD-10 editor, sees own ICD-10 tasks
-6. `*.Task.view` - Task viewer, cannot access task list
+Resource privileges are automatically translated to Task privileges at login:
+
+| Resource Privilege | Derived Task Privileges | Effect |
+|--------------------|------------------------|--------|
+| `*.*.edit` (any edit) | `*.Task.view`, `*.Task.edit` | Can access task list, see own tasks |
+| `*.*.publish` (any publish) | `*.Task.view`, `*.Task.edit`, `*.Task.publish` | Can access task list, see own tasks + publisher-supervised tasks |
+| `*.*.view` only | None | Cannot access task list |
+| `*.*.*` (admin) | `*.*.*` | Sees all tasks |
 
 ### TaskSearchParams (Backend)
 
@@ -280,9 +305,14 @@ Internal search parameters passed to TaskForge repository.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| createdByOrAssignee | String | SQL filter: `created_by = ? OR assignee = ?` |
-| permittedContexts | List<String> | SQL filter: context resource IDs must be in this list |
+| visibilityFilter | TaskVisibilityFilter | Combined OR filter for task visibility |
 | unseenChanges | Boolean | JOIN with task_read_log, filter where last_opened < updated_at |
+
+**TaskVisibilityFilter:**
+- `username` - Matches `created_by = ? OR assignee = ?`
+- `publisherContexts` - Matches tasks whose context is in the list (null = all, empty = none)
+
+**SQL logic:** `(created_by = username OR assignee = username) OR (context IN publisherContexts)`
 
 These parameters are mapped from `TaskQueryParams` by the controller after applying privilege checks.
 
@@ -290,84 +320,99 @@ These parameters are mapped from `TaskQueryParams` by the controller after apply
 
 ```mermaid
 flowchart TD
-    Request[API Request] --> Controller[TaskController]
-    Controller --> CheckRole{Check User Role}
+    Login[User Login] --> SessionProvider[SessionProvider]
+    SessionProvider --> DerivePrivs[deriveTaskPrivileges]
+    DerivePrivs -->|*.*.edit or *.*.publish| AddTaskPrivs[Add *.Task.view/edit/publish]
+    AddTaskPrivs --> SessionInfo[SessionInfo with derived privileges]
     
-    CheckRole -->|Admin| AllTasks[Query All Tasks]
-    CheckRole -->|Publisher| PublisherFilter[Filter by Permitted Resources]
-    CheckRole -->|Editor| EditorFilter[Filter by Created/Assigned + Permitted Resources]
-    CheckRole -->|Viewer| Empty[Return Empty Result]
+    Request[API Request] --> Auth[@Authorized Task.view]
+    Auth -->|No Task.view| Forbidden[403 Forbidden]
+    Auth -->|Has Task.view| Controller[TaskController]
     
-    PublisherFilter --> GetPermitted[Get Permitted Resource IDs]
-    EditorFilter --> GetPermitted
+    Controller --> CheckAdmin{Is Admin?}
+    CheckAdmin -->|Yes| AllTasks[Query All Tasks]
+    CheckAdmin -->|No| BuildFilter[Build TaskVisibilityFilter]
     
-    GetPermitted --> Session[SessionInfo.getPermittedResourceIds]
-    Session --> FilterContext[Filter tasks by context.resourceId IN permitted]
+    BuildFilter --> SetUsername[username = session.username]
+    BuildFilter --> GetPublisher[publisherContexts = getPermittedContexts publish]
     
-    EditorFilter --> AddOwnership[Add createdBy/assignee filter]
-    AddOwnership --> FilterContext
+    SetUsername --> ApplyFilter[Apply Visibility Filter]
+    GetPublisher --> ApplyFilter
     
-    FilterContext --> Repository[TaskRepository]
-    Repository --> Database[(taskforge.task)]
+    ApplyFilter --> Repository[TaskRepository]
+    AllTasks --> Repository
+    
+    Repository --> SQL[WHERE own tasks OR publisher context]
+    SQL --> Database[(taskforge.task)]
     Database --> Results[Filtered Results]
 ```
 
 **Privilege resolution flow:**
 
-1. **Request arrives**: Extract session from OAuth/mock provider
-2. **Check admin**: If `*.*.*` or `*.*.publish`, return all tasks
-3. **Check publisher**: If has publish on any resource type, get permitted resource IDs and filter by context
-4. **Check editor**: If has edit on any resource type, apply `createdByOrAssignee` filter plus permitted resources
-5. **Default (viewer)**: Return empty result
+1. **Login**: SessionFilter calls `deriveTaskPrivileges()` - any `*.*.edit` or `*.*.publish` grants Task privileges
+2. **Request arrives**: `@Authorized(privilege = Privilege.T_VIEW)` checks for `*.Task.view` (gate check)
+3. **Controller logic**:
+   - If admin (`*.*.*`): no filter
+   - Otherwise: build `TaskVisibilityFilter` with username + publisher contexts
+4. **Repository SQL**: Apply OR filter at database level
 
 **Database filtering:**
 
-Filtering happens at the SQL level for performance:
+Filtering happens at the SQL level for performance with OR logic:
 
 ```sql
--- Editor query
+-- Visibility filter query
 SELECT * FROM taskforge.task t
-WHERE (t.created_by = ? OR t.assignee = ?)
-  AND EXISTS (
+WHERE (
+  -- Rule A: Own tasks
+  (t.created_by = ? OR t.assignee = ?)
+  -- Rule B: Publisher context match
+  OR EXISTS (
     SELECT 1 FROM jsonb_array_elements(t.context) ctx
-    WHERE (ctx->>'type', ctx->>'id') IN (permitted_resources)
+    WHERE (ctx->>'type', ctx->>'id') IN (permitted_publisher_resources)
   )
+)
 ```
 
 ## Technical Implementation
 
 ### Key Components
 
+**SessionFilter privilege derivation:**
+
+```java
+private void deriveTaskPrivileges(SessionInfo session) {
+    if (session.getPrivileges() == null) return;
+    Set<String> derived = new HashSet<>(session.getPrivileges());
+    boolean hasEdit = session.hasPrivilege("*.*.edit");
+    boolean hasPublish = session.hasPrivilege("*.*.publish");
+    if (hasEdit || hasPublish) {
+        derived.add("*.Task.view");
+        derived.add("*.Task.edit");
+    }
+    if (hasPublish) {
+        derived.add("*.Task.publish");
+    }
+    session.setPrivileges(derived);
+}
+```
+
 **TaskController filtering logic:**
 
 ```java
-@Authorized(privilege = Privilege.T_VIEW)
+@Authorized(privilege = Privilege.T_VIEW)  // Gate check
 @Get(uri = "/tasks{?params*}")
 public QueryResult<Task> queryTasks(TaskQueryParams params) {
     SessionInfo session = SessionStore.require();
     
-    // Admin sees everything
-    if (session.hasPrivilege("*.*.publish") || session.hasPrivilege("*.*.*")) {
-        return taskService.queryTasks(params);
+    if (!isAdmin(session)) {
+        // Build visibility filter with OR semantics
+        TaskVisibilityFilter filter = new TaskVisibilityFilter();
+        filter.setUsername(session.getUsername());
+        filter.setPublisherContexts(getPermittedContexts(session, "publish"));
+        params.setVisibilityFilter(filter);
     }
-    
-    // Publisher sees all tasks for accessible resources
-    if (session.hasAnyPrivilege(List.of("*.Task.publish", "*.*.publish"))) {
-        List<String> permittedResources = session.getPermittedResourceIds("*.publish");
-        params.setPermittedContexts(permittedResources);
-        return taskService.queryTasks(params);
-    }
-    
-    // Editor sees only own tasks for accessible resources
-    if (session.hasAnyPrivilege(List.of("*.Task.edit", "*.*.edit"))) {
-        params.setCreatedByOrAssignee(session.getUsername());
-        List<String> permittedResources = session.getPermittedResourceIds("*.edit");
-        params.setPermittedContexts(permittedResources);
-        return taskService.queryTasks(params);
-    }
-    
-    // Viewer: return empty
-    return QueryResult.empty();
+    return taskService.queryTasks(params);
 }
 ```
 

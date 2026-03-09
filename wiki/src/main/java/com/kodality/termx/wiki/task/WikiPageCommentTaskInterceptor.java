@@ -1,12 +1,12 @@
 package com.kodality.termx.wiki.task;
 
-import com.kodality.termx.task.Task;
-import com.kodality.termx.task.Task.TaskActivity;
-import com.kodality.termx.task.Task.TaskActivity.TaskActivityContextItem;
-import com.kodality.termx.task.Task.TaskContextItem;
-import com.kodality.termx.task.TaskPriority;
-import com.kodality.termx.task.TaskService;
-import com.kodality.termx.task.TaskStatus;
+import org.termx.task.Task;
+import org.termx.task.Task.TaskActivity;
+import org.termx.task.Task.TaskActivity.TaskActivityContextItem;
+import org.termx.task.Task.TaskContextItem;
+import org.termx.task.TaskPriority;
+import org.termx.task.TaskService;
+import org.termx.task.TaskStatus;
 import com.kodality.termx.wiki.page.PageComment;
 import com.kodality.termx.wiki.page.PageCommentStatus;
 import com.kodality.termx.wiki.page.PageContent;

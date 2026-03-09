@@ -1,12 +1,12 @@
-package com.kodality.termx.task.api;
+package org.termx.task.api;
 
 import com.kodality.commons.model.CodeName;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.task.Task;
-import com.kodality.termx.task.Task.TaskActivity;
-import com.kodality.termx.task.Task.TaskActivity.TaskActivityContextItem;
-import com.kodality.termx.task.TaskQueryParams;
-import com.kodality.termx.task.Workflow;
+import org.termx.task.Task;
+import org.termx.task.Task.TaskActivity;
+import org.termx.task.Task.TaskActivity.TaskActivityContextItem;
+import org.termx.task.TaskQueryParams;
+import org.termx.task.Workflow;
 import java.util.List;
 
 public abstract class TaskProvider {

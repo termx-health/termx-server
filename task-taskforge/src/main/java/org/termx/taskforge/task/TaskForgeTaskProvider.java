@@ -14,8 +14,8 @@ import org.termx.taskforge.task.activity.TaskActivityService;
 import org.termx.taskforge.task.readlog.TaskReadLogService;
 import org.termx.taskforge.workflow.WorkflowSearchParams;
 import org.termx.taskforge.workflow.WorkflowService;
-import com.kodality.termx.task.TaskQueryParams;
-import com.kodality.termx.task.api.TaskProvider;
+import org.termx.task.TaskQueryParams;
+import org.termx.task.api.TaskProvider;
 import io.micronaut.context.annotation.Replaces;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
@@ -35,16 +35,16 @@ public class TaskForgeTaskProvider extends TaskProvider {
   private final TaskMapper mapper;
 
   @Override
-  public QueryResult<com.kodality.termx.task.Task> queryTasks(TaskQueryParams params) {
+  public QueryResult<org.termx.task.Task> queryTasks(TaskQueryParams params) {
     QueryResult<Task> result = taskService.search(mapper.map(params));
-    QueryResult<com.kodality.termx.task.Task> termxResult = new QueryResult<>();
+    QueryResult<org.termx.task.Task> termxResult = new QueryResult<>();
     termxResult.setMeta(result.getMeta());
     termxResult.setData(result.getData().stream().map(mapper::map).toList());
     return termxResult;
   }
 
   @Override
-  public com.kodality.termx.task.Task loadTask(String number) {
+  public org.termx.task.Task loadTask(String number) {
     Task task = taskService.load(number);
     List<TaskActivity> activities =
         taskActivityService.search(new TaskActivitySearchParams().setTaskIds(task.getId().toString()).setSort(List.of(Ordering.updated)));
@@ -55,7 +55,7 @@ public class TaskForgeTaskProvider extends TaskProvider {
   }
 
   @Override
-  public com.kodality.termx.task.Task saveTask(com.kodality.termx.task.Task termxTask) {
+  public org.termx.task.Task saveTask(org.termx.task.Task termxTask) {
     Task task = mapper.map(termxTask);
     if (task.getNumber() != null) {
       Task existingTask = taskService.load(task.getNumber());
@@ -70,7 +70,7 @@ public class TaskForgeTaskProvider extends TaskProvider {
     taskService.updateStatus(task.getId(), newStatus);
   }
 
-  public List<com.kodality.termx.task.Task.TaskActivity> findActivities(String context) {
+  public List<org.termx.task.Task.TaskActivity> findActivities(String context) {
     if (StringUtils.isEmpty(context)) {
       return List.of();
     }
@@ -80,8 +80,8 @@ public class TaskForgeTaskProvider extends TaskProvider {
   }
 
   @Override
-  public com.kodality.termx.task.Task.TaskActivity createTaskActivity(String number, String note,
-                                                                      List<com.kodality.termx.task.Task.TaskActivity.TaskActivityContextItem> context) {
+  public org.termx.task.Task.TaskActivity createTaskActivity(String number, String note,
+                                                                      List<org.termx.task.Task.TaskActivity.TaskActivityContextItem> context) {
     Long taskId = taskService.load(number).getId();
     TaskActivity ta = new TaskActivity();
     ta.setTaskId(taskId);
@@ -93,7 +93,7 @@ public class TaskForgeTaskProvider extends TaskProvider {
   }
 
   @Override
-  public com.kodality.termx.task.Task.TaskActivity updateTaskActivity(String number, String activityId, String note) {
+  public org.termx.task.Task.TaskActivity updateTaskActivity(String number, String activityId, String note) {
     Long taskId = taskService.load(number).getId();
     TaskActivity ta = taskActivityService.load(Long.valueOf(activityId));
     ta.setTaskId(taskId);
@@ -112,7 +112,7 @@ public class TaskForgeTaskProvider extends TaskProvider {
   }
 
   @Override
-  public List<com.kodality.termx.task.Workflow> loadProjectWorkFlows(String code) {
+  public List<org.termx.task.Workflow> loadProjectWorkFlows(String code) {
     WorkflowSearchParams params = new WorkflowSearchParams().all();
     params.setProjectCodes(code);
     return workflowService.search(params).getData().stream().map(mapper::map).toList();

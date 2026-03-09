@@ -1,11 +1,11 @@
-package com.kodality.termx.task;
+package org.termx.task;
 
 import com.kodality.commons.model.CodeName;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.task.Task.TaskActivity;
-import com.kodality.termx.task.Task.TaskActivity.TaskActivityContextItem;
-import com.kodality.termx.task.Task.TaskContextItem;
-import com.kodality.termx.task.api.TaskProvider;
+import org.termx.task.Task.TaskActivity;
+import org.termx.task.Task.TaskActivity.TaskActivityContextItem;
+import org.termx.task.Task.TaskContextItem;
+import org.termx.task.api.TaskProvider;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.List;

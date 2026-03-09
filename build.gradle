@@ -53,7 +53,7 @@ subprojects { Project project ->
     testRuntime("spock2")
     processing {
       incremental(true)
-      annotations("com.kodality.termx.*")
+      annotations("com.kodality.termx.*", "org.termx.*")
     }
   }
 
