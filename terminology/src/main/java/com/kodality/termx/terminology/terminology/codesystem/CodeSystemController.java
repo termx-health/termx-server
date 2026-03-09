@@ -127,7 +127,7 @@ public class CodeSystemController {
   @Authorized(Privilege.CS_PUBLISH)
   @Delete(uri = "/{codeSystem}")
   public HttpResponse<?> deleteCodeSystem(@PathVariable String codeSystem) {
-    codeSystemService.cancel(codeSystem);
+    codeSystemService.cancel(parseCode(codeSystem));
     provenanceService.create(new Provenance("delete", "CodeSystem", codeSystem));
     return HttpResponse.ok();
   }

@@ -49,6 +49,7 @@ public class ValueSetVersionConceptService {
   private static final String INACTIVE = "inactive";
   private static final String STATUS = "status";
   private static final String RETIREMENT_DATE = "retirementDate";
+  private static final String SNOMED_URI = "http://snomed.info/sct";
   @Transactional
   public List<ValueSetVersionConcept> expand(String vs, String vsVersion) {
     ValueSetVersion version = getVersion(vs, vsVersion);
@@ -162,7 +163,9 @@ public class ValueSetVersionConceptService {
           if (CollectionUtils.isEmpty(c.getAdditionalDesignations())) {
             c.setAdditionalDesignations(designations.stream()
                 .filter(d -> CollectionUtils.isEmpty(supportedLanguages) || supportedLanguages.contains(d.getLanguage()))
-                .filter(d -> c.getDisplay() == null || d != c.getDisplay()).toList());
+                .filter(d -> c.getDisplay() == null || d != c.getDisplay())
+                .filter(d -> !SNOMED_URI.equals(c.getConcept().getBaseCodeSystemUri()) || !"display".equals(d.getDesignationType()))
+                .filter(d -> !d.isSupplement() || designations.stream().noneMatch(d1 -> d1.getDesignationType().equals(d.getDesignationType()) && d1 != d)).toList());
           }
           c.setActive(calculatedActive(versions));
           c.setStatus(versions.stream().findFirst().map(CodeSystemEntityVersion::getStatus).orElse(PublicationStatus.active));

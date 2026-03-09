@@ -26,6 +26,30 @@ with t (code, association_kind, forward_name, reverse_name, directed, descriptio
 select 1;
 --rollback select 1;
 
+--changeset termx:concept-map-equivalence-2
+with t (code, association_kind, forward_name, reverse_name, directed, description) as (values
+  ('related-to', 'concept-map-equivalence', 'Related To', null, true,
+   'The concepts are related to each other, but the exact relationship is not known.'),
+  ('not-related-to', 'concept-map-equivalence', 'Not Related To', null, true,
+   'This is an explicit assertion that the target concept is not related to the source concept.')
+)
+, e as (select t.*, (exists(select 1 from terminology.association_type a where t.code = a.code)) as pexists from t)
+, inserted as (
+    insert into terminology.association_type(code, association_kind, forward_name, reverse_name, directed, description)
+    select e.code, e.association_kind, e.forward_name, e.reverse_name, e.directed, e.description
+      from e
+     where e.pexists = false
+)
+, updated as (
+    update terminology.association_type a
+       set association_kind = e.association_kind, forward_name = e.forward_name, reverse_name = e.reverse_name,
+           directed = e.directed, description = e.description
+      from e
+     where e.pexists = true and e.code = a.code
+)
+select 1;
+--rollback select 1;
+
 --changeset termx:codesystem-hierarchy-meaning
 with t (code, association_kind, forward_name, reverse_name, directed, description) as (values
   ('grouped-by', 'codesystem-hierarchy-meaning', 'Grouped By', null, true,

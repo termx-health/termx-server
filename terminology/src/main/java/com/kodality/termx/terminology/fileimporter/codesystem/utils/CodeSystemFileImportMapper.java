@@ -110,9 +110,9 @@ public class CodeSystemFileImportMapper {
     version.setReleaseDate(version.getReleaseDate() != null ? version.getReleaseDate() : fpVersion.getReleaseDate() != null ? fpVersion.getReleaseDate() : LocalDate.now());
     version.setAlgorithm(fpVersion.getAlgorithm());
     version.setSupportedLanguages(langs);
-    version.setBaseCodeSystem(fpCodeSystem.getSupplement());
-    version.setBaseCodeSystemUri(fpCodeSystem.getSupplementUri());
-    version.setBaseCodeSystemVersion(fpVersion.getSupplementVersion() != null ? new CodeSystemVersionReference().setVersion(fpVersion.getSupplementVersion()) : null);
+    version.setBaseCodeSystem(Optional.ofNullable(fpCodeSystem.getSupplement()).orElse(version.getBaseCodeSystem()));
+    version.setBaseCodeSystemUri(Optional.ofNullable(fpCodeSystem.getSupplementUri()).orElse(version.getBaseCodeSystemUri()));
+    version.setBaseCodeSystemVersion(Optional.ofNullable(fpVersion.getSupplementVersion()).map(v -> new CodeSystemVersionReference().setVersion(v)).orElse(version.getBaseCodeSystemVersion()));
     version.setPreferredLanguage(fpVersion.getLanguage() != null ? fpVersion.getLanguage() : langs.size() == 1 ? langs.get(0) :
         langs.contains(SessionStore.require().getLang()) ? SessionStore.require().getLang() : null);
     version.setIdentifiers(fpVersion.getOid() != null ? List.of(new Identifier(OID_SYSTEM, OID_PREFIX + fpVersion.getOid())) : version.getIdentifiers());

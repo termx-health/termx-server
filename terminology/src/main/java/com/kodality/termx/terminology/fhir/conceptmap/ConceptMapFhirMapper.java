@@ -10,10 +10,12 @@ import com.kodality.termx.core.sys.provenance.Provenance;
 import com.kodality.termx.terminology.Privilege;
 import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService;
 import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService;
+import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptUtil;
 import com.kodality.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import com.kodality.termx.terminology.terminology.mapset.MapSetService;
 import com.kodality.termx.terminology.terminology.relatedartifacts.MapSetRelatedArtifactService;
 import com.kodality.termx.terminology.terminology.valueset.ValueSetService;
+import com.kodality.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
 import com.kodality.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import com.kodality.termx.ts.Copyright;
 import com.kodality.termx.ts.Language;
@@ -38,6 +40,7 @@ import com.kodality.termx.ts.mapset.MapSetVersion.MapSetVersionScope;
 import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
 import com.kodality.termx.ts.valueset.ValueSet;
 import com.kodality.termx.ts.valueset.ValueSetVersion;
+import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
 import com.kodality.zmei.fhir.datatypes.Coding;
@@ -57,6 +60,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -74,11 +78,13 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
   private final MapSetService mapSetService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final ValueSetVersionService valueSetVersionService;
+  private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final MapSetRelatedArtifactService relatedArtifactService;
 
   public ConceptMapFhirMapper(ConceptService conceptService,
                               CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
                               CodeSystemVersionService codeSystemVersionService, ValueSetVersionService valueSetVersionService,
+                              ValueSetVersionConceptService valueSetVersionConceptService,
                               MapSetRelatedArtifactService relatedArtifactService) {
     this.conceptService = conceptService;
     this.codeSystemService = codeSystemService;
@@ -86,6 +92,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     this.mapSetService = mapSetService;
     this.codeSystemVersionService = codeSystemVersionService;
     this.valueSetVersionService = valueSetVersionService;
+    this.valueSetVersionConceptService = valueSetVersionConceptService;
     this.relatedArtifactService = relatedArtifactService;
   }
 
@@ -156,13 +163,14 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
 //    toFhirRelatedArtifacts(fhirConceptMap, relatedArtifacts);
 
     fhirConceptMap.setVersion(version.getVersion());
+    fhirConceptMap.setLanguage(version.getPreferredLanguage());
     fhirConceptMap.setEffectivePeriod(new Period(
         OffsetDateTime.of(version.getReleaseDate().atTime(0, 0), ZoneOffset.UTC),
         version.getExpirationDate() == null ? null : OffsetDateTime.of(version.getExpirationDate().atTime(23, 59), ZoneOffset.UTC)));
     fhirConceptMap.setStatus(version.getStatus());
     fhirConceptMap.setSourceScopeUri(version.getScope().getSourceValueSet() == null ? null : version.getScope().getSourceValueSet().getUri());
     fhirConceptMap.setTargetScopeUri(version.getScope().getTargetValueSet() == null ? null : version.getScope().getTargetValueSet().getUri());
-    fhirConceptMap.setGroup(toFhirGroup(version.getAssociations(), version.getScope()));
+    fhirConceptMap.setGroup(toFhirGroup(version.getAssociations(), version.getScope(), version.getPreferredLanguage()));
     fhirConceptMap.setProperty(toFhirProperties(mapSet.getProperties(), version.getPreferredLanguage()));
     return fhirConceptMap;
   }
@@ -179,7 +187,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     ).toList();
   }
 
-  private List<ConceptMapGroup> toFhirGroup(List<MapSetAssociation> associations, MapSetVersionScope scope) {
+  private List<ConceptMapGroup> toFhirGroup(List<MapSetAssociation> associations, MapSetVersionScope scope, String preferredLanguage) {
     if (associations == null) {
       return new ArrayList<>();
     }
@@ -194,6 +202,10 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
           uri = uri == null ? codeSystemService.load(cs).map(CodeSystem::getUri).orElse(null) : uri;
           return Pair.of(cs, uri);
         }).filter(p -> p.getKey() != null && p.getValue() != null).collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+
+    Map<String, String> sourceDisplays = buildDisplayMap(scope, true, preferredLanguage);
+    Map<String, String> targetDisplays = buildDisplayMap(scope, false, preferredLanguage);
+
     Map<String, List<MapSetAssociation>> groups = associations.stream()
         .collect(Collectors.groupingBy(a -> a.getSource().getCodeSystem() + a.getTarget().getCodeSystem()));
     return groups.values().stream().map(a -> {
@@ -205,16 +217,84 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
       Map<String, List<MapSetAssociation>> elements = a.stream().collect(Collectors.groupingBy(el -> el.getSource().getCode()));
       group.setElement(elements.values().stream().map(el -> new ConceptMapGroupElement()
               .setCode(el.get(0).getSource().getCode())
-              .setDisplay(el.get(0).getSource().getDisplay())
+              .setDisplay(getDisplay(el.get(0).getSource(), sourceDisplays))
               .setNoMap(el.get(0).isNoMap() ? true : null)
               .setTarget(el.stream().map(t -> new ConceptMapGroupElementTarget()
                   .setCode(t.getTarget().getCode())
-                  .setDisplay(t.getTarget().getDisplay())
+                  .setDisplay(getDisplay(t.getTarget(), targetDisplays))
                   .setRelationship(t.getRelationship())
                   .setProperty(toFhirPropertyValues(t.getPropertyValues()))).toList()))
           .collect(Collectors.toList()));
       return group;
     }).collect(Collectors.toList());
+  }
+
+  private String getDisplay(MapSetAssociationEntity entity, Map<String, String> displayLookup) {
+    if (entity == null) {
+      return null;
+    }
+    if (StringUtils.isNotEmpty(entity.getDisplay())) {
+      return entity.getDisplay();
+    }
+    return displayLookup.get(entity.getCodeSystem() + "|" + entity.getCode());
+  }
+
+  private Map<String, String> buildDisplayMap(MapSetVersionScope scope, boolean isSource, String preferredLanguage) {
+    Map<String, String> displayMap = new HashMap<>();
+    if (isSource) {
+      if ("value-set".equals(scope.getSourceType()) && scope.getSourceValueSet() != null) {
+        loadDisplaysFromValueSet(scope.getSourceValueSet(), displayMap, preferredLanguage);
+      } else if ("code-system".equals(scope.getSourceType()) && CollectionUtils.isNotEmpty(scope.getSourceCodeSystems())) {
+        for (MapSetResourceReference csRef : scope.getSourceCodeSystems()) {
+          loadDisplaysFromCodeSystem(csRef, displayMap, preferredLanguage);
+        }
+      }
+    } else {
+      if ("value-set".equals(scope.getTargetType()) && scope.getTargetValueSet() != null) {
+        loadDisplaysFromValueSet(scope.getTargetValueSet(), displayMap, preferredLanguage);
+      } else if ("code-system".equals(scope.getTargetType()) && CollectionUtils.isNotEmpty(scope.getTargetCodeSystems())) {
+        for (MapSetResourceReference csRef : scope.getTargetCodeSystems()) {
+          loadDisplaysFromCodeSystem(csRef, displayMap, preferredLanguage);
+        }
+      }
+    }
+    return displayMap;
+  }
+
+  private void loadDisplaysFromCodeSystem(MapSetResourceReference csRef, Map<String, String> displayMap, String preferredLanguage) {
+    if (csRef == null || csRef.getId() == null) {
+      return;
+    }
+    ConceptQueryParams params = new ConceptQueryParams()
+        .setCodeSystem(csRef.getId())
+        .setCodeSystemVersions(csRef.getId() + "|" + csRef.getVersion())
+        .all();
+    conceptService.query(params).getData().forEach(concept -> {
+      String display = concept.getVersions().stream()
+          .flatMap(v -> v.getDesignations().stream())
+          .filter(Objects::nonNull)
+          .collect(Collectors.collectingAndThen(Collectors.toList(), designations -> {
+            var d = ConceptUtil.getDisplay(designations, preferredLanguage, List.of());
+            return d != null ? d.getName() : null;
+          }));
+      if (display != null) {
+        displayMap.put(csRef.getId() + "|" + concept.getCode(), display);
+      }
+    });
+  }
+
+  private void loadDisplaysFromValueSet(MapSetResourceReference vsRef, Map<String, String> displayMap, String preferredLanguage) {
+    if (vsRef == null || vsRef.getId() == null) {
+      return;
+    }
+    var snapshot = valueSetVersionConceptService.expand(vsRef.getId(), vsRef.getVersion(), preferredLanguage);
+    List<ValueSetVersionConcept> concepts = snapshot != null && snapshot.getExpansion() != null ? snapshot.getExpansion() : List.of();
+    concepts.forEach(vsConcept -> {
+      String display = vsConcept.getDisplay() != null ? vsConcept.getDisplay().getName() : null;
+      if (display != null && vsConcept.getConcept() != null) {
+        displayMap.put(vsConcept.getConcept().getCodeSystem() + "|" + vsConcept.getConcept().getCode(), display);
+      }
+    });
   }
 
   private List<ConceptMapGroupElementTargetProperty> toFhirPropertyValues(List<MapSetPropertyValue> propertyValues) {

@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class CodeSystemService {
+  private static final Pattern CS_ID_REGEX = Pattern.compile("[A-Za-z0-9\\-.]{1,64}");
   private final CodeSystemRepository repository;
   private final ConceptService conceptService;
   private final EntityPropertyService entityPropertyService;
@@ -141,6 +143,9 @@ public class CodeSystemService {
   }
 
   private void validateId(String id) {
+    if (!CS_ID_REGEX.matcher(id).matches()) {
+      throw ApiError.TE119.toApiException();
+    }
     if (id.contains(BaseFhirMapper.SEPARATOR)) {
       throw ApiError.TE113.toApiException(Map.of("symbols", BaseFhirMapper.SEPARATOR));
     }
