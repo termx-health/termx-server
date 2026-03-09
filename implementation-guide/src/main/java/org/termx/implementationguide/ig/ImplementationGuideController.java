@@ -2,10 +2,10 @@ package org.termx.implementationguide.ig;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.core.sys.provenance.Provenance;
-import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceChange;
+import org.termx.core.auth.Authorized;
+import org.termx.core.auth.SessionStore;
+import org.termx.core.sys.provenance.Provenance;
+import org.termx.core.sys.provenance.Provenance.ProvenanceChange;
 import org.termx.implementationguide.Privilege;
 import org.termx.implementationguide.ig.version.ImplementationGuideVersion;
 import org.termx.implementationguide.ig.version.ImplementationGuideVersionQueryParams;
@@ -13,7 +13,7 @@ import org.termx.implementationguide.ig.version.ImplementationGuideVersionServic
 import org.termx.implementationguide.ig.version.group.ImplementationGuideGroup;
 import org.termx.implementationguide.ig.version.page.ImplementationGuidePage;
 import org.termx.implementationguide.ig.version.resource.ImplementationGuideResource;
-import com.kodality.termx.ts.PublicationStatus;
+import org.termx.ts.PublicationStatus;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;

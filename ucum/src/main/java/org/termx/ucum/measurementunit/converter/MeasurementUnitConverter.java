@@ -2,7 +2,7 @@ package org.termx.ucum.measurementunit.converter;
 
 import org.termx.ucum.ApiError;
 import org.termx.ucum.measurementunit.MeasurementUnitService;
-import com.kodality.termx.ucum.MeasurementUnit;
+import org.termx.ucum.MeasurementUnit;
 import java.math.BigDecimal;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

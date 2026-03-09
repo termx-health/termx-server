@@ -6,7 +6,7 @@ import org.termx.task.TaskType;
 import org.termx.task.api.TaskStatusChangeInterceptor;
 import org.termx.terminology.terminology.mapset.MapSetProvenanceService;
 import org.termx.terminology.terminology.mapset.version.MapSetVersionService;
-import com.kodality.termx.ts.mapset.MapSetVersion;
+import org.termx.ts.mapset.MapSetVersion;
 import java.util.Optional;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

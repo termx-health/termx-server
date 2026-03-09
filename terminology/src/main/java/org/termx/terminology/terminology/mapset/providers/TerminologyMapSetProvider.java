@@ -1,10 +1,10 @@
 package org.termx.terminology.terminology.mapset.providers;
 
-import com.kodality.termx.core.ts.MapSetProvider;
+import org.termx.core.ts.MapSetProvider;
 import org.termx.terminology.terminology.mapset.MapSetService;
 import org.termx.terminology.terminology.mapset.version.MapSetVersionService;
-import com.kodality.termx.ts.mapset.MapSet;
-import com.kodality.termx.ts.mapset.MapSetVersion;
+import org.termx.ts.mapset.MapSet;
+import org.termx.ts.mapset.MapSetVersion;
 import java.util.Optional;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

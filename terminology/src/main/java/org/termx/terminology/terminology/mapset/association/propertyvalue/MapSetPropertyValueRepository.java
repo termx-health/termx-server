@@ -5,7 +5,7 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.ts.mapset.MapSetPropertyValue;
+import org.termx.ts.mapset.MapSetPropertyValue;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;

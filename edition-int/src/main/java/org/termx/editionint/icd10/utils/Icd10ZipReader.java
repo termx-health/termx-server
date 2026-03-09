@@ -1,7 +1,7 @@
 package org.termx.editionint.icd10.utils;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.kodality.termx.core.utils.XmlMapperUtil;
+import org.termx.core.utils.XmlMapperUtil;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;

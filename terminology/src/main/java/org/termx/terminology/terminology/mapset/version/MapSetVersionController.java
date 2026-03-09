@@ -1,9 +1,9 @@
 package org.termx.terminology.terminology.mapset.version;
 
 import org.termx.terminology.Privilege;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.ts.mapset.MapSetVersion;
+import org.termx.core.auth.Authorized;
+import org.termx.core.auth.SessionStore;
+import org.termx.ts.mapset.MapSetVersion;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;

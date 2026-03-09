@@ -1,12 +1,12 @@
 package org.termx.terminology.fhir.conceptmap;
 
-import com.kodality.termx.core.http.BinaryHttpClient;
+import org.termx.core.http.BinaryHttpClient;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.terminology.mapset.MapSetImportService;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.association.AssociationType;
-import com.kodality.termx.ts.mapset.MapSet;
-import com.kodality.termx.ts.mapset.MapSetImportAction;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.association.AssociationType;
+import org.termx.ts.mapset.MapSet;
+import org.termx.ts.mapset.MapSetImportAction;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.Resource;
 import com.kodality.zmei.fhir.resource.ResourceType;

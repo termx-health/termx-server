@@ -1,15 +1,15 @@
 package org.termx.terminology.terminology.codesystem.validator;
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.sys.lorque.LorqueProcess;
-import com.kodality.termx.core.sys.lorque.LorqueProcessService;
-import com.kodality.termx.sys.lorque.ProcessResult;
+import org.termx.core.auth.SessionStore;
+import org.termx.sys.lorque.LorqueProcess;
+import org.termx.core.sys.lorque.LorqueProcessService;
+import org.termx.sys.lorque.ProcessResult;
 import org.termx.terminology.terminology.codesystem.concept.ConceptService;
-import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.codesystem.ConceptQueryParams;
-import com.kodality.termx.ts.codesystem.Designation;
-import com.kodality.termx.ts.codesystem.EntityPropertyValue;
+import org.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.ConceptQueryParams;
+import org.termx.ts.codesystem.Designation;
+import org.termx.ts.codesystem.EntityPropertyValue;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Comparator;

@@ -6,8 +6,8 @@ import org.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportR
 import org.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportResult.FileProcessingResponseProperty;
 import org.termx.terminology.fileimporter.fileparser.FileParserFactory;
 import org.termx.terminology.fileimporter.fileparser.IFileParser;
-import com.kodality.termx.ts.codesystem.EntityPropertyKind;
-import com.kodality.termx.ts.codesystem.EntityPropertyType;
+import org.termx.ts.codesystem.EntityPropertyKind;
+import org.termx.ts.codesystem.EntityPropertyType;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.text.ParseException;
@@ -28,11 +28,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.kodality.termx.ts.codesystem.EntityPropertyType.bool;
-import static com.kodality.termx.ts.codesystem.EntityPropertyType.coding;
-import static com.kodality.termx.ts.codesystem.EntityPropertyType.dateTime;
-import static com.kodality.termx.ts.codesystem.EntityPropertyType.decimal;
-import static com.kodality.termx.ts.codesystem.EntityPropertyType.integer;
+import static org.termx.ts.codesystem.EntityPropertyType.bool;
+import static org.termx.ts.codesystem.EntityPropertyType.coding;
+import static org.termx.ts.codesystem.EntityPropertyType.dateTime;
+import static org.termx.ts.codesystem.EntityPropertyType.decimal;
+import static org.termx.ts.codesystem.EntityPropertyType.integer;
 
 public class CodeSystemFileImportProcessor {
   public static final String IDENTIFIER_PROPERTY = "concept-code";

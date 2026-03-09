@@ -1,8 +1,8 @@
 package org.termx.terminology.terminology.codesystem.designation;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.ts.codesystem.Designation;
-import com.kodality.termx.ts.codesystem.DesignationQueryParams;
+import org.termx.ts.codesystem.Designation;
+import org.termx.ts.codesystem.DesignationQueryParams;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;

@@ -3,8 +3,8 @@ package org.termx.editionint.atc;
 
 import org.termx.editionint.atc.utils.AtcMapper;
 import org.termx.editionint.atc.utils.AtcResponseParser;
-import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration;
-import com.kodality.termx.core.ts.CodeSystemImportProvider;
+import org.termx.ts.codesystem.CodeSystemImportConfiguration;
+import org.termx.core.ts.CodeSystemImportProvider;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;

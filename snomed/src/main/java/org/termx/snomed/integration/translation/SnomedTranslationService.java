@@ -1,10 +1,10 @@
 package org.termx.snomed.integration.translation;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.snomed.concept.SnomedTranslation;
-import com.kodality.termx.snomed.concept.SnomedTranslationSearchParams;
-import com.kodality.termx.snomed.concept.SnomedTranslationStatus;
-import com.kodality.termx.snomed.description.SnomedDescription;
+import org.termx.snomed.concept.SnomedTranslation;
+import org.termx.snomed.concept.SnomedTranslationSearchParams;
+import org.termx.snomed.concept.SnomedTranslationStatus;
+import org.termx.snomed.description.SnomedDescription;
 import org.termx.snomed.integration.SnomedInterceptor;
 import org.termx.snomed.integration.SnomedService;
 import io.micronaut.context.annotation.Value;

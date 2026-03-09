@@ -1,6 +1,6 @@
 package org.termx.editionint.loinc;
 
-import com.kodality.termx.core.sys.job.logger.ImportLog;
+import org.termx.core.sys.job.logger.ImportLog;
 import org.termx.editionint.loinc.utils.LoincConcept;
 import org.termx.editionint.loinc.utils.LoincConcept.LoincConceptAssociation;
 import org.termx.editionint.loinc.utils.LoincConcept.LoincConceptProperty;
@@ -10,11 +10,11 @@ import org.termx.editionint.loinc.utils.answerlist.LoincAnswerList;
 import org.termx.editionint.loinc.utils.answerlist.LoincAnswerListMapper;
 import org.termx.editionint.loinc.utils.part.LoincPart;
 import org.termx.editionint.loinc.utils.part.LoincPartMapper;
-import com.kodality.termx.core.ts.CodeSystemImportProvider;
-import com.kodality.termx.ts.Language;
-import com.kodality.termx.core.ts.MapSetImportProvider;
-import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.codesystem.EntityPropertyType;
+import org.termx.core.ts.CodeSystemImportProvider;
+import org.termx.ts.Language;
+import org.termx.core.ts.MapSetImportProvider;
+import org.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.EntityPropertyType;
 import com.univocity.parsers.common.processor.RowListProcessor;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;

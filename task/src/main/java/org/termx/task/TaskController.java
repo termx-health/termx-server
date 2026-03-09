@@ -2,11 +2,11 @@ package org.termx.task;
 
 import com.kodality.commons.model.CodeName;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionInfo;
-import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.core.utils.PatchUtil;
-import com.kodality.termx.core.utils.PatchUtil.PatchRequest;
+import org.termx.core.auth.Authorized;
+import org.termx.core.auth.SessionInfo;
+import org.termx.core.auth.SessionStore;
+import org.termx.core.utils.PatchUtil;
+import org.termx.core.utils.PatchUtil.PatchRequest;
 import org.termx.task.Task.TaskActivity;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;

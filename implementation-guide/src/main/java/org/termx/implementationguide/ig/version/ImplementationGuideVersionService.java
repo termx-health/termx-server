@@ -8,7 +8,7 @@ import org.termx.implementationguide.ig.version.page.ImplementationGuidePage;
 import org.termx.implementationguide.ig.version.page.ImplementationGuidePageService;
 import org.termx.implementationguide.ig.version.resource.ImplementationGuideResource;
 import org.termx.implementationguide.ig.version.resource.ImplementationGuideResourceService;
-import com.kodality.termx.ts.PublicationStatus;
+import org.termx.ts.PublicationStatus;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

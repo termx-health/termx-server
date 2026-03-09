@@ -58,7 +58,7 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok:1.18.42")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.42")
     testImplementation("io.micronaut.test:micronaut-test-spock:3.9.2")
-    testImplementation("org.spockframework:spock-core:2.3-groovy-3.0") {
+    testImplementation("org.spockframework:spock-core:2.4-groovy-5.0") {
         exclude(group = "org.codehaus.groovy", module = "groovy-all")
     }
     testImplementation("org.apache.commons:commons-lang3:3.12.0")
@@ -69,7 +69,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("com.kodality.termx.TermxApplication")
+    mainClass.set("org.termx.TermxApplication")
 }
 
 micronaut {

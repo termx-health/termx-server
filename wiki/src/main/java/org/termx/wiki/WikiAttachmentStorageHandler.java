@@ -1,8 +1,8 @@
 package org.termx.wiki;
-import com.kodality.termx.wiki.page.Page;
+import org.termx.wiki.page.Page;
 
 import com.kodality.commons.micronaut.rest.MultipartBodyReader.Attachment;
-import com.kodality.termx.wiki.page.Page.PageAttachment;
+import org.termx.wiki.page.Page.PageAttachment;
 import io.micronaut.http.server.types.files.StreamedFile;
 import java.util.List;
 import java.util.Map;

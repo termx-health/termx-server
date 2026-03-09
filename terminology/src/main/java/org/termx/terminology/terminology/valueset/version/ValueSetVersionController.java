@@ -1,8 +1,8 @@
 package org.termx.terminology.terminology.valueset.version;
 
 import org.termx.terminology.Privilege;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.ts.valueset.ValueSetVersion;
+import org.termx.core.auth.Authorized;
+import org.termx.ts.valueset.ValueSetVersion;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;

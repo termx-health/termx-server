@@ -5,8 +5,8 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.ts.association.AssociationType;
-import com.kodality.termx.ts.association.AssociationTypeQueryParams;
+import org.termx.ts.association.AssociationType;
+import org.termx.ts.association.AssociationTypeQueryParams;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 

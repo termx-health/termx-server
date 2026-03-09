@@ -1,13 +1,13 @@
 package org.termx.terminology.terminology.valueset.providers;
 
 
-import com.kodality.termx.core.github.ResourceContentProvider.ResourceContent;
-import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
+import org.termx.core.github.ResourceContentProvider.ResourceContent;
+import org.termx.core.sys.space.SpaceGithubDataHandler;
 import org.termx.terminology.terminology.valueset.ValueSetService;
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
-import com.kodality.termx.ts.valueset.ValueSet;
-import com.kodality.termx.ts.valueset.ValueSetQueryParams;
-import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
+import org.termx.ts.valueset.ValueSet;
+import org.termx.ts.valueset.ValueSetQueryParams;
+import org.termx.ts.valueset.ValueSetVersionQueryParams;
 import java.util.List;
 import java.util.Map;
 import jakarta.inject.Singleton;

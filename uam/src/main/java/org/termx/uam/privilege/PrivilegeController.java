@@ -1,9 +1,9 @@
 package org.termx.uam.privilege;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.Privilege;
-import com.kodality.termx.auth.PrivilegeQueryParams;
-import com.kodality.termx.core.auth.Authorized;
+import org.termx.auth.Privilege;
+import org.termx.auth.PrivilegeQueryParams;
+import org.termx.core.auth.Authorized;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;

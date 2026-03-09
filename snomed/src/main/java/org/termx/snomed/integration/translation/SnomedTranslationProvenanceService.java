@@ -1,10 +1,10 @@
 package org.termx.snomed.integration.translation;
 
-import com.kodality.termx.core.sys.provenance.Provenance;
-import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceChange;
-import com.kodality.termx.core.sys.provenance.ProvenanceService;
-import com.kodality.termx.core.sys.provenance.ProvenanceUtil;
-import com.kodality.termx.snomed.concept.SnomedTranslation;
+import org.termx.core.sys.provenance.Provenance;
+import org.termx.core.sys.provenance.Provenance.ProvenanceChange;
+import org.termx.core.sys.provenance.ProvenanceService;
+import org.termx.core.sys.provenance.ProvenanceUtil;
+import org.termx.snomed.concept.SnomedTranslation;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;
 import java.util.Map;

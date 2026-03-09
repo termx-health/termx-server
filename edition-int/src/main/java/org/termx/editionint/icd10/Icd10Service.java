@@ -1,11 +1,11 @@
 package org.termx.editionint.icd10;
 
-import com.kodality.termx.core.http.BinaryHttpClient;
+import org.termx.core.http.BinaryHttpClient;
 import org.termx.editionint.icd10.utils.Icd10;
 import org.termx.editionint.icd10.utils.Icd10Mapper;
 import org.termx.editionint.icd10.utils.Icd10ZipReader;
-import com.kodality.termx.core.ts.CodeSystemImportProvider;
-import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration;
+import org.termx.core.ts.CodeSystemImportProvider;
+import org.termx.ts.codesystem.CodeSystemImportConfiguration;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

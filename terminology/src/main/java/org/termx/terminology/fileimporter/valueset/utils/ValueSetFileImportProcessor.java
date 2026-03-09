@@ -3,11 +3,11 @@ package org.termx.terminology.fileimporter.valueset.utils;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.fileimporter.fileparser.FileParserFactory;
 import org.termx.terminology.fileimporter.fileparser.IFileParser;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.codesystem.Designation;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
-import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.codesystem.Designation;
+import org.termx.ts.valueset.ValueSetVersionConcept;
+import org.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
+import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 

@@ -1,0 +1,69 @@
+package org.termx.core.sys.checklist.assertion;
+
+import org.termx.core.auth.SessionStore;
+import org.termx.core.sys.checklist.ChecklistService;
+import org.termx.core.sys.lorque.LorqueProcessService;
+import org.termx.core.utils.CsvUtil;
+import org.termx.sys.checklist.Checklist;
+import org.termx.sys.checklist.ChecklistAssertion.ChecklistAssertionError;
+import org.termx.sys.checklist.ChecklistQueryParams;
+import org.termx.sys.lorque.LorqueProcess;
+import org.termx.sys.lorque.ProcessResult;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import jakarta.inject.Singleton;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
+@Singleton
+@RequiredArgsConstructor
+public class ChecklistAssertionExportService {
+  private final static String process = "checklist-assertion-csv-export";
+
+  private final LorqueProcessService lorqueProcessService;
+  private final ChecklistService checklistService;
+
+  public LorqueProcess export(String resourceType, String resourceId, String resourceVersion) {
+    LorqueProcess lorqueProcess = lorqueProcessService.start(new LorqueProcess().setProcessName(process));
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
+      try {
+        ProcessResult result = ProcessResult.binary(composeResult(resourceType, resourceId, resourceVersion));
+        lorqueProcessService.complete(lorqueProcess.getId(), result);
+      } catch (Exception e) {
+        ProcessResult result = ProcessResult.text(ExceptionUtils.getMessage(e) + "\n" + ExceptionUtils.getStackTrace(e));
+        lorqueProcessService.fail(lorqueProcess.getId(), result);
+      }
+    }));
+
+    return lorqueProcess;
+  }
+
+  private byte[] composeResult(String resourceType, String resourceId, String resourceVersion) {
+    List<Checklist> checklists = checklistService.query(new ChecklistQueryParams()
+        .setResourceType(resourceType)
+        .setResourceId(resourceId)
+        .setResourceVersion(resourceVersion)
+        .setAssertionsDecorated(true).all()).getData();
+
+    List<String> headers = List.of("rule_code", "rule_title", "rule_description", "errors");
+    List<Object[]> rows = checklists.stream()
+        .filter(checklist -> CollectionUtils.isNotEmpty(checklist.getAssertions()) && !checklist.getAssertions().get(0).isPassed())
+        .map(this::composeRow).toList();
+
+    return CsvUtil.composeCsv(headers, rows, ",").toString().getBytes();
+  }
+
+  private Object[] composeRow(Checklist checklist) {
+    List<Object> row = new ArrayList<>();
+    row.add(checklist.getRule().getCode());
+    row.add(checklist.getRule().getTitle().getOrDefault(SessionStore.require().getLang(), ""));
+    row.add(checklist.getRule().getDescription().getOrDefault(SessionStore.require().getLang(), ""));
+    row.add(Optional.ofNullable(checklist.getAssertions().get(0).getErrors()).orElse(List.of()).stream()
+        .map(ChecklistAssertionError::getError).collect(Collectors.joining("\n")));
+    return row.toArray();
+  }
+}

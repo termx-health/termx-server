@@ -2,7 +2,7 @@ package org.termx.modeler.transformationdefinition.providers;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.util.PipeUtil;
-import com.kodality.termx.core.github.ResourceContentProvider;
+import org.termx.core.github.ResourceContentProvider;
 import org.termx.modeler.transformationdefinition.TransformationDefinition;
 import org.termx.modeler.transformationdefinition.TransformationDefinitionQueryParams;
 import org.termx.modeler.transformationdefinition.TransformationDefinitionService;

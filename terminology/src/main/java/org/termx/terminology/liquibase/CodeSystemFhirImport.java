@@ -3,7 +3,7 @@ package org.termx.terminology.liquibase;
 import com.kodality.commons.micronaut.BeanContext;
 import com.kodality.commons.util.JsonUtil;
 import org.termx.terminology.fhir.codesystem.CodeSystemFhirImportService;
-import com.kodality.termx.core.file.AuthorizedFileReaderCustomChange;
+import org.termx.core.file.AuthorizedFileReaderCustomChange;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
 import lombok.extern.slf4j.Slf4j;
 

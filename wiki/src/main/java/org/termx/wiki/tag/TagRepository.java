@@ -1,5 +1,5 @@
 package org.termx.wiki.tag;
-import com.kodality.termx.wiki.tag.Tag;
+import org.termx.wiki.tag.Tag;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;

@@ -1,6 +1,6 @@
 package org.termx.terminology.terminology.mapset.association.propertyvalue;
 
-import com.kodality.termx.ts.mapset.MapSetPropertyValue;
+import org.termx.ts.mapset.MapSetPropertyValue;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;

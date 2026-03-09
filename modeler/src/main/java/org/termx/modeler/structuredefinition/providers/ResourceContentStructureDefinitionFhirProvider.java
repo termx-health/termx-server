@@ -1,7 +1,7 @@
 package org.termx.modeler.structuredefinition.providers;
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinition;
+import org.termx.modeler.structuredefinition.StructureDefinition;
 import org.termx.modeler.structuredefinition.StructureDefinitionService;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;

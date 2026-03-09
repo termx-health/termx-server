@@ -1,7 +1,7 @@
 
 package org.termx.terminology.terminology.codesystem.validator;
 
-import com.kodality.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.Concept;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;

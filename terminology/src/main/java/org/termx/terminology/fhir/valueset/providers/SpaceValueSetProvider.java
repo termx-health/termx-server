@@ -1,13 +1,13 @@
 package org.termx.terminology.fhir.valueset.providers;
 
 import org.termx.terminology.fhir.valueset.ValueSetFhirImportService;
-import com.kodality.termx.sys.ResourceType;
-import com.kodality.termx.sys.server.TerminologyServer;
-import com.kodality.termx.sys.space.resource.SpaceResourceProvider;
-import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
+import org.termx.sys.ResourceType;
+import org.termx.sys.server.TerminologyServer;
+import org.termx.sys.space.resource.SpaceResourceProvider;
+import org.termx.sys.spacepackage.PackageVersion.PackageResource;
 import org.termx.terminology.terminology.valueset.ValueSetService;
-import com.kodality.termx.ts.valueset.ValueSet;
-import com.kodality.termx.ts.valueset.ValueSetQueryParams;
+import org.termx.ts.valueset.ValueSet;
+import org.termx.ts.valueset.ValueSetQueryParams;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Objects;

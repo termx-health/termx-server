@@ -1,17 +1,17 @@
 package org.termx.terminology.terminology.mapset.association;
 
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.core.sys.lorque.LorqueProcessService;
-import com.kodality.termx.core.utils.CsvUtil;
-import com.kodality.termx.core.utils.XlsxUtil;
-import com.kodality.termx.sys.lorque.LorqueProcess;
-import com.kodality.termx.sys.lorque.ProcessResult;
+import org.termx.core.sys.lorque.LorqueProcessService;
+import org.termx.core.utils.CsvUtil;
+import org.termx.core.utils.XlsxUtil;
+import org.termx.sys.lorque.LorqueProcess;
+import org.termx.sys.lorque.ProcessResult;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.terminology.mapset.version.MapSetVersionService;
-import com.kodality.termx.ts.mapset.MapSetAssociation;
-import com.kodality.termx.ts.mapset.MapSetAssociationQueryParams;
-import com.kodality.termx.ts.mapset.MapSetPropertyValue;
-import com.kodality.termx.ts.mapset.MapSetVersion;
+import org.termx.ts.mapset.MapSetAssociation;
+import org.termx.ts.mapset.MapSetAssociationQueryParams;
+import org.termx.ts.mapset.MapSetPropertyValue;
+import org.termx.ts.mapset.MapSetVersion;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;

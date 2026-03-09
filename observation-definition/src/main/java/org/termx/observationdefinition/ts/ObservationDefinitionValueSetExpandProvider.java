@@ -1,14 +1,14 @@
 package org.termx.observationdefinition.ts;
 
-import com.kodality.termx.core.ts.ValueSetExternalExpandProvider;
+import org.termx.core.ts.ValueSetExternalExpandProvider;
 import org.termx.observationdefinition.observationdefinition.ObservationDefinitionService;
-import com.kodality.termx.observationdefintion.ObservationDefinition;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
-import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.valueset.ValueSetVersion;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
-import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
-import com.kodality.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
+import org.termx.observationdefintion.ObservationDefinition;
+import org.termx.ts.codesystem.CodeSystemEntityVersion;
+import org.termx.ts.codesystem.Concept;
+import org.termx.ts.valueset.ValueSetVersion;
+import org.termx.ts.valueset.ValueSetVersionConcept;
+import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
+import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;

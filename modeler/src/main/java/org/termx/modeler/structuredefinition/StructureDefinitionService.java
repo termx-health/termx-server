@@ -1,11 +1,11 @@
 package org.termx.modeler.structuredefinition;
 
-import com.kodality.termx.modeler.structuredefinition.StructureDefinition;
-import com.kodality.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
+import org.termx.modeler.structuredefinition.StructureDefinition;
+import org.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.utils.ObjectUtil;
+import org.termx.core.utils.ObjectUtil;
 import jakarta.inject.Singleton;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

@@ -1,9 +1,9 @@
 package org.termx.snomed.integration;
 
-import com.kodality.termx.core.sys.email.EmailService;
+import org.termx.core.sys.email.EmailService;
 import org.termx.snomed.client.SnowstormClient;
-import com.kodality.termx.snomed.rf2.SnomedImportJob;
-import com.kodality.termx.snomed.rf2.SnomedImportTracking;
+import org.termx.snomed.rf2.SnomedImportJob;
+import org.termx.snomed.rf2.SnomedImportTracking;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.scheduling.annotation.Scheduled;
 import jakarta.inject.Singleton;

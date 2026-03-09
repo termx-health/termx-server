@@ -1,8 +1,8 @@
 package org.termx.terminology.terminology;
 
-import com.kodality.termx.sys.server.TerminologyServerKind;
-import com.kodality.termx.core.sys.server.TerminologyServerRepository;
-import com.kodality.termx.core.sys.server.httpclient.ServerHttpClientService;
+import org.termx.sys.server.TerminologyServerKind;
+import org.termx.core.sys.server.TerminologyServerRepository;
+import org.termx.core.sys.server.httpclient.ServerHttpClientService;
 import java.net.http.HttpRequest.Builder;
 import jakarta.inject.Singleton;
 

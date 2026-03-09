@@ -6,15 +6,18 @@ alwaysApply: false
 
 # Java Package Convention
 
-All **new** Java classes must use `org.termx` as the root package.
+All Java classes use `org.termx` as the root package.
 
-- New code: `org.termx.<module>.<subpackage>`
-- Existing code in `com.kodality.termx.*` is legacy; do not create new classes there.
+## Package Structure
+
+- API contracts: `org.termx.ts.*`, `org.termx.sys.*`, `org.termx.snomed.*`, etc. (termx-api module)
+- Core infrastructure: `org.termx.core.*` (termx-core module)
+- Feature modules: `org.termx.<feature>.*` (e.g., `org.termx.terminology.*`, `org.termx.wiki.*`)
+- Application: `org.termx.*` (termx-app module)
 
 Examples:
-- `org.termx.auth` (authentication)
-- `org.termx.core.sequence` (core utilities)
-- `org.termx.taskforge.task` (taskforge module)
+- `org.termx.ts.codesystem.CodeSystem` (API DTO)
+- `org.termx.core.auth.SessionInfo` (core infrastructure)
+- `org.termx.terminology.terminology.codesystem.CodeSystemService` (feature implementation)
 
-When extending or importing existing `com.kodality.*` classes from new `org.termx.*` code,
-use fully qualified imports -- this is expected during the migration period.
+**Note:** External dependencies from `com.kodality.commons.*` and `com.kodality.kefhir.*` remain unchanged.

@@ -2,9 +2,9 @@ package org.termx.ucum.liquibase;
 
 import com.kodality.commons.micronaut.BeanContext;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.core.file.AuthorizedFileReaderCustomChange;
+import org.termx.core.file.AuthorizedFileReaderCustomChange;
 import org.termx.ucum.measurementunit.MeasurementUnitService;
-import com.kodality.termx.ucum.MeasurementUnit;
+import org.termx.ucum.MeasurementUnit;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 

@@ -10,11 +10,11 @@ import org.termx.terminology.fileimporter.association.utils.AssociationFileImpor
 import org.termx.terminology.fileimporter.fileparser.CsvFileParser;
 import org.termx.terminology.terminology.codesystem.association.CodeSystemAssociationService;
 import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.codesystem.CodeSystemAssociation;
-import com.kodality.termx.ts.codesystem.CodeSystemAssociationQueryParams;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.codesystem.CodeSystemAssociation;
+import org.termx.ts.codesystem.CodeSystemAssociationQueryParams;
+import org.termx.ts.codesystem.CodeSystemEntityVersion;
+import org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
 import jakarta.inject.Singleton;

@@ -1,13 +1,13 @@
 package org.termx.ucum.ts;
 
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.termx.ts.CaseSignificance;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion;
-import com.kodality.termx.ts.codesystem.Concept;
-import com.kodality.termx.ts.codesystem.Designation;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
-import com.kodality.termx.ucum.MeasurementUnit;
+import org.termx.ts.CaseSignificance;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.codesystem.CodeSystemEntityVersion;
+import org.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.Designation;
+import org.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue;
+import org.termx.ucum.MeasurementUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;

@@ -2,8 +2,8 @@ package org.termx.terminology.fileimporter.analyze;
 
 import com.kodality.commons.util.JsonUtil;
 import org.termx.terminology.Privilege;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.utils.FileUtil;
+import org.termx.core.auth.Authorized;
+import org.termx.core.utils.FileUtil;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Controller;

@@ -2,7 +2,7 @@ package org.termx.ucum.measurementunit.mapping;
 
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SqlBuilder;
-import com.kodality.termx.ucum.MeasurementUnitMapping;
+import org.termx.ucum.MeasurementUnitMapping;
 import java.util.List;
 import jakarta.inject.Singleton;
 

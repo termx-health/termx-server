@@ -2,7 +2,7 @@ package org.termx.taskforge;
 
 import org.termx.taskforge.auth.TaskforgeSessionInfo;
 import org.termx.taskforge.auth.TaskforgeSessionProvider;
-import com.kodality.termx.core.auth.SessionStore;
+import org.termx.core.auth.SessionStore;
 import jakarta.inject.Singleton;
 import java.util.Optional;
 

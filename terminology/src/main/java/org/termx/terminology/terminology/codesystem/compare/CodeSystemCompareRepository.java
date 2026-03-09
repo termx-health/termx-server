@@ -2,9 +2,9 @@ package org.termx.terminology.terminology.codesystem.compare;
 
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.ts.codesystem.CodeSystemCompareResult;
-import com.kodality.termx.ts.codesystem.CodeSystemCompareResult.CodeSystemCompareResultChange;
-import com.kodality.termx.ts.codesystem.CodeSystemCompareResult.CodeSystemCompareResultDiff;
+import org.termx.ts.codesystem.CodeSystemCompareResult;
+import org.termx.ts.codesystem.CodeSystemCompareResult.CodeSystemCompareResultChange;
+import org.termx.ts.codesystem.CodeSystemCompareResult.CodeSystemCompareResultDiff;
 import jakarta.inject.Singleton;
 
 @Singleton

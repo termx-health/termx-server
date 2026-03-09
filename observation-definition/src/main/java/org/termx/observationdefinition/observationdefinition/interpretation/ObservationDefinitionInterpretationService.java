@@ -1,6 +1,6 @@
 package org.termx.observationdefinition.observationdefinition.interpretation;
 
-import com.kodality.termx.observationdefintion.ObservationDefinitionInterpretation;
+import org.termx.observationdefintion.ObservationDefinitionInterpretation;
 import java.util.List;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package org.termx.uam.privilege;
 
-import com.kodality.termx.auth.Privilege;
+import org.termx.auth.Privilege;
 
 public interface PrivilegeDataHandler {
   default void afterPrivilegeSave(Privilege privilege) {}

@@ -1,11 +1,11 @@
 package org.termx.terminology.fhir;
 
-import com.kodality.termx.core.fhir.ConformanceInitializer.TermxGeneratedConformanceProvider;
+import org.termx.core.fhir.ConformanceInitializer.TermxGeneratedConformanceProvider;
 import org.termx.terminology.terminology.codesystem.CodeSystemService;
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
-import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
-import com.kodality.termx.ts.codesystem.CodeSystemVersion;
-import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
+import org.termx.ts.codesystem.CodeSystemQueryParams;
+import org.termx.ts.codesystem.CodeSystemVersion;
+import org.termx.ts.codesystem.CodeSystemVersionQueryParams;
 import jakarta.inject.Singleton;
 import java.util.Date;
 import java.util.List;

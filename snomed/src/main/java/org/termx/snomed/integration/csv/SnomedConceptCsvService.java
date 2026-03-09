@@ -1,14 +1,14 @@
 package org.termx.snomed.integration.csv;
 
-import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.core.sys.lorque.LorqueProcessService;
-import com.kodality.termx.core.utils.CsvUtil;
-import com.kodality.termx.snomed.concept.SnomedConcept;
-import com.kodality.termx.snomed.concept.SnomedConceptSearchParams;
-import com.kodality.termx.snomed.description.SnomedDescription;
+import org.termx.core.auth.SessionStore;
+import org.termx.core.sys.lorque.LorqueProcessService;
+import org.termx.core.utils.CsvUtil;
+import org.termx.snomed.concept.SnomedConcept;
+import org.termx.snomed.concept.SnomedConceptSearchParams;
+import org.termx.snomed.description.SnomedDescription;
 import org.termx.snomed.integration.SnomedService;
-import com.kodality.termx.sys.lorque.LorqueProcess;
-import com.kodality.termx.sys.lorque.ProcessResult;
+import org.termx.sys.lorque.LorqueProcess;
+import org.termx.sys.lorque.ProcessResult;
 import io.micronaut.core.util.CollectionUtils;
 import java.io.OutputStream;
 import java.util.ArrayList;

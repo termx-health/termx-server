@@ -1,8 +1,8 @@
 package org.termx.snomed.task;
 
-import com.kodality.termx.snomed.concept.SnomedTranslation;
-import com.kodality.termx.snomed.description.SnomedDescription;
-import com.kodality.termx.snomed.description.SnomedDescriptionSearchParams;
+import org.termx.snomed.concept.SnomedTranslation;
+import org.termx.snomed.description.SnomedDescription;
+import org.termx.snomed.description.SnomedDescriptionSearchParams;
 import org.termx.snomed.integration.SnomedInterceptor;
 import org.termx.snomed.integration.SnomedService;
 import org.termx.task.Task;

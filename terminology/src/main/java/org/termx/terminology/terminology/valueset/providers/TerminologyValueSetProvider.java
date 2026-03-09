@@ -1,13 +1,13 @@
 package org.termx.terminology.terminology.valueset.providers;
 
 import com.kodality.commons.exception.NotFoundException;
-import com.kodality.termx.core.ts.ValueSetProvider;
+import org.termx.core.ts.ValueSetProvider;
 import org.termx.terminology.terminology.valueset.ValueSetService;
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import org.termx.terminology.terminology.valueset.compare.ValueSetCompareService;
-import com.kodality.termx.ts.valueset.ValueSet;
-import com.kodality.termx.ts.valueset.ValueSetCompareResult;
-import com.kodality.termx.ts.valueset.ValueSetVersion;
+import org.termx.ts.valueset.ValueSet;
+import org.termx.ts.valueset.ValueSetCompareResult;
+import org.termx.ts.valueset.ValueSetVersion;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;

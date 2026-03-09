@@ -1,6 +1,6 @@
 package org.termx.wiki.pagecomment.interceptors;
 
-import com.kodality.termx.wiki.page.PageComment;
+import org.termx.wiki.page.PageComment;
 import java.util.List;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

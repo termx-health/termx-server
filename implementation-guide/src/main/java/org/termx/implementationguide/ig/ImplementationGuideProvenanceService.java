@@ -2,10 +2,10 @@ package org.termx.implementationguide.ig;
 
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.core.sys.provenance.Provenance;
-import com.kodality.termx.core.sys.provenance.Provenance.ProvenanceChange;
-import com.kodality.termx.core.sys.provenance.ProvenanceService;
-import com.kodality.termx.core.sys.provenance.ProvenanceUtil;
+import org.termx.core.sys.provenance.Provenance;
+import org.termx.core.sys.provenance.Provenance.ProvenanceChange;
+import org.termx.core.sys.provenance.ProvenanceService;
+import org.termx.core.sys.provenance.ProvenanceUtil;
 import org.termx.implementationguide.ig.version.ImplementationGuideVersion;
 import org.termx.implementationguide.ig.version.ImplementationGuideVersionService;
 import jakarta.inject.Singleton;

@@ -3,9 +3,9 @@ package org.termx.wiki;
 
 import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.util.PipeUtil;
-import com.kodality.termx.core.github.ResourceContentProvider;
-import com.kodality.termx.wiki.page.Page;
-import com.kodality.termx.wiki.page.PageQueryParams;
+import org.termx.core.github.ResourceContentProvider;
+import org.termx.wiki.page.Page;
+import org.termx.wiki.page.PageQueryParams;
 import org.termx.wiki.page.PageService;
 import java.util.List;
 import jakarta.inject.Singleton;

@@ -1,14 +1,14 @@
 package org.termx.editionint.icd10;
 
 import com.kodality.commons.model.LocalizedName;
-import com.kodality.termx.core.treminology.Icd10ImportProvider;
-import com.kodality.termx.core.ts.CodeSystemImportProvider;
+import org.termx.core.treminology.Icd10ImportProvider;
+import org.termx.core.ts.CodeSystemImportProvider;
 import org.termx.editionint.icd10.utils.Icd10;
 import org.termx.editionint.icd10.utils.Icd10Mapper;
 import org.termx.editionint.icd10.utils.Icd10ZipReader;
-import com.kodality.termx.ts.Language;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.codesystem.CodeSystemImportConfiguration;
+import org.termx.ts.Language;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.codesystem.CodeSystemImportConfiguration;
 import java.util.Map;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;

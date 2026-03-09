@@ -1,14 +1,14 @@
 package org.termx.terminology.fhir.conceptmap.providers;
 
 import org.termx.terminology.fhir.conceptmap.ConceptMapFhirImportService;
-import com.kodality.termx.sys.ResourceType;
-import com.kodality.termx.sys.server.TerminologyServer;
-import com.kodality.termx.sys.space.resource.SpaceResourceProvider;
-import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
+import org.termx.sys.ResourceType;
+import org.termx.sys.server.TerminologyServer;
+import org.termx.sys.space.resource.SpaceResourceProvider;
+import org.termx.sys.spacepackage.PackageVersion.PackageResource;
 import org.termx.terminology.terminology.mapset.MapSetService;
-import com.kodality.termx.ts.mapset.MapSet;
-import com.kodality.termx.ts.mapset.MapSetImportAction;
-import com.kodality.termx.ts.mapset.MapSetQueryParams;
+import org.termx.ts.mapset.MapSet;
+import org.termx.ts.mapset.MapSetImportAction;
+import org.termx.ts.mapset.MapSetQueryParams;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Objects;

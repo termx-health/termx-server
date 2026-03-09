@@ -1,13 +1,13 @@
 package org.termx.terminology.fhir.codesystem.providers;
 
 import org.termx.terminology.fhir.codesystem.CodeSystemFhirImportService;
-import com.kodality.termx.sys.ResourceType;
-import com.kodality.termx.sys.server.TerminologyServer;
-import com.kodality.termx.sys.space.resource.SpaceResourceProvider;
-import com.kodality.termx.sys.spacepackage.PackageVersion.PackageResource;
+import org.termx.sys.ResourceType;
+import org.termx.sys.server.TerminologyServer;
+import org.termx.sys.space.resource.SpaceResourceProvider;
+import org.termx.sys.spacepackage.PackageVersion.PackageResource;
 import org.termx.terminology.terminology.codesystem.CodeSystemService;
-import com.kodality.termx.ts.codesystem.CodeSystem;
-import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
+import org.termx.ts.codesystem.CodeSystem;
+import org.termx.ts.codesystem.CodeSystemQueryParams;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Objects;

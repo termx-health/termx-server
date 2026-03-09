@@ -1,16 +1,16 @@
 package org.termx.terminology.terminology.relatedartifacts;
 
-import com.kodality.termx.core.sys.space.SpaceService;
-import com.kodality.termx.core.wiki.PageProvider;
-import com.kodality.termx.sys.space.Space;
-import com.kodality.termx.sys.space.SpaceQueryParams;
+import org.termx.core.sys.space.SpaceService;
+import org.termx.core.wiki.PageProvider;
+import org.termx.sys.space.Space;
+import org.termx.sys.space.SpaceQueryParams;
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
-import com.kodality.termx.ts.relatedartifact.RelatedArtifact;
-import com.kodality.termx.ts.relatedartifact.RelatedArtifactType;
-import com.kodality.termx.ts.valueset.ValueSetVersion;
-import com.kodality.termx.ts.valueset.ValueSetVersionQueryParams;
-import com.kodality.termx.wiki.page.PageContent;
-import com.kodality.termx.wiki.page.PageRelationType;
+import org.termx.ts.relatedartifact.RelatedArtifact;
+import org.termx.ts.relatedartifact.RelatedArtifactType;
+import org.termx.ts.valueset.ValueSetVersion;
+import org.termx.ts.valueset.ValueSetVersionQueryParams;
+import org.termx.wiki.page.PageContent;
+import org.termx.wiki.page.PageRelationType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

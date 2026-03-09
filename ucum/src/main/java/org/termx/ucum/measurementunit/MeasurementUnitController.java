@@ -3,10 +3,10 @@ package org.termx.ucum.measurementunit;
 
 import com.kodality.commons.model.QueryResult;
 import org.termx.ucum.Privilege;
-import com.kodality.termx.core.auth.Authorized;
+import org.termx.core.auth.Authorized;
 import org.termx.ucum.measurementunit.converter.MeasurementUnitConverter;
-import com.kodality.termx.ucum.MeasurementUnit;
-import com.kodality.termx.ucum.MeasurementUnitQueryParams;
+import org.termx.ucum.MeasurementUnit;
+import org.termx.ucum.MeasurementUnitQueryParams;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;

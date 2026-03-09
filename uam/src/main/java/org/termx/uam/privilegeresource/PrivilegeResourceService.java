@@ -1,6 +1,6 @@
 package org.termx.uam.privilegeresource;
 
-import com.kodality.termx.auth.PrivilegeResource;
+import org.termx.auth.PrivilegeResource;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;

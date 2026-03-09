@@ -1,13 +1,13 @@
 package org.termx.wiki.pagecomment;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.core.sys.provenance.Provenance;
-import com.kodality.termx.core.sys.provenance.ProvenanceService;
+import org.termx.core.auth.SessionStore;
+import org.termx.core.sys.provenance.Provenance;
+import org.termx.core.sys.provenance.ProvenanceService;
 import org.termx.wiki.ApiError;
-import com.kodality.termx.wiki.page.PageComment;
-import com.kodality.termx.wiki.page.PageCommentQueryParams;
-import com.kodality.termx.wiki.page.PageCommentStatus;
+import org.termx.wiki.page.PageComment;
+import org.termx.wiki.page.PageCommentQueryParams;
+import org.termx.wiki.page.PageCommentStatus;
 import org.termx.wiki.pagecomment.diff.PageCommentDiffUtil;
 import org.termx.wiki.pagecomment.interceptors.PageCommentInterceptorService;
 import java.util.List;

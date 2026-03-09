@@ -2,7 +2,7 @@ package org.termx.taskforge;
 
 import org.termx.taskforge.api.TaskforgeUserProvider;
 import org.termx.taskforge.user.TaskforgeUser;
-import com.kodality.termx.core.user.UserProvider;
+import org.termx.core.user.UserProvider;
 import jakarta.inject.Singleton;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

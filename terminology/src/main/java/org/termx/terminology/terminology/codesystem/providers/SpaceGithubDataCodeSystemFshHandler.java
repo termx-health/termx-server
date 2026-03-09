@@ -1,13 +1,13 @@
 package org.termx.terminology.terminology.codesystem.providers;
 
 
-import com.kodality.termx.core.github.ResourceContentProvider.ResourceContent;
-import com.kodality.termx.core.sys.space.SpaceGithubDataHandler;
+import org.termx.core.github.ResourceContentProvider.ResourceContent;
+import org.termx.core.sys.space.SpaceGithubDataHandler;
 import org.termx.terminology.terminology.codesystem.CodeSystemService;
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
-import com.kodality.termx.ts.codesystem.CodeSystem;
-import com.kodality.termx.ts.codesystem.CodeSystemQueryParams;
-import com.kodality.termx.ts.codesystem.CodeSystemVersionQueryParams;
+import org.termx.ts.codesystem.CodeSystem;
+import org.termx.ts.codesystem.CodeSystemQueryParams;
+import org.termx.ts.codesystem.CodeSystemVersionQueryParams;
 import java.util.List;
 import java.util.Map;
 import jakarta.inject.Singleton;

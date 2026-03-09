@@ -1,10 +1,10 @@
 package org.termx.terminology.fhir.valueset;
 
 import org.termx.terminology.ApiError;
-import com.kodality.termx.core.http.BinaryHttpClient;
+import org.termx.core.http.BinaryHttpClient;
 import org.termx.terminology.terminology.valueset.ValueSetImportService;
-import com.kodality.termx.ts.PublicationStatus;
-import com.kodality.termx.ts.valueset.ValueSetImportAction;
+import org.termx.ts.PublicationStatus;
+import org.termx.ts.valueset.ValueSetImportAction;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.ResourceType;
 import java.nio.charset.StandardCharsets;

@@ -1,8 +1,8 @@
 package org.termx.uam.privilege;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.auth.Privilege;
-import com.kodality.termx.auth.PrivilegeQueryParams;
+import org.termx.auth.Privilege;
+import org.termx.auth.PrivilegeQueryParams;
 import org.termx.uam.privilegeresource.PrivilegeResourceService;
 import java.util.List;
 import jakarta.inject.Singleton;

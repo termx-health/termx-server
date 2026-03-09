@@ -1,9 +1,9 @@
 package org.termx.terminology.terminology.valueset.snapshot;
 
-import com.kodality.termx.core.auth.SessionStore;
-import com.kodality.termx.ts.valueset.ValueSetSnapshot;
-import com.kodality.termx.ts.valueset.ValueSetVersionConcept;
-import com.kodality.termx.ts.valueset.ValueSetVersionReference;
+import org.termx.core.auth.SessionStore;
+import org.termx.ts.valueset.ValueSetSnapshot;
+import org.termx.ts.valueset.ValueSetVersionConcept;
+import org.termx.ts.valueset.ValueSetVersionReference;
 import java.time.OffsetDateTime;
 import java.util.List;
 import jakarta.inject.Singleton;

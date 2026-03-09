@@ -1,7 +1,7 @@
 package org.termx.terminology.fhir.codesystem.providers;
 
-import com.kodality.termx.sys.server.resource.TerminologyServerResourceProvider;
-import com.kodality.termx.sys.server.resource.TerminologyServerResourceSyncProvider;
+import org.termx.sys.server.resource.TerminologyServerResourceProvider;
+import org.termx.sys.server.resource.TerminologyServerResourceSyncProvider;
 import org.termx.terminology.terminology.FhirServerHttpClientService;
 import org.termx.terminology.terminology.FhirServerHttpClientService.FhirServerHttpClient;
 import com.kodality.zmei.fhir.resource.ResourceType;

@@ -2,10 +2,10 @@ package org.termx.wiki.pagerelation;
 
 import com.kodality.commons.model.CodeName;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.utils.MatcherUtil;
-import com.kodality.termx.wiki.page.PageContent;
-import com.kodality.termx.wiki.page.PageRelation;
-import com.kodality.termx.wiki.page.PageRelationQueryParams;
+import org.termx.core.utils.MatcherUtil;
+import org.termx.wiki.page.PageContent;
+import org.termx.wiki.page.PageRelation;
+import org.termx.wiki.page.PageRelationQueryParams;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,0 +1,17 @@
+package org.termx.core.ts;
+
+import org.termx.ts.valueset.ValueSet;
+import org.termx.ts.valueset.ValueSetCompareResult;
+import org.termx.ts.valueset.ValueSetVersion;
+import java.util.Optional;
+import jakarta.inject.Singleton;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
+
+@Singleton
+@RequiredArgsConstructor
+public abstract class ValueSetProvider {
+  public abstract Optional<ValueSetVersion> loadValueSetVersion(String valueSet, String version);
+  public abstract void activateVersion(String valueSet, String version);
+  public abstract Pair<ValueSet, ValueSetCompareResult> compareWithPreviousVersion(String valueSet, String version);
+}

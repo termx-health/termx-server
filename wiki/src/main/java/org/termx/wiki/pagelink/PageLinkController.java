@@ -1,12 +1,12 @@
 package org.termx.wiki.pagelink;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.auth.Authorized;
-import com.kodality.termx.core.auth.SessionStore;
+import org.termx.core.auth.Authorized;
+import org.termx.core.auth.SessionStore;
 import org.termx.wiki.Privilege;
-import com.kodality.termx.wiki.page.PageLink;
-import com.kodality.termx.wiki.page.PageLinkMoveRequest;
-import com.kodality.termx.wiki.page.PageLinkQueryParams;
+import org.termx.wiki.page.PageLink;
+import org.termx.wiki.page.PageLinkMoveRequest;
+import org.termx.wiki.page.PageLinkQueryParams;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;

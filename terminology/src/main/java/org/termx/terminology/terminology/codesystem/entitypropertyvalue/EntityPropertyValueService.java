@@ -1,8 +1,8 @@
 package org.termx.terminology.terminology.codesystem.entitypropertyvalue;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.ts.codesystem.EntityPropertyValue;
-import com.kodality.termx.ts.codesystem.EntityPropertyValueQueryParams;
+import org.termx.ts.codesystem.EntityPropertyValue;
+import org.termx.ts.codesystem.EntityPropertyValueQueryParams;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;

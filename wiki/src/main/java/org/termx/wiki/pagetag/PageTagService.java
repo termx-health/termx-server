@@ -1,6 +1,6 @@
 package org.termx.wiki.pagetag;
 
-import com.kodality.termx.wiki.page.PageTag;
+import org.termx.wiki.page.PageTag;
 import org.termx.wiki.tag.TagService;
 import io.micronaut.core.util.CollectionUtils;
 import java.util.List;

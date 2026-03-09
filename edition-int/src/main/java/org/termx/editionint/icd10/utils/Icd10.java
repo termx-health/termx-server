@@ -6,7 +6,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText;
-import com.kodality.termx.core.utils.SimpleDateDeserializer;
+import org.termx.core.utils.SimpleDateDeserializer;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;

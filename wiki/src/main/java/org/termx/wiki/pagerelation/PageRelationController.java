@@ -1,10 +1,10 @@
 package org.termx.wiki.pagerelation;
 
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.core.auth.Authorized;
+import org.termx.core.auth.Authorized;
 import org.termx.wiki.Privilege;
-import com.kodality.termx.wiki.page.PageRelation;
-import com.kodality.termx.wiki.page.PageRelationQueryParams;
+import org.termx.wiki.page.PageRelation;
+import org.termx.wiki.page.PageRelationQueryParams;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import lombok.RequiredArgsConstructor;

@@ -1,16 +1,16 @@
 package org.termx.ucum.service
 
 import com.kodality.commons.model.QueryResult
-import com.kodality.termx.terminology.terminology.codesystem.CodeSystemService
-import com.kodality.termx.terminology.terminology.codesystem.concept.ConceptService
-import com.kodality.termx.ts.codesystem.CodeSystem
-import com.kodality.termx.ts.codesystem.CodeSystemEntityVersion
-import com.kodality.termx.ts.codesystem.Concept
-import com.kodality.termx.ts.codesystem.CodeSystemQueryParams
-import com.kodality.termx.ts.codesystem.ConceptQueryParams
-import com.kodality.termx.ts.codesystem.Designation
-import com.kodality.termx.ucum.ts.UcumMapper
-import com.kodality.termx.ucum.ts.UcumConceptResolver
+import org.termx.terminology.terminology.codesystem.CodeSystemService
+import org.termx.terminology.terminology.codesystem.concept.ConceptService
+import org.termx.ts.codesystem.CodeSystem
+import org.termx.ts.codesystem.CodeSystemEntityVersion
+import org.termx.ts.codesystem.Concept
+import org.termx.ts.codesystem.CodeSystemQueryParams
+import org.termx.ts.codesystem.ConceptQueryParams
+import org.termx.ts.codesystem.Designation
+import org.termx.ucum.ts.UcumMapper
+import org.termx.ucum.ts.UcumConceptResolver
 import org.termx.ucum.dto.DefinedUnitDto
 import org.termx.ucum.dto.UcumExportRequestDto
 import org.termx.ucum.dto.ValidateResponseDto
@@ -35,7 +35,7 @@ class UcumExportServiceTest extends Specification {
       QueryResult<CodeSystem> query(CodeSystemQueryParams params) {
         return new QueryResult([
             new CodeSystem().setId("ucum-supplement-lt").setUri("https://termx.org/fhir/CodeSystem/ucum-supplement-lt").setBaseCodeSystem("ucum").setVersions([
-                new com.kodality.termx.ts.codesystem.CodeSystemVersion().setVersion("1.0.0").setStatus("active")
+                new org.termx.ts.codesystem.CodeSystemVersion().setVersion("1.0.0").setStatus("active")
             ])
         ])
       }

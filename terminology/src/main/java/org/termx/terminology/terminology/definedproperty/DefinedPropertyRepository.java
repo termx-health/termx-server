@@ -5,8 +5,8 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.QueryResult;
-import com.kodality.termx.ts.property.DefinedProperty;
-import com.kodality.termx.ts.property.DefinedPropertyQueryParams;
+import org.termx.ts.property.DefinedProperty;
+import org.termx.ts.property.DefinedPropertyQueryParams;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 

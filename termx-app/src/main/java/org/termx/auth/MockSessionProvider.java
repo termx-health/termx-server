@@ -2,8 +2,8 @@ package org.termx.auth;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.termx.auth.SessionProvider;
-import com.kodality.termx.core.auth.SessionInfo;
+import org.termx.auth.SessionProvider;
+import org.termx.core.auth.SessionInfo;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.StringUtils;

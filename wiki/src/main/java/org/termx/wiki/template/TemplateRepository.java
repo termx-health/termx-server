@@ -1,6 +1,6 @@
 package org.termx.wiki.template;
-import com.kodality.termx.wiki.template.Template;
-import com.kodality.termx.wiki.template.TemplateQueryParams;
+import org.termx.wiki.template.Template;
+import org.termx.wiki.template.TemplateQueryParams;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
