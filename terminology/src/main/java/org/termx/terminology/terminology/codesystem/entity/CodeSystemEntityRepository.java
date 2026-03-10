@@ -1,17 +1,18 @@
 package org.termx.terminology.terminology.codesystem.entity;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Streams;
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import org.apache.commons.collections4.ListUtils;
 import org.termx.ts.codesystem.CodeSystemEntity;
-import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import java.util.stream.Stream;
 
 @Singleton
 public class CodeSystemEntityRepository extends BaseRepository {
@@ -34,31 +35,17 @@ public class CodeSystemEntityRepository extends BaseRepository {
   }
 
   public void batchUpsert(List<CodeSystemEntity> entities, String codeSystem) {
-    List<Long> existingIds = jdbcTemplate.queryForList("select id from terminology.code_system_entity where sys_status = 'A' and code_system = ?", Long.class, codeSystem);
-
+    // Note: this and previous version of this deliberately did not update existing values here. Is it as needed?
     List<CodeSystemEntity> newEntities = entities.stream().filter(e -> e.getId() == null).toList();
-    String query = "insert into terminology.code_system_entity (type, code_system) values (?,?)";
-    jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
-      @Override
-      public void setValues(PreparedStatement ps, int i) throws SQLException {
-        ps.setString(1, newEntities.get(i).getType());
-        ps.setString(2, codeSystem);
-      }
-      @Override
-      public int getBatchSize() {
-        return newEntities.size();
-      }
-    });
-
-    List<Long> currentIds = jdbcTemplate.queryForList("select id from terminology.code_system_entity where sys_status = 'A' and code_system = ?", Long.class, codeSystem);
-    List<Long> newIds = currentIds.stream().filter(id -> !existingIds.contains(id)).toList();
-
-    entities.forEach(e -> {
-      if (e.getId() == null && CollectionUtils.isNotEmpty(newIds)) {
-        e.setId(newIds.get(0));
-        newIds.remove(0);
-      }
-    });
+    if (newEntities.isEmpty()) {
+      return;
+    }
+    SqlBuilder sql = new SqlBuilder("insert into terminology.code_system_entity (type, code_system) values ");
+    sql.append(newEntities.stream().map(e -> "(?, ?)").collect(Collectors.joining(",")));
+    sql.add(newEntities.stream().flatMap(e -> Stream.of(e.getType(), codeSystem)).toList());
+    sql.append(" returning id");
+    List<Long> insertedIds = jdbcTemplate.queryForList(sql.getSql(), Long.class, sql.getParams());
+    Streams.forEachPair(newEntities.stream(), insertedIds.stream(), CodeSystemEntity::setId);
   }
 
   public void cancel(Long id) {
@@ -66,4 +53,3 @@ public class CodeSystemEntityRepository extends BaseRepository {
     jdbcTemplate.update(sb.getSql(), sb.getParams());
   }
 }
-

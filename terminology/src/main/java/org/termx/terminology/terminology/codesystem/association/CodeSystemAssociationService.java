@@ -10,6 +10,7 @@ import org.termx.ts.codesystem.CodeSystemAssociationQueryParams;
 import org.termx.ts.codesystem.CodeSystemEntityType;
 import org.termx.ts.codesystem.CodeSystemEntityVersion;
 import org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -103,10 +104,10 @@ public class CodeSystemAssociationService {
       }
     }));
 
-    List<Long> sourceIds = entries.stream().map(Entry::getKey).toList();
-    sourceIds.addAll(entries.stream().flatMap(e -> e.getValue().stream().map(CodeSystemAssociation::getTargetId)).toList());
+    var sourceIds = entries.stream().map(Entry::getKey);
+    var targetIds = entries.stream().flatMap(e -> e.getValue().stream()).map(CodeSystemAssociation::getTargetId);
 
-    List<Long> entityVersionIds = sourceIds.stream().distinct().toList();
+    List<Long> entityVersionIds = Stream.concat(sourceIds, targetIds).distinct().toList();
 
     Map<Long, String> versionCodes = new HashMap<>();
     IntStream.range(0, (entityVersionIds.size() + 1000 - 1) / 1000)

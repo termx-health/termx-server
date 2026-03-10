@@ -1,5 +1,6 @@
 package org.termx.terminology.terminology.relatedartifacts;
 
+import org.termx.commons.UniqueResource;
 import org.termx.core.sys.space.SpaceService;
 import org.termx.core.wiki.PageProvider;
 import org.termx.sys.space.Space;
@@ -22,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
@@ -51,11 +54,12 @@ public class CodeSystemRelatedArtifactService extends RelatedArtifactService {
   }
 
   private List<RelatedArtifact> findSupplement(String id) {
-    Optional<String> supplementCs = codeSystemService.load(id).map(CodeSystem::getBaseCodeSystem);
-    List<RelatedArtifact> ra = supplementCs.map(cs -> new RelatedArtifact().setType(RelatedArtifactType.cs).setId(cs)).stream().toList();
-    ra.addAll(codeSystemService.query(new CodeSystemQueryParams().setBaseCodeSystem(id).all()).getData().stream()
-        .map(cs -> new RelatedArtifact().setType(RelatedArtifactType.cs).setId(cs.getId())).toList());
-    return ra;
+    var csIds = Stream.concat(
+            codeSystemService.load(id).map(CodeSystem::getBaseCodeSystem).stream(),
+            codeSystemService.query(new CodeSystemQueryParams().setBaseCodeSystem(id).all()).getData()
+                    .stream().map(UniqueResource::getId)
+    );
+    return csIds.map(csId -> new RelatedArtifact().setType(RelatedArtifactType.cs).setId(csId)).toList();
   }
 
   private List<RelatedArtifact> findValueSets(String id) {
