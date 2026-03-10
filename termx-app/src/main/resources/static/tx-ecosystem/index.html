@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FHIR Terminology Ecosystem Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .filter-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 0.9em;
+        }
+
+        input[type="text"],
+        select {
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input {
+            margin-right: 8px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .results-header h3 {
+            color: #333;
+        }
+
+        .results-count {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c3e6cb;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: top;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin: 2px;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .code-list {
+            max-width: 500px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .required {
+            color: #dc3545;
+        }
+
+        .help-text {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .results-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 FHIR Terminology Ecosystem Explorer</h1>
+            <p>Discover and resolve terminology servers in the HL7 FHIR ecosystem</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('discovery')">
+                Discovery
+            </div>
+            <div class="tab" onclick="switchTab('resolution')">
+                Resolution
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Discovery Tab -->
+            <div id="discovery-tab" class="tab-content active">
+                <div class="filter-section">
+                    <h3 style="margin-bottom: 20px;">🔍 Filter Servers</h3>
+                    <div class="filter-grid">
+                        <div class="form-group">
+                            <label for="disc-fhirVersion">FHIR Version</label>
+                            <select id="disc-fhirVersion">
+                                <option value="">All Versions</option>
+                                <option value="R3">R3</option>
+                                <option value="R4" selected>R4</option>
+                                <option value="R4B">R4B</option>
+                                <option value="R5">R5</option>
+                                <option value="R6">R6</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="disc-registry">Registry</label>
+                            <input type="text" id="disc-registry" placeholder="e.g., hl7-main">
+                        </div>
+                        <div class="form-group">
+                            <label for="disc-server">Server Code</label>
+                            <input type="text" id="disc-server" placeholder="e.g., tx.fhir.org">
+                        </div>
+                        <div class="form-group">
+                            <label for="disc-url">CodeSystem URL</label>
+                            <input type="text" id="disc-url" placeholder="e.g., http://snomed.info/sct">
+                        </div>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="disc-authOnly">
+                        <label for="disc-authOnly" style="margin-bottom: 0;">Show only authoritative servers</label>
+                    </div>
+                    <div class="button-group" style="margin-top: 20px;">
+                        <button class="btn-primary" onclick="discoverServers()">
+                            🔍 Discover Servers
+                        </button>
+                        <button class="btn-secondary" onclick="clearDiscoveryFilters()">
+                            Clear Filters
+                        </button>
+                        <button class="btn-success" onclick="downloadDiscovery()">
+                            ⬇️ Download Results
+                        </button>
+                    </div>
+                </div>
+
+                <div id="discovery-results" class="results-section" style="display: none;">
+                    <div class="results-header">
+                        <h3>📋 Discovery Results</h3>
+                        <span class="results-count" id="disc-count"></span>
+                    </div>
+                    <div id="discovery-content"></div>
+                </div>
+            </div>
+
+            <!-- Resolution Tab -->
+            <div id="resolution-tab" class="tab-content">
+                <div class="filter-section">
+                    <h3 style="margin-bottom: 20px;">🎯 Resolve Server</h3>
+                    <div class="filter-grid">
+                        <div class="form-group">
+                            <label for="res-fhirVersion">FHIR Version <span class="required">*</span></label>
+                            <select id="res-fhirVersion">
+                                <option value="">Select Version</option>
+                                <option value="R3">R3</option>
+                                <option value="R4" selected>R4</option>
+                                <option value="R4B">R4B</option>
+                                <option value="R5">R5</option>
+                                <option value="R6">R6</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="res-url">CodeSystem URL</label>
+                            <input type="text" id="res-url" placeholder="e.g., http://snomed.info/sct">
+                            <span class="help-text">Enter either CodeSystem URL or ValueSet URL</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="res-valueSet">ValueSet URL</label>
+                            <input type="text" id="res-valueSet" placeholder="e.g., http://hl7.org/fhir/ValueSet/...">
+                        </div>
+                        <div class="form-group">
+                            <label for="res-usage">Usage</label>
+                            <select id="res-usage">
+                                <option value="">Any Usage</option>
+                                <option value="publication">Publication</option>
+                                <option value="validation">Validation</option>
+                                <option value="code-generation">Code Generation</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="res-authOnly">
+                        <label for="res-authOnly" style="margin-bottom: 0;">Show only authoritative servers</label>
+                    </div>
+                    <div class="button-group" style="margin-top: 20px;">
+                        <button class="btn-primary" onclick="resolveServer()">
+                            🎯 Resolve Server
+                        </button>
+                        <button class="btn-secondary" onclick="clearResolutionFilters()">
+                            Clear Filters
+                        </button>
+                        <button class="btn-success" onclick="downloadResolution()">
+                            ⬇️ Download Results
+                        </button>
+                    </div>
+                </div>
+
+                <div id="resolution-results" class="results-section" style="display: none;">
+                    <div class="results-header">
+                        <h3>📋 Resolution Results</h3>
+                    </div>
+                    <div id="resolution-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/tx-reg';
+        let lastDiscoveryParams = null;
+        let lastResolutionParams = null;
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'discovery') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('discovery-tab').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('resolution-tab').classList.add('active');
+            }
+        }
+
+        async function discoverServers() {
+            const params = new URLSearchParams();
+            const fhirVersion = document.getElementById('disc-fhirVersion').value;
+            const registry = document.getElementById('disc-registry').value;
+            const server = document.getElementById('disc-server').value;
+            const url = document.getElementById('disc-url').value;
+            const authOnly = document.getElementById('disc-authOnly').checked;
+
+            if (fhirVersion) params.append('fhirVersion', fhirVersion);
+            if (registry) params.append('registry', registry);
+            if (server) params.append('server', server);
+            if (url) params.append('url', url);
+            if (authOnly) params.append('authoritativeOnly', 'true');
+
+            lastDiscoveryParams = params.toString();
+
+            const resultsDiv = document.getElementById('discovery-results');
+            const contentDiv = document.getElementById('discovery-content');
+            
+            resultsDiv.style.display = 'block';
+            contentDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Loading servers...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                displayDiscoveryResults(data);
+            } catch (error) {
+                contentDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function displayDiscoveryResults(data) {
+            const contentDiv = document.getElementById('discovery-content');
+            const countSpan = document.getElementById('disc-count');
+
+            if (!data.results || data.results.length === 0) {
+                contentDiv.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        <p>No servers found matching your criteria</p>
+                    </div>
+                `;
+                countSpan.textContent = '0 servers found';
+                return;
+            }
+
+            countSpan.textContent = `${data.results.length} server${data.results.length !== 1 ? 's' : ''} found`;
+
+            let html = '<div class="table-container"><table>';
+            html += '<thead><tr>';
+            html += '<th>Server Name</th>';
+            html += '<th>Code</th>';
+            html += '<th>URL</th>';
+            html += '<th>FHIR Version</th>';
+            html += '<th>Systems</th>';
+            html += '<th>Access</th>';
+            html += '<th>Authoritative</th>';
+            html += '</tr></thead><tbody>';
+
+            data.results.forEach(server => {
+                html += '<tr>';
+                html += `<td><strong>${escapeHtml(server['server-name'] || 'N/A')}</strong></td>`;
+                html += `<td><code>${escapeHtml(server['server-code'] || 'N/A')}</code></td>`;
+                html += `<td><a href="${escapeHtml(server.url)}" target="_blank">${escapeHtml(server.url)}</a></td>`;
+                html += `<td><span class="badge badge-info">${escapeHtml(server.fhirVersion || 'N/A')}</span></td>`;
+                html += `<td>${server.systems || 0}</td>`;
+                html += `<td>${getAccessBadges(server)}</td>`;
+                html += `<td><div class="code-list">${formatAuthoritativeList(server.authoritative || [])}</div></td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            contentDiv.innerHTML = html;
+        }
+
+        async function resolveServer() {
+            const fhirVersion = document.getElementById('res-fhirVersion').value;
+            const url = document.getElementById('res-url').value;
+            const valueSet = document.getElementById('res-valueSet').value;
+            const usage = document.getElementById('res-usage').value;
+            const authOnly = document.getElementById('res-authOnly').checked;
+
+            if (!fhirVersion) {
+                alert('Please select a FHIR version');
+                return;
+            }
+
+            if (!url && !valueSet) {
+                alert('Please enter either a CodeSystem URL or ValueSet URL');
+                return;
+            }
+
+            const params = new URLSearchParams();
+            params.append('fhirVersion', fhirVersion);
+            if (url) params.append('url', url);
+            if (valueSet) params.append('valueSet', valueSet);
+            if (usage) params.append('usage', usage);
+            if (authOnly) params.append('authoritativeOnly', 'true');
+
+            lastResolutionParams = params.toString();
+
+            const resultsDiv = document.getElementById('resolution-results');
+            const contentDiv = document.getElementById('resolution-content');
+            
+            resultsDiv.style.display = 'block';
+            contentDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Resolving server...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/resolve?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                displayResolutionResults(data);
+            } catch (error) {
+                contentDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function displayResolutionResults(data) {
+            const contentDiv = document.getElementById('resolution-content');
+
+            let html = '';
+
+            if (data.authoritative && data.authoritative.length > 0) {
+                html += '<h4 style="margin-bottom: 15px; color: #28a745;">✅ Authoritative Servers</h4>';
+                html += '<div class="table-container"><table>';
+                html += '<thead><tr><th>Server Name</th><th>URL</th><th>FHIR Version</th><th>Access</th></tr></thead><tbody>';
+                
+                data.authoritative.forEach(server => {
+                    html += '<tr>';
+                    html += `<td><strong>${escapeHtml(server['server-name'] || 'N/A')}</strong></td>`;
+                    html += `<td><a href="${escapeHtml(server.url)}" target="_blank">${escapeHtml(server.url)}</a></td>`;
+                    html += `<td><span class="badge badge-info">${escapeHtml(server.fhirVersion || 'N/A')}</span></td>`;
+                    html += `<td>${getAccessBadges(server)}</td>`;
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table></div>';
+            }
+
+            if (data.candidate && data.candidate.length > 0) {
+                html += '<h4 style="margin: 25px 0 15px; color: #ffc107;">⚠️ Candidate Servers</h4>';
+                html += '<div class="table-container"><table>';
+                html += '<thead><tr><th>Server Name</th><th>URL</th><th>FHIR Version</th><th>Content</th><th>Access</th></tr></thead><tbody>';
+                
+                data.candidate.forEach(server => {
+                    html += '<tr>';
+                    html += `<td><strong>${escapeHtml(server['server-name'] || 'N/A')}</strong></td>`;
+                    html += `<td><a href="${escapeHtml(server.url)}" target="_blank">${escapeHtml(server.url)}</a></td>`;
+                    html += `<td><span class="badge badge-info">${escapeHtml(server.fhirVersion || 'N/A')}</span></td>`;
+                    html += `<td><span class="badge badge-warning">${escapeHtml(server.content || 'unknown')}</span></td>`;
+                    html += `<td>${getAccessBadges(server)}</td>`;
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table></div>';
+            }
+
+            if ((!data.authoritative || data.authoritative.length === 0) && 
+                (!data.candidate || data.candidate.length === 0)) {
+                html = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        <p>No servers found for the specified criteria</p>
+                    </div>
+                `;
+            }
+
+            contentDiv.innerHTML = html;
+        }
+
+        function getAccessBadges(server) {
+            const badges = [];
+            if (server.open) badges.push('<span class="badge badge-success">Open</span>');
+            if (server.password) badges.push('<span class="badge badge-info">Password</span>');
+            if (server.token) badges.push('<span class="badge badge-info">Token</span>');
+            if (server.oauth) badges.push('<span class="badge badge-info">OAuth</span>');
+            if (server.smart) badges.push('<span class="badge badge-info">SMART</span>');
+            if (server.cert) badges.push('<span class="badge badge-info">Cert</span>');
+            return badges.join(' ') || '<span class="badge">Unknown</span>';
+        }
+
+        function formatAuthoritativeList(list) {
+            if (!list || list.length === 0) return '<em>None</em>';
+            return list.map(item => `<div>${escapeHtml(item)}</div>`).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function downloadDiscovery() {
+            if (!lastDiscoveryParams) {
+                alert('Please run a discovery search first');
+                return;
+            }
+            window.location.href = `${API_BASE}?${lastDiscoveryParams}&download=true`;
+        }
+
+        function downloadResolution() {
+            if (!lastResolutionParams) {
+                alert('Please run a resolution search first');
+                return;
+            }
+            window.location.href = `${API_BASE}/resolve?${lastResolutionParams}&download=true`;
+        }
+
+        function clearDiscoveryFilters() {
+            document.getElementById('disc-fhirVersion').value = 'R4';
+            document.getElementById('disc-registry').value = '';
+            document.getElementById('disc-server').value = '';
+            document.getElementById('disc-url').value = '';
+            document.getElementById('disc-authOnly').checked = false;
+        }
+
+        function clearResolutionFilters() {
+            document.getElementById('res-fhirVersion').value = 'R4';
+            document.getElementById('res-url').value = '';
+            document.getElementById('res-valueSet').value = '';
+            document.getElementById('res-usage').value = '';
+            document.getElementById('res-authOnly').checked = false;
+        }
+
+        // Example quick searches
+        window.addEventListener('DOMContentLoaded', () => {
+            // Auto-load discovery on page load (optional)
+            // discoverServers();
+        });
+    </script>
+</body>
+</html>

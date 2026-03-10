@@ -8,13 +8,14 @@ import static org.termx.wiki.page.PageRelationType.concept;
 import static org.termx.wiki.page.PageRelationType.cs;
 import static org.termx.wiki.page.PageRelationType.ms;
 import static org.termx.wiki.page.PageRelationType.page;
+import static org.termx.wiki.page.PageRelationType.sd;
 import static org.termx.wiki.page.PageRelationType.vs;
 
 @Singleton
 public class WikiPageRelationServiceConfig implements PageRelationServiceConfig {
   @Override
   public List<String> getAllowedPageRelationTypes() {
-    return List.of(cs, vs, ms, concept, page);
+    return List.of(cs, vs, ms, sd, concept, page);
   }
 
   @Override

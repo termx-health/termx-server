@@ -14,6 +14,10 @@ public class StructureDefinitionQueryParams extends QueryParams {
   private String code;
   private String textContains;
   private String urls;
+  private String url;
+  private String name;
+  private String status;
+  private String publisher;
   private String contentFormat;
   private String version;
 

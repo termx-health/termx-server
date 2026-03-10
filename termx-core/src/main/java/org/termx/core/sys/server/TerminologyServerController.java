@@ -7,13 +7,19 @@ import org.termx.sys.server.TerminologyServer;
 import org.termx.sys.server.TerminologyServerQueryParams;
 import org.termx.sys.server.resource.TerminologyServerResourceRequest;
 import org.termx.sys.server.resource.TerminologyServerResourceResponse;
+import io.micronaut.http.HttpHeaders;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MediaType;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Put;
+import io.micronaut.http.annotation.QueryValue;
 import java.util.List;
+import java.util.Optional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -63,5 +69,28 @@ public class TerminologyServerController {
   @Post("/resource")
   public TerminologyServerResourceResponse getResource(@Valid @Body TerminologyServerResourceRequest request) {
     return serverResourceService.getResource(request);
+  }
+
+  @Authorized("TerminologyServer.view")
+  @Get("/export/ecosystem")
+  public HttpResponse<String> exportEcosystem(@QueryValue Optional<Boolean> download) {
+    String json = serverService.exportToEcosystemFormat();
+    MutableHttpResponse<String> response = HttpResponse.ok(json)
+        .contentType(MediaType.APPLICATION_JSON);
+
+    if (download.orElse(false)) {
+      response.header(HttpHeaders.CONTENT_DISPOSITION,
+          "attachment; filename=\"termx-servers.json\"");
+    }
+
+    return response;
+  }
+
+  @Authorized("TerminologyServer.edit")
+  @Post("/import/ecosystem")
+  public List<TerminologyServer> importEcosystem(@Body String json) {
+    return serverService.importFromEcosystemFormat(json).stream()
+        .map(TerminologyServer::maskSensitiveData)
+        .toList();
   }
 }
