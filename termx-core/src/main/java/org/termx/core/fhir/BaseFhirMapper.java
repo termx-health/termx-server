@@ -105,8 +105,8 @@ public abstract class BaseFhirMapper {
     if (identifiers == null && versionIdentifiers == null) {
       return null;
     }
-    List<Identifier> fhirIdentifiers = Optional.ofNullable(identifiers).orElse(new ArrayList<>()).stream()
-        .map(i -> new Identifier().setSystem(i.getSystem()).setValue(i.getValue())).toList();
+    List<Identifier> fhirIdentifiers = new ArrayList<>(Optional.ofNullable(identifiers).orElse(new ArrayList<>()).stream()
+        .map(i -> new Identifier().setSystem(i.getSystem()).setValue(i.getValue())).toList());
     fhirIdentifiers.addAll(Optional.ofNullable(versionIdentifiers).orElse(new ArrayList<>()).stream()
         .filter(vi -> identifiers == null || identifiers.stream().noneMatch(i -> (i.getSystem() + i.getValue()).equals(vi.getSystem() + vi.getValue())))
         .map(vi -> new Identifier().setSystem(vi.getSystem()).setValue(vi.getValue()).setType(new CodeableConcept(new Coding(VERSION_IDENTIFIER_TYPE))))
