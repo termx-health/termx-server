@@ -1,3 +1,39 @@
+# TermX Server
+
+A FHIR-compliant terminology server for managing and serving healthcare terminologies.
+
+## Features
+
+### 🌐 FHIR Terminology Ecosystem Integration (New!)
+
+Discover and resolve terminology servers across distributed healthcare systems.
+
+- **Interactive Web UI**: Visual interface at `/tx-ecosystem/` for exploring servers
+- **REST API**: Standards-compliant endpoints at `/tx-reg` for programmatic access
+- **Discovery**: Find all registered terminology servers with flexible filtering
+- **Resolution**: Identify authoritative servers for specific CodeSystems/ValueSets
+- **Download**: Export server information as JSON files
+- **Public Access**: No authentication required
+
+**Quick Start:**
+- Web UI: https://dev.termx.org/tx-ecosystem/
+- API: https://dev.termx.org/tx-reg
+
+**Documentation:**
+- [Feature Description](docs/features/fhir-terminology-ecosystem-feature-description.md) - Overview and use cases
+- [Technical Guide](docs/features/fhir-terminology-ecosystem-api.md) - API reference and configuration
+- [UI Guide](docs/features/fhir-terminology-ecosystem-ui.md) - Web interface documentation
+
+### Other Features
+
+- **CodeSystem & ValueSet Management**: Create, version, and manage code systems and value sets
+- **FHIR Operations**: Support for $expand, $validate-code, $lookup, $translate, and more
+- **SNOMED CT Integration**: Integration with Snowstorm for SNOMED CT support
+- **Multi-language Support**: Designations and translations in multiple languages
+- **Excel Import/Export**: Import and export terminologies via Excel/CSV files
+
+For complete feature documentation, see the [docs/features](docs/features) directory.
+
 ## Init postgres docker 
 Or you can also use an existing database.
 

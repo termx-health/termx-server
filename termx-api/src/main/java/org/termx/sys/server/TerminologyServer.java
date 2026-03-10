@@ -22,6 +22,14 @@ public class TerminologyServer {
   private boolean active;
   private boolean currentInstallation;
 
+  private String accessInfo;
+  private List<String> usage;
+  private List<AuthoritativeResource> authoritative;
+  private List<AuthoritativeResource> authoritativeValuesets;
+  private List<String> exclusions;
+  private List<TerminologyServerFhirVersion> fhirVersions;
+  private List<String> supportedOperations;
+
   @Getter
   @Setter
   public static class TerminologyServerHeader {
@@ -35,6 +43,24 @@ public class TerminologyServer {
     private String accessTokenUrl;
     private String clientId;
     private String clientSecret;
+  }
+
+  @Getter
+  @Setter
+  @Introspected
+  public static class AuthoritativeResource {
+    private String url;
+    private String status;
+    private String version;
+    private String name;
+  }
+
+  @Getter
+  @Setter
+  @Introspected
+  public static class TerminologyServerFhirVersion {
+    private String version;
+    private String url;
   }
 
   public TerminologyServer maskSensitiveData() {
@@ -55,6 +81,13 @@ public class TerminologyServer {
         .setRootUrl(this.rootUrl)
         .setKind(this.kind)
         .setActive(this.active)
-        .setCurrentInstallation(this.currentInstallation);
+        .setCurrentInstallation(this.currentInstallation)
+        .setAccessInfo(this.accessInfo)
+        .setUsage(this.usage)
+        .setAuthoritative(this.authoritative)
+        .setAuthoritativeValuesets(this.authoritativeValuesets)
+        .setExclusions(this.exclusions)
+        .setFhirVersions(this.fhirVersions)
+        .setSupportedOperations(this.supportedOperations);
   }
 }

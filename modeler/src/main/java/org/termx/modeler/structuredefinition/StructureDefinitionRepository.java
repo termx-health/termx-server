@@ -23,20 +23,26 @@ public class StructureDefinitionRepository extends BaseRepository {
     ssb.property("id", structureDefinition.getId());
     ssb.property("url", structureDefinition.getUrl());
     ssb.property("code", structureDefinition.getCode());
-    ssb.property("content", structureDefinition.getContent());
-    ssb.property("content_type", structureDefinition.getContentType());
-    ssb.property("content_format", structureDefinition.getContentFormat());
+    ssb.property("name", structureDefinition.getName());
     ssb.property("parent", structureDefinition.getParent());
-    ssb.property("version", structureDefinition.getVersion());
+    ssb.property("publisher", structureDefinition.getPublisher());
     SqlBuilder sb = ssb.buildSave("modeler.structure_definition", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     structureDefinition.setId(id);
+  }
+
+  public StructureDefinition loadByUrl(String url) {
+    String sql = "select * from modeler.structure_definition where sys_status = 'A' and url = ?";
+    return getBean(sql, bp, url);
   }
 
   public StructureDefinition load(Long id) {
     String sql = "select * from modeler.structure_definition where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
   }
+
+  private static final String CURRENT_VERSION_JOIN =
+      " left join lateral (select v.status from modeler.structure_definition_version v where v.structure_definition_id = sd.id and v.sys_status = 'A' order by v.release_date desc nulls last, v.id desc limit 1) cv on true ";
 
   public QueryResult<StructureDefinition> query(StructureDefinitionQueryParams params) {
     final String join = getJoin(params);
@@ -47,8 +53,8 @@ public class StructureDefinitionRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select sd.* "
-          + "from modeler.structure_definition sd " + join
+      SqlBuilder sb = new SqlBuilder("select sd.*, cv.status "
+          + "from modeler.structure_definition sd " + CURRENT_VERSION_JOIN + join
           + "where sd.sys_status = 'A' ");
       sb.append(filter(params));
       sb.append(limit(params));
@@ -83,10 +89,20 @@ public class StructureDefinitionRepository extends BaseRepository {
     sb.and().in("sd.id", params.getPermittedIds());
     sb.and().in("sd.id", params.getIds(), Long::valueOf);
     sb.appendIfNotNull("and sd.code = ?", params.getCode());
-    sb.appendIfNotNull("and sd.content_format = ?", params.getContentFormat());
-    sb.appendIfNotNull("and sd.version = ?", params.getVersion());
+    sb.appendIfNotNull("and sd.url = ?", params.getUrl());
+    sb.appendIfNotNull(params.getName(), (s, n) -> s.append("and (sd.name ilike '%' || ? || '%' or sd.url ilike '%' || ? || '%' or sd.code ilike '%' || ? || '%')", n, n, n));
+    sb.appendIfNotNull("and sd.publisher ilike '%' || ? || '%'", params.getPublisher());
     sb.appendIfNotNull("and terminology.text_search(sd.code, sd.url) like '%' || terminology.search_translate(?) || '%'", params.getTextContains());
     sb.appendIfNotNull(params.getUrls(), (s, p) -> s.and().in("sd.url", p));
+
+    // status/version filter via join to current version
+    if (params.getStatus() != null || params.getVersion() != null || params.getContentFormat() != null) {
+      sb.append(" and exists (select 1 from modeler.structure_definition_version sdv where sdv.structure_definition_id = sd.id and sdv.sys_status = 'A' ");
+      sb.appendIfNotNull("and sdv.status = ?", params.getStatus());
+      sb.appendIfNotNull("and sdv.version = ?", params.getVersion());
+      sb.appendIfNotNull("and sdv.content_format = ?", params.getContentFormat());
+      sb.append(")");
+    }
 
     // space
     sb.appendIfNotNull("and pv.id = ?", params.getPackageVersionId());

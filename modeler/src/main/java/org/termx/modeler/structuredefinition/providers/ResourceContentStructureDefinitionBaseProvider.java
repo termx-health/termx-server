@@ -34,13 +34,15 @@ public abstract class ResourceContentStructureDefinitionBaseProvider implements 
   protected StructureDefinition getStructureDefinition(String id, String version) {
     StructureDefinition sd;
     if (StringUtils.isNumeric(id)) {
-      sd = structureDefinitionService.load(Long.parseLong(id))
+      sd = structureDefinitionService.load(Long.parseLong(id), version)
           .orElseThrow(() -> new NotFoundException("StructureDefinition not found: " + id));
     } else {
-      sd = structureDefinitionService.query(new StructureDefinitionQueryParams().setCode(id).setVersion(version).all())
+      StructureDefinition header = structureDefinitionService.query(new StructureDefinitionQueryParams().setCode(id).setVersion(version).all())
           .getData()
           .stream()
           .findFirst()
+          .orElseThrow(() -> new NotFoundException("StructureDefinition not found: " + id + "; version=" + version));
+      sd = structureDefinitionService.load(header.getId(), version)
           .orElseThrow(() -> new NotFoundException("StructureDefinition not found: " + id + "; version=" + version));
     }
     return sd;

@@ -16,8 +16,10 @@ public class StructureDefinitionUtils {
       final org.hl7.fhir.r4b.model.StructureDefinition resource =
           (org.hl7.fhir.r4b.model.StructureDefinition) new JsonParser().parse(json);
       target.setUrl(resource.getUrl());
-      target.setContentType(resource.getKind().toCode());
+      target.setName(resource.hasName() ? resource.getName() : null);
+      target.setContentType(resource.getKind() != null ? resource.getKind().toCode() : null);
       target.setContent(json);
+      target.setParent(resource.hasBaseDefinition() ? resource.getBaseDefinition() : null);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -35,12 +37,14 @@ public class StructureDefinitionUtils {
           (org.hl7.fhir.r4b.model.StructureDefinition) new JsonParser().parse(json);
       return new StructureDefinition()
           .setUrl(resource.getUrl())
-          .setCode(resource.getId())
-          .setContentType(resource.getKind().toCode())
+          .setCode(resource.hasId() ? resource.getId() : null)
+          .setName(resource.hasName() ? resource.getName() : null)
+          .setParent(resource.hasBaseDefinition() ? resource.getBaseDefinition() : null)
+          .setContentType(resource.getKind() != null ? resource.getKind().toCode() : null)
           .setContentFormat("json")
           .setContent(json)
-//        .setParent(resource.?)
-          .setVersion(resource.getVersion());
+          .setVersion(resource.hasVersion() ? resource.getVersion() : null)
+          .setStatus(resource.hasStatus() ? resource.getStatus().toCode() : "draft");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

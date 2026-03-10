@@ -36,3 +36,13 @@ alter table sys.terminology_server add column headers jsonb;
 alter table sys.terminology_server add column auth_config jsonb;
 --
 
+--changeset termx:terminology_server-ecosystem_fields
+alter table sys.terminology_server add column if not exists access_info text;
+alter table sys.terminology_server add column if not exists usage jsonb;
+alter table sys.terminology_server add column if not exists authoritative jsonb;
+alter table sys.terminology_server add column if not exists authoritative_valuesets jsonb;
+alter table sys.terminology_server add column if not exists exclusions jsonb;
+alter table sys.terminology_server add column if not exists fhir_versions jsonb;
+alter table sys.terminology_server add column if not exists supported_operations jsonb;
+--
+

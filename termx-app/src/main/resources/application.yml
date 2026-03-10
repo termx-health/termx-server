@@ -11,6 +11,9 @@ micronaut:
       swagger:
         paths: classpath:META-INF/swagger
         mapping: /swagger/**
+      tx-ecosystem:
+        paths: classpath:static/tx-ecosystem
+        mapping: /tx-ecosystem/**
 #      swagger-ui:
 #        paths: classpath:META-INF/swagger/views/swagger-ui
 #        mapping: /swagger-ui/**
@@ -70,6 +73,8 @@ auth:
       - '/github/cb'
       - '/pages/static'
       - '/management/email'
+      - '/tx-reg'
+      - '/tx-ecosystem'
 
 snowstorm:
   url: https://snowstorm.termx.org/
@@ -77,6 +82,9 @@ snowstorm:
   password: ''
   branch: 'MAIN'
   namespace: '1000265'
+
+terminology-ecosystem:
+  coordination-server-url: ${TERMINOLOGY_ECOSYSTEM_URL:http://tx.fhir.org/tx-reg}
 
 chef.url: https://demo.termx.org/chef
 #github:
