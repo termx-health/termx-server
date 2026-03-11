@@ -35,13 +35,12 @@ allprojects {
 
     repositories {
         mavenCentral()
-        // Kodality Maven: only for kefhir and taskflow (commons and zmei are vendored)
+        // Kodality Maven: only for kefhir (commons and zmei are vendored, taskForge is used instead of taskflow)
         maven { 
             url = uri("https://kexus.kodality.com/repository/maven-public/")
             content {
-                // Only allow kefhir and taskflow from this repo
+                // Only allow kefhir from this repo
                 includeGroup("com.kodality.kefhir")
-                includeGroup("com.kodality.taskflow")
             }
         }
     }

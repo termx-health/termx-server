@@ -15,7 +15,6 @@ repositories {
         url = uri("https://kexus.kodality.com/repository/maven-public/")
         content {
             includeGroup("com.kodality.kefhir")
-            includeGroup("com.kodality.taskflow")
         }
     }
 }
@@ -23,9 +22,10 @@ repositories {
 
 ## What This Does
 
-- **Allows**: `com.kodality.kefhir:*` and `com.kodality.taskflow:*` to be downloaded from kexus.kodality.com
-- **Blocks**: `com.kodality.commons:*` and `com.kodality.zmei:*` from being downloaded from Maven
+- **Allows**: `com.kodality.kefhir:*` to be downloaded from kexus.kodality.com
+- **Blocks**: `com.kodality.commons:*`, `com.kodality.zmei:*`, and `com.kodality.taskflow:*` from being downloaded from Maven
 - **Forces**: Gradle to use the vendored source code in `kodality-commons/` and `zmei/` directories
+- **Note**: taskForge is used instead of taskflow
 
 ## Why This Matters
 
