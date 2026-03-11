@@ -106,7 +106,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
 
     String displayLanguage = req == null ? null : req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
-        .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString).orElse(null));
+        .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString)
+        .orElse(req.findParameter("defaultLanguage").map(ParametersParameter::getValueCode)
+        .orElse(req.findParameter("defaultLanguage").map(ParametersParameter::getValueString).orElse(null))));
     boolean includeDesignations = req != null && req.findParameter("includeDesignations")
         .map(pr -> pr.getValueBoolean() != null && pr.getValueBoolean() || "true".equals(pr.getValueString()))
         .orElse(false);
@@ -140,7 +142,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
     // Extract parameters
     String displayLanguage = req == null ? null : req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
-        .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString).orElse(null));
+        .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString)
+        .orElse(req.findParameter("defaultLanguage").map(ParametersParameter::getValueCode)
+        .orElse(req.findParameter("defaultLanguage").map(ParametersParameter::getValueString).orElse(null))));
     boolean includeDesignations = req != null && req.findParameter("includeDesignations")
         .map(pr -> pr.getValueBoolean() != null && pr.getValueBoolean() || "true".equals(pr.getValueString()))
         .orElse(false);
