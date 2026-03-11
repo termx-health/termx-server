@@ -11,6 +11,9 @@ dependencies {
 
   api 'org.springframework:spring-jdbc:6.2.6'
   api 'org.postgresql:postgresql:42.7.5'
+  // CRITICAL: Expose commons-dbutils as API so consumers get all standard classes
+  // Module substitution in parent build routes requests to THIS module
+  // We provide modified BeanProcessor/GenerousBeanProcessor + standard classes from commons-dbutils
   api 'commons-dbutils:commons-dbutils:1.8.1'
   implementation 'jakarta.inject:jakarta.inject-api:2.0.1'
 

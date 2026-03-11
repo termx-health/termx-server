@@ -82,6 +82,11 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
     mergeServiceFiles {
         exclude("META-INF/services/org.xmlpull.v1.XmlPullParserFactory")
     }
+    
+    // CRITICAL: JAR will contain TWO BeanProcessor.class files (vendored 12723 bytes + standard 12088 bytes)
+    // At runtime, JVM loads them in JAR order - Shadow processes project sources FIRST, so our vendored
+    // version should load. We warn on duplicates to track them, but allow both to exist.
+    duplicatesStrategy = DuplicatesStrategy.WARN
 }
 
 tasks.named<JavaExec>("run") {

@@ -52,15 +52,6 @@ allprojects {
         implementation(platform("org.apache.groovy:groovy-bom:5.0.3"))
         testImplementation(platform("org.apache.groovy:groovy-bom:5.0.3"))
         testImplementation(platform("org.spockframework:spock-bom:2.4-groovy-5.0"))
-        
-        // CRITICAL: Exclude commons-dbutils globally because our vendored kodality-commons:commons-db
-        // includes a MODIFIED version of org.apache.commons.dbutils.BeanProcessor with registerColumnHandler()
-        // Having both versions causes NoSuchMethodError at runtime
-        modules {
-            module("commons-dbutils:commons-dbutils") {
-                replacedBy("org.termx:commons-db", "using vendored version with custom modifications")
-            }
-        }
     }
 
     java {
