@@ -43,6 +43,7 @@ jobs:
           cache-disabled: true
 
       - name: Clear Maven cache
+        working-directory: .
         run: rm -rf ~/.m2/repository/com/kodality || true
       
       - name: Build
@@ -52,10 +53,27 @@ jobs:
       - name: Verify vendored code
         working-directory: .
         run: |
-          echo "Verifying PgBeanProcessor in built JAR..."
-          jar -tf kodality-commons/commons-db/build/libs/commons-db-*.jar | grep "PgBeanProcessor.class" || (echo "ERROR: PgBeanProcessor not found!" && exit 1)
-          jar -tf termx-app/build/libs/termx-app-*-all.jar | grep "com/kodality/commons/db/bean/PgBeanProcessor.class" || (echo "ERROR: PgBeanProcessor not in final JAR!" && exit 1)
-          echo "✅ Vendored code verified in JARs"
+          echo "=== Checking for built JARs ==="
+          ls -la kodality-commons/commons-db/build/libs/ || echo "commons-db libs dir not found"
+          ls -la termx-app/build/libs/ || echo "termx-app libs dir not found"
+          echo ""
+          echo "=== Verifying PgBeanProcessor in commons-db JAR ==="
+          if jar -tf kodality-commons/commons-db/build/libs/commons-db-*.jar | grep -q "PgBeanProcessor.class"; then
+            echo "✅ PgBeanProcessor found in commons-db JAR"
+          else
+            echo "❌ ERROR: PgBeanProcessor not found in commons-db JAR!"
+            exit 1
+          fi
+          echo ""
+          echo "=== Verifying PgBeanProcessor in termx-app JAR ==="
+          if jar -tf termx-app/build/libs/termx-app-*-all.jar | grep -q "com/kodality/commons/db/bean/PgBeanProcessor.class"; then
+            echo "✅ PgBeanProcessor found in termx-app JAR"
+          else
+            echo "❌ ERROR: PgBeanProcessor not in termx-app JAR!"
+            exit 1
+          fi
+          echo ""
+          echo "✅ All vendored code verified successfully!"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
