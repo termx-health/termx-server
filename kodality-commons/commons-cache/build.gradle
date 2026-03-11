@@ -1,0 +1,6 @@
+description = "Kodality commons caching"
+
+dependencies {
+  api ('org.ehcache:ehcache:3.10.8')
+}
+

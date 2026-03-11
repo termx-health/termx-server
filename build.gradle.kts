@@ -16,6 +16,19 @@ allprojects {
     apply(plugin = "org.owasp.dependencycheck")
     apply(plugin = "com.github.spotbugs")
     apply(plugin = "pmd")
+    
+    // Apply dependency substitution for vendored kodality-commons
+    if (project.path != ":kodality-commons:commons-model" &&
+        project.path != ":kodality-commons:commons-util" &&
+        project.path != ":kodality-commons:commons-db-core" &&
+        project.path != ":kodality-commons:commons-db-bean" &&
+        project.path != ":kodality-commons:commons-db" &&
+        project.path != ":kodality-commons:commons-http-client" &&
+        project.path != ":kodality-commons:commons-csv" &&
+        project.path != ":kodality-commons:commons-zmei" &&
+        project.path != ":kodality-commons:commons-cache") {
+        apply(from = "${rootProject.projectDir}/kodality-commons-dependencies.gradle.kts")
+    }
 
     // SpotBugs: run only via manual task spotbugsCheck (not part of check) to speed up CI/Docker builds
     extensions.findByType<com.github.spotbugs.snom.SpotBugsExtension>()?.runOnCheck?.set(false)

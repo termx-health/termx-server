@@ -1,0 +1,26 @@
+description = "Kodality commons db utilities"
+
+
+apply plugin: "groovy"
+
+dependencies {
+  api project(':kodality-commons:commons-model')
+  api project(':kodality-commons:commons-util')
+  // Note: We merge BaseBeanRepository methods into BaseRepository to avoid circular dependency
+  // (commons-db-bean depends on commons-db, so commons-db cannot depend on commons-db-bean)
+
+  api 'org.springframework:spring-jdbc:6.2.6'
+  api 'org.postgresql:postgresql:42.7.5'
+  api 'commons-dbutils:commons-dbutils:1.8.1'
+  implementation 'jakarta.inject:jakarta.inject-api:2.0.1'
+
+  testImplementation "org.codehaus.groovy:groovy-all:3.0.10"
+  testImplementation("org.spockframework:spock-core:2.2-M1-groovy-3.0") {
+    exclude group: "org.codehaus.groovy", module: "groovy-all"
+  }
+}
+
+test {
+  useJUnitPlatform()
+}
+

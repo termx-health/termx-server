@@ -8,6 +8,7 @@ dependencies {
     implementation("com.kodality.commons:commons-micronaut:${rootProject.extra["commonsMicronautVersion"]}")
     implementation("com.kodality.commons:commons-cache:${rootProject.extra["commonsVersion"]}")
     implementation("com.kodality.commons:commons-db:${rootProject.extra["commonsVersion"]}")
+    implementation("com.kodality.commons:commons-db-bean:${rootProject.extra["commonsVersion"]}")
 
     implementation("io.micronaut:micronaut-runtime")
     implementation("io.micronaut:micronaut-http-server-netty")

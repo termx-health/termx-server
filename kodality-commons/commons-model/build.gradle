@@ -1,0 +1,9 @@
+description = "Kodality commons base models"
+
+dependencies {
+  api "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+  api "jakarta.validation:jakarta.validation-api:3.1.1"
+  api "org.apache.commons:commons-text:1.13.0"
+
+  testImplementation "junit:junit:4.13.2"
+}

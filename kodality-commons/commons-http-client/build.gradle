@@ -1,0 +1,21 @@
+description = "Kodality commons simple http client"
+
+
+apply plugin: "groovy"
+
+dependencies {
+  api project(":kodality-commons:commons-util")
+  api project(":kodality-commons:commons-model")
+
+  testImplementation "junit:junit:4.13"
+  testImplementation("org.spockframework:spock-core:2.2-M1-groovy-3.0") {
+    exclude group: "org.codehaus.groovy", module: "groovy-all"
+  }
+  testImplementation "com.github.tomakehurst:wiremock-jre8:2.33.1"
+}
+
+test {
+  useJUnitPlatform()
+}
+
+

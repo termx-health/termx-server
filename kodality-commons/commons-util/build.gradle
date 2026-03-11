@@ -1,0 +1,26 @@
+description = "Kodality commons utilities"
+
+apply plugin: "groovy"
+
+dependencies {
+  api project(":kodality-commons:commons-model")
+
+  api "com.jayway.jsonpath:json-path:2.9.0"
+  api "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+  api "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
+  api "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jacksonVersion}"
+  implementation "org.apache.commons:commons-lang3:3.17.0"
+  implementation "org.jsoup:jsoup:1.19.1"
+  implementation "org.dmfs:lib-recur:0.17.1"
+
+  testImplementation "junit:junit:4.13.2"
+  testImplementation "org.codehaus.groovy:groovy-all:3.0.10"
+  testImplementation("org.spockframework:spock-core:2.2-M1-groovy-3.0") {
+    exclude group: "org.codehaus.groovy", module: "groovy-all"
+  }
+}
+
+test {
+  useJUnitPlatform()
+}
+

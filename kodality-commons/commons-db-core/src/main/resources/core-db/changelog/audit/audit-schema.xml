@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+  <changeSet id="create_schema_audit" author="core">
+    <sql>
+      create schema if not exists audit;
+    </sql>
+  </changeSet>
+
+  <changeSet id="default_privileges__audit__app" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <preConditions onFail="CONTINUE">
+      <changeLogPropertyDefined property="app-username" />
+    </preConditions>
+    <sql>
+      GRANT USAGE ON SCHEMA audit TO ${app-username};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT USAGE ON SEQUENCES TO ${app-username};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT EXECUTE ON FUNCTIONS TO ${app-username};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT,INSERT,UPDATE ON TABLES TO ${app-username};
+    </sql>
+  </changeSet>
+
+  <changeSet id="default_privileges__audit__viewer" author="kodality">
+    <validCheckSum>ANY</validCheckSum>
+    <preConditions onFail="CONTINUE">
+      <changeLogPropertyDefined property="viewer-username" />
+    </preConditions>
+    <sql>
+      GRANT USAGE ON SCHEMA audit TO ${viewer-username};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT EXECUTE ON FUNCTIONS TO ${viewer-username};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA audit GRANT SELECT ON TABLES TO ${viewer-username};
+    </sql>
+  </changeSet>
+
+</databaseChangeLog>
+
+
+
+
+
+
+

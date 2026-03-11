@@ -30,3 +30,13 @@ include("uam")
 
 include("snomed")
 include("ucum")
+
+// Vendored Kodality Commons modules
+include("kodality-commons:commons-model")
+include("kodality-commons:commons-util")
+include("kodality-commons:commons-db-core")
+include("kodality-commons:commons-db")  // Note: commons-db-bean merged into commons-db
+include("kodality-commons:commons-http-client")
+include("kodality-commons:commons-csv")
+include("kodality-commons:commons-zmei")
+include("kodality-commons:commons-cache")

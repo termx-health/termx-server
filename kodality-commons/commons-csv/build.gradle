@@ -1,0 +1,21 @@
+description = "Kodality commons csv parsing and composing"
+
+apply plugin: "groovy"
+
+dependencies {
+  api project(':kodality-commons:commons-util')
+  api "com.univocity:univocity-parsers:2.9.1"
+  api "org.apache.commons:commons-lang3:3.14.0"
+  implementation "com.jayway.jsonpath:json-path:2.9.0"
+  implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+  implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
+
+  testImplementation "org.codehaus.groovy:groovy-all:3.0.10"
+  testImplementation("org.spockframework:spock-core:2.2-M1-groovy-3.0") {
+    exclude group: "org.codehaus.groovy", module: "groovy-all"
+  }
+}
+
+test {
+  useJUnitPlatform()
+}

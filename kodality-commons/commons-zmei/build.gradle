@@ -1,0 +1,6 @@
+dependencies {
+  api project(':kodality-commons:commons-model')
+  api project(':kodality-commons:commons-util')
+  api("com.kodality.zmei:zmei-fhir:2.0-SNAPSHOT") { changing = true }
+}
+

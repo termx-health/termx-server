@@ -1,0 +1,5 @@
+description = "Kodality commons core db schema"
+
+
+dependencies {
+}
