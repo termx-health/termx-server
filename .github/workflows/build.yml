@@ -39,31 +39,7 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          cache-disabled: true
 
-      - name: Debug checkout
-        working-directory: .
-        run: |
-          echo "=== Checking vendored source files ==="
-          ls -la kodality-commons/ || echo "kodality-commons dir not found!"
-          ls -la kodality-commons/commons-db/src/main/java/com/kodality/commons/db/bean/ || echo "bean dir not found!"
-          echo ""
-          echo "=== Checking if PgBeanProcessor.java exists ==="
-          if [ -f kodality-commons/commons-db/src/main/java/com/kodality/commons/db/bean/PgBeanProcessor.java ]; then
-            echo "✅ PgBeanProcessor.java exists"
-            head -25 kodality-commons/commons-db/src/main/java/com/kodality/commons/db/bean/PgBeanProcessor.java
-          else
-            echo "❌ PgBeanProcessor.java NOT FOUND!"
-          fi
-          echo ""
-          echo "=== Checking settings.gradle.kts ==="
-          grep -A 5 "kodality-commons:commons-db" settings.gradle.kts || echo "Not in settings"
-      
-      - name: Clear Maven cache
-        working-directory: .
-        run: rm -rf ~/.m2/repository/com/kodality || true
-      
       - name: Build
         working-directory: .
         run: ./gradlew clean assemble --no-daemon
@@ -71,17 +47,12 @@ jobs:
       - name: Verify vendored code
         working-directory: .
         run: |
-          echo "=== Checking for built JARs ==="
-          ls -la kodality-commons/commons-db/build/libs/ || echo "commons-db libs dir not found"
-          echo ""
-          echo "=== Content of commons-db JAR ==="
-          jar -tf kodality-commons/commons-db/build/libs/commons-db-*.jar | grep -E "kodality/commons/db" | head -20
-          echo ""
           echo "=== Verifying PgBeanProcessor in commons-db JAR ==="
           if jar -tf kodality-commons/commons-db/build/libs/commons-db-*.jar | grep -q "PgBeanProcessor.class"; then
             echo "✅ PgBeanProcessor found in commons-db JAR"
           else
             echo "❌ ERROR: PgBeanProcessor not found in commons-db JAR!"
+            jar -tf kodality-commons/commons-db/build/libs/commons-db-*.jar | grep "kodality/commons" | head -10
             exit 1
           fi
           echo ""
@@ -92,7 +63,6 @@ jobs:
             echo "❌ ERROR: PgBeanProcessor not in termx-app JAR!"
             exit 1
           fi
-          echo ""
           echo "✅ All vendored code verified successfully!"
 
       - name: Set up QEMU

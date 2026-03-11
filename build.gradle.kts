@@ -35,7 +35,15 @@ allprojects {
 
     repositories {
         mavenCentral()
-        maven { url = uri("https://kexus.kodality.com/repository/maven-public/") }
+        // Kodality Maven: only for kefhir and taskflow (commons and zmei are vendored)
+        maven { 
+            url = uri("https://kexus.kodality.com/repository/maven-public/")
+            content {
+                // Only allow kefhir and taskflow from this repo
+                includeGroup("com.kodality.kefhir")
+                includeGroup("com.kodality.taskflow")
+            }
+        }
     }
 
     dependencies {
