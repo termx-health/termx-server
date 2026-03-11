@@ -44,26 +44,32 @@ jobs:
         working-directory: .
         run: ./gradlew clean assemble --no-daemon
       
-      - name: Verify vendored code
+      - name: Verify vendored code in final JAR
         working-directory: .
         run: |
-          echo "=== Verifying PgBeanProcessor in commons-db JAR ==="
-          if jar -tf kodality-commons/commons-db/build/libs/commons-db-*.jar | grep -q "PgBeanProcessor.class"; then
-            echo "✅ PgBeanProcessor found in commons-db JAR"
-          else
-            echo "❌ ERROR: PgBeanProcessor not found in commons-db JAR!"
-            jar -tf kodality-commons/commons-db/build/libs/commons-db-*.jar | grep "kodality/commons" | head -10
-            exit 1
-          fi
+          echo "=== Verifying vendored code in termx-app-*-all.jar (the JAR that goes into Docker) ==="
+          TERMX_JAR=$(ls termx-app/build/libs/termx-app-*-all.jar)
+          echo "Checking: $TERMX_JAR"
           echo ""
-          echo "=== Verifying PgBeanProcessor in termx-app JAR ==="
-          if jar -tf termx-app/build/libs/termx-app-*-all.jar | grep -q "com/kodality/commons/db/bean/PgBeanProcessor.class"; then
-            echo "✅ PgBeanProcessor found in termx-app JAR"
+          
+          echo "=== Verifying PgBeanProcessor ==="
+          if jar -tf "$TERMX_JAR" | grep -q "com/kodality/commons/db/bean/PgBeanProcessor.class"; then
+            echo "✅ PgBeanProcessor found"
           else
-            echo "❌ ERROR: PgBeanProcessor not in termx-app JAR!"
+            echo "❌ ERROR: PgBeanProcessor not found!"
             exit 1
           fi
-          echo "✅ All vendored code verified successfully!"
+          
+          echo "=== Verifying BeanProcessor (with registerColumnHandler method) ==="
+          if jar -tf "$TERMX_JAR" | grep -q "org/apache/commons/dbutils/BeanProcessor.class"; then
+            echo "✅ BeanProcessor found"
+          else
+            echo "❌ ERROR: BeanProcessor not found!"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All vendored code verified successfully in final JAR!"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
