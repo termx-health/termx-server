@@ -1,0 +1,11 @@
+description = "Simple and minimalistic FHIR client"
+
+
+dependencies {
+  api project(':zmei:zmei-fhir')
+  api project(':zmei:zmei-fhir-jackson')
+
+  implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+  implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
+}
+

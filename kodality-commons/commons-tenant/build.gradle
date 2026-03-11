@@ -1,0 +1,6 @@
+description = "Kodality commons db acl functions"
+
+dependencies {
+  api project(':kodality-commons:commons-micronaut')
+  api project(':kodality-commons:commons-micronaut-pg')
+}

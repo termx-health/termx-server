@@ -1,0 +1,14 @@
+description = "Kodality commons micronaut postgres tools"
+
+dependencies {
+  api project(':kodality-commons:commons-db')
+  api project(':kodality-commons:commons-db-core')
+  api project(':kodality-commons:commons-micronaut')
+
+  api "io.micronaut.sql:micronaut-jdbc-hikari"
+  api "org.springframework:spring-jdbc"
+  implementation "jakarta.annotation:jakarta.annotation-api:3.0.0"
+//  api "io.micronaut.data:micronaut-data-spring-jdbc"
+
+  implementation "io.micronaut.micrometer:micronaut-micrometer-core"
+}

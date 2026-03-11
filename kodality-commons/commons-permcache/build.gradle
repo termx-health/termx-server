@@ -1,0 +1,5 @@
+dependencies {
+  api project(':kodality-commons:commons-micronaut')
+  api project(':kodality-commons:commons-micronaut-pg')
+  api project(':kodality-commons:commons-cache')
+}

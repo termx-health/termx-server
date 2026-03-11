@@ -18,16 +18,13 @@ allprojects {
     apply(plugin = "pmd")
     
     // Apply dependency substitution for vendored kodality-commons
-    if (project.path != ":kodality-commons:commons-model" &&
-        project.path != ":kodality-commons:commons-util" &&
-        project.path != ":kodality-commons:commons-db-core" &&
-        project.path != ":kodality-commons:commons-db-bean" &&
-        project.path != ":kodality-commons:commons-db" &&
-        project.path != ":kodality-commons:commons-http-client" &&
-        project.path != ":kodality-commons:commons-csv" &&
-        project.path != ":kodality-commons:commons-zmei" &&
-        project.path != ":kodality-commons:commons-cache") {
+    if (!project.path.startsWith(":kodality-commons:")) {
         apply(from = "${rootProject.projectDir}/kodality-commons-dependencies.gradle.kts")
+    }
+    
+    // Apply dependency substitution for vendored zmei
+    if (!project.path.startsWith(":zmei:")) {
+        apply(from = "${rootProject.projectDir}/zmei-dependencies.gradle.kts")
     }
 
     // SpotBugs: run only via manual task spotbugsCheck (not part of check) to speed up CI/Docker builds

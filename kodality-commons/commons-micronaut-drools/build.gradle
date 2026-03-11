@@ -1,0 +1,5 @@
+dependencies {
+  api project(':kodality-commons:commons-micronaut')
+  api "org.drools:drools-compiler:9.44.0.Final"
+}
+
