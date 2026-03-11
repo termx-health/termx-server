@@ -1,3 +1,6 @@
+-- Drop function if parameter name changed (for migration from Maven to vendored version)
+DROP FUNCTION IF EXISTS core.jsonvalue(jsonb, text);
+
 CREATE OR REPLACE FUNCTION core.jsonvalue(_json jsonb, _path text) RETURNS text AS $$
 DECLARE
   result jsonb[];

@@ -1,3 +1,6 @@
+-- Drop function if parameter name changed (for migration from Maven to vendored version)
+DROP FUNCTION IF EXISTS core.jsonpath(jsonb, text[]);
+
 CREATE OR REPLACE FUNCTION core.jsonpath(_json jsonb, _path text[]) RETURNS jsonb[] AS $$
 BEGIN 
   IF jsonb_typeof(_json) = 'array' THEN
