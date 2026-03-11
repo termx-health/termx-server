@@ -42,7 +42,7 @@ jobs:
 
       - name: Build
         working-directory: .
-        run: ./gradlew clean assemble
+        run: ./gradlew clean assemble --refresh-dependencies
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
