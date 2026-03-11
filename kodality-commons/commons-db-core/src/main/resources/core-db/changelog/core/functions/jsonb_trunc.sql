@@ -1,3 +1,6 @@
+-- Drop function if parameter name changed (for migration from Maven to vendored version)
+DROP FUNCTION IF EXISTS core.jsonb_trunc(jsonb);
+
 CREATE OR REPLACE FUNCTION core.jsonb_trunc(_json JSONB)
 RETURNS JSONB AS $$
 DECLARE
