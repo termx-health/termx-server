@@ -22,4 +22,9 @@ public class ValueSetVersionConceptRepository extends BaseRepository {
     SqlBuilder sb = new SqlBuilder("select * from terminology.value_set_expand(?::bigint)", valueSetVersionId);
     return getBeans(sb.getSql(), bp, sb.getParams());
   }
+
+  public List<ValueSetVersionConcept> expandFromJson(String valueSetJson) {
+    SqlBuilder sb = new SqlBuilder("select * from terminology.value_set_expand(?::text)", valueSetJson);
+    return getBeans(sb.getSql(), bp, sb.getParams());
+  }
 }
