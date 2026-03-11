@@ -42,9 +42,20 @@ jobs:
         with:
           cache-disabled: true
 
+      - name: Clear Maven cache
+        run: rm -rf ~/.m2/repository/com/kodality || true
+      
       - name: Build
         working-directory: .
         run: ./gradlew clean assemble --no-daemon
+      
+      - name: Verify vendored code
+        working-directory: .
+        run: |
+          echo "Verifying PgBeanProcessor in built JAR..."
+          jar -tf kodality-commons/commons-db/build/libs/commons-db-*.jar | grep "PgBeanProcessor.class" || (echo "ERROR: PgBeanProcessor not found!" && exit 1)
+          jar -tf termx-app/build/libs/termx-app-*-all.jar | grep "com/kodality/commons/db/bean/PgBeanProcessor.class" || (echo "ERROR: PgBeanProcessor not in final JAR!" && exit 1)
+          echo "✅ Vendored code verified in JARs"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
