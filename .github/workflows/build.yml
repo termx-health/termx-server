@@ -42,6 +42,24 @@ jobs:
         with:
           cache-disabled: true
 
+      - name: Debug checkout
+        working-directory: .
+        run: |
+          echo "=== Checking vendored source files ==="
+          ls -la kodality-commons/ || echo "kodality-commons dir not found!"
+          ls -la kodality-commons/commons-db/src/main/java/com/kodality/commons/db/bean/ || echo "bean dir not found!"
+          echo ""
+          echo "=== Checking if PgBeanProcessor.java exists ==="
+          if [ -f kodality-commons/commons-db/src/main/java/com/kodality/commons/db/bean/PgBeanProcessor.java ]; then
+            echo "✅ PgBeanProcessor.java exists"
+            head -25 kodality-commons/commons-db/src/main/java/com/kodality/commons/db/bean/PgBeanProcessor.java
+          else
+            echo "❌ PgBeanProcessor.java NOT FOUND!"
+          fi
+          echo ""
+          echo "=== Checking settings.gradle.kts ==="
+          grep -A 5 "kodality-commons:commons-db" settings.gradle.kts || echo "Not in settings"
+      
       - name: Clear Maven cache
         working-directory: .
         run: rm -rf ~/.m2/repository/com/kodality || true
@@ -55,7 +73,9 @@ jobs:
         run: |
           echo "=== Checking for built JARs ==="
           ls -la kodality-commons/commons-db/build/libs/ || echo "commons-db libs dir not found"
-          ls -la termx-app/build/libs/ || echo "termx-app libs dir not found"
+          echo ""
+          echo "=== Content of commons-db JAR ==="
+          jar -tf kodality-commons/commons-db/build/libs/commons-db-*.jar | grep -E "kodality/commons/db" | head -20
           echo ""
           echo "=== Verifying PgBeanProcessor in commons-db JAR ==="
           if jar -tf kodality-commons/commons-db/build/libs/commons-db-*.jar | grep -q "PgBeanProcessor.class"; then
