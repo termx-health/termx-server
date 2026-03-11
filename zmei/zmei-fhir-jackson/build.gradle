@@ -1,0 +1,12 @@
+description = "FHIR models jackson serializer"
+
+dependencies {
+  implementation project(":zmei:zmei-fhir")
+  implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+  implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
+
+  testImplementation 'junit:junit:4.13.2'
+  testImplementation 'commons-io:commons-io:2.15.0'
+  testImplementation 'com.flipkart.zjsonpatch:zjsonpatch:0.4.14'
+}
+

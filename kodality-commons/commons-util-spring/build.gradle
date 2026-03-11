@@ -1,0 +1,7 @@
+description = "Kodality commons micronaut utilitis using spring"
+
+dependencies {
+  api project(':kodality-commons:commons-util')
+  implementation 'org.springframework:spring-core:5.3.37'
+  implementation "commons-io:commons-io:2.16.1"
+}

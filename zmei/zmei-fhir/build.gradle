@@ -1,0 +1,8 @@
+description = "Simple and minimalistic FHIR reference library"
+
+dependencies {
+  implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+  testImplementation 'junit:junit:4.13.2'
+}
+
+

@@ -1,0 +1,16 @@
+description = "Kodality commons micronaut base"
+
+
+dependencies {
+  annotationProcessor "io.micronaut.validation:micronaut-validation"
+
+  api project(':kodality-commons:commons-util')
+  api project(':kodality-commons:commons-http-client')
+  implementation "io.projectreactor:reactor-core:3.6.7"
+
+  api "io.micronaut:micronaut-management"
+  api "io.micronaut:micronaut-http-server-netty"
+  api "io.micronaut.liquibase:micronaut-liquibase"
+  api "commons-io:commons-io:2.16.1"
+}
+

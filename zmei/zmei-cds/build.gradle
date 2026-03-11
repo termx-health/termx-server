@@ -1,0 +1,6 @@
+dependencies {
+  api project(":zmei:zmei-fhir")
+  implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+}
+
+

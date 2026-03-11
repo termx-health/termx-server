@@ -1,0 +1,7 @@
+description = "Kodality commons sys_sequence"
+
+
+dependencies {
+  api project(':kodality-commons:commons-micronaut')
+  api project(':kodality-commons:commons-micronaut-pg')
+}
