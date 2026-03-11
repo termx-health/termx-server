@@ -83,10 +83,43 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
         exclude("META-INF/services/org.xmlpull.v1.XmlPullParserFactory")
     }
     
-    // CRITICAL: JAR will contain TWO BeanProcessor.class files (vendored 12723 bytes + standard 12088 bytes)
-    // At runtime, JVM loads them in JAR order - Shadow processes project sources FIRST, so our vendored
-    // version should load. We warn on duplicates to track them, but allow both to exist.
+    // CRITICAL: Allow duplicate BeanProcessor.class files during build
+    // They will be cleaned up in the removeDuplicateBeanProcessor task
     duplicatesStrategy = DuplicatesStrategy.WARN
+    
+    doLast {
+        // Post-process: Remove duplicate BeanProcessor AND GenerousBeanProcessor, keep only vendored versions
+        val jarFile = archiveFile.get().asFile
+        val vendoredModule = project.project(":kodality-commons:commons-db")
+        val vendoredClassDir = vendoredModule.layout.buildDirectory.dir("classes/java/main").get().asFile
+        
+        // Remove BOTH duplicates
+        listOf("BeanProcessor.class", "GenerousBeanProcessor.class").forEach { className ->
+            println("🔧 Removing duplicate ${className}...")
+            val removeProcess = ProcessBuilder("zip", "-d", jarFile.absolutePath, "org/apache/commons/dbutils/${className}")
+                .inheritIO()
+                .start()
+            if (removeProcess.waitFor() != 0) {
+                throw GradleException("Failed to remove duplicate ${className}")
+            }
+            
+            // Re-add ONLY the vendored version
+            val vendoredClass = File(vendoredClassDir, "org/apache/commons/dbutils/${className}")
+            if (vendoredClass.exists()) {
+                val addProcess = ProcessBuilder("zip", "-u", jarFile.absolutePath, "org/apache/commons/dbutils/${className}")
+                    .directory(vendoredClassDir)
+                    .inheritIO()
+                    .start()
+                if (addProcess.waitFor() != 0) {
+                    throw GradleException("Failed to add vendored ${className}")
+                }
+                println("✅ Vendored ${className} restored")
+            } else {
+                throw GradleException("Vendored ${className} not found at ${vendoredClass.absolutePath}")
+            }
+        }
+        println("✅ All duplicate Apache dbutils classes resolved (using vendored versions with registerColumnHandler)")
+    }
 }
 
 tasks.named<JavaExec>("run") {

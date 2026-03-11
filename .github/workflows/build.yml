@@ -60,16 +60,34 @@ jobs:
             exit 1
           fi
           
-          echo "=== Verifying BeanProcessor (with registerColumnHandler method) ==="
-          if jar -tf "$TERMX_JAR" | grep -q "org/apache/commons/dbutils/BeanProcessor.class"; then
-            echo "✅ BeanProcessor found"
+          echo "=== Verifying NO duplicate BeanProcessor classes ==="
+          BEAN_COUNT=$(jar -tf "$TERMX_JAR" | grep -c "org/apache/commons/dbutils/BeanProcessor.class" || true)
+          if [ "$BEAN_COUNT" -eq "1" ]; then
+            echo "✅ Only ONE BeanProcessor.class (vendored)"
           else
-            echo "❌ ERROR: BeanProcessor not found!"
+            echo "❌ ERROR: Found $BEAN_COUNT BeanProcessor.class files (expected 1)!"
+            exit 1
+          fi
+          
+          echo "=== Verifying NO duplicate GenerousBeanProcessor classes ==="
+          GENEROUS_COUNT=$(jar -tf "$TERMX_JAR" | grep -c "org/apache/commons/dbutils/GenerousBeanProcessor.class" || true)
+          if [ "$GENEROUS_COUNT" -eq "1" ]; then
+            echo "✅ Only ONE GenerousBeanProcessor.class (vendored)"
+          else
+            echo "❌ ERROR: Found $GENEROUS_COUNT GenerousBeanProcessor.class files (expected 1)!"
+            exit 1
+          fi
+          
+          echo "=== Verifying ColumnHandler exists ==="
+          if jar -tf "$TERMX_JAR" | grep -q "org/apache/commons/dbutils/ColumnHandler.class"; then
+            echo "✅ ColumnHandler.class found"
+          else
+            echo "❌ ERROR: ColumnHandler.class not found!"
             exit 1
           fi
           
           echo ""
-          echo "✅ All vendored code verified successfully in final JAR!"
+          echo "✅ All vendored code verified successfully - NO duplicates, all required classes present!"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
