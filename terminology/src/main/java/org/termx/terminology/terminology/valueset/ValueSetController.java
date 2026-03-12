@@ -16,6 +16,7 @@ import org.termx.core.sys.job.logger.ImportLogger;
 import org.termx.core.sys.provenance.Provenance;
 import org.termx.core.sys.provenance.Provenance.ProvenanceChange;
 import org.termx.terminology.terminology.valueset.expansion.ValueSetExportService;
+import org.termx.terminology.terminology.valueset.expansion.ValueSetRuleExpandService;
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
 import org.termx.terminology.terminology.valueset.provenance.ValueSetProvenanceService;
 import org.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleService;
@@ -24,6 +25,7 @@ import org.termx.terminology.terminology.valueset.version.ValueSetVersionService
 import org.termx.ts.valueset.ValueSet;
 import org.termx.ts.valueset.ValueSetExpandRequest;
 import org.termx.ts.valueset.ValueSetQueryParams;
+import org.termx.ts.valueset.ValueSetRuleExpandRequest;
 import org.termx.ts.valueset.ValueSetTransactionRequest;
 import org.termx.ts.valueset.ValueSetVersion;
 import org.termx.ts.valueset.ValueSetVersionConcept;
@@ -64,6 +66,7 @@ public class ValueSetController {
   private final ValueSetVersionRuleSetService valueSetVersionRuleSetService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final ValueSetDuplicateService valueSetDuplicateService;
+  private final ValueSetRuleExpandService valueSetRuleExpandService;
   private final ImportLogger importLogger;
   private final ValueSetProvenanceService provenanceService;
   private final LorqueProcessService lorqueProcessService;
@@ -206,6 +209,13 @@ public class ValueSetController {
   public List<ValueSetVersionConcept> expand(@Body @Valid ValueSetExpandRequest request) {
     SessionStore.require().checkPermitted(request.getValueSet(), Privilege.VS_VIEW);
     return valueSetVersionConceptService.expand(request.getValueSet(), request.getValueSetVersion());
+  }
+
+  @Authorized(Privilege.VS_VIEW)
+  @Post(uri = "/expand-rule")
+  public List<ValueSetVersionConcept> expandRule(@Body @Valid ValueSetRuleExpandRequest request) {
+    SessionStore.require().checkPermitted(request.getValueSet(), Privilege.VS_VIEW);
+    return valueSetRuleExpandService.expandRule(request.getValueSet(), request.getValueSetVersion(), request.getRule(), request.isInactiveConcepts());
   }
 
   @Authorized(Privilege.VS_VIEW)

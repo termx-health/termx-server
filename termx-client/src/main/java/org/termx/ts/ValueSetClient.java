@@ -7,6 +7,7 @@ import com.kodality.commons.util.JsonUtil;
 import org.termx.ts.valueset.ValueSet;
 import org.termx.ts.valueset.ValueSetExpandRequest;
 import org.termx.ts.valueset.ValueSetQueryParams;
+import org.termx.ts.valueset.ValueSetRuleExpandRequest;
 import org.termx.ts.valueset.ValueSetVersion;
 import org.termx.ts.valueset.ValueSetVersionConcept;
 import org.termx.ts.valueset.ValueSetVersionQueryParams;
@@ -41,6 +42,10 @@ public class ValueSetClient {
 
   public CompletableFuture<List<ValueSetVersionConcept>> expand(ValueSetExpandRequest request) {
     return client.POST("/expand", request, JsonUtil.getParametricType(List.class, ValueSetVersionConcept.class));
+  }
+
+  public CompletableFuture<List<ValueSetVersionConcept>> expandRule(ValueSetRuleExpandRequest request) {
+    return client.POST("/expand-rule", request, JsonUtil.getParametricType(List.class, ValueSetVersionConcept.class));
   }
 
 }
