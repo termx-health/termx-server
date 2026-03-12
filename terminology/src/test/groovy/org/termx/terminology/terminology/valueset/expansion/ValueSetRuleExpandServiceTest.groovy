@@ -1,6 +1,7 @@
 package org.termx.terminology.terminology.valueset.expansion
 
 import com.kodality.zmei.fhir.resource.terminology.ValueSet as FhirValueSet
+import org.termx.core.ts.ValueSetExternalExpandProvider
 import org.termx.terminology.fhir.valueset.ValueSetFhirMapper
 import org.termx.terminology.terminology.codesystem.CodeSystemService
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService
@@ -25,6 +26,7 @@ class ValueSetRuleExpandServiceTest extends Specification {
   def fhirMapper = Mock(ValueSetFhirMapper)
 
   def service = new ValueSetRuleExpandService(
+      [],
       valueSetService,
       valueSetVersionService,
       codeSystemService,
@@ -76,5 +78,55 @@ class ValueSetRuleExpandServiceTest extends Specification {
     1 * conceptService.decorate(rawConcepts, _, "en") >> decorated
     result.size() == 1
     result.first().active
+  }
+
+  def "expandRule includes external provider concepts"() {
+    given:
+    def externalConcept = new ValueSetVersionConcept().setActive(true)
+    def service = new ValueSetRuleExpandService(
+        [provider("ucum", externalConcept)],
+        valueSetService,
+        valueSetVersionService,
+        codeSystemService,
+        codeSystemVersionService,
+        repository,
+        conceptService,
+        fhirMapper
+    )
+    def valueSet = new ValueSet().setId("vs").setUri("http://example.org/vs")
+    def version = new ValueSetVersion()
+        .setId(10L)
+        .setValueSet("vs")
+        .setVersion("1.0.0")
+        .setStatus("draft")
+        .setPreferredLanguage("en")
+    def requestRule = new ValueSetVersionRule().setType("include").setCodeSystem("ucum")
+
+    when:
+    def result = service.expandRule("vs", "1.0.0", requestRule, false)
+
+    then:
+    1 * valueSetService.load("vs") >> valueSet
+    1 * valueSetVersionService.load("vs", "1.0.0") >> Optional.of(version)
+    1 * codeSystemService.load("ucum") >> Optional.of(new CodeSystem().setId("ucum").setUri("http://unitsofmeasure.org"))
+    0 * codeSystemVersionService._
+    1 * fhirMapper.toFhir(valueSet, _, []) >> new FhirValueSet()
+    1 * repository.expandFromJson(_) >> []
+    1 * conceptService.decorate([], _, "en") >> []
+    result == [externalConcept]
+  }
+
+  private static ValueSetExternalExpandProvider provider(String codeSystemId, ValueSetVersionConcept concept) {
+    return new ValueSetExternalExpandProvider() {
+      @Override
+      List<ValueSetVersionConcept> ruleExpand(ValueSetVersionRule rule, ValueSetVersion version, String preferredLanguage) {
+        return [concept]
+      }
+
+      @Override
+      String getCodeSystemId() {
+        return codeSystemId
+      }
+    }
   }
 }

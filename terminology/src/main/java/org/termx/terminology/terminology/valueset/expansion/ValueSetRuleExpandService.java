@@ -4,6 +4,7 @@ import com.kodality.zmei.fhir.FhirMapper;
 import jakarta.inject.Singleton;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.termx.core.ts.ValueSetExternalExpandProvider;
 import org.termx.terminology.terminology.codesystem.CodeSystemService;
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import org.termx.terminology.terminology.valueset.ValueSetService;
@@ -22,6 +23,7 @@ import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 @Singleton
 @RequiredArgsConstructor
 public class ValueSetRuleExpandService {
+  private final List<ValueSetExternalExpandProvider> externalExpandProviders;
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
   private final CodeSystemService codeSystemService;
@@ -55,7 +57,11 @@ public class ValueSetRuleExpandService {
     String inlineValueSetJson = FhirMapper.toJson(valueSetFhirMapper.toFhir(valueSet, version, List.of()));
     List<ValueSetVersionConcept> expansion = valueSetVersionConceptRepository.expandFromJson(inlineValueSetJson);
     List<ValueSetVersionConcept> decorated = valueSetVersionConceptService.decorate(expansion, version, version.getPreferredLanguage());
-    return inactiveConcepts ? decorated : decorated.stream().filter(ValueSetVersionConcept::isActive).toList();
+    List<ValueSetVersionConcept> previewExpansion = new java.util.ArrayList<>(decorated);
+    for (ValueSetExternalExpandProvider provider : externalExpandProviders) {
+      previewExpansion.addAll(provider.expand(version.getRuleSet(), version, version.getPreferredLanguage()));
+    }
+    return inactiveConcepts ? previewExpansion : previewExpansion.stream().filter(ValueSetVersionConcept::isActive).toList();
   }
 
   private ValueSetVersionRule enrichRule(ValueSetVersionRule source) {
