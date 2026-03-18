@@ -126,7 +126,7 @@ WITH recursive vs AS (
   select t.type, cs.id "codeSystem", t.code, csev.id "conceptVersionId", t.display,
          t.designation, t.property,
          jsonb_path_query_first( t.property, '$[*] ? (@.code == "order").valueInteger')::integer AS order_nr,
-         jsonb_build_object('conceptVersionId', csev.id, 'code', c.code, 'codeSystem', cs.id, 'codeSystemUri', cs.uri, 'baseCodeSystemUri', bcs.uri) obj
+         jsonb_build_object('conceptVersionId', csev.id, 'code', t.code, 'codeSystem', cs.id, 'codeSystemUri', cs.uri, 'baseCodeSystemUri', bcs.uri) obj
     from concepts t
          inner join terminology.code_system cs on cs.uri = t."system" and cs.sys_status = 'A'
          left outer join terminology.code_system bcs on bcs.id = cs.base_code_system and bcs.sys_status = 'A'
@@ -134,10 +134,19 @@ WITH recursive vs AS (
                 and ((t.version is not null and csv."version" = t.version ) or
                      (t.version is null and csv.id = (select max(id) from terminology.code_system_version t2 where t2.code_system = cs.id and t2.sys_status='A'))
                     )
-         inner join terminology.concept c on csv.code_system  = c.code_system and c.code = t.code and c.sys_status = 'A'
-         inner join terminology.code_system_entity_version csev on csev.code_system_entity_id = c.id and csev.sys_status = 'A'
-         inner join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.sys_status = 'A'
+         left outer join terminology.code_system_entity_version csev on csev.code_system = cs.id
+                and csev.code = t.code
+                and csev.sys_status = 'A'
+         left outer join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.sys_status = 'A'
                 and evcsvm.code_system_entity_version_id = csev.id and csv.id = evcsvm.code_system_version_id
+   where (evcsvm.id is not null or cs.content = 'not-present')
+     and not exists (
+         select 1
+           from terminology.entity_version_code_system_version_membership evcsvm_excluded
+          where evcsvm_excluded.code_system_version_id = csv.id
+            and evcsvm_excluded.code_system_entity_version_id = csev.id
+            and evcsvm_excluded.sys_status = 'C'
+     )
 )
 , t as (
   -- Find the proper code_system_version for every rule
