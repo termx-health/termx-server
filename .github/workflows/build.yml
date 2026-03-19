@@ -108,8 +108,8 @@ jobs:
           echo "Base ref: ${{ github.base_ref }}"
 
       - name: Set latest tag
-        if: github.ref == 'refs/heads/main'
-        run: echo "LATEST_TAG=latest" >> $GITHUB_ENV
+        if: github.ref == 'refs/heads/terminology-lt'
+        run: echo "LATEST_TAG=latest-lt" >> $GITHUB_ENV
 
 
       - name: Docker meta
@@ -118,8 +118,6 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}         
             type=raw,value=${{ env.LATEST_TAG }}
           flavor: |
             latest=false
