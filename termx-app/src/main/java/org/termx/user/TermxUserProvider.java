@@ -1,62 +1,57 @@
 package org.termx.user;
 
-import com.kodality.commons.cache.CacheManager;
-import org.termx.auth.Privilege;
+import com.kodality.commons.client.HttpClient;
+import com.kodality.commons.util.JsonUtil;
+import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
+import jakarta.inject.Singleton;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.Setter;
 import org.termx.core.user.User;
 import org.termx.core.user.UserProvider;
-import org.termx.uam.privilege.PrivilegeDataHandler;
-import org.termx.uam.privilege.PrivilegeStore;
-import io.micronaut.context.annotation.Requires;
-import io.micronaut.core.util.StringUtils;
-import jakarta.inject.Singleton;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
-@Requires(property = "auth.mock.enabled", notEquals = StringUtils.TRUE)
+@Requires(property = "nsoft.url")
 @Singleton
-public class TermxUserProvider extends UserProvider implements PrivilegeDataHandler {
-  private final Optional<OAuthUserHttpClient> authUserHttpClient;
-  private final CacheManager cache = new CacheManager();
-  private final PrivilegeStore privilegeStore;
+public class TermxUserProvider extends UserProvider {
+  private final HttpClient client;
 
-  public TermxUserProvider(Optional<OAuthUserHttpClient> authUserHttpClient, PrivilegeStore privilegeStore) {
-    this.authUserHttpClient = authUserHttpClient;
-    this.privilegeStore = privilegeStore;
-    cache.initCache("users", 1, TimeUnit.MINUTES.toSeconds(10));
+  public TermxUserProvider(@Value("${nsoft.url}") String nsoftUrl) {
+    this.client = new HttpClient(nsoftUrl);
   }
 
   @Override
   public List<User> getUsers() {
-    return cache.get("users", "query", () -> authUserHttpClient.map(this::getUsers).orElseGet(List::of));
+    CompletableFuture<List<NsoftUser>> request = client.GET("/info/users", JsonUtil.getListType(NsoftUser.class));
+    return request.join().stream().map(u -> new User().setSub(u.getEmail()).setName(getName(u)).setPrivileges(getPrivileges(u))).collect(Collectors.toList());
   }
 
-  private List<User> getUsers(OAuthUserHttpClient client) {
-    return client.getUsers()
-        .join()
-        .stream()
-        .map(u -> {
-          var userRoles = client.getUserRoles(u.getId());
-          return new User().setSub(u.getUsername()).setName(getName(u)).setPrivileges(privilegeStore.getPrivileges(userRoles));
-        })
-        .toList();
-  }
-
-  private String getName(OAuthUser user) {
-    if (user.getFirstName() != null && user.getLastName() != null) {
-      return String.join(",", user.getLastName(), user.getFirstName());
+  private String getName(NsoftUser user) {
+    if (user.getFirstname() != null && user.getLastname() != null) {
+      return String.join(",", user.getLastname(), user.getFirstname());
     }
-    return user.getUsername();
+    return user.getEmail();
+  }
+
+  private Set<String> getPrivileges(NsoftUser user) {
+    if (user.getPermissions() == null) {
+      return Set.of();
+    }
+    return new HashSet<>(user.getPermissions());
   }
 
 
-  @Override
-  public void afterPrivilegeSave(Privilege privilege) {
-    cache.clearCache("users");
-  }
-
-  @Override
-  public void afterPrivilegeDelete(Privilege privilege) {
-    cache.clearCache("users");
+  @Getter
+  @Setter
+  private static class NsoftUser {
+    private Long id;
+    private String firstname;
+    private String lastname;
+    private String email;
+    private List<String> permissions;
   }
 }

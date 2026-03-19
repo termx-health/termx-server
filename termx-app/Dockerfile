@@ -8,5 +8,9 @@ ENV APP_VERSION=${APP_VERSION:-latest}
 ARG BUILD_TIME
 ENV BUILD_TIME=$BUILD_TIME
 
+ADD entrypoint.sh /
+RUN mkdir /certs
+
 COPY build/libs/*-all.jar terminology.jar
 CMD java ${JAVA_OPTS} -jar terminology.jar
+ENTRYPOINT ["/entrypoint.sh"]
