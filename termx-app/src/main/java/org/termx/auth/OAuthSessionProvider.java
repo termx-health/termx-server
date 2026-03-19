@@ -12,7 +12,6 @@ import com.kodality.commons.cache.CacheManager;
 import com.kodality.commons.client.HttpClient;
 import com.kodality.commons.util.JsonUtil;
 import org.termx.core.auth.SessionInfo;
-import org.termx.uam.privilege.PrivilegeStore;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpRequest;
@@ -37,12 +36,12 @@ public class OAuthSessionProvider extends SessionProvider {
 
   private final HttpClient jwksClient;
   private final CacheManager jwksCache = new CacheManager();
-  private final PrivilegeStore privilegeStore;
+  private final OAuthSessionPrivilegeMapper privilegeMapper;
 
-  public OAuthSessionProvider(@Value("${auth.oauth.jwks-url}") String userinfoUrl, PrivilegeStore privilegeStore) {
-    this.privilegeStore = privilegeStore;
+  public OAuthSessionProvider(@Value("${auth.oauth.jwks-url}") String jwksUrl, OAuthSessionPrivilegeMapper privilegeMapper) {
+    this.privilegeMapper = privilegeMapper;
     jwksCache.initCache("jwks", 1, 600);
-    this.jwksClient = new HttpClient(userinfoUrl);
+    this.jwksClient = new HttpClient(jwksUrl);
   }
 
   @Override
@@ -76,7 +75,7 @@ public class OAuthSessionProvider extends SessionProvider {
       String payload = new String(Base64.getUrlDecoder().decode(jwt.getPayload()), java.nio.charset.StandardCharsets.UTF_8);
       Map<String, Object> map = JsonUtil.toMap(payload);
       SessionInfo info = new SessionInfo();
-      info.setPrivileges(privilegeStore.getPrivileges((List<String>) map.get("roles")));
+      info.setPrivileges(privilegeMapper.getPrivileges(map));
       info.setUsername((String) map.get("preferred_username"));
       return info;
     } catch (SignatureVerificationException | JwkException | JWTDecodeException e) {
