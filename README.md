@@ -2,6 +2,11 @@
 
 A FHIR-compliant terminology server for managing and serving healthcare terminologies.
 
+## Branch Image Tag
+
+For the `terminology-lt` branch, use the Docker image tag `latest-lt`.
+The full image name is: `ghcr.io/termx-health/termx-server:latest`.
+
 ## Features
 
 ### 🌐 FHIR Terminology Ecosystem Integration (New!)
