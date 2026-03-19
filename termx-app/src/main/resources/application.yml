@@ -1,6 +1,6 @@
 micronaut:
   application:
-    name: termx
+    name: termserver
   server:
     port: 8200
     max-request-size: 629145600 #600MB
@@ -40,13 +40,13 @@ info:
 
 datasources:
   default:
-    url: ${DB_URL:`jdbc:postgresql://localhost:5432/termx`}
+    url: ${DB_URL:`jdbc:postgresql://localhost:5432/termserver`}
     username: termserver_app
     password: ${DB_APP_PASSWORD:test}
     maximum-pool-size: ${DB_POOL_SIZE:10}
     driver-class-name: org.postgresql.Driver
   liquibase:
-    url: ${DB_URL:`jdbc:postgresql://localhost:5432/termx`}
+    url: ${DB_URL:`jdbc:postgresql://localhost:5432/termserver`}
     username: termserver_admin
     password: ${DB_ADMIN_PASSWORD:test}
     driver-class-name: org.postgresql.Driver
@@ -60,6 +60,10 @@ liquibase:
       parameters:
         app-username: ${datasources.default.username}
 auth:
+  privilege:
+    mapper:
+      store: disabled
+      direct: privileges
   mock:
     enabled: ${AUTH_MOCK_ENABLED:false}
     default-user: ${AUTH_MOCK_DEFAULT_USER:admin}
@@ -83,6 +87,13 @@ snowstorm:
   branch: 'MAIN'
   namespace: '1000265'
 
+github:
+  client:
+    id: 'client-id'
+    secret: 'secret'
+  app-id: ${GITHUB_APP_ID}
+  app-name: ${GITHUB_APP_NAME}
+  private-key-path: '/path/to/private-key.pem'
 terminology-ecosystem:
   coordination-server-url: ${TERMINOLOGY_ECOSYSTEM_URL:http://tx.fhir.org/tx-reg}
 
@@ -113,6 +124,8 @@ javamail:
         auth: ${SMTP_AUTH:true}
         starttls:
           enable: ${SMTP_STARTTLS:true}
+nsoft.url: https://dev.mnkv.nsoft.lt
+
 
 # Ensures Micronaut applies logger.levels from profile-specific files (e.g. application-local.yml).
 # Without a top-level "logger" entry, logger levels from local-only YAML may not be applied.
