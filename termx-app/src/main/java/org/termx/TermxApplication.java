@@ -1,7 +1,6 @@
 package org.termx;
 
 import org.termx.observationdefinition.observationdefinition.ObservationDefinitionController;
-import org.termx.ucum.measurementunit.MeasurementUnitController;
 import org.termx.ucum.controller.UcumController;
 import io.micronaut.openapi.annotation.OpenAPIInclude;
 import io.micronaut.runtime.Micronaut;
@@ -74,10 +73,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @OpenAPIInclude(
     tags = @Tag(name = "SNOMED"),
     classes = {org.termx.snomed.integration.SnomedController.class}
-)
-@OpenAPIInclude(
-    tags = @Tag(name = "MeasurementUnits"),
-    classes = {MeasurementUnitController.class}
 )
 @OpenAPIInclude(
     tags = @Tag(name = "UCUM"),

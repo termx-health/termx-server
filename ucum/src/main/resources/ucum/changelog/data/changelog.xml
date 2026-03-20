@@ -4,18 +4,4 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
 		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
 
-  <changeSet id="measurement-unit" author="kodality">
-    <validCheckSum>ANY</validCheckSum>
-    <customChange class="org.termx.ucum.liquibase.MeasurementUnitTsvImport">
-      <param name="files" value="ucum/changelog/data/measurement-unit.tsv"/>
-    </customChange>
-  </changeSet>
-
-  <changeSet id="measurement-unit-supplement" author="kodality">
-    <validCheckSum>ANY</validCheckSum>
-    <customChange class="org.termx.ucum.liquibase.MeasurementUnitImport">
-      <param name="files" value="ucum/changelog/data/measurement-unit-supplement.json"/>
-    </customChange>
-  </changeSet>
-
 </databaseChangeLog>
