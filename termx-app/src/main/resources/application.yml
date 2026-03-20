@@ -96,6 +96,10 @@ chef.url: https://demo.termx.org/chef
 termx:
   web-url: https://demo.termx.org
   api-url: https://demo.termx.org/api
+  fhir:
+    codesystem:
+      lookup:
+        default-property-mode: ALL
 
 javamail:
   authentication:

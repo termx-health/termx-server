@@ -13,6 +13,8 @@ import org.termx.ts.codesystem.CodeSystemQueryParams
 import org.termx.ts.codesystem.Concept
 import org.termx.ts.codesystem.ConceptQueryParams
 import org.termx.ts.codesystem.Designation
+import org.termx.ts.codesystem.EntityPropertyType
+import org.termx.ts.codesystem.EntityPropertyValue
 import com.kodality.zmei.fhir.FhirMapper
 import com.kodality.zmei.fhir.datatypes.Coding
 import com.kodality.zmei.fhir.resource.other.Parameters
@@ -178,11 +180,71 @@ class CodeSystemUcumOperationsTest extends Specification {
     designationLanguages == ["lt"] as Set
   }
 
-  private static Concept concept(String code, List<Designation> designations) {
+  def "lookup returns all properties by default when mode is ALL"() {
+    given:
+    def lookupOperation = new CodeSystemLookupOperation(conceptService, codeSystemService, LookupDefaultPropertyMode.ALL)
+    codeSystemService.query(_ as CodeSystemQueryParams) >> new QueryResult([new CodeSystem().setId("ucum").setUri("http://unitsofmeasure.org")])
+    conceptService.query(_ as ConceptQueryParams) >> new QueryResult([concept("mL", [
+        designation("display", "en", "milliliter")
+    ], [
+        property("status", EntityPropertyType.code, "active"),
+        property("comment", EntityPropertyType.string, "metric")
+    ])])
+
+    def request = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("system").setValueUri("http://unitsofmeasure.org"))
+        .addParameter(new Parameters.ParametersParameter("code").setValueCode("mL"))
+
+    when:
+    def response = lookupOperation.run(new ResourceContent(FhirMapper.toJson(request), "json"))
+    def parameters = FhirMapper.fromJson(response.value, Parameters)
+    def properties = parameters.parameter.findAll { it.name == "property" }
+    def propertyCodes = properties.collect { property -> property.part.find { it.name == "code" }?.valueString }.toSet()
+
+    then:
+    propertyCodes == ["status", "comment"] as Set
+  }
+
+  def "lookup returns no properties by default when mode is NONE unless explicitly requested"() {
+    given:
+    def lookupOperation = new CodeSystemLookupOperation(conceptService, codeSystemService, LookupDefaultPropertyMode.NONE)
+    codeSystemService.query(_ as CodeSystemQueryParams) >> new QueryResult([new CodeSystem().setId("ucum").setUri("http://unitsofmeasure.org")])
+    conceptService.query(_ as ConceptQueryParams) >> new QueryResult([concept("mL", [
+        designation("display", "en", "milliliter")
+    ], [
+        property("status", EntityPropertyType.code, "active"),
+        property("comment", EntityPropertyType.string, "metric")
+    ])])
+
+    def requestWithoutProperty = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("system").setValueUri("http://unitsofmeasure.org"))
+        .addParameter(new Parameters.ParametersParameter("code").setValueCode("mL"))
+    def requestWithProperty = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("system").setValueUri("http://unitsofmeasure.org"))
+        .addParameter(new Parameters.ParametersParameter("code").setValueCode("mL"))
+        .addParameter(new Parameters.ParametersParameter("property").setValueCode("status"))
+
+    when:
+    def responseWithoutProperty = lookupOperation.run(new ResourceContent(FhirMapper.toJson(requestWithoutProperty), "json"))
+    def parametersWithoutProperty = FhirMapper.fromJson(responseWithoutProperty.value, Parameters)
+    def responseWithProperty = lookupOperation.run(new ResourceContent(FhirMapper.toJson(requestWithProperty), "json"))
+    def parametersWithProperty = FhirMapper.fromJson(responseWithProperty.value, Parameters)
+
+    then:
+    parametersWithoutProperty.parameter.findAll { it.name == "property" }.isEmpty()
+    parametersWithProperty.parameter.findAll { it.name == "property" }.size() == 1
+    parametersWithProperty.parameter.find { it.name == "property" }.part.find { it.name == "code" }.valueString == "status"
+  }
+
+  private static Concept concept(String code, List<Designation> designations, List<EntityPropertyValue> propertyValues = []) {
     return new Concept()
         .setCode(code)
         .setCodeSystem("ucum")
-        .setVersions([new CodeSystemEntityVersion().setCode(code).setCodeSystem("ucum").setDesignations(designations)])
+        .setVersions([new CodeSystemEntityVersion()
+            .setCode(code)
+            .setCodeSystem("ucum")
+            .setDesignations(designations)
+            .setPropertyValues(propertyValues)])
   }
 
   private static Designation designation(String type, String language, String value) {
@@ -192,5 +254,12 @@ class CodeSystemUcumOperationsTest extends Specification {
         .setName(value)
         .setPreferred("display".equals(type))
         .setStatus("active")
+  }
+
+  private static EntityPropertyValue property(String code, String type, Object value) {
+    return new EntityPropertyValue()
+        .setEntityProperty(code)
+        .setEntityPropertyType(type)
+        .setValue(value)
   }
 }
