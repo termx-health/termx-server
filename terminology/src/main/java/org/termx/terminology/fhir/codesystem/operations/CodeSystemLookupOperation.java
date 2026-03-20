@@ -25,6 +25,7 @@ import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.Coding;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
+import io.micronaut.context.annotation.Value;
 import jakarta.inject.Singleton;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -34,19 +35,29 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Singleton
-@RequiredArgsConstructor
 public class CodeSystemLookupOperation implements InstanceOperationDefinition, TypeOperationDefinition {
   private static final String UCUM = "ucum";
   private static final String UCUM_URI = "http://unitsofmeasure.org";
 
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
+  private final LookupDefaultPropertyMode defaultPropertyMode;
+
+  public CodeSystemLookupOperation(ConceptService conceptService, CodeSystemService codeSystemService,
+                                   @Value("${termx.fhir.codesystem.lookup.default-property-mode:ALL}") LookupDefaultPropertyMode defaultPropertyMode) {
+    this.conceptService = conceptService;
+    this.codeSystemService = codeSystemService;
+    this.defaultPropertyMode = defaultPropertyMode;
+  }
+
+  CodeSystemLookupOperation(ConceptService conceptService, CodeSystemService codeSystemService) {
+    this(conceptService, codeSystemService, LookupDefaultPropertyMode.ALL);
+  }
 
   public String getResourceType() {
     return ResourceType.CodeSystem.name();
@@ -135,14 +146,24 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
       );
     });
 
-    List<String> properties = req.getParameter().stream().filter(p -> "property".equals(p.getName())).map(ParametersParameter::getValueString).toList();
+    List<String> properties = req.getParameter().stream()
+        .filter(p -> "property".equals(p.getName()))
+        .map(p -> StringUtils.firstNonBlank(p.getValueCode(), p.getValueString()))
+        .toList();
     List<EntityPropertyValue> propertyValues = c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getPropertyValues).orElse(List.of());
-    propertyValues.stream().filter(pv -> properties.contains(pv.getEntityProperty())).forEach(pv -> {
+    propertyValues.stream().filter(pv -> shouldReturnProperty(properties, pv)).forEach(pv -> {
       resp.addParameter(new ParametersParameter("property")
           .addPart(new ParametersParameter("code").setValueString(pv.getEntityProperty()))
-          .addPart(toParameter(pv.getEntityPropertyType(), pv)));
+          .addPart(toParameter(pv.getEntityPropertyType(), pv.getValue())));
     });
     return resp;
+  }
+
+  private boolean shouldReturnProperty(List<String> requestedProperties, EntityPropertyValue propertyValue) {
+    if (!requestedProperties.isEmpty()) {
+      return requestedProperties.contains(propertyValue.getEntityProperty());
+    }
+    return defaultPropertyMode == LookupDefaultPropertyMode.ALL;
   }
 
   private List<Designation> loadSupplementDesignations(String csId, String code, String displayLanguage, Parameters req) {
