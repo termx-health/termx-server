@@ -66,6 +66,29 @@ cd termx-app
 ``` 
 In the development mode you can use application without authentication. The application use special dev token **Bearer token** `yupi` in request Authorization header.
 
+### Logging
+
+- **Local (verbose)**: Copy [`termx-app/src/main/resources/application-local.example.yml`](termx-app/src/main/resources/application-local.example.yml) to `termx-app/src/main/resources/application-local.yml` (that file is gitignored). Micronaut only loads `application-local.yml` when the **`local`** environment is active. Use **`./gradlew :termx-app:run -Pdev`** or **`./_run_local.sh`** (they set `dev,local`), or add **`-Dmicronaut.environments=dev,local`** to the JVM when running from the IDE. **`./gradlew run` without `-Pdev` does not load `application-local.yml`**, so `logger.levels` there will have no effect.
+- **Docker**: Default root level is **INFO** unless overridden. Set **`LOGBACK_LOG_LEVEL`** (e.g. `DEBUG` for troubleshooting) or pass **`-DLOGBACK_LOG_LEVEL=...`** via **`JAVA_OPTS`**. For Docker Compose, add a line in [`deployment/docker-compose/server.env`](deployment/docker-compose/server.env).
+
+### Running automated tests
+
+From the repository root, use Gradle:
+
+```bash
+# All modules
+./gradlew test
+
+# One module (examples)
+./gradlew :terminology:test
+./gradlew :termx-app:test
+
+# One test class
+./gradlew :terminology:test --tests "org.termx.terminology.fileimporter.codesystem.CodeSystemFileImportProcessorTest"
+```
+
+HTML reports are under each module’s `build/reports/tests/test/` (e.g. `terminology/build/reports/tests/test/index.html`).
+
 ### Test
 Query `http://localhost:8200/fhir/metadata` in the browser.
 It should return CapabilityStatement resource.

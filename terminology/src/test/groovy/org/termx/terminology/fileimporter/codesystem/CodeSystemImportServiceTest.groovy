@@ -7,7 +7,6 @@ import org.termx.terminology.terminology.codesystem.CodeSystemImportService
 import org.termx.terminology.terminology.codesystem.CodeSystemService
 import org.termx.terminology.terminology.codesystem.validator.CodeSystemValidationService
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService
-import org.termx.terminology.terminology.codesystem.compare.CodeSystemCompareService
 import org.termx.terminology.terminology.codesystem.concept.ConceptService
 import org.termx.terminology.terminology.valueset.ValueSetService
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService
@@ -26,7 +25,7 @@ import static org.termx.ts.codesystem.EntityPropertyValue.EntityPropertyValueCod
 import static org.apache.commons.lang3.builder.EqualsBuilder.reflectionEquals
 
 class CodeSystemImportServiceTest extends Specification {
-  def codeSystemCompareService = Mock(CodeSystemCompareService)
+  def dryRunService = Mock(CodeSystemFileImportDryRunService)
   def codeSystemFhirImportService = Mock(CodeSystemFhirImportService)
   def codeSystemImportService = Mock(CodeSystemImportService)
   def codeSystemService = Mock(CodeSystemService)
@@ -39,7 +38,7 @@ class CodeSystemImportServiceTest extends Specification {
   def valueSetVersionService = Mock(ValueSetVersionService)
 
   def service = new CodeSystemFileImportService(
-      codeSystemCompareService,
+      dryRunService,
       codeSystemFhirImportService,
       codeSystemImportService,
       codeSystemService,

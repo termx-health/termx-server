@@ -36,7 +36,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CodeSystemFileImportMapper {
   public static final String CONCEPT_CODE = "concept-code";
   public static final String HIERARCHICAL_CONCEPT = "hierarchical-concept";
@@ -65,6 +67,13 @@ public class CodeSystemFileImportMapper {
 
   public static CodeSystem toCodeSystem(FileProcessingCodeSystem fpCodeSystem, FileProcessingCodeSystemVersion fpVersion, CodeSystemFileImportResult result,
                                         CodeSystem existingCodeSystem, CodeSystemVersion existingCodeSystemVersion) {
+    log.debug("=== MAPPER DEBUG: toCodeSystem START ===");
+    log.debug("MAPPER DEBUG: CodeSystem ID: {}, Version: {}, Entities: {}, Properties: {}", 
+        fpCodeSystem.getId(), fpVersion.getNumber(), result.getEntities().size(), result.getProperties().size());
+    log.debug("MAPPER DEBUG: Existing CodeSystem: {}, Existing Version: {}", 
+        existingCodeSystem != null ? existingCodeSystem.getId() : "null", 
+        existingCodeSystemVersion != null ? existingCodeSystemVersion.getVersion() : "null");
+    
     CodeSystem codeSystem = existingCodeSystem != null ? JsonUtil.fromJson(JsonUtil.toJson(existingCodeSystem), CodeSystem.class) : new CodeSystem();
     codeSystem.setId(fpCodeSystem.getId());
     codeSystem.setUri(fpCodeSystem.getUri() != null ? fpCodeSystem.getUri() : codeSystem.getUri());
@@ -73,9 +82,18 @@ public class CodeSystemFileImportMapper {
     codeSystem.setIdentifiers(fpCodeSystem.getOid() != null ? List.of(new Identifier(OID_SYSTEM, OID_PREFIX + fpCodeSystem.getOid())) : codeSystem.getIdentifiers());
     codeSystem.setTitle(fpCodeSystem.getTitle() != null ? fpCodeSystem.getTitle() : codeSystem.getTitle());
     codeSystem.setDescription(fpCodeSystem.getDescription() != null ? fpCodeSystem.getDescription() : codeSystem.getDescription());
+    
+    log.debug("MAPPER DEBUG: Mapping version...");
     codeSystem.setVersions(List.of(toCsVersion(fpVersion, result.getEntities(), fpCodeSystem, existingCodeSystemVersion)));
+    
+    log.debug("MAPPER DEBUG: Mapping properties...");
     codeSystem.setProperties(toCsProperties(result.getProperties()));
+    log.debug("MAPPER DEBUG: Mapped {} properties", codeSystem.getProperties().size());
+    
+    log.debug("MAPPER DEBUG: Mapping {} concepts...", result.getEntities().size());
     codeSystem.setConcepts(result.getEntities().stream().map(e -> toCsConcept(codeSystem.getId(), e, result.getEntities())).toList());
+    log.debug("MAPPER DEBUG: Mapped {} concepts", codeSystem.getConcepts().size());
+    
     codeSystem.setContent(fpCodeSystem.getSupplement() != null || fpCodeSystem.getSupplementUri() != null ? CodeSystemContent.supplement : CodeSystemContent.complete);
     codeSystem.setBaseCodeSystem(fpCodeSystem.getSupplement());
     codeSystem.setBaseCodeSystemUri(fpCodeSystem.getSupplementUri());
@@ -88,6 +106,10 @@ public class CodeSystemFileImportMapper {
       permissions.setEndorser(fpCodeSystem.getEndorser());
       codeSystem.setPermissions(permissions);
     }
+    
+    log.debug("MAPPER DEBUG: CodeSystem mapping complete - ID: {}, Concepts: {}, Properties: {}", 
+        codeSystem.getId(), codeSystem.getConcepts().size(), codeSystem.getProperties().size());
+    log.debug("=== MAPPER DEBUG: toCodeSystem END ===");
     return codeSystem;
   }
 
@@ -138,14 +160,24 @@ public class CodeSystemFileImportMapper {
 
   private static Concept toCsConcept(String codeSystem, Map<String, List<FileProcessingEntityPropertyValue>> entity,
                                      List<Map<String, List<FileProcessingEntityPropertyValue>>> entities) {
+    String conceptCode = Optional.ofNullable(getEntityProp(entity, CONCEPT_CODE)).orElse(getEntityProp(entity, HIERARCHICAL_CONCEPT));
+    log.debug("MAPPER DEBUG: toCsConcept - Mapping concept with code: '{}'", conceptCode);
+    
     if (entity.containsKey(null)) {
+      log.error("MAPPER DEBUG: toCsConcept - Entity contains null key");
       throw ApiError.TE723.toApiException();
     }
     Concept concept = new Concept();
     concept.setCodeSystem(codeSystem);
-    concept.setCode(Optional.ofNullable(getEntityProp(entity, CONCEPT_CODE)).orElse(getEntityProp(entity, HIERARCHICAL_CONCEPT)));
+    concept.setCode(conceptCode);
     concept.setDescription(getEntityProp(entity, CONCEPT_DESCRIPTION));
     concept.setVersions(List.of(toConceptVersion(codeSystem, entity, entities)));
+    
+    log.debug("MAPPER DEBUG: toCsConcept - Concept '{}' mapped - Designations: {}, PropertyValues: {}, Associations: {}", 
+        conceptCode,
+        concept.getVersions().get(0).getDesignations().size(),
+        concept.getVersions().get(0).getPropertyValues().size(),
+        concept.getVersions().get(0).getAssociations().size());
     return concept;
   }
 
@@ -158,14 +190,28 @@ public class CodeSystemFileImportMapper {
 
   private static CodeSystemEntityVersion toConceptVersion(String codeSystem, Map<String, List<FileProcessingEntityPropertyValue>> entity,
                                                           List<Map<String, List<FileProcessingEntityPropertyValue>>> entities) {
+    String conceptCode = Optional.ofNullable(getEntityProp(entity, CONCEPT_CODE)).orElse(getEntityProp(entity, HIERARCHICAL_CONCEPT));
+    log.debug("MAPPER DEBUG: toConceptVersion - Mapping version for concept: '{}'", conceptCode);
+    
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCodeSystem(codeSystem);
-    version.setCode(Optional.ofNullable(getEntityProp(entity, CONCEPT_CODE)).orElse(getEntityProp(entity, HIERARCHICAL_CONCEPT)));
+    version.setCode(conceptCode);
     version.setDescription(getEntityProp(entity, CONCEPT_DESCRIPTION));
+    
+    log.debug("MAPPER DEBUG: toConceptVersion - Mapping designations for concept '{}'...", conceptCode);
     version.setDesignations(toConceptVersionDesignations(entity));
+    log.debug("MAPPER DEBUG: toConceptVersion - Mapped {} designations", version.getDesignations().size());
+    
+    log.debug("MAPPER DEBUG: toConceptVersion - Mapping property values for concept '{}'...", conceptCode);
     version.setPropertyValues(toConceptVersionPropertyValues(entity));
+    log.debug("MAPPER DEBUG: toConceptVersion - Mapped {} property values", version.getPropertyValues().size());
+    
+    log.debug("MAPPER DEBUG: toConceptVersion - Mapping associations for concept '{}'...", conceptCode);
     version.setAssociations(toConceptVersionAssociations(version.getCode(), entity, entities));
+    log.debug("MAPPER DEBUG: toConceptVersion - Mapped {} associations", version.getAssociations().size());
+    
     version.setStatus(toConceptVersionStatus(entity));
+    log.debug("MAPPER DEBUG: toConceptVersion - Concept '{}' status: {}", conceptCode, version.getStatus());
     return version;
   }
 
@@ -174,10 +220,12 @@ public class CodeSystemFileImportMapper {
   }
 
   private static List<Designation> toConceptVersionDesignations(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
-    return entity.keySet().stream()
+    log.debug("MAPPER DEBUG: toConceptVersionDesignations - Processing designations from entity keys: {}", entity.keySet());
+    List<Designation> designations = entity.keySet().stream()
         .filter(key -> List.of(CONCEPT_DISPLAY, CONCEPT_DEFINITION).contains(key) || entity.get(key).stream().anyMatch(e -> e.getLang() != null))
         .flatMap(key -> {
           List<FileProcessingEntityPropertyValue> fpPropertyValues = entity.get(key);
+          log.debug("MAPPER DEBUG: toConceptVersionDesignations - Processing designation key '{}' with {} values", key, fpPropertyValues.size());
           return fpPropertyValues.stream().map(fpPropertyValue -> {
             Designation designation = new Designation();
             designation.setName((String) fpPropertyValue.getValue());
@@ -186,25 +234,36 @@ public class CodeSystemFileImportMapper {
             designation.setPreferred(CONCEPT_DISPLAY.equals(key));
             designation.setCaseSignificance(CaseSignificance.entire_term_case_insensitive);
             designation.setDesignationType(fpPropertyValue.getPropertyName());
+            log.debug("MAPPER DEBUG: toConceptVersionDesignations - Created designation - type: {}, language: {}, name: '{}', preferred: {}", 
+                designation.getDesignationType(), designation.getLanguage(), designation.getName(), designation.isPreferred());
             return designation;
           });
         }).toList();
+    log.debug("MAPPER DEBUG: toConceptVersionDesignations - Created {} designations", designations.size());
+    return designations;
   }
 
   private static List<EntityPropertyValue> toConceptVersionPropertyValues(Map<String, List<FileProcessingEntityPropertyValue>> entity) {
-    return entity.keySet().stream()
+    log.debug("MAPPER DEBUG: toConceptVersionPropertyValues - Processing property values from entity keys: {}", entity.keySet());
+    List<EntityPropertyValue> propertyValues = entity.keySet().stream()
         .filter(key -> !List.of(CONCEPT_CODE, CONCEPT_DESCRIPTION, CONCEPT_DISPLAY, CONCEPT_DEFINITION,
             HIERARCHICAL_CONCEPT, CONCEPT_IS_A, CONCEPT_PARENT, CONCEPT_CHILD, CONCEPT_PART_OF, CONCEPT_GROUPED_BY, CONCEPT_CLASSIFIED_WITH,
             CONCEPT_STATUS).contains(key))
         .filter(key -> entity.get(key).stream().noneMatch(e -> e.getLang() != null)).flatMap(key -> {
           List<FileProcessingEntityPropertyValue> fpPropertyValues = entity.get(key);
+          log.debug("MAPPER DEBUG: toConceptVersionPropertyValues - Processing property key '{}' with {} values", key, fpPropertyValues.size());
           return fpPropertyValues.stream().map(fpPropertyValue -> {
             EntityPropertyValue propertyValue = new EntityPropertyValue();
             propertyValue.setValue(fpPropertyValue.getValue());
             propertyValue.setEntityProperty(fpPropertyValue.getPropertyName());
+            log.debug("MAPPER DEBUG: toConceptVersionPropertyValues - Created property value - property: {}, value: {}, type: {}", 
+                propertyValue.getEntityProperty(), propertyValue.getValue(), 
+                propertyValue.getValue() != null ? propertyValue.getValue().getClass().getSimpleName() : "null");
             return propertyValue;
           });
         }).toList();
+    log.debug("MAPPER DEBUG: toConceptVersionPropertyValues - Created {} property values", propertyValues.size());
+    return propertyValues;
   }
 
   private static List<CodeSystemAssociation> toConceptVersionAssociations(String code, Map<String, List<FileProcessingEntityPropertyValue>> entity,

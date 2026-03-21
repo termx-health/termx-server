@@ -94,13 +94,16 @@ public enum ApiError {
   TE736("TE736", "The \"{{property}}\" is missing! Invalid source type cannot fallback! Change the source type to 'code-system' or provide values!"),
   TE737("TE737", "The \"{{property}}\" is missing! Invalid target type cannot fallback! Change the target type to 'code-system' or provide values!"),
   TE738("TE738", "File contains duplicate concept code rows."),
+  TE739("TE739", "The file is not a valid Excel (.xlsx) workbook. If the file is CSV or TSV, choose that import type. If it is a spreadsheet, save or export it as .xlsx (Office Open XML), not .xls."),
+  TE740("TE740", "The Excel workbook must contain a worksheet named \"concepts\"."),
   TE801("TE801", "Association type is required, can't be deleted."),
   TE802("TE802", "Association type is used in code system '{{codeSystem}}' association, can't be deleted."),
   TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted."),
   TE804("TE804", "Target concept is not defined."),
   TE805("TE805", "Target concept and source concepts are the same."),
   TE806("TE806", "FHIR TO FSH converter not provided"),
-  TE807("TE807", "'{{format}}' is not supported.");
+  TE807("TE807", "'{{format}}' is not supported."),
+  TE808("TE808", "Export failed: at least one designation is missing from export output. CodeSystem: {{codeSystemId}}, Description: {{description}}, Missing designations: {{missingDesignations}}");
   @Getter
   private String code;
   @Getter

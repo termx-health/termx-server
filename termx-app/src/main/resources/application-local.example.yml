@@ -1,0 +1,9 @@
+# Copy to application-local.yml (gitignored). Only loaded when Micronaut environment "local" is active
+# (e.g. ./gradlew :termx-app:run -Pdev or _run_local.sh — NOT plain ./gradlew run).
+#
+# If DEBUG still does not appear: confirm -Dmicronaut.environments includes "local" (see README Logging).
+logger:
+  levels:
+    root: DEBUG
+    org.termx.terminology: DEBUG
+    # optional: io.micronaut: INFO
