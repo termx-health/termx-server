@@ -1,9 +1,7 @@
 package org.termx.terminology.fileimporter.codesystem;
 
-import com.kodality.commons.db.transaction.TransactionManager;
 import com.kodality.commons.model.Issue;
 import com.kodality.commons.util.JsonUtil;
-import com.kodality.commons.util.PipeUtil;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.fhir.FhirFshConverter;
 import org.termx.terminology.fhir.codesystem.CodeSystemFhirImportService;
@@ -19,9 +17,6 @@ import org.termx.terminology.terminology.codesystem.CodeSystemImportService;
 import org.termx.terminology.terminology.codesystem.CodeSystemService;
 import org.termx.terminology.terminology.codesystem.validator.CodeSystemValidationService;
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
-import org.termx.ts.codesystem.CodeSystemCompareResult;
-import org.termx.ts.codesystem.CodeSystemCompareResult.CodeSystemCompareResultDiffItem;
-import org.termx.terminology.terminology.codesystem.compare.CodeSystemCompareService;
 import org.termx.terminology.terminology.codesystem.concept.ConceptService;
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
 import org.termx.ts.PublicationStatus;
@@ -60,9 +55,7 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportMapper.CONCEPT_CODE;
@@ -70,14 +63,13 @@ import static org.termx.terminology.fileimporter.codesystem.utils.CodeSystemFile
 import static org.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportMapper.toCodeSystem;
 import static org.termx.ts.codesystem.EntityPropertyType.coding;
 import static io.micronaut.core.util.CollectionUtils.last;
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
 @Slf4j
 @Singleton
 @RequiredArgsConstructor
 public class CodeSystemFileImportService {
-  private final CodeSystemCompareService codeSystemCompareService;
+  private final CodeSystemFileImportDryRunService dryRunService;
   private final CodeSystemFhirImportService codeSystemFhirImportService;
   private final CodeSystemImportService codeSystemImportService;
   private final CodeSystemService codeSystemService;
@@ -97,36 +89,62 @@ public class CodeSystemFileImportService {
 
   @Transactional
   public CodeSystemFileImportResponse process(CodeSystemFileImportRequest request, byte[] file) {
+    log.debug("=== IMPORT SERVICE DEBUG: process START ===");
+    log.debug("IMPORT SERVICE DEBUG: CodeSystem ID: {}, Version: {}, Type: {}, File size: {} bytes", 
+        request.getCodeSystem().getId(), request.getVersion().getNumber(), request.getType(), file != null ? file.length : 0);
+    
     if ("json".equals(request.getType())) {
+      log.debug("IMPORT SERVICE DEBUG: Processing JSON import");
       codeSystemFhirImportService.importCodeSystem(new String(file, StandardCharsets.UTF_8), request.getCodeSystem().getId());
       return new CodeSystemFileImportResponse();
     }
     if ("fsh".equals(request.getType())) {
+      log.debug("IMPORT SERVICE DEBUG: Processing FSH import");
       String json = fhirFshConverter.orElseThrow(ApiError.TE806::toApiException).toFhir(new String(file, StandardCharsets.UTF_8)).join();
       codeSystemFhirImportService.importCodeSystem(json, request.getCodeSystem().getId());
       return new CodeSystemFileImportResponse();
     }
+    
+    log.debug("IMPORT SERVICE DEBUG: Processing file import (CSV/TSV/XLSX)");
     CodeSystemFileImportResult result = CodeSystemFileImportProcessor.process(request, file);
-    return save(request, result);
+    log.debug("IMPORT SERVICE DEBUG: File processing complete - Entities: {}, Properties: {}", 
+        result.getEntities().size(), result.getProperties().size());
+    
+    log.debug("IMPORT SERVICE DEBUG: Saving import result...");
+    CodeSystemFileImportResponse response = save(request, result);
+    log.debug("IMPORT SERVICE DEBUG: Import complete - Errors: {}", response.getErrors().size());
+    log.debug("=== IMPORT SERVICE DEBUG: process END ===");
+    return response;
   }
 
 
   @Transactional
   public CodeSystemFileImportResponse save(CodeSystemFileImportRequest request, CodeSystemFileImportResult result) {
+    log.debug("=== IMPORT SERVICE DEBUG: save START ===");
+    log.debug("IMPORT SERVICE DEBUG: CodeSystem ID: {}, Version: {}, Entities: {}, Properties: {}", 
+        request.getCodeSystem().getId(), request.getVersion().getNumber(), 
+        result.getEntities().size(), result.getProperties().size());
+    
     CodeSystemFileImportResponse resp = new CodeSystemFileImportResponse();
     FileProcessingCodeSystem reqCodeSystem = request.getCodeSystem();
     FileProcessingCodeSystemVersion reqVersion = request.getVersion();
 
-    log.info("Trying to load existing CodeSystem");
+    log.debug("IMPORT SERVICE DEBUG: Loading existing CodeSystem: {}", reqCodeSystem.getId());
     CodeSystem existingCodeSystem = codeSystemService.load(reqCodeSystem.getId(), true).orElse(null);
-    log.info("Trying to load existing CodeSystemVersion");
+    log.debug("IMPORT SERVICE DEBUG: Existing CodeSystem: {}", existingCodeSystem != null ? "found" : "not found");
+    
+    log.debug("IMPORT SERVICE DEBUG: Loading existing CodeSystemVersion: {} / {}", reqCodeSystem.getId(), reqVersion.getNumber());
     CodeSystemVersion existingCodeSystemVersion = findVersion(reqCodeSystem.getId(), reqVersion.getNumber()).orElse(null);
-
+    log.debug("IMPORT SERVICE DEBUG: Existing CodeSystemVersion: {}", existingCodeSystemVersion != null ? "found" : "not found");
 
     // Mapping
-    log.info("Mapping to CodeSystem");
+    log.debug("IMPORT SERVICE DEBUG: Mapping to CodeSystem...");
     var mappedCodeSystem = toCodeSystem(reqCodeSystem, reqVersion, result, existingCodeSystem, existingCodeSystemVersion);
+    log.debug("IMPORT SERVICE DEBUG: CodeSystem mapped - Concepts: {}, Properties: {}", 
+        mappedCodeSystem.getConcepts().size(), mappedCodeSystem.getProperties().size());
+    
     var associationTypes = toAssociationTypes(result.getProperties());
+    log.debug("IMPORT SERVICE DEBUG: Association types: {}", associationTypes);
 
 
     // Validation
@@ -134,48 +152,30 @@ public class CodeSystemFileImportService {
     resp.getErrors().addAll(validationErrors);
 
     if (request.isDryRun()) {
-      // Version comparison
-      log.info("Calculating the diff");
+      // Version comparison: shadow import + compare run in REQUIRES_NEW so rollback does not mark outer txn rollback-only
+      log.info("Calculating the diff (validate data only, no persistent import)");
       log.info("\tCreating CS copy");
       CodeSystem copy = JsonUtil.fromJson(JsonUtil.toJson(mappedCodeSystem), CodeSystem.class);
       log.info("\tAdding _shadow suffix to version");
       copy.getVersions().forEach(cv -> cv.setId(null).setVersion(cv.getVersion() + "_shadow"));
 
-      try {
-        log.info("\tImporting CS copy");
-        CodeSystemImportAction action = new CodeSystemImportAction()
-            .setActivate(PublicationStatus.active.equals(request.getVersion().getStatus()))
-            .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
-            .setGenerateValueSet(request.isGenerateValueSet())
-            .setValueSetProperties(request.getValueSetProperties())
-            .setCleanRun(request.isCleanVersion())
-            .setCleanConceptRun(request.isReplaceConcept())
-            .setSpaceToAdd(request.getSpace() != null && request.getSpacePackage() != null ?
-                String.join("|", request.getSpace(), request.getSpacePackage()) : null);
-        codeSystemImportService.importCodeSystem(copy, associationTypes, action);
-      } catch (Exception e) {
-        TransactionManager.rollback();
-        resp.getErrors().add(ApiError.TE716.toIssue(Map.of("exception", ExceptionUtils.getMessage(e))));
-        return resp;
+      CodeSystemImportAction action = new CodeSystemImportAction()
+          .setActivate(PublicationStatus.active.equals(request.getVersion().getStatus()))
+          .setRetire(PublicationStatus.retired.equals(request.getVersion().getStatus()))
+          .setGenerateValueSet(request.isGenerateValueSet())
+          .setValueSetProperties(request.getValueSetProperties())
+          .setCleanRun(request.isCleanVersion())
+          .setCleanConceptRun(request.isReplaceConcept())
+          .setSpaceToAdd(request.getSpace() != null && request.getSpacePackage() != null ?
+              String.join("|", request.getSpace(), request.getSpacePackage()) : null);
+
+      CodeSystemFileImportDryRunService.DryRunResult dryRunResult = dryRunService.dryRunImportCompareAndRollback(
+          copy, associationTypes, action, reqCodeSystem.getId(), existingCodeSystemVersion);
+
+      dryRunResult.importError().ifPresent(issue -> resp.getErrors().add(issue));
+      if (dryRunResult.diff() != null) {
+        resp.setDiff(dryRunResult.diff());
       }
-
-
-      Long sourceVersionId = null;
-      if (existingCodeSystemVersion != null) {
-        log.info("\tUsing the source version '{}' with ID '{}'", existingCodeSystemVersion.getVersion(), existingCodeSystemVersion.getId());
-        sourceVersionId = existingCodeSystemVersion.getId();
-      } else {
-        log.info("\tSource version is not set");
-      }
-
-      log.info("\tFinding the target version by version code '{}'", copy.getVersions().getFirst().getVersion());
-      Long targetVersionId = findVersion(reqCodeSystem.getId(), copy.getVersions().getFirst().getVersion()).map(CodeSystemVersion::getId).orElseThrow();
-
-      log.info("\tComparing two versions: '{}' and '{}'", sourceVersionId, targetVersionId);
-      CodeSystemCompareResult compare = codeSystemCompareService.compare(sourceVersionId, targetVersionId);
-      resp.setDiff(composeCompareSummary(compare));
-
-      TransactionManager.rollback();
       return resp;
     }
 
@@ -389,59 +389,6 @@ public class CodeSystemFileImportService {
       return c.getDesignations().stream().anyMatch(d -> d.getName().equalsIgnoreCase(codingText));
     }).toList();
   }
-
-  private String composeCompareSummary(CodeSystemCompareResult res) {
-    List<String> msg = new ArrayList<>();
-    msg.add("##### Created ######");
-    res.getAdded().forEach(d -> msg.add(" * %s".formatted(d)));
-
-    msg.add("##### Changed ######");
-    res.getChanged().forEach(c -> {
-      CodeSystemCompareResultDiffItem old = c.getDiff().getOld();
-      CodeSystemCompareResultDiffItem mew = c.getDiff().getMew();
-
-      List<String> changes = new ArrayList<>();
-      changes.add(compareDiffElements("status", old.getStatus(), mew.getStatus()));
-      changes.add(compareDiffElements("description", old.getDescription(), mew.getDescription()));
-      changes.add(compareDiffElements(old.getDesignations(), mew.getDesignations()));
-      changes.add(compareDiffElements(old.getProperties(), mew.getProperties()));
-
-      if (changes.stream().anyMatch(StringUtils::isNotBlank)) {
-        msg.add(" * %s".formatted(c.getCode()));
-        changes.stream().filter(StringUtils::isNotBlank).forEach(msg::add);
-      }
-    });
-
-
-    msg.add("##### Deleted ######");
-    res.getDeleted().forEach(d -> msg.add(" * %s".formatted(d)));
-
-    return StringUtils.join(msg, "\n");
-  }
-
-  private String compareDiffElements(String key, String el1, String el2) {
-    return !Objects.equals(el1, el2) ? "\t- %s: \"%s\" -> \"%s\"".formatted(key, el1, el2) : null;
-  }
-
-  private String compareDiffElements(List<String> els1, List<String> els2) {
-    Map<String, List<String>> collect1 = els1 == null ? Map.of() : els1.stream()
-        .map(PipeUtil::parsePipe)
-        .collect(groupingBy(s -> s[0], Collectors.mapping(s -> s[1], Collectors.toList())));
-    Map<String, List<String>> collect2 = els2 == null ? Map.of() : els2.stream()
-        .map(PipeUtil::parsePipe)
-        .collect(groupingBy(s -> s[0], Collectors.mapping(s -> s[1], Collectors.toList())));
-
-    return SetUtils.union(collect1.keySet(), collect2.keySet())
-        .stream()
-        .map(k -> {
-          List<String> v1 = collect1.getOrDefault(k, List.of());
-          List<String> v2 = collect2.getOrDefault(k, List.of());
-          return ListUtils.isEqualList(v1, v2) ? null : "\t- %s: \"%s\" -> \"%s\"".formatted(k, StringUtils.join(v1, ", "), StringUtils.join(v2, ", "));
-        })
-        .filter(Objects::nonNull)
-        .collect(Collectors.joining("\n"));
-  }
-
 
   // utils
 

@@ -113,3 +113,8 @@ javamail:
         auth: ${SMTP_AUTH:true}
         starttls:
           enable: ${SMTP_STARTTLS:true}
+
+# Ensures Micronaut applies logger.levels from profile-specific files (e.g. application-local.yml).
+# Without a top-level "logger" entry, logger levels from local-only YAML may not be applied.
+logger:
+  levels: {}
