@@ -2,7 +2,9 @@
 
 ## Feature Summary
 
-TermX now integrates with the HL7 FHIR Terminology Ecosystem, enabling seamless discovery and resolution of terminology servers across distributed healthcare systems. This integration provides both a programmatic API and an interactive web interface for finding and using the right terminology server for any clinical code system or value set.
+TermX integrates with the **HL7 FHIR Terminology Ecosystem** so you can **discover** registered terminology servers and **resolve** which server is authoritative for a given code system or value set—using the same coordination patterns as **tx.fhir.org**. TermX exposes a **programmatic API** (`/tx-reg`) and a lightweight **web UI** (`/tx-ecosystem/`) for this **global registry** role.
+
+**How this fits the wider ecosystem:** The same HL7 [FHIR Terminology Ecosystem IG](https://build.fhir.org/ig/HL7/fhir-tx-ecosystem-ig/ecosystem.html) also underpins **operational gateways** that route traffic to *your* servers. In related HelEx deployments, **HTX Router** (gateway) and **HTX Viewer** (browser UI) implement that pattern: a configured **ecosystem registry**, intelligent routing and caching to multiple FHIR terminology backends, and an Angular **landing + browse** experience for staff. That stack is **complementary** to TermX’s built-in coordination proxy—see [Related ecosystem deployments: HTX Router and HTX Viewer](#related-ecosystem-deployments-htx-router-and-htx-viewer).
 
 **Release Version:** 1.0  
 **Release Date:** March 10, 2026  
@@ -76,6 +78,41 @@ TermX now integrates with the HL7 FHIR Terminology Ecosystem, enabling seamless 
 - No custom adapters needed for different servers
 - Future-proof against changes in terminology landscape
 - Easy testing with visual interface
+
+---
+
+## Related ecosystem deployments: HTX Router and HTX Viewer
+
+TermX’s **tx-reg / tx-ecosystem** feature answers: *“Which terminology server should I use, according to the HL7 coordination registry?”* Many organizations also need: *“How do we run a **single** API and **browser** on top of **our** national, regional, and project terminology servers?”* That operational layer is addressed by the **HTX platform** (sibling repositories **`htx-router`** and **`htx-viewer`**), which applies the **same ecosystem standards** in a **tenant-specific** gateway and UI.
+
+**Example demo sites:** [HTX Router (gateway)](https://tx.hl7.lt) · [HTX Viewer (browser)](https://htx.hl7.ee)
+
+### HTX Router (terminology gateway)
+
+- **Role:** Single FHIR terminology **entry point** that **routes** `$lookup`, `$expand`, `$validate-code`, search, and resource reads to the correct **backend** server (or package source), using an **`ecosystem.json`** registry aligned with the FHIR Terminology Ecosystem IG (authoritative URLs, server metadata, supported operations).
+- **Business outcomes:** Fewer point-to-point integrations; **caching** and load reduction on backends; **version-aware** routing; **observability** (correlation IDs, diagnostics) for support and audit; support for **multiple** FHIR versions and resource types (including **ConceptMap**, **StructureDefinition**, **StructureMap** where configured).
+- **Typical consumers:** EHR interfaces, integration engines, validation pipelines, and **HTX Viewer** (see below).
+
+*Business-oriented detail:* `htx-router/docs/features/HTX_ROUTER_BUSINESS_OVERVIEW.md`, `EXECUTIVE_SUMMARY.md`, `HTX_PLATFORM_OVERVIEW.md`.
+
+### HTX Viewer (terminology browser)
+
+- **Role:** **Angular** web application: **landing** page with ecosystem-wide and **per-server** resource summaries (code systems, value sets, etc.), **browse/search** CodeSystems and ValueSets, **detail** views and terminology workflows; **multi-language** UI (e.g. English, Estonian, Russian).
+- **Integration:** Calls the gateway (often via **`/api`** proxied to HTX Router)—same ecosystem the router exposes from **`/ecosystem`**, **TerminologyCapabilities**, and FHIR endpoints.
+- **Business outcomes:** **Self-service** lookup for clinicians and terminology managers; **transparency** on which server hosts which content; faster onboarding than API-only access.
+
+*Documentation:* `htx-viewer/README.md`, `htx-viewer/docs/features/landing-page.md`, `htx-viewer/docs/features/code-system-tree-hierarchy.md` (hierarchy / performance topics).
+
+### TermX vs HTX (scope)
+
+| Aspect | TermX **tx-reg / tx-ecosystem** | **HTX Router + Viewer** |
+|--------|----------------------------------|-------------------------|
+| **Primary question** | Who is authoritative in the **HL7 coordination** catalog? | How do **our** apps and users reach **our** configured terminology servers? |
+| **Configuration** | Optional URL to coordination server (default HL7) | **`ecosystem.json`** + env (e.g. `FHIR_ECOSYSTEM_CONFIG`) |
+| **UI** | Lightweight discovery / resolution at `/tx-ecosystem/` | Full **dashboard + browse** (Viewer) |
+| **Caching** | TermX proxy is **stateless** toward coordination (see Known Limitations) | Router implements **server-side** caching and routing policies |
+
+Together, **coordination discovery (TermX)** and **gateway + browser (HTX)** cover both **global registry** use cases and **local operations** for a terminology program.
 
 ## Use Cases
 
@@ -340,6 +377,7 @@ Same API, same response format, no code changes required.
 - **UI Guide:** `docs/features/fhir-terminology-ecosystem-ui.md`
 - **Implementation Summary:** `docs/features/fhir-terminology-ecosystem-api-implementation-summary.md`
 - **This Document:** `docs/features/fhir-terminology-ecosystem-feature-description.md`
+- **Related (sibling repos):** HTX Router business/platform overviews — `htx-router/docs/features/HTX_ROUTER_BUSINESS_OVERVIEW.md`, `HTX_PLATFORM_OVERVIEW.md`, `EXECUTIVE_SUMMARY.md`; HTX Viewer — `htx-viewer/README.md`, `htx-viewer/docs/features/landing-page.md`
 
 ### External Resources
 - **HL7 Specification:** https://build.fhir.org/ig/HL7/fhir-tx-ecosystem-ig/
@@ -407,14 +445,14 @@ Same API, same response format, no code changes required.
 
 ## Conclusion
 
-The FHIR Terminology Ecosystem integration brings enterprise-grade terminology server discovery and resolution to TermX. With both a programmatic API and user-friendly web interface, it serves the needs of developers, implementers, and terminology specialists alike.
+The FHIR Terminology Ecosystem integration brings **coordination-server** discovery and resolution to TermX—so teams can align with HL7’s **global** terminology registry while keeping TermX as the integration surface. Where deployments also require a **dedicated gateway and clinical/browser UX** over **local** servers, teams often adopt **HTX Router** and **HTX Viewer** alongside the same ecosystem standards.
 
 **Key Takeaways:**
-- ✅ Standards-compliant HL7 FHIR Ecosystem integration
-- ✅ Both API and web UI for different use cases
+- ✅ Standards-compliant HL7 FHIR Ecosystem integration (discovery + resolution)
+- ✅ Programmatic API and **tx-ecosystem** UI for coordination use cases
+- ✅ Clear **complement** to HTX Router/Viewer for operational, multi-server terminology access (see Related ecosystem deployments)
 - ✅ Production-ready with comprehensive testing
-- ✅ Zero additional dependencies
-- ✅ Publicly accessible (no login required)
+- ✅ Publicly accessible coordination endpoints by default (no login required)
 - ✅ Fully documented with examples
 
 **Get Started Today:**
