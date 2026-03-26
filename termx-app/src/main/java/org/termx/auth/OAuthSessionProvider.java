@@ -21,6 +21,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import jakarta.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
@@ -38,9 +39,11 @@ public class OAuthSessionProvider extends SessionProvider {
   private final CacheManager jwksCache = new CacheManager();
   private final OAuthSessionPrivilegeMapper privilegeMapper;
 
-  public OAuthSessionProvider(@Value("${auth.oauth.jwks-url}") String jwksUrl, OAuthSessionPrivilegeMapper privilegeMapper) {
+  public OAuthSessionProvider(@Value("${auth.oauth.jwks-url}") String jwksUrl,
+                              @Value("${auth.oauth.jwks-cache-ttl-seconds:3600}") Long jwksCacheTtlSeconds,
+                              OAuthSessionPrivilegeMapper privilegeMapper) {
     this.privilegeMapper = privilegeMapper;
-    jwksCache.initCache("jwks", 1, 600);
+    jwksCache.initCache("jwks", 1, jwksCacheTtlSeconds == null ? TimeUnit.HOURS.toSeconds(1) : jwksCacheTtlSeconds);
     this.jwksClient = new HttpClient(jwksUrl);
   }
 

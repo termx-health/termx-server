@@ -66,6 +66,7 @@ auth:
     users-file: ${AUTH_MOCK_USERS_FILE:mock/users.json}
   oauth:
     jwks-url: ${OAUTH_JWKS_URL:fixme}
+    jwks-cache-ttl-seconds: ${OAUTH_JWKS_CACHE_TTL_SECONDS:3600}
   public:
     endpoints:
       - '/fhir-swagger'
