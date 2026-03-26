@@ -55,6 +55,7 @@ liquibase:
   datasources:
     liquibase:
       enabled: true
+      async: false
       change-log: 'classpath:changelog.xml'
       default-schema: 'public'
       parameters:
