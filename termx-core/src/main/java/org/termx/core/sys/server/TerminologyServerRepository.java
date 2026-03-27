@@ -27,6 +27,9 @@ public class TerminologyServerRepository extends BaseRepository {
     bp.addColumnProcessor("usage", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("authoritative", PgBeanProcessor.fromJson(JsonUtil.getListType(AuthoritativeResource.class)));
     bp.addColumnProcessor("authoritative_valuesets", PgBeanProcessor.fromJson(JsonUtil.getListType(AuthoritativeResource.class)));
+    bp.addColumnProcessor("authoritative_conceptmaps", PgBeanProcessor.fromJson(JsonUtil.getListType(AuthoritativeResource.class)));
+    bp.addColumnProcessor("authoritative_structuredefinitions", PgBeanProcessor.fromJson(JsonUtil.getListType(AuthoritativeResource.class)));
+    bp.addColumnProcessor("authoritative_structuremaps", PgBeanProcessor.fromJson(JsonUtil.getListType(AuthoritativeResource.class)));
     bp.addColumnProcessor("exclusions", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("fhir_versions", PgBeanProcessor.fromJson(JsonUtil.getListType(TerminologyServerFhirVersion.class)));
     bp.addColumnProcessor("supported_operations", PgBeanProcessor.fromJson());
@@ -47,9 +50,19 @@ public class TerminologyServerRepository extends BaseRepository {
     ssb.jsonProperty("usage", server.getUsage());
     ssb.jsonProperty("authoritative", server.getAuthoritative());
     ssb.jsonProperty("authoritative_valuesets", server.getAuthoritativeValuesets());
+    ssb.jsonProperty("authoritative_conceptmaps", server.getAuthoritativeConceptmaps());
+    ssb.jsonProperty("authoritative_structuredefinitions", server.getAuthoritativeStructuredefinitions());
+    ssb.jsonProperty("authoritative_structuremaps", server.getAuthoritativeStructuremaps());
     ssb.jsonProperty("exclusions", server.getExclusions());
     ssb.jsonProperty("fhir_versions", server.getFhirVersions());
     ssb.jsonProperty("supported_operations", server.getSupportedOperations());
+    ssb.property("cache_period_hours", server.getCachePeriodHours());
+    ssb.property("strategy", server.getStrategy());
+    ssb.property("open", server.getOpen());
+    ssb.property("token", server.getToken());
+    ssb.property("oauth_flag", server.getOauthFlag());
+    ssb.property("smart_flag", server.getSmartFlag());
+    ssb.property("cert_flag", server.getCertFlag());
 
     SqlBuilder sb = ssb.buildSave("sys.terminology_server", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
