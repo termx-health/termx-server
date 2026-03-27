@@ -14,7 +14,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import org.termx.core.util.canonical.GlobMatcher;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -57,6 +60,15 @@ public class TerminologyServerService {
   }
 
   private void prepare(TerminologyServer server) {
+    // Derive rootUrl from first fhirVersion URL
+    if (server.getFhirVersions() != null && !server.getFhirVersions().isEmpty()) {
+      server.getFhirVersions().stream()
+          .map(TerminologyServerFhirVersion::getUrl)
+          .filter(StringUtils::isNotBlank)
+          .findFirst()
+          .ifPresent(server::setRootUrl);
+    }
+
     TerminologyServer persisted = load(server.getId());
 
     if (persisted != null) {
@@ -86,6 +98,33 @@ public class TerminologyServerService {
         throw ApiError.TC109.toApiException(Map.of("name", "Authorization"));
       }
     }
+    validateAuthoritativeUrls(server);
+  }
+
+  private void validateAuthoritativeUrls(TerminologyServer server) {
+    validateAuthoritativePatterns(server.getAuthoritative(), "authoritative");
+    validateAuthoritativePatterns(server.getAuthoritativeValuesets(), "authoritative-valuesets");
+    validateAuthoritativePatterns(server.getAuthoritativeConceptmaps(), "authoritative-conceptmaps");
+    validateAuthoritativePatterns(server.getAuthoritativeStructuredefinitions(), "authoritative-structuredefinitions");
+    validateAuthoritativePatterns(server.getAuthoritativeStructuremaps(), "authoritative-structuremaps");
+  }
+
+  private void validateAuthoritativePatterns(List<AuthoritativeResource> resources, String fieldName) {
+    if (resources == null) {
+      return;
+    }
+    for (AuthoritativeResource r : resources) {
+      if (StringUtils.isBlank(r.getUrl())) {
+        throw ApiError.TC121.toApiException(Map.of("field", fieldName, "reason", "URL is blank"));
+      }
+      if (GlobMatcher.isRegexPattern(r.getUrl())) {
+        try {
+          Pattern.compile(r.getUrl());
+        } catch (PatternSyntaxException e) {
+          throw ApiError.TC121.toApiException(Map.of("field", fieldName, "reason", "Invalid regex: " + e.getMessage()));
+        }
+      }
+    }
   }
 
   // -- Export --
@@ -109,7 +148,7 @@ public class TerminologyServerService {
     return JsonUtil.toJson(registry);
   }
 
-  private Map<String, Object> convertToEcosystemServer(TerminologyServer ts) {
+  public Map<String, Object> convertToEcosystemServer(TerminologyServer ts) {
     Map<String, Object> server = new LinkedHashMap<>();
     server.put("code", ts.getCode());
     server.put("name", extractName(ts.getNames()));
@@ -124,17 +163,36 @@ public class TerminologyServerService {
       server.put("usage", ts.getUsage());
     }
 
-    if (ts.getAuthConfig() != null) {
-      server.put("oauth", true);
-    } else if (hasAuthHeaders(ts)) {
-      server.put("token", true);
-    } else {
-      server.put("open", true);
+    if (ts.getOpen() != null) { server.put("open", ts.getOpen()); }
+    if (ts.getToken() != null) { server.put("token", ts.getToken()); }
+    if (ts.getOauthFlag() != null) { server.put("oauth", ts.getOauthFlag()); }
+    else if (ts.getAuthConfig() != null) { server.put("oauth", true); }
+    if (ts.getSmartFlag() != null) { server.put("smart", ts.getSmartFlag()); }
+    if (ts.getCertFlag() != null) { server.put("cert", ts.getCertFlag()); }
+    // Fallback: if no flags set, infer from auth config
+    if (ts.getOpen() == null && ts.getToken() == null && ts.getOauthFlag() == null) {
+      if (ts.getAuthConfig() != null) {
+        server.put("oauth", true);
+      } else if (hasAuthHeaders(ts)) {
+        server.put("token", true);
+      } else {
+        server.put("open", true);
+      }
     }
 
     server.put("authoritative", toCanonicalList(ts.getAuthoritative()));
     server.put("authoritative-valuesets", toCanonicalList(ts.getAuthoritativeValuesets()));
+    server.put("authoritative-conceptmaps", toCanonicalList(ts.getAuthoritativeConceptmaps()));
+    server.put("authoritative-structuredefinitions", toCanonicalList(ts.getAuthoritativeStructuredefinitions()));
+    server.put("authoritative-structuremaps", toCanonicalList(ts.getAuthoritativeStructuremaps()));
     server.put("exclusions", ts.getExclusions() != null ? ts.getExclusions() : new ArrayList<>());
+
+    if (ts.getCachePeriodHours() != null) {
+      server.put("cache_period_hours", ts.getCachePeriodHours());
+    }
+    if (StringUtils.isNotBlank(ts.getStrategy())) {
+      server.put("strategy", ts.getStrategy());
+    }
 
     if (ts.getFhirVersions() != null && !ts.getFhirVersions().isEmpty()) {
       List<Map<String, String>> fv = ts.getFhirVersions().stream().map(v -> {
@@ -162,12 +220,7 @@ public class TerminologyServerService {
     if (resources == null || resources.isEmpty()) {
       return new ArrayList<>();
     }
-    return resources.stream().map(r -> {
-      if (StringUtils.isNotBlank(r.getVersion())) {
-        return r.getUrl() + "|" + r.getVersion();
-      }
-      return r.getUrl();
-    }).collect(Collectors.toList());
+    return resources.stream().map(AuthoritativeResource::toEcosystemUrl).collect(Collectors.toList());
   }
 
   private String extractName(LocalizedName names) {
@@ -245,6 +298,19 @@ public class TerminologyServerService {
     ts.setExclusions(stringList(node, "exclusions"));
     ts.setAuthoritative(parseAuthoritativeList(node.get("authoritative")));
     ts.setAuthoritativeValuesets(parseAuthoritativeList(node.get("authoritative-valuesets")));
+    ts.setAuthoritativeConceptmaps(parseAuthoritativeList(node.get("authoritative-conceptmaps")));
+    ts.setAuthoritativeStructuredefinitions(parseAuthoritativeList(node.get("authoritative-structuredefinitions")));
+    ts.setAuthoritativeStructuremaps(parseAuthoritativeList(node.get("authoritative-structuremaps")));
+
+    if (node.has("cache_period_hours") && !node.get("cache_period_hours").isNull()) {
+      ts.setCachePeriodHours(node.get("cache_period_hours").asInt());
+    }
+    ts.setStrategy(textValue(node, "strategy"));
+    ts.setOpen(booleanValue(node, "open"));
+    ts.setToken(booleanValue(node, "token"));
+    ts.setOauthFlag(booleanValue(node, "oauth"));
+    ts.setSmartFlag(booleanValue(node, "smart"));
+    ts.setCertFlag(booleanValue(node, "cert"));
 
     JsonNode opsNode = node.get("supportedOperations");
     if (opsNode != null && opsNode.isArray()) {
@@ -277,6 +343,11 @@ public class TerminologyServerService {
   private String textValue(JsonNode node, String field) {
     JsonNode child = node.get(field);
     return child != null && !child.isNull() ? child.asText() : null;
+  }
+
+  private Boolean booleanValue(JsonNode node, String field) {
+    JsonNode child = node.get(field);
+    return child != null && !child.isNull() ? child.asBoolean() : null;
   }
 
   private List<String> stringList(JsonNode node, String field) {

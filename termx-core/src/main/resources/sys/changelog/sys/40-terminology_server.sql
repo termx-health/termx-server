@@ -46,3 +46,20 @@ alter table sys.terminology_server add column if not exists fhir_versions jsonb;
 alter table sys.terminology_server add column if not exists supported_operations jsonb;
 --
 
+--changeset termx:terminology_server-ecosystem_fields_v2
+alter table sys.terminology_server add column if not exists cache_period_hours integer;
+alter table sys.terminology_server add column if not exists strategy text;
+alter table sys.terminology_server add column if not exists authoritative_conceptmaps jsonb;
+alter table sys.terminology_server add column if not exists authoritative_structuredefinitions jsonb;
+alter table sys.terminology_server add column if not exists authoritative_structuremaps jsonb;
+alter table sys.terminology_server add column if not exists open boolean;
+alter table sys.terminology_server add column if not exists token boolean;
+alter table sys.terminology_server add column if not exists oauth_flag boolean;
+alter table sys.terminology_server add column if not exists smart_flag boolean;
+alter table sys.terminology_server add column if not exists cert_flag boolean;
+--rollback alter table sys.terminology_server drop column if exists cache_period_hours, drop column if exists strategy, drop column if exists authoritative_conceptmaps, drop column if exists authoritative_structuredefinitions, drop column if exists authoritative_structuremaps, drop column if exists open, drop column if exists token, drop column if exists oauth_flag, drop column if exists smart_flag, drop column if exists cert_flag;
+
+--changeset termx:terminology_server-root_url_nullable
+alter table sys.terminology_server alter column root_url drop not null;
+--rollback alter table sys.terminology_server alter column root_url set not null;
+
