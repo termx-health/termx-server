@@ -9,5 +9,6 @@
 
   <include file="sys/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="terminology/changelog/changelog.xml" relativeToChangelogFile="false"/>
+  <include file="uam/changelog/changelog.xml" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

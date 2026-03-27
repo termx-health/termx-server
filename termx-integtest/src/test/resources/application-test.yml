@@ -23,7 +23,7 @@ liquibase:
   datasources:
     liquibase:
       enabled: true
-      change-log: 'classpath:changelog.xml'
+      change-log: 'classpath:termx-integtest-changelog.xml'
       default-schema: 'public'
       parameters:
         app-username: ${datasources.default.username}

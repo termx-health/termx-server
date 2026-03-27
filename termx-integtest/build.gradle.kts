@@ -9,7 +9,9 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok:1.18.42")
     testAnnotationProcessor("io.micronaut.spring:micronaut-spring-annotation")
 
+    testImplementation(project(":termx-app"))
     testImplementation(project(":terminology"))
+    testImplementation(project(":snomed"))
 
     testImplementation("io.micronaut.data:micronaut-data-spring-jdbc")
     testImplementation("io.micronaut.email:micronaut-email-javamail")

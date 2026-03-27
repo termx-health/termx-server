@@ -1,9 +1,11 @@
 package org.termx.core
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.kodality.commons.client.HttpClientError
 import com.kodality.commons.util.JsonUtil
 import org.termx.TermxIntegTest
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
+import java.net.http.HttpRequest
 import java.net.http.HttpResponse.BodyHandlers
 
 @MicronautTest(transactional = false)
@@ -12,7 +14,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should expose discovery endpoint at /tx-reg"() {
     when:
     def request = client.builder("/tx-reg").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502  // 502 if coordination server unavailable
@@ -21,7 +23,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should return JSON from discovery endpoint"() {
     when:
     def request = client.builder("/tx-reg").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     if (response.statusCode() == 200) {
@@ -34,7 +36,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should support discovery filtering by fhirVersion"() {
     when:
     def request = client.builder("/tx-reg?fhirVersion=R4").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -43,7 +45,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should support discovery filtering by server code"() {
     when:
     def request = client.builder("/tx-reg?server=tx.fhir.org").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -52,7 +54,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should support discovery filtering by registry"() {
     when:
     def request = client.builder("/tx-reg?registry=hl7-main").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -61,7 +63,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should support discovery filtering by URL"() {
     when:
     def request = client.builder("/tx-reg?url=http://snomed.info/sct").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -70,7 +72,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should support discovery filtering by authoritativeOnly"() {
     when:
     def request = client.builder("/tx-reg?authoritativeOnly=true").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -79,7 +81,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should support multiple discovery filters"() {
     when:
     def request = client.builder("/tx-reg?fhirVersion=R4&authoritativeOnly=true").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -88,7 +90,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should set Content-Disposition header when download=true"() {
     when:
     def request = client.builder("/tx-reg?download=true").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     if (response.statusCode() == 200) {
@@ -102,7 +104,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should not set Content-Disposition header when download is false"() {
     when:
     def request = client.builder("/tx-reg").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     if (response.statusCode() == 200) {
@@ -114,7 +116,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should return Content-Type application/json for discovery"() {
     when:
     def request = client.builder("/tx-reg").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     if (response.statusCode() == 200) {
@@ -127,7 +129,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should expose resolve endpoint at /tx-reg/resolve"() {
     when:
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=http://snomed.info/sct").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -136,7 +138,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should return 400 when fhirVersion is missing from resolve"() {
     when:
     def request = client.builder("/tx-reg/resolve?url=http://snomed.info/sct").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 400
@@ -145,7 +147,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should return 400 when both url and valueSet are missing from resolve"() {
     when:
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 400
@@ -154,7 +156,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should support resolve with url parameter"() {
     when:
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=http://snomed.info/sct").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -163,7 +165,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should support resolve with valueSet parameter"() {
     when:
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4&valueSet=http://hl7.org/fhir/ValueSet/administrative-gender").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -172,7 +174,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should support resolve with authoritativeOnly filter"() {
     when:
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=http://loinc.org&authoritativeOnly=true").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -181,7 +183,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should support resolve with usage parameter"() {
     when:
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=http://snomed.info/sct&usage=validation").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -190,7 +192,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should return JSON from resolve endpoint"() {
     when:
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=http://snomed.info/sct").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     if (response.statusCode() == 200) {
@@ -203,7 +205,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should set Content-Disposition header for resolve when download=true"() {
     when:
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=http://snomed.info/sct&download=true").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     if (response.statusCode() == 200) {
@@ -217,7 +219,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should return Content-Type application/json for resolve"() {
     when:
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=http://snomed.info/sct").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     if (response.statusCode() == 200) {
@@ -229,8 +231,9 @@ class TerminologyEcosystemTest extends TermxIntegTest {
 
   def "should support versioned CodeSystem URLs in resolve"() {
     when:
-    def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=http://snomed.info/sct|http://snomed.info/sct/900000000000207008").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def encodedUrl = java.net.URLEncoder.encode("http://snomed.info/sct|http://snomed.info/sct/900000000000207008", "UTF-8")
+    def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=" + encodedUrl).GET().build()
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502
@@ -240,7 +243,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
     when:
     def encodedUrl = java.net.URLEncoder.encode("http://snomed.info/sct|http://snomed.info/sct/900000000000207008/version/20230901", "UTF-8")
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=" + encodedUrl).GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() == 200 || response.statusCode() == 502 || response.statusCode() == 400
@@ -251,7 +254,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
     def request = client.builder("/tx-reg")
         .GET()
         .build()  // No Authorization header
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() != 401 && response.statusCode() != 403
@@ -262,7 +265,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=http://snomed.info/sct")
         .GET()
         .build()  // No Authorization header
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     response.statusCode() != 401 && response.statusCode() != 403
@@ -271,7 +274,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should handle coordination server unavailable gracefully"() {
     when:
     def request = client.builder("/tx-reg").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     // Either succeeds (200) or returns Bad Gateway (502) if coordination server unreachable
@@ -281,7 +284,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should validate discovery response structure when available"() {
     when:
     def request = client.builder("/tx-reg").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     if (response.statusCode() == 200) {
@@ -295,7 +298,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
   def "should validate resolve response structure when available"() {
     when:
     def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=http://snomed.info/sct").GET().build()
-    def response = client.execute(request, BodyHandlers.ofString())
+    def response = executeForStatus(request)
 
     then:
     if (response.statusCode() == 200) {
@@ -310,7 +313,7 @@ class TerminologyEcosystemTest extends TermxIntegTest {
     expect:
     ["R3", "R4", "R4B", "R5", "R6"].each { version ->
       def request = client.builder("/tx-reg/resolve?fhirVersion=${version}&url=http://snomed.info/sct").GET().build()
-      def response = client.execute(request, BodyHandlers.ofString())
+      def response = executeForStatus(request)
       
       // Should either succeed or return 502 (coordination server issue), not 400 (validation error)
       assert response.statusCode() in [200, 502]
@@ -321,9 +324,16 @@ class TerminologyEcosystemTest extends TermxIntegTest {
     expect:
     ["publication", "validation", "code-generation"].each { usage ->
       def request = client.builder("/tx-reg/resolve?fhirVersion=R4&url=http://snomed.info/sct&usage=${usage}").GET().build()
-      def response = client.execute(request, BodyHandlers.ofString())
+      def response = executeForStatus(request)
       
       assert response.statusCode() in [200, 502]
+    }
+  }
+  private def executeForStatus(HttpRequest request) {
+    try {
+      return client.execute(request, BodyHandlers.ofString())
+    } catch (HttpClientError e) {
+      return e.response
     }
   }
 }

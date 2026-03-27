@@ -52,6 +52,7 @@ allprojects {
         implementation(platform("org.apache.groovy:groovy-bom:5.0.3"))
         testImplementation(platform("org.apache.groovy:groovy-bom:5.0.3"))
         testImplementation(platform("org.spockframework:spock-bom:2.4-groovy-5.0"))
+        testImplementation(platform("org.testcontainers:testcontainers-bom:${rootProject.extra["testcontainersVersion"]}"))
     }
 
     java {

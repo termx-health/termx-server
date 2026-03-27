@@ -11,7 +11,9 @@ import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
+import io.micronaut.http.exceptions.HttpStatusException;
 import io.micronaut.http.server.exceptions.ExceptionHandler;
+import io.micronaut.web.router.exceptions.UnsatisfiedRouteException;
 import jakarta.inject.Singleton;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Collections;
@@ -60,6 +62,12 @@ public class DefaultExceptionHandler implements ExceptionHandler<Throwable, Http
     if (exception instanceof HttpClientError) {
       return handleHttpClientError(((HttpClientError) exception));
     }
+    if (exception instanceof HttpStatusException) {
+      return handleHttpStatusException((HttpStatusException) exception);
+    }
+    if (exception instanceof UnsatisfiedRouteException) {
+      return handleUnsatisfiedRouteException((UnsatisfiedRouteException) exception);
+    }
     return null;
   }
 
@@ -101,6 +109,17 @@ public class DefaultExceptionHandler implements ExceptionHandler<Throwable, Http
       exception.getIssues().forEach(issue -> issue.setMessage(substituteParams(issue)));
     }
     return HttpResponse.status(status).body(JsonUtil.toJson(exception.getIssues()));
+  }
+
+  protected HttpResponse<?> handleHttpStatusException(HttpStatusException exception) {
+    HttpStatus status = exception.getStatus();
+    Issue issue = Issue.error(String.valueOf(status.getCode()), exception.getMessage());
+    return HttpResponse.status(status).body(JsonUtil.toJson(List.of(issue)));
+  }
+
+  protected HttpResponse<?> handleUnsatisfiedRouteException(UnsatisfiedRouteException exception) {
+    Issue issue = Issue.error(String.valueOf(HttpStatus.BAD_REQUEST.getCode()), exception.getMessage());
+    return HttpResponse.badRequest(JsonUtil.toJson(List.of(issue)));
   }
 
   protected String substituteParams(Issue issue) {
