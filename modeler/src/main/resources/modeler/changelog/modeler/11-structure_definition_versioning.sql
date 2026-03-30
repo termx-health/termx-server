@@ -82,11 +82,11 @@ create unique index structure_definition_url_ukey on modeler.structure_definitio
 create index structure_definition_url_idx on modeler.structure_definition(url);
 --
 
---changeset modeler:structure_definition_version-populate_version
+--changeset modeler:structure_definition_version-populate_version-v2
 -- 1) set version from content JSON where version is null
 update modeler.structure_definition_version
 set version = content::jsonb->>'version'
-where sys_status = 'A' and version is null and content is not null and content::jsonb->>'version' is not null;
+where sys_status = 'A' and version is null and content is not null and content_format = 'json' and content::jsonb->>'version' is not null;
 
 -- 2) set version using row_number for remaining nulls
 update modeler.structure_definition_version v
