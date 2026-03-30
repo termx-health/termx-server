@@ -36,6 +36,7 @@ import org.hl7.fhir.r5.model.Resource;
 public class ConformanceInitializer extends ConformanceStaticLoader {
   private final List<TermxGeneratedConformanceProvider> generators;
   private final ResourceLoader resourceLoader;
+  private final ConformanceInitializerDependency conformanceInitializerDependency;
 
   @Override
   public List<String> getResources() {
