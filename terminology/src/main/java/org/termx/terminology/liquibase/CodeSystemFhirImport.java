@@ -1,7 +1,7 @@
 package org.termx.terminology.liquibase;
 
 import com.kodality.commons.micronaut.BeanContext;
-import com.kodality.commons.util.JsonUtil;
+import com.kodality.zmei.fhir.FhirMapper;
 import org.termx.terminology.fhir.codesystem.CodeSystemFhirImportService;
 import org.termx.core.file.AuthorizedFileReaderCustomChange;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem;
@@ -20,7 +20,7 @@ public class CodeSystemFhirImport extends AuthorizedFileReaderCustomChange {
     log.info("Creating CodeSystem " + name);
 
     try {
-      CodeSystem cs = JsonUtil.fromJson(asString(content), CodeSystem.class);
+      CodeSystem cs = FhirMapper.fromJson(asString(content), CodeSystem.class);
       codeSystemFhirImportService.importCodeSystem(cs);
     } catch (Exception e) {
       log.error("Failed to create CodeSystem {} during Liquibase import", name, e);

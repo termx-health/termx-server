@@ -1,7 +1,7 @@
 package org.termx.terminology.liquibase;
 
 import com.kodality.commons.micronaut.BeanContext;
-import com.kodality.commons.util.JsonUtil;
+import com.kodality.zmei.fhir.FhirMapper;
 import org.termx.terminology.fhir.valueset.ValueSetFhirImportService;
 import org.termx.core.file.AuthorizedFileReaderCustomChange;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet;
@@ -20,7 +20,7 @@ public class ValueSetFhirImport extends AuthorizedFileReaderCustomChange {
     log.info("Creating ValueSet " + name);
 
     try {
-      ValueSet vs = JsonUtil.fromJson(asString(content), ValueSet.class);
+      ValueSet vs = FhirMapper.fromJson(asString(content), ValueSet.class);
       valueSetFhirImportService.importValueSet(vs);
     } catch (Exception e) {
       log.error("Failed to create ValueSet {} during Liquibase import", name, e);
