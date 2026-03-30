@@ -71,6 +71,11 @@ public class ValueSetRepository extends BaseRepository {
     return getBean(sql, bp, id);
   }
 
+  public ValueSet loadByUriIgnoreCase(String uri) {
+    String sql = "select * from terminology.value_set where sys_status = 'A' and lower(uri) = ?";
+    return getBean(sql, bp, uri);
+  }
+
   public QueryResult<ValueSet> query(ValueSetQueryParams params) {
     String join = "left join terminology.value_set_version vsv on vsv.value_set = vs.id and vsv.sys_status = 'A' " +
                   "left join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A' " +

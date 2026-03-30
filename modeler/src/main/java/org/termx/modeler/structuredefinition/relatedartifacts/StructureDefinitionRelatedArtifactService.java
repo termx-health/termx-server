@@ -2,15 +2,19 @@ package org.termx.modeler.structuredefinition.relatedartifacts;
 
 import org.termx.core.sys.space.SpaceService;
 import org.termx.core.wiki.PageProvider;
+import org.termx.modeler.structuredefinition.StructureDefinition;
 import org.termx.modeler.structuredefinition.StructureDefinitionContentReference;
 import org.termx.modeler.structuredefinition.StructureDefinitionContentReferenceRepository;
+import org.termx.modeler.structuredefinition.StructureDefinitionRepository;
 import org.termx.modeler.structuredefinition.StructureDefinitionVersion;
 import org.termx.modeler.structuredefinition.StructureDefinitionVersionRepository;
 import org.termx.sys.space.Space;
 import org.termx.sys.space.SpaceQueryParams;
 import org.termx.terminology.terminology.relatedartifacts.RelatedArtifactService;
 import org.termx.ts.relatedartifact.RelatedArtifact;
+import org.termx.terminology.terminology.valueset.ValueSetRepository;
 import org.termx.ts.relatedartifact.RelatedArtifactType;
+import org.termx.ts.valueset.ValueSet;
 import org.termx.wiki.page.PageContent;
 import org.termx.wiki.page.PageRelationType;
 import jakarta.inject.Singleton;
@@ -29,6 +33,8 @@ public class StructureDefinitionRelatedArtifactService extends RelatedArtifactSe
   private final SpaceService spaceService;
   private final StructureDefinitionContentReferenceRepository contentReferenceRepository;
   private final StructureDefinitionVersionRepository versionRepository;
+  private final StructureDefinitionRepository structureDefinitionRepository;
+  private final ValueSetRepository valueSetRepository;
 
   @Override
   public String getResourceType() {
@@ -39,6 +45,7 @@ public class StructureDefinitionRelatedArtifactService extends RelatedArtifactSe
   public List<RelatedArtifact> findRelatedArtifacts(String id) {
     List<RelatedArtifact> artifacts = new ArrayList<>();
     artifacts.addAll(findContentReferences(id));
+    artifacts.addAll(findIncomingReferences(id));
     artifacts.addAll(findPages(id));
     artifacts.addAll(findSpaces(id));
     return artifacts;
@@ -60,11 +67,44 @@ public class StructureDefinitionRelatedArtifactService extends RelatedArtifactSe
       RelatedArtifact artifact = new RelatedArtifact().setUrl(ref.getUrl());
       if (ref.getResourceType() != null && ref.getResourceId() != null) {
         artifact.setType(ref.getResourceType()).setId(ref.getResourceId()).setResolved(true);
+        artifact.setName(resolveArtifactName(ref.getResourceType(), ref.getResourceId()));
       } else {
         artifact.setResolved(false);
       }
       return artifact;
     }).toList();
+  }
+
+  private List<RelatedArtifact> findIncomingReferences(String id) {
+    List<Long> referencingSdIds = contentReferenceRepository.findDistinctStructureDefinitionIds("StructureDefinition", id);
+    return referencingSdIds.stream()
+        .filter(sdId -> !sdId.toString().equals(id))
+        .map(sdId -> {
+          StructureDefinition sd = structureDefinitionRepository.load(sdId);
+          return new RelatedArtifact()
+              .setType("StructureDefinition")
+              .setId(String.valueOf(sdId))
+              .setName(sd != null ? sd.getName() : null)
+              .setUrl(sd != null ? sd.getUrl() : null)
+              .setResolved(true);
+        })
+        .toList();
+  }
+
+  private String resolveArtifactName(String resourceType, String resourceId) {
+    if ("StructureDefinition".equals(resourceType)) {
+      try {
+        StructureDefinition sd = structureDefinitionRepository.load(Long.valueOf(resourceId));
+        return sd != null ? sd.getName() : null;
+      } catch (NumberFormatException e) {
+        return null;
+      }
+    }
+    if ("ValueSet".equals(resourceType)) {
+      ValueSet vs = valueSetRepository.load(resourceId);
+      return vs != null ? vs.getName() : null;
+    }
+    return null;
   }
 
   private List<RelatedArtifact> findPages(String id) {

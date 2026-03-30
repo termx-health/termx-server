@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.termx.terminology.fhir.FhirFshConverter;
 import org.termx.terminology.terminology.valueset.ValueSetRepository;
-import org.termx.ts.valueset.ValueSetQueryParams;
+import org.termx.ts.valueset.ValueSet;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -148,14 +148,14 @@ public class StructureDefinitionContentReferenceService implements StructureDefi
   private StructureDefinitionContentReference resolve(String normalizedUrl) {
     StructureDefinitionContentReference ref = new StructureDefinitionContentReference().setUrl(normalizedUrl);
 
-    StructureDefinition sd = structureDefinitionRepository.loadByUrl(normalizedUrl);
+    StructureDefinition sd = structureDefinitionRepository.loadByUrlIgnoreCase(normalizedUrl);
     if (sd != null) {
       return ref.setResourceType("StructureDefinition").setResourceId(String.valueOf(sd.getId()));
     }
 
-    var vsResult = valueSetRepository.query(new ValueSetQueryParams().setUri(normalizedUrl).limit(1));
-    if (vsResult.getData() != null && !vsResult.getData().isEmpty()) {
-      return ref.setResourceType("ValueSet").setResourceId(vsResult.getData().get(0).getId());
+    ValueSet vs = valueSetRepository.loadByUriIgnoreCase(normalizedUrl);
+    if (vs != null) {
+      return ref.setResourceType("ValueSet").setResourceId(vs.getId());
     }
 
     return ref;

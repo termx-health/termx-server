@@ -53,6 +53,11 @@ public class StructureDefinitionRepository extends BaseRepository {
     return getBean(sql, bp, url);
   }
 
+  public StructureDefinition loadByUrlIgnoreCase(String url) {
+    String sql = "select * from modeler.structure_definition where sys_status = 'A' and lower(url) = ?";
+    return getBean(sql, bp, url);
+  }
+
   public StructureDefinition load(Long id) {
     String sql = "select * from modeler.structure_definition where sys_status = 'A' and id = ?";
     return getBean(sql, bp, id);
