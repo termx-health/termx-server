@@ -23,7 +23,7 @@ public class CodeSystemFhirImport extends AuthorizedFileReaderCustomChange {
       CodeSystem cs = JsonUtil.fromJson(asString(content), CodeSystem.class);
       codeSystemFhirImportService.importCodeSystem(cs);
     } catch (Exception e) {
-      log.error(e.getMessage());
+      log.error("Failed to create CodeSystem {} during Liquibase import", name, e);
     }
   }
 }

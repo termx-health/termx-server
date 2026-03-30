@@ -30,6 +30,7 @@ dependencies {
     implementation("com.kodality.commons:commons-db-bean:${rootProject.extra["commonsVersion"]}")
     implementation("com.kodality.commons:commons-cache:${rootProject.extra["commonsVersion"]}")
     implementation("com.kodality.commons:commons-http-client:${rootProject.extra["commonsVersion"]}")
+    implementation("com.kodality.commons:commons-sequence:${rootProject.extra["commonsVersion"]}")
 
     implementation("com.kodality.kefhir:fhir-rest:${rootProject.extra["kefhirVersion"]}") { isChanging = true }
     implementation("com.kodality.kefhir:validation-profile:${rootProject.extra["kefhirVersion"]}") { isChanging = true }

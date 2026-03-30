@@ -1,32 +1,11 @@
 package org.termx.terminology.fhir.codesystem;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.collect.Maps;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.kefhir.core.model.search.SearchCriterion;
-import org.termx.core.auth.SessionStore;
-import org.termx.core.fhir.BaseFhirMapper;
-import org.termx.core.sys.provenance.Provenance;
-import org.termx.terminology.Privilege;
-import org.termx.terminology.terminology.codesystem.CodeSystemService;
-import org.termx.terminology.terminology.codesystem.concept.ConceptRepository;
-import org.termx.terminology.terminology.codesystem.concept.ConceptService;
-import org.termx.terminology.terminology.mapset.MapSetService;
-import org.termx.terminology.terminology.relatedartifacts.CodeSystemRelatedArtifactService;
-import org.termx.terminology.terminology.valueset.ValueSetService;
-import org.termx.ts.CaseSignificance;
-import org.termx.ts.Copyright;
-import org.termx.ts.Language;
-import org.termx.ts.Permissions;
-import org.termx.ts.PublicationStatus;
-import org.termx.ts.codesystem.*;
-import org.termx.ts.mapset.MapSet;
-import org.termx.ts.property.PropertyReference;
-import org.termx.ts.relatedartifact.RelatedArtifactType;
-import org.termx.ts.valueset.ValueSet;
 import com.kodality.zmei.fhir.Extension;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.datatypes.CodeableConcept;
@@ -37,23 +16,30 @@ import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptD
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty;
 import com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemProperty;
 import io.micronaut.context.annotation.Context;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.Objects;
-import java.util.Comparator;
-import java.util.ArrayList;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.termx.core.auth.SessionStore;
+import org.termx.core.fhir.BaseFhirMapper;
+import org.termx.core.sys.provenance.Provenance;
+import org.termx.terminology.Privilege;
+import org.termx.terminology.terminology.codesystem.CodeSystemService;
+import org.termx.terminology.terminology.codesystem.concept.ConceptService;
+import org.termx.terminology.terminology.mapset.MapSetService;
+import org.termx.terminology.terminology.relatedartifacts.CodeSystemRelatedArtifactService;
+import org.termx.terminology.terminology.valueset.ValueSetService;
+import org.termx.ts.*;
+import org.termx.ts.codesystem.*;
+import org.termx.ts.property.PropertyReference;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -466,13 +452,15 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     version.setCodeSystem(fhirCodeSystem.getId());
     version.setVersion(fhirCodeSystem.getVersion() == null ? "1.0.0" : fhirCodeSystem.getVersion());
     version.setPreferredLanguage(fhirCodeSystem.getLanguage() == null ? Language.en : fhirCodeSystem.getLanguage());
-    version.setSupportedLanguages(Optional.ofNullable(fhirCodeSystem.getConcept()).orElse(new ArrayList<>()).stream()
-        .filter(c -> c.getDesignation() != null)
-        .flatMap(c -> c.getDesignation().stream().map(CodeSystemConceptDesignation::getLanguage)).filter(Objects::nonNull).distinct()
-        .toList());
-    if (!version.getSupportedLanguages().contains(version.getPreferredLanguage())) {
-      version.getSupportedLanguages().add(version.getPreferredLanguage());
-    }
+    var supportedLanguages = Optional.ofNullable(fhirCodeSystem.getConcept()).map(List::stream).orElse(Stream.of())
+        .map(CodeSystemConcept::getDesignation)
+        .filter(Objects::nonNull).flatMap(List::stream)
+        .map(CodeSystemConceptDesignation::getLanguage);
+    version.setSupportedLanguages(Stream.concat(
+          supportedLanguages,
+          Stream.of(version.getPreferredLanguage()))
+        .filter(Objects::nonNull)
+        .distinct().toList());
     version.setStatus(PublicationStatus.draft);
     version.setAlgorithm(fhirCodeSystem.getVersionAlgorithmString());
     version.setReleaseDate(fhirCodeSystem.getEffectivePeriod() == null || fhirCodeSystem.getEffectivePeriod().getStart() == null ? LocalDate.now() :
@@ -601,7 +589,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       designation.setDesignationKind("text");
       designation.setStatus("active");
       return designation;
-    }).toList();
+    }).collect(Collectors.toCollection(ArrayList::new));
 
     Designation display = new Designation();
     display.setDesignationType(DISPLAY);
