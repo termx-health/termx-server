@@ -2,6 +2,7 @@ package org.termx.terminology.terminology.relatedartifacts;
 
 import org.termx.core.sys.space.SpaceService;
 import org.termx.core.wiki.PageProvider;
+import org.termx.modeler.structuredefinition.StructureDefinitionContentReferenceProvider;
 import org.termx.sys.space.Space;
 import org.termx.sys.space.SpaceQueryParams;
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
@@ -30,6 +31,7 @@ public class ValueSetRelatedArtifactService extends RelatedArtifactService {
   private final ValueSetVersionService valueSetVersionService;
   private final Optional<PageProvider> pageProvider;
   private final SpaceService spaceService;
+  private final Optional<StructureDefinitionContentReferenceProvider> contentReferenceProvider;
 
   @Override
   public String getResourceType() {
@@ -40,9 +42,20 @@ public class ValueSetRelatedArtifactService extends RelatedArtifactService {
   public List<RelatedArtifact> findRelatedArtifacts(String id) {
     List<RelatedArtifact> artifacts = new ArrayList<>();
     artifacts.addAll(collectFromRules(id));
+    artifacts.addAll(findReferencingStructureDefinitions(id));
     artifacts.addAll(findPages(id));
     artifacts.addAll(findSpaces(id));
     return artifacts;
+  }
+
+  private List<RelatedArtifact> findReferencingStructureDefinitions(String id) {
+    if (contentReferenceProvider.isEmpty()) {
+      return List.of();
+    }
+    List<Long> sdIds = contentReferenceProvider.get().findReferencingStructureDefinitionIds("ValueSet", id);
+    return sdIds.stream()
+        .map(sdId -> new RelatedArtifact().setType(RelatedArtifactType.sd).setId(String.valueOf(sdId)).setResolved(true))
+        .toList();
   }
 
   private List<RelatedArtifact> collectFromRules(String id) {

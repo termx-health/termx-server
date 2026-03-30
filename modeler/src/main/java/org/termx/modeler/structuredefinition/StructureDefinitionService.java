@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class StructureDefinitionService {
   private final StructureDefinitionRepository repository;
   private final StructureDefinitionVersionRepository versionRepository;
+  private final StructureDefinitionContentReferenceService contentReferenceService;
 
   public Optional<StructureDefinition> load(Long id) {
     return load(id, null);
@@ -78,6 +79,7 @@ public class StructureDefinitionService {
           .setStatus(structureDefinition.getStatus() != null ? structureDefinition.getStatus() : "draft")
           .setReleaseDate(structureDefinition.getReleaseDate());
       versionRepository.save(ver);
+      contentReferenceService.extractAndSave(ver.getId(), ver.getContent(), ver.getContentFormat());
     } else {
       ver.setContent(structureDefinition.getContent());
       ver.setContentType(structureDefinition.getContentType());
@@ -86,8 +88,41 @@ public class StructureDefinitionService {
       ver.setReleaseDate(structureDefinition.getReleaseDate());
       ver.setFhirId(structureDefinition.getFhirId());
       versionRepository.save(ver);
+      contentReferenceService.extractAndSave(ver.getId(), ver.getContent(), ver.getContentFormat());
     }
     return load(headerId).orElse(null);
+  }
+
+  @Transactional
+  public StructureDefinitionVersion saveVersion(StructureDefinitionVersion version) {
+    if ("json".equals(version.getContentFormat()) && version.getContent() != null) {
+      try {
+        version.setContent(ObjectUtil.removeEmptyAttributes(version.getContent()));
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    versionRepository.save(version);
+    contentReferenceService.extractAndSave(version.getId(), version.getContent(), version.getContentFormat());
+    return version;
+  }
+
+  @Transactional
+  public StructureDefinitionVersion duplicateVersion(Long structureDefinitionId, String sourceVersion, String targetVersion) {
+    StructureDefinitionVersion source = versionRepository.load(structureDefinitionId, sourceVersion);
+    if (source == null) {
+      throw new com.kodality.commons.exception.NotFoundException("Source version not found: " + structureDefinitionId + "/" + sourceVersion);
+    }
+    StructureDefinitionVersion target = new StructureDefinitionVersion()
+        .setStructureDefinitionId(structureDefinitionId)
+        .setVersion(targetVersion)
+        .setContent(source.getContent())
+        .setContentType(source.getContentType())
+        .setContentFormat(source.getContentFormat())
+        .setStatus("draft");
+    versionRepository.save(target);
+    contentReferenceService.extractAndSave(target.getId(), target.getContent(), target.getContentFormat());
+    return target;
   }
 
   @Transactional

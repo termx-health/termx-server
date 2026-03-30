@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class StructureDefinitionController {
   private final StructureDefinitionService service;
   private final StructureDefinitionFhirImportService importService;
+  private final StructureDefinitionContentReferenceService contentReferenceService;
 
   @Authorized(Privilege.SD_VIEW)
   @Get(uri = "/{id}{?version}")
@@ -42,8 +43,33 @@ public class StructureDefinitionController {
 
   @Authorized(Privilege.SD_VIEW)
   @Get(uri = "/{id}/versions/{version}")
-  public StructureDefinition getStructureDefinitionVersion(@PathVariable Long id, @PathVariable String version) {
-    return service.load(id, version).orElseThrow(() -> new NotFoundException("Structure definition version not found: " + id + "/" + version));
+  public StructureDefinitionVersion getStructureDefinitionVersion(@PathVariable Long id, @PathVariable String version) {
+    return service.loadVersion(id, version).orElseThrow(() -> new NotFoundException("Structure definition version not found: " + id + "/" + version));
+  }
+
+  @Authorized(Privilege.SD_EDIT)
+  @Post(uri = "/{id}/versions")
+  public HttpResponse<?> createVersion(@PathVariable Long id, @Body StructureDefinitionVersion version) {
+    version.setId(null);
+    version.setStructureDefinitionId(id);
+    service.saveVersion(version);
+    return HttpResponse.created(version);
+  }
+
+  @Authorized(Privilege.SD_EDIT)
+  @Put(uri = "/{id}/versions/{versionCode}")
+  public HttpResponse<?> updateVersion(@PathVariable Long id, @PathVariable String versionCode, @Body StructureDefinitionVersion version) {
+    version.setStructureDefinitionId(id);
+    service.saveVersion(version);
+    return HttpResponse.ok(version);
+  }
+
+  @Authorized(Privilege.SD_EDIT)
+  @Post(uri = "/{id}/versions/{versionCode}/duplicate")
+  public HttpResponse<?> duplicateVersion(@PathVariable Long id, @PathVariable String versionCode, @Body java.util.Map<String, String> request) {
+    String targetVersion = request.get("version");
+    StructureDefinitionVersion ver = service.duplicateVersion(id, versionCode, targetVersion);
+    return HttpResponse.created(ver);
   }
 
   @Authorized(Privilege.SD_VIEW)
@@ -71,6 +97,13 @@ public class StructureDefinitionController {
   @Delete(uri = "/{id}")
   public HttpResponse<?> deleteStructureDefinition(@PathVariable Long id) {
     service.cancel(id);
+    return HttpResponse.ok();
+  }
+
+  @Authorized(Privilege.SD_EDIT)
+  @Post(uri = "/{id}/recalculate-references")
+  public HttpResponse<?> recalculateReferences(@PathVariable Long id) {
+    contentReferenceService.recalculate(id);
     return HttpResponse.ok();
   }
 

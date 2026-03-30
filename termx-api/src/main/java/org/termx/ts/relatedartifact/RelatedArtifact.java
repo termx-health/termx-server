@@ -10,4 +10,6 @@ import lombok.experimental.Accessors;
 public class RelatedArtifact {
   private String type;
   private String id;
+  private String url;
+  private Boolean resolved;
 }

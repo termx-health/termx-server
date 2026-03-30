@@ -1,8 +1,7 @@
 package org.termx.modeler.structuredefinition;
 
 import org.termx.core.http.BinaryHttpClient;
-import org.termx.modeler.structuredefinition.StructureDefinition;
-import org.termx.modeler.structuredefinition.StructureDefinitionVersion;
+import org.termx.modeler.fhir.StructureDefinitionFhirMapper;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +27,7 @@ public class StructureDefinitionFhirImportService {
 
   @Transactional
   public StructureDefinition importFromJson(String json) {
-    StructureDefinition parsed = StructureDefinitionUtils.createStructureDefinitionFromJson(json);
+    StructureDefinition parsed = StructureDefinitionFhirMapper.fromFhir(json);
     if (parsed.getUrl() == null || parsed.getUrl().isBlank()) {
       throw new IllegalArgumentException("StructureDefinition URL is required");
     }
@@ -38,15 +37,34 @@ public class StructureDefinitionFhirImportService {
           .setUrl(parsed.getUrl())
           .setCode(parsed.getCode() != null ? parsed.getCode() : parsed.getUrl())
           .setName(parsed.getName())
-          .setParent(parsed.getParent());
+          .setParent(parsed.getParent())
+          .setPublisher(parsed.getPublisher())
+          .setTitle(parsed.getTitle())
+          .setDescription(parsed.getDescription())
+          .setPurpose(parsed.getPurpose())
+          .setCopyright(parsed.getCopyright())
+          .setIdentifiers(parsed.getIdentifiers())
+          .setContacts(parsed.getContacts())
+          .setUseContext(parsed.getUseContext())
+          .setHierarchyMeaning(parsed.getHierarchyMeaning())
+          .setExperimental(parsed.getExperimental());
       repository.save(header);
     } else {
       if (parsed.getName() != null) header.setName(parsed.getName());
       if (parsed.getParent() != null) header.setParent(parsed.getParent());
+      if (parsed.getPublisher() != null) header.setPublisher(parsed.getPublisher());
+      if (parsed.getTitle() != null) header.setTitle(parsed.getTitle());
+      if (parsed.getDescription() != null) header.setDescription(parsed.getDescription());
+      if (parsed.getPurpose() != null) header.setPurpose(parsed.getPurpose());
+      if (parsed.getCopyright() != null) header.setCopyright(parsed.getCopyright());
+      if (parsed.getIdentifiers() != null) header.setIdentifiers(parsed.getIdentifiers());
+      if (parsed.getContacts() != null) header.setContacts(parsed.getContacts());
+      if (parsed.getUseContext() != null) header.setUseContext(parsed.getUseContext());
+      if (parsed.getExperimental() != null) header.setExperimental(parsed.getExperimental());
       repository.save(header);
     }
     String versionStr = parsed.getVersion();
-    String fhirId = parsed.getCode();
+    String fhirId = parsed.getFhirId();
     StructureDefinitionVersion existing = versionRepository.load(header.getId(), versionStr);
     if (existing != null) {
       existing.setContent(parsed.getContent());

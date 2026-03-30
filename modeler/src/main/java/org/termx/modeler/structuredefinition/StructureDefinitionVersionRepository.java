@@ -10,7 +10,9 @@ import java.util.List;
 
 @Singleton
 public class StructureDefinitionVersionRepository extends BaseRepository {
-  private final PgBeanProcessor bp = new PgBeanProcessor(StructureDefinitionVersion.class);
+  private final PgBeanProcessor bp = new PgBeanProcessor(StructureDefinitionVersion.class, bp -> {
+    bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
+  });
 
   public void save(StructureDefinitionVersion v) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -23,7 +25,7 @@ public class StructureDefinitionVersionRepository extends BaseRepository {
     ssb.property("content_format", v.getContentFormat());
     ssb.property("status", v.getStatus());
     ssb.property("release_date", v.getReleaseDate());
-    ssb.property("description", v.getDescription());
+    ssb.jsonProperty("description", v.getDescription());
     SqlBuilder sb = ssb.buildSave("modeler.structure_definition_version", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     v.setId(id);

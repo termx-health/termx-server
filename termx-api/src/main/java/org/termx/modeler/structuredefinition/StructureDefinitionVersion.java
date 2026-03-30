@@ -1,5 +1,6 @@
 package org.termx.modeler.structuredefinition;
 
+import com.kodality.commons.model.LocalizedName;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -19,5 +20,5 @@ public class StructureDefinitionVersion {
   private String contentFormat;
   private String status;
   private OffsetDateTime releaseDate;
-  private String description;
+  private LocalizedName description;
 }

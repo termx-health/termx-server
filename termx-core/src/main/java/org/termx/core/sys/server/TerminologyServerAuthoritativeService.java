@@ -30,18 +30,20 @@ public class TerminologyServerAuthoritativeService extends BaseRepository {
               "where ms.sys_status = 'A'",
           "ConceptMap"},
       "structure-definitions", new String[]{
-          "select sd.id::text as id, sd.url as uri, sd.content_version as version, sd.status " +
-              "from modeler.structure_definition sd where sd.sys_status = 'A'",
+          "select sd.id::text as id, sd.url as uri, sdv.version, sdv.status " +
+              "from modeler.structure_definition sd " +
+              "left join modeler.structure_definition_version sdv on sdv.structure_definition_id = sd.id and sdv.sys_status = 'A' " +
+              "where sd.sys_status = 'A'",
           "StructureDefinition"},
       "structure-maps", new String[]{
-          "select sm.id::text as id, sm.url as uri, sm.content_version as version, sm.status " +
-              "from modeler.structure_map sm where sm.sys_status = 'A'",
+          "select td.id::text as id, td.url as uri, null as version, null as status " +
+              "from modeler.transformation_definition td where td.sys_status = 'A'",
           "StructureMap"}
   );
 
   public List<AuthoritativeResource> findMatchingResources(String resourceType, List<AuthoritativeResource> patterns) {
     String[] config = RESOURCE_TYPE_CONFIG.get(resourceType);
-    if (config == null || patterns == null || patterns.isEmpty()) {
+    if (config == null || config[0] == null || patterns == null || patterns.isEmpty()) {
       return new ArrayList<>();
     }
 

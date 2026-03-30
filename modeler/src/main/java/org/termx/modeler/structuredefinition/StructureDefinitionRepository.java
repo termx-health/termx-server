@@ -1,22 +1,30 @@
 package org.termx.modeler.structuredefinition;
 
-import org.termx.modeler.structuredefinition.StructureDefinition;
-import org.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
-
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
+import com.kodality.commons.util.JsonUtil;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
-
 import java.util.Objects;
 import java.util.stream.Stream;
+import org.termx.ts.ContactDetail;
+import org.termx.ts.UseContext;
 
 @Singleton
 public class StructureDefinitionRepository extends BaseRepository {
-  private final PgBeanProcessor bp = new PgBeanProcessor(StructureDefinition.class);
+  private final PgBeanProcessor bp = new PgBeanProcessor(StructureDefinition.class, bp -> {
+    bp.addColumnProcessor("title", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("purpose", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("copyright", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
+    bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
+    bp.addColumnProcessor("use_context", PgBeanProcessor.fromJson(JsonUtil.getListType(UseContext.class)));
+  });
 
   public void save(StructureDefinition structureDefinition) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -26,6 +34,15 @@ public class StructureDefinitionRepository extends BaseRepository {
     ssb.property("name", structureDefinition.getName());
     ssb.property("parent", structureDefinition.getParent());
     ssb.property("publisher", structureDefinition.getPublisher());
+    ssb.property("hierarchy_meaning", structureDefinition.getHierarchyMeaning());
+    ssb.property("experimental", structureDefinition.getExperimental());
+    ssb.jsonProperty("title", structureDefinition.getTitle());
+    ssb.jsonProperty("description", structureDefinition.getDescription());
+    ssb.jsonProperty("purpose", structureDefinition.getPurpose());
+    ssb.jsonProperty("copyright", structureDefinition.getCopyright());
+    ssb.jsonProperty("identifiers", structureDefinition.getIdentifiers());
+    ssb.jsonProperty("contacts", structureDefinition.getContacts());
+    ssb.jsonProperty("use_context", structureDefinition.getUseContext());
     SqlBuilder sb = ssb.buildSave("modeler.structure_definition", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
     structureDefinition.setId(id);
@@ -42,7 +59,7 @@ public class StructureDefinitionRepository extends BaseRepository {
   }
 
   private static final String CURRENT_VERSION_JOIN =
-      " left join lateral (select v.status from modeler.structure_definition_version v where v.structure_definition_id = sd.id and v.sys_status = 'A' order by v.release_date desc nulls last, v.id desc limit 1) cv on true ";
+      " left join lateral (select v.version, v.status from modeler.structure_definition_version v where v.structure_definition_id = sd.id and v.sys_status = 'A' order by v.release_date desc nulls last, v.id desc limit 1) cv on true ";
 
   public QueryResult<StructureDefinition> query(StructureDefinitionQueryParams params) {
     final String join = getJoin(params);
@@ -53,7 +70,7 @@ public class StructureDefinitionRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select sd.*, cv.status "
+      SqlBuilder sb = new SqlBuilder("select sd.*, cv.version, cv.status "
           + "from modeler.structure_definition sd " + CURRENT_VERSION_JOIN + join
           + "where sd.sys_status = 'A' ");
       sb.append(filter(params));
