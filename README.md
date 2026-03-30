@@ -57,6 +57,23 @@ grant connect on database termserver to termserver_app;
 CREATE EXTENSION IF NOT EXISTS hstore schema public;
 EOSQL
 ```
+
+If you need to create a separate db for testing:
+```bash 
+docker exec -i termx-postgres psql -U postgres <<-EOSQL
+CREATE DATABASE termserver_new WITH OWNER = termserver_admin ENCODING = 'UTF8' TABLESPACE = pg_default CONNECTION LIMIT = -1;
+grant temp on database termserver_new to termserver_app;
+grant connect on database termserver_new to termserver_app;
+EOSQL
+```
+Or recreate it with the helper script:
+```bash
+./recreate-termserver-db.sh
+```
+To target a different database name:
+```bash
+./recreate-termserver-db.sh termserver_new
+```
 In case you are using an existing database, run SQL commands between EOSQL via sql console.
 
 ## Navigate to app folder and run application in the development mode 

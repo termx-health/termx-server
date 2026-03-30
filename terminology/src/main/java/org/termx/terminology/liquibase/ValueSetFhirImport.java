@@ -23,7 +23,7 @@ public class ValueSetFhirImport extends AuthorizedFileReaderCustomChange {
       ValueSet vs = JsonUtil.fromJson(asString(content), ValueSet.class);
       valueSetFhirImportService.importValueSet(vs);
     } catch (Exception e) {
-      log.error(e.getMessage());
+      log.error("Failed to create ValueSet {} during Liquibase import", name, e);
     }
   }
 }
