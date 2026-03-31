@@ -9,6 +9,7 @@ plugins {
 }
 
 group = "org.termx"
+version = file("VERSION").readText().trim()
 
 allprojects {
     apply(plugin = "java-library")

@@ -2,6 +2,10 @@
 
 A FHIR-compliant terminology server for managing and serving healthcare terminologies.
 
+## Versioning
+
+The application version is defined in the `VERSION` file in the project root; it is read by `build.gradle.kts` at build time and overrides `gradle.properties`.
+
 ## Features
 
 ### 🌐 FHIR Terminology Ecosystem Integration (New!)
