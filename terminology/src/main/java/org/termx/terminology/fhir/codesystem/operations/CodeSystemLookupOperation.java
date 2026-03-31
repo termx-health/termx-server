@@ -17,6 +17,7 @@ import org.termx.ts.codesystem.CodeSystemEntityVersion;
 import org.termx.ts.codesystem.CodeSystemQueryParams;
 import org.termx.ts.codesystem.CodeSystemVersionReference;
 import org.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.ConceptSnapshot;
 import org.termx.ts.codesystem.ConceptQueryParams;
 import org.termx.ts.codesystem.Designation;
 import org.termx.ts.codesystem.EntityPropertyType;
@@ -33,6 +34,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ArrayList;
 import org.apache.commons.lang3.StringUtils;
@@ -154,7 +156,7 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
     propertyValues.stream().filter(pv -> shouldReturnProperty(properties, pv)).forEach(pv -> {
       resp.addParameter(new ParametersParameter("property")
           .addPart(new ParametersParameter("code").setValueString(pv.getEntityProperty()))
-          .addPart(toParameter(pv.getEntityPropertyType(), pv.getValue())));
+          .addPart(toParameter(pv.getEntityPropertyType(), pv.getValue(), c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getSnapshot).orElse(null), displayLanguage)));
     });
     return resp;
   }
@@ -217,7 +219,7 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
         (language.equals(displayLanguage) || language.startsWith(displayLanguage + "-"));
   }
 
-  private static ParametersParameter toParameter(String type, Object value) {
+  private static ParametersParameter toParameter(String type, Object value, ConceptSnapshot snapshot, String language) {
     ParametersParameter result = new ParametersParameter("value");
     switch (type) {
       case EntityPropertyType.code -> result.setValueCode((String) value);
@@ -227,7 +229,12 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
       case EntityPropertyType.integer -> result.setValueInteger(Integer.valueOf(String.valueOf(value)));
       case EntityPropertyType.coding -> {
         Concept concept = JsonUtil.getObjectMapper().convertValue(value, Concept.class);
-        result.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
+        Coding coding = new Coding(concept.getCodeSystem(), concept.getCode());
+        findSnapshotCoding(snapshot, concept).ifPresent(snapshotCoding -> {
+          coding.setDisplay(resolveDisplay(snapshotCoding.display(), language));
+          coding.setVersion(snapshotCoding.version());
+        });
+        result.setValueCoding(coding);
       }
       case EntityPropertyType.dateTime -> {
         if (value instanceof OffsetDateTime) {
@@ -239,4 +246,40 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
     }
     return result;
   }
+
+  private static Optional<ConceptSnapshot.SnapshotCoding> findSnapshotCoding(ConceptSnapshot snapshot, Concept concept) {
+    return Optional.ofNullable(snapshot)
+        .map(ConceptSnapshot::getProperties).stream()
+        .flatMap(List::stream)
+        .filter(Objects::nonNull)
+        .map(ConceptSnapshot.SnapshotProperty::valueCoding)
+        .filter(Objects::nonNull)
+        .filter(propertyCoding -> concept.getCode().equals(propertyCoding.code())
+            && concept.getCodeSystem().equals(propertyCoding.system()))
+        .findFirst();
+  }
+
+  private static String resolveDisplay(String display, String language) {
+    if (display == null) {
+      return null;
+    }
+    try {
+      List<LocalName> jsonList = JsonUtil.getObjectMapper().readValue(display, JsonUtil.getListType(LocalName.class));
+      if (jsonList.isEmpty()) {
+        return null;
+      }
+      if (language == null) {
+        return jsonList.getFirst().name();
+      }
+      return jsonList.stream()
+          .filter(localName -> language.equals(localName.language()))
+          .map(LocalName::name)
+          .findFirst()
+          .orElseGet(() -> jsonList.getFirst().name());
+    } catch (Exception e) {
+      return display;
+    }
+  }
+
+  private record LocalName(String language, String name) {}
 }

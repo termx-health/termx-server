@@ -12,6 +12,7 @@ import org.termx.ts.codesystem.CodeSystemEntityVersion
 import org.termx.ts.codesystem.CodeSystemQueryParams
 import org.termx.ts.codesystem.Concept
 import org.termx.ts.codesystem.ConceptQueryParams
+import org.termx.ts.codesystem.ConceptSnapshot
 import org.termx.ts.codesystem.Designation
 import org.termx.ts.codesystem.EntityPropertyType
 import org.termx.ts.codesystem.EntityPropertyValue
@@ -205,6 +206,39 @@ class CodeSystemUcumOperationsTest extends Specification {
     propertyCodes == ["status", "comment"] as Set
   }
 
+  def "lookup returns coding property display from snapshot"() {
+    given:
+    codeSystemService.query(_ as CodeSystemQueryParams) >> new QueryResult([new CodeSystem().setId("ucum").setUri("http://unitsofmeasure.org")])
+    conceptService.query(_ as ConceptQueryParams) >> new QueryResult([concept("16542-3", [
+        designation("display", "en", "example")
+    ], [
+        property("expected-result-type", EntityPropertyType.coding, new Concept().setCodeSystem("lt-lab-test-results").setCode("KIEKYBINIS"))
+    ], new ConceptSnapshot().setProperties([
+        new ConceptSnapshot.SnapshotProperty(
+            "expected-result-type",
+            new ConceptSnapshot.SnapshotCoding("lt-lab-test-results", "1.0.0", "KIEKYBINIS", '[{"language":"en","name":"Quantitative"}]'),
+            null,
+            null)
+    ]) )])
+
+    def request = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("system").setValueUri("http://unitsofmeasure.org"))
+        .addParameter(new Parameters.ParametersParameter("code").setValueCode("16542-3"))
+        .addParameter(new Parameters.ParametersParameter("property").setValueCode("expected-result-type"))
+
+    when:
+    def response = lookupOperation.run(new ResourceContent(FhirMapper.toJson(request), "json"))
+    def parameters = FhirMapper.fromJson(response.value, Parameters)
+    def property = parameters.parameter.find { it.name == "property" }
+    def coding = property.part.find { it.name == "value" }?.valueCoding
+
+    then:
+    coding.system == "lt-lab-test-results"
+    coding.code == "KIEKYBINIS"
+    coding.display == "Quantitative"
+    coding.version == "1.0.0"
+  }
+
   def "lookup returns no properties by default when mode is NONE unless explicitly requested"() {
     given:
     def lookupOperation = new CodeSystemLookupOperation(conceptService, codeSystemService, LookupDefaultPropertyMode.NONE)
@@ -236,7 +270,7 @@ class CodeSystemUcumOperationsTest extends Specification {
     parametersWithProperty.parameter.find { it.name == "property" }.part.find { it.name == "code" }.valueString == "status"
   }
 
-  private static Concept concept(String code, List<Designation> designations, List<EntityPropertyValue> propertyValues = []) {
+  private static Concept concept(String code, List<Designation> designations, List<EntityPropertyValue> propertyValues = [], ConceptSnapshot snapshot = null) {
     return new Concept()
         .setCode(code)
         .setCodeSystem("ucum")
@@ -244,6 +278,7 @@ class CodeSystemUcumOperationsTest extends Specification {
             .setCode(code)
             .setCodeSystem("ucum")
             .setDesignations(designations)
+            .setSnapshot(snapshot)
             .setPropertyValues(propertyValues)])
   }
 
