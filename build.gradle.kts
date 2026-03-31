@@ -35,13 +35,17 @@ allprojects {
     group = rootProject.group
 
     repositories {
+        mavenLocal()
         mavenCentral()
-        // Kodality Maven: only for kefhir (commons and zmei are vendored, taskForge is used instead of taskflow)
-        maven { 
-            url = uri("https://kexus.kodality.com/repository/maven-public/")
+        // kefhir fork on GitHub Packages (commons and zmei are vendored)
+        maven {
+            url = uri("https://maven.pkg.github.com/termx-health/kefhir")
             content {
-                // Only allow kefhir from this repo
                 includeGroup("com.kodality.kefhir")
+            }
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }

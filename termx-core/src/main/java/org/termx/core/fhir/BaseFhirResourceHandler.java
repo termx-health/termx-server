@@ -19,9 +19,9 @@ public abstract class BaseFhirResourceHandler implements ResourceStorage, Resour
   public abstract String getPrivilegeName();
 
   @Override
-  public List<ResourceVersion> load(List<ResourceId> ids) {
+  public List<ResourceVersion> load(List<VersionId> ids) {
     //TODO: batch
-    return ids.stream().map(id -> load(new VersionId(id))).toList();
+    return ids.stream().map(this::load).toList();
   }
 
   @Override
