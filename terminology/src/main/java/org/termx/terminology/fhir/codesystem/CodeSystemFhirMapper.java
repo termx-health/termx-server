@@ -32,6 +32,8 @@ import org.termx.terminology.terminology.valueset.ValueSetService;
 import org.termx.ts.*;
 import org.termx.ts.codesystem.*;
 import org.termx.ts.property.PropertyReference;
+import org.termx.ts.valueset.ValueSet;
+import org.termx.ts.valueset.ValueSetQueryParams;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -55,6 +57,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   private static final String DISPLAY = "display";
   private static final String DEFINITION = "definition";
   private static final Set<String> IMPLICIT_PROPERTY_DEFINITIONS = Set.of(DISPLAY, DEFINITION);
+  private static final String PROPERTY_VALUE_SET_EXTENSION_URL = "http://hl7.org/fhir/StructureDefinition/codesystem-property-valueset";
+  private static final String PROPERTY_CODE_SYSTEM_EXTENSION_URL = "http://fhir.ee/StructureDefinition/codesystem-property-codesystem";
 
   public CodeSystemFhirMapper(ConceptService conceptService,
                               CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
@@ -257,18 +261,62 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         .toList();
   }
 
-  private static List<CodeSystemProperty> toFhirCodeSystemProperty(List<EntityProperty> entityProperties, String lang) {
+  private List<CodeSystemProperty> toFhirCodeSystemProperty(List<EntityProperty> entityProperties, String lang) {
     if (CollectionUtils.isEmpty(entityProperties)) {
       return List.of();
     }
     return entityProperties.stream()
       .filter(p -> !IMPLICIT_PROPERTY_DEFINITIONS.contains(p.getName()))
-      .map(p -> new CodeSystemProperty()
-        .setCode(p.getName())
-        .setType(p.getType())
-        .setUri(p.getUri())
-        .setDescription(toFhirName(p.getDescription(), lang))
-    ).sorted(Comparator.comparing(CodeSystemProperty::getCode)).toList();
+      .map(p -> {
+        CodeSystemProperty property = new CodeSystemProperty()
+            .setCode(p.getName())
+            .setType(p.getType())
+            .setUri(p.getUri())
+            .setDescription(toFhirName(p.getDescription(), lang));
+        addPropertyBindingExtensions(property, p);
+        return property;
+      }).sorted(Comparator.comparing(CodeSystemProperty::getCode)).toList();
+  }
+
+  private void addPropertyBindingExtensions(CodeSystemProperty property, EntityProperty entityProperty) {
+    EntityPropertyRule rule = entityProperty.getRule();
+    if (rule == null) {
+      return;
+    }
+
+    resolveValueSetCanonical(rule.getValueSet()).ifPresent(valueSet ->
+        property.addExtension(new Extension(PROPERTY_VALUE_SET_EXTENSION_URL).setValueCanonical(valueSet)));
+    resolveCodeSystemCanonicals(rule.getCodeSystems()).forEach(codeSystem ->
+        property.addExtension(new Extension(PROPERTY_CODE_SYSTEM_EXTENSION_URL).setValueCanonical(codeSystem)));
+  }
+
+  private Optional<String> resolveValueSetCanonical(String valueSet) {
+    return resolveCanonical(valueSet, id -> Optional.ofNullable(valueSetService.load(id)).map(ValueSet::getUri));
+  }
+
+  private List<String> resolveCodeSystemCanonicals(List<String> codeSystems) {
+    if (CollectionUtils.isEmpty(codeSystems)) {
+      return List.of();
+    }
+    return codeSystems.stream()
+        .map(this::resolveCodeSystemCanonical)
+        .flatMap(Optional::stream)
+        .distinct()
+        .sorted()
+        .toList();
+  }
+
+  private Optional<String> resolveCodeSystemCanonical(String codeSystem) {
+    return resolveCanonical(codeSystem, id -> codeSystemService.load(id).map(CodeSystem::getUri));
+  }
+
+  private Optional<String> resolveCanonical(String value, java.util.function.Function<String, Optional<String>> resolver) {
+    if (StringUtils.isBlank(value)) {
+      return Optional.empty();
+    }
+    return resolver.apply(value)
+        .filter(StringUtils::isNotBlank)
+        .or(() -> Optional.of(value));
   }
 
   private List<CodeSystemConceptProperty> toFhirConceptProperties(CodeSystemEntityVersion entityVersion,
@@ -398,7 +446,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   // -------------- FROM FHIR --------------
 
-  public static CodeSystem fromFhirCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCS) {
+  public CodeSystem fromFhirCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCS) {
     CodeSystem codeSystem = new CodeSystem();
     codeSystem.setId(CodeSystemFhirMapper.parseCompositeId(fhirCS.getId())[0]);
     codeSystem.setUri(fhirCS.getUrl());
@@ -476,7 +524,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return List.of(version);
   }
 
-  private static List<EntityProperty> fromFhirProperties(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
+  private List<EntityProperty> fromFhirProperties(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     List<EntityProperty> properties = getImplicitProperties();
 
     if (fhirCodeSystem.getProperty() != null) {
@@ -519,7 +567,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return ep;
   }
 
-  private static EntityProperty fromFhirProperty(CodeSystemProperty p, String lang) {
+  private EntityProperty fromFhirProperty(CodeSystemProperty p, String lang) {
     EntityProperty property = new EntityProperty();
     property.setName(p.getCode());
     property.setUri(p.getUri());
@@ -527,7 +575,50 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     property.setType(p.getType());
     property.setKind(EntityPropertyKind.property);
     property.setStatus(PublicationStatus.active);
+    EntityPropertyRule rule = fromFhirPropertyRule(p);
+    if (rule != null) {
+      property.setRule(rule);
+    }
     return property;
+  }
+
+  private EntityPropertyRule fromFhirPropertyRule(CodeSystemProperty property) {
+    String valueSet = property.getExtensions(PROPERTY_VALUE_SET_EXTENSION_URL)
+        .map(this::getCanonicalValue)
+        .filter(StringUtils::isNotBlank)
+        .map(this::resolveValueSetId)
+        .findFirst()
+        .orElse(null);
+
+    List<String> codeSystems = property.getExtensions(PROPERTY_CODE_SYSTEM_EXTENSION_URL)
+        .map(this::getCanonicalValue)
+        .filter(StringUtils::isNotBlank)
+        .map(this::resolveCodeSystemId)
+        .distinct()
+        .toList();
+
+    if (valueSet == null && CollectionUtils.isEmpty(codeSystems)) {
+      return null;
+    }
+    return new EntityPropertyRule()
+        .setValueSet(valueSet)
+        .setCodeSystems(CollectionUtils.isEmpty(codeSystems) ? null : codeSystems);
+  }
+
+  private String getCanonicalValue(Extension extension) {
+    return StringUtils.firstNonBlank(extension.getValueCanonical(), extension.getValueUri(), extension.getValueUrl());
+  }
+
+  private String resolveValueSetId(String valueSetCanonical) {
+    return valueSetService.query(new ValueSetQueryParams().setUri(valueSetCanonical).limit(1)).findFirst()
+        .map(ValueSet::getId)
+        .orElse(valueSetCanonical);
+  }
+
+  private String resolveCodeSystemId(String codeSystemCanonical) {
+    return codeSystemService.query(new CodeSystemQueryParams().setUri(codeSystemCanonical).limit(1)).findFirst()
+        .map(CodeSystem::getId)
+        .orElse(codeSystemCanonical);
   }
 
   private static List<Concept> fromFhirConcepts(List<CodeSystemConcept> fhirConcepts,
