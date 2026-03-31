@@ -43,6 +43,9 @@ jobs:
       - name: Build
         working-directory: .
         run: ./gradlew clean assemble --no-daemon
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Verify vendored code in final JAR
         working-directory: .
