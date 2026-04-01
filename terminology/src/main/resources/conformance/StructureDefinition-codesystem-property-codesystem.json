@@ -1,0 +1,60 @@
+{
+  "resourceType": "StructureDefinition",
+  "id": "codesystem-property-codesystem",
+  "url": "https://termx.org/fhir/StructureDefinition/codesystem-property-codesystem",
+  "version": "1.0.0",
+  "name": "CodeSystemPropertyCodeSystem",
+  "title": "CodeSystem property code system binding",
+  "status": "active",
+  "experimental": false,
+  "date": "2026-04-01",
+  "publisher": "TermX",
+  "description": "Identifies a code system that the property values of type Coding are drawn from. When this extension is present on a CodeSystem.property element, it indicates that Coding values for this property must come from the referenced code system.",
+  "fhirVersion": "5.0.0",
+  "kind": "complex-type",
+  "abstract": false,
+  "context": [
+    {
+      "type": "element",
+      "expression": "CodeSystem.property"
+    }
+  ],
+  "type": "Extension",
+  "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Extension",
+  "derivation": "constraint",
+  "differential": {
+    "element": [
+      {
+        "id": "Extension",
+        "path": "Extension",
+        "short": "Code system binding for a Coding-type property",
+        "definition": "Identifies a code system that the property values of type Coding are drawn from.",
+        "min": 0,
+        "max": "*"
+      },
+      {
+        "id": "Extension.extension",
+        "path": "Extension.extension",
+        "max": "0"
+      },
+      {
+        "id": "Extension.url",
+        "path": "Extension.url",
+        "fixedUri": "https://termx.org/fhir/StructureDefinition/codesystem-property-codesystem"
+      },
+      {
+        "id": "Extension.value[x]",
+        "path": "Extension.value[x]",
+        "min": 1,
+        "type": [
+          {
+            "code": "canonical",
+            "targetProfile": [
+              "http://hl7.org/fhir/StructureDefinition/CodeSystem"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

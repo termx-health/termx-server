@@ -68,7 +68,7 @@ class CodeSystemFhirMapperSpec extends Specification {
     def valueSets = property.getExtensions("http://hl7.org/fhir/StructureDefinition/codesystem-property-valueset")
         .map { it.valueCanonical }
         .toList()
-    def codeSystems = property.getExtensions("http://fhir.ee/StructureDefinition/codesystem-property-codesystem")
+    def codeSystems = property.getExtensions("https://termx.org/fhir/StructureDefinition/codesystem-property-codesystem")
         .map { it.valueCanonical }
         .collect { it }
         .sort()
@@ -94,9 +94,9 @@ class CodeSystemFhirMapperSpec extends Specification {
                 .setType(EntityPropertyType.coding)
                 .addExtension(new Extension("http://hl7.org/fhir/StructureDefinition/codesystem-property-valueset")
                     .setValueCanonical("http://fhir.ee/ValueSet/vs-1"))
-                .addExtension(new Extension("http://fhir.ee/StructureDefinition/codesystem-property-codesystem")
+                .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/codesystem-property-codesystem")
                     .setValueCanonical("http://fhir.ee/CodeSystem/cs-1"))
-                .addExtension(new Extension("http://fhir.ee/StructureDefinition/codesystem-property-codesystem")
+                .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/codesystem-property-codesystem")
                     .setValueCanonical("http://fhir.ee/CodeSystem/cs-2"))
         ])
 

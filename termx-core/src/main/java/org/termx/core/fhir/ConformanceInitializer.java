@@ -70,6 +70,7 @@ public class ConformanceInitializer extends ConformanceStaticLoader {
         "conformance/StructureDefinition-Parameters.json",
         "conformance/StructureDefinition-Resource.json",
         "conformance/StructureDefinition-ValueSet.json",
+        "conformance/StructureDefinition-codesystem-property-codesystem.json",
         "conformance/StructureDefinition-Provenance.json",
         "conformance/base/SearchParameter.json",
         "conformance/base/profiles-types.json"

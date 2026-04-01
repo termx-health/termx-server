@@ -58,7 +58,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   private static final String DEFINITION = "definition";
   private static final Set<String> IMPLICIT_PROPERTY_DEFINITIONS = Set.of(DISPLAY, DEFINITION);
   private static final String PROPERTY_VALUE_SET_EXTENSION_URL = "http://hl7.org/fhir/StructureDefinition/codesystem-property-valueset";
-  private static final String PROPERTY_CODE_SYSTEM_EXTENSION_URL = "http://fhir.ee/StructureDefinition/codesystem-property-codesystem";
+  private static final String PROPERTY_CODE_SYSTEM_EXTENSION_URL = "https://termx.org/fhir/StructureDefinition/codesystem-property-codesystem";
 
   public CodeSystemFhirMapper(ConceptService conceptService,
                               CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
