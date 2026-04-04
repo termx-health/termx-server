@@ -8,6 +8,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.PipeUtil;
 import org.termx.ts.codesystem.Concept;
 import org.termx.ts.codesystem.ConceptQueryParams;
+import org.termx.ts.codesystem.ConceptTreeItem;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
@@ -93,6 +94,32 @@ public class ConceptRepository extends BaseRepository {
       sb.append(limit(params));
       return getBeans(sb.getSql(), bp, sb.getParams());
     });
+  }
+
+  public List<ConceptTreeItem> queryTree(ConceptTreeQueryParams params, List<String> matchedCodes) {
+    if (CollectionUtils.isEmpty(matchedCodes)) {
+      return List.of();
+    }
+
+    SqlBuilder sb = new SqlBuilder();
+    sb.append("with recursive tree as (");
+    sb.append(" select c.id, c.code_system, c.code, c.description, parent.parent_code, true as matched, array[c.code]::text[] as visited, 0 as depth ");
+    sb.append(" from terminology.concept c ");
+    sb.append(" left join lateral (").append(buildDirectParentSelect("c", params)).append(") parent on true ");
+    sb.append(" where c.sys_status = 'A' ");
+    sb.and().in("c.code_system", splitCsv(params.getMatchParams().getCodeSystem()));
+    sb.and().in("c.code", matchedCodes);
+    sb.append(" union all ");
+    sb.append(" select p.id, p.code_system, p.code, p.description, parent.parent_code, false as matched, tree.visited || p.code, tree.depth + 1 ");
+    sb.append(" from tree ");
+    sb.append(" join terminology.concept p on p.code = tree.parent_code and p.code_system = tree.code_system and p.sys_status = 'A' ");
+    sb.append(" left join lateral (").append(buildDirectParentSelect("p", params)).append(") parent on true ");
+    sb.append(" where tree.parent_code is not null and not p.code = any(tree.visited) ");
+    sb.append(") ");
+    sb.append("select distinct on (code_system, code, parent_code) id, code_system, code, description, parent_code, matched ");
+    sb.append("from tree ");
+    sb.append("order by code_system, code, parent_code nulls first, matched desc, depth asc");
+    return getBeans(sb.getSql(), new PgBeanProcessor(ConceptTreeItem.class), sb.getParams());
   }
 
   private String isLeaf(ConceptQueryParams params) {
@@ -412,5 +439,62 @@ public class ConceptRepository extends BaseRepository {
     return StringUtils.isNotEmpty(sep)
         ? List.of(org.apache.commons.lang3.StringUtils.split(str, sep))
         : List.of(str);
+  }
+
+  private String buildDirectParentSelect(String conceptAlias, ConceptTreeQueryParams params) {
+    String csevAlias = conceptAlias + "_csev";
+    String csaAlias = conceptAlias + "_csa";
+    String parentAlias = conceptAlias + "_parent";
+    String evcsvmAlias = conceptAlias + "_evcsvm";
+    String csvAlias = conceptAlias + "_csv";
+
+    SqlBuilder sb = new SqlBuilder();
+    sb.append("select ").append(parentAlias).append(".code as parent_code ");
+    sb.append("from terminology.code_system_entity_version ").append(csevAlias).append(" ");
+    if (hasVersionFilter(params.getMatchParams())) {
+      sb.append("left join terminology.entity_version_code_system_version_membership ").append(evcsvmAlias)
+          .append(" on ").append(evcsvmAlias).append(".code_system_entity_version_id = ").append(csevAlias).append(".id and ").append(evcsvmAlias).append(".sys_status = 'A' ");
+      sb.append("left join terminology.code_system_version ").append(csvAlias)
+          .append(" on ").append(csvAlias).append(".id = ").append(evcsvmAlias).append(".code_system_version_id and ").append(csvAlias).append(".sys_status = 'A' ");
+    }
+    sb.append("join terminology.code_system_association ").append(csaAlias)
+        .append(" on ").append(csaAlias).append(".source_code_system_entity_version_id = ").append(csevAlias).append(".id ")
+        .append("and ").append(csaAlias).append(".sys_status = 'A' and ").append(csaAlias).append(".status <> 'retired' ")
+        .append("and ").append(csaAlias).append(".association_type = ? ", params.getHierarchyType());
+    sb.append("join terminology.code_system_entity_version ").append(parentAlias)
+        .append(" on ").append(parentAlias).append(".id = ").append(csaAlias).append(".target_code_system_entity_version_id ")
+        .append("and ").append(parentAlias).append(".sys_status = 'A' ");
+    sb.append("where ").append(csevAlias).append(".code_system_entity_id = ").append(conceptAlias).append(".id ")
+        .append("and ").append(csevAlias).append(".sys_status = 'A' and ").append(csevAlias).append(".status <> 'retired' ");
+    appendVersionFilter(sb, params.getMatchParams(), csvAlias);
+    sb.append("order by ").append(parentAlias).append(".code limit 1");
+    return sb.toPrettyString();
+  }
+
+  private void appendVersionFilter(SqlBuilder sb, ConceptQueryParams params, String csvAlias) {
+    if (StringUtils.isNotEmpty(params.getCodeSystemVersionCodeSystem())) {
+      sb.and().in(csvAlias + ".code_system", splitCsv(params.getCodeSystemVersionCodeSystem()));
+    }
+    sb.appendIfNotNull("and " + csvAlias + ".id = ?", params.getCodeSystemVersionId());
+    sb.appendIfNotNull("and " + csvAlias + ".version = ?", params.getCodeSystemVersion());
+    if (StringUtils.isNotEmpty(params.getCodeSystemVersions())) {
+      sb.append(checkCodeSystemVersions(params.getCodeSystemVersions()).replace("csv.", csvAlias + "."));
+    }
+    sb.appendIfNotNull("and " + csvAlias + ".release_date >= ?", params.getCodeSystemVersionReleaseDateGe());
+    sb.appendIfNotNull("and " + csvAlias + ".release_date <= ?", params.getCodeSystemVersionReleaseDateLe());
+    sb.appendIfNotNull("and (" + csvAlias + ".expiration_date >= ? or " + csvAlias + ".expiration_date is null)", params.getCodeSystemVersionExpirationDateGe());
+    sb.appendIfNotNull("and (" + csvAlias + ".expiration_date <= ? or " + csvAlias + ".expiration_date is null)", params.getCodeSystemVersionExpirationDateLe());
+  }
+
+  private boolean hasVersionFilter(ConceptQueryParams params) {
+    return CollectionUtils.isNotEmpty(Stream.of(
+            params.getCodeSystemVersion(), params.getCodeSystemVersionId(), params.getCodeSystemVersions(),
+            params.getCodeSystemVersionReleaseDateLe(), params.getCodeSystemVersionReleaseDateGe(),
+            params.getCodeSystemVersionExpirationDateLe(), params.getCodeSystemVersionExpirationDateGe())
+        .filter(Objects::nonNull).toList());
+  }
+
+  private List<String> splitCsv(String value) {
+    return StringUtils.isEmpty(value) ? List.of() : Arrays.stream(value.split(",")).toList();
   }
 }
