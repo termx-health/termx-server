@@ -17,6 +17,8 @@ import org.termx.ts.codesystem.CodeSystemQueryParams;
 import org.termx.ts.codesystem.CodeSystemVersion;
 import org.termx.ts.codesystem.Concept;
 import org.termx.ts.codesystem.ConceptQueryParams;
+import org.termx.ts.codesystem.ConceptTreeSearchResult;
+import org.termx.ts.codesystem.ConceptTreeItem;
 import org.termx.ts.codesystem.ConceptTransactionRequest;
 import org.termx.ts.codesystem.EntityPropertyValue;
 import io.micronaut.core.util.CollectionUtils;
@@ -138,6 +140,36 @@ public class ConceptService {
     return concepts;
   }
 
+  public ConceptTreeSearchResult queryTree(ConceptQueryParams params) {
+    String hierarchyType = params.getAssociationType();
+    if (StringUtils.isEmpty(hierarchyType)) {
+      ConceptTreeSearchResult empty = new ConceptTreeSearchResult();
+      empty.setData(List.of());
+      empty.setMatchedCount(0);
+      return empty;
+    }
+
+    String codeSystem = params.getCodeSystem();
+    ConceptQueryParams matchParams = copyTreeMatchParams(params);
+    prepareParams(matchParams);
+    QueryResult<Concept> matchedConcepts = repository.query(matchParams);
+
+    ConceptTreeSearchResult result = new ConceptTreeSearchResult();
+    result.setMeta(matchedConcepts.getMeta());
+    result.setQueryParams(matchedConcepts.getQueryParams());
+    result.setMatchedCount(matchedConcepts.getData().size());
+    if (CollectionUtils.isEmpty(matchedConcepts.getData())) {
+      result.setData(List.of());
+      return result;
+    }
+
+    List<ConceptTreeItem> treeItems = repository.queryTree(new ConceptTreeQueryParams(matchParams, hierarchyType),
+        matchedConcepts.getData().stream().map(Concept::getCode).toList());
+    decorate(treeItems.stream().map(i -> (Concept) i).toList(), codeSystem, matchParams);
+    result.setData(treeItems);
+    return result;
+  }
+
   public Optional<Concept> load(Long id) {
     return Optional.ofNullable(repository.load(id)).map(c -> decorate(c, null, null));
   }
@@ -234,6 +266,43 @@ public class ConceptService {
         params.setCodeSystem(String.join(",", codeSystems));
       }
     }
+  }
+
+  private ConceptQueryParams copyTreeMatchParams(ConceptQueryParams params) {
+    return new ConceptQueryParams()
+        .setId(params.getId())
+        .setCode(params.getCode())
+        .setCodeEq(params.getCodeEq())
+        .setCodes(params.getCodes())
+        .setCodeContains(params.getCodeContains())
+        .setTextEq(params.getTextEq())
+        .setTextContains(params.getTextContains())
+        .setTextContainsSep(params.getTextContainsSep())
+        .setCodeSystem(params.getCodeSystem())
+        .setPermittedCodeSystems(params.getPermittedCodeSystems())
+        .setCodeSystemUri(params.getCodeSystemUri())
+        .setCodeSystemVersion(params.getCodeSystemVersion())
+        .setCodeSystemVersionCodeSystem(params.getCodeSystemVersionCodeSystem())
+        .setCodeSystemVersionId(params.getCodeSystemVersionId())
+        .setCodeSystemVersions(params.getCodeSystemVersions())
+        .setCodeSystemVersionReleaseDateLe(params.getCodeSystemVersionReleaseDateLe())
+        .setCodeSystemVersionReleaseDateGe(params.getCodeSystemVersionReleaseDateGe())
+        .setCodeSystemVersionExpirationDateLe(params.getCodeSystemVersionExpirationDateLe())
+        .setCodeSystemVersionExpirationDateGe(params.getCodeSystemVersionExpirationDateGe())
+        .setCodeSystemEntityStatus(params.getCodeSystemEntityStatus())
+        .setCodeSystemEntityVersionId(params.getCodeSystemEntityVersionId())
+        .setProperties(params.getProperties())
+        .setPropertyValues(params.getPropertyValues())
+        .setPropertyValuesPartial(params.getPropertyValuesPartial())
+        .setPropertyRoot(params.getPropertyRoot())
+        .setPropertySource(params.getPropertySource())
+        .setDesignationCiEq(params.getDesignationCiEq())
+        .setUnmapedInMapSetVersionId(params.getUnmapedInMapSetVersionId())
+        .setVerifiedInMapSetVersionId(params.getVerifiedInMapSetVersionId())
+        .setUnverifiedInMapSetVersionId(params.getUnverifiedInMapSetVersionId())
+        .limit(params.getLimit())
+        .offset(params.getOffset())
+        .sort(params.getSort());
   }
 
   @Transactional

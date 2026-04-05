@@ -28,6 +28,8 @@ import org.termx.ts.codesystem.CodeSystemVersion;
 import org.termx.ts.codesystem.CodeSystemVersionQueryParams;
 import org.termx.ts.codesystem.Concept;
 import org.termx.ts.codesystem.ConceptQueryParams;
+import org.termx.ts.codesystem.ConceptTreeSearchResult;
+import org.termx.ts.codesystem.ConceptTreeItem;
 import org.termx.ts.codesystem.ConceptTransactionRequest;
 import org.termx.ts.codesystem.EntityProperty;
 import org.termx.ts.codesystem.EntityPropertyQueryParams;
@@ -226,6 +228,17 @@ public class CodeSystemController {
   public QueryResult<Concept> queryConcepts(@PathVariable String codeSystem, ConceptQueryParams params) {
     params.setCodeSystem(codeSystem);
     return conceptService.query(params);
+  }
+
+  @Authorized(Privilege.CS_VIEW)
+  @Get(uri = "/{codeSystem}/concepts/tree-search{?params*}")
+  public ConceptTreeSearchResult queryConceptTree(@PathVariable String codeSystem, ConceptQueryParams params) {
+    params.setCodeSystem(codeSystem);
+    if (params.getAssociationType() == null) {
+      String hierarchyMeaning = codeSystemService.load(codeSystem).orElseThrow(() -> new NotFoundException("CodeSystem not found: " + codeSystem)).getHierarchyMeaning();
+      params.setAssociationType(hierarchyMeaning);
+    }
+    return conceptService.queryTree(params);
   }
 
   @Authorized(Privilege.CS_VIEW)
