@@ -193,6 +193,7 @@ public class ConceptRepository extends BaseRepository {
         sb.and().in("lower(d.name)", params.getDesignationCiEq().toLowerCase());
       }
       sb.append("))");
+      appendUcumSupplementTextFilter(sb, params);
     }
     if (StringUtils.isNotEmpty(params.getCodeEq())) {
       sb.and("c.code = ?", params.getCodeEq());
@@ -271,6 +272,44 @@ public class ConceptRepository extends BaseRepository {
     sb.appendIfNotNull("and exists(" + msaBase + "and msa.map_set_version_id = ? and msa.verified = true)", params.getVerifiedInMapSetVersionId());
     sb.appendIfNotNull("and exists(" + msaBase + "and msa.map_set_version_id = ? and msa.verified = false)", params.getUnverifiedInMapSetVersionId());
     return sb;
+  }
+
+  private void appendUcumSupplementTextFilter(SqlBuilder sb, ConceptQueryParams params) {
+    if (!Boolean.TRUE.equals(params.getIncludeSupplement())) {
+      return;
+    }
+    if (StringUtils.isNotEmpty(params.getCodeSystem()) && Arrays.stream(params.getCodeSystem().split(",")).noneMatch("ucum"::equals)) {
+      return;
+    }
+
+    sb.append("or exists (");
+    sb.append("select 1 from terminology.code_system cs_sup ");
+    sb.append("inner join (");
+    sb.append("  select distinct on (csv.code_system) csv.id, csv.code_system ");
+    sb.append("  from terminology.code_system_version csv ");
+    sb.append("  where csv.sys_status = 'A' and csv.status = 'active' ");
+    sb.append("  order by csv.code_system, coalesce(csv.release_date, now()) desc, csv.created desc nulls last, csv.version desc");
+    sb.append(") latest_sup on latest_sup.code_system = cs_sup.id ");
+    sb.append("inner join terminology.concept c_sup on c_sup.code_system = cs_sup.id and c_sup.code = c.code and c_sup.sys_status = 'A' ");
+    sb.append("inner join terminology.code_system_entity_version csev_sup on csev_sup.code_system_entity_id = c_sup.id and csev_sup.sys_status = 'A' ");
+    sb.append("inner join terminology.entity_version_code_system_version_membership evcsvm_sup on evcsvm_sup.code_system_entity_version_id = csev_sup.id and evcsvm_sup.code_system_version_id = latest_sup.id and evcsvm_sup.sys_status = 'A' ");
+    sb.append("inner join terminology.designation d_sup on d_sup.code_system_entity_version_id = csev_sup.id and d_sup.sys_status = 'A' ");
+    sb.append("where cs_sup.sys_status = 'A' and cs_sup.content = 'supplement' and cs_sup.base_code_system = c.code_system and c.code_system = 'ucum' ");
+    if (StringUtils.isNotEmpty(params.getDisplayLanguage())) {
+      sb.append("and (d_sup.language = ? or d_sup.language like ?)", params.getDisplayLanguage(), params.getDisplayLanguage() + "-%");
+    }
+    if (StringUtils.isNotEmpty(params.getTextContains())) {
+      sb.append("and (terminology.text_search(d_sup.name) like '%'");
+      split(params.getTextContains(), params.getTextContainsSep()).forEach(t -> sb.append("|| terminology.search_translate(?) || '%'", t));
+      sb.append(")");
+    }
+    if (StringUtils.isNotEmpty(params.getTextEq())) {
+      sb.append("and (terminology.text_search(d_sup.name) = '`' || terminology.search_translate(?) || '`')", params.getTextEq());
+    }
+    if (StringUtils.isNotEmpty(params.getDesignationCiEq())) {
+      sb.and().in("lower(d_sup.name)", params.getDesignationCiEq().toLowerCase());
+    }
+    sb.append(")");
   }
 
   private String checkCodeSystemVersions(String codeSystemVersions) {

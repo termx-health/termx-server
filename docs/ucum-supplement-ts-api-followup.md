@@ -123,6 +123,19 @@ Effectively:
 - `$validate-code` now does the same
 - `$validate-code` now also aligns more closely with lookup by allowing `displayLanguage`-driven supplement auto-discovery through the shared concept path
 
+### 5. Extended TS concept filtering to search UCUM supplement designations
+
+Relevant file:
+
+- [`ConceptRepository.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptRepository.java)
+
+Current implementation details:
+
+- supplement-aware filtering is currently enabled only for `ucum`
+- when supplement loading is requested, concept text filtering also checks the latest active UCUM supplement version designations
+- supplement designation filtering follows `displayLanguage` when it is provided
+- this keeps global concept search on the standard TS concept endpoint while restoring localized UCUM hits without reviving the legacy measurement-unit search path
+
 ## Implemented Web Changes
 
 ### 1. Added a tiny UCUM supplement-request helper
@@ -201,13 +214,7 @@ Recommended future fix:
 
 - pass `SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW)` into the `ConceptQueryParams` used by direct concept GET supplement decoration
 
-### 3. Legacy measurement-unit UI code still exists in `termx-web`
-
-The web still contains the older measurement-unit module and services in multiple files under [`app/src/app/measurement-unit`](/job/helex/htx/termx-web/app/src/app/measurement-unit) and related imports.
-
-This pass only removed the UCUM display dependency from the main concept-display path. It did **not** complete a full deletion or migration of all legacy measurement-unit UI functionality.
-
-### 4. Verification is partially blocked by private dependency access
+### 3. Verification is partially blocked by private dependency access
 
 Attempted verification in `termx-server`:
 
