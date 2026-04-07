@@ -44,6 +44,7 @@ public class ConceptService {
   private final CodeSystemEntityService codeSystemEntityService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
+  private final ConceptSupplementService conceptSupplementService;
   private final List<CodeSystemExternalProvider> codeSystemProviders;
 
   @Transactional
@@ -129,6 +130,7 @@ public class ConceptService {
     for (CodeSystemExternalProvider provider : codeSystemProviders) {
       QueryResult<Concept> result = provider.searchConcepts(params.getCodeSystem(), params);
       if (CollectionUtils.isNotEmpty(result.getData())) {
+        conceptSupplementService.mergeRuntimeSupplements(result.getData(), params);
         return result;
       }
     }
@@ -137,6 +139,7 @@ public class ConceptService {
     prepareParams(params);
     QueryResult<Concept> concepts = repository.query(params);
     concepts.setData(decorate(concepts.getData(), codeSystem, params));
+    conceptSupplementService.mergeRuntimeSupplements(concepts.getData(), params);
     return concepts;
   }
 
@@ -171,7 +174,7 @@ public class ConceptService {
   }
 
   public Optional<Concept> load(Long id) {
-    return Optional.ofNullable(repository.load(id)).map(c -> decorate(c, null, null));
+    return Optional.ofNullable(repository.load(id)).map(c -> decorate(c, null, new ConceptQueryParams()));
   }
 
   public Optional<Concept> load(String codeSystem, String code) {
@@ -179,7 +182,7 @@ public class ConceptService {
     if (CollectionUtils.isEmpty(codeSystems)) {
       return Optional.empty();
     }
-    return Optional.ofNullable(repository.load(codeSystems, code)).map(c -> decorate(c, codeSystem, null));
+    return Optional.ofNullable(repository.load(codeSystems, code)).map(c -> decorate(c, codeSystem, new ConceptQueryParams()));
   }
 
   public Map<String, Concept> batchLoad(List<Pair<String, String>> codeSystemCodePairs) {
@@ -228,11 +231,27 @@ public class ConceptService {
   }
 
   private Concept decorate(Concept concept, String codeSystem, String codeSystemVersion) {
+    return decorate(concept, codeSystem, new ConceptQueryParams().setCodeSystemVersion(codeSystemVersion));
+  }
+
+  public Concept decorate(Concept concept, String codeSystem, ConceptQueryParams params) {
     List<CodeSystemEntityVersion> versions = codeSystemEntityVersionService.query(new CodeSystemEntityVersionQueryParams()
         .setCodeSystemEntityId(concept.getId())
-        .setCodeSystemVersion(codeSystemVersion)
+        .setCodeSystemVersion(params.getCodeSystemVersion())
+        .setCodeSystemVersionId(params.getCodeSystemVersionId())
+        .setCodeSystemVersions(params.getCodeSystemVersions())
         .setCodeSystem(codeSystem)).getData();
     concept.setVersions(versions);
+    ConceptQueryParams supplementParams = new ConceptQueryParams()
+        .setCodeSystem(codeSystem != null ? codeSystem : concept.getCodeSystem())
+        .setCodeSystemVersion(params.getCodeSystemVersion())
+        .setCodeSystemVersionId(params.getCodeSystemVersionId())
+        .setCodeSystemVersions(params.getCodeSystemVersions())
+        .setIncludeSupplement(params.getIncludeSupplement())
+        .setDisplayLanguage(params.getDisplayLanguage())
+        .setUseSupplement(params.getUseSupplement())
+        .setPermittedCodeSystems(params.getPermittedCodeSystems());
+    conceptSupplementService.mergeRuntimeSupplements(concept, supplementParams);
     return concept;
   }
 
