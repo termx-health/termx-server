@@ -17,8 +17,10 @@ import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersi
 import org.termx.terminology.terminology.codesystem.entity.CodeSystemSupplementService;
 import org.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
+import org.termx.terminology.terminology.valueset.ValueSetCodeSystemImpactService;
 import org.termx.ts.codesystem.CodeSystem;
 import org.termx.ts.codesystem.CodeSystemAssociation;
+import org.termx.ts.codesystem.CodeSystemArtifactImpact;
 import org.termx.ts.codesystem.CodeSystemSupplementRequest;
 import org.termx.ts.codesystem.CodeSystemEntityVersion;
 import org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
@@ -70,6 +72,7 @@ public class CodeSystemController {
   private final CodeSystemSupplementService codeSystemSupplementService;
   private final CodeSystemProvenanceService provenanceService;
   private final LorqueProcessService lorqueProcessService;
+  private final ValueSetCodeSystemImpactService valueSetCodeSystemImpactService;
 
   //----------------CodeSystem----------------
 
@@ -148,6 +151,13 @@ public class CodeSystemController {
   @Get(uri = "/{codeSystem}/versions/{version}")
   public CodeSystemVersion getCodeSystemVersion(@PathVariable String codeSystem, @PathVariable String version) {
     return codeSystemVersionService.load(codeSystem, version).orElseThrow(() -> new NotFoundException("CodeSystemVersion not found: " + codeSystem));
+  }
+
+  @Authorized(Privilege.CS_VIEW)
+  @Get(uri = "/{codeSystem}/value-set-impacts")
+  public List<CodeSystemArtifactImpact> getValueSetImpacts(@PathVariable String codeSystem) {
+    SessionStore.require().checkPermitted(codeSystem, Privilege.CS_VIEW);
+    return valueSetCodeSystemImpactService.findValueSetImpacts(codeSystem);
   }
 
   @Authorized(Privilege.CS_EDIT)

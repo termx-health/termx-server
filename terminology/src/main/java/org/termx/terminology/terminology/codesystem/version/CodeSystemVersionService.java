@@ -1,8 +1,10 @@
 package org.termx.terminology.terminology.codesystem.version;
 
 import com.kodality.commons.model.QueryResult;
+import jakarta.inject.Provider;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
+import org.termx.terminology.terminology.valueset.ValueSetCodeSystemImpactService;
 import org.termx.ts.PublicationStatus;
 import org.termx.ts.codesystem.CodeSystemEntityVersion;
 import org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CodeSystemVersionService {
   private final CodeSystemVersionRepository repository;
   private final CodeSystemEntityVersionService entityVersionService;
+  private final Provider<ValueSetCodeSystemImpactService> valueSetCodeSystemImpactServiceProvider;
 
   @Transactional
   public void save(CodeSystemVersion version) {
@@ -91,6 +94,7 @@ public class CodeSystemVersionService {
     }
     repository.activate(codeSystem, version);
     entityVersionService.activate(codeSystem, version);
+    valueSetCodeSystemImpactServiceProvider.get().refreshDynamicValueSets(codeSystem);
   }
 
   @Transactional

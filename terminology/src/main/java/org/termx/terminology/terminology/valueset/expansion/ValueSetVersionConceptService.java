@@ -19,6 +19,7 @@ import org.termx.ts.codesystem.EntityPropertyType;
 import org.termx.ts.codesystem.EntityPropertyValue;
 import org.termx.ts.property.PropertyReference;
 import org.termx.ts.valueset.ValueSetSnapshot;
+import org.termx.ts.valueset.ValueSetSnapshotDependency;
 import org.termx.ts.valueset.ValueSetVersion;
 import org.termx.ts.valueset.ValueSetVersionConcept;
 import org.termx.ts.valueset.ValueSetVersionRuleSet;
@@ -44,6 +45,7 @@ public class ValueSetVersionConceptService {
   private final ValueSetSnapshotService valueSetSnapshotService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final EntityPropertyService entityPropertyService;
+  private final ValueSetCodeSystemVersionResolver codeSystemVersionResolver;
 
   private static final String DEPRECATION_DATE = "deprecationDate";
   private static final String INACTIVE = "inactive";
@@ -57,7 +59,7 @@ public class ValueSetVersionConceptService {
       return new ArrayList<>();
     }
     List<ValueSetVersionConcept> expansion = expand(version, null);
-    valueSetSnapshotService.createSnapshot(vs, version.getId(), expansion);
+    valueSetSnapshotService.createSnapshot(vs, version.getId(), expansion, resolveDependencies(version));
     return expansion;
   }
 
@@ -76,12 +78,13 @@ public class ValueSetVersionConceptService {
     if (!includeDesignations &&
         StringUtils.isEmpty(preferredLanguage) &&
         PublicationStatus.active.equals(version.getStatus()) &&
-        snapshot != null && snapshot.getExpansion() != null) {
+        snapshot != null && snapshot.getExpansion() != null &&
+        isSnapshotCurrent(version, snapshot)) {
       return snapshot;
     }
     
     List<ValueSetVersionConcept> expansion = expand(version, preferredLanguage, includeDesignations);
-    snapshot = valueSetSnapshotService.createSnapshot(vs, version.getId(), expansion);
+    snapshot = valueSetSnapshotService.createSnapshot(vs, version.getId(), expansion, resolveDependencies(version));
 
     return snapshot;
   }
@@ -98,7 +101,8 @@ public class ValueSetVersionConceptService {
     if (!includeDesignations &&
         StringUtils.isEmpty(preferredLanguage) &&
         PublicationStatus.active.equals(version.getStatus()) &&
-        version.getSnapshot() != null && version.getSnapshot().getExpansion() != null) {
+        version.getSnapshot() != null && version.getSnapshot().getExpansion() != null &&
+        isSnapshotCurrent(version, version.getSnapshot())) {
       return version.getSnapshot().getExpansion();
     }
 
@@ -240,6 +244,39 @@ public class ValueSetVersionConceptService {
       return null;
     }
     return Optional.ofNullable(vsVersion).map(v -> valueSetVersionRepository.load(vs, v)).orElse(valueSetVersionRepository.loadLastVersion(vs));
+  }
+
+  private List<ValueSetSnapshotDependency> resolveDependencies(ValueSetVersion version) {
+    return codeSystemVersionResolver.collectDependencies(version);
+  }
+
+  private boolean isSnapshotCurrent(ValueSetVersion version, ValueSetSnapshot snapshot) {
+    List<ValueSetVersionRule> rules = Optional.ofNullable(version.getRuleSet()).map(ValueSetVersionRuleSet::getRules).orElse(List.of());
+    boolean hasDynamicRules = rules.stream().anyMatch(codeSystemVersionResolver::isDynamic);
+    if (!hasDynamicRules) {
+      return true;
+    }
+    List<ValueSetSnapshotDependency> dependencies = Optional.ofNullable(snapshot.getDependencies()).orElse(List.of());
+    if (dependencies.isEmpty()) {
+      return false;
+    }
+    Map<String, ValueSetSnapshotDependency> dependencyMap = dependencies.stream()
+        .filter(ValueSetSnapshotDependency::isDynamic)
+        .filter(d -> d.getCodeSystem() != null)
+        .collect(Collectors.toMap(ValueSetSnapshotDependency::getCodeSystem, d -> d, (left, right) -> left));
+
+    return rules.stream()
+        .filter(codeSystemVersionResolver::isDynamic)
+        .allMatch(rule -> {
+          ValueSetSnapshotDependency dependency = dependencyMap.get(rule.getCodeSystem());
+          if (dependency == null) {
+            return false;
+          }
+          CodeSystemVersionReference currentVersion = codeSystemVersionResolver.copyReference(
+              codeSystemVersionResolver.resolve(rule.getCodeSystem(), null));
+          return Objects.equals(currentVersion == null ? null : currentVersion.getId(),
+              dependency.getCodeSystemVersion() == null ? null : dependency.getCodeSystemVersion().getId());
+        });
   }
 
   public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {

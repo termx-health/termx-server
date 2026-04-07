@@ -30,6 +30,7 @@ public class ValueSetVersionRepository extends BaseRepository {
       "   'valueSet', vss.value_set, " +
       "   'valueSetVersion', (select json_build_object('id', vsv2.id, 'version', vsv2.version) from terminology.value_set_version vsv2 where vsv2.id = vss.value_set_version_id and vsv2.sys_status = 'A'), " +
       "   'expansion', vss.expansion, " +
+      "   'dependencies', vss.dependencies, " +
       "   'createdAt', vss.created_at, " +
       "   'createdBy', vss.created_by, " +
       "   'conceptsTotal', vss.concepts_total " +
@@ -159,6 +160,7 @@ public class ValueSetVersionRepository extends BaseRepository {
     sb.appendIfNotNull("and exists (select 1 from jsonb_array_elements(vss.expansion::jsonb) exp where (exp -> 'concept' ->> 'code') = ?)",
         params.getConceptCode());
     sb.appendIfNotNull("and vsvr.type = 'include' and cs.uri = ?", params.getCodeSystemUri());
+    sb.appendIfNotNull("and vsvr.code_system = ?", params.getCodeSystem());
 
     sb.and().in("vsv.id", params.getIds(), Long::valueOf);
     sb.appendIfNotNull("and vsv.version = ?", params.getVersion());

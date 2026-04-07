@@ -132,7 +132,13 @@ WITH recursive vs AS (
          left outer join terminology.code_system bcs on bcs.id = cs.base_code_system and bcs.sys_status = 'A'
          inner join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A'
                 and ((t.version is not null and csv."version" = t.version ) or
-                     (t.version is null and csv.id = (select max(id) from terminology.code_system_version t2 where t2.code_system = cs.id and t2.sys_status='A'))
+                     (t.version is null and csv.id = (select t2.id
+                                                        from terminology.code_system_version t2
+                                                       where t2.code_system = cs.id
+                                                         and t2.sys_status = 'A'
+                                                         and t2.status in ('active', 'draft')
+                                                       order by coalesce(t2.release_date, now()) desc, t2.version desc, t2.id desc
+                                                       limit 1))
                     )
          left outer join terminology.code_system_entity_version csev on csev.code_system = cs.id
                 and csev.code = t.code
@@ -169,8 +175,13 @@ WITH recursive vs AS (
          left outer join terminology.code_system bcs on bcs.id = cs.base_code_system and bcs.sys_status = 'A'
          inner join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A'
                 and ((r.version is not null and csv."version" = r.version ) or
-                     (r.version is null and csv.id = (select max(id) from terminology.code_system_version t2
-                                                       where t2.code_system = cs.id and t2.sys_status='A'))
+                     (r.version is null and csv.id = (select t2.id
+                                                        from terminology.code_system_version t2
+                                                       where t2.code_system = cs.id
+                                                         and t2.sys_status = 'A'
+                                                         and t2.status in ('active', 'draft')
+                                                       order by coalesce(t2.release_date, now()) desc, t2.version desc, t2.id desc
+                                                       limit 1))
                     )
    where r.filters is not null
 )
@@ -278,8 +289,13 @@ WITH recursive vs AS (
          left outer join terminology.code_system bcs on bcs.id = cs.base_code_system and bcs.sys_status = 'A'
          inner join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A'
                 and ((r.version is not null and csv."version" = r.version ) or
-                     (r.version is null and csv.id = (select max(id) from terminology.code_system_version t2
-                                                       where t2.code_system = cs.id and t2.sys_status='A'))
+                     (r.version is null and csv.id = (select t2.id
+                                                        from terminology.code_system_version t2
+                                                       where t2.code_system = cs.id
+                                                         and t2.sys_status = 'A'
+                                                         and t2.status in ('active', 'draft')
+                                                       order by coalesce(t2.release_date, now()) desc, t2.version desc, t2.id desc
+                                                       limit 1))
                     )
          inner join terminology.code_system_entity_version csev on cs.id = csev.code_system and csev.sys_status='A'
          inner join terminology.entity_version_code_system_version_membership evcsvm on evcsvm.sys_status = 'A'

@@ -20,6 +20,7 @@ class ValueSetVersionConceptServiceTest extends Specification {
   def valueSetSnapshotService = Mock(ValueSetSnapshotService)
   def codeSystemEntityVersionService = Mock(CodeSystemEntityVersionService)
   def entityPropertyService = Mock(EntityPropertyService)
+  def codeSystemVersionResolver = Mock(ValueSetCodeSystemVersionResolver)
 
   def "expand returns external provider concepts with preferred language"() {
     given:
@@ -33,7 +34,8 @@ class ValueSetVersionConceptServiceTest extends Specification {
         valueSetVersionRepository,
         valueSetSnapshotService,
         codeSystemEntityVersionService,
-        entityPropertyService
+        entityPropertyService,
+        codeSystemVersionResolver
     )
 
     when:
@@ -56,7 +58,8 @@ class ValueSetVersionConceptServiceTest extends Specification {
         valueSetVersionRepository,
         valueSetSnapshotService,
         codeSystemEntityVersionService,
-        entityPropertyService
+        entityPropertyService,
+        codeSystemVersionResolver
     )
     def version = valueSetVersion()
         .setStatus("active")

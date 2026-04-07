@@ -6,6 +6,7 @@ import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.util.JsonUtil;
 import org.termx.ts.valueset.ValueSetSnapshot;
+import org.termx.ts.valueset.ValueSetSnapshotDependency;
 import org.termx.ts.valueset.ValueSetVersionConcept;
 import jakarta.inject.Singleton;
 
@@ -13,6 +14,7 @@ import jakarta.inject.Singleton;
 public class ValueSetSnapshotRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(ValueSetSnapshot.class, bp -> {
     bp.addColumnProcessor("expansion", PgBeanProcessor.fromJson(JsonUtil.getListType(ValueSetVersionConcept.class)));
+    bp.addColumnProcessor("dependencies", PgBeanProcessor.fromJson(JsonUtil.getListType(ValueSetSnapshotDependency.class)));
     bp.addColumnProcessor("value_set_version", PgBeanProcessor.fromJson());
   });
 
@@ -26,6 +28,7 @@ public class ValueSetSnapshotRepository extends BaseRepository {
     ssb.property("value_set_version_id", snapshot.getValueSetVersion().getId());
     ssb.property("concepts_total", snapshot.getConceptsTotal());
     ssb.jsonProperty("expansion", snapshot.getExpansion(), false);
+    ssb.jsonProperty("dependencies", snapshot.getDependencies(), false);
     ssb.property("created_at", snapshot.getCreatedAt());
     ssb.property("created_by", snapshot.getCreatedBy());
     SqlBuilder sb = ssb.buildSave("terminology.value_set_snapshot", "id");

@@ -15,6 +15,7 @@ public class ValueSetSnapshot {
   private ValueSetVersionReference valueSetVersion;
   private Integer conceptsTotal;
   private List<ValueSetVersionConcept> expansion;
+  private List<ValueSetSnapshotDependency> dependencies;
   private OffsetDateTime createdAt;
   private String createdBy;
 }

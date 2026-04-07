@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
+import org.termx.ts.valueset.ValueSetSnapshotDependency;
 
 @Singleton
 @RequiredArgsConstructor
@@ -15,6 +16,11 @@ public class ValueSetSnapshotService {
   private final ValueSetSnapshotRepository repository;
 
   public ValueSetSnapshot createSnapshot(String valueSet, Long versionId, List<ValueSetVersionConcept> expansion) {
+    return createSnapshot(valueSet, versionId, expansion, null);
+  }
+
+  public ValueSetSnapshot createSnapshot(String valueSet, Long versionId, List<ValueSetVersionConcept> expansion,
+                                         List<ValueSetSnapshotDependency> dependencies) {
     if (valueSet == null || versionId == null || expansion == null) {
       return null;
     }
@@ -23,6 +29,7 @@ public class ValueSetSnapshotService {
       snapshot = new ValueSetSnapshot().setValueSet(valueSet).setValueSetVersion(new ValueSetVersionReference().setId(versionId));
     }
     snapshot.setExpansion(expansion);
+    snapshot.setDependencies(dependencies);
     snapshot.setConceptsTotal(expansion.size());
     snapshot.setCreatedAt(OffsetDateTime.now());
     snapshot.setCreatedBy(SessionStore.require().getUsername());

@@ -20,9 +20,9 @@ with rules as (
              (select csv.id
                 from terminology.code_system_version csv
                where csv.code_system = r.code_system
-                 and csv.status = 'active'
+                 and csv.status in ('active', 'draft')
                  and csv.sys_status = 'A'
-               order by csv.release_date desc, csv.id desc
+               order by coalesce(csv.release_date, now()) desc, csv.version desc, csv.id desc
                limit 1)
          ) as code_system_version_id,
          r.filters, r.concepts, cs.uri uri, bcs.uri base_uri, r.value_set_version_id
@@ -309,27 +309,14 @@ expression_concepts as (
 ),
 cs_all as (
   select t.rule_id, t."type", t.code_system, t.original_code_system_version_id, t.code_system_version_id, csev.id csev_id, csev.code csev_code,
-         jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri, 'baseCodeSystemUri', t.base_uri, 'codeSystemVersionId', t.code_system_version_id) obj,
-         row_number() over (partition by t.rule_id, t.code_system, csev.code
-                            order by case when evcsvm.code_system_version_id = t.code_system_version_id then 0 else 1 end,
-                                     csv.release_date desc) as version_rn
+         jsonb_build_object('conceptVersionId', csev.id, 'code', csev.code, 'codeSystem', t.code_system, 'codeSystemUri', t.uri, 'baseCodeSystemUri', t.base_uri, 'codeSystemVersionId', t.code_system_version_id) obj
     from rules t,
          terminology.code_system_entity_version csev,
-         terminology.entity_version_code_system_version_membership evcsvm,
-         terminology.code_system_version csv
+         terminology.entity_version_code_system_version_membership evcsvm
    where t.code_system = csev.code_system
      and evcsvm.sys_status = 'A' and csev.sys_status='A'
      and csev.id = evcsvm.code_system_entity_version_id
-     and (evcsvm.code_system_version_id = t.code_system_version_id
-           or evcsvm.code_system_version_id in (
-               select csv2.id
-                 from terminology.code_system_version csv2
-                where csv2.code_system = t.code_system
-                  and csv2.sys_status = 'A'
-                  and csv2.release_date <= (select csv3.release_date
-                                              from terminology.code_system_version csv3
-                                             where csv3.id = t.code_system_version_id)))
-     and csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A'
+     and evcsvm.code_system_version_id = t.code_system_version_id
      and t.filters is null and t.concepts is null
      and not exists (
          select 1
@@ -342,7 +329,6 @@ cs_all as (
 cs as (
   select rule_id, "type", code_system, original_code_system_version_id, code_system_version_id, csev_id, csev_code, obj
     from cs_all
-   where version_rn = 1
 ),
 vs as (
   select s.* from rules t, lateral terminology.value_set_expand(t.value_set_version_id) s

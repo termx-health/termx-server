@@ -35,6 +35,7 @@ public class ValueSetVersionQueryParams extends QueryParams {
 
   private String conceptCode; // eq
   private String codeSystemUri; // eq
+  private String codeSystem; // eq
 
   private String ids; // eq, multiple
   private String version; // eq
@@ -44,4 +45,3 @@ public class ValueSetVersionQueryParams extends QueryParams {
   private LocalDate releaseDateGe;
   private LocalDate expirationDateGe;
 }
-

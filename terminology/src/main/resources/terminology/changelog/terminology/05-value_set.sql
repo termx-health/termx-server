@@ -242,3 +242,7 @@ add column external_web_source text;
 --rollback  drop column if exists external_web_source,
 --rollback  add column external_web_source boolean;
 --
+
+--changeset termx:value_set_snapshot-dependencies
+alter table terminology.value_set_snapshot add column dependencies jsonb;
+--
