@@ -61,6 +61,8 @@ liquibase:
       parameters:
         app-username: ${datasources.default.username}
 auth:
+  guest:
+    disabled: ${GUEST_DISABLED:false}
   mock:
     enabled: ${AUTH_MOCK_ENABLED:false}
     default-user: ${AUTH_MOCK_DEFAULT_USER:admin}

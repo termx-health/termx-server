@@ -17,7 +17,7 @@ public class YupiSessionProvider extends SessionProvider {
 
   @Override
   public int getOrder() {
-    return 20;
+    return 10;
   }
 
   @Override
