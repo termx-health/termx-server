@@ -1,9 +1,9 @@
 package org.termx.terminology.terminology.codesystem.concept;
 
 import com.kodality.commons.model.QueryResult;
+import org.termx.terminology.terminology.codesystem.CodeSystemRepository;
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import org.termx.ts.PublicationStatus;
-import org.termx.terminology.terminology.codesystem.CodeSystemService;
 import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import org.termx.ts.codesystem.CodeSystem;
 import org.termx.ts.codesystem.CodeSystemContent;
@@ -34,7 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 @RequiredArgsConstructor
 public class ConceptSupplementService {
   private final ConceptRepository conceptRepository;
-  private final CodeSystemService codeSystemService;
+  private final CodeSystemRepository codeSystemRepository;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
@@ -127,7 +127,7 @@ public class ConceptSupplementService {
 
     Map<String, List<ResolvedSupplement>> result = new LinkedHashMap<>();
     parseRequestedSupplements(params.getUseSupplement()).forEach(requested -> {
-      CodeSystem supplement = codeSystemService.query(new CodeSystemQueryParams().setUri(requested.uri()).limit(1)).findFirst().orElse(null);
+      CodeSystem supplement = codeSystemRepository.query(new CodeSystemQueryParams().setUri(requested.uri()).limit(1)).findFirst().orElse(null);
       if (supplement == null || StringUtils.isBlank(supplement.getBaseCodeSystem()) || !baseCodeSystems.contains(supplement.getBaseCodeSystem())) {
         return;
       }
@@ -136,7 +136,7 @@ public class ConceptSupplementService {
     });
 
     if (Boolean.TRUE.equals(params.getIncludeSupplement()) && StringUtils.isNotBlank(params.getDisplayLanguage())) {
-      baseCodeSystems.forEach(baseCodeSystem -> codeSystemService.query(new CodeSystemQueryParams()
+      baseCodeSystems.forEach(baseCodeSystem -> codeSystemRepository.query(new CodeSystemQueryParams()
               .setBaseCodeSystem(baseCodeSystem)
               .setContent(CodeSystemContent.supplement)
               .all())
