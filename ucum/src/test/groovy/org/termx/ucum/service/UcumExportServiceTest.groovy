@@ -1,16 +1,26 @@
 package org.termx.ucum.service
 
 import com.kodality.commons.model.QueryResult
+import org.termx.terminology.terminology.codesystem.CodeSystemRepository
 import org.termx.terminology.terminology.codesystem.CodeSystemService
+import org.termx.terminology.terminology.codesystem.concept.ConceptRepository
 import org.termx.terminology.terminology.codesystem.concept.ConceptService
+import org.termx.terminology.terminology.codesystem.designation.DesignationService
+import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionRepository
+import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionRepository
 import org.termx.ts.codesystem.CodeSystem
 import org.termx.ts.codesystem.CodeSystemEntityVersion
+import org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams
 import org.termx.ts.codesystem.Concept
 import org.termx.ts.codesystem.CodeSystemQueryParams
+import org.termx.ts.codesystem.CodeSystemVersion
+import org.termx.ts.codesystem.CodeSystemVersionQueryParams
 import org.termx.ts.codesystem.ConceptQueryParams
 import org.termx.ts.codesystem.Designation
+import org.termx.ts.codesystem.DesignationQueryParams
 import org.termx.ucum.ts.UcumMapper
 import org.termx.ucum.ts.UcumConceptResolver
+import org.termx.ucum.ts.UcumSupplementDesignationService
 import org.termx.ucum.dto.DefinedUnitDto
 import org.termx.ucum.dto.UcumExportRequestDto
 import org.termx.ucum.dto.ValidateResponseDto
@@ -40,7 +50,7 @@ class UcumExportServiceTest extends Specification {
         ])
       }
     }
-    def conceptService = new ConceptService(null, null, null, null, null, List.of()) {
+    def conceptService = new ConceptService(null, null, null, null, null, null, List.of()) {
       @Override
       QueryResult<Concept> query(ConceptQueryParams params) {
         assert params.codeSystem == "ucum-supplement-lt"
@@ -54,7 +64,7 @@ class UcumExportServiceTest extends Specification {
         ])
       }
     }
-    def resolver = new UcumConceptResolver(new UcumMapper(), ucumService)
+    def resolver = new UcumConceptResolver(new UcumMapper(), ucumService, emptySupplementService())
 
     def service = new UcumExportService(resolver, codeSystemService, conceptService)
     def request = new UcumExportRequestDto()
@@ -85,5 +95,40 @@ class UcumExportServiceTest extends Specification {
     dto.setNames(names)
     dto.setProperty(property)
     return dto
+  }
+
+  private static UcumSupplementDesignationService emptySupplementService() {
+    new UcumSupplementDesignationService(
+        new CodeSystemRepository() {
+          @Override
+          QueryResult<CodeSystem> query(CodeSystemQueryParams params) {
+            return QueryResult.empty()
+          }
+        },
+        new CodeSystemVersionRepository() {
+          @Override
+          QueryResult<CodeSystemVersion> query(CodeSystemVersionQueryParams params) {
+            return QueryResult.empty()
+          }
+        },
+        new ConceptRepository() {
+          @Override
+          QueryResult<Concept> query(ConceptQueryParams params) {
+            return QueryResult.empty()
+          }
+        },
+        new CodeSystemEntityVersionRepository() {
+          @Override
+          QueryResult<CodeSystemEntityVersion> query(CodeSystemEntityVersionQueryParams params) {
+            return QueryResult.empty()
+          }
+        },
+        new DesignationService(null) {
+          @Override
+          QueryResult<Designation> query(DesignationQueryParams params) {
+            return QueryResult.empty()
+          }
+        }
+    )
   }
 }

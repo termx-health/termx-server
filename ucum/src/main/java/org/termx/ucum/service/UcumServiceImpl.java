@@ -2,11 +2,13 @@ package org.termx.ucum.service;
 
 import org.termx.ucum.essence.UcumEssenceStorageService;
 import jakarta.inject.Singleton;
+import jakarta.inject.Provider;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fhir.ucum.*;
 import org.fhir.ucum.UcumService.UcumVersionDetails;
+import org.termx.core.ts.UcumSearchCacheInvalidator;
 import org.termx.ucum.dto.BaseUnitDto;
 import org.termx.ucum.dto.DefinedUnitDto;
 import org.termx.ucum.dto.PrefixDto;
@@ -51,16 +53,18 @@ public class UcumServiceImpl implements UcumService {
     private final BaseUnitMapper baseUnitMapper;
     private final PrefixMapper prefixMapper;
     private final UcumEssenceStorageService essenceStorageService;
+    private final Provider<UcumSearchCacheInvalidator> ucumSearchCacheInvalidatorProvider;
 
     private org.fhir.ucum.UcumEssenceService ucumService;
 
     @PostConstruct
     void initializeService() {
-        reload();
+        this.ucumService = initUcumService();
     }
 
     public synchronized void reload() {
         this.ucumService = initUcumService();
+        ucumSearchCacheInvalidatorProvider.get().invalidate();
     }
 
     private org.fhir.ucum.UcumEssenceService initUcumService() {

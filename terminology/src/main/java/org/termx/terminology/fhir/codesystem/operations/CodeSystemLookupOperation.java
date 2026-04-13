@@ -12,7 +12,6 @@ import org.termx.terminology.terminology.codesystem.CodeSystemService;
 import org.termx.terminology.terminology.codesystem.concept.ConceptService;
 import org.termx.terminology.terminology.codesystem.concept.ConceptUtil;
 import org.termx.ts.codesystem.CodeSystem;
-import org.termx.ts.codesystem.CodeSystemContent;
 import org.termx.ts.codesystem.CodeSystemEntityVersion;
 import org.termx.ts.codesystem.CodeSystemQueryParams;
 import org.termx.ts.codesystem.CodeSystemVersionReference;
@@ -32,7 +31,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -105,8 +103,9 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
         .or(() -> req.findParameter("code").map(ParametersParameter::getValueCode))
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
     LocalDate date = req.findParameter("date").map(pp -> LocalDateTime.parse(pp.getValueString()).toLocalDate()).orElse(null);
-
-
+    String displayLanguage = req.findParameter("displayLanguage")
+        .map(p -> StringUtils.firstNonBlank(p.getValueCode(), p.getValueString()))
+        .orElse(null);
 
     ConceptQueryParams cQueryParams = new ConceptQueryParams()
         .setCodeSystem(csId)
@@ -114,16 +113,14 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
         .setCodeSystemVersion(version)
         .setCodeSystemVersionReleaseDateGe(date)
         .setCodeSystemVersionExpirationDateLe(date)
+        .setIncludeSupplement(true)
+        .setDisplayLanguage(displayLanguage)
+        .setUseSupplement(extractUseSupplement(req))
         .limit(1);
     Concept c = conceptService.query(cQueryParams).findFirst()
         .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "Concept not found"));
 
-    String displayLanguage = req.findParameter("displayLanguage")
-        .map(p -> StringUtils.firstNonBlank(p.getValueCode(), p.getValueString()))
-        .orElse(null);
-
     List<Designation> designations = new ArrayList<>(c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getDesignations).orElse(List.of()));
-    designations.addAll(loadSupplementDesignations(csId, code, displayLanguage, req));
 
     Parameters resp = new Parameters();
     resp.addParameter(new ParametersParameter().setName("name").setValueString(c.getCodeSystem()));
@@ -168,50 +165,16 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
     return defaultPropertyMode == LookupDefaultPropertyMode.ALL;
   }
 
-  private List<Designation> loadSupplementDesignations(String csId, String code, String displayLanguage, Parameters req) {
-    List<String> requestedSupplements = req.getParameter().stream()
+  private static String extractUseSupplement(Parameters req) {
+    return req.getParameter().stream()
         .filter(p -> "useSupplement".equals(p.getName()))
         .map(p -> p.getValueCanonical() != null ? p.getValueCanonical() :
             p.getValueUri() != null ? p.getValueUri() :
                 p.getValueUrl() != null ? p.getValueUrl() :
                     p.getValueString())
-        .filter(s -> s != null && !s.isBlank())
-        .toList();
-
-    List<String> discoveredSupplements = StringUtils.isBlank(displayLanguage) ? List.of() :
-        codeSystemService.query(new CodeSystemQueryParams()
-            .setBaseCodeSystem(csId)
-            .setContent(CodeSystemContent.supplement)
-            .all()).getData().stream()
-            .map(CodeSystem::getUri)
-            .filter(StringUtils::isNotBlank)
-            .toList();
-
-    LinkedHashSet<String> supplementRefs = new LinkedHashSet<>();
-    supplementRefs.addAll(requestedSupplements);
-    supplementRefs.addAll(discoveredSupplements);
-    List<String> supplements = new ArrayList<>(supplementRefs);
-    if (supplements.isEmpty()) {
-      return List.of();
-    }
-    return supplements.stream().map(s -> {
-      String[] sv = s.split("\\|", 2);
-      String uri = sv[0];
-      String version = sv.length > 1 ? sv[1] : null;
-      CodeSystem supplement = codeSystemService.query(new CodeSystemQueryParams().setUri(uri).limit(1)).findFirst().orElse(null);
-      if (supplement == null || !csId.equals(supplement.getBaseCodeSystem())) {
-        return null;
-      }
-      Concept concept = conceptService.query(new ConceptQueryParams()
-          .setCodeSystem(supplement.getId())
-          .setCodeEq(code)
-          .setCodeSystemVersion(version)
-          .limit(1)).findFirst().orElse(null);
-      return concept != null && concept.getVersions() != null && !concept.getVersions().isEmpty() ?
-          concept.getVersions().getFirst().getDesignations() : null;
-    }).filter(ds -> ds != null).flatMap(List::stream)
-        .filter(d -> languageMatches(d.getLanguage(), displayLanguage))
-        .toList();
+        .filter(StringUtils::isNotBlank)
+        .distinct()
+        .collect(java.util.stream.Collectors.joining(","));
   }
 
   private static boolean languageMatches(String language, String displayLanguage) {

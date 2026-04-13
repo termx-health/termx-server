@@ -44,7 +44,7 @@ class CodeSystemUcumOperationsTest extends Specification {
       if (p.uri == "http://unitsofmeasure.org") {
         return new QueryResult([new CodeSystem().setId("ucum").setUri("http://unitsofmeasure.org")])
       }
-      if (p.uri == "https://termx.org/fhir/CodeSystem/ucum-supplement-lt") {
+      if (p.baseCodeSystem == "ucum" && p.content == "supplement") {
         return new QueryResult([new CodeSystem().setId("ucum-supplement-lt").setBaseCodeSystem("ucum")])
       }
       return QueryResult.empty()
@@ -52,15 +52,16 @@ class CodeSystemUcumOperationsTest extends Specification {
     conceptService.query(_ as ConceptQueryParams) >> { args ->
       ConceptQueryParams p = args[0]
       if (p.codeSystem == "ucum") {
-        return new QueryResult([concept("mL", [
+        def designations = [
             designation("display", "en", "milliliter")
-        ])])
-      }
-      if (p.codeSystem == "ucum-supplement-lt") {
-        return new QueryResult([concept("mL", [
+        ]
+        if ((p.useSupplement?.contains("https://termx.org/fhir/CodeSystem/ucum-supplement-lt") || p.displayLanguage == "lt") && p.includeSupplement) {
+          designations.addAll([
             designation("abbreviation", "lt", "ml"),
             designation("definition", "lt", "Milliliter")
-        ])])
+          ])
+        }
+        return new QueryResult([concept("mL", designations)])
       }
       return QueryResult.empty()
     }
@@ -87,7 +88,7 @@ class CodeSystemUcumOperationsTest extends Specification {
       if (p.uri == "http://unitsofmeasure.org") {
         return new QueryResult([new CodeSystem().setId("ucum").setUri("http://unitsofmeasure.org")])
       }
-      if (p.uri == "https://termx.org/fhir/CodeSystem/ucum-supplement-lt") {
+      if (p.baseCodeSystem == "ucum" && p.content == "supplement") {
         return new QueryResult([new CodeSystem().setId("ucum-supplement-lt").setBaseCodeSystem("ucum")])
       }
       return QueryResult.empty()
@@ -95,15 +96,16 @@ class CodeSystemUcumOperationsTest extends Specification {
     conceptService.query(_ as ConceptQueryParams) >> { args ->
       ConceptQueryParams p = args[0]
       if (p.codeSystem == "ucum") {
-        return new QueryResult([concept("mL", [
+        def designations = [
             designation("display", "en", "milliliter")
-        ])])
-      }
-      if (p.codeSystem == "ucum-supplement-lt") {
-        return new QueryResult([concept("mL", [
+        ]
+        if (p.useSupplement?.contains("https://termx.org/fhir/CodeSystem/ucum-supplement-lt") && p.includeSupplement) {
+          designations.addAll([
             designation("abbreviation", "lt", "ml"),
             designation("definition", "lt", "Milliliter")
-        ])])
+          ])
+        }
+        return new QueryResult([concept("mL", designations)])
       }
       return QueryResult.empty()
     }
@@ -147,15 +149,16 @@ class CodeSystemUcumOperationsTest extends Specification {
     conceptService.query(_ as ConceptQueryParams) >> { args ->
       ConceptQueryParams p = args[0]
       if (p.codeSystem == "ucum") {
-        return new QueryResult([concept("mL", [
+        def designations = [
             designation("display", "en", "milliliter")
-        ])])
-      }
-      if (p.codeSystem == "ucum-supplement-lt") {
-        return new QueryResult([concept("mL", [
+        ]
+        if (p.displayLanguage == "lt" && p.includeSupplement) {
+          designations.addAll([
             designation("abbreviation", "lt", "ml"),
             designation("definition", "lt", "Milliliter")
-        ])])
+          ])
+        }
+        return new QueryResult([concept("mL", designations)])
       }
       return QueryResult.empty()
     }
@@ -179,6 +182,52 @@ class CodeSystemUcumOperationsTest extends Specification {
     valuesByUse["abbreviation"] == "ml"
     valuesByUse["definition"] == "Milliliter"
     designationLanguages == ["lt"] as Set
+  }
+
+  def "validate-code auto-loads supplements by displayLanguage"() {
+    given:
+    codeSystemService.query(_ as CodeSystemQueryParams) >> { args ->
+      CodeSystemQueryParams p = args[0]
+      if (p.uri == "http://unitsofmeasure.org") {
+        return new QueryResult([new CodeSystem().setId("ucum").setUri("http://unitsofmeasure.org")])
+      }
+      if (p.baseCodeSystem == "ucum" && p.content == "supplement") {
+        return new QueryResult([new CodeSystem()
+            .setId("ucum-supplement-lt")
+            .setUri("https://termx.org/fhir/CodeSystem/ucum-supplement-lt")
+            .setBaseCodeSystem("ucum")])
+      }
+      return QueryResult.empty()
+    }
+    conceptService.query(_ as ConceptQueryParams) >> { args ->
+      ConceptQueryParams p = args[0]
+      if (p.codeSystem == "ucum") {
+        def designations = [
+            designation("display", "en", "milliliter")
+        ]
+        if (p.displayLanguage == "lt" && p.includeSupplement) {
+          designations.addAll([
+              designation("abbreviation", "lt", "ml"),
+              designation("definition", "lt", "Milliliter")
+          ])
+        }
+        return new QueryResult([concept("mL", designations)])
+      }
+      return QueryResult.empty()
+    }
+
+    def request = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://unitsofmeasure.org"))
+        .addParameter(new Parameters.ParametersParameter("code").setValueCode("mL"))
+        .addParameter(new Parameters.ParametersParameter("display").setValueString("ml"))
+        .addParameter(new Parameters.ParametersParameter("displayLanguage").setValueCode("lt"))
+
+    when:
+    def response = validateCodeOperation.run(new ResourceContent(FhirMapper.toJson(request), "json"))
+    def parameters = FhirMapper.fromJson(response.value, Parameters)
+
+    then:
+    parameters.findParameter("result").orElseThrow().valueBoolean
   }
 
   def "lookup returns all properties by default when mode is ALL"() {

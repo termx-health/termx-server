@@ -28,10 +28,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
@@ -121,6 +119,9 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     cp.setCode(code);
     cp.setCodeSystem(csId);
     cp.setCodeSystemVersionId(versionId);
+    cp.setIncludeSupplement(true);
+    cp.setDisplayLanguage(displayLanguage);
+    cp.setUseSupplement(extractUseSupplement(req));
     cp.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
 
     Concept concept = conceptService.query(cp).findFirst().orElse(null);
@@ -128,8 +129,7 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
       return error("Code '" + code + "' is invalid");
     }
 
-    Concept merged = mergeSupplements(csId, versionId, code, concept, req);
-    Set<String> validDisplays = extractDisplays(merged, displayLanguage);
+    Set<String> validDisplays = extractDisplays(concept, displayLanguage);
     String conceptDisplay = validDisplays.stream().findFirst().orElse(null);
     if (display != null && !validDisplays.contains(display)) {
       return new Parameters()
@@ -148,52 +148,13 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
         .addParameter(new ParametersParameter("message").setValueString(message));
   }
 
-  private Concept mergeSupplements(String csId, Long versionId, String code, Concept concept, Parameters req) {
-    List<Concept> supplements = loadSupplementConcepts(csId, versionId, code, req);
-    if (CollectionUtils.isEmpty(supplements)) {
-      return concept;
-    }
-    List<Designation> designations = new ArrayList<>(CollectionUtils.isEmpty(concept.getVersions()) ? List.of() :
-        Optional.ofNullable(concept.getVersions().getFirst().getDesignations()).orElse(List.of()));
-    supplements.stream().filter(c -> CollectionUtils.isNotEmpty(c.getVersions())).forEach(c ->
-        designations.addAll(Optional.ofNullable(c.getVersions().getFirst().getDesignations()).orElse(List.of())));
-    concept.getVersions().getFirst().setDesignations(designations.stream()
-        .collect(java.util.stream.Collectors.collectingAndThen(
-            java.util.stream.Collectors.toMap(
-                d -> String.join("|", StringUtils.defaultString(d.getDesignationType()), StringUtils.defaultString(d.getLanguage()), StringUtils.defaultString(d.getName())),
-                d -> d,
-                (a, b) -> a,
-                java.util.LinkedHashMap::new),
-            m -> new ArrayList<>(m.values()))));
-    return concept;
-  }
-
-  private List<Concept> loadSupplementConcepts(String csId, Long versionId, String code, Parameters req) {
-    List<String> supplements = req.getParameter().stream()
+  private static String extractUseSupplement(Parameters req) {
+    return req.getParameter().stream()
         .filter(p -> "useSupplement".equals(p.getName()))
         .map(p -> StringUtils.firstNonBlank(p.getValueCanonical(), p.getValueUri(), p.getValueUrl(), p.getValueString()))
         .filter(StringUtils::isNotBlank)
-        .toList();
-    if (CollectionUtils.isEmpty(supplements)) {
-      return List.of();
-    }
-    return supplements.stream().map(s -> {
-      String[] sv = s.split("\\|", 2);
-      String uri = sv[0];
-      String version = sv.length > 1 ? sv[1] : null;
-      CodeSystem supplement = codeSystemService.query(new CodeSystemQueryParams().setUri(uri).limit(1)).findFirst().orElse(null);
-      if (supplement == null || !csId.equals(supplement.getBaseCodeSystem())) {
-        return null;
-      }
-      ConceptQueryParams cp = new ConceptQueryParams()
-          .setCodeSystem(supplement.getId())
-          .setCodeEq(code)
-          .setCodeSystemVersion(version)
-          .setCodeSystemVersionId(version == null ? versionId : null)
-          .setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW))
-          .limit(1);
-      return conceptService.query(cp).findFirst().orElse(null);
-    }).filter(c -> c != null && CollectionUtils.isNotEmpty(c.getVersions())).toList();
+        .distinct()
+        .collect(java.util.stream.Collectors.joining(","));
   }
 
   public static Set<String> extractDisplays(Concept c, String displayLanguage) {

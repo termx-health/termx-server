@@ -1,7 +1,9 @@
 package org.termx.ucum.service
 
 import com.kodality.commons.model.QueryResult
+import org.termx.core.ts.UcumSearchCacheInvalidator
 import org.termx.terminology.terminology.codesystem.CodeSystemService
+import org.termx.terminology.terminology.codesystem.CodeSystemRepository
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService
 import org.termx.ts.codesystem.CodeSystem
 import org.termx.ts.codesystem.CodeSystemVersion
@@ -46,7 +48,16 @@ class UcumAdministrationServiceTest extends Specification {
         savedCodeSystems << codeSystem
       }
     }
-    def codeSystemVersionService = new CodeSystemVersionService(null, null) {
+    def codeSystemVersionService = new CodeSystemVersionService(null, null, null, new CodeSystemRepository() {
+      @Override
+      CodeSystem load(String codeSystem) {
+        return null
+      }
+    }, new UcumSearchCacheInvalidator() {
+      @Override
+      void invalidate() {
+      }
+    }) {
       @Override
       Optional<CodeSystemVersion> load(String codeSystem, String versionCode) {
         return Optional.empty()

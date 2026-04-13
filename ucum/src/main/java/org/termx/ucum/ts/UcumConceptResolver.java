@@ -4,6 +4,7 @@ import com.kodality.commons.model.QueryResult;
 import org.termx.ts.codesystem.Concept;
 import org.termx.ts.codesystem.ConceptQueryParams;
 import org.termx.ts.valueset.ValueSetVersionConcept;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.termx.ts.codesystem.Designation;
 import org.termx.ucum.dto.BaseUnitDto;
 import org.termx.ucum.dto.DefinedUnitDto;
 import org.termx.ucum.service.UcumService;
@@ -28,9 +30,13 @@ import org.termx.ucum.service.UcumService;
 public class UcumConceptResolver {
   private final UcumMapper mapper;
   private final UcumService ucumService;
+  private final UcumSupplementDesignationService ucumSupplementDesignationService;
+  @Value("${ucum.ts.cache-ttl-ms:300000}")
+  private long cacheTtlMillis = 300000;
 
   private volatile List<UcumUnitDefinition> unitsCache;
   private volatile Map<String, UcumUnitDefinition> unitByCodeCache;
+  private volatile long cacheExpiresAtMillis;
 
   public QueryResult<Concept> search(ConceptQueryParams params) {
     String codeEq = StringUtils.isNotEmpty(params.getCodeEq()) ? params.getCodeEq() : params.getCode();
@@ -42,9 +48,14 @@ public class UcumConceptResolver {
     List<UcumUnitDefinition> units = getUnits().stream()
         .filter(u -> matchesCodes(u, params.getCodes()))
         .filter(u -> matchesCodeContains(u, params.getCodeContains()))
-        .filter(u -> matchesDesignationCiEq(u, params.getDesignationCiEq()))
-        .filter(u -> matchesTextContains(u, params.getTextContains()))
         .sorted(Comparator.comparing(UcumUnitDefinition::getCode))
+        .toList();
+    units = mergeUnits(units, ucumSupplementDesignationService.loadSupplementUnitDefinitions(params));
+    Map<String, List<Designation>> supplementDesignations = ucumSupplementDesignationService.loadDesignations(
+        units.stream().map(UcumUnitDefinition::getCode).toList(), params);
+    units = units.stream()
+        .filter(u -> matchesDesignationCiEq(u, supplementDesignations.get(u.getCode()), params.getDesignationCiEq()))
+        .filter(u -> matchesTextContains(u, supplementDesignations.get(u.getCode()), params.getTextContains()))
         .toList();
 
     int offset = Optional.ofNullable(params.getOffset()).orElse(0);
@@ -61,11 +72,14 @@ public class UcumConceptResolver {
     if (StringUtils.isEmpty(code)) {
       return Optional.empty();
     }
+    if (!isValidCode(code)) {
+      return Optional.empty();
+    }
     UcumUnitDefinition knownUnit = getUnitByCode().get(code);
     if (knownUnit != null) {
       return Optional.of(mapper.toConcept(knownUnit));
     }
-    return isValidCode(code) ? Optional.of(mapper.toExpressionConcept(code)) : Optional.empty();
+    return Optional.of(mapper.toExpressionConcept(code));
   }
 
   public Optional<UcumUnitDefinition> findUnitDefinition(String code) {
@@ -103,16 +117,23 @@ public class UcumConceptResolver {
     }
   }
 
+  public synchronized void invalidateCache() {
+    unitsCache = null;
+    unitByCodeCache = null;
+    cacheExpiresAtMillis = 0L;
+  }
+
   private List<UcumUnitDefinition> getUnits() {
     List<UcumUnitDefinition> local = unitsCache;
-    if (local != null) {
+    if (local != null && !isCacheExpired()) {
       return local;
     }
     synchronized (this) {
-      if (unitsCache == null) {
+      if (unitsCache == null || isCacheExpired()) {
         unitsCache = loadUnits();
         unitByCodeCache = unitsCache.stream()
             .collect(Collectors.toMap(UcumUnitDefinition::getCode, u -> u, (a, b) -> a, LinkedHashMap::new));
+        cacheExpiresAtMillis = System.currentTimeMillis() + Math.max(cacheTtlMillis, 0L);
       }
       return unitsCache;
     }
@@ -132,11 +153,43 @@ public class UcumConceptResolver {
 
     baseUnits.stream().map(this::toUnit).filter(Objects::nonNull).forEach(all::add);
     definedUnits.stream().map(this::toUnit).filter(Objects::nonNull).forEach(all::add);
+    ucumSupplementDesignationService.loadSupplementUnitDefinitions().stream()
+        .filter(Objects::nonNull)
+        .filter(unit -> isValidCode(unit.getCode()))
+        .forEach(all::add);
 
     return all.stream()
         .filter(u -> StringUtils.isNotEmpty(u.getCode()))
         .collect(Collectors.collectingAndThen(Collectors.toMap(UcumUnitDefinition::getCode, u -> u, (a, b) -> a, LinkedHashMap::new),
             m -> new ArrayList<>(m.values())));
+  }
+
+  private boolean isCacheExpired() {
+    return cacheExpiresAtMillis > 0 && System.currentTimeMillis() >= cacheExpiresAtMillis;
+  }
+
+  private List<UcumUnitDefinition> mergeUnits(List<UcumUnitDefinition> baseUnits, List<UcumUnitDefinition> additionalUnits) {
+    if (additionalUnits == null || additionalUnits.isEmpty()) {
+      return baseUnits;
+    }
+    LinkedHashMap<String, UcumUnitDefinition> merged = new LinkedHashMap<>();
+    Optional.ofNullable(baseUnits).orElse(List.of()).forEach(unit -> merged.put(unit.getCode(), unit));
+    additionalUnits.stream()
+        .filter(Objects::nonNull)
+        .filter(unit -> StringUtils.isNotEmpty(unit.getCode()))
+        .forEach(unit -> merged.merge(unit.getCode(), unit, (left, right) -> {
+          List<String> names = new ArrayList<>(Optional.ofNullable(left.getNames()).orElse(List.of()));
+          names.addAll(Optional.ofNullable(right.getNames()).orElse(List.of()));
+          left.setNames(names.stream().filter(StringUtils::isNotEmpty).distinct().toList());
+          if (left.getKind() == null) {
+            left.setKind(right.getKind());
+          }
+          if (left.getProperty() == null) {
+            left.setProperty(right.getProperty());
+          }
+          return left;
+        }));
+    return new ArrayList<>(merged.values());
   }
 
   private UcumUnitDefinition toUnit(BaseUnitDto dto) {
@@ -173,18 +226,26 @@ public class UcumConceptResolver {
     return StringUtils.isEmpty(codeContains) || containsIgnoreCase(unit.getCode(), codeContains);
   }
 
-  private static boolean matchesDesignationCiEq(UcumUnitDefinition unit, String designationCiEq) {
-    return StringUtils.isEmpty(designationCiEq) || unit.getCode().equalsIgnoreCase(designationCiEq);
+  private static boolean matchesDesignationCiEq(UcumUnitDefinition unit, List<Designation> supplementDesignations, String designationCiEq) {
+    if (StringUtils.isEmpty(designationCiEq)) {
+      return true;
+    }
+    return unit.getCode().equalsIgnoreCase(designationCiEq)
+        || Optional.ofNullable(unit.getNames()).orElse(List.of()).stream().anyMatch(name -> name.equalsIgnoreCase(designationCiEq))
+        || Optional.ofNullable(supplementDesignations).orElse(List.of()).stream().map(Designation::getName)
+        .anyMatch(name -> name != null && name.equalsIgnoreCase(designationCiEq));
   }
 
-  private static boolean matchesTextContains(UcumUnitDefinition unit, String textContains) {
+  private static boolean matchesTextContains(UcumUnitDefinition unit, List<Designation> supplementDesignations, String textContains) {
     if (StringUtils.isEmpty(textContains)) {
       return true;
     }
     return containsIgnoreCase(unit.getCode(), textContains)
         || containsIgnoreCase(unit.getKind(), textContains)
         || containsIgnoreCase(unit.getProperty(), textContains)
-        || Optional.ofNullable(unit.getNames()).orElse(List.of()).stream().anyMatch(n -> containsIgnoreCase(n, textContains));
+        || Optional.ofNullable(unit.getNames()).orElse(List.of()).stream().anyMatch(n -> containsIgnoreCase(n, textContains))
+        || Optional.ofNullable(supplementDesignations).orElse(List.of()).stream().map(Designation::getName)
+        .anyMatch(n -> containsIgnoreCase(n, textContains));
   }
 
   private static boolean matchesKindOrProperty(UcumUnitDefinition unit, Set<String> requested) {

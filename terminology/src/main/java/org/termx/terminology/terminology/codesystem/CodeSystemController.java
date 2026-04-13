@@ -252,9 +252,11 @@ public class CodeSystemController {
   }
 
   @Authorized(Privilege.CS_VIEW)
-  @Get(uri = "/{codeSystem}/concepts/{code}")
-  public Concept getConcept(@PathVariable String codeSystem, @PathVariable String code) {
-    return conceptService.load(codeSystem, parseCode(code)).orElseThrow(() -> new NotFoundException("Concept not found: " + parseCode(code)));
+  @Get(uri = "/{codeSystem}/concepts/{code}{?params*}")
+  public Concept getConcept(@PathVariable String codeSystem, @PathVariable String code, ConceptQueryParams params) {
+    return conceptService.load(codeSystem, parseCode(code))
+        .map(concept -> conceptService.decorate(concept, codeSystem, params.setCodeSystem(codeSystem)))
+        .orElseThrow(() -> new NotFoundException("Concept not found: " + parseCode(code)));
   }
 
   @Authorized(Privilege.CS_EDIT)

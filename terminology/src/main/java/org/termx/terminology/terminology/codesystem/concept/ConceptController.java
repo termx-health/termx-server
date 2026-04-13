@@ -19,9 +19,10 @@ public class ConceptController {
   private final ConceptService conceptService;
 
   @Authorized(privilege = Privilege.CS_VIEW)
-  @Get(uri = "/{id}")
-  public Concept getConcept(@PathVariable Long id) {
-    Concept c = conceptService.load(id).orElseThrow(() -> new NotFoundException("Concept not found: " + id));
+  @Get(uri = "/{id}{?params*}")
+  public Concept getConcept(@PathVariable Long id, ConceptQueryParams params) {
+    Concept c = conceptService.load(id).map(concept -> conceptService.decorate(concept, concept.getCodeSystem(), params))
+        .orElseThrow(() -> new NotFoundException("Concept not found: " + id));
     SessionStore.require().checkPermitted(c.getCodeSystem(), Privilege.CS_VIEW);
     return c;
   }

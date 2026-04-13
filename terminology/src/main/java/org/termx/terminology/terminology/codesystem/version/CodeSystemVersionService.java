@@ -2,10 +2,13 @@ package org.termx.terminology.terminology.codesystem.version;
 
 import com.kodality.commons.model.QueryResult;
 import jakarta.inject.Provider;
+import org.termx.core.ts.UcumSearchCacheInvalidator;
 import org.termx.terminology.ApiError;
+import org.termx.terminology.terminology.codesystem.CodeSystemRepository;
 import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import org.termx.terminology.terminology.valueset.ValueSetCodeSystemImpactService;
 import org.termx.ts.PublicationStatus;
+import org.termx.ts.codesystem.CodeSystem;
 import org.termx.ts.codesystem.CodeSystemEntityVersion;
 import org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import org.termx.ts.codesystem.CodeSystemVersion;
@@ -27,6 +30,8 @@ public class CodeSystemVersionService {
   private final CodeSystemVersionRepository repository;
   private final CodeSystemEntityVersionService entityVersionService;
   private final Provider<ValueSetCodeSystemImpactService> valueSetCodeSystemImpactServiceProvider;
+  private final CodeSystemRepository codeSystemRepository;
+  private final UcumSearchCacheInvalidator ucumSearchCacheInvalidator;
 
   @Transactional
   public void save(CodeSystemVersion version) {
@@ -48,6 +53,7 @@ public class CodeSystemVersionService {
     }
     version.setCreated(version.getCreated() == null ? OffsetDateTime.now() : version.getCreated());
     repository.save(version);
+    invalidateCaches(version.getCodeSystem());
   }
 
   public Optional<CodeSystemVersion> load(String codeSystem, String versionCode) {
@@ -95,6 +101,7 @@ public class CodeSystemVersionService {
     repository.activate(codeSystem, version);
     entityVersionService.activate(codeSystem, version);
     valueSetCodeSystemImpactServiceProvider.get().refreshDynamicValueSets(codeSystem);
+    invalidateCaches(codeSystem);
   }
 
   @Transactional
@@ -108,6 +115,7 @@ public class CodeSystemVersionService {
       return;
     }
     repository.retire(codeSystem, version);
+    invalidateCaches(codeSystem);
   }
 
   @Transactional
@@ -121,6 +129,7 @@ public class CodeSystemVersionService {
       return;
     }
     repository.saveAsDraft(codeSystem, version);
+    invalidateCaches(codeSystem);
   }
 
   @Transactional
@@ -158,5 +167,21 @@ public class CodeSystemVersionService {
   @Transactional
   public void cancel(Long id, String codeSystem) {
     repository.cancel(id);
+    invalidateCaches(codeSystem);
+  }
+
+  private void invalidateCaches(String codeSystem) {
+    invalidateIfUcumRelated(codeSystem);
+  }
+
+  private void invalidateIfUcumRelated(String codeSystem) {
+    if ("ucum".equals(codeSystem)) {
+      ucumSearchCacheInvalidator.invalidate();
+      return;
+    }
+    CodeSystem current = codeSystemRepository.load(codeSystem);
+    if (current != null && "ucum".equals(current.getBaseCodeSystem())) {
+      ucumSearchCacheInvalidator.invalidate();
+    }
   }
 }
