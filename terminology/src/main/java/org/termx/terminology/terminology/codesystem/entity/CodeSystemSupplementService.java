@@ -1,5 +1,7 @@
 package org.termx.terminology.terminology.codesystem.entity;
 
+import org.termx.core.ts.UcumSearchCacheInvalidator;
+import org.termx.terminology.terminology.codesystem.CodeSystemRepository;
 import org.termx.terminology.terminology.codesystem.CodeSystemService;
 import org.termx.terminology.terminology.codesystem.concept.ConceptService;
 import org.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
@@ -37,14 +39,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class CodeSystemSupplementService {
   private final CodeSystemService codeSystemService;
   private final ConceptService conceptService;
+  private final CodeSystemRepository codeSystemRepository;
   private final CodeSystemEntityVersionService entityVersionService;
   private final CodeSystemVersionService versionService;
   private final EntityPropertyService entityPropertyService;
+  private final UcumSearchCacheInvalidator ucumSearchCacheInvalidator;
 
   @Transactional
   public void supplement(String cs, CodeSystemSupplementRequest request) {
     if (request.getCodeSystem() != null && request.getCodeSystemUri() != null) {
       fullCsSupplement(cs, request);
+      invalidateCaches(cs, request.getCodeSystem());
     }
   }
 
@@ -56,6 +61,9 @@ public class CodeSystemSupplementService {
     }
     if (StringUtils.isNotEmpty(request.getExternalSystemCode())) {
       versions.add(supplementFromExternalSystem(cs, csv, request.getExternalSystemCode()));
+    }
+    if (!versions.isEmpty()) {
+      invalidateCaches(cs, null);
     }
     return versions;
   }
@@ -142,6 +150,29 @@ public class CodeSystemSupplementService {
       versionService.linkEntityVersions(cs, csv, List.of(version.getId()));
     }
     return version;
+  }
+
+  private void invalidateCaches(String codeSystem, String createdSupplementCodeSystem) {
+    invalidateIfUcumRelated(codeSystem, createdSupplementCodeSystem);
+  }
+
+  private void invalidateIfUcumRelated(String codeSystem, String createdSupplementCodeSystem) {
+    if (isUcumRelated(codeSystem) || isUcumRelated(createdSupplementCodeSystem)) {
+      ucumSearchCacheInvalidator.invalidate();
+    }
+  }
+
+  private boolean isUcumRelated(String codeSystem) {
+    if (StringUtils.isBlank(codeSystem)) {
+      return false;
+    }
+    if ("ucum".equals(codeSystem)) {
+      return true;
+    }
+    return Optional.ofNullable(codeSystemRepository.load(codeSystem))
+        .map(CodeSystem::getBaseCodeSystem)
+        .filter("ucum"::equals)
+        .isPresent();
   }
 
 }
