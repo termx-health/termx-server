@@ -19,3 +19,4 @@ out/
 *.swp
 application-local.yml
 CLAUDE.md
+.codex

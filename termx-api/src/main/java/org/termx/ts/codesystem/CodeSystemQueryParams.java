@@ -53,6 +53,7 @@ public class CodeSystemQueryParams extends QueryParams {
   private Long codeSystemEntityVersionId; // eq
 
   private boolean versionsDecorated; // decorate
+  private boolean lastVersionDecorated; // decorate
   private boolean conceptsDecorated; // decorate
   private boolean propertiesDecorated;
   private String lang; // used for sort

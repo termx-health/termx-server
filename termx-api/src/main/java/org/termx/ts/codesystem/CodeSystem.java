@@ -1,5 +1,6 @@
 package org.termx.ts.codesystem;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
@@ -59,6 +60,8 @@ public class CodeSystem extends UniqueResource<CodeSystem> {
   private List<Concept> concepts;
   private List<EntityProperty> properties;
   private List<CodeSystemVersion> versions;
+  @JsonProperty("lastVersion")
+  private CodeSystemVersion latestVersion;
 
   @JsonIgnore
   public Optional<CodeSystemVersion> getFirstVersion() {

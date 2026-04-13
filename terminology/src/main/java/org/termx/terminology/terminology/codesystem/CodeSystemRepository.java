@@ -41,10 +41,11 @@ public class CodeSystemRepository extends BaseRepository {
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
     bp.addColumnProcessor("properties", PgBeanProcessor.fromJson(JsonUtil.getListType(EntityProperty.class)));
+    bp.addColumnProcessor("last_version", "latestVersion", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("configuration_attributes", PgBeanProcessor.fromJson(JsonUtil.getListType(ConfigurationAttribute.class)));
   });
 
-  private static final String select = "select distinct on (cs.id) cs.*, " +
+  private static final String selectBase = "select distinct on (cs.id) cs.*, " +
                                        "(select jsonb_agg(ep.p) from (select json_build_object(" +
                                        "               'id', ep.id, " +
                                        "               'name', ep.name, " +
@@ -65,7 +66,34 @@ public class CodeSystemRepository extends BaseRepository {
                                        "(select distinct on (vsv.value_set) vsv.value_set from terminology.value_set_version vsv " +
                                        "        inner join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A'" +
                                        "        inner join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' and vsvr.type = 'include'" +
-                                       "        where vsv.sys_status = 'A' and vsvr.code_system = cs.id and vsvr.concepts is null and vsvr.filters is null limit 1) as value_set ";
+                                       "        where vsv.sys_status = 'A' and vsvr.code_system = cs.id and vsvr.concepts is null and vsvr.filters is null limit 1) as value_set, " +
+                                       "null::json as last_version ";
+
+  private static final String lastVersionSelect = ", (select json_build_object(" +
+                                       "        'id', csv.id, " +
+                                       "        'version', csv.version, " +
+                                       "        'uri', csv.uri, " +
+                                       "        'status', csv.status, " +
+                                       "        'releaseDate', csv.release_date, " +
+                                       "        'expirationDate', csv.expiration_date, " +
+                                       "        'created', csv.created, " +
+                                       "        'conceptsTotal', (" +
+                                       "          select count(1) from terminology.entity_version_code_system_version_membership evcsvm " +
+                                       "          inner join terminology.code_system_entity_version csev on csev.id = evcsvm.code_system_entity_version_id " +
+                                       "          where evcsvm.code_system_version_id = csv.id and evcsvm.sys_status = 'A' and csev.sys_status = 'A'" +
+                                       "        )" +
+                                       "      ) " +
+                                       " from terminology.code_system_version csv " +
+                                       " where csv.code_system = cs.id and csv.sys_status = 'A' " +
+                                       " order by csv.created desc nulls last, csv.release_date desc nulls last, csv.version desc nulls last " +
+                                       " limit 1) as last_version ";
+
+  private String select(boolean lastVersionDecorated) {
+    if (!lastVersionDecorated) {
+      return selectBase;
+    }
+    return selectBase.replace("null::json as last_version", lastVersionSelect.substring(2));
+  }
 
   public void save(CodeSystem codeSystem) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -102,7 +130,7 @@ public class CodeSystemRepository extends BaseRepository {
   }
 
   public CodeSystem load(String codeSystem) {
-    String sql = select + "from terminology.code_system cs where cs.sys_status = 'A' and cs.id = ?";
+    String sql = select(true) + "from terminology.code_system cs where cs.sys_status = 'A' and cs.id = ?";
     return getBean(sql, bp, codeSystem);
   }
 
@@ -118,7 +146,7 @@ public class CodeSystemRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder(select + "from terminology.code_system cs " + join);
+      SqlBuilder sb = new SqlBuilder(select(params.isLastVersionDecorated()) + "from terminology.code_system cs " + join);
       sb.append(filter(params));
       sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));
