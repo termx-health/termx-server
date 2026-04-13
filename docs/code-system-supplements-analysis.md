@@ -2,251 +2,148 @@
 
 ## Scope
 
-This note describes how code system supplements are currently used in the server, with emphasis on:
+This note describes the current supplement behavior in `termx-server`, focusing on:
 
-- Code system `$lookup`
-- Code system `$validate-code`
-- Value set expansion
-
-The analysis is based on the current implementation in the repository as of 2026-04-04.
+- FHIR `$lookup`
+- FHIR `$validate-code`
+- TS concept query/load APIs
+- value set expansion
 
 ## Summary
 
-The current implementation is asymmetric:
+Supplement support is now split into two clear layers:
 
-- `$lookup` has explicit runtime supplement handling.
-- `$validate-code` has partial runtime supplement handling.
-- Value set expansion does not do generic runtime supplement resolution.
+- concept lookup/query paths have generic runtime supplement enrichment for designations
+- value set expansion still does not have the same generic runtime supplement-resolution model
 
-In practice, this means lookup can actively merge supplement designations into a base concept response, while expansion only sees supplement data if that data is already attached to the resolved concept versions or is injected by an external expand provider.
+So the main asymmetry is no longer between lookup and TS APIs. It is now between concept-oriented APIs and expansion.
 
 ## Data Model and Storage
 
-Supplements are modeled as separate code systems with:
+Supplements are stored as separate code systems with:
 
 - `content = supplement`
 - `baseCodeSystem` pointing to the base code system
 
-Relevant code:
+Relevant file:
 
-- [`CodeSystemSupplementService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemSupplementService.java#L63)
+- [`CodeSystemSupplementService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemSupplementService.java)
 
-When supplement entity versions are created from base entity versions, the supplement version keeps a pointer to the base entity version through `baseEntityVersionId`.
+When supplement entity versions are created from base entity versions, the supplement entity version keeps a pointer to the base entity version through `baseEntityVersionId`.
 
-Relevant code:
+Relevant file:
 
-- [`CodeSystemSupplementService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemSupplementService.java#L115)
+- [`CodeSystemSupplementService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemSupplementService.java)
 
-At load time, designation and property repositories can mark rows as supplement-derived when they come from the base entity version.
+At entity-version decoration time, base and supplement data can be merged, with base-derived items marked using `supplement=true`.
 
-Relevant code:
+Relevant file:
 
-- [`DesignationRepository.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/designation/DesignationRepository.java#L52)
-- [`EntityPropertyValueRepository.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entitypropertyvalue/EntityPropertyValueRepository.java#L45)
+- [`CodeSystemEntityVersionService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemEntityVersionService.java)
 
-The generic merge point is entity-version decoration. If a version has `baseEntityVersionId`, the service loads both the supplement version’s own data and the base version’s data, marking the base-derived items with `supplement=true`.
+## Generic Runtime Supplement Enrichment
 
-Relevant code:
+Runtime supplement enrichment for concept responses is centralized in:
 
-- [`CodeSystemEntityVersionService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemEntityVersionService.java#L129)
+- [`ConceptSupplementService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptSupplementService.java)
+
+The request model is carried through:
+
+- [`ConceptQueryParams.java`](/job/helex/htx/termx-server/termx-api/src/main/java/org/termx/ts/codesystem/ConceptQueryParams.java)
+
+Current semantics:
+
+- `includeSupplement=true` enables runtime supplement merge
+- `displayLanguage` filters supplement designations and enables supplement auto-discovery
+- `useSupplement` allows explicit supplement selection, optionally with `canonical|version`
+- explicit supplement versions are respected when provided
+- otherwise one effective version is selected per supplement code system: latest active version
+
+The merge is currently designation-focused:
+
+- supplement designations are appended into concept versions
+- merged designations are marked with `supplement=true`
+- duplicates are removed
 
 ## `$lookup`
 
-`$lookup` has first-class supplement handling at request time.
+`$lookup` is supplement-aware through the shared concept enrichment path.
 
-The operation:
+Relevant file:
 
-1. Resolves the base code system from `system`
-2. Loads the base concept by `code`
-3. Reads `displayLanguage`
-4. Loads supplement designations
-5. Merges those designations with the base designations
-6. Picks the response `display` from the merged designation set
+- [`CodeSystemLookupOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemLookupOperation.java)
 
-Relevant code:
+Current behavior:
 
-- [`CodeSystemLookupOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemLookupOperation.java#L103)
-
-### Explicit supplement loading
-
-If the request contains one or more `useSupplement` parameters, the operation resolves each supplement by canonical URI and loads the same code from that supplement code system.
-
-Relevant code:
-
-- [`CodeSystemLookupOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemLookupOperation.java#L171)
-
-### Auto-discovery by language
-
-If `displayLanguage` is present, `$lookup` also auto-discovers supplements by querying code systems where:
-
-- `baseCodeSystem = <base code system id>`
-- `content = supplement`
-
-That discovered supplement set is merged with any explicit `useSupplement` parameters.
-
-Relevant code:
-
-- [`CodeSystemLookupOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemLookupOperation.java#L181)
-
-### What is actually merged
-
-The lookup merge is designation-only. The code appends supplement designations into the designation list used for:
-
-- display selection
-- returned `designation` parameters
-
-Relevant code:
-
-- [`CodeSystemLookupOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemLookupOperation.java#L125)
-
-Properties are not loaded from supplements in this path. Returned `property` parameters come from the base concept version’s property values.
-
-Relevant code:
-
-- [`CodeSystemLookupOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemLookupOperation.java#L151)
-
-### Tests
-
-There is direct test coverage for:
-
-- explicit supplement use
-- auto-loading supplements by `displayLanguage`
-- validating supplement-driven UCUM abbreviations and definitions
-
-Relevant code:
-
-- [`CodeSystemUcumOperationsTest.groovy`](/job/helex/htx/termx-server/terminology/src/test/groovy/org/termx/terminology/fhir/codesystem/operations/CodeSystemUcumOperationsTest.groovy#L40)
+- supports explicit `useSupplement`
+- supports supplement auto-discovery by `displayLanguage`
+- uses merged designations for response display and returned `designation` parameters
+- does not generically merge supplement properties at request time
 
 ## `$validate-code`
 
-`$validate-code` has related but narrower supplement support.
+`$validate-code` now uses the same concept enrichment model rather than a separate supplement-loading implementation.
 
-The operation loads the base concept, then calls `mergeSupplements(...)`, which merges in designations from supplement concepts resolved from `useSupplement`.
+Relevant file:
 
-Relevant code:
+- [`CodeSystemValidateCodeOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemValidateCodeOperation.java)
 
-- [`CodeSystemValidateCodeOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemValidateCodeOperation.java#L151)
+Current behavior:
 
-Important difference from `$lookup`:
+- supports explicit `useSupplement`
+- follows the shared concept enrichment path
+- uses the merged designation set when validating display text
+- is aligned more closely with `$lookup`, including `displayLanguage`-driven supplement behavior through the shared concept path
 
-- `$validate-code` does not auto-discover supplements from `displayLanguage`
-- it only uses supplements explicitly listed via `useSupplement`
+## TS Concept APIs
 
-The merged designation set is then used to derive valid displays for comparison.
+TS concept query/load endpoints are also supplement-aware through the same shared enrichment path.
 
-Relevant code:
+Relevant files:
 
-- [`CodeSystemValidateCodeOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemValidateCodeOperation.java#L171)
+- [`ConceptService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptService.java)
+- [`ConceptController.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptController.java)
+- [`CodeSystemController.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/CodeSystemController.java)
+
+This is the main change from the earlier supplement state: supplement-aware runtime concept loading is no longer limited to FHIR operations.
 
 ## Value Set Expansion
 
-Value set expansion does not have an equivalent generic supplement-resolution step.
+Value set expansion still does not implement the same generic runtime supplement-resolution model used by concept lookup/query.
 
-`ValueSetExpandOperation` extracts:
+Relevant files:
 
-- `displayLanguage`
-- `includeDesignations`
+- [`ValueSetExpandOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/valueset/operations/ValueSetExpandOperation.java)
+- [`ValueSetVersionConceptService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/valueset/expansion/ValueSetVersionConceptService.java)
 
-and passes them into `ValueSetVersionConceptService.expand(...)`.
+Current behavior:
 
-Relevant code:
+- expansion accepts `displayLanguage` and `includeDesignations`
+- expansion does not generically resolve supplements from `useSupplement`
+- expansion does not implement generic supplement auto-discovery equivalent to concept lookup/query
+- supplement data appears only when it is already present on resolved entity versions or is added by an external/provider-specific expansion path
 
-- [`ValueSetExpandOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/valueset/operations/ValueSetExpandOperation.java#L93)
+For UCUM specifically, there is additional provider-driven enrichment around supplement designations, but that is still not the same as generic supplement resolution for all code systems.
 
-Notably, it does not:
-
-- parse `useSupplement`
-- discover supplement code systems at runtime
-- load supplement concepts by canonical URI
-
-### Where expansion gets designations
-
-Expansion is built from `ValueSetVersionConceptService`. That service decorates expanded concepts by loading the underlying `CodeSystemEntityVersion`s and collecting their designations, properties, associations, and status.
-
-Relevant code:
-
-- [`ValueSetVersionConceptService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/valueset/expansion/ValueSetVersionConceptService.java#L124)
-
-For designations:
-
-- the display is selected from the designation set
-- `additionalDesignations` are populated from the same designation set
-- supplement-derived designations are filtered only by the existing local rules
-
-Relevant code:
-
-- [`ValueSetVersionConceptService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/valueset/expansion/ValueSetVersionConceptService.java#L156)
-
-### What this means in practice
-
-Expansion only sees supplement data if that data is already attached to the entity versions returned for the expansion result.
-
-That happens when:
-
-- the resolved concept version is itself a supplement-backed entity version with `baseEntityVersionId`, so entity-version decoration merges the base/supplement data
-- an external expand provider returns concepts that already include `additionalDesignations`
-
-It does not happen through a generic runtime supplement discovery mechanism equivalent to `$lookup`.
-
-### External provider path
-
-`ValueSetVersionConceptService` also appends results from `ValueSetExternalExpandProvider`s.
-
-Relevant code:
-
-- [`ValueSetVersionConceptService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/valueset/expansion/ValueSetVersionConceptService.java#L105)
-
-The unit tests show this path being used to provide UCUM-like additional designations during expansion.
-
-Relevant code:
-
-- [`ValueSetVersionConceptServiceTest.groovy`](/job/helex/htx/termx-server/terminology/src/test/groovy/org/termx/terminology/terminology/valueset/expansion/ValueSetVersionConceptServiceTest.groovy#L24)
-
-This is provider-driven enrichment, not generic supplement resolution.
-
-## Value Set FHIR Representation
+## FHIR ValueSet Representation
 
 The FHIR mapper can represent supplement semantics in exported ValueSets by:
 
 - placing the base code system URI into `compose.include.system`
 - adding the supplement canonical as the `valueset-supplement` extension
 
-Relevant code:
+Relevant file:
 
-- [`ValueSetFhirMapper.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/valueset/ValueSetFhirMapper.java#L214)
+- [`ValueSetFhirMapper.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/valueset/ValueSetFhirMapper.java)
 
-That affects representation/export. It does not mean the `$expand` runtime consumes the same extension into supplement loading logic.
-
-## Current Behavioral Differences
-
-### `$lookup`
-
-- Supports explicit `useSupplement`
-- Supports auto-discovery by `displayLanguage`
-- Merges supplement designations at request time
-- Does not merge supplement properties at request time
-
-### `$validate-code`
-
-- Supports explicit `useSupplement`
-- Does not auto-discover by `displayLanguage`
-- Uses merged designations when validating display text
-
-### `$expand`
-
-- Accepts `displayLanguage` and `includeDesignations`
-- Does not resolve supplements from `useSupplement`
-- Does not auto-discover supplements by base code system and language
-- Only includes supplement data if it is already present on resolved entity versions or provided by an external expand provider
+That affects representation and export. It does not mean `$expand` consumes the same extension into generic runtime supplement loading.
 
 ## Main Conclusion
 
-Supplements are fully modeled in persistence and are actively used in lookup-style operations, but value set expansion does not currently use the same generic runtime supplement-resolution model.
+The current supplement model is:
 
-The practical result is:
+- generic runtime supplement enrichment for concept-oriented APIs
+- designation-focused merge semantics
+- no generic supplement-resolution model for value set expansion
 
-- lookup behavior is supplement-aware
-- validate-code is partly supplement-aware
-- expansion is supplement-aware only indirectly
-
-So if the expectation is that value set expansion should behave like `$lookup` and dynamically merge applicable supplements for a base code system, that behavior is not implemented generically today.
+So the remaining supplement gap is now primarily expansion behavior, not concept lookup/query behavior.
