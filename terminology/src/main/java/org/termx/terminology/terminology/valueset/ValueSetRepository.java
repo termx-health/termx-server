@@ -35,7 +35,33 @@ public class ValueSetRepository extends BaseRepository {
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
     bp.addColumnProcessor("configuration_attributes", PgBeanProcessor.fromJson(JsonUtil.getListType(ConfigurationAttribute.class)));
+    bp.addColumnProcessor("last_version", "latestVersion", PgBeanProcessor.fromJson());
   });
+
+  private static final String selectBase = "select distinct on (vs.id) vs.*, null::json as last_version ";
+  private static final String lastVersionSelect = ", (select json_build_object(" +
+      "   'id', vsv.id, " +
+      "   'version', vsv.version, " +
+      "   'valueSet', vsv.value_set, " +
+      "   'status', vsv.status, " +
+      "   'releaseDate', vsv.release_date, " +
+      "   'expirationDate', vsv.expiration_date, " +
+      "   'created', vsv.created, " +
+      "   'snapshot', (select json_build_object('conceptsTotal', vss.concepts_total) " +
+      "                from terminology.value_set_snapshot vss " +
+      "                where vss.value_set_version_id = vsv.id and vss.sys_status = 'A')" +
+      " ) " +
+      " from terminology.value_set_version vsv " +
+      " where vsv.value_set = vs.id and vsv.sys_status = 'A' " +
+      " order by vsv.created desc nulls last, vsv.release_date desc nulls last, vsv.version desc nulls last " +
+      " limit 1) as last_version ";
+
+  private String select(boolean lastVersionDecorated) {
+    if (!lastVersionDecorated) {
+      return selectBase;
+    }
+    return selectBase.replace("null::json as last_version", lastVersionSelect.substring(2));
+  }
 
   public void save(ValueSet valueSet) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -67,12 +93,12 @@ public class ValueSetRepository extends BaseRepository {
   }
 
   public ValueSet load(String id) {
-    String sql = "select * from terminology.value_set where sys_status = 'A' and id = ?";
+    String sql = select(false) + "from terminology.value_set vs where vs.sys_status = 'A' and vs.id = ?";
     return getBean(sql, bp, id);
   }
 
   public ValueSet loadByUriIgnoreCase(String uri) {
-    String sql = "select * from terminology.value_set where sys_status = 'A' and lower(uri) = ?";
+    String sql = "select * from terminology.value_set vs where vs.sys_status = 'A' and lower(vs.uri) = ?";
     return getBean(sql, bp, uri);
   }
 
@@ -91,7 +117,7 @@ public class ValueSetRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder("select distinct on (vs.id) vs.* from terminology.value_set vs " + join);
+      SqlBuilder sb = new SqlBuilder(select(params.isLastVersionDecorated()) + "from terminology.value_set vs " + join);
       sb.append(filter(params));
       sb.append(order(params, sortMap(params.getLang())));
       sb.append(limit(params));

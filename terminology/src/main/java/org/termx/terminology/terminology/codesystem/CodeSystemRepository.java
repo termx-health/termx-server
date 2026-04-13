@@ -130,7 +130,7 @@ public class CodeSystemRepository extends BaseRepository {
   }
 
   public CodeSystem load(String codeSystem) {
-    String sql = select(true) + "from terminology.code_system cs where cs.sys_status = 'A' and cs.id = ?";
+    String sql = select(false) + "from terminology.code_system cs where cs.sys_status = 'A' and cs.id = ?";
     return getBean(sql, bp, codeSystem);
   }
 

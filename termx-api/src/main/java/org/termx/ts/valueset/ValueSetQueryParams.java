@@ -54,6 +54,7 @@ public class ValueSetQueryParams extends QueryParams {
   private Long conceptId; // eq
 
   private boolean decorated;
+  private boolean lastVersionDecorated;
   private String lang; // used for sort
 
   private Long spaceId;

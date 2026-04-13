@@ -1,6 +1,7 @@
 package org.termx.ts.valueset;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.LocalizedName;
 import org.termx.commons.UniqueResource;
@@ -50,6 +51,8 @@ public class ValueSet extends UniqueResource<ValueSet> {
 
   private List<ValueSetVersion> versions;
   private List<ValueSetSnapshot> snapshots;
+  @JsonProperty("lastVersion")
+  private ValueSetVersion latestVersion;
 
 
   @JsonIgnore
