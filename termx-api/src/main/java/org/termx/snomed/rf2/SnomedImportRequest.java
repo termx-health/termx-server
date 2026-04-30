@@ -9,4 +9,5 @@ public class SnomedImportRequest {
   private String branchPath;
   private boolean createCodeSystemVersion;
   private String type;
+  private boolean dryRun;
 }

@@ -15,6 +15,7 @@
   <include file="60-release.sql" relativeToChangelogFile="true"/>
   <include file="61-checklist.sql" relativeToChangelogFile="true"/>
   <include file="70-snomed_import_tracking.sql" relativeToChangelogFile="true"/>
+  <include file="71-snomed_rf2_upload.sql" relativeToChangelogFile="true"/>
   <include file="80-ecosystem.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
