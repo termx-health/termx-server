@@ -20,10 +20,19 @@ import lombok.extern.slf4j.Slf4j;
 public class SnomedRF2ZipParser {
 
   public ParsedRF2 parse(byte[] zipBytes) throws IOException {
-    return parse(zipBytes, null);
+    return parse(zipBytes, null, true);
   }
 
   public ParsedRF2 parse(byte[] zipBytes, java.util.function.Consumer<String> phaseReporter) throws IOException {
+    return parse(zipBytes, phaseReporter, true);
+  }
+
+  /**
+   * Parse the RF2 zip, optionally restricted to the lightweight set of files for "summary" mode.
+   * When {@code fullMode} is false, relationship and language-refset entries are skipped — those
+   * two files dominate the wall-clock time on a full International edition zip.
+   */
+  public ParsedRF2 parse(byte[] zipBytes, java.util.function.Consumer<String> phaseReporter, boolean fullMode) throws IOException {
     ParsedRF2 parsed = new ParsedRF2();
     try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
       ZipEntry entry;
@@ -42,10 +51,10 @@ public class SnomedRF2ZipParser {
           } else if (name.startsWith("sct2_TextDefinition_")) {
             report(phaseReporter, "text-definitions");
             parsed.getDescriptions().addAll(readDescriptions(zis, true));
-          } else if (name.startsWith("sct2_Relationship_") || name.startsWith("sct2_StatedRelationship_")) {
+          } else if (fullMode && (name.startsWith("sct2_Relationship_") || name.startsWith("sct2_StatedRelationship_"))) {
             report(phaseReporter, "relationships");
             parsed.getRelationships().addAll(readRelationships(zis));
-          } else if (name.startsWith("der2_cRefset_Language")) {
+          } else if (fullMode && name.startsWith("der2_cRefset_Language")) {
             report(phaseReporter, "language-refset");
             parsed.getLanguageRefset().addAll(readLanguageRefset(zis));
           }

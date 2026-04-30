@@ -20,8 +20,14 @@ invalidated concepts, with their designations and attributes). Algorithm matches
 
 ```text
 python3 snomed_rf2_scan.py <ZIP> [--cutoff YYYYMMDD] [-o OUTPUT.json]
-                                 [--branch-path MAIN] [--rf2-type SNAPSHOT|DELTA|FULL] [-q]
+                                 [--branch-path MAIN] [--rf2-type SNAPSHOT|DELTA|FULL]
+                                 [--mode summary|full] [-q]
 ```
+
+### Mode
+
+- `--mode summary` (default) — parses only the Concept, Description and TextDefinition files. Several times faster on a full International edition zip (the Relationship and Language-refset files dominate wall-clock time). Designations are reported with `acceptability="none"` and there are no attributes.
+- `--mode full` — parses all five RF2 file kinds. Acceptability and attributes are populated.
 
 ### Examples
 
@@ -33,11 +39,12 @@ python3 snomed_rf2_scan.py ~/Downloads/SnomedCT_InternationalRF2_PRODUCTION_2026
     -o /tmp/scan.json
 ```
 
-Filter changes since a specific date (e.g. everything since 2025-10-01):
+Filter changes since a specific date (e.g. everything since 2025-10-01), full mode:
 
 ```sh
 python3 snomed_rf2_scan.py ~/Downloads/SnomedCT_InternationalRF2_PRODUCTION_20260101T120000Z.zip \
     --cutoff 20251001 \
+    --mode full \
     -o /tmp/scan-since-20251001.json
 ```
 
