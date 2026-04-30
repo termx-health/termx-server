@@ -1,0 +1,54 @@
+{
+  "resourceType": "OperationDefinition",
+  "id": "ConceptMap-closure",
+  "url": "http://hl7.org/fhir/OperationDefinition/ConceptMap-closure",
+  "version": "5.0.0",
+  "name": "closure",
+  "title": "Closure Table Maintenance",
+  "status": "active",
+  "kind": "operation",
+  "description": "This operation provides support for ongoing maintenance of a client-side transitive closure table. Routed in TermX as a type-level operation on ConceptMap (POST /ConceptMap/$closure) per kefhir's dispatch model.",
+  "publisher": "TermX",
+  "affectsState": true,
+  "code": "closure",
+  "system": false,
+  "type": true,
+  "instance": false,
+  "resource": [
+    "ConceptMap"
+  ],
+  "parameter": [
+    {
+      "name": "name",
+      "use": "in",
+      "min": 1,
+      "max": "1",
+      "documentation": "The name that defines the particular context for the subsumption based closure table.",
+      "type": "string"
+    },
+    {
+      "name": "concept",
+      "use": "in",
+      "min": 0,
+      "max": "*",
+      "documentation": "A list of concepts to add to the closure table.",
+      "type": "Coding"
+    },
+    {
+      "name": "version",
+      "use": "in",
+      "min": 0,
+      "max": "1",
+      "documentation": "Replay: return the closure as of the given version (string form of the integer version).",
+      "type": "string"
+    },
+    {
+      "name": "return",
+      "use": "out",
+      "min": 1,
+      "max": "1",
+      "documentation": "A concept map with the transitive closure delta for this call.",
+      "type": "ConceptMap"
+    }
+  ]
+}
