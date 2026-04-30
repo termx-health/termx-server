@@ -18,4 +18,6 @@ public class LorqueProcess {
   private byte[] result;
   private String resultText;
   private String resultType;
+  private Integer progressPercent;
+  private String progressNote;
 }

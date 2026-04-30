@@ -47,9 +47,12 @@ public class SnomedRF2ScanService {
 
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
-        SnomedRF2ScanResult result = buildScan(zipBytes, branchPath, rf2Type).setUploadCacheId(uploadId);
+        lorqueProcessService.reportProgress(process.getId(), 5, "starting");
+        SnomedRF2ScanResult result = buildScan(zipBytes, branchPath, rf2Type, process.getId()).setUploadCacheId(uploadId);
+        lorqueProcessService.reportProgress(process.getId(), 90, "rendering report");
         SnomedRF2ScanEnvelope envelope = new SnomedRF2ScanEnvelope().setJson(result).setMarkdown(renderMarkdown(result));
         byte[] payload = JsonUtil.toJson(envelope).getBytes(StandardCharsets.UTF_8);
+        lorqueProcessService.reportProgress(process.getId(), 100, "done");
         lorqueProcessService.complete(process.getId(), ProcessResult.binary(payload));
       } catch (Exception e) {
         log.error("SNOMED RF2 dry-run scan failed for upload {}", uploadId, e);
@@ -62,8 +65,35 @@ public class SnomedRF2ScanService {
   }
 
   public SnomedRF2ScanResult buildScan(byte[] zipBytes, String branchPath, String rf2Type) throws java.io.IOException {
-    ParsedRF2 parsed = parser.parse(zipBytes);
+    return buildScan(zipBytes, branchPath, rf2Type, null);
+  }
+
+  private SnomedRF2ScanResult buildScan(byte[] zipBytes, String branchPath, String rf2Type, Long lorqueId) throws java.io.IOException {
+    java.util.function.Consumer<String> phaseReporter = phase -> {
+      if (lorqueId == null) {
+        return;
+      }
+      Integer percent = phasePercent(phase);
+      if (percent != null) {
+        lorqueProcessService.reportProgress(lorqueId, percent, "parsing " + phase);
+      }
+    };
+    ParsedRF2 parsed = parser.parse(zipBytes, phaseReporter);
+    if (lorqueId != null) {
+      lorqueProcessService.reportProgress(lorqueId, 80, "computing diff");
+    }
     return diffEngine.classify(parsed, branchPath, rf2Type);
+  }
+
+  private static Integer phasePercent(String phase) {
+    return switch (phase) {
+      case "concepts" -> 10;
+      case "descriptions" -> 30;
+      case "text-definitions" -> 45;
+      case "relationships" -> 55;
+      case "language-refset" -> 70;
+      default -> null;
+    };
   }
 
   public String renderMarkdown(SnomedRF2ScanResult result) {

@@ -20,6 +20,10 @@ import lombok.extern.slf4j.Slf4j;
 public class SnomedRF2ZipParser {
 
   public ParsedRF2 parse(byte[] zipBytes) throws IOException {
+    return parse(zipBytes, null);
+  }
+
+  public ParsedRF2 parse(byte[] zipBytes, java.util.function.Consumer<String> phaseReporter) throws IOException {
     ParsedRF2 parsed = new ParsedRF2();
     try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
       ZipEntry entry;
@@ -30,14 +34,19 @@ public class SnomedRF2ZipParser {
         String name = stripPath(entry.getName());
         try {
           if (name.startsWith("sct2_Concept_")) {
+            report(phaseReporter, "concepts");
             parsed.getConcepts().addAll(readConcepts(zis));
           } else if (name.startsWith("sct2_Description_")) {
+            report(phaseReporter, "descriptions");
             parsed.getDescriptions().addAll(readDescriptions(zis, false));
           } else if (name.startsWith("sct2_TextDefinition_")) {
+            report(phaseReporter, "text-definitions");
             parsed.getDescriptions().addAll(readDescriptions(zis, true));
           } else if (name.startsWith("sct2_Relationship_") || name.startsWith("sct2_StatedRelationship_")) {
+            report(phaseReporter, "relationships");
             parsed.getRelationships().addAll(readRelationships(zis));
           } else if (name.startsWith("der2_cRefset_Language")) {
+            report(phaseReporter, "language-refset");
             parsed.getLanguageRefset().addAll(readLanguageRefset(zis));
           }
         } catch (Exception e) {
@@ -46,6 +55,12 @@ public class SnomedRF2ZipParser {
       }
     }
     return parsed;
+  }
+
+  private static void report(java.util.function.Consumer<String> reporter, String phase) {
+    if (reporter != null) {
+      reporter.accept(phase);
+    }
   }
 
   private static String stripPath(String entryName) {

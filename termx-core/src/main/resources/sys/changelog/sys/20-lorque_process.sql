@@ -24,3 +24,10 @@ select core.create_table_metadata('sys.lorque_process');
 --changeset kodality:grant-lorque_process-delete
 GRANT DELETE ON table sys.lorque_process TO ${app-username};
 --rollback select 1;
+
+--changeset termx:lorque_process-progress
+alter table sys.lorque_process add column if not exists progress_percent int;
+alter table sys.lorque_process add column if not exists progress_note text;
+--rollback alter table sys.lorque_process drop column if exists progress_percent;
+--rollback alter table sys.lorque_process drop column if exists progress_note;
+--
