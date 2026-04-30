@@ -13,8 +13,8 @@ import org.termx.core.sys.job.logger.ImportLogger;
 import com.kodality.zmei.fhir.FhirMapper;
 import com.kodality.zmei.fhir.resource.other.Parameters;
 import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
-import io.micronaut.context.annotation.Factory;
 import io.micronaut.core.util.CollectionUtils;
+import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.r4.model.ResourceType;
 
 @Slf4j
-@Factory
+@Singleton
 @RequiredArgsConstructor
 public class ValueSetSyncOperation implements TypeOperationDefinition {
   private final ImportLogger importLogger;
