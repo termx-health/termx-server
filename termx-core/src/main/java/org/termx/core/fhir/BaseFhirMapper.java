@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,6 +39,18 @@ import org.hl7.fhir.r5.model.Narrative.NarrativeStatus;
 public abstract class BaseFhirMapper {
   public static final String SEPARATOR = "--";
   public static final String VERSION_IDENTIFIER_TYPE = "version";
+
+  private static final Set<String> NON_FILTER_PARAM_KEYS = Set.of(
+      SearchCriterion._SORT,
+      SearchCriterion._INCLUDE,
+      SearchCriterion._REVINCLUDE,
+      SearchCriterion._SUMMARY,
+      SearchCriterion._ELEMENTS,
+      SearchCriterion._CONTAINED,
+      SearchCriterion._CONTAINEDTYPE,
+      "_pretty",
+      "_format"
+  );
 
   public static String[] parseCompositeId(String id) {
     id = URLDecoder.decode(id, StandardCharsets.UTF_8);
@@ -55,6 +68,7 @@ public abstract class BaseFhirMapper {
 
   public static Map<String, String> getSimpleParams(SearchCriterion fhir) {
     return fhir.getRawParams().keySet().stream()
+        .filter(k -> !NON_FILTER_PARAM_KEYS.contains(k))
         .filter(k -> CollectionUtils.isNotEmpty(fhir.getRawParams().get(k)))
         .collect(Collectors.toMap(k -> k, k -> fhir.getRawParams().get(k).get(0)));
   }
