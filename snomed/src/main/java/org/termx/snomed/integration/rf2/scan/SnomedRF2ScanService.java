@@ -44,11 +44,12 @@ public class SnomedRF2ScanService {
     Long uploadId = upload.getId();
     String branchPath = request.getBranchPath();
     String rf2Type = request.getType();
+    boolean fullMode = "full".equalsIgnoreCase(request.getMode());
 
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
-        lorqueProcessService.reportProgress(process.getId(), 5, "starting");
-        SnomedRF2ScanResult result = buildScan(zipBytes, branchPath, rf2Type, process.getId()).setUploadCacheId(uploadId);
+        lorqueProcessService.reportProgress(process.getId(), 5, "starting (" + (fullMode ? "full" : "summary") + " mode)");
+        SnomedRF2ScanResult result = buildScan(zipBytes, branchPath, rf2Type, fullMode, process.getId()).setUploadCacheId(uploadId);
         lorqueProcessService.reportProgress(process.getId(), 90, "rendering report");
         SnomedRF2ScanEnvelope envelope = new SnomedRF2ScanEnvelope().setJson(result).setMarkdown(renderMarkdown(result));
         byte[] payload = JsonUtil.toJson(envelope).getBytes(StandardCharsets.UTF_8);
@@ -65,10 +66,10 @@ public class SnomedRF2ScanService {
   }
 
   public SnomedRF2ScanResult buildScan(byte[] zipBytes, String branchPath, String rf2Type) throws java.io.IOException {
-    return buildScan(zipBytes, branchPath, rf2Type, null);
+    return buildScan(zipBytes, branchPath, rf2Type, true, null);
   }
 
-  private SnomedRF2ScanResult buildScan(byte[] zipBytes, String branchPath, String rf2Type, Long lorqueId) throws java.io.IOException {
+  private SnomedRF2ScanResult buildScan(byte[] zipBytes, String branchPath, String rf2Type, boolean fullMode, Long lorqueId) throws java.io.IOException {
     java.util.function.Consumer<String> phaseReporter = phase -> {
       if (lorqueId == null) {
         return;
@@ -78,7 +79,7 @@ public class SnomedRF2ScanService {
         lorqueProcessService.reportProgress(lorqueId, percent, "parsing " + phase);
       }
     };
-    ParsedRF2 parsed = parser.parse(zipBytes, phaseReporter);
+    ParsedRF2 parsed = parser.parse(zipBytes, phaseReporter, fullMode);
     if (lorqueId != null) {
       lorqueProcessService.reportProgress(lorqueId, 80, "computing diff");
     }

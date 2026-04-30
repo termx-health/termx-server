@@ -141,21 +141,22 @@ def find_member(names, prefix, contains=None):
     return None
 
 
-def classify(zip_path, cutoff, branch_path="MAIN", rf2_type="SNAPSHOT", verbose=True):
+def classify(zip_path, cutoff, branch_path="MAIN", rf2_type="SNAPSHOT", mode="summary", verbose=True):
     log = (lambda msg: print(msg, file=sys.stderr)) if verbose else (lambda msg: None)
-    log(f"[scan] opening {zip_path}, cutoff effectiveTime >= {cutoff or '(none)'}")
+    full_mode = mode == "full"
+    log(f"[scan] opening {zip_path}, cutoff effectiveTime >= {cutoff or '(none)'}, mode={mode}")
     with zipfile.ZipFile(zip_path) as zf:
         names = zf.namelist()
         c_path = find_member(names, "sct2_Concept_Snapshot_", "Snapshot/Terminology/")
         d_path = find_member(names, "sct2_Description_Snapshot", "Snapshot/Terminology/")
         td_path = find_member(names, "sct2_TextDefinition_Snapshot", "Snapshot/Terminology/")
-        r_path = find_member(names, "sct2_Relationship_Snapshot_", "Snapshot/Terminology/")
-        lr_path = find_member(names, "der2_cRefset_LanguageSnapshot", "Snapshot/Refset/Language/")
+        r_path = find_member(names, "sct2_Relationship_Snapshot_", "Snapshot/Terminology/") if full_mode else None
+        lr_path = find_member(names, "der2_cRefset_LanguageSnapshot", "Snapshot/Refset/Language/") if full_mode else None
         log(f"[scan]   concept:        {c_path}")
         log(f"[scan]   description:    {d_path}")
         log(f"[scan]   text-def:       {td_path}")
-        log(f"[scan]   relationship:   {r_path}")
-        log(f"[scan]   language-refset:{lr_path}")
+        log(f"[scan]   relationship:   {r_path or '(skipped — summary mode)'}")
+        log(f"[scan]   language-refset:{lr_path or '(skipped — summary mode)'}")
 
         if c_path is None:
             raise SystemExit("ERROR: no sct2_Concept_Snapshot_*.txt found in zip — is this an RF2 release?")
@@ -182,9 +183,11 @@ def classify(zip_path, cutoff, branch_path="MAIN", rf2_type="SNAPSHOT", verbose=
             descriptions += read_descriptions(zf, td_path, cutoff, True)
         log(f"[scan] description+textdef rows post-cutoff: {len(descriptions)}")
         relationships = read_relationships(zf, r_path, cutoff) if r_path else []
-        log(f"[scan] relationship rows post-cutoff: {len(relationships)}")
+        if full_mode:
+            log(f"[scan] relationship rows post-cutoff: {len(relationships)}")
         lang = read_language_refset(zf, lr_path, cutoff) if lr_path else []
-        log(f"[scan] language-refset rows post-cutoff: {len(lang)}")
+        if full_mode:
+            log(f"[scan] language-refset rows post-cutoff: {len(lang)}")
 
     concepts = latest_per_id(concepts)
     descriptions = latest_per_id(descriptions)
@@ -298,10 +301,15 @@ def main():
     p.add_argument("--branch-path", default="MAIN", help="Branch path label for the report.")
     p.add_argument("--rf2-type", default="SNAPSHOT", choices=("SNAPSHOT", "DELTA", "FULL"),
                    help="Label for the report (algorithm is identical for all three).")
+    p.add_argument("--mode", default="summary", choices=("summary", "full"),
+                   help="summary (default): parse concepts + descriptions + text-definitions only "
+                        "(several times faster on a full International edition). "
+                        "full: also parse relationships and the language refset so the report "
+                        "includes attributes and acceptability.")
     p.add_argument("-q", "--quiet", action="store_true", help="Suppress progress logging on stderr.")
     args = p.parse_args()
 
-    result = classify(args.zip, args.cutoff, args.branch_path, args.rf2_type, verbose=not args.quiet)
+    result = classify(args.zip, args.cutoff, args.branch_path, args.rf2_type, args.mode, verbose=not args.quiet)
 
     with open(args.output, "w") as f:
         json.dump(result, f)
