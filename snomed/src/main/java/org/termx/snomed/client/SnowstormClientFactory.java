@@ -44,8 +44,10 @@ public class SnowstormClientFactory {
   }
 
   private static Builder builder(Builder builder, Optional<String> snowstormUser, Optional<String> snowstormPassword) {
-    if (snowstormUser.isPresent() && snowstormPassword.isPresent()) {
-      builder.setHeader(HttpHeaders.AUTHORIZATION, basicAuth(snowstormUser.get(), snowstormPassword.get()));
+    String user = snowstormUser.map(String::trim).filter(s -> !s.isEmpty()).orElse(null);
+    String password = snowstormPassword.map(String::trim).filter(s -> !s.isEmpty()).orElse(null);
+    if (user != null && password != null) {
+      builder.setHeader(HttpHeaders.AUTHORIZATION, basicAuth(user, password));
     }
     return builder;
   }
