@@ -39,8 +39,17 @@ public class SnomedRF2UploadCacheRepository extends BaseRepository {
     jdbcTemplate.update(sql, id);
   }
 
+  public void setScanLorqueId(Long id, Long lorqueId) {
+    String sql = "update sys.snomed_rf2_upload set scan_lorque_id = ? where id = ?";
+    jdbcTemplate.update(sql, lorqueId, id);
+  }
+
   public void cleanup(int daysOld) {
-    String sql = "delete from sys.snomed_rf2_upload where started < current_timestamp - (? || ' days')::interval";
+    // Soft-delete and clear zip_data: the schema GRANTs in sys-schema.xml don't include DELETE
+    // for the app user, and what we actually need is to reclaim the bytea (which can be hundreds
+    // of MB per row). The empty-string assignment lets PostgreSQL release the TOAST chunks.
+    String sql = "update sys.snomed_rf2_upload set sys_status = 'C', zip_data = ''::bytea "
+        + "where sys_status = 'A' and started < current_timestamp - (? || ' days')::interval";
     jdbcTemplate.update(sql, String.valueOf(daysOld));
   }
 }

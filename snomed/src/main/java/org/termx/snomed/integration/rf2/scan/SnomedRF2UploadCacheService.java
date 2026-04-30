@@ -34,12 +34,7 @@ public class SnomedRF2UploadCacheService {
 
   @Transactional
   public void attachLorqueId(Long uploadId, Long lorqueId) {
-    SnomedRF2Upload upload = repository.load(uploadId);
-    if (upload == null) {
-      return;
-    }
-    upload.setScanLorqueId(lorqueId);
-    repository.save(upload);
+    repository.setScanLorqueId(uploadId, lorqueId);
   }
 
   public SnomedRF2Upload load(Long id) {
