@@ -1,5 +1,7 @@
 package org.termx.snomed.integration;
 
+import com.kodality.commons.client.HttpClientError;
+import com.kodality.commons.exception.ApiException;
 import org.termx.snomed.ApiError;
 import org.termx.snomed.client.SnowstormClient;
 import org.termx.snomed.codesystem.SnomedCodeSystem;
@@ -17,6 +19,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -118,13 +121,20 @@ public class SnomedService {
 
   @Transactional
   public Map<String, String> importRF2File(SnomedImportRequest req, byte[] importFile) {
-    String jobId = snowstormClient.createImportJob(req).join();
+    String jobId;
+    try {
+      jobId = snowstormClient.createImportJob(req).join();
+    } catch (CompletionException e) {
+      throw rethrowSnowstormImportFailure(e);
+    }
     try {
       snowstormClient.uploadRF2File(jobId, importFile).join();
     } catch (FileNotFoundException e) {
-      e.printStackTrace();
+      log.warn("SNOMED RF2 upload to Snowstorm failed: {}", e.getMessage());
+    } catch (CompletionException e) {
+      throw rethrowSnowstormImportFailure(e);
     }
-    
+
     SnomedImportTracking tracking = new SnomedImportTracking()
         .setSnowstormJobId(jobId)
         .setBranchPath(req.getBranchPath())
@@ -133,10 +143,28 @@ public class SnomedService {
         .setStarted(OffsetDateTime.now())
         .setNotified(false);
     trackingRepository.save(tracking);
-    
+
     log.info("Created SNOMED import tracking record for Snowstorm job: {}", jobId);
-    
+
     return Map.of("jobId", jobId);
+  }
+
+  /**
+   * Convert a CompletableFuture failure from the Snowstorm client into a clean ApiException.
+   * Logs a one-line warn (no stack) so the dev-server log isn't polluted by the full Netty
+   * trace every time Snowstorm rejects an import (e.g. auth misconfiguration). The frontend
+   * still receives a structured error with the upstream status and URL.
+   */
+  private ApiException rethrowSnowstormImportFailure(CompletionException e) {
+    Throwable cause = e.getCause() != null ? e.getCause() : e;
+    if (cause instanceof HttpClientError hce) {
+      int status = hce.getResponse() == null ? 0 : hce.getResponse().statusCode();
+      String url = hce.getRequest() == null ? "(unknown)" : hce.getRequest().uri().toString();
+      log.warn("Snowstorm import call failed: HTTP {} {}", status, url);
+      return ApiError.SN201.toApiException(Map.of("status", status, "url", url));
+    }
+    // Unknown async failure — keep the full stack so it surfaces as a real bug.
+    throw e;
   }
 
   public List<SnomedCodeSystem> loadCodeSystems() {
