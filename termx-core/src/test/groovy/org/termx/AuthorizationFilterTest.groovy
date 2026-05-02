@@ -19,6 +19,14 @@ class AuthorizationFilterTest extends Specification {
     ['*.CodeSystem.view']                  | ['*.CodeSystem.edit']                  | false
     ['ABS.CodeSystem.edit']                | ['SBA.CodeSystem.edit']                | false
     ['*.CodeSystem.*']                     | ['SBA.CodeSystem.edit']                | true
+    // Phase A: triage is a new, independent action
+    ['*.*.triage']                         | ['*.*.*']                              | true
+    ['*.CodeSystem.triage']                | ['icd-10.CodeSystem.triage']           | true
+    ['icd-10.CodeSystem.triage']           | ['*.*.triage']                         | true
+    ['icd-10.CodeSystem.triage']           | ['*.CodeSystem.*']                     | true
+    ['icd-10.CodeSystem.triage']           | ['icd-10.CodeSystem.view']             | false
+    ['icd-10.CodeSystem.view']             | ['icd-10.CodeSystem.triage']           | false
+    ['icd-10.CodeSystem.triage']           | ['icd-10.CodeSystem.edit']             | false
   }
 
 //  def "privilege resource check works"() {

@@ -87,6 +87,35 @@ cd termx-app
 ``` 
 In the development mode you can use application without authentication. The application use special dev token **Bearer token** `yupi` in request Authorization header.
 
+### Yupi privilege override (QA / migration testing)
+
+By default the `yupi` session is granted the full set of action wildcards (`*.*.view`, `*.*.triage`, `*.*.edit`, `*.*.publish`). To test the application as a user with a restricted privilege set -- for example, to verify that a `View`-only user no longer sees CodeSystem download links or wiki comments after the Phase A migration -- override the yupi privilege set with the `-PyupiPrivileges` Gradle flag (or directly with `-Dauth.dev.yupi.privileges=...`).
+
+```bash
+# View-only: page renders but downloads + comments are hidden.
+./gradlew :termx-app:run -Pdev -PyupiPrivileges='*.*.view'
+
+# View + Triage: downloads visible, comment thread visible, no edit.
+./gradlew :termx-app:run -Pdev -PyupiPrivileges='*.*.view,*.*.triage'
+
+# Resource-scoped view: only the icd-10 CodeSystem is viewable.
+./gradlew :termx-app:run -Pdev -PyupiPrivileges='icd-10.CodeSystem.view'
+```
+
+The value is a comma-separated list of dotted privilege strings (`{resource}.{type}.{action}`); whitespace and empty tokens are ignored. Common preset values and their expected UI effect are documented in [docs/specification/terminology-server/privileges-migration-guide.md](../docs/specification/terminology-server/privileges-migration-guide.md#qa-testing-with-the-yupi-privilege-override) and inline in [`YupiSessionProvider`](termx-app/src/main/java/org/termx/auth/YupiSessionProvider.java).
+
+For ad-hoc per-request overrides without restarting the server, send a JSON-encoded `SessionInfo` directly in the header:
+
+```
+Authorization: Bearer yupi{"username":"qa","privileges":["*.CodeSystem.view"]}
+```
+
+**Frontend note.** The web UI (termx-web) fetches privileges from the backend's `/auth/userinfo` endpoint, so any `auth.dev.yupi.privileges` override is reflected in the UI automatically. After changing the override and restarting the server, **hard-refresh the browser** (Cmd/Ctrl-Shift-R) to drop the cached session. If you still see admin (`*.*.*`) after the refresh, check that:
+1. The frontend's `environment.yupiEnabled` is `true` (default in `environment.ts`).
+2. The backend started with `-Pdev` so `auth.dev.allowed=true` is set.
+3. The `-PyupiPrivileges` value made it onto the JVM command line (visible in `./gradlew :termx-app:run` output via `-Dauth.dev.yupi.privileges=...`).
+4. Hit `http://localhost:8200/auth/userinfo` directly in the browser. The response should show `"username": "yupi"` with the privileges you configured. If it shows a different username (e.g. `admin`) you are hitting the **mock** auth provider configured in `application-local.yml` -- the yupi provider is wired to take priority over mock since order=3 (yupi) < 5 (mock), so this should not happen, but if your `application-local.yml` is heavily customised, double-check that nothing else is intercepting `Bearer yupi`.
+
 ### Logging
 
 - **Local (verbose)**: Copy [`termx-app/src/main/resources/application-local.example.yml`](termx-app/src/main/resources/application-local.example.yml) to `termx-app/src/main/resources/application-local.yml` (that file is gitignored). Micronaut only loads `application-local.yml` when the **`local`** environment is active. Use **`./gradlew :termx-app:run -Pdev`** or **`./_run_local.sh`** (they set `dev,local`), or add **`-Dmicronaut.environments=dev,local`** to the JVM when running from the IDE. **`./gradlew run` without `-Pdev` does not load `application-local.yml`**, so `logger.levels` there will have no effect.

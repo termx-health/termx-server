@@ -26,14 +26,14 @@ public class PageCommentController {
   private final PageContentService pageContentService;
   private final PageCommentService commentService;
 
-  @Authorized(Privilege.W_VIEW)
+  @Authorized(Privilege.W_TRIAGE)
   @Get("{?params*}")
   public QueryResult<PageComment> query(PageCommentQueryParams params) {
-    params.setPermittedSpaceIds(SessionStore.require().getPermittedResourceIds(Privilege.W_VIEW, Long::valueOf));
+    params.setPermittedSpaceIds(SessionStore.require().getPermittedResourceIds(Privilege.W_TRIAGE, Long::valueOf));
     return commentService.query(params);
   }
 
-  @Authorized(Privilege.W_EDIT)
+  @Authorized(Privilege.W_TRIAGE)
   @Post
   public HttpResponse<?> create(@Body @Valid PageComment comment) {
     comment.setId(null);
@@ -43,7 +43,7 @@ public class PageCommentController {
   @Authorized(privilege = Privilege.W_EDIT)
   @Put("/{id}")
   public HttpResponse<?> update(@PathVariable Long id, @Body @Valid PageComment comment) {
-    SessionStore.require().checkPermitted(pageContentService.load(comment.getPageContentId()).getSpaceId().toString(), Privilege.W_VIEW);
+    SessionStore.require().checkPermitted(pageContentService.load(comment.getPageContentId()).getSpaceId().toString(), Privilege.W_TRIAGE);
     comment.setId(id);
     return HttpResponse.ok(commentService.update(comment));
   }
