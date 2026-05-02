@@ -21,6 +21,7 @@ public class PrivilegeResource {
   @Accessors(chain = true)
   public static class PrivilegeResourceActions {
     private boolean view;
+    private boolean triage;
     private boolean edit;
     private boolean publish;
   }

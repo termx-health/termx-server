@@ -294,13 +294,13 @@ public class MapSetController {
 
   //----------------MapSet Export----------------
 
-  @Authorized(Privilege.MS_VIEW)
+  @Authorized(Privilege.MS_TRIAGE)
   @Get(uri = "/{mapSet}/versions/{version}/associations-export{?params*}")
   public LorqueProcess exportAssociations(@PathVariable String mapSet, @PathVariable String version, Map<String, String> params) {
     return mapSetExportService.export(mapSet, version, params.getOrDefault("format", "csv"));
   }
 
-  @Authorized(Privilege.MS_VIEW)
+  @Authorized(Privilege.MS_TRIAGE)
   @Get(value = "/associations-export-csv/result/{lorqueProcessId}", produces = "application/csv")
   public HttpResponse<?> getAssociationExportCSV(Long lorqueProcessId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
@@ -309,7 +309,7 @@ public class MapSetController {
         .contentType(MediaType.of("application/csv"));
   }
 
-  @Authorized(Privilege.MS_VIEW)
+  @Authorized(Privilege.MS_TRIAGE)
   @Get(value = "/associations-export-xlsx/result/{lorqueProcessId}", produces = "application/vnd.ms-excel")
   public HttpResponse<?> getAssociationExportXLSX(Long lorqueProcessId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());

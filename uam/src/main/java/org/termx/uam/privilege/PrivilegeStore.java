@@ -69,6 +69,9 @@ public class PrivilegeStore implements PrivilegeDataHandler {
     if (actions.isView()) {
       privileges.add(dottedPrivilege(id, type, "view"));
     }
+    if (actions.isTriage()) {
+      privileges.add(dottedPrivilege(id, type, "triage"));
+    }
     if (actions.isEdit()) {
       privileges.add(dottedPrivilege(id, type, "edit"));
     }

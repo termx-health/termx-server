@@ -241,13 +241,13 @@ public class ValueSetController {
     return jobLogResponse;
   }
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_TRIAGE)
   @Get(uri = "/{valueSet}/versions/{version}/expansion-export{?params*}")
   public LorqueProcess exportConcepts(@PathVariable String valueSet, @PathVariable String version, Map<String, String> params) {
     return valueSetExportService.export(valueSet, version, params.getOrDefault("format", "csv"));
   }
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_TRIAGE)
   @Get(value = "/expansion-export-csv/result/{lorqueProcessId}", produces = "application/csv")
   public HttpResponse<?> getConceptExportCSV(Long lorqueProcessId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
@@ -256,7 +256,7 @@ public class ValueSetController {
         .contentType(MediaType.of("application/csv"));
   }
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_TRIAGE)
   @Get(value = "/expansion-export-xlsx/result/{lorqueProcessId}", produces = "application/vnd.ms-excel")
   public HttpResponse<?> getConceptExportXLSX(Long lorqueProcessId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());

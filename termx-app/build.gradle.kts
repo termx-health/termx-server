@@ -130,4 +130,10 @@ tasks.named<JavaExec>("run") {
     if (project.hasProperty("dev")) {
         jvmArgs = (jvmArgs ?: listOf()) + listOf("-Dauth.dev.allowed=true", "-Dmicronaut.environments=dev,local")
     }
+    // QA / migration testing: override the yupi default session's privilege set.
+    // Example: ./gradlew :termx-app:run -Pdev -PyupiPrivileges='*.*.view'
+    // See YupiSessionProvider Javadoc for common preset values.
+    if (project.hasProperty("yupiPrivileges")) {
+        jvmArgs = (jvmArgs ?: listOf()) + listOf("-Dauth.dev.yupi.privileges=${project.property("yupiPrivileges")}")
+    }
 }

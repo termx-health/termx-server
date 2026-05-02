@@ -7,6 +7,7 @@
     "username": "demo-tm",
     "privileges": [
       "*.*.view",
+      "*.*.triage",
       "*.Task.publish",
       "*.CodeSystem.publish",
       "*.ValueSet.publish",
@@ -17,6 +18,7 @@
     "username": "demo-publisher",
     "privileges": [
       "*.*.view",
+      "*.*.triage",
       "*.Task.publish",
       "icd-10.CodeSystem.publish",
       "icd-11.CodeSystem.publish",
@@ -28,6 +30,7 @@
     "username": "demo-editor",
     "privileges": [
       "*.*.view",
+      "*.*.triage",
       "*.Task.edit",
       "icd-10.CodeSystem.edit",
       "icd-11.CodeSystem.edit",
@@ -39,6 +42,7 @@
     "username": "demo-reviewer",
     "privileges": [
       "*.*.view",
+      "*.*.triage",
       "*.Task.edit",
       "icd-10.CodeSystem.edit"
     ]

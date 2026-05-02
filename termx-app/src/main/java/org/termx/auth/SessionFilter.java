@@ -57,14 +57,16 @@ public class SessionFilter implements HttpServerFilter {
     return false;
   }
 
-  private void deriveTaskPrivileges(SessionInfo session) {
+  void deriveTaskPrivileges(SessionInfo session) {
     if (session.getPrivileges() == null) {
       return;
     }
     java.util.Set<String> derived = new java.util.HashSet<>(session.getPrivileges());
-    
-    // Keep admin unchanged
-    if (session.hasPrivilege("*.*.*")) {
+
+    // Keep admin unchanged. Use a literal string contains (not hasPrivilege) because
+    // hasPrivilege("*.*.*") matches any 3-part privilege via wildcards, which would
+    // short-circuit derivation for every authenticated user.
+    if (session.getPrivileges().contains("*.*.*")) {
       session.setPrivileges(derived);
       return;
     }
@@ -93,7 +95,9 @@ public class SessionFilter implements HttpServerFilter {
         continue; // Not a resource type we derive from
       }
       
-      if ("edit".equals(action)) {
+      if ("triage".equals(action)) {
+        derived.add(contextType + "#" + resourceId + ".Task.view");
+      } else if ("edit".equals(action)) {
         derived.add(contextType + "#" + resourceId + ".Task.view");
         derived.add(contextType + "#" + resourceId + ".Task.edit");
       } else if ("publish".equals(action)) {
