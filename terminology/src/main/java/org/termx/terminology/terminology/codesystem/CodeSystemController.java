@@ -322,13 +322,13 @@ public class CodeSystemController {
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.CS_VIEW)
+  @Authorized(Privilege.CS_TRIAGE)
   @Get(uri = "/{codeSystem}/versions/{version}/concepts/export{?params*}")
   public LorqueProcess exportConcepts(@PathVariable String codeSystem, @PathVariable String version, Map<String, String> params) {
     return conceptExportService.export(codeSystem, version, params.getOrDefault("format", "csv"));
   }
 
-  @Authorized(Privilege.CS_VIEW)
+  @Authorized(Privilege.CS_TRIAGE)
   @Get(value = "/concepts/export-csv/result/{lorqueProcessId}", produces = "application/csv")
   public HttpResponse<?> getConceptExportCSV(Long lorqueProcessId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
@@ -337,7 +337,7 @@ public class CodeSystemController {
         .contentType(MediaType.of("application/csv"));
   }
 
-  @Authorized(Privilege.CS_VIEW)
+  @Authorized(Privilege.CS_TRIAGE)
   @Get(value = "/concepts/export-xlsx/result/{lorqueProcessId}", produces = "application/vnd.ms-excel")
   public HttpResponse<?> getConceptExportXLSX(Long lorqueProcessId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());

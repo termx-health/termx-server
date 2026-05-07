@@ -26,9 +26,16 @@ import org.termx.snomed.rf2.SnomedExportJob;
 import org.termx.snomed.rf2.SnomedExportRequest;
 import org.termx.snomed.rf2.SnomedImportJob;
 import org.termx.snomed.rf2.SnomedImportRequest;
+import org.termx.snomed.rf2.SnomedRF2Upload;
+import org.termx.snomed.rf2.scan.SnomedRF2ScanEnvelope;
+import org.termx.snomed.concept.SnomedConceptUsage;
+import org.termx.snomed.concept.SnomedConceptUsageRequest;
 import org.termx.snomed.search.SnomedSearchResult;
 import org.termx.snomed.integration.csv.SnomedConceptCsvService;
 import org.termx.snomed.integration.rf2.SnomedRF2Service;
+import org.termx.snomed.integration.rf2.scan.SnomedRF2ScanService;
+import org.termx.snomed.integration.rf2.scan.SnomedRF2UploadCacheService;
+import org.termx.snomed.integration.usage.SnomedConceptUsageService;
 import org.termx.snomed.integration.translation.SnomedTranslationActionService;
 import org.termx.snomed.integration.translation.SnomedTranslationProvenanceService;
 import org.termx.snomed.integration.translation.SnomedTranslationService;
@@ -76,6 +83,9 @@ public class SnomedController {
   private final SnomedTranslationService translationService;
   private final SnomedTranslationActionService translationActionService;
   private final SnomedTranslationProvenanceService provenanceService;
+  private final SnomedRF2ScanService snomedRF2ScanService;
+  private final SnomedRF2UploadCacheService snomedRF2UploadCacheService;
+  private final SnomedConceptUsageService snomedConceptUsageService;
 
 
   //----------------CodeSystems----------------
@@ -247,9 +257,52 @@ public class SnomedController {
   }
 
   @Authorized(Privilege.SNOMED_VIEW)
+  @Post(value = "/imports/scan", consumes = MediaType.MULTIPART_FORM_DATA)
+  public LorqueProcess scanImport(Publisher<CompletedFileUpload> file, @Part("request") String request) {
+    SnomedImportRequest req = JsonUtil.fromJson(request, SnomedImportRequest.class);
+    CompletedFileUpload upload = Flowable.fromPublisher(file).firstOrError().blockingGet();
+    byte[] importFile = FileUtil.readBytes(upload);
+    String filename = upload == null ? null : upload.getFilename();
+    return snomedRF2ScanService.scanRF2(req, importFile, filename);
+  }
+
+  @Authorized(Privilege.SNOMED_EDIT)
+  @Post("/imports/scan/{cacheId}/proceed")
+  public Map<String, String> proceedScanImport(@PathVariable Long cacheId) {
+    SnomedRF2Upload cached = snomedRF2UploadCacheService.load(cacheId);
+    if (cached == null) {
+      throw new IllegalArgumentException("Upload cache " + cacheId + " not found or expired");
+    }
+    SnomedImportRequest req = new SnomedImportRequest();
+    req.setBranchPath(cached.getBranchPath());
+    req.setType(cached.getRf2Type());
+    req.setCreateCodeSystemVersion(cached.isCreateCodeSystemVersion());
+    Map<String, String> result = snomedService.importRF2File(req, cached.getZipData());
+    snomedRF2UploadCacheService.markImported(cacheId);
+    return result;
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
   @Get("/imports/{jobId}")
   public SnomedImportJob loadImportJob(@PathVariable String jobId) {
     return snowstormClient.loadImportJob(jobId).join();
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Get("/imports/scan/result/{lorqueProcessId}")
+  public SnomedRF2ScanEnvelope loadScanResult(@PathVariable Long lorqueProcessId) {
+    LorqueProcess process = lorqueProcessService.load(lorqueProcessId);
+    if (process == null || process.getResult() == null) {
+      return null;
+    }
+    String json = new String(process.getResult(), java.nio.charset.StandardCharsets.UTF_8);
+    return JsonUtil.fromJson(json, SnomedRF2ScanEnvelope.class);
+  }
+
+  @Authorized(Privilege.SNOMED_VIEW)
+  @Post("/concept-usage")
+  public List<SnomedConceptUsage> findConceptUsage(@Body SnomedConceptUsageRequest request) {
+    return snomedConceptUsageService.findUsage(request == null ? null : request.getCodes());
   }
 
   //----------------Concepts----------------

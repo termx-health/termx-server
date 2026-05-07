@@ -7,6 +7,7 @@
     "username": "publisher1",
     "privileges": [
       "*.*.view",
+      "*.*.triage",
       "*.Task.publish",
       "*.CodeSystem.publish",
       "*.ValueSet.publish",
@@ -17,6 +18,7 @@
     "username": "editor1",
     "privileges": [
       "*.*.view",
+      "*.*.triage",
       "*.Task.edit",
       "*.CodeSystem.edit",
       "*.ValueSet.edit",
@@ -27,6 +29,7 @@
     "username": "editor2",
     "privileges": [
       "*.*.view",
+      "*.*.triage",
       "*.Task.edit",
       "icd-10.CodeSystem.edit",
       "disorders.ValueSet.edit"

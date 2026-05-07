@@ -29,8 +29,15 @@ public class LorqueProcessRepository extends BaseRepository {
     ssb.property("finished", process.getFinished());
     ssb.property("result", process.getResult());
     ssb.property("result_type", process.getResultType());
+    ssb.property("progress_percent", process.getProgressPercent());
+    ssb.property("progress_note", process.getProgressNote());
     SqlBuilder sb = ssb.buildSave("sys.lorque_process", "id");
     return jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
+  }
+
+  public void updateProgress(Long id, Integer percent, String note) {
+    String sql = "update sys.lorque_process set progress_percent = ?, progress_note = ? where id = ?";
+    jdbcTemplate.update(sql, percent, note, id);
   }
 
   public void cleanup(int daysInterval) {

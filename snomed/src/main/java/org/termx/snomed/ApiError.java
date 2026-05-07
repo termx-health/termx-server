@@ -10,6 +10,7 @@ import lombok.Getter;
 public enum ApiError {
   SN101("SN101", "Branch name is required"),
   SN102("SN102", "Branch name can contain only: A-Z charaters, numbers, slash and hyphen"),
+  SN201("SN201", "Snowstorm rejected the import request: HTTP {{status}} ({{url}})"),
   ;
 
   private String code;

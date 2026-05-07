@@ -16,6 +16,7 @@
     <include file="08-code_system_supplement.sql" relativeToChangelogFile="true"/>
     <include file="09-naming_system.sql" relativeToChangelogFile="true"/>
     <include file="10-code_system_entity_version_update_queue.sql" relativeToChangelogFile="true"/>
+    <include file="12-closure.sql" relativeToChangelogFile="true"/>
 
     <include file="views/concept_closure.sql" relativeToChangelogFile="true"/>
     <include file="views/concept_name.sql" relativeToChangelogFile="true"/>

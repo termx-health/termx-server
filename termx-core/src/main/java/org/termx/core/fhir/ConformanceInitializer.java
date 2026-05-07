@@ -59,6 +59,7 @@ public class ConformanceInitializer extends ConformanceStaticLoader {
         "conformance/OperationDefinition-CodeSystem-subsumes.json",
         "conformance/OperationDefinition-CodeSystem-sync.json",
         "conformance/OperationDefinition-CodeSystem-validate-code.json",
+        "conformance/OperationDefinition-ConceptMap-closure.json",
         "conformance/OperationDefinition-ConceptMap-sync.json",
         "conformance/OperationDefinition-ConceptMap-translate.json",
         "conformance/OperationDefinition-ValueSet-expand.json",

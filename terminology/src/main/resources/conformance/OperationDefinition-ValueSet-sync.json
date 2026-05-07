@@ -10,7 +10,7 @@
   "status": "draft",
   "system": false,
   "version": "5.0.0",
-  "instance": true,
+  "instance": false,
   "resource": [
     "ValueSet"
   ],

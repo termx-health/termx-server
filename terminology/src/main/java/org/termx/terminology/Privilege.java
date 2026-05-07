@@ -2,6 +2,7 @@ package org.termx.terminology;
 
 public interface Privilege {
   String CS_VIEW = "CodeSystem.view";
+  String CS_TRIAGE = "CodeSystem.triage";
   String CS_EDIT = "CodeSystem.edit";
   String CS_PUBLISH = "CodeSystem.publish";
 
@@ -9,10 +10,12 @@ public interface Privilege {
   String DEF_PROP_EDIT = "DefinedProperty.edit";
 
   String VS_VIEW = "ValueSet.view";
+  String VS_TRIAGE = "ValueSet.triage";
   String VS_EDIT = "ValueSet.edit";
   String VS_PUBLISH = "ValueSet.publish";
 
   String MS_VIEW = "MapSet.view";
+  String MS_TRIAGE = "MapSet.triage";
   String MS_EDIT = "MapSet.edit";
   String MS_PUBLISH = "MapSet.publish";
 

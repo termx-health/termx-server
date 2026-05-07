@@ -42,3 +42,15 @@ select 1;
 --precondition-sql-check expectedResult:'dev' select core.get_setting('core.env');
 insert into uam.privilege_resource(privilege_id, resource_type) select id, 'Admin' from uam.privilege p where p.code = 'guest'
 --
+
+--changeset termx:add_triage_to_editor_publisher
+-- Phase A migration: grant the new `triage` action (downloads + comment access)
+-- to the seeded `editor` and `publisher` privileges. `viewer` is intentionally
+-- left without `triage` to preserve the documented Q5 test target (legacy
+-- view-only users lose downloads / comments).
+update uam.privilege_resource
+set actions = actions || '{"triage": true}'::jsonb
+where privilege_id in (select id from uam.privilege where code in ('editor', 'publisher'))
+  and (actions->>'triage') is distinct from 'true';
+--rollback update uam.privilege_resource set actions = actions - 'triage' where privilege_id in (select id from uam.privilege where code in ('editor', 'publisher'));
+--

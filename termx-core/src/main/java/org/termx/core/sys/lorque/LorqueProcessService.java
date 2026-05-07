@@ -57,6 +57,10 @@ public class LorqueProcessService {
     return repository.getStatus(id);
   }
 
+  public void reportProgress(Long id, Integer percent, String note) {
+    repository.updateProgress(id, percent, note);
+  }
+
   @Transactional
   public LorqueProcess complete(Long id, ProcessResult result) {
     LorqueProcess process = load(id);
