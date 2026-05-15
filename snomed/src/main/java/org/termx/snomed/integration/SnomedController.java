@@ -90,40 +90,40 @@ public class SnomedController {
 
   //----------------CodeSystems----------------
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/codesystems")
   public List<SnomedCodeSystem> loadCodeSystems() {
     return snomedService.loadCodeSystems();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Get("/codesystems/{shortName}")
   public SnomedCodeSystem loadCodeSystem(@PathVariable String shortName) {
     return snomedService.loadCodeSystem(shortName);
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post("/codesystems")
   public HttpResponse<?> createCodeSystem(@Body SnomedCodeSystem codeSystem) {
     snowstormClient.createCodeSystem(codeSystem).join();
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post("/codesystems/{shortName}/upgrade")
   public HttpResponse<?> upgradeCodeSystem(@PathVariable String shortName, @Body SnomedCodeSystemUpgradeRequest request) {
     snowstormClient.upgradeCodeSystem(shortName, request).join();
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Put("/codesystems/{shortName}")
   public HttpResponse<?> createCodeSystem(@PathVariable String shortName, @Body SnomedCodeSystem codeSystem) {
     snowstormClient.updateCodeSystem(shortName, codeSystem).join();
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Delete("/codesystems/{shortName}")
   public HttpResponse<?> deleteCodeSystem(@PathVariable String shortName) {
     snowstormClient.deleteCodeSystem(shortName).join();
@@ -131,7 +131,7 @@ public class SnomedController {
   }
 
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post("/codesystems/{shortName}/versions")
   public HttpResponse<?> createCodeSystemVersion(@PathVariable String shortName, @Body SnomedCodeSystemVersion version) {
     snowstormClient.createCodeSystemVersion(shortName, version).join();
@@ -140,84 +140,84 @@ public class SnomedController {
 
   //----------------Branches----------------
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/branches")
   public List<SnomedBranch> loadBranches() {
     return snowstormClient.loadBranches().join();
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/branches/{path}")
   public SnomedBranch loadBranch(@PathVariable String path) {
     return snowstormClient.loadBranch(parsePath(path)).join();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post("/branches")
   public SnomedBranch createBranch(@Body SnomedBranchRequest request) {
     snomedService.validateBranchName(request.getName());
     return snowstormClient.createBranch(request).join();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Put("/branches/{path}")
   public SnomedBranch updateBranch(@PathVariable String path, @Body SnomedBranchRequest request) {
     snomedService.validateBranchName(request.getName());
     return snowstormClient.updateBranch(parsePath(path), request).join();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Delete("/branches/{path}")
   public HttpResponse<?> deleteBranch(@PathVariable String path) {
     snowstormClient.deleteBranch(parsePath(path)).join();
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post("/branches/{path}/lock")
   public HttpResponse<?> lockBranch(@PathVariable String path, @QueryValue String lockMessage) {
     snowstormClient.lockBranch(parsePath(path), Map.of("lockMessage", lockMessage)).join();
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post("/branches/{path}/unlock")
   public HttpResponse<?> unlockBranch(@PathVariable String path) {
     snowstormClient.unlockBranch(parsePath(path)).join();
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post("/branches/{path}/integrity-check")
   public Object branchIntegrityCheck(@PathVariable String path) {
     return snowstormClient.branchIntegrityCheck(parsePath(path)).join();
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/{path}/authoring-stats/changed-fully-specified-names")
   public List<SnomedAuthoringStatsResponse> getChangedFsn(@PathVariable String path) {
     return snowstormClient.getChangedFsn(parsePath(path)).join();
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/{path}/authoring-stats/new-descriptions")
   public List<SnomedAuthoringStatsResponse> getNewDescriptions(@PathVariable String path) {
     return snowstormClient.getNewDescriptions(parsePath(path)).join();
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/{path}/authoring-stats/new-synonyms-on-existing-concepts")
   public List<SnomedAuthoringStatsResponse> getNewSynonyms(@PathVariable String path) {
     return snowstormClient.getNewSynonyms(parsePath(path)).join();
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/{path}/authoring-stats/inactivated-synonyms")
   public List<SnomedAuthoringStatsResponse> getInactivatedSynonyms(@PathVariable String path) {
     return snowstormClient.getInactivatedSynonyms(parsePath(path)).join();
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/{path}/authoring-stats/reactivated-synonyms")
   public List<SnomedAuthoringStatsResponse> getReactivatedSynonyms(@PathVariable String path) {
     return snowstormClient.getReactivatedSynonyms(parsePath(path)).join();
@@ -226,21 +226,21 @@ public class SnomedController {
 
   //----------------RF2----------------
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post("/exports")
   public Map<String, String> createExportJob(@Body SnomedExportRequest request) {
     return Map.of("jobId", snowstormClient.createExportJob(request).join());
   }
 
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get(value = "/exports/{jobId}/archive")
   public HttpResponse<?> getRF2File(@PathVariable String jobId) {
     LorqueProcess lorqueProcess = snomedRF2Service.getRF2File(jobId);
     return HttpResponse.accepted().body(lorqueProcess);
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get(value = "/exports/archive/result/{lorqueProcessId}", produces = "application/zip")
   public HttpResponse<?> getRF2File(Long lorqueProcessId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
@@ -248,7 +248,7 @@ public class SnomedController {
         .contentType(MediaType.of("application/zip"));
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post(value = "/imports", consumes = MediaType.MULTIPART_FORM_DATA)
   public Map<String, String> createImportJob(Publisher<CompletedFileUpload> file, @Part("request") String request) {
     SnomedImportRequest req = JsonUtil.fromJson(request, SnomedImportRequest.class);
@@ -256,7 +256,7 @@ public class SnomedController {
     return snomedService.importRF2File(req, importFile);
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Post(value = "/imports/scan", consumes = MediaType.MULTIPART_FORM_DATA)
   public LorqueProcess scanImport(Publisher<CompletedFileUpload> file, @Part("request") String request) {
     SnomedImportRequest req = JsonUtil.fromJson(request, SnomedImportRequest.class);
@@ -266,7 +266,7 @@ public class SnomedController {
     return snomedRF2ScanService.scanRF2(req, importFile, filename);
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post("/imports/scan/{cacheId}/proceed")
   public Map<String, String> proceedScanImport(@PathVariable Long cacheId) {
     SnomedRF2Upload cached = snomedRF2UploadCacheService.load(cacheId);
@@ -282,13 +282,13 @@ public class SnomedController {
     return result;
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/imports/{jobId}")
   public SnomedImportJob loadImportJob(@PathVariable String jobId) {
     return snowstormClient.loadImportJob(jobId).join();
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/imports/scan/result/{lorqueProcessId}")
   public SnomedRF2ScanEnvelope loadScanResult(@PathVariable Long lorqueProcessId) {
     LorqueProcess process = lorqueProcessService.load(lorqueProcessId);
@@ -299,7 +299,7 @@ public class SnomedController {
     return JsonUtil.fromJson(json, SnomedRF2ScanEnvelope.class);
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Post("/concept-usage")
   public List<SnomedConceptUsage> findConceptUsage(@Body SnomedConceptUsageRequest request) {
     return snomedConceptUsageService.findUsage(request == null ? null : request.getCodes());
@@ -307,7 +307,7 @@ public class SnomedController {
 
   //----------------Concepts----------------
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/concepts/{conceptId}")
   public SnomedConcept loadConcept(@PathVariable String conceptId, @QueryValue @Nullable String branch) {
     if (StringUtils.isNotEmpty(branch)) {
@@ -316,7 +316,7 @@ public class SnomedController {
     return snowstormClient.loadConcept(conceptId).join();
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/concepts/{conceptId}/children")
   public List<SnomedConcept> findConceptChildren(@PathVariable String conceptId, @QueryValue @Nullable String branch) {
     if (StringUtils.isNotEmpty(branch)) {
@@ -333,7 +333,7 @@ public class SnomedController {
     return concepts;
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/concepts{?params*}")
   public SnomedSearchResult<SnomedConcept> findConcepts(SnomedConceptSearchParams params) {
     SnomedSearchResult<SnomedConcept> concepts = snowstormClient.queryConcepts(params).join();
@@ -344,14 +344,14 @@ public class SnomedController {
     return concepts;
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Post(value = "/concepts/export-csv")
   public HttpResponse<?> startConceptCsvExport(@Body SnomedConceptSearchParams params) {
     LorqueProcess lorqueProcess = snomedConceptCsvService.startCsvExport(params);
     return HttpResponse.accepted().body(lorqueProcess);
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get(value = "/concepts/export-csv/result/{lorqueProcessId}", produces = "application/csv")
   public HttpResponse<?> getConceptCsv(Long lorqueProcessId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
@@ -362,7 +362,7 @@ public class SnomedController {
 
   //----------------Descriptions----------------
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/descriptions{?params*}")
   public SnomedDescriptionItemResponse findConceptDescriptions(SnomedDescriptionItemSearchParams params) {
     params.setActive(true);
@@ -379,7 +379,7 @@ public class SnomedController {
     return response;
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post("/branches/{path}/descriptions/{descriptionId}/deactivate")
   public HttpResponse<?> deactivateDescription(@PathVariable String path, @PathVariable String descriptionId) {
     path += "/";
@@ -387,7 +387,7 @@ public class SnomedController {
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Post("/branches/{path}/descriptions/{descriptionId}/reactivate")
   public HttpResponse<?> reactivateDescription(@PathVariable String path, @PathVariable String descriptionId) {
     path += "/";
@@ -395,7 +395,7 @@ public class SnomedController {
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SNOMED_EDIT)
+  @Authorized(Privilege.SNOMED_WRITE)
   @Delete("/branches/{path}/descriptions/{descriptionId}")
   public HttpResponse<?> deleteDescription(@PathVariable String path, @PathVariable String descriptionId) {
     path += "/";
@@ -405,13 +405,13 @@ public class SnomedController {
 
   //----------------RefSets----------------
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/refsets{?params*}")
   public SnomedRefsetResponse findRefsets(SnomedRefsetSearchParams params) {
     return snowstormClient.findRefsets(params).join();
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/refset-members{?params*}")
   public SnomedRefsetMemberResponse findRefsetMembers(SnomedRefsetSearchParams params) {
     return snowstormClient.findRefsetMembers(params).join();
@@ -420,7 +420,7 @@ public class SnomedController {
 
 //----------------Translations----------------
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/translations")
   public List<SnomedTranslation> queryTranslations(@QueryValue @Nullable Boolean active,
                                                    @QueryValue @Nullable Boolean unlinked,
@@ -428,40 +428,40 @@ public class SnomedController {
     return translationService.loadAll(active, unlinked, branch);
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/translations/{id}")
   public SnomedTranslation loadTranslation(@PathVariable Long id) {
     return translationService.load(id);
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Post("/translations/{id}/add-to-branch")
   public HttpResponse<?> addTranslationToBranch(@PathVariable Long id) {
     translationActionService.addToBranch(id);
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get("/concepts/{conceptId}/translations")
   public List<SnomedTranslation> loadTranslations(@PathVariable String conceptId) {
     return translationService.load(conceptId);
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Post("/concepts/{conceptId}/translations")
   public HttpResponse<?> saveTranslations(@PathVariable String conceptId, @Body List<SnomedTranslation> translations) {
     provenanceService.provenanceTranslations("snomed-translations-save", conceptId, () -> translationService.save(conceptId, translations));
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Post(value = "/translations/export-rf2")
   public HttpResponse<?> startRF2Export() {
     LorqueProcess lorqueProcess = snomedRF2Service.startRF2Export();
     return HttpResponse.accepted().body(lorqueProcess);
   }
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get(value = "/translations/export-rf2/result/{lorqueProcessId}", produces = "application/zip")
   public HttpResponse<?> getRF2(Long lorqueProcessId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());
@@ -472,7 +472,7 @@ public class SnomedController {
 
   //----------------Provenances----------------
 
-  @Authorized(Privilege.SNOMED_VIEW)
+  @Authorized(Privilege.SNOMED_READ)
   @Get(uri = "/concepts/{conceptId}/provenances")
   public List<Provenance> queryProvenances(@PathVariable String conceptId) {
     return provenanceService.find(conceptId);

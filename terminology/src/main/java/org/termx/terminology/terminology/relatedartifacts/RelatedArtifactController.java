@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class RelatedArtifactController {
   private final List<RelatedArtifactService> services;
 
-  @Authorized("*.*.view")
+  @Authorized("*.*.read")
   @Post()
   public List<RelatedArtifact> findRelatedArtifacts(@Valid @Body RelatedArtifactRequest request) {
     return services.stream().flatMap(s -> s.findRelatedArtifacts(request).stream()).toList();

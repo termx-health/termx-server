@@ -806,7 +806,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     });
     params.setVersionsDecorated(true);
     params.setPropertiesDecorated(true);
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.CS_READ));
     return params;
   }
 
@@ -858,7 +858,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         default -> throw new ApiClientException("Search by '" + k + "' not supported");
       }
     });
-    params.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
+    params.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_READ));
     return params;
   }
 }

@@ -1,6 +1,6 @@
 package org.termx.observationdefinition;
 
 public interface Privilege {
-  String OBS_DEF_VIEW = "ObservationDefinition.view";
-  String OBS_DEF_EDIT = "ObservationDefinition.edit";
+  String OBS_DEF_READ = "ObservationDefinition.read";
+  String OBS_DEF_WRITE = "ObservationDefinition.write";
 }

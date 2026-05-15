@@ -79,7 +79,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   public Parameters run(ValueSetVersion vsVersion, Parameters req) {
-    SessionStore.require().checkPermitted(vsVersion.getValueSet(), Privilege.VS_VIEW);
+    SessionStore.require().checkPermitted(vsVersion.getValueSet(), Privilege.VS_READ);
     String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
     String system = findSystem(req);
     String version = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);

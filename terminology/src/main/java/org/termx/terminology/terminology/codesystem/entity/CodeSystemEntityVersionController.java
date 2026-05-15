@@ -14,12 +14,12 @@ import lombok.RequiredArgsConstructor;
 public class CodeSystemEntityVersionController {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
 
-  @Authorized(privilege = Privilege.CS_VIEW)
+  @Authorized(privilege = Privilege.CS_READ)
   @Get(uri = "/{id}")
   public CodeSystemEntityVersion getEntityVersion(@PathVariable Long id) {
     CodeSystemEntityVersion csev = codeSystemEntityVersionService.load(id);
     if (csev != null) {
-      SessionStore.require().checkPermitted(csev.getCodeSystem(), Privilege.CS_VIEW);
+      SessionStore.require().checkPermitted(csev.getCodeSystem(), Privilege.CS_READ);
     }
     return csev;
   }

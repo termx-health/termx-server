@@ -33,7 +33,7 @@ public class ObservationDefinitionController {
 
   private final ImportLogger importLogger;
 
-  @Authorized(Privilege.OBS_DEF_EDIT)
+  @Authorized(Privilege.OBS_DEF_WRITE)
   @Post()
   public ObservationDefinition create(@Body @Valid ObservationDefinition def) {
     def.setId(null);
@@ -41,7 +41,7 @@ public class ObservationDefinitionController {
     return load(def.getId());
   }
 
-  @Authorized(Privilege.OBS_DEF_EDIT)
+  @Authorized(Privilege.OBS_DEF_WRITE)
   @Put("/{id}")
   public ObservationDefinition update(@PathVariable Long id, @Body @Valid ObservationDefinition def) {
     def.setId(id);
@@ -49,7 +49,7 @@ public class ObservationDefinitionController {
     return load(def.getId());
   }
 
-  @Authorized(Privilege.OBS_DEF_VIEW)
+  @Authorized(Privilege.OBS_DEF_READ)
   @Get("/{id}")
   public ObservationDefinition load(@PathVariable Long id) {
     ObservationDefinition def = observationDefinitionService.load(id);
@@ -59,14 +59,14 @@ public class ObservationDefinitionController {
     return def;
   }
 
-  @Authorized(Privilege.OBS_DEF_VIEW)
+  @Authorized(Privilege.OBS_DEF_READ)
   @Get("/{?params*}")
   public QueryResult<ObservationDefinition> search(ObservationDefinitionSearchParams params) {
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.OBS_DEF_VIEW, Long::valueOf));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.OBS_DEF_READ, Long::valueOf));
     return observationDefinitionService.search(params);
   }
 
-  @Authorized(privilege = Privilege.OBS_DEF_EDIT)
+  @Authorized(privilege = Privilege.OBS_DEF_WRITE)
   @Post("/import")
   public JobLogResponse importDefinitions(@Body @Valid ObservationDefinitionImportRequest request) {
     JobLogResponse jobLogResponse = importLogger.createJob("OBS-DEF-IMPORT");

@@ -24,7 +24,7 @@ class PrivilegeStoreTriageTest extends Specification {
 
   def "calculate emits *.X.triage when actions.triage is true"() {
     given:
-    def actions = new PrivilegeResourceActions(view: true, triage: true, edit: false, publish: false)
+    def actions = new PrivilegeResourceActions(read: true, triage: true, write: false, maintain: false)
     def privilege = priv("triage-role-1", res("CodeSystem", "icd-10", actions))
 
     when:
@@ -32,26 +32,26 @@ class PrivilegeStoreTriageTest extends Specification {
 
     then:
     1 * privilegeService.query(_ as PrivilegeQueryParams) >> new QueryResult<Privilege>([privilege])
-    result == ["icd-10.CodeSystem.view", "icd-10.CodeSystem.triage"] as Set
+    result == ["icd-10.CodeSystem.read", "icd-10.CodeSystem.triage"] as Set
   }
 
   def "calculate does not emit triage when actions.triage is false (legacy row)"() {
     given:
-    def actions = new PrivilegeResourceActions(view: true, triage: false, edit: false, publish: false)
-    def privilege = priv("legacy-view-only", res("CodeSystem", "icd-10", actions))
+    def actions = new PrivilegeResourceActions(read: true, triage: false, write: false, maintain: false)
+    def privilege = priv("legacy-read-only", res("CodeSystem", "icd-10", actions))
 
     when:
-    Set<String> result = store.getPrivileges("legacy-view-only")
+    Set<String> result = store.getPrivileges("legacy-read-only")
 
     then:
     1 * privilegeService.query(_ as PrivilegeQueryParams) >> new QueryResult<Privilege>([privilege])
-    result == ["icd-10.CodeSystem.view"] as Set
+    result == ["icd-10.CodeSystem.read"] as Set
     !result.any { it.endsWith(".triage") }
   }
 
   def "calculate emits all four actions when all flags are true"() {
     given:
-    def actions = new PrivilegeResourceActions(view: true, triage: true, edit: true, publish: true)
+    def actions = new PrivilegeResourceActions(read: true, triage: true, write: true, maintain: true)
     def privilege = priv("full-role", res("CodeSystem", "icd-10", actions))
 
     when:
@@ -60,10 +60,10 @@ class PrivilegeStoreTriageTest extends Specification {
     then:
     1 * privilegeService.query(_ as PrivilegeQueryParams) >> new QueryResult<Privilege>([privilege])
     result == [
-      "icd-10.CodeSystem.view",
+      "icd-10.CodeSystem.read",
       "icd-10.CodeSystem.triage",
-      "icd-10.CodeSystem.edit",
-      "icd-10.CodeSystem.publish"
+      "icd-10.CodeSystem.write",
+      "icd-10.CodeSystem.maintain"
     ] as Set
   }
 
@@ -82,7 +82,7 @@ class PrivilegeStoreTriageTest extends Specification {
     description       | actions
     "triage-false"    | new PrivilegeResourceActions(triage: false)
     "triage-true"     | new PrivilegeResourceActions(triage: true)
-    "all-flags-true"  | new PrivilegeResourceActions(view: true, triage: true, edit: true, publish: true)
+    "all-flags-true"  | new PrivilegeResourceActions(read: true, triage: true, write: true, maintain: true)
   }
 
   def "Any resource type emits triage as *.<Type>.triage"() {

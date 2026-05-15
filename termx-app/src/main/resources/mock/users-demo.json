@@ -6,53 +6,53 @@
   "terminology-manager": {
     "username": "demo-tm",
     "privileges": [
-      "*.*.view",
+      "*.*.read",
       "*.*.triage",
-      "*.Task.publish",
-      "*.CodeSystem.publish",
-      "*.ValueSet.publish",
-      "*.MapSet.publish"
+      "*.Task.maintain",
+      "*.CodeSystem.maintain",
+      "*.ValueSet.maintain",
+      "*.MapSet.maintain"
     ]
   },
   "publisher": {
     "username": "demo-publisher",
     "privileges": [
-      "*.*.view",
+      "*.*.read",
       "*.*.triage",
-      "*.Task.publish",
-      "icd-10.CodeSystem.publish",
-      "icd-11.CodeSystem.publish",
-      "disorders.ValueSet.publish",
-      "icd-snomed.MapSet.publish"
+      "*.Task.maintain",
+      "icd-10.CodeSystem.maintain",
+      "icd-11.CodeSystem.maintain",
+      "disorders.ValueSet.maintain",
+      "icd-snomed.MapSet.maintain"
     ]
   },
   "editor": {
     "username": "demo-editor",
     "privileges": [
-      "*.*.view",
+      "*.*.read",
       "*.*.triage",
-      "*.Task.edit",
-      "icd-10.CodeSystem.edit",
-      "icd-11.CodeSystem.edit",
-      "disorders.ValueSet.edit",
-      "icd-snomed.MapSet.edit"
+      "*.Task.write",
+      "icd-10.CodeSystem.write",
+      "icd-11.CodeSystem.write",
+      "disorders.ValueSet.write",
+      "icd-snomed.MapSet.write"
     ]
   },
   "reviewer": {
     "username": "demo-reviewer",
     "privileges": [
-      "*.*.view",
+      "*.*.read",
       "*.*.triage",
-      "*.Task.edit",
-      "icd-10.CodeSystem.edit"
+      "*.Task.write",
+      "icd-10.CodeSystem.write"
     ]
   },
   "viewer": {
     "username": "demo-viewer",
-    "privileges": ["*.*.view"]
+    "privileges": ["*.*.read"]
   },
   "guest": {
     "username": "guest",
-    "privileges": ["*.*.view"]
+    "privileges": ["*.*.read"]
   }
 }

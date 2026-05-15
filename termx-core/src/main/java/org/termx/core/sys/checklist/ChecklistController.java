@@ -46,13 +46,13 @@ public class ChecklistController {
 
   //----------------Checklist----------------
 
-  @Authorized(Privilege.C_VIEW)
+  @Authorized(Privilege.C_READ)
   @Get("{?params*}")
   public QueryResult<Checklist> search(ChecklistQueryParams params) {
     return service.query(params);
   }
 
-  @Authorized(privilege = Privilege.C_EDIT)
+  @Authorized(privilege = Privilege.C_WRITE)
   @Post()
   public HttpResponse<?> save(@Valid @Body ChecklistRequest request) {
     service.save(request.getChecklist(), request.getResourceType(), request.getResourceId());
@@ -62,7 +62,7 @@ public class ChecklistController {
 
   //----------------Rule----------------
 
-  @Authorized(privilege = Privilege.C_EDIT)
+  @Authorized(privilege = Privilege.C_WRITE)
   @Post("/rules")
   public ChecklistRule create(@Valid @Body ChecklistRule rule) {
     rule.setId(null);
@@ -70,7 +70,7 @@ public class ChecklistController {
     return rule;
   }
 
-  @Authorized(Privilege.C_EDIT)
+  @Authorized(Privilege.C_WRITE)
   @Put("/rules/{id}")
   public ChecklistRule update(@PathVariable Long id, @Valid @Body ChecklistRule rule) {
     rule.setId(id);
@@ -78,20 +78,20 @@ public class ChecklistController {
     return ruleService.save(rule);
   }
 
-  @Authorized(Privilege.C_VIEW)
+  @Authorized(Privilege.C_READ)
   @Get("/rules/{id}")
   public ChecklistRule load(@PathVariable Long id) {
     return ruleService.load(id);
   }
 
-  @Authorized(Privilege.C_VIEW)
+  @Authorized(Privilege.C_READ)
   @Get("/rules{?params*}")
   public QueryResult<ChecklistRule> search(ChecklistRuleQueryParams params) {
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.C_VIEW, Long::valueOf));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.C_READ, Long::valueOf));
     return ruleService.query(params);
   }
 
-  @Authorized(Privilege.C_EDIT)
+  @Authorized(Privilege.C_WRITE)
   @Delete(uri = "/rules/{id}")
   public HttpResponse<?> deleteRule(@PathVariable Long id) {
     ruleService.delete(id);
@@ -100,26 +100,26 @@ public class ChecklistController {
 
   //----------------Assertions----------------
 
-  @Authorized(privilege = Privilege.C_EDIT)
+  @Authorized(privilege = Privilege.C_WRITE)
   @Post("/{id}/assertions")
   public ChecklistAssertion create(@PathVariable Long id, @Valid @Body AssertionRequest request) {
     return assertionService.create(id, request.getResourceVersion(), request.isPassed());
   }
 
-  @Authorized(privilege = Privilege.C_EDIT)
+  @Authorized(privilege = Privilege.C_WRITE)
   @Post("/assertions/run-checks")
   public HttpResponse<?> runChecks(@Valid @Body ChecklistValidationRequest request) {
     validationService.runChecks(request);
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.C_VIEW)
+  @Authorized(Privilege.C_READ)
   @Get(uri = "/assertions/export{?params*}")
   public LorqueProcess exportAssertions(Map<String, String> params) {
     return assertionExportService.export(params.get("resourceType"), params.get("resourceId"), params.get("resourceVersion"));
   }
 
-  @Authorized(Privilege.C_VIEW)
+  @Authorized(Privilege.C_READ)
   @Get(value = "/assertions/export/result/{lorqueProcessId}", produces = "application/csv")
   public HttpResponse<?> getAssertionExportResult(Long lorqueProcessId) {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(lorqueProcessService.load(lorqueProcessId).getResult());

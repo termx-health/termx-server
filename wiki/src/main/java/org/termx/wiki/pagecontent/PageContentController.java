@@ -15,10 +15,10 @@ import lombok.RequiredArgsConstructor;
 public class PageContentController {
   private final PageContentService pageContentService;
 
-  @Authorized(Privilege.W_VIEW)
+  @Authorized(Privilege.W_READ)
   @Get(uri = "{?params*}")
   public QueryResult<PageContent> queryPageContents(PageContentQueryParams params) {
-    params.setPermittedSpaceIds(SessionStore.require().getPermittedResourceIds(Privilege.W_VIEW, Long::valueOf));
+    params.setPermittedSpaceIds(SessionStore.require().getPermittedResourceIds(Privilege.W_READ, Long::valueOf));
     return pageContentService.query(params);
   }
 }

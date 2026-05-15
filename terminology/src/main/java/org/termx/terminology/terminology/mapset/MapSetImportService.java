@@ -40,7 +40,7 @@ public class MapSetImportService {
 
   @Transactional
   public void importMapSet(MapSet mapSet, List<AssociationType> associationTypes, MapSetImportAction action) {
-    SessionStore.require().checkPermitted(mapSet.getId(), Privilege.MS_EDIT);
+    SessionStore.require().checkPermitted(mapSet.getId(), Privilege.MS_WRITE);
 
     long start = System.currentTimeMillis();
     log.info("IMPORT STARTED : map set - {}", mapSet.getId());

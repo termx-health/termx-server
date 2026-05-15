@@ -29,25 +29,25 @@ public class StructureDefinitionController {
   private final StructureDefinitionFhirImportService importService;
   private final StructureDefinitionContentReferenceService contentReferenceService;
 
-  @Authorized(Privilege.SD_VIEW)
+  @Authorized(Privilege.SD_READ)
   @Get(uri = "/{id}{?version}")
   public StructureDefinition getStructureDefinition(@PathVariable Long id, @Nullable @QueryValue String version) {
     return service.load(id, version).orElseThrow(() -> new NotFoundException("Structure definition not found: " + id));
   }
 
-  @Authorized(Privilege.SD_VIEW)
+  @Authorized(Privilege.SD_READ)
   @Get(uri = "/{id}/versions")
   public java.util.List<StructureDefinitionVersion> listVersions(@PathVariable Long id) {
     return service.listVersions(id);
   }
 
-  @Authorized(Privilege.SD_VIEW)
+  @Authorized(Privilege.SD_READ)
   @Get(uri = "/{id}/versions/{version}")
   public StructureDefinitionVersion getStructureDefinitionVersion(@PathVariable Long id, @PathVariable String version) {
     return service.loadVersion(id, version).orElseThrow(() -> new NotFoundException("Structure definition version not found: " + id + "/" + version));
   }
 
-  @Authorized(Privilege.SD_EDIT)
+  @Authorized(Privilege.SD_WRITE)
   @Post(uri = "/{id}/versions")
   public HttpResponse<?> createVersion(@PathVariable Long id, @Body StructureDefinitionVersion version) {
     version.setId(null);
@@ -56,7 +56,7 @@ public class StructureDefinitionController {
     return HttpResponse.created(version);
   }
 
-  @Authorized(Privilege.SD_EDIT)
+  @Authorized(Privilege.SD_WRITE)
   @Put(uri = "/{id}/versions/{versionCode}")
   public HttpResponse<?> updateVersion(@PathVariable Long id, @PathVariable String versionCode, @Body StructureDefinitionVersion version) {
     version.setStructureDefinitionId(id);
@@ -64,7 +64,7 @@ public class StructureDefinitionController {
     return HttpResponse.ok(version);
   }
 
-  @Authorized(Privilege.SD_EDIT)
+  @Authorized(Privilege.SD_WRITE)
   @Post(uri = "/{id}/versions/{versionCode}/duplicate")
   public HttpResponse<?> duplicateVersion(@PathVariable Long id, @PathVariable String versionCode, @Body java.util.Map<String, String> request) {
     String targetVersion = request.get("version");
@@ -72,42 +72,42 @@ public class StructureDefinitionController {
     return HttpResponse.created(ver);
   }
 
-  @Authorized(Privilege.SD_VIEW)
+  @Authorized(Privilege.SD_READ)
   @Get(uri = "{?params*}")
   public QueryResult<StructureDefinition> queryStructureDefinitions(StructureDefinitionQueryParams params) {
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.SD_VIEW, Long::valueOf));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.SD_READ, Long::valueOf));
     return service.query(params);
   }
 
-  @Authorized(Privilege.SD_EDIT)
+  @Authorized(Privilege.SD_WRITE)
   @Post
   public HttpResponse<?> saveStructureDefinition(@Body StructureDefinition structureDefinition) {
     structureDefinition.setId(null);
     return HttpResponse.created(service.save(structureDefinition));
   }
 
-  @Authorized(Privilege.SD_EDIT)
+  @Authorized(Privilege.SD_WRITE)
   @Put(uri = "/{id}")
   public HttpResponse<?> updateStructureDefinition(@PathVariable Long id, @Body StructureDefinition structureDefinition) {
     structureDefinition.setId(id);
     return HttpResponse.created(service.save(structureDefinition));
   }
 
-  @Authorized(Privilege.SD_EDIT)
+  @Authorized(Privilege.SD_WRITE)
   @Delete(uri = "/{id}")
   public HttpResponse<?> deleteStructureDefinition(@PathVariable Long id) {
     service.cancel(id);
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SD_EDIT)
+  @Authorized(Privilege.SD_WRITE)
   @Post(uri = "/{id}/recalculate-references")
   public HttpResponse<?> recalculateReferences(@PathVariable Long id) {
     contentReferenceService.recalculate(id);
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.SD_EDIT)
+  @Authorized(Privilege.SD_WRITE)
   @Post(uri = "/import")
   public HttpResponse<StructureDefinition> importStructureDefinition(@Body StructureDefinitionImportRequest request) {
     if (request.getUrl() != null && !request.getUrl().isBlank()) {

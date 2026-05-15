@@ -51,7 +51,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     ValueSetQueryParams vsParams = new ValueSetQueryParams();
     vsParams.setId(vsId);
     vsParams.setLimit(1);
-    vsParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
+    vsParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_READ));
     ValueSet valueSet = valueSetService.query(vsParams).findFirst()
         .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "value set not found: " + id.getResourceId()));
 
@@ -83,7 +83,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     ValueSetQueryParams vsParams = new ValueSetQueryParams();
     vsParams.setUri(url);
     vsParams.setLimit(1);
-    vsParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
+    vsParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_READ));
     ValueSet valueSet = valueSetService.query(vsParams).findFirst()
         .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "value set not found: " + url));
 

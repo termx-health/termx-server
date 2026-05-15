@@ -38,28 +38,28 @@ public class ImplementationGuideController {
   private final ImplementationGuideVersionService igVersionService;
   private final ImplementationGuideProvenanceService provenanceService;
 
-  @Authorized(Privilege.IG_VIEW)
+  @Authorized(Privilege.IG_READ)
   @Get(uri = "{?params*}")
   public QueryResult<ImplementationGuide> query(ImplementationGuideQueryParams params) {
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.IG_VIEW));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.IG_READ));
     return igService.query(params);
   }
 
-  @Authorized(Privilege.IG_VIEW)
+  @Authorized(Privilege.IG_READ)
   @Get(uri = "/{ig}")
   public ImplementationGuide load(@PathVariable String ig) {
     return igService.load(ig).orElseThrow(() -> new NotFoundException("ImplementationGuide not found: " + ig));
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Post("/transaction")
   public HttpResponse<?> save(@Body @Valid ImplementationGuideTransactionRequest request) {
-    SessionStore.require().checkPermitted(request.getImplementationGuide().getId(), Privilege.IG_EDIT);
+    SessionStore.require().checkPermitted(request.getImplementationGuide().getId(), Privilege.IG_WRITE);
     provenanceService.provenanceImplementationGuideTransactionRequest("save", request, () -> igService.save(request));
     return HttpResponse.created(request.getImplementationGuide());
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Post(uri = "/{ig}/change-id")
   public HttpResponse<?> changeId(@PathVariable String ig, @Valid @Body Map<String, String> body) {
     String newId = body.get("id");
@@ -68,7 +68,7 @@ public class ImplementationGuideController {
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.IG_PUBLISH)
+  @Authorized(Privilege.IG_MAINTAIN)
   @Delete(uri = "/{ig}")
   public HttpResponse<?> delete(@PathVariable String ig) {
     igService.cancel(ig);
@@ -79,21 +79,21 @@ public class ImplementationGuideController {
 
   //----------------ImplementationGuide Version----------------
 
-  @Authorized(Privilege.IG_VIEW)
+  @Authorized(Privilege.IG_READ)
   @Get(uri = "/{ig}/versions{?params*}")
   public QueryResult<ImplementationGuideVersion> queryVersions(@PathVariable String ig, ImplementationGuideVersionQueryParams params) {
-    params.setPermittedImplementationGuideIds(SessionStore.require().getPermittedResourceIds(Privilege.IG_VIEW));
+    params.setPermittedImplementationGuideIds(SessionStore.require().getPermittedResourceIds(Privilege.IG_READ));
     params.setImplementationGuideIds(ig);
     return igVersionService.query(params);
   }
 
-  @Authorized(Privilege.IG_VIEW)
+  @Authorized(Privilege.IG_READ)
   @Get(uri = "/{ig}/versions/{version}")
   public ImplementationGuideVersion getVersion(@PathVariable String ig, @PathVariable String version) {
     return igVersionService.load(ig, version).orElseThrow(() -> new NotFoundException("ImplementationGuide version not found: " + ig + "|" + version));
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Post(uri = "/{ig}/versions")
   public HttpResponse<?> createVersion(@PathVariable String ig, @Body @Valid ImplementationGuideVersion igVersion) {
     igVersion.setId(null);
@@ -102,7 +102,7 @@ public class ImplementationGuideController {
     return HttpResponse.created(igVersion);
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Put(uri = "/{ig}/versions/{version}")
   public HttpResponse<?> updateVersion(@PathVariable String ig, @PathVariable String version,
                                                  @Body @Valid ImplementationGuideVersion igVersion) {
@@ -112,54 +112,54 @@ public class ImplementationGuideController {
     return HttpResponse.created(igVersion);
   }
 
-  @Authorized(Privilege.IG_PUBLISH)
+  @Authorized(Privilege.IG_MAINTAIN)
   @Post(uri = "/{ig}/versions/{version}/activate")
   public HttpResponse<?> activateVersion(@PathVariable String ig, @PathVariable String version) {
     provenanceService.provenanceImplementationGuideVersion("activate", ig, version, () -> igVersionService.changeStatus(ig, version, PublicationStatus.active));
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.IG_PUBLISH)
+  @Authorized(Privilege.IG_MAINTAIN)
   @Post(uri = "/{ig}/versions/{version}/retire")
   public HttpResponse<?> retireVersion(@PathVariable String ig, @PathVariable String version) {
     provenanceService.provenanceImplementationGuideVersion("retire", ig, version, () -> igVersionService.changeStatus(ig, version, PublicationStatus.retired));
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.IG_PUBLISH)
+  @Authorized(Privilege.IG_MAINTAIN)
   @Post(uri = "/{ig}/versions/{version}/draft")
   public HttpResponse<?> saveAsDraftVersion(@PathVariable String ig, @PathVariable String version) {
     provenanceService.provenanceImplementationGuideVersion("save", ig, version, () -> igVersionService.changeStatus(ig, version, PublicationStatus.draft));
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Post("/{ig}/versions/{version}/groups")
   public HttpResponse<?> saveVersionGroups(@PathVariable String ig, @PathVariable String version, @Body List<ImplementationGuideGroup> groups) {
     provenanceService.provenanceImplementationGuideVersion("save-groups", ig, version, () -> igVersionService.saveGroups(ig, version, groups));
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Get("/{ig}/versions/{version}/resources")
   public List<ImplementationGuideResource> loadVersionResources(@PathVariable String ig, @PathVariable String version) {
     return igVersionService.loadResources(ig, version);
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Post("/{ig}/versions/{version}/resources")
   public HttpResponse<?> saveVersionResources(@PathVariable String ig, @PathVariable String version, @Body List<ImplementationGuideResource> resources) {
     provenanceService.provenanceImplementationGuideVersion("save-resources", ig, version, () -> igVersionService.saveResources(ig, version, resources));
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Get("/{ig}/versions/{version}/pages")
   public List<ImplementationGuidePage> loadVersionPages(@PathVariable String ig, @PathVariable String version) {
     return igVersionService.loadPages(ig, version);
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Post("/{ig}/versions/{version}/pages")
   public HttpResponse<?> saveVersionPages(@PathVariable String ig, @PathVariable String version, @Body List<ImplementationGuidePage> pages) {
     provenanceService.provenanceImplementationGuideVersion("save-resources", ig, version, () -> igVersionService.savePages(ig, version, pages));
@@ -169,7 +169,7 @@ public class ImplementationGuideController {
 
   //----------------Provenances----------------
 
-  @Authorized(Privilege.IG_VIEW)
+  @Authorized(Privilege.IG_READ)
   @Get(uri = "/{ig}/provenances")
   public List<Provenance> queryProvenances(@PathVariable String ig, @Nullable @QueryValue String version) {
     return provenanceService.find(ig, version);

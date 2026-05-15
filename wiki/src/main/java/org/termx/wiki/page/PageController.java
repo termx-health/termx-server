@@ -49,88 +49,88 @@ public class PageController {
   private final PageLinkService linkService;
   private final ProvenanceService provenanceService;
 
-  @Authorized(privilege = Privilege.W_VIEW)
+  @Authorized(privilege = Privilege.W_READ)
   @Get("/{id}")
   public Page getPage(@PathVariable Long id) {
     Page page = pageService.load(id).orElseThrow(() -> new NotFoundException("Page not found: " + id));
-    SessionStore.require().checkPermitted(page.getSpaceId().toString(), Privilege.W_VIEW);
+    SessionStore.require().checkPermitted(page.getSpaceId().toString(), Privilege.W_READ);
     return page;
   }
 
-  @Authorized(Privilege.W_VIEW)
+  @Authorized(Privilege.W_READ)
   @Get("{?params*}")
   public QueryResult<Page> queryPages(PageQueryParams params) {
-    params.setPermittedSpaceIds(SessionStore.require().getPermittedResourceIds(Privilege.W_VIEW, Long::valueOf));
+    params.setPermittedSpaceIds(SessionStore.require().getPermittedResourceIds(Privilege.W_READ, Long::valueOf));
     return pageService.query(params);
   }
 
-  @Authorized(Privilege.W_VIEW)
+  @Authorized(Privilege.W_READ)
   @Get("/tree")
   public List<PageTreeItem> loadTree(@NotNull @QueryValue Long spaceId) {
     return pageService.loadTree(spaceId);
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Post
   public HttpResponse<?> createPage(@Body @Valid PageRequest request) {
-    SessionStore.require().checkPermitted(request.getPage().getSpaceId().toString(), Privilege.W_EDIT);
+    SessionStore.require().checkPermitted(request.getPage().getSpaceId().toString(), Privilege.W_WRITE);
     request.getPage().setId(null);
     Page page = pageService.save(request.getPage(), request.getContent());
     provenanceService.create(new Provenance("created", "Page", page.getId().toString()));
     return HttpResponse.created(page);
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Put("/{id}")
   public HttpResponse<?> updatePage(@PathVariable Long id, @Body @Valid PageRequest request) {
-    SessionStore.require().checkPermitted(request.getPage().getSpaceId().toString(), Privilege.W_EDIT);
+    SessionStore.require().checkPermitted(request.getPage().getSpaceId().toString(), Privilege.W_WRITE);
     request.getPage().setId(id);
     Page page = pageService.save(request.getPage(), request.getContent());
     provenanceService.create(new Provenance("modified", "Page", page.getId().toString()));
     return HttpResponse.created(page);
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Delete("/{id}")
   public HttpResponse<?> deletePage(@PathVariable Long id) {
-    validate(id, Privilege.W_EDIT);
+    validate(id, Privilege.W_WRITE);
     pageService.delete(id);
     provenanceService.create(new Provenance("deleted", "Page", id.toString()));
     return HttpResponse.ok();
   }
 
-  @Authorized(privilege = Privilege.W_VIEW)
+  @Authorized(privilege = Privilege.W_READ)
   @Get("/{id}/path")
   public List<Long> getPath(@PathVariable Long id) {
-    validate(id, Privilege.W_VIEW);
+    validate(id, Privilege.W_READ);
     return linkService.getPath(id);
   }
 
 
   /* Content */
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Post("/{id}/contents")
   public HttpResponse<?> savePageContent(@PathVariable Long id, @Body PageContent content) {
-    validate(id, Privilege.W_EDIT);
+    validate(id, Privilege.W_WRITE);
     PageContent persisted = contentService.save(content, id);
     provenanceService.create(new Provenance("modified", "Page", id.toString()));
     return HttpResponse.created(persisted);
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Put("/{id}/contents/{contentId}")
   public HttpResponse<?> updatePageContent(@PathVariable Long id, @PathVariable Long contentId, @Body PageContent content) {
-    validate(id, Privilege.W_EDIT);
+    validate(id, Privilege.W_WRITE);
     PageContent persisted = contentService.save(content.setId(contentId), id);
     provenanceService.create(new Provenance("modified", "Page", id.toString()));
     return HttpResponse.created(persisted);
   }
 
-  @Authorized(privilege = Privilege.W_VIEW)
+  @Authorized(privilege = Privilege.W_READ)
   @Get("/{id}/contents/{contentId}/history{?params*}")
   public QueryResult<PageContentHistoryItem> queryPageContentHistory(@PathVariable Long id, @PathVariable Long contentId, PageContentHistoryQueryParams params) {
-    validate(id, Privilege.W_VIEW);
+    validate(id, Privilege.W_READ);
     params.setPermittedPageIds(List.of(id));
     params.setPermittedPageContentIds(List.of(contentId));
     return contentService.queryHistory(params);
@@ -139,32 +139,32 @@ public class PageController {
 
   /* Files */
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Post(value = "/{id}/files", consumes = MediaType.MULTIPART_FORM_DATA)
   public Map<String, PageAttachment> uploadFiles(@PathVariable Long id, @Body MultipartBody partz) {
-    validate(id, Privilege.W_EDIT);
+    validate(id, Privilege.W_WRITE);
     MultipartBodyReader.MultipartBody body = MultipartBodyReader.readMultipart(partz);
     return attachmentService.saveAttachments(id, body.getAttachments());
   }
 
-  @Authorized(privilege = Privilege.W_VIEW)
+  @Authorized(privilege = Privilege.W_READ)
   @Get("/{id}/files")
   public List<PageAttachment> getFiles(@PathVariable Long id) {
-    validate(id, Privilege.W_VIEW);
+    validate(id, Privilege.W_READ);
     return attachmentService.getAttachments(id);
   }
 
-  @Authorized(privilege = Privilege.W_VIEW)
+  @Authorized(privilege = Privilege.W_READ)
   @Get("/{id}/files/{fileName}")
   public StreamedFile getFile(@PathVariable Long id, @PathVariable String fileName) {
-    validate(id, Privilege.W_VIEW);
+    validate(id, Privilege.W_READ);
     return attachmentService.getAttachmentContent(id, fileName);
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Delete("/{id}/files/{fileName}")
   public void deleteFile(@PathVariable Long id, @PathVariable String fileName) {
-    validate(id, Privilege.W_EDIT);
+    validate(id, Privilege.W_WRITE);
     attachmentService.deleteAttachmentContent(id, fileName);
   }
 

@@ -28,7 +28,7 @@ public class AtcController {
 
   private static final String JOB_TYPE = "ATC";
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(Privilege.CS_WRITE)
   @Post("/import")
   public JobLogResponse importAtc(@Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getPublisher(), JOB_TYPE);

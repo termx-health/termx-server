@@ -20,30 +20,30 @@ import org.termx.sys.ecosystem.EcosystemQueryParams;
 public class EcosystemController {
   private final EcosystemService ecosystemService;
 
-  @Authorized(privilege = Privilege.S_EDIT)
+  @Authorized(privilege = Privilege.S_WRITE)
   @Post
   public Ecosystem create(@Valid @Body Ecosystem p) {
     p.setId(null);
     return ecosystemService.save(p);
   }
 
-  @Authorized(Privilege.S_EDIT)
+  @Authorized(Privilege.S_WRITE)
   @Put("{id}")
   public Ecosystem update(@PathVariable Long id, @Valid @Body Ecosystem p) {
     p.setId(id);
     return ecosystemService.save(p);
   }
 
-  @Authorized(Privilege.S_VIEW)
+  @Authorized(Privilege.S_READ)
   @Get("{id}")
   public Ecosystem load(@PathVariable Long id) {
     return ecosystemService.load(id);
   }
 
-  @Authorized(Privilege.S_VIEW)
+  @Authorized(Privilege.S_READ)
   @Get("/{?params*}")
   public QueryResult<Ecosystem> search(EcosystemQueryParams params) {
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.S_VIEW, Long::valueOf));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.S_READ, Long::valueOf));
     return ecosystemService.query(params);
   }
 }

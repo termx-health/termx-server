@@ -6,37 +6,37 @@
   "publisher": {
     "username": "publisher1",
     "privileges": [
-      "*.*.view",
+      "*.*.read",
       "*.*.triage",
-      "*.Task.publish",
-      "*.CodeSystem.publish",
-      "*.ValueSet.publish",
-      "*.MapSet.publish"
+      "*.Task.maintain",
+      "*.CodeSystem.maintain",
+      "*.ValueSet.maintain",
+      "*.MapSet.maintain"
     ]
   },
   "editor": {
     "username": "editor1",
     "privileges": [
-      "*.*.view",
+      "*.*.read",
       "*.*.triage",
-      "*.Task.edit",
-      "*.CodeSystem.edit",
-      "*.ValueSet.edit",
-      "*.MapSet.edit"
+      "*.Task.write",
+      "*.CodeSystem.write",
+      "*.ValueSet.write",
+      "*.MapSet.write"
     ]
   },
   "editor2": {
     "username": "editor2",
     "privileges": [
-      "*.*.view",
+      "*.*.read",
       "*.*.triage",
-      "*.Task.edit",
-      "icd-10.CodeSystem.edit",
-      "disorders.ValueSet.edit"
+      "*.Task.write",
+      "icd-10.CodeSystem.write",
+      "disorders.ValueSet.write"
     ]
   },
   "viewer": {
     "username": "viewer1",
-    "privileges": ["*.*.view"]
+    "privileges": ["*.*.read"]
   }
 }

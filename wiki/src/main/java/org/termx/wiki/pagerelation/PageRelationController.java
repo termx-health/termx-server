@@ -15,7 +15,7 @@ public class PageRelationController {
 
   private final PageRelationService pageRelationService;
 
-  @Authorized(Privilege.W_VIEW)
+  @Authorized(Privilege.W_READ)
   @Get(uri = "{?params*}")
   public QueryResult<PageRelation> queryPageRelations(PageRelationQueryParams params) {
     //TODO auth

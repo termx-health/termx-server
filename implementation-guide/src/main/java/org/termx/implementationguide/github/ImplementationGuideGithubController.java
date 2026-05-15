@@ -20,45 +20,45 @@ import lombok.RequiredArgsConstructor;
 public class ImplementationGuideGithubController {
   private final ImplementationGuideGithubService service;
 
-  @Authorized(Privilege.IG_VIEW)
+  @Authorized(Privilege.IG_READ)
   @Post("/authenticate")
   public SpaceGithubAuthResult authenticate(@PathVariable String ig, @PathVariable String version, @Body IgGithubAuthRequest r) {
     return service.authenticate(ig, version, r.returnUrl);
   }
 
-  @Authorized(Privilege.IG_VIEW)
+  @Authorized(Privilege.IG_READ)
   @Get("/status")
   public IgGithubStatus prepareFiles(@PathVariable String ig, @PathVariable String version) {
     return service.status(ig, version);
   }
 
-  @Authorized(Privilege.IG_VIEW)
+  @Authorized(Privilege.IG_READ)
   @Get("/branches")
   public List<String> listBranches(@PathVariable String ig, @PathVariable String version) {
     return service.listBranches(ig, version);
   }
 
-  @Authorized(Privilege.IG_VIEW)
+  @Authorized(Privilege.IG_READ)
   @Get("/diff")
   public GithubDiff diff(@PathVariable String ig, @PathVariable String version, @QueryValue String file) {
     return service.diff(ig, version, file);
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Post("/push")
   public HttpResponse<?> push(@PathVariable String ig, @PathVariable String version, @Body IgGithubCommitRequest req) {
     service.push(ig, version, req.message);
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Post("/ig-initialize")
   public HttpResponse<?> initIg(@PathVariable String ig, @PathVariable String version) {
     service.initIg(ig, version);
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.IG_EDIT)
+  @Authorized(Privilege.IG_WRITE)
   @Post("/create-branch")
   public HttpResponse<?> createBranch(@PathVariable String ig, @PathVariable String version, @Body IgGithubCreateBranchRequest req) {
     service.createBranch(ig, version, req.baseBranch);

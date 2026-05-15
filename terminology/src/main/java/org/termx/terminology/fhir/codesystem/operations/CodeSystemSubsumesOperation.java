@@ -100,7 +100,7 @@ public class CodeSystemSubsumesOperation implements InstanceOperationDefinition,
     conceptParams.setCode(code);
     conceptParams.setCodeSystemVersionId(codeSystemVersion.getId());
     conceptParams.setLimit(1);
-    conceptParams.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
+    conceptParams.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_READ));
     return conceptService.query(conceptParams).findFirst()
         .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "Concept '" + code + "' not found in " + codeSystemVersion.getCodeSystem()));
   }

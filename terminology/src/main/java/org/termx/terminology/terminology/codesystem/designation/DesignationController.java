@@ -15,10 +15,10 @@ import lombok.RequiredArgsConstructor;
 public class DesignationController {
   private final DesignationService designationService;
 
-  @Authorized(Privilege.CS_VIEW)
+  @Authorized(Privilege.CS_READ)
   @Get(uri = "{?params*}")
   public QueryResult<Designation> queryDesignations(DesignationQueryParams params) {
-    params.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
+    params.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_READ));
     return designationService.query(params);
   }
 }

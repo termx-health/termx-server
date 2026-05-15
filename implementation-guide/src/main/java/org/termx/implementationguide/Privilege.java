@@ -1,7 +1,7 @@
 package org.termx.implementationguide;
 
 public interface Privilege {
-  String IG_VIEW = "ImplementationGuide.view";
-  String IG_EDIT = "ImplementationGuide.edit";
-  String IG_PUBLISH = "ImplementationGuide.publish";
+  String IG_READ = "ImplementationGuide.read";
+  String IG_WRITE = "ImplementationGuide.write";
+  String IG_MAINTAIN = "ImplementationGuide.maintain";
 }

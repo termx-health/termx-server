@@ -95,7 +95,7 @@ public class StructureDefinitionResourceStorage extends BaseFhirResourceHandler 
           default -> throw new ApiClientException("Search by '" + k + "' not supported");
         }
       });
-      List<String> ids = SessionStore.require().getPermittedResourceIds(Privilege.SD_VIEW);
+      List<String> ids = SessionStore.require().getPermittedResourceIds(Privilege.SD_READ);
       if (ids != null) {
         params.setPermittedIds(ids.stream().map(Long::valueOf).toList());
       }

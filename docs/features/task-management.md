@@ -104,14 +104,14 @@ No environment variables are required. TaskForge uses the main application datab
 **Context:** Organization has editors who should only see their own tasks, not all tasks in the system.
 
 **Steps:**
-1. Configure user with `*.CodeSystem.edit` privilege (not publish)
-2. User logs in - system automatically derives `code-system#*.Task.view` and `code-system#*.Task.edit` privileges (resource-specific)
-3. User navigates to task list (now accessible with derived Task.view privilege)
+1. Configure user with `*.CodeSystem.write` privilege (not publish)
+2. User logs in - system automatically derives `code-system#*.Task.read` and `code-system#*.Task.write` privileges (resource-specific)
+3. User navigates to task list (now accessible with derived Task.read privilege)
 4. System automatically filters to show only tasks:
    - Created by the user OR assigned to the user
-5. User with `icd-10.CodeSystem.publish` sees:
+5. User with `icd-10.CodeSystem.maintain` sees:
    - Tasks created by OR assigned to them (any resource)
-   - PLUS all ICD-10 CodeSystem tasks (publisher oversight via `code-system#icd-10.Task.publish`)
+   - PLUS all ICD-10 CodeSystem tasks (publisher oversight via `code-system#icd-10.Task.maintain`)
 
 **Outcome:** Users see only relevant tasks via automatic resource-specific privilege derivation and OR-based filtering, reducing clutter and protecting sensitive information.
 
@@ -123,22 +123,22 @@ All endpoints are under `/api/tm`.
 
 | Method | Path | Privilege | Description |
 |--------|------|-----------|-------------|
-| GET | `/tasks{?params*}` | Task.view | Query tasks (privilege-filtered) |
-| GET | `/tasks/{number}` | Task.view | Load single task by number |
-| POST | `/tasks` | Task.edit | Create task |
-| PUT | `/tasks/{number}` | Task.edit | Update task |
-| PATCH | `/tasks/{number}` | Task.edit | Patch individual fields |
-| POST | `/tasks/{number}/opened` | Task.view | Log task opened (read log) |
-| POST | `/tasks/{number}/activities` | Task.edit | Create activity (comment) |
-| PUT | `/tasks/{number}/activities/{id}` | Task.edit | Update activity |
-| DELETE | `/tasks/{number}/activities/{id}` | Task.edit | Cancel activity |
+| GET | `/tasks{?params*}` | Task.read | Query tasks (privilege-filtered) |
+| GET | `/tasks/{number}` | Task.read | Load single task by number |
+| POST | `/tasks` | Task.write | Create task |
+| PUT | `/tasks/{number}` | Task.write | Update task |
+| PATCH | `/tasks/{number}` | Task.write | Patch individual fields |
+| POST | `/tasks/{number}/opened` | Task.read | Log task opened (read log) |
+| POST | `/tasks/{number}/activities` | Task.write | Create activity (comment) |
+| PUT | `/tasks/{number}/activities/{id}` | Task.write | Update activity |
+| DELETE | `/tasks/{number}/activities/{id}` | Task.write | Cancel activity |
 
 ### Projects & Workflows
 
 | Method | Path | Privilege | Description |
 |--------|------|-----------|-------------|
-| GET | `/projects` | Task.view | List all projects |
-| GET | `/projects/{code}/workflows` | Task.view | List workflows for a project |
+| GET | `/projects` | Task.read | List all projects |
+| GET | `/projects/{code}/workflows` | Task.read | List workflows for a project |
 
 ### Query Parameters
 
@@ -158,18 +158,18 @@ Common query parameters for `/tasks{?params*}`:
 ### Privilege-Based Filtering
 
 **Resource-specific privilege derivation at login:**
-- Any resource edit privilege (e.g., `icd-10.CodeSystem.edit`) → derives `code-system#icd-10.Task.view` and `code-system#icd-10.Task.edit`
-- Any resource publish privilege (e.g., `*.ValueSet.publish`) → derives `value-set#*.Task.view`, `value-set#*.Task.edit`, and `value-set#*.Task.publish`
+- Any resource edit privilege (e.g., `icd-10.CodeSystem.write`) → derives `code-system#icd-10.Task.read` and `code-system#icd-10.Task.write`
+- Any resource publish privilege (e.g., `*.ValueSet.maintain`) → derives `value-set#*.Task.read`, `value-set#*.Task.write`, and `value-set#*.Task.maintain`
 - View-only privileges → no Task privileges (task list hidden)
 
 **Task visibility rules (OR logic):**
 
 | User Privilege | Task List Accessible? | Derived Privileges | Tasks Visible |
 |----------------|----------------------|-------------------|---------------|
-| `*.CodeSystem.view` only | ❌ No | None | None (no Task privileges) |
-| `icd-10.CodeSystem.edit` | ✅ Yes | `code-system#icd-10.Task.view`, `code-system#icd-10.Task.edit` | Tasks created by OR assigned to user |
-| `icd-10.CodeSystem.publish` | ✅ Yes | `code-system#icd-10.Task.view`, `code-system#icd-10.Task.edit`, `code-system#icd-10.Task.publish` | (Created by OR assigned to user) OR (context = code-system\|icd-10) |
-| `*.CodeSystem.publish` | ✅ Yes | `code-system#*.Task.view`, `code-system#*.Task.edit`, `code-system#*.Task.publish` | (Created by OR assigned to user) OR (all CodeSystem contexts) |
+| `*.CodeSystem.read` only | ❌ No | None | None (no Task privileges) |
+| `icd-10.CodeSystem.write` | ✅ Yes | `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write` | Tasks created by OR assigned to user |
+| `icd-10.CodeSystem.maintain` | ✅ Yes | `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write`, `code-system#icd-10.Task.maintain` | (Created by OR assigned to user) OR (context = code-system\|icd-10) |
+| `*.CodeSystem.maintain` | ✅ Yes | `code-system#*.Task.read`, `code-system#*.Task.write`, `code-system#*.Task.maintain` | (Created by OR assigned to user) OR (all CodeSystem contexts) |
 | `*.*.*` (admin) | ✅ Yes | (no derivation) | All tasks (no filter) |
 
 ## Testing
@@ -365,11 +365,11 @@ flowchart TD
 ```mermaid
 flowchart TD
     Login[User Login] --> DerivePrivs[Derive Task Privileges]
-    DerivePrivs -->|*.*.edit or *.*.publish| TaskPrivs[*.Task.view/edit/publish]
+    DerivePrivs -->|*.*.write or *.*.maintain| TaskPrivs[*.Task.read/edit/publish]
     
-    Request[API Request] --> Auth[@Authorized Task.view]
-    Auth -->|No Task.view| Forbidden[403 Forbidden]
-    Auth -->|Has Task.view| Controller[TaskController]
+    Request[API Request] --> Auth[@Authorized Task.read]
+    Auth -->|No Task.read| Forbidden[403 Forbidden]
+    Auth -->|Has Task.read| Controller[TaskController]
     
     Controller --> CheckAdmin{Is Admin?}
     CheckAdmin -->|Yes| AllTasks[No Filter]
@@ -392,25 +392,25 @@ Task privileges are automatically derived from resource privileges at login usin
 | Resource Privilege | Derived Task Privileges | Tasks Visible |
 |--------------------|------------------------|---------------|
 | `*.*.*` | (no derivation) | All tasks |
-| `icd-10.CodeSystem.publish` | `code-system#icd-10.Task.view/edit/publish` | Own tasks + ICD-10 CodeSystem tasks |
-| `*.CodeSystem.publish` | `code-system#*.Task.view/edit/publish` | Own tasks + all CodeSystem tasks |
-| `icd-10.CodeSystem.edit` | `code-system#icd-10.Task.view/edit` | Own tasks only |
-| `*.*.view` only | None | No task access (403) |
+| `icd-10.CodeSystem.maintain` | `code-system#icd-10.Task.read/edit/publish` | Own tasks + ICD-10 CodeSystem tasks |
+| `*.CodeSystem.maintain` | `code-system#*.Task.read/edit/publish` | Own tasks + all CodeSystem tasks |
+| `icd-10.CodeSystem.write` | `code-system#icd-10.Task.read/edit` | Own tasks only |
+| `*.*.read` only | None | No task access (403) |
 
 **Privilege format:** `contextType#resourceId.Task.action`
 
 Examples:
-- `code-system#icd-10.Task.edit`
-- `value-set#disorders.Task.publish`
-- `code-system#*.Task.edit` (wildcard)
+- `code-system#icd-10.Task.write`
+- `value-set#disorders.Task.maintain`
+- `code-system#*.Task.write` (wildcard)
 
 **How filtering works:**
 
 1. **Login** -- `SessionFilter.deriveTaskPrivileges()` adds resource-specific Task privileges
-2. **Gate check** -- `@Authorized(privilege = Privilege.T_VIEW)` verifies any Task.view privilege exists
+2. **Gate check** -- `@Authorized(privilege = Privilege.T_VIEW)` verifies any Task.read privilege exists
 3. **Visibility filter** -- Controller builds `TaskVisibilityFilter` with:
    - `username` for creator/assignee matching
-   - `publisherContexts` extracted from hash-format privileges (e.g., `code-system#icd-10.Task.publish` → `code-system|icd-10`)
+   - `publisherContexts` extracted from hash-format privileges (e.g., `code-system#icd-10.Task.maintain` → `code-system|icd-10`)
 4. **SQL filtering** -- Repository applies OR logic: `(own tasks) OR (publisher context match)`
 
 Single task load applies the same logic: admins see all, others see tasks matching own OR publisher criteria.

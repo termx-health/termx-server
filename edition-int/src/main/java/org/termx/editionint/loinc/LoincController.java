@@ -30,7 +30,7 @@ public class LoincController {
   private final LoincService loincService;
   private final ImportLogger importLogger;
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(Privilege.CS_WRITE)
   @Post(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(
       @Nullable Publisher<CompletedFileUpload> partsFile,

@@ -14,11 +14,11 @@ import lombok.RequiredArgsConstructor;
 public class CodeSystemVersionController {
   private final CodeSystemVersionService codeSystemVersionService;
 
-  @Authorized(privilege = Privilege.CS_VIEW)
+  @Authorized(privilege = Privilege.CS_READ)
   @Get(uri = "/{id}")
   public CodeSystemVersion getVersion(@PathVariable Long id) {
     CodeSystemVersion version = codeSystemVersionService.load(id);
-    SessionStore.require().checkPermitted(version.getCodeSystem(), Privilege.CS_VIEW);
+    SessionStore.require().checkPermitted(version.getCodeSystem(), Privilege.CS_READ);
     return version;
   }
 }

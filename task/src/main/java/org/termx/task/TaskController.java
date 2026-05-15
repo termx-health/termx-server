@@ -32,7 +32,7 @@ public class TaskController {
 
   // ----------- Tasks -----------
 
-  @Authorized(privilege = Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.T_READ)
   @Get(uri = "/tasks{?params*}")
   public QueryResult<Task> queryTasks(TaskQueryParams params) {
     SessionInfo session = SessionStore.require();
@@ -50,7 +50,7 @@ public class TaskController {
     return taskService.queryTasks(params);
   }
 
-  @Authorized(privilege = Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.T_READ)
   @Get(uri = "/tasks/{number}")
   public Task loadTask(@PathVariable String number) {
     SessionInfo session = SessionStore.require();
@@ -88,10 +88,10 @@ public class TaskController {
     boolean allPermitted = true;
     
     for (String contextType : CONTEXT_TYPES) {
-      // Check for privileges like code-system#icd-10.Task.publish
+      // Check for privileges like code-system#icd-10.Task.maintain
       List<String> ids = getPermittedResourceIds(session, contextType, action);
       if (ids == null) {
-        continue; // null = all resources of this type (code-system#*.Task.publish)
+        continue; // null = all resources of this type (code-system#*.Task.maintain)
       }
       allPermitted = false;
       for (String id : ids) {
@@ -106,13 +106,13 @@ public class TaskController {
       return List.of();
     }
     
-    // Check for wildcard: code-system#*.Task.publish
+    // Check for wildcard: code-system#*.Task.maintain
     String wildcardPrivilege = contextType + "#*.Task." + action;
     if (session.hasPrivilege(wildcardPrivilege)) {
       return null; // null = all resources
     }
     
-    // Extract resource IDs from privileges like code-system#icd-10.Task.publish
+    // Extract resource IDs from privileges like code-system#icd-10.Task.maintain
     String suffix = ".Task." + action;
     String prefix = contextType + "#";
     
@@ -127,13 +127,13 @@ public class TaskController {
       return true;
     }
     return task.getContext().stream().allMatch(ctx -> {
-      // Build privilege string using context type directly: code-system#icd-10.Task.publish
+      // Build privilege string using context type directly: code-system#icd-10.Task.maintain
       String privilege = ctx.getType() + "#" + ctx.getId() + ".Task." + action;
       return session.hasPrivilege(privilege);
     });
   }
 
-  @Authorized(privilege = Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.T_READ)
   @Post("/tasks/{number}/opened")
   public HttpResponse<?> logTaskOpened(@PathVariable String number) {
     SessionInfo session = SessionStore.require();
@@ -141,40 +141,40 @@ public class TaskController {
     return HttpResponse.ok();
   }
 
-  @Authorized(privilege = Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_WRITE)
   @Post("/tasks")
   public Task saveTask(@Body Task task) {
     task.setNumber(null);
     return taskService.saveTask(task);
   }
 
-  @Authorized(privilege = Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_WRITE)
   @Put("/tasks/{number}")
   public Task updateTask(@PathVariable String number, @Body Task task) {
     task.setNumber(number);
     return taskService.saveTask(task);
   }
 
-  @Authorized(privilege = Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_WRITE)
   @Patch("/tasks/{number}")
   public Task patchTask(@PathVariable String number, @Body PatchRequest request) {
     Task currentTask = taskService.loadTask(number);
     return taskService.saveTask(PatchUtil.mergeFields(request, currentTask));
   }
 
-  @Authorized(privilege = Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_WRITE)
   @Post("/tasks/{number}/activities")
   public TaskActivity createTaskActivity(@PathVariable String number, @Valid @Body Map<String, String> body) {
     return taskService.createTaskActivity(number, body.get("note"), null);
   }
 
-  @Authorized(privilege = Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_WRITE)
   @Put("/tasks/{number}/activities/{id}")
   public TaskActivity createTaskActivity(@PathVariable String number, @PathVariable String id, @Valid @Body Map<String, String> body) {
     return taskService.updateTaskActivity(number, id, body.get("note"));
   }
 
-  @Authorized(privilege = Privilege.T_EDIT)
+  @Authorized(privilege = Privilege.T_WRITE)
   @Delete("/tasks/{number}/activities/{id}")
   public HttpResponse<?> deleteTaskActivity(@PathVariable String number, @PathVariable String id) {
     taskService.cancelTaskActivity(number, id);
@@ -184,13 +184,13 @@ public class TaskController {
 
   // ----------- Projects -----------
 
-  @Authorized(privilege = Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.T_READ)
   @Get(uri = "/projects")
   public List<CodeName> loadProjects() {
     return taskService.loadProjects();
   }
 
-  @Authorized(privilege = Privilege.T_VIEW)
+  @Authorized(privilege = Privilege.T_READ)
   @Get(uri = "/projects/{code}/workflows")
   public List<Workflow> loadProjectWorkflows(@PathVariable String code) {
     return taskService.loadProjectWorkFlows(code);
