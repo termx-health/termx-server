@@ -47,7 +47,7 @@ public class CodeSystemSyncOperation implements TypeOperationDefinition {
     }
     resources.forEach(res -> {
       String id = res.findPart("id").map(ParametersParameter::getValueString).orElseThrow();
-      SessionStore.require().checkPermitted(id, Privilege.CS_EDIT);
+      SessionStore.require().checkPermitted(id, Privilege.CS_WRITE);
     });
 
     JobLogResponse jobLogResponse = importLogger.createJob("FHIR-CS");

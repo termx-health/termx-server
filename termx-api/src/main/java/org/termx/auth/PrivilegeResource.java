@@ -20,9 +20,9 @@ public class PrivilegeResource {
   @Setter
   @Accessors(chain = true)
   public static class PrivilegeResourceActions {
-    private boolean view;
+    private boolean read;
     private boolean triage;
-    private boolean edit;
-    private boolean publish;
+    private boolean write;
+    private boolean maintain;
   }
 }

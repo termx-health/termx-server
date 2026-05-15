@@ -40,8 +40,8 @@ Uploaded zips are cached in `sys.snomed_rf2_upload`. A scheduled task (`SnomedRF
 
 | Privilege | Used for |
 |-----------|----------|
-| `snomed-ct.CodeSystem.view` | Trigger dry-run scan, view scan-result page, run concept-usage lookup |
-| `snomed-ct.CodeSystem.edit` | *Proceed with import* on the scan-result page (the scan itself only needs `view`) |
+| `snomed-ct.CodeSystem.read` | Trigger dry-run scan, view scan-result page, run concept-usage lookup |
+| `snomed-ct.CodeSystem.write` | *Proceed with import* on the scan-result page (the scan itself only needs `view`) |
 
 ## Use-Cases
 

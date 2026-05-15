@@ -18,19 +18,19 @@ public class ConceptController {
 
   private final ConceptService conceptService;
 
-  @Authorized(privilege = Privilege.CS_VIEW)
+  @Authorized(privilege = Privilege.CS_READ)
   @Get(uri = "/{id}{?params*}")
   public Concept getConcept(@PathVariable Long id, ConceptQueryParams params) {
     Concept c = conceptService.load(id).map(concept -> conceptService.decorate(concept, concept.getCodeSystem(), params))
         .orElseThrow(() -> new NotFoundException("Concept not found: " + id));
-    SessionStore.require().checkPermitted(c.getCodeSystem(), Privilege.CS_VIEW);
+    SessionStore.require().checkPermitted(c.getCodeSystem(), Privilege.CS_READ);
     return c;
   }
 
-  @Authorized(privilege = Privilege.CS_VIEW)
+  @Authorized(privilege = Privilege.CS_READ)
   @Get(uri = "{?params*}")
   public QueryResult<Concept> queryConcepts(ConceptQueryParams params) {
-    params.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
+    params.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_READ));
     return conceptService.query(params);
   }
 

@@ -20,14 +20,14 @@ import lombok.RequiredArgsConstructor;
 public class PageLinkController {
   private final PageLinkService pageLinkService;
 
-  @Authorized(Privilege.W_VIEW)
+  @Authorized(Privilege.W_READ)
   @Get(uri = "{?params*}")
   public QueryResult<PageLink> queryPages(PageLinkQueryParams params) {
-    params.setPermittedSpaceIds(SessionStore.require().getPermittedResourceIds(Privilege.W_VIEW, Long::valueOf));
+    params.setPermittedSpaceIds(SessionStore.require().getPermittedResourceIds(Privilege.W_READ, Long::valueOf));
     return pageLinkService.query(params);
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Post(uri = "/{id}/move")
   public List<PageLink> movePage(@PathVariable Long id, @Body PageLinkMoveRequest req) {
     //TODO: auth

@@ -495,7 +495,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       }
     });
     params.setDecorated(true);
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_READ));
     return params;
   }
 
@@ -546,7 +546,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         default -> throw new ApiClientException("Search by '" + k + "' not supported");
       }
     });
-    params.setPermittedValueSets(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
+    params.setPermittedValueSets(SessionStore.require().getPermittedResourceIds(Privilege.VS_READ));
     return params;
   }
 

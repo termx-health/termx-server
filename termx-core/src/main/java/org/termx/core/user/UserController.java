@@ -17,7 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 public class UserController {
   private final UserProvider userProvider;
 
-  @Authorized("*.Users.view")
+  @Authorized("*.Users.read")
   @Get("{?params*}")
   public List<User> loadAll(UserSearchParams params) {
     //TODO: auth

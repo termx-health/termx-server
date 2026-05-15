@@ -22,44 +22,44 @@ public class PackageController {
   private final PackageService packageService;
   private final PackageVersionService packageVersionService;
 
-  @Authorized(Privilege.S_VIEW)
+  @Authorized(Privilege.S_READ)
   @Get()
   public List<Package> loadPackages(@PathVariable Long spaceId) {
     return packageService.loadAll(spaceId);
   }
 
-  @Authorized(Privilege.S_EDIT)
+  @Authorized(Privilege.S_WRITE)
   @Post()
   public Package savePackage(@PathVariable Long spaceId, @Body PackageTransactionRequest request) {
     return packageService.save(request, spaceId);
   }
 
-  @Authorized(Privilege.S_VIEW)
+  @Authorized(Privilege.S_READ)
   @Get("/{id}")
   public Package load(@PathVariable Long spaceId, @PathVariable Long id) {
     return packageService.load(spaceId, id);
   }
 
-  @Authorized(Privilege.S_VIEW)
+  @Authorized(Privilege.S_READ)
   @Get("/{id}/versions")
   public List<PackageVersion> loadVersions(@PathVariable Long spaceId, @PathVariable Long id) {
     return packageVersionService.loadAll(spaceId, id);
   }
 
-  @Authorized(Privilege.S_VIEW)
+  @Authorized(Privilege.S_READ)
   @Get("/{id}/versions/{versionId}")
   public PackageVersion loadVersion(@PathVariable Long spaceId, @PathVariable Long id, @PathVariable Long versionId) {
     return packageVersionService.load(spaceId, id, versionId);
   }
 
-  @Authorized(Privilege.S_EDIT)
+  @Authorized(Privilege.S_WRITE)
   @Delete("/{id}")
   public HttpResponse<?> delete(@PathVariable Long spaceId, @PathVariable Long id) {
     packageService.delete(spaceId, id);
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.S_EDIT)
+  @Authorized(Privilege.S_WRITE)
   @Delete("/{id}/versions/{versionId}")
   public HttpResponse<?> deleteVersion(@PathVariable Long spaceId, @PathVariable Long id, @PathVariable Long versionId) {
     packageVersionService.delete(spaceId, id, versionId);

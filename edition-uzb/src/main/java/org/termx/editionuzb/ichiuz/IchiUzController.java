@@ -29,7 +29,7 @@ public class IchiUzController {
 
   private static final String JOB_TYPE = "ICHI";
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(Privilege.CS_WRITE)
   @Post("/import")
   public JobLogResponse importIchiUz(@NonNull @QueryValue String url, @Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getPublisher(), JOB_TYPE);

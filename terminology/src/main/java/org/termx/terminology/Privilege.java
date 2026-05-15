@@ -1,29 +1,29 @@
 package org.termx.terminology;
 
 public interface Privilege {
-  String CS_VIEW = "CodeSystem.view";
+  String CS_READ = "CodeSystem.read";
   String CS_TRIAGE = "CodeSystem.triage";
-  String CS_EDIT = "CodeSystem.edit";
-  String CS_PUBLISH = "CodeSystem.publish";
+  String CS_WRITE = "CodeSystem.write";
+  String CS_MAINTAIN = "CodeSystem.maintain";
 
-  String DEF_PROP_VIEW = "DefinedProperty.view";
-  String DEF_PROP_EDIT = "DefinedProperty.edit";
+  String DEF_PROP_READ = "DefinedProperty.read";
+  String DEF_PROP_WRITE = "DefinedProperty.write";
 
-  String VS_VIEW = "ValueSet.view";
+  String VS_READ = "ValueSet.read";
   String VS_TRIAGE = "ValueSet.triage";
-  String VS_EDIT = "ValueSet.edit";
-  String VS_PUBLISH = "ValueSet.publish";
+  String VS_WRITE = "ValueSet.write";
+  String VS_MAINTAIN = "ValueSet.maintain";
 
-  String MS_VIEW = "MapSet.view";
+  String MS_READ = "MapSet.read";
   String MS_TRIAGE = "MapSet.triage";
-  String MS_EDIT = "MapSet.edit";
-  String MS_PUBLISH = "MapSet.publish";
+  String MS_WRITE = "MapSet.write";
+  String MS_MAINTAIN = "MapSet.maintain";
 
-  String AT_VIEW = "AssociationType.view";
-  String AT_EDIT = "AssociationType.edit";
-  String AT_PUBLISH= "AssociationType.publish";
+  String AT_READ = "AssociationType.read";
+  String AT_WRITE = "AssociationType.write";
+  String AT_MAINTAIN = "AssociationType.maintain";
 
-  String NS_VIEW = "NamingSystem.view";
-  String NS_EDIT = "NamingSystem.edit";
-  String NS_PUBLISH = "NamingSystem.publish";
+  String NS_READ = "NamingSystem.read";
+  String NS_WRITE = "NamingSystem.write";
+  String NS_MAINTAIN = "NamingSystem.maintain";
 }

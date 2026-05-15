@@ -40,7 +40,7 @@ public class PageCommentController {
     return HttpResponse.created(commentService.create(comment));
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Put("/{id}")
   public HttpResponse<?> update(@PathVariable Long id, @Body @Valid PageComment comment) {
     SessionStore.require().checkPermitted(pageContentService.load(comment.getPageContentId()).getSpaceId().toString(), Privilege.W_TRIAGE);
@@ -48,20 +48,20 @@ public class PageCommentController {
     return HttpResponse.ok(commentService.update(comment));
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Delete("/{id}")
   public HttpResponse<?> delete(@PathVariable Long id) {
     PageComment comment = commentService.load(id);
-    SessionStore.require().checkPermitted(pageContentService.load(comment.getPageContentId()).getSpaceId().toString(), Privilege.W_EDIT);
+    SessionStore.require().checkPermitted(pageContentService.load(comment.getPageContentId()).getSpaceId().toString(), Privilege.W_WRITE);
     commentService.delete(id);
     return HttpResponse.noContent();
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Post("/{id}/resolve")
   public HttpResponse<?> resolve(@PathVariable Long id) {
     PageComment comment = commentService.load(id);
-    SessionStore.require().checkPermitted(pageContentService.load(comment.getPageContentId()).getSpaceId().toString(), Privilege.W_EDIT);
+    SessionStore.require().checkPermitted(pageContentService.load(comment.getPageContentId()).getSpaceId().toString(), Privilege.W_WRITE);
     return HttpResponse.ok(commentService.resolve(id));
   }
 }

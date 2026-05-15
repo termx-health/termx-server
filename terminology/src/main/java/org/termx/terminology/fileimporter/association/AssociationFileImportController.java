@@ -36,7 +36,7 @@ public class AssociationFileImportController {
   private final AssociationFileImportService fileImporterService;
   private final ImportLogger importLogger;
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(Privilege.CS_WRITE)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(Publisher<CompletedFileUpload> file, @Part("request") String request) {
     AssociationFileImportRequest req = JsonUtil.fromJson(request, AssociationFileImportRequest.class);
@@ -65,7 +65,7 @@ public class AssociationFileImportController {
     return jobLogResponse;
   }
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(Privilege.CS_WRITE)
   @Get(value = "/csv-template", produces = "application/csv")
   public HttpResponse<?> getTemplate() {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(fileImporterService.getTemplate());

@@ -31,7 +31,7 @@ public class MapSetFileImportController {
   private final ImportLogger importLogger;
   private final MapSetFileImportService importService;
 
-  @Authorized(Privilege.MS_VIEW)
+  @Authorized(Privilege.MS_READ)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(Publisher<CompletedFileUpload> file, @Part("request") String request) {
     MapSetFileImportRequest req = JsonUtil.fromJson(request, MapSetFileImportRequest.class);
@@ -39,7 +39,7 @@ public class MapSetFileImportController {
     return importLogger.runJob(JOB_TYPE, Map.of("request", req, "file", importFile), importService::process);
   }
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(Privilege.CS_WRITE)
   @Get(value = "/csv-template", produces = "application/csv")
   public HttpResponse<?> getTemplate() {
     MutableHttpResponse<byte[]> response = HttpResponse.ok(importService.getTemplate());

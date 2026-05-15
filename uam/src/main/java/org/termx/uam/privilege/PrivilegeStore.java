@@ -66,17 +66,17 @@ public class PrivilegeStore implements PrivilegeDataHandler {
       return List.of();
     }
     List<String> privileges = new ArrayList<>();
-    if (actions.isView()) {
-      privileges.add(dottedPrivilege(id, type, "view"));
+    if (actions.isRead()) {
+      privileges.add(dottedPrivilege(id, type, "read"));
     }
     if (actions.isTriage()) {
       privileges.add(dottedPrivilege(id, type, "triage"));
     }
-    if (actions.isEdit()) {
-      privileges.add(dottedPrivilege(id, type, "edit"));
+    if (actions.isWrite()) {
+      privileges.add(dottedPrivilege(id, type, "write"));
     }
-    if (actions.isPublish()) {
-      privileges.add(dottedPrivilege(id, type, "publish"));
+    if (actions.isMaintain()) {
+      privileges.add(dottedPrivilege(id, type, "maintain"));
     }
     return privileges;
   }

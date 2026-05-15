@@ -101,17 +101,17 @@ In the development mode you can use application without authentication. The appl
 
 ### Yupi privilege override (QA / migration testing)
 
-By default the `yupi` session is granted the full set of action wildcards (`*.*.view`, `*.*.triage`, `*.*.edit`, `*.*.publish`). To test the application as a user with a restricted privilege set -- for example, to verify that a `View`-only user no longer sees CodeSystem download links or wiki comments after the Phase A migration -- override the yupi privilege set with the `-PyupiPrivileges` Gradle flag (or directly with `-Dauth.dev.yupi.privileges=...`).
+By default the `yupi` session is granted the full set of action wildcards (`*.*.read`, `*.*.triage`, `*.*.write`, `*.*.maintain`). To test the application as a user with a restricted privilege set -- for example, to verify that a `View`-only user no longer sees CodeSystem download links or wiki comments after the Phase A migration -- override the yupi privilege set with the `-PyupiPrivileges` Gradle flag (or directly with `-Dauth.dev.yupi.privileges=...`).
 
 ```bash
 # View-only: page renders but downloads + comments are hidden.
-./gradlew :termx-app:run -Pdev -PyupiPrivileges='*.*.view'
+./gradlew :termx-app:run -Pdev -PyupiPrivileges='*.*.read'
 
 # View + Triage: downloads visible, comment thread visible, no edit.
-./gradlew :termx-app:run -Pdev -PyupiPrivileges='*.*.view,*.*.triage'
+./gradlew :termx-app:run -Pdev -PyupiPrivileges='*.*.read,*.*.triage'
 
 # Resource-scoped view: only the icd-10 CodeSystem is viewable.
-./gradlew :termx-app:run -Pdev -PyupiPrivileges='icd-10.CodeSystem.view'
+./gradlew :termx-app:run -Pdev -PyupiPrivileges='icd-10.CodeSystem.read'
 ```
 
 The value is a comma-separated list of dotted privilege strings (`{resource}.{type}.{action}`); whitespace and empty tokens are ignored. Common preset values and their expected UI effect are documented in [docs/specification/terminology-server/privileges-migration-guide.md](../docs/specification/terminology-server/privileges-migration-guide.md#qa-testing-with-the-yupi-privilege-override) and inline in [`YupiSessionProvider`](termx-app/src/main/java/org/termx/auth/YupiSessionProvider.java).
@@ -119,7 +119,7 @@ The value is a comma-separated list of dotted privilege strings (`{resource}.{ty
 For ad-hoc per-request overrides without restarting the server, send a JSON-encoded `SessionInfo` directly in the header:
 
 ```
-Authorization: Bearer yupi{"username":"qa","privileges":["*.CodeSystem.view"]}
+Authorization: Bearer yupi{"username":"qa","privileges":["*.CodeSystem.read"]}
 ```
 
 **Frontend note.** The web UI (termx-web) fetches privileges from the backend's `/auth/userinfo` endpoint, so any `auth.dev.yupi.privileges` override is reflected in the UI automatically. After changing the override and restarting the server, **hard-refresh the browser** (Cmd/Ctrl-Shift-R) to drop the cached session. If you still see admin (`*.*.*`) after the refresh, check that:

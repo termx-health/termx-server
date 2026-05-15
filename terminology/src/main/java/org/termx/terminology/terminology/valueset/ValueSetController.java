@@ -74,31 +74,31 @@ public class ValueSetController {
 
   //----------------ValueSet----------------
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_READ)
   @Get(uri = "{?params*}")
   public QueryResult<ValueSet> queryValueSets(ValueSetQueryParams params) {
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_VIEW));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_READ));
     return valueSetService.query(params);
   }
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_READ)
   @Get(uri = "/{valueSet}{?decorate}")
   public ValueSet getValueSet(@PathVariable String valueSet, Optional<Boolean> decorate) {
     return valueSetService.load(valueSet, decorate.orElse(false))
         .orElseThrow(() -> new NotFoundException("ValueSet not found: " + valueSet));
   }
 
-  @Authorized(Privilege.VS_EDIT)
+  @Authorized(Privilege.VS_WRITE)
   @Post("/transaction")
   public HttpResponse<?> saveValueSetTransaction(@Body @Valid ValueSetTransactionRequest request) {
-    SessionStore.require().checkPermitted(request.getValueSet().getId(), Privilege.VS_EDIT);
+    SessionStore.require().checkPermitted(request.getValueSet().getId(), Privilege.VS_WRITE);
     provenanceService.provenanceValueSetTransaction("save", request, () -> {
       valueSetService.save(request);
     });
     return HttpResponse.created(request.getValueSet());
   }
 
-  @Authorized(Privilege.VS_EDIT)
+  @Authorized(Privilege.VS_WRITE)
   @Post(uri = "/{valueSet}/change-id")
   public HttpResponse<?> changeValueSetId(@PathVariable String valueSet, @Valid @Body UniqueResource<?> body) {
     String newId = body.getId();
@@ -108,7 +108,7 @@ public class ValueSetController {
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.VS_PUBLISH)
+  @Authorized(Privilege.VS_MAINTAIN)
   @Delete(uri = "/{valueSet}")
   public HttpResponse<?> deleteValueSet(@PathVariable String valueSet) {
     valueSetService.cancel(valueSet);
@@ -118,21 +118,21 @@ public class ValueSetController {
 
   //----------------ValueSet Version----------------
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_READ)
   @Get(uri = "/{valueSet}/versions{?params*}")
   public QueryResult<ValueSetVersion> queryValueSetVersions(@PathVariable String valueSet, ValueSetVersionQueryParams params) {
     params.setValueSet(valueSet);
     return valueSetVersionService.query(params);
   }
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_READ)
   @Get(uri = "/{valueSet}/versions/{version}")
   public ValueSetVersion getValueSetVersion(@PathVariable String valueSet, @PathVariable String version) {
     return valueSetVersionService.load(valueSet, version)
         .orElseThrow(() -> new NotFoundException("Value set version not found: " + version));
   }
 
-  @Authorized(Privilege.VS_EDIT)
+  @Authorized(Privilege.VS_WRITE)
   @Post(uri = "/{valueSet}/versions")
   public HttpResponse<?> createVersion(@PathVariable String valueSet, @Body @Valid ValueSetVersion version) {
     version.setId(null);
@@ -143,7 +143,7 @@ public class ValueSetController {
     return HttpResponse.created(version);
   }
 
-  @Authorized(Privilege.VS_EDIT)
+  @Authorized(Privilege.VS_WRITE)
   @Put(uri = "/{valueSet}/versions/{version}")
   public HttpResponse<?> updateVersion(@PathVariable String valueSet, @PathVariable String version, @Body @Valid ValueSetVersion valueSetVersion) {
     valueSetVersion.setVersion(version);
@@ -154,7 +154,7 @@ public class ValueSetController {
     return HttpResponse.created(valueSetVersion);
   }
 
-  @Authorized(Privilege.VS_PUBLISH)
+  @Authorized(Privilege.VS_MAINTAIN)
   @Post(uri = "/{valueSet}/versions/{version}/activate")
   public HttpResponse<?> activateVersion(@PathVariable String valueSet, @PathVariable String version) {
     provenanceService.provenanceValueSetVersion("activate", valueSet, version, () -> {
@@ -163,7 +163,7 @@ public class ValueSetController {
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.VS_PUBLISH)
+  @Authorized(Privilege.VS_MAINTAIN)
   @Post(uri = "/{valueSet}/versions/{version}/retire")
   public HttpResponse<?> retireVersion(@PathVariable String valueSet, @PathVariable String version) {
     provenanceService.provenanceValueSetVersion("retire", valueSet, version, () -> {
@@ -172,7 +172,7 @@ public class ValueSetController {
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.VS_PUBLISH)
+  @Authorized(Privilege.VS_MAINTAIN)
   @Post(uri = "/{valueSet}/versions/{version}/draft")
   public HttpResponse<?> saveAsDraft(@PathVariable String valueSet, @PathVariable String version) {
     provenanceService.provenanceValueSetVersion("save", valueSet, version, () -> {
@@ -181,18 +181,18 @@ public class ValueSetController {
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.VS_EDIT)
+  @Authorized(Privilege.VS_WRITE)
   @Post(uri = "/{valueSet}/versions/{version}/duplicate")
   public HttpResponse<?> duplicateValueSetVersion(@PathVariable String valueSet, @PathVariable String version,
                                                   @Body @Valid ValueSetVersionDuplicateRequest request) {
-    SessionStore.require().checkPermitted(request.getValueSet(), Privilege.VS_EDIT);
+    SessionStore.require().checkPermitted(request.getValueSet(), Privilege.VS_WRITE);
     provenanceService.provenanceValueSetVersion("duplicate", valueSet, request.getVersion(), () -> {
       valueSetDuplicateService.duplicateValueSetVersion(request.getVersion(), request.getValueSet(), version, valueSet);
     });
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.VS_PUBLISH)
+  @Authorized(Privilege.VS_MAINTAIN)
   @Delete(uri = "/{valueset}/versions/{version}")
   public HttpResponse<?> deleteValueSetVersion(@PathVariable String valueset, @PathVariable String version) {
     Long versionId = valueSetVersionService.load(valueset, version).map(ValueSetVersionReference::getId).orElseThrow();
@@ -204,24 +204,24 @@ public class ValueSetController {
 
   //----------------ValueSet Expand----------------
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_READ)
   @Post(uri = "/expand")
   public List<ValueSetVersionConcept> expand(@Body @Valid ValueSetExpandRequest request) {
-    SessionStore.require().checkPermitted(request.getValueSet(), Privilege.VS_VIEW);
+    SessionStore.require().checkPermitted(request.getValueSet(), Privilege.VS_READ);
     return valueSetVersionConceptService.expand(request.getValueSet(), request.getValueSetVersion());
   }
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_READ)
   @Post(uri = "/expand-rule")
   public List<ValueSetVersionConcept> expandRule(@Body @Valid ValueSetRuleExpandRequest request) {
-    SessionStore.require().checkPermitted(request.getValueSet(), Privilege.VS_VIEW);
+    SessionStore.require().checkPermitted(request.getValueSet(), Privilege.VS_READ);
     return valueSetRuleExpandService.expandRule(request.getValueSet(), request.getValueSetVersion(), request.getRule(), request.isInactiveConcepts());
   }
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_READ)
   @Post(uri = "/expand-async")
   public JobLogResponse expandAsync(@Body @Valid ValueSetExpandRequest request) {
-    SessionStore.require().checkPermitted(request.getValueSet(), Privilege.VS_VIEW);
+    SessionStore.require().checkPermitted(request.getValueSet(), Privilege.VS_READ);
     JobLogResponse jobLogResponse = importLogger.createJob(request.getValueSet(), "value-set-expand");
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       try {
@@ -266,7 +266,7 @@ public class ValueSetController {
   }
 
   //----------------ValueSet Version Rule----------------
-  @Authorized(Privilege.VS_EDIT)
+  @Authorized(Privilege.VS_WRITE)
   @Put(uri = "/{valueSet}/versions/{version}/rule-sets/{id}")
   public HttpResponse<?> updateRuleSet(@PathVariable String valueSet, @PathVariable String version, @PathVariable Long id,
                                     @Body @Valid ValueSetVersionRuleSet ruleSet) {
@@ -277,7 +277,7 @@ public class ValueSetController {
     return HttpResponse.created(ruleSet);
   }
 
-  @Authorized(Privilege.VS_EDIT)
+  @Authorized(Privilege.VS_WRITE)
   @Post(uri = "/{valueSet}/versions/{version}/rules")
   public HttpResponse<?> createRule(@PathVariable String valueSet, @PathVariable String version, @Body @Valid ValueSetVersionRule rule) {
     rule.setId(null);
@@ -287,7 +287,7 @@ public class ValueSetController {
     return HttpResponse.created(rule);
   }
 
-  @Authorized(Privilege.VS_EDIT)
+  @Authorized(Privilege.VS_WRITE)
   @Put(uri = "/{valueSet}/versions/{version}/rules/{id}")
   public HttpResponse<?> updateRule(@PathVariable String valueSet, @PathVariable String version, @PathVariable Long id,
                                     @Body @Valid ValueSetVersionRule rule) {
@@ -298,7 +298,7 @@ public class ValueSetController {
     return HttpResponse.created(rule);
   }
 
-  @Authorized(Privilege.VS_EDIT)
+  @Authorized(Privilege.VS_WRITE)
   @Delete(uri = "/{valueSet}/versions/{version}/rules/{id}")
   public HttpResponse<?> deleteRule(@PathVariable String valueSet, @PathVariable String version, @PathVariable Long id) {
     if (valueSetVersionService.load(valueSet, version).isEmpty()) {
@@ -312,7 +312,7 @@ public class ValueSetController {
 
   //----------------Provenances----------------
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_READ)
   @Get(uri = "/{valueSet}/provenances")
   public List<Provenance> queryProvenances(@PathVariable String valueSet, @Nullable @QueryValue String version) {
     return provenanceService.find(valueSet, version);

@@ -46,20 +46,20 @@ public class KefhirAuthHttpInterceptor implements KefhirRequestExecutionIntercep
       return;
     }
     if (Objects.equals(InteractionType.READ, interaction) &&
-        !SessionStore.require().hasPrivilege(id + "." + resourcePrivileges.get(type) + ".view")) {
+        !SessionStore.require().hasPrivilege(id + "." + resourcePrivileges.get(type) + ".read")) {
       throw new FhirException(403, IssueType.FORBIDDEN, id + "." + type + "." + interaction + " not allowed");
     }
     if (Objects.equals(InteractionType.CREATE, interaction)
-        && !SessionStore.require().hasPrivilege("*." + resourcePrivileges.get(type) + ".edit")) {
+        && !SessionStore.require().hasPrivilege("*." + resourcePrivileges.get(type) + ".write")) {
       throw new FhirException(403, IssueType.FORBIDDEN, id + "." + type + "." + interaction + " not allowed");
     }
     if (Objects.equals(InteractionType.UPDATE, interaction)
-        && !SessionStore.require().hasPrivilege(id + "." + resourcePrivileges.get(type) + ".edit")) {
+        && !SessionStore.require().hasPrivilege(id + "." + resourcePrivileges.get(type) + ".write")) {
       throw new FhirException(403, IssueType.FORBIDDEN, id + "." + type + "." + interaction + " not allowed");
     }
     if (Objects.equals(InteractionType.OPERATION, interaction) && request.getPath().contains("/") /* instance operation */) {
       //check at least view privilege for instance operations. everything else  manually in operation implementation
-      if (!SessionStore.require().hasPrivilege(id + "." + resourcePrivileges.get(type) + ".view")) {
+      if (!SessionStore.require().hasPrivilege(id + "." + resourcePrivileges.get(type) + ".read")) {
         throw new FhirException(403, IssueType.FORBIDDEN, request.getPath() + "." + type + " not allowed");
       }
     }

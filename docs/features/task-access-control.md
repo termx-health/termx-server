@@ -29,18 +29,18 @@ Task access control is automatically enabled and requires no configuration. It i
 Task access is controlled through **virtual privilege derivation**. When a user logs in, their resource privileges are automatically translated into Task privileges:
 
 **Privilege derivation at login:**
-- Any `*.*.edit` privilege (e.g., `icd-10.CodeSystem.edit`) → automatically derives `code-system#icd-10.Task.view` and `code-system#icd-10.Task.edit`
-- Any `*.*.publish` privilege (e.g., `*.ValueSet.publish`) → automatically derives `value-set#*.Task.view`, `value-set#*.Task.edit`, and `value-set#*.Task.publish`
-- View-only privileges (e.g., `*.CodeSystem.view`) → no Task privileges, task list is hidden
+- Any `*.*.write` privilege (e.g., `icd-10.CodeSystem.write`) → automatically derives `code-system#icd-10.Task.read` and `code-system#icd-10.Task.write`
+- Any `*.*.maintain` privilege (e.g., `*.ValueSet.maintain`) → automatically derives `value-set#*.Task.read`, `value-set#*.Task.write`, and `value-set#*.Task.maintain`
+- View-only privileges (e.g., `*.CodeSystem.read`) → no Task privileges, task list is hidden
 
 **Task visibility rules:**
 
 | User Privilege | Task List Accessible? | Derived Task Privileges | Tasks Visible |
 |----------------|----------------------|------------------------|---------------|
-| `*.CodeSystem.view` only | ❌ No | None | None (no Task privileges derived) |
-| `icd-10.CodeSystem.edit` | ✅ Yes | `code-system#icd-10.Task.view`, `code-system#icd-10.Task.edit` | Tasks created by OR assigned to user |
-| `icd-10.CodeSystem.publish` | ✅ Yes | `code-system#icd-10.Task.view`, `code-system#icd-10.Task.edit`, `code-system#icd-10.Task.publish` | Tasks created by OR assigned to user, PLUS all tasks with context `code-system\|icd-10` |
-| `*.CodeSystem.publish` | ✅ Yes | `code-system#*.Task.view`, `code-system#*.Task.edit`, `code-system#*.Task.publish` | Tasks created by OR assigned to user, PLUS all CodeSystem tasks |
+| `*.CodeSystem.read` only | ❌ No | None | None (no Task privileges derived) |
+| `icd-10.CodeSystem.write` | ✅ Yes | `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write` | Tasks created by OR assigned to user |
+| `icd-10.CodeSystem.maintain` | ✅ Yes | `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write`, `code-system#icd-10.Task.maintain` | Tasks created by OR assigned to user, PLUS all tasks with context `code-system\|icd-10` |
+| `*.CodeSystem.maintain` | ✅ Yes | `code-system#*.Task.read`, `code-system#*.Task.write`, `code-system#*.Task.maintain` | Tasks created by OR assigned to user, PLUS all CodeSystem tasks |
 | `*.*.*` (admin) | ✅ Yes | (no derivation) | All tasks (no filter) |
 
 ### Default Role Configuration
@@ -48,9 +48,9 @@ Task access is controlled through **virtual privilege derivation**. When a user 
 Default roles in TermX:
 
 - **admin**: `*.*.*` (all privileges)
-- **publisher**: `*.*.publish` (publish on all resources)
-- **editor**: `*.*.edit` (edit on all resources)
-- **viewer**: `*.*.view` (view-only on all resources)
+- **publisher**: `*.*.maintain` (publish on all resources)
+- **editor**: `*.*.write` (edit on all resources)
+- **viewer**: `*.*.read` (view-only on all resources)
 
 See [Mock Authentication](mock-auth.md) for testing with mock user profiles.
 
@@ -62,7 +62,7 @@ Tasks are linked to resources via context items (e.g., CodeSystem, ValueSet, Map
 2. **Specific resource ID** from task context
 3. **Task ownership** (created by or assigned to user)
 
-Example: A user with privilege `icd-10.CodeSystem.edit` can see tasks with context `{type: "code-system", id: "icd-10"}` that they created or are assigned to.
+Example: A user with privilege `icd-10.CodeSystem.write` can see tasks with context `{type: "code-system", id: "icd-10"}` that they created or are assigned to.
 
 ## Use-Cases
 
@@ -71,9 +71,9 @@ Example: A user with privilege `icd-10.CodeSystem.edit` can see tasks with conte
 **Context:** Junior editor needs to create a review task for ICD-10 concepts they're working on.
 
 **Steps:**
-1. Editor logs in with `icd-10.CodeSystem.edit` privilege
-2. System automatically derives `code-system#icd-10.Task.view` and `code-system#icd-10.Task.edit` privileges at login
-3. Task list becomes visible (gate check passes with Task.view privilege)
+1. Editor logs in with `icd-10.CodeSystem.write` privilege
+2. System automatically derives `code-system#icd-10.Task.read` and `code-system#icd-10.Task.write` privileges at login
+3. Task list becomes visible (gate check passes with Task.read privilege)
 4. Creates task: "Review new diabetes concepts" with context `{type: "code-system", id: "icd-10"}`
 5. Task is assigned to themselves
 6. Query task list - sees the newly created task (creator match)
@@ -86,10 +86,10 @@ Example: A user with privilege `icd-10.CodeSystem.edit` can see tasks with conte
 **Context:** Senior publisher needs to see all review tasks for ICD-10 and ICD-11 code systems.
 
 **Steps:**
-1. Publisher logs in with `icd-10.CodeSystem.publish` and `icd-11.CodeSystem.publish` privileges
+1. Publisher logs in with `icd-10.CodeSystem.maintain` and `icd-11.CodeSystem.maintain` privileges
 2. System automatically derives:
-   - `code-system#icd-10.Task.view`, `code-system#icd-10.Task.edit`, `code-system#icd-10.Task.publish`
-   - `code-system#icd-11.Task.view`, `code-system#icd-11.Task.edit`, `code-system#icd-11.Task.publish`
+   - `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write`, `code-system#icd-10.Task.maintain`
+   - `code-system#icd-11.Task.read`, `code-system#icd-11.Task.write`, `code-system#icd-11.Task.maintain`
 3. Query task list - sees:
    - ALL tasks with context `code-system|icd-10` (from all users)
    - ALL tasks with context `code-system|icd-11` (from all users)
@@ -116,9 +116,9 @@ Example: A user with privilege `icd-10.CodeSystem.edit` can see tasks with conte
 **Context:** Read-only user (reports/auditing role) should not see task management interface.
 
 **Steps:**
-1. Viewer logs in with only `*.*.view` privileges (no edit or publish on any resource)
+1. Viewer logs in with only `*.*.read` privileges (no edit or publish on any resource)
 2. System does NOT derive any Task privileges (no resource-specific Task privileges)
-3. Query task list - receives 403 Forbidden (gate check fails - no Task.view privilege)
+3. Query task list - receives 403 Forbidden (gate check fails - no Task.read privilege)
 4. Task menu items hidden in UI (no Task privileges)
 
 **Outcome:** Viewer cannot access task system, maintaining separation of concerns. The resource-specific privilege derivation ensures task access is automatically tied to edit/publish privileges on actual resources.
@@ -128,16 +128,16 @@ Example: A user with privilege `icd-10.CodeSystem.edit` can see tasks with conte
 **Context:** Mixed publisher/editor privileges on different resources.
 
 **Steps:**
-1. User has privileges: `icd-10.CodeSystem.publish`, `disorders.ValueSet.edit`
+1. User has privileges: `icd-10.CodeSystem.maintain`, `disorders.ValueSet.write`
 2. System derives:
-   - `code-system#icd-10.Task.view`, `code-system#icd-10.Task.edit`, `code-system#icd-10.Task.publish`
-   - `value-set#disorders.Task.view`, `value-set#disorders.Task.edit`
+   - `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write`, `code-system#icd-10.Task.maintain`
+   - `value-set#disorders.Task.read`, `value-set#disorders.Task.write`
 3. Query task list - sees tasks where:
    - **(Rule A)** Created by user OR assigned to user (any resource)
    - **OR (Rule B)** Context matches `code-system#icd-10` (publisher access, sees all ICD-10 CodeSystem tasks)
 4. Specifically:
    - ✅ Own tasks for disorders ValueSet (creator/assignee match)
-   - ✅ All ICD-10 CodeSystem tasks (publisher context match: `code-system#icd-10.Task.publish`)
+   - ✅ All ICD-10 CodeSystem tasks (publisher context match: `code-system#icd-10.Task.maintain`)
    - ❌ Other users' disorders tasks (no publish access on disorders, not own task)
    - ❌ Other resources' tasks (no access, not own task)
 
@@ -166,7 +166,7 @@ The `visibilityFilter` is automatically applied for non-admin users - it cannot 
 
 - **Admin**: All tasks (no filter)
 - **Publisher/Editor**: Tasks matching visibility filter (own tasks OR publisher context match)
-- **Viewer**: 403 Forbidden (no Task.view privilege)
+- **Viewer**: 403 Forbidden (no Task.read privilege)
 
 ## Testing
 
@@ -214,7 +214,7 @@ curl -H "Authorization: Bearer editor" http://localhost:8200/api/tm/tasks
 # Expected: Task appears in results
 
 # Different editor (no access to icd-10) should NOT see it
-# (if they don't have icd-10.CodeSystem.edit privilege)
+# (if they don't have icd-10.CodeSystem.write privilege)
 
 # Publisher with icd-10 publish access should see it
 curl -H "Authorization: Bearer publisher" http://localhost:8200/api/tm/tasks
@@ -298,20 +298,20 @@ Resource privileges are automatically translated to resource-specific Task privi
 
 | Resource Privilege | Derived Task Privileges | Effect |
 |--------------------|------------------------|--------|
-| `icd-10.CodeSystem.edit` | `code-system#icd-10.Task.view`, `code-system#icd-10.Task.edit` | Can access task list, see own ICD-10 tasks |
-| `icd-10.CodeSystem.publish` | `code-system#icd-10.Task.view`, `code-system#icd-10.Task.edit`, `code-system#icd-10.Task.publish` | Can access task list, see own tasks + all ICD-10 CodeSystem tasks |
-| `*.CodeSystem.edit` | `code-system#*.Task.view`, `code-system#*.Task.edit` | Can access task list, see own tasks for any CodeSystem |
-| `*.CodeSystem.publish` | `code-system#*.Task.view`, `code-system#*.Task.edit`, `code-system#*.Task.publish` | Can access task list, see own tasks + all CodeSystem tasks |
-| `*.*.view` only | None | Cannot access task list |
+| `icd-10.CodeSystem.write` | `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write` | Can access task list, see own ICD-10 tasks |
+| `icd-10.CodeSystem.maintain` | `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write`, `code-system#icd-10.Task.maintain` | Can access task list, see own tasks + all ICD-10 CodeSystem tasks |
+| `*.CodeSystem.write` | `code-system#*.Task.read`, `code-system#*.Task.write` | Can access task list, see own tasks for any CodeSystem |
+| `*.CodeSystem.maintain` | `code-system#*.Task.read`, `code-system#*.Task.write`, `code-system#*.Task.maintain` | Can access task list, see own tasks + all CodeSystem tasks |
+| `*.*.read` only | None | Cannot access task list |
 | `*.*.*` (admin) | (no derivation) | Sees all tasks |
 
 **Privilege format:** `contextType#resourceId.Task.action`
 
 Examples:
-- `code-system#icd-10.Task.edit` - ICD-10 CodeSystem task editing
-- `value-set#disorders.Task.publish` - Disorders ValueSet task publishing
-- `map-set#icd10-to-snomed.Task.view` - MapSet task viewing
-- `code-system#*.Task.edit` - All CodeSystem task editing (wildcard)
+- `code-system#icd-10.Task.write` - ICD-10 CodeSystem task editing
+- `value-set#disorders.Task.maintain` - Disorders ValueSet task publishing
+- `map-set#icd10-to-snomed.Task.read` - MapSet task viewing
+- `code-system#*.Task.write` - All CodeSystem task editing (wildcard)
 
 ### TaskSearchParams (Backend)
 
@@ -336,12 +336,12 @@ These parameters are mapped from `TaskQueryParams` by the controller after apply
 flowchart TD
     Login[User Login] --> SessionProvider[SessionProvider]
     SessionProvider --> DerivePrivs[deriveTaskPrivileges]
-    DerivePrivs -->|*.*.edit or *.*.publish| AddTaskPrivs[Add *.Task.view/edit/publish]
+    DerivePrivs -->|*.*.write or *.*.maintain| AddTaskPrivs[Add *.Task.read/edit/publish]
     AddTaskPrivs --> SessionInfo[SessionInfo with derived privileges]
     
-    Request[API Request] --> Auth[@Authorized Task.view]
-    Auth -->|No Task.view| Forbidden[403 Forbidden]
-    Auth -->|Has Task.view| Controller[TaskController]
+    Request[API Request] --> Auth[@Authorized Task.read]
+    Auth -->|No Task.read| Forbidden[403 Forbidden]
+    Auth -->|Has Task.read| Controller[TaskController]
     
     Controller --> CheckAdmin{Is Admin?}
     CheckAdmin -->|Yes| AllTasks[Query All Tasks]
@@ -364,7 +364,7 @@ flowchart TD
 **Privilege resolution flow:**
 
 1. **Login**: SessionFilter calls `deriveTaskPrivileges()` - resource privileges derive resource-specific Task privileges
-2. **Request arrives**: `@Authorized(privilege = Privilege.T_VIEW)` checks for any Task.view privilege (gate check)
+2. **Request arrives**: `@Authorized(privilege = Privilege.T_VIEW)` checks for any Task.read privilege (gate check)
 3. **Controller logic**:
    - If admin (`*.*.*`): no filter
    - Otherwise: build `TaskVisibilityFilter` with username + publisher contexts extracted from hash-format privileges
@@ -380,7 +380,7 @@ SELECT * FROM taskforge.task t
 WHERE (
   -- Rule A: Own tasks
   (t.created_by = ? OR t.assignee = ?)
-  -- Rule B: Publisher context match (from code-system#icd-10.Task.publish privileges)
+  -- Rule B: Publisher context match (from code-system#icd-10.Task.maintain privileges)
   OR EXISTS (
     SELECT 1 FROM jsonb_array_elements(t.context) ctx
     WHERE (ctx->>'type', ctx->>'id') IN (
@@ -430,12 +430,12 @@ private void deriveTaskPrivileges(SessionInfo session) {
         if (contextType == null) continue;
         
         if ("edit".equals(action)) {
-            derived.add(contextType + "#" + resourceId + ".Task.view");
-            derived.add(contextType + "#" + resourceId + ".Task.edit");
+            derived.add(contextType + "#" + resourceId + ".Task.read");
+            derived.add(contextType + "#" + resourceId + ".Task.write");
         } else if ("publish".equals(action)) {
-            derived.add(contextType + "#" + resourceId + ".Task.view");
-            derived.add(contextType + "#" + resourceId + ".Task.edit");
-            derived.add(contextType + "#" + resourceId + ".Task.publish");
+            derived.add(contextType + "#" + resourceId + ".Task.read");
+            derived.add(contextType + "#" + resourceId + ".Task.write");
+            derived.add(contextType + "#" + resourceId + ".Task.maintain");
         }
     }
     
@@ -474,11 +474,11 @@ private List<String> getPermittedContexts(SessionInfo session, String action) {
 }
 
 private List<String> getPermittedResourceIds(SessionInfo session, String contextType, String action) {
-    // Check for wildcard: code-system#*.Task.publish
+    // Check for wildcard: code-system#*.Task.maintain
     if (session.hasPrivilege(contextType + "#*.Task." + action)) {
         return null; // all resources
     }
-    // Extract IDs from privileges like code-system#icd-10.Task.publish
+    // Extract IDs from privileges like code-system#icd-10.Task.maintain
     String prefix = contextType + "#";
     String suffix = ".Task." + action;
     return session.getPrivileges().stream()
@@ -510,10 +510,10 @@ Task context items link tasks to resources:
 
 | Context Type | Resource | Privilege Pattern |
 |--------------|----------|-------------------|
-| `code-system` | CodeSystem | `<resourceId>.CodeSystem.edit/publish` |
-| `value-set` | ValueSet | `<resourceId>.ValueSet.edit/publish` |
-| `map-set` | MapSet | `<resourceId>.MapSet.edit/publish` |
-| `wiki` | Wiki space | `<resourceId>.Wiki.edit/publish` |
+| `code-system` | CodeSystem | `<resourceId>.CodeSystem.write/publish` |
+| `value-set` | ValueSet | `<resourceId>.ValueSet.write/publish` |
+| `map-set` | MapSet | `<resourceId>.MapSet.write/publish` |
+| `wiki` | Wiki space | `<resourceId>.Wiki.write/publish` |
 
 The system extracts resource IDs from task context and checks user privileges against those specific resources.
 

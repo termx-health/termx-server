@@ -28,21 +28,21 @@ public class PackageResourceController {
   private final PackageResourceService packageResourceService;
   private final PackageResourceSyncService packageResourceSyncService;
 
-  @Authorized(privilege = Privilege.S_VIEW)
+  @Authorized(privilege = Privilege.S_READ)
   @Get("/{?params*}")
   public List<PackageResource> loadAll(@NotNull @QueryValue Long spaceId, @Nullable @QueryValue String packageCode, @Nullable @QueryValue String version) {
     return packageResourceService.loadAll(spaceId, packageCode, version);
   }
 
 
-  @Authorized(privilege = Privilege.S_EDIT) //TODO: fix this
+  @Authorized(privilege = Privilege.S_WRITE) //TODO: fix this
   @Put("/{id}")
   public PackageResource update(@PathVariable Long id, @Valid @Body PackageResourceSaveRequest request) {
     request.getResource().setId(id);
     return packageResourceService.save(request.getVersionId(), request.getResource());
   }
 
-  @Authorized(privilege = Privilege.S_EDIT)
+  @Authorized(privilege = Privilege.S_WRITE)
   @Post("/change-server")
   public HttpResponse<?> update(@Valid @Body PackageResourceChangeServerRequest request) {
     packageResourceService.changeServer(request.getResourceIds(), request.getTerminologyServer());
@@ -50,7 +50,7 @@ public class PackageResourceController {
   }
 
 
-  @Authorized(privilege = Privilege.S_EDIT)
+  @Authorized(privilege = Privilege.S_WRITE)
   @Post(value = "/{id}/sync")
   public HttpResponse<?> importResource(@PathVariable Long id, @Valid @Body PackageResourceSyncRequest request) {
     //TODO: auth?

@@ -21,32 +21,32 @@ import lombok.RequiredArgsConstructor;
 public class TemplateController {
   private final TemplateService service;
 
-  @Authorized(privilege = Privilege.W_VIEW)
+  @Authorized(privilege = Privilege.W_READ)
   @Get(uri = "/{id}")
   public Template getTemplate(@PathVariable Long id) {
     return service.load(id).orElseThrow(() -> new NotFoundException("Template not found: " + id));
   }
 
-  @Authorized(privilege = Privilege.W_VIEW)
+  @Authorized(privilege = Privilege.W_READ)
   @Get(uri = "{?params*}")
   public QueryResult<Template> queryTemplates(TemplateQueryParams params) {
     return service.query(params);
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Post
   public HttpResponse<?> saveTemplate(@Body Template template) {
     return HttpResponse.created(service.save(template));
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Put(uri = "/{id}")
   public HttpResponse<?> updateTemplate(@PathVariable Long id,@Body Template template) {
     template.setId(id);
     return HttpResponse.created(service.save(template));
   }
 
-  @Authorized(privilege = Privilege.W_EDIT)
+  @Authorized(privilege = Privilege.W_WRITE)
   @Delete(uri = "/{id}")
   public HttpResponse<?> deleteTemplate(@PathVariable Long id) {
     service.cancel(id);

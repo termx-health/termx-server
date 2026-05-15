@@ -49,7 +49,7 @@ public class ValueSetSyncOperation implements TypeOperationDefinition {
     }
     resources.forEach(res -> {
       String id = res.findPart("id").map(ParametersParameter::getValueString).orElseThrow();
-      SessionStore.require().checkPermitted(id, Privilege.VS_EDIT);
+      SessionStore.require().checkPermitted(id, Privilege.VS_WRITE);
     });
 
     JobLogResponse jobLogResponse = importLogger.createJob(JOB_TYPE);

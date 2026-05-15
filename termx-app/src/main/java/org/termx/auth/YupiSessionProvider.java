@@ -18,7 +18,7 @@ import org.termx.core.auth.SessionInfo;
  * Local-dev session provider, activated by {@code auth.dev.allowed=true}.
  *
  * <p>By default the yupi session is granted the full set of action wildcards
- * ({@code *.*.view}, {@code *.*.triage}, {@code *.*.edit}, {@code *.*.publish}),
+ * ({@code *.*.read}, {@code *.*.triage}, {@code *.*.write}, {@code *.*.maintain}),
  * which is effectively admin-equivalent for the privilege-matching algorithm.
  *
  * <p>For QA / migration testing the privilege set can be overridden via the
@@ -26,15 +26,15 @@ import org.termx.core.auth.SessionInfo;
  * list of dotted privilege strings. Common testing presets:
  * <ul>
  *   <li>{@code *.*.*} -- true Admin (short-circuits Task derivation)</li>
- *   <li>{@code *.*.view} -- view-only across all resources (use to verify
+ *   <li>{@code *.*.read} -- read-only across all resources (use to verify
  *       Phase A Q5: download / comment sections must be hidden)</li>
- *   <li>{@code *.*.view,*.*.triage} -- view + triage (downloads + comments
- *       visible, no edit)</li>
- *   <li>{@code icd-10.CodeSystem.view} -- scoped view-only on a single
+ *   <li>{@code *.*.read,*.*.triage} -- read + triage (downloads + comments
+ *       visible, no write)</li>
+ *   <li>{@code icd-10.CodeSystem.read} -- scoped read-only on a single
  *       resource</li>
  * </ul>
  *
- * <p>Example: {@code ./gradlew :termx-app:run -Pdev -PyupiPrivileges='*.*.view'}
+ * <p>Example: {@code ./gradlew :termx-app:run -Pdev -PyupiPrivileges='*.*.read'}
  *
  * <p>Per-request overrides via the {@code Authorization: Bearer yupi<json>}
  * header still work and take precedence over the configured default.
@@ -45,7 +45,7 @@ import org.termx.core.auth.SessionInfo;
 public class YupiSessionProvider extends SessionProvider {
   private static final String BEARER_YUPI = "Bearer yupi";
   static final Set<String> DEFAULT_PRIVILEGES =
-      Set.of("*.*.view", "*.*.triage", "*.*.edit", "*.*.publish");
+      Set.of("*.*.read", "*.*.triage", "*.*.write", "*.*.maintain");
 
   private final Set<String> configuredPrivileges;
 

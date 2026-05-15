@@ -523,7 +523,7 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
       }
     });
     params.setVersionsDecorated(true);
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.MS_VIEW));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.MS_READ));
     return params;
   }
 }

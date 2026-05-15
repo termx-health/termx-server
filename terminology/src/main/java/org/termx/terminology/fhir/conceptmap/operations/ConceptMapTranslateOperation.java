@@ -133,7 +133,7 @@ public class ConceptMapTranslateOperation implements InstanceOperationDefinition
         .setUri(cmUrl)
         .setVersionVersion(cmVersion)
         .setVersionsDecorated(cmVersion != null)
-        .setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.MS_VIEW))
+        .setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.MS_READ))
         .limit(1);
     MapSet mapSet = mapSetService.query(msParams).findFirst().orElse(null);
     if (mapSet == null) {

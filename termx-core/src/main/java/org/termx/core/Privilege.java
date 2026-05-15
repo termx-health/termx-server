@@ -1,13 +1,13 @@
 package org.termx.core;
 
 public interface Privilege {
-  String S_VIEW = "Space.view";
-  String S_EDIT = "Space.edit";
+  String S_READ = "Space.read";
+  String S_WRITE = "Space.write";
 
-  String R_VIEW = "Release.view";
-  String R_EDIT = "Release.edit";
-  String R_PUBLISH = "Release.publish";
+  String R_READ = "Release.read";
+  String R_WRITE = "Release.write";
+  String R_MAINTAIN = "Release.maintain";
 
-  String C_VIEW = "Checklist.view";
-  String C_EDIT = "Checklist.edit";
+  String C_READ = "Checklist.read";
+  String C_WRITE = "Checklist.write";
 }

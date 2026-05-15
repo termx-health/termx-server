@@ -12,7 +12,7 @@ Key capabilities:
 
 ## Configuration
 
-No server-side configuration required. Ecosystems are managed through the UI and REST API. Uses Space privileges (`Space.view`, `Space.edit`).
+No server-side configuration required. Ecosystems are managed through the UI and REST API. Uses Space privileges (`Space.read`, `Space.write`).
 
 ## Use-Cases
 
@@ -42,10 +42,10 @@ No server-side configuration required. Ecosystems are managed through the UI and
 
 | Method | Path | Privilege | Description |
 |--------|------|-----------|-------------|
-| POST | `/ecosystems` | Space.edit | Create ecosystem |
-| PUT | `/ecosystems/{id}` | Space.edit | Update ecosystem |
-| GET | `/ecosystems/{id}` | Space.view | Load ecosystem |
-| GET | `/ecosystems` | Space.view | Search ecosystems (textContains) |
+| POST | `/ecosystems` | Space.write | Create ecosystem |
+| PUT | `/ecosystems/{id}` | Space.write | Update ecosystem |
+| GET | `/ecosystems/{id}` | Space.read | Load ecosystem |
+| GET | `/ecosystems` | Space.read | Search ecosystems (textContains) |
 
 ### Public API (unsecured, under /public prefix)
 

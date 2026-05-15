@@ -63,9 +63,9 @@ auth:
 | Profile key | Username     | Privileges                                                                                    |
 |-------------|--------------|-----------------------------------------------------------------------------------------------|
 | `admin`     | `admin`      | `*.*.*` (full access)                                                                         |
-| `publisher` | `publisher1` | `*.*.view`, `*.Task.publish`, `icd-10.CodeSystem.publish`, `disorders.ValueSet.publish`, `icd-snomed.MapSet.publish` |
-| `editor`    | `editor1`    | `*.*.view`, `*.Task.edit`, `icd-10.CodeSystem.edit`, `disorders.ValueSet.edit`                 |
-| `viewer`    | `viewer1`    | `*.*.view`                                                                                    |
+| `publisher` | `publisher1` | `*.*.read`, `*.Task.maintain`, `icd-10.CodeSystem.maintain`, `disorders.ValueSet.maintain`, `icd-snomed.MapSet.maintain` |
+| `editor`    | `editor1`    | `*.*.read`, `*.Task.write`, `icd-10.CodeSystem.write`, `disorders.ValueSet.write`                 |
+| `viewer`    | `viewer1`    | `*.*.read`                                                                                    |
 
 #### mock/users-demo.json (demo/showcase)
 
@@ -106,9 +106,9 @@ Privileges follow the TermX convention: `<resourceId>.<ResourceType>.<action>`.
 
 Examples:
 - `*.*.*` -- full admin access
-- `*.*.view` -- view all resources
-- `*.Task.edit` -- edit tasks across all resources
-- `icd-10.CodeSystem.publish` -- publish access to a specific code system
+- `*.*.read` -- view all resources
+- `*.Task.write` -- edit tasks across all resources
+- `icd-10.CodeSystem.maintain` -- publish access to a specific code system
 
 ## Use-Cases
 
@@ -253,10 +253,10 @@ curl -H "Authorization: Bearer editor" http://localhost:8200/api/tm/tasks
   "editor": {
     "username": "editor1",
     "privileges": [
-      "*.*.view",
-      "*.Task.edit",
-      "icd-10.CodeSystem.edit",
-      "disorders.ValueSet.edit"
+      "*.*.read",
+      "*.Task.write",
+      "icd-10.CodeSystem.write",
+      "disorders.ValueSet.write"
     ]
   }
 }
@@ -275,10 +275,10 @@ Privileges follow the pattern: `<resourceId>.<ResourceType>.<action>`
 **Privilege examples:**
 
 - `*.*.*` - Full admin access to everything
-- `*.*.view` - View access to all resources and types
-- `*.Task.edit` - Edit tasks across all resources
-- `icd-10.CodeSystem.publish` - Publish access to specific code system
-- `disorders.ValueSet.edit` - Edit access to specific value set
+- `*.*.read` - View access to all resources and types
+- `*.Task.write` - Edit tasks across all resources
+- `icd-10.CodeSystem.maintain` - Publish access to specific code system
+- `disorders.ValueSet.write` - Edit access to specific value set
 
 ### SessionInfo
 
@@ -287,7 +287,7 @@ When a request arrives, MockSessionProvider creates a SessionInfo object that is
 ```java
 SessionInfo {
   username: "editor1",
-  privileges: ["*.*.view", "*.Task.edit", "icd-10.CodeSystem.edit"],
+  privileges: ["*.*.read", "*.Task.write", "icd-10.CodeSystem.write"],
   authenticated: true
 }
 ```

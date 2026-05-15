@@ -16,11 +16,11 @@ public class CodeSystemCompareController {
   private final CodeSystemCompareService service;
   private final CodeSystemVersionService codeSystemVersionService;
 
-  @Authorized(privilege = Privilege.CS_VIEW)
+  @Authorized(privilege = Privilege.CS_READ)
   @Get()
   public CodeSystemCompareResult compare(@QueryValue Long source, @QueryValue Long target) {
-    SessionStore.require().checkPermitted(codeSystemVersionService.load(source).getCodeSystem(), Privilege.CS_VIEW);
-    SessionStore.require().checkPermitted(codeSystemVersionService.load(target).getCodeSystem(), Privilege.CS_VIEW);
+    SessionStore.require().checkPermitted(codeSystemVersionService.load(source).getCodeSystem(), Privilege.CS_READ);
+    SessionStore.require().checkPermitted(codeSystemVersionService.load(target).getCodeSystem(), Privilege.CS_READ);
     return service.compare(source, target);
   }
 

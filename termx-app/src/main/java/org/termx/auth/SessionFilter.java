@@ -96,14 +96,14 @@ public class SessionFilter implements HttpServerFilter {
       }
       
       if ("triage".equals(action)) {
-        derived.add(contextType + "#" + resourceId + ".Task.view");
-      } else if ("edit".equals(action)) {
-        derived.add(contextType + "#" + resourceId + ".Task.view");
-        derived.add(contextType + "#" + resourceId + ".Task.edit");
-      } else if ("publish".equals(action)) {
-        derived.add(contextType + "#" + resourceId + ".Task.view");
-        derived.add(contextType + "#" + resourceId + ".Task.edit");
-        derived.add(contextType + "#" + resourceId + ".Task.publish");
+        derived.add(contextType + "#" + resourceId + ".Task.read");
+      } else if ("write".equals(action)) {
+        derived.add(contextType + "#" + resourceId + ".Task.read");
+        derived.add(contextType + "#" + resourceId + ".Task.write");
+      } else if ("maintain".equals(action)) {
+        derived.add(contextType + "#" + resourceId + ".Task.read");
+        derived.add(contextType + "#" + resourceId + ".Task.write");
+        derived.add(contextType + "#" + resourceId + ".Task.maintain");
       }
     }
     
