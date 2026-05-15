@@ -21,19 +21,19 @@ import lombok.RequiredArgsConstructor;
 public class DefinedPropertyController {
   private final DefinedPropertyService service;
 
-  @Authorized(Privilege.DEF_PROP_VIEW)
+  @Authorized(Privilege.DEF_PROP_READ)
   @Get(uri = "{?params*}")
   public QueryResult<DefinedProperty> query(DefinedPropertyQueryParams params) {
     return service.query(params);
   }
 
-  @Authorized(Privilege.DEF_PROP_VIEW)
+  @Authorized(Privilege.DEF_PROP_READ)
   @Get(uri = "/{id}")
   public DefinedProperty load(@PathVariable Long id) {
     return service.load(id).orElseThrow(() -> new NotFoundException("Defined entity property not found: " + id));
   }
 
-  @Authorized(Privilege.DEF_PROP_EDIT)
+  @Authorized(Privilege.DEF_PROP_WRITE)
   @Post
   public HttpResponse<?> create(@Body @Valid DefinedProperty entityProperty) {
     entityProperty.setId(null);
@@ -41,7 +41,7 @@ public class DefinedPropertyController {
     return HttpResponse.created(entityProperty);
   }
 
-  @Authorized(Privilege.DEF_PROP_EDIT)
+  @Authorized(Privilege.DEF_PROP_WRITE)
   @Put("/{id}")
   public HttpResponse<?> update(@PathVariable Long id, @Body @Valid DefinedProperty entityProperty) {
     entityProperty.setId(id);
@@ -49,7 +49,7 @@ public class DefinedPropertyController {
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.DEF_PROP_EDIT)
+  @Authorized(Privilege.DEF_PROP_WRITE)
   @Post("/{id}/update-related")
   public HttpResponse<?> updateRelated(@PathVariable Long id) {
     service.updateRelated(id);

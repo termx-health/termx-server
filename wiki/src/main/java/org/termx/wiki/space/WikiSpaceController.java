@@ -20,11 +20,11 @@ import lombok.experimental.Accessors;
 public class WikiSpaceController {
   private final SpaceService spaceService;
 
-  @Authorized(Privilege.W_VIEW)
+  @Authorized(Privilege.W_READ)
   @Get()
   public List<WikiSpace> listSpaces() {
     SpaceQueryParams params = new SpaceQueryParams();
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.W_VIEW, Long::valueOf));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.W_READ, Long::valueOf));
     params.all();
     return spaceService.query(params).getData().stream()
         .map(WikiSpace::fromSpace)

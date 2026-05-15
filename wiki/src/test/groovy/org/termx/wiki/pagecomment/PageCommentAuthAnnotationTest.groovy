@@ -9,9 +9,9 @@ import java.lang.reflect.Method
 /**
  * Verifies the comment endpoints are gated correctly per Phase A.2:
  *  - query (GET) and create (POST) require W_TRIAGE  (positional @Authorized(value=...))
- *  - update / delete / resolve still require W_EDIT  (named @Authorized(privilege=...))
+ *  - update / delete / resolve still require W_WRITE  (named @Authorized(privilege=...))
  *
- * Per Q4 of the migration spec, comment read is gated by triage (not view).
+ * Per Q4 of the migration spec, comment read is gated by triage (not read).
  *
  * The two annotation styles are tested explicitly:
  *  - positional: value() populated, privilege() empty
@@ -31,12 +31,12 @@ class PageCommentAuthAnnotationTest extends Specification {
     methodName << ["query", "create"]
   }
 
-  def "#methodName uses named @Authorized(privilege=W_EDIT)"() {
+  def "#methodName uses named @Authorized(privilege=W_WRITE)"() {
     given:
     def annotation = findMethod(PageCommentController, methodName).getAnnotation(Authorized)
 
     expect:
-    annotation.privilege() == Privilege.W_EDIT
+    annotation.privilege() == Privilege.W_WRITE
     annotation.value().toList() == []
 
     where:

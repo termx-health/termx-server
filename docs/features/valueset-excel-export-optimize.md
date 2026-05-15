@@ -120,17 +120,17 @@ Export endpoints are unchanged. Optimizations are transparent to API consumers.
 
 | Method | Path | Privilege | Description |
 |--------|------|-----------|-------------|
-| GET | `/value-sets/{id}/versions/{version}/expansion-export{?params*}` | `ValueSet.view` | Initiate export, returns process ID |
-| GET | `/expansion-export-csv/result/{processId}` | `ValueSet.view` | Download CSV |
-| GET | `/expansion-export-xlsx/result/{processId}` | `ValueSet.view` | Download Excel |
+| GET | `/value-sets/{id}/versions/{version}/expansion-export{?params*}` | `ValueSet.read` | Initiate export, returns process ID |
+| GET | `/expansion-export-csv/result/{processId}` | `ValueSet.read` | Download CSV |
+| GET | `/expansion-export-xlsx/result/{processId}` | `ValueSet.read` | Download Excel |
 
 ### CodeSystem Export
 
 | Method | Path | Privilege | Description |
 |--------|------|-----------|-------------|
-| GET | `/code-systems/{id}/versions/{version}/concepts-export{?params*}` | `CodeSystem.view` | Initiate export |
-| GET | `/concepts-export-csv/result/{processId}` | `CodeSystem.view` | Download CSV |
-| GET | `/concepts-export-xlsx/result/{processId}` | `CodeSystem.view` | Download Excel |
+| GET | `/code-systems/{id}/versions/{version}/concepts-export{?params*}` | `CodeSystem.read` | Initiate export |
+| GET | `/concepts-export-csv/result/{processId}` | `CodeSystem.read` | Download CSV |
+| GET | `/concepts-export-xlsx/result/{processId}` | `CodeSystem.read` | Download Excel |
 
 ## Testing
 

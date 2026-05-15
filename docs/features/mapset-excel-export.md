@@ -107,9 +107,9 @@ All endpoints are under `/api/ts/map-sets`.
 
 | Method | Path | Privilege | Description |
 |--------|------|-----------|-------------|
-| GET | `/{mapSet}/versions/{version}/associations-export{?params*}` | `MapSet.view` | Initiate async export, returns process ID |
-| GET | `/associations-export-csv/result/{lorqueProcessId}` | `MapSet.view` | Download CSV result |
-| GET | `/associations-export-xlsx/result/{lorqueProcessId}` | `MapSet.view` | Download Excel result |
+| GET | `/{mapSet}/versions/{version}/associations-export{?params*}` | `MapSet.read` | Initiate async export, returns process ID |
+| GET | `/associations-export-csv/result/{lorqueProcessId}` | `MapSet.read` | Download CSV result |
+| GET | `/associations-export-xlsx/result/{lorqueProcessId}` | `MapSet.read` | Download Excel result |
 
 ### Initiate Export
 

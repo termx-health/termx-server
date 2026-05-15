@@ -17,7 +17,7 @@ This feature allows you to export your TermX terminology servers in the **FHIR T
 
 **GET** `/api/terminology-servers/export/ecosystem`
 
-**Authorization:** `TerminologyServer.view` privilege required
+**Authorization:** `TerminologyServer.read` privilege required
 
 **Query Parameters:**
 - `download` (optional, boolean) - If `true`, returns response as downloadable file
@@ -234,7 +234,7 @@ Support multiple FHIR versions per server:
 - Only `access_info` text is included (no credentials)
 
 **Access Control:**
-- Requires `TerminologyServer.view` privilege
+- Requires `TerminologyServer.read` privilege
 - Admin users have access by default
 - Configure additional users in `mock/users.json`
 
@@ -255,7 +255,7 @@ curl http://localhost:8200/api/terminology-servers
 ```yaml
 auth:
   mock:
-    default-user: admin  # Required for TerminologyServer.view
+    default-user: admin  # Required for TerminologyServer.read
 ```
 
 ---

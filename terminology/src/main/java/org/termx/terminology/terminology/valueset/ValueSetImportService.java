@@ -53,7 +53,7 @@ public class ValueSetImportService {
 
   @Transactional
   public ValueSet importValueSet(ValueSet valueSet, ValueSetImportAction action) {
-    SessionStore.require().checkPermitted(valueSet.getId(), Privilege.VS_EDIT);
+    SessionStore.require().checkPermitted(valueSet.getId(), Privilege.VS_WRITE);
 
     long start = System.currentTimeMillis();
     log.info("IMPORT STARTED : value set - {}", valueSet.getId());

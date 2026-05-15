@@ -31,27 +31,27 @@ public class TerminologyServerController {
   private final TerminologyServerResourceService serverResourceService;
   private final TerminologyServerAuthoritativeService authoritativeService;
 
-  @Authorized("Server.view")
+  @Authorized("Server.read")
   @Get("/kinds")
   public List<String> getKinds() {
     return serverService.getKinds();
   }
 
-  @Authorized("Server.edit")
+  @Authorized("Server.write")
   @Post
   public TerminologyServer create(@Valid @Body TerminologyServer ts) {
     ts.setId(null);
     return serverService.save(ts).maskSensitiveData();
   }
 
-  @Authorized("Server.edit")
+  @Authorized("Server.write")
   @Put("/{id}")
   public TerminologyServer update(@PathVariable Long id, @Valid @Body TerminologyServer ts) {
     ts.setId(id);
     return serverService.save(ts).maskSensitiveData();
   }
 
-  @Authorized("Server.edit")
+  @Authorized("Server.write")
   @Get("/{id}")
   public TerminologyServer load(@PathVariable Long id) {
     return serverService.load(id).maskSensitiveData();
@@ -61,19 +61,19 @@ public class TerminologyServerController {
   @Get("/{?params*}")
   public QueryResult<TerminologyServer> search(TerminologyServerQueryParams params) {
     QueryResult<TerminologyServer> query = serverService.query(params);
-    if (!SessionStore.require().hasPrivilege("Server.edit")) {
+    if (!SessionStore.require().hasPrivilege("Server.write")) {
       return query.map(TerminologyServer::publicView).map(TerminologyServer::maskSensitiveData);
     }
     return query.map(TerminologyServer::maskSensitiveData);
   }
 
-  @Authorized("Server.edit")
+  @Authorized("Server.write")
   @Post("/resource")
   public TerminologyServerResourceResponse getResource(@Valid @Body TerminologyServerResourceRequest request) {
     return serverResourceService.getResource(request);
   }
 
-  @Authorized("Server.view")
+  @Authorized("Server.read")
   @Get("/export/ecosystem")
   public HttpResponse<String> exportEcosystem(@QueryValue Optional<Boolean> download) {
     String json = serverService.exportToEcosystemFormat();
@@ -88,14 +88,14 @@ public class TerminologyServerController {
     return response;
   }
 
-  @Authorized("Server.view")
+  @Authorized("Server.read")
   @Post("/{id}/authoritative/{type}/preview")
   public List<AuthoritativeResource> previewAuthoritative(@PathVariable Long id, @PathVariable String type,
                                                           @Body List<AuthoritativeResource> patterns) {
     return authoritativeService.findMatchingResources(type, patterns);
   }
 
-  @Authorized("Server.view")
+  @Authorized("Server.read")
   @Get("/{id}/resources/{type}")
   public List<AuthoritativeResource> getMatchingResources(@PathVariable Long id, @PathVariable String type) {
     TerminologyServer server = serverService.load(id);
@@ -116,7 +116,7 @@ public class TerminologyServerController {
     return authoritativeService.findMatchingResources(type, patterns);
   }
 
-  @Authorized("Server.edit")
+  @Authorized("Server.write")
   @Post("/import/ecosystem")
   public List<TerminologyServer> importEcosystem(@Body String json) {
     return serverService.importFromEcosystemFormat(json).stream()

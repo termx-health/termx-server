@@ -122,7 +122,7 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     cp.setIncludeSupplement(true);
     cp.setDisplayLanguage(displayLanguage);
     cp.setUseSupplement(extractUseSupplement(req));
-    cp.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
+    cp.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_READ));
 
     Concept concept = conceptService.query(cp).findFirst().orElse(null);
     if (concept == null) {

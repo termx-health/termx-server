@@ -18,14 +18,14 @@ public class CodeSystemValidatorController {
   private final CodeSystemUniquenessValidatorService uniquenessValidatorService;
   private final CodeSystemCircularDependenciesDetectorService circularDependenciesDetectorService;
 
-  @Authorized(privilege = Privilege.CS_VIEW)
+  @Authorized(privilege = Privilege.CS_READ)
   @Post("/validate-uniqueness")
   public HttpResponse<?> validateUniqueness(@Body @Valid CodeSystemUniquenessValidatorRequest request) {
     LorqueProcess lorqueProcess = uniquenessValidatorService.validate(request);
     return HttpResponse.accepted().body(lorqueProcess);
   }
 
-  @Authorized(privilege = Privilege.CS_VIEW)
+  @Authorized(privilege = Privilege.CS_READ)
   @Get("/detect-circular-dependencies")
   public CodeSystemCircularDependenciesDetectorResult detectCircularDependencies(@QueryValue Long versionId) {
     return circularDependenciesDetectorService.detect(versionId);

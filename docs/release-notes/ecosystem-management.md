@@ -62,5 +62,5 @@ Added Ecosystem Management for defining FHIR TX Ecosystem configurations through
 - Existing Terminology Server data is preserved; all new columns are nullable with sensible defaults
 - The 5 authoritative resource lists are stored as `jsonb` arrays on `sys.terminology_server`
 - Backend API path changed from `/terminology-servers` to `/servers`
-- Frontend privilege strings remain `*.TerminologyServer.edit/view` (backend unchanged)
+- Frontend privilege strings remain `*.TerminologyServer.write/view` (backend unchanged)
 - HTX Router: optionally add `"ecosystem_url": "https://termx.example.org/public/ecosystems/{code}"` to ecosystem.json

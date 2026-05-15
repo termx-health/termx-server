@@ -22,42 +22,42 @@ import lombok.RequiredArgsConstructor;
 public class NamingSystemController {
   private final NamingSystemService namingSystemService;
 
-  @Authorized(Privilege.NS_VIEW)
+  @Authorized(Privilege.NS_READ)
   @Get(uri = "{?params*}")
   public QueryResult<NamingSystem> queryNamingSystems(NamingSystemQueryParams params) {
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.NS_VIEW));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.NS_READ));
     return namingSystemService.query(params);
   }
 
-  @Authorized(Privilege.NS_VIEW)
+  @Authorized(Privilege.NS_READ)
   @Get(uri = "/{namingSystem}")
   public NamingSystem getNamingSystem(@PathVariable String namingSystem) {
     return namingSystemService.load(namingSystem).orElseThrow(() -> new NotFoundException("Naming system not found: " + namingSystem));
   }
 
-  @Authorized(Privilege.NS_EDIT)
+  @Authorized(Privilege.NS_WRITE)
   @Post
   public HttpResponse<?> saveNamingSystem(@Body @Valid NamingSystem namingSystem) {
-    SessionStore.require().checkPermitted(namingSystem.getId(), Privilege.NS_EDIT);
+    SessionStore.require().checkPermitted(namingSystem.getId(), Privilege.NS_WRITE);
     namingSystemService.save(namingSystem);
     return HttpResponse.created(namingSystem);
   }
 
-  @Authorized(Privilege.NS_PUBLISH)
+  @Authorized(Privilege.NS_MAINTAIN)
   @Post(uri = "/{namingSystem}/activate")
   public HttpResponse<?> activateNamingSystem(@PathVariable String namingSystem) {
     namingSystemService.activate(namingSystem);
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.NS_PUBLISH)
+  @Authorized(Privilege.NS_MAINTAIN)
   @Post(uri = "/{namingSystem}/retire")
   public HttpResponse<?> retireNamingSystem(@PathVariable String namingSystem) {
     namingSystemService.retire(namingSystem);
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.NS_PUBLISH)
+  @Authorized(Privilege.NS_MAINTAIN)
   @Delete(uri = "/{namingSystem}")
   public HttpResponse<?> deleteNamingSystem(@PathVariable String namingSystem) {
     namingSystemService.cancel(namingSystem);

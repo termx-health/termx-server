@@ -7,7 +7,7 @@ class SessionFilterTaskDerivationTest extends Specification {
 
   SessionFilter filter = new SessionFilter([])
 
-  def "triage on CodeSystem derives Task.view"() {
+  def "triage on CodeSystem derives Task.read"() {
     given:
     def session = new SessionInfo(privileges: ["icd-10.CodeSystem.triage"] as Set)
 
@@ -15,38 +15,38 @@ class SessionFilterTaskDerivationTest extends Specification {
     filter.deriveTaskPrivileges(session)
 
     then:
-    session.privileges.contains("code-system#icd-10.Task.view")
-    !session.privileges.contains("code-system#icd-10.Task.edit")
-    !session.privileges.contains("code-system#icd-10.Task.publish")
+    session.privileges.contains("code-system#icd-10.Task.read")
+    !session.privileges.contains("code-system#icd-10.Task.write")
+    !session.privileges.contains("code-system#icd-10.Task.maintain")
   }
 
-  def "edit on CodeSystem still derives Task.view + Task.edit (Phase A vocabulary unchanged)"() {
+  def "write on CodeSystem derives Task.read + Task.write"() {
     given:
-    def session = new SessionInfo(privileges: ["icd-10.CodeSystem.edit"] as Set)
+    def session = new SessionInfo(privileges: ["icd-10.CodeSystem.write"] as Set)
 
     when:
     filter.deriveTaskPrivileges(session)
 
     then:
-    session.privileges.contains("code-system#icd-10.Task.view")
-    session.privileges.contains("code-system#icd-10.Task.edit")
-    !session.privileges.contains("code-system#icd-10.Task.publish")
+    session.privileges.contains("code-system#icd-10.Task.read")
+    session.privileges.contains("code-system#icd-10.Task.write")
+    !session.privileges.contains("code-system#icd-10.Task.maintain")
   }
 
-  def "publish on CodeSystem still derives all three Task privileges"() {
+  def "maintain on CodeSystem derives all three Task privileges"() {
     given:
-    def session = new SessionInfo(privileges: ["icd-10.CodeSystem.publish"] as Set)
+    def session = new SessionInfo(privileges: ["icd-10.CodeSystem.maintain"] as Set)
 
     when:
     filter.deriveTaskPrivileges(session)
 
     then:
-    session.privileges.contains("code-system#icd-10.Task.view")
-    session.privileges.contains("code-system#icd-10.Task.edit")
-    session.privileges.contains("code-system#icd-10.Task.publish")
+    session.privileges.contains("code-system#icd-10.Task.read")
+    session.privileges.contains("code-system#icd-10.Task.write")
+    session.privileges.contains("code-system#icd-10.Task.maintain")
   }
 
-  def "triage on ValueSet derives value-set Task.view"() {
+  def "triage on ValueSet derives value-set Task.read"() {
     given:
     def session = new SessionInfo(privileges: ["my-vs.ValueSet.triage"] as Set)
 
@@ -54,12 +54,12 @@ class SessionFilterTaskDerivationTest extends Specification {
     filter.deriveTaskPrivileges(session)
 
     then:
-    session.privileges.contains("value-set#my-vs.Task.view")
+    session.privileges.contains("value-set#my-vs.Task.read")
   }
 
-  def "view alone (no triage) does NOT derive Task privileges"() {
+  def "read alone (no triage) does NOT derive Task privileges"() {
     given:
-    def session = new SessionInfo(privileges: ["icd-10.CodeSystem.view"] as Set)
+    def session = new SessionInfo(privileges: ["icd-10.CodeSystem.read"] as Set)
 
     when:
     filter.deriveTaskPrivileges(session)
@@ -82,13 +82,13 @@ class SessionFilterTaskDerivationTest extends Specification {
 
   def "Admin combined with another privilege still short-circuits derivation"() {
     given:
-    def session = new SessionInfo(privileges: ["*.*.*", "icd-10.CodeSystem.edit"] as Set)
+    def session = new SessionInfo(privileges: ["*.*.*", "icd-10.CodeSystem.write"] as Set)
 
     when:
     filter.deriveTaskPrivileges(session)
 
     then:
-    session.privileges == ["*.*.*", "icd-10.CodeSystem.edit"] as Set
+    session.privileges == ["*.*.*", "icd-10.CodeSystem.write"] as Set
     !session.privileges.any { it.contains("Task.") }
   }
 }

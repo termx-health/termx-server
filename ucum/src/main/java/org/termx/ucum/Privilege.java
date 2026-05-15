@@ -1,6 +1,6 @@
 package org.termx.ucum;
 
 public interface Privilege {
-  String UCUM_VIEW = "ucum.CodeSystem.view";
-  String UCUM_EDIT = "ucum.CodeSystem.edit";
+  String UCUM_READ = "ucum.CodeSystem.read";
+  String UCUM_WRITE = "ucum.CodeSystem.write";
 }

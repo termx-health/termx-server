@@ -1,9 +1,9 @@
 package org.termx.modeler;
 
 public interface Privilege {
-  String SD_VIEW = "StructureDefinition.view";
-  String SD_EDIT = "StructureDefinition.edit";
+  String SD_READ = "StructureDefinition.read";
+  String SD_WRITE = "StructureDefinition.write";
 
-  String TD_VIEW = "TransformationDefinition.view";
-  String TD_EDIT = "TransformationDefinition.edit";
+  String TD_READ = "TransformationDefinition.read";
+  String TD_WRITE = "TransformationDefinition.write";
 }

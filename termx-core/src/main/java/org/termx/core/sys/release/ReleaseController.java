@@ -41,7 +41,7 @@ public class ReleaseController {
 
   //----------------Release----------------
 
-  @Authorized(privilege = Privilege.R_EDIT)
+  @Authorized(privilege = Privilege.R_WRITE)
   @Post()
   public Release create(@Valid @Body Release release) {
     provenanceService.provenanceRelease("save", release.getCode(), () -> {
@@ -51,7 +51,7 @@ public class ReleaseController {
     return release;
   }
 
-  @Authorized(Privilege.R_EDIT)
+  @Authorized(Privilege.R_WRITE)
   @Put("{id}")
   public Release update(@PathVariable Long id, @Valid @Body Release release) {
     provenanceService.provenanceRelease("save", release.getCode(), () -> {
@@ -61,34 +61,34 @@ public class ReleaseController {
     return releaseService.save(release);
   }
 
-  @Authorized(Privilege.R_VIEW)
+  @Authorized(Privilege.R_READ)
   @Get("{id}")
   public Release load(@PathVariable Long id) {
     return releaseService.load(id);
   }
 
-  @Authorized(Privilege.R_VIEW)
+  @Authorized(Privilege.R_READ)
   @Get("/{?params*}")
   public QueryResult<Release> search(ReleaseQueryParams params) {
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.R_VIEW, Long::valueOf));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.R_READ, Long::valueOf));
     return releaseService.query(params);
   }
 
-  @Authorized(Privilege.R_PUBLISH)
+  @Authorized(Privilege.R_MAINTAIN)
   @Post(uri = "/{id}/activate")
   public HttpResponse<?> activate(@PathVariable Long id) {
     provenanceService.provenanceRelease("activate", id, () -> releaseService.changeStatus(id, PublicationStatus.active));
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.R_PUBLISH)
+  @Authorized(Privilege.R_MAINTAIN)
   @Post(uri = "/{id}/retire")
   public HttpResponse<?> retire(@PathVariable Long id) {
     provenanceService.provenanceRelease("retire", id, () -> releaseService.changeStatus(id, PublicationStatus.retired));
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.R_PUBLISH)
+  @Authorized(Privilege.R_MAINTAIN)
   @Post(uri = "/{id}/draft")
   public HttpResponse<?> saveAsDraft(@PathVariable Long id) {
     provenanceService.provenanceRelease("save", id, () -> releaseService.changeStatus(id, PublicationStatus.draft));
@@ -97,13 +97,13 @@ public class ReleaseController {
 
   //----------------Release Resource----------------
 
-  @Authorized(Privilege.R_VIEW)
+  @Authorized(Privilege.R_READ)
   @Get("{id}/resources")
   public List<ReleaseResource> loadResources(@PathVariable Long id) {
     return releaseResourceService.loadAll(id);
   }
 
-  @Authorized(privilege = Privilege.R_EDIT)
+  @Authorized(privilege = Privilege.R_WRITE)
   @Post("{id}/resources")
   public HttpResponse<?> createResource(@PathVariable Long id, @Valid @Body ReleaseResource resource) {
     resource.setId(null);
@@ -111,7 +111,7 @@ public class ReleaseController {
     return HttpResponse.ok();
   }
 
-  @Authorized(privilege = Privilege.R_EDIT)
+  @Authorized(privilege = Privilege.R_WRITE)
   @Put("{id}/resources/{resourceId}")
   public HttpResponse<?> updateResource(@PathVariable Long id,  @PathVariable Long resourceId, @Valid @Body ReleaseResource resource) {
     resource.setId(resourceId);
@@ -119,7 +119,7 @@ public class ReleaseController {
     return HttpResponse.ok();
   }
 
-  @Authorized(privilege = Privilege.R_EDIT)
+  @Authorized(privilege = Privilege.R_WRITE)
   @Delete("{id}/resources/{resourceId}")
   public HttpResponse<?> deleteResource(@PathVariable Long id, @PathVariable Long resourceId) {
     releaseResourceService.cancel(id, resourceId);
@@ -129,7 +129,7 @@ public class ReleaseController {
 
   //----------------Release Provenance----------------
 
-  @Authorized(Privilege.R_VIEW)
+  @Authorized(Privilege.R_READ)
   @Get("{id}/provenances")
   public List<Provenance> loadProvenances(@PathVariable Long id) {
     return provenanceService.find(id);
@@ -137,14 +137,14 @@ public class ReleaseController {
 
   //----------------Release Server Sync----------------
 
-  @Authorized(privilege = Privilege.R_PUBLISH)
+  @Authorized(privilege = Privilege.R_MAINTAIN)
   @Post("{id}/server-sync")
   public HttpResponse<?> syncResources(@PathVariable Long id, @Valid @Body Map<String, Object> request) {
     JobLogResponse response = syncService.syncResources(id, (Long) request.get("resourceId"));
     return HttpResponse.accepted().body(response);
   }
 
-  @Authorized(privilege = Privilege.R_VIEW)
+  @Authorized(privilege = Privilege.R_READ)
   @Post("{id}/validate-sync")
   public HttpResponse<?> validateSync(@PathVariable Long id) {
     JobLogResponse response = syncService.validateSync(id);
@@ -153,19 +153,19 @@ public class ReleaseController {
 
   //----------------Release Notes----------------
 
-  @Authorized(privilege = Privilege.R_VIEW)
+  @Authorized(privilege = Privilege.R_READ)
   @Get("/{id}/notes")
   public List<ReleaseAttachment> getReleaseNotes(@PathVariable Long id) {
     return attachmentService.getAttachments(id);
   }
 
-  @Authorized(privilege = Privilege.R_VIEW)
+  @Authorized(privilege = Privilege.R_READ)
   @Get("/{id}/notes/{fileName}")
   public StreamedFile getFile(@PathVariable Long id, @PathVariable String fileName) {
     return attachmentService.getAttachmentContent(id, fileName);
   }
 
-  @Authorized(privilege = Privilege.R_EDIT)
+  @Authorized(privilege = Privilege.R_WRITE)
   @Post("/{id}/generate-notes")
   public HttpResponse<?> generateReleaseNotes(@PathVariable Long id) {
     notesService.generateNotes(id);

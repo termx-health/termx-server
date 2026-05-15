@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 public class ProvenanceController {
   private final ProvenanceService service;
 
-  @Authorized("Provenance.view")
+  @Authorized("Provenance.read")
   @Get()
   public List<Provenance> query(@QueryValue String target) {
     return service.find(target);

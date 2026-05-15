@@ -59,7 +59,7 @@ public class CodeSystemFindMatchesOperation implements InstanceOperationDefiniti
     ConceptQueryParams conceptParams = new ConceptQueryParams();
     conceptParams.setCodeSystem(csId);
     conceptParams.setCodeSystemVersion(versionNumber);
-    conceptParams.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
+    conceptParams.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_READ));
     if (exact) {
       conceptParams.setPropertyValues(String.join(";", properties));
     } else {
@@ -89,7 +89,7 @@ public class CodeSystemFindMatchesOperation implements InstanceOperationDefiniti
     ConceptQueryParams conceptParams = new ConceptQueryParams();
     conceptParams.setCodeSystemUri(system);
     conceptParams.setCodeSystemVersion(version);
-    conceptParams.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_VIEW));
+    conceptParams.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_READ));
     if (exact) {
       conceptParams.setPropertyValues(String.join(";", properties));
     } else {

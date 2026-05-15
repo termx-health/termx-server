@@ -36,20 +36,20 @@ public class TransformationDefinitionController {
   private final TransformerService transformerService;
   private final ProvenanceService provenanceService;
 
-  @Authorized(Privilege.TD_VIEW)
+  @Authorized(Privilege.TD_READ)
   @Get(uri = "/{id}")
   public TransformationDefinition load(@PathVariable Long id) {
     return service.load(id);
   }
 
-  @Authorized(Privilege.TD_VIEW)
+  @Authorized(Privilege.TD_READ)
   @Get(uri = "{?params*}")
   public QueryResult<TransformationDefinition> search(TransformationDefinitionQueryParams params) {
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.TD_VIEW, Long::valueOf));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.TD_READ, Long::valueOf));
     return service.search(params);
   }
 
-  @Authorized(Privilege.TD_EDIT)
+  @Authorized(Privilege.TD_WRITE)
   @Post
   public TransformationDefinition create(@Valid @Body TransformationDefinition def) {
     def.setId(null);
@@ -58,7 +58,7 @@ public class TransformationDefinitionController {
     return def;
   }
 
-  @Authorized(Privilege.TD_EDIT)
+  @Authorized(Privilege.TD_WRITE)
   @Put(uri = "/{id}")
   public TransformationDefinition update(@PathVariable Long id, @Valid @Body TransformationDefinition def) {
     def.setId(id);
@@ -67,7 +67,7 @@ public class TransformationDefinitionController {
     return def;
   }
 
-  @Authorized(Privilege.TD_EDIT)
+  @Authorized(Privilege.TD_WRITE)
   @Delete(uri = "/{id}")
   public HttpResponse<?> delete(@PathVariable Long id) {
     service.delete(id);
@@ -75,13 +75,13 @@ public class TransformationDefinitionController {
     return HttpResponse.noContent();
   }
 
-  @Authorized(Privilege.TD_EDIT)
+  @Authorized(Privilege.TD_WRITE)
   @Post(uri = "/{id}/duplicate")
   public TransformationDefinition duplicate(@PathVariable Long id) {
     return service.duplicate(id);
   }
 
-  @Authorized(Privilege.TD_VIEW)
+  @Authorized(Privilege.TD_READ)
   @Post("{id}/transform")
   public TransformationResult transformInstance(@PathVariable Long id, @Body InstanceTransformationRequest req) {
     return transformerService.transform(req.source, load(id));
@@ -141,13 +141,13 @@ public class TransformationDefinitionController {
     }
   }
 
-  @Authorized(privilege = Privilege.TD_VIEW)
+  @Authorized(privilege = Privilege.TD_READ)
   @Post("/generate-input")
   public GenerateInputResponse generateInput(@Body GenerateInputRequest req) {
     return new GenerateInputResponse(transformerService.generateObject(req.resource));
   }
 
-  @Authorized(privilege = Privilege.TD_VIEW)
+  @Authorized(privilege = Privilege.TD_READ)
   @Get(uri = "/base-resources")
   public String loadBaseResources() {
     try {

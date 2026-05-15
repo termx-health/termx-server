@@ -28,7 +28,7 @@ public class Icd10Controller {
 
   private static final String JOB_TYPE = "ICD-10";
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(Privilege.CS_WRITE)
   @Post("/import")
   public JobLogResponse importIcd10(@NonNull @QueryValue String url, @Body @Valid @NonNull CodeSystemImportConfiguration configuration) {
     JobLogResponse jobLogResponse = importLogger.createJob(configuration.getPublisher(), JOB_TYPE);

@@ -14,7 +14,7 @@ public abstract class AuthorizedFileReaderCustomChange extends FileReaderCustomC
     try {
       SessionInfo sessionInfo = new SessionInfo();
       sessionInfo.setUsername("liquibase");
-      sessionInfo.setPrivileges(Set.of("*.*.edit", "*.*.view", "*.*.publish"));
+      sessionInfo.setPrivileges(Set.of("*.*.write", "*.*.read", "*.*.maintain"));
       SessionStore.setLocal(sessionInfo);
 
       handleMigrationFile(name, content);

@@ -24,28 +24,28 @@ public class AssociationTypeController {
   private final AssociationTypeService associationTypeService;
   private final AssociationTypeDeleteService associationTypeDeleteService;
 
-  @Authorized(Privilege.AT_VIEW)
+  @Authorized(Privilege.AT_READ)
   @Get(uri = "{?params*}")
   public QueryResult<AssociationType> queryAssociationTypes(AssociationTypeQueryParams params) {
-    params.setPermittedCodes(SessionStore.require().getPermittedResourceIds(Privilege.AT_VIEW));
+    params.setPermittedCodes(SessionStore.require().getPermittedResourceIds(Privilege.AT_READ));
     return associationTypeService.query(params);
   }
 
-  @Authorized(Privilege.AT_VIEW)
+  @Authorized(Privilege.AT_READ)
   @Get(uri = "/{code}")
   public AssociationType getAssociationType(@PathVariable String code) {
     return associationTypeService.load(code).orElseThrow(() -> new NotFoundException("Association type not found: " + code));
   }
 
-  @Authorized(Privilege.AT_EDIT)
+  @Authorized(Privilege.AT_WRITE)
   @Post
   public HttpResponse<?> createAssociationType(@Body @Valid AssociationType associationType) {
-    SessionStore.require().checkPermitted(associationType.getCode(), Privilege.AT_EDIT);
+    SessionStore.require().checkPermitted(associationType.getCode(), Privilege.AT_WRITE);
     associationTypeService.save(associationType);
     return HttpResponse.created(associationType);
   }
 
-  @Authorized(Privilege.AT_EDIT)
+  @Authorized(Privilege.AT_WRITE)
   @Put("/{code}")
   public HttpResponse<?> updateAssociationType(@PathVariable String code, @Body @Valid AssociationType associationType) {
     associationType.setCode(code);
@@ -53,7 +53,7 @@ public class AssociationTypeController {
     return HttpResponse.ok();
   }
 
-  @Authorized(Privilege.AT_PUBLISH)
+  @Authorized(Privilege.AT_MAINTAIN)
   @Delete(uri = "/{code}")
   public HttpResponse<?> deleteAssociationType(@PathVariable String code) {
     associationTypeDeleteService.delete(code);

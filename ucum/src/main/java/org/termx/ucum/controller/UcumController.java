@@ -68,7 +68,7 @@ public class UcumController {
         schema = @Schema(implementation = UcumVersionDto.class)
       )
     )
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Get("/version")
     public HttpResponse<UcumVersionDto> getUcumVersionDetails() {
         UcumVersionDto response = ucumService.getUcumVersionDetails();
@@ -83,7 +83,7 @@ public class UcumController {
           schema = @Schema(implementation = ValidateResponseDto.class)
         )
     )
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Get("/validate")
     public HttpResponse<ValidateResponseDto> validate(
             @QueryValue(defaultValue = "") @NotBlank String code) {
@@ -108,7 +108,7 @@ public class UcumController {
         )
       )
     })
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Get("/analyse")
     public HttpResponse<AnalyseResponseDto> analyse(
             @QueryValue(defaultValue = "") @NotBlank String code) throws UcumException {
@@ -137,7 +137,7 @@ public class UcumController {
         )
       )
     })
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Get("/convert")
     public HttpResponse<ConvertResponseDto> convert(
             @Nullable @NotNull @QueryValue BigDecimal value,
@@ -168,7 +168,7 @@ public class UcumController {
         )
       )
     })
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Get("/canonicalise")
     public HttpResponse<CanonicaliseResponseDto> getCanonicalUnits(
             @QueryValue(defaultValue = "") @NotBlank String code) throws UcumException {
@@ -189,7 +189,7 @@ public class UcumController {
         schema = @Schema(implementation = DefinedUnitDto.class, type = "array")
       )
     )
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Get("/defined-units")
     public HttpResponse<List<DefinedUnitDto>> getDefinedUnits() {
         List<DefinedUnitDto> response = ucumService.getDefinedUnits();
@@ -213,7 +213,7 @@ public class UcumController {
         )
       )
     })
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Get("/defined-units/{code}")
     public HttpResponse<DefinedUnitDto> getDefinedUnitByCode(@PathVariable String code) {
         DefinedUnitDto response = ucumService.getDefinedUnitByCode(code);
@@ -234,7 +234,7 @@ public class UcumController {
         schema = @Schema(implementation = BaseUnitDto.class, type = "array")
       )
     )
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Get("/base-units")
     public HttpResponse<List<BaseUnitDto>> getBaseUnits() {
         List<BaseUnitDto> response = ucumService.getBaseUnits();
@@ -258,7 +258,7 @@ public class UcumController {
         )
       )
     })
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Get("/base-units/{code}")
     public HttpResponse<BaseUnitDto> getBaseUnitByCode(@PathVariable String code) {
         BaseUnitDto response = ucumService.getBaseUnitByCode(code);
@@ -279,7 +279,7 @@ public class UcumController {
         schema = @Schema(implementation = PrefixDto.class, type = "array")
       )
     )
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Get("/prefixes")
     public HttpResponse<List<PrefixDto>> getPrefixes() {
         List<PrefixDto> response = ucumService.getPrefixes();
@@ -303,7 +303,7 @@ public class UcumController {
         )
       )
     })
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Get("/prefixes/{code}")
     public HttpResponse<PrefixDto> getPrefixByCode(@PathVariable String code) {
         PrefixDto response = ucumService.getPrefixByCode(code);
@@ -333,7 +333,7 @@ public class UcumController {
         )
       )
     })
-    @Authorized(Privilege.UCUM_EDIT)
+    @Authorized(Privilege.UCUM_WRITE)
     @Post(value = "/essence/import", consumes = MediaType.MULTIPART_FORM_DATA)
     public JobLogResponse importEssence(@Part("file") CompletedFileUpload file) {
         byte[] xml = FileUtil.readBytes(file);
@@ -361,7 +361,7 @@ public class UcumController {
         schema = @Schema(implementation = UcumExportResponseDto.class)
       )
     )
-    @Authorized(Privilege.UCUM_VIEW)
+    @Authorized(Privilege.UCUM_READ)
     @Post("/export")
     public HttpResponse<UcumExportResponseDto> export(@Nullable @Body UcumExportRequestDto request) {
         try {

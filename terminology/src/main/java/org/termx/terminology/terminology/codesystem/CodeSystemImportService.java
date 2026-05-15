@@ -88,7 +88,7 @@ public class CodeSystemImportService {
 
   @Transactional
   public CodeSystem importCodeSystem(CodeSystem codeSystem, List<AssociationType> associationTypes, CodeSystemImportAction action) {
-    SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_EDIT);
+    SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_WRITE);
 
     long start = System.currentTimeMillis();
     log.info("IMPORT STARTED : code system - {}", codeSystem.getId());
@@ -103,11 +103,11 @@ public class CodeSystemImportService {
     saveConcepts(prepareConcepts(codeSystem.getConcepts(), codeSystem.getBaseCodeSystem()), codeSystemVersion, entityProperties, action.isCleanConceptRun());
 
     if (action.isActivate()) {
-      SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_PUBLISH);
+      SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_MAINTAIN);
       codeSystemVersionService.activate(codeSystem.getId(), codeSystemVersion.getVersion());
     }
     if (action.isRetire()) {
-      SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_PUBLISH);
+      SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_MAINTAIN);
       codeSystemVersionService.retire(codeSystem.getId(), codeSystemVersion.getVersion());
     }
     if (StringUtils.isNotEmpty(action.getSpaceToAdd())) {
@@ -194,7 +194,7 @@ public class CodeSystemImportService {
   }
 
   public List<EntityProperty> saveProperties(List<EntityProperty> properties, String codeSystem) {
-    SessionStore.require().checkPermitted(codeSystem, Privilege.CS_EDIT);
+    SessionStore.require().checkPermitted(codeSystem, Privilege.CS_WRITE);
 
     List<EntityProperty> existingProperties = entityPropertyService.query(new EntityPropertyQueryParams().setCodeSystem(codeSystem)).getData();
     List<EntityProperty> entityProperties = new ArrayList<>(existingProperties);
@@ -203,7 +203,7 @@ public class CodeSystemImportService {
   }
 
   public void saveConcepts(List<Concept> concepts, CodeSystemVersion version, List<EntityProperty> entityProperties, boolean cleanRun) {
-    SessionStore.require().checkPermitted(version.getCodeSystem(), Privilege.CS_EDIT);
+    SessionStore.require().checkPermitted(version.getCodeSystem(), Privilege.CS_WRITE);
 
     log.info("Creating '{}' concepts", concepts.size());
     long start = System.currentTimeMillis();

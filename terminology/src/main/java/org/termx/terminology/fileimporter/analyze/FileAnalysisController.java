@@ -22,7 +22,7 @@ import org.reactivestreams.Publisher;
 public class FileAnalysisController {
   private final FileAnalysisService fileAnalysisService;
 
-  @Authorized(privilege = Privilege.CS_EDIT)
+  @Authorized(privilege = Privilege.CS_WRITE)
   @Post(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA)
   public FileAnalysisResponse analyze(@Nullable Publisher<CompletedFileUpload> file, @Part("request") String request) {
     FileAnalysisRequest req = JsonUtil.fromJson(request, FileAnalysisRequest.class);

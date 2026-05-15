@@ -40,47 +40,47 @@ public class SpaceController {
   private final ImportLogger importLogger;
   private static final String JOB_TYPE = "space-import";
 
-  @Authorized(privilege = Privilege.S_EDIT)
+  @Authorized(privilege = Privilege.S_WRITE)
   @Post()
   public Space create(@Valid @Body Space p) {
     p.setId(null);
     return spaceService.save(p);
   }
 
-  @Authorized(Privilege.S_EDIT)
+  @Authorized(Privilege.S_WRITE)
   @Put("{id}")
   public Space update(@PathVariable Long id, @Valid @Body Space p) {
     p.setId(id);
     return spaceService.save(p);
   }
 
-  @Authorized(Privilege.S_VIEW)
+  @Authorized(Privilege.S_READ)
   @Get("{id}")
   public Space load(@PathVariable Long id) {
     return spaceService.load(id);
   }
 
-  @Authorized(Privilege.S_VIEW)
+  @Authorized(Privilege.S_READ)
   @Get("/{?params*}")
   public QueryResult<Space> search(SpaceQueryParams params) {
-    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.S_VIEW, Long::valueOf));
+    params.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.S_READ, Long::valueOf));
     return spaceService.query(params);
   }
 
-  @Authorized(Privilege.S_VIEW)
+  @Authorized(Privilege.S_READ)
   @Get("/{id}/overview")
   public SpaceOverviewResponse overview(@PathVariable Long id, @Nullable @QueryValue String packageCode, @Nullable @QueryValue String version) {
     return overviewService.compose(id, packageCode, version);
   }
 
-  @Authorized(Privilege.S_VIEW)
+  @Authorized(Privilege.S_READ)
   @Get("/{id}/diff")
   public HttpResponse<?> diff(@PathVariable Long id, @Nullable @QueryValue String packageCode, @Nullable @QueryValue String version) {
     LorqueProcess lorqueProcess = diffService.findDiff(id, packageCode, version);
     return HttpResponse.accepted().body(lorqueProcess);
   }
 
-  @Authorized(Privilege.S_EDIT)
+  @Authorized(Privilege.S_WRITE)
   @Post("/{id}/sync")
   public HttpResponse<?> syncResources(@PathVariable Long id, @Body Map<String, Object> request) {
     JobLogResponse response = syncService.syncResources(id,
@@ -90,7 +90,7 @@ public class SpaceController {
     return HttpResponse.accepted().body(response);
   }
 
-  @Authorized(privilege = Privilege.S_EDIT)
+  @Authorized(privilege = Privilege.S_WRITE)
   @Post(value = "/sync", consumes = MediaType.MULTIPART_FORM_DATA)
   public HttpResponse<?> importSpace(@Nullable Publisher<CompletedFileUpload> file) {
     if (file == null) {

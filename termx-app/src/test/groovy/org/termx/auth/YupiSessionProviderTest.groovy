@@ -36,44 +36,44 @@ class YupiSessionProviderTest extends Specification {
 
     where:
     raw                                  | expected
-    "*.*.view"                           | ["*.*.view"]
-    "*.*.view,*.*.triage"                | ["*.*.view", "*.*.triage"]
-    " *.*.view , *.*.triage "            | ["*.*.view", "*.*.triage"]   // trims whitespace
-    "icd-10.CodeSystem.view"             | ["icd-10.CodeSystem.view"]
+    "*.*.read"                           | ["*.*.read"]
+    "*.*.read,*.*.triage"                | ["*.*.read", "*.*.triage"]
+    " *.*.read , *.*.triage "            | ["*.*.read", "*.*.triage"]   // trims whitespace
+    "icd-10.CodeSystem.read"             | ["icd-10.CodeSystem.read"]
     "*.*.*"                              | ["*.*.*"]
-    "*.*.view,,,*.*.edit"                | ["*.*.view", "*.*.edit"]    // skips empty tokens
+    "*.*.read,,,*.*.write"               | ["*.*.read", "*.*.write"]    // skips empty tokens
   }
 
-  def "view-only override produces a session that fails the triage check"() {
+  def "read-only override produces a session that fails the triage check"() {
     given:
-    def provider = new YupiSessionProvider("*.*.view")
+    def provider = new YupiSessionProvider("*.*.read")
     def session = provider.authenticate(yupiRequest())
 
     expect:
-    session.privileges == ["*.*.view"] as Set
+    session.privileges == ["*.*.read"] as Set
     !session.hasPrivilege("administrative-gender.CodeSystem.triage")
     !session.hasPrivilege("any-space.Wiki.triage")
-    session.hasPrivilege("administrative-gender.CodeSystem.view")
+    session.hasPrivilege("administrative-gender.CodeSystem.read")
   }
 
-  def "view+triage override produces a session that passes the triage check"() {
+  def "read+triage override produces a session that passes the triage check"() {
     given:
-    def provider = new YupiSessionProvider("*.*.view,*.*.triage")
+    def provider = new YupiSessionProvider("*.*.read,*.*.triage")
     def session = provider.authenticate(yupiRequest())
 
     expect:
-    session.hasPrivilege("administrative-gender.CodeSystem.view")
+    session.hasPrivilege("administrative-gender.CodeSystem.read")
     session.hasPrivilege("administrative-gender.CodeSystem.triage")
-    !session.hasPrivilege("administrative-gender.CodeSystem.edit")
+    !session.hasPrivilege("administrative-gender.CodeSystem.write")
   }
 
   def "explicit JSON in Bearer header overrides the configured default"() {
     given:
-    def provider = new YupiSessionProvider("*.*.view")  // configured = view-only
+    def provider = new YupiSessionProvider("*.*.read")  // configured = read-only
     def request = Mock(HttpRequest)
     def headers = Mock(HttpHeaders)
     headers.getFirst("Authorization") >>
-        Optional.of('Bearer yupi{"username":"adhoc","privileges":["*.*.publish"]}')
+        Optional.of('Bearer yupi{"username":"adhoc","privileges":["*.*.maintain"]}')
     request.getHeaders() >> headers
 
     when:
@@ -81,7 +81,7 @@ class YupiSessionProviderTest extends Specification {
 
     then:
     session.username == "adhoc"
-    session.privileges == ["*.*.publish"] as Set
+    session.privileges == ["*.*.maintain"] as Set
   }
 
   def "non-yupi authorization header returns null"() {

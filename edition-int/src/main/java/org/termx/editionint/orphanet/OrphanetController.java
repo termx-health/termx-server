@@ -35,7 +35,7 @@ public class OrphanetController {
 
   private static final String JOB_TYPE = "Orphanet";
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(Privilege.CS_WRITE)
   @Post(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse importIcd10(@Nullable Publisher<CompletedFileUpload> file, @Part("request") String request) {
     CodeSystemImportConfiguration configuration = JsonUtil.fromJson(request, CodeSystemImportConfiguration.class);

@@ -39,7 +39,7 @@ public class CodeSystemFileImportController {
   private final CodeSystemFileImportService fileImporterService;
   private final ImportLogger importLogger;
 
-  @Authorized(Privilege.CS_EDIT)
+  @Authorized(Privilege.CS_WRITE)
   @Post(value = "/process", consumes = MediaType.MULTIPART_FORM_DATA)
   public JobLogResponse process(@Nullable Publisher<CompletedFileUpload> file, @Part("request") String request) {
     String val = URLDecoder.decode(request, StandardCharsets.UTF_8);

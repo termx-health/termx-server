@@ -22,33 +22,33 @@ import lombok.RequiredArgsConstructor;
 public class SysSequenceController {
   private final SysSequenceService sysSequenceService;
 
-  @Authorized("Sequence.view")
+  @Authorized("Sequence.read")
   @Get("{?params*}")
   public QueryResult<SysSequence> query(SysSequenceQueryParams params) {
     return sysSequenceService.query(params);
   }
 
-  @Authorized("Sequence.view")
+  @Authorized("Sequence.read")
   @Get("/{id}")
   public SysSequence load(@PathVariable Long id) {
     return sysSequenceService.load(id);
   }
 
-  @Authorized("Sequence.edit")
+  @Authorized("Sequence.write")
   @Post
   public SysSequence create(@Body @Valid SysSequence sequence) {
     sequence.setId(null);
     return load(sysSequenceService.save(sequence));
   }
 
-  @Authorized("Sequence.edit")
+  @Authorized("Sequence.write")
   @Put("/{id}")
   public SysSequence update(@PathVariable Long id, @Body @Valid SysSequence sequence) {
     sequence.setId(id);
     return load(sysSequenceService.save(sequence));
   }
 
-  @Authorized(privilege = "Sequence.view") //TODO: privilege
+  @Authorized(privilege = "Sequence.read") //TODO: privilege
   @Get("/{code}/next")
   public Map<String, Object> getNextValue(String code) {
     return Map.of("value", sysSequenceService.getNextValue(code));

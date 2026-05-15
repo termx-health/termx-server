@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 public class ValueSetVersionController {
   private final ValueSetVersionService valueSetVersionService;
 
-  @Authorized(Privilege.VS_VIEW)
+  @Authorized(Privilege.VS_READ)
   @Get(uri = "/{id}")
   public ValueSetVersion getVersion(@PathVariable Long id) {
     return valueSetVersionService.load(id);

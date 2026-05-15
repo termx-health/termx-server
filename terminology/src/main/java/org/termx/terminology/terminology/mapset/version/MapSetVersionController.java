@@ -14,11 +14,11 @@ import lombok.RequiredArgsConstructor;
 public class MapSetVersionController {
   private final MapSetVersionService mapSetVersionService;
 
-  @Authorized(privilege = Privilege.VS_VIEW)
+  @Authorized(privilege = Privilege.VS_READ)
   @Get(uri = "/{id}")
   public MapSetVersion getVersion(@PathVariable Long id) {
     MapSetVersion version = mapSetVersionService.load(id);
-    SessionStore.require().checkPermitted(version.getMapSet(), Privilege.VS_VIEW);
+    SessionStore.require().checkPermitted(version.getMapSet(), Privilege.VS_READ);
     return version;
   }
 }
