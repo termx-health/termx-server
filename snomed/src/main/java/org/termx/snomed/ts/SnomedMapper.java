@@ -74,6 +74,7 @@ public class SnomedMapper {
       version.setDesignations(toConceptDesignations(snomedConcept.getPt(), snomedConcept.getFsn()));
     }
     version.setStatus(PublicationStatus.draft);
+    version.setEffectiveTime(snomedConcept.getEffectiveTime());
     return version;
   }
 

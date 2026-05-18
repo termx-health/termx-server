@@ -49,6 +49,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     ssb.property("code", version.getCode());
     ssb.property("description", version.getDescription());
     ssb.property("status", version.getStatus());
+    ssb.property("effective_time", version.getEffectiveTime());
     ssb.property("created", version.getCreated());
     ssb.property("base_entity_version_id", version.getBaseEntityVersionId());
 
@@ -210,7 +211,7 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
         .flatMap(es -> es.getValue().stream().map(v -> Pair.of(es.getKey(), v)))
         .filter(e -> e.getValue().getId() == null)
         .toList();
-    String query = "insert into terminology.code_system_entity_version (code_system_entity_id, code_system, code, description, status, created, base_entity_version_id) values (?,?,?,?,?,?::timestamp,NULLIF(?,0))";
+    String query = "insert into terminology.code_system_entity_version (code_system_entity_id, code_system, code, description, status, effective_time, created, base_entity_version_id) values (?,?,?,?,?,?,?::timestamp,NULLIF(?,0))";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override
       public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -225,12 +226,12 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
         .flatMap(es -> es.getValue().stream().map(v -> Pair.of(es.getKey(), v)))
         .filter(e -> e.getValue().getId() != null)
         .toList();
-    query = "update terminology.code_system_entity_version set code_system_entity_id = ?, code_system = ?, code = ?, description = ?, status = ?, created = ?::timestamp, base_entity_version_id = NULLIF(?,0) where id = ?";
+    query = "update terminology.code_system_entity_version set code_system_entity_id = ?, code_system = ?, code = ?, description = ?, status = ?, effective_time = ?, created = ?::timestamp, base_entity_version_id = NULLIF(?,0) where id = ?";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override
       public void setValues(PreparedStatement ps, int i) throws SQLException {
         CodeSystemEntityVersionRepository.this.setValues(ps, i, versionsToUpdate);
-        ps.setLong(8, versionsToUpdate.get(i).getValue().getId());
+        ps.setLong(9, versionsToUpdate.get(i).getValue().getId());
       }
       @Override
       public int getBatchSize() {return versionsToUpdate.size();}
@@ -255,8 +256,9 @@ public class CodeSystemEntityVersionRepository extends BaseRepository {
     ps.setString(3, versionsToInsert.get(i).getValue().getCode());
     ps.setString(4, versionsToInsert.get(i).getValue().getDescription());
     ps.setString(5, versionsToInsert.get(i).getValue().getStatus());
-    ps.setString(6, versionsToInsert.get(i).getValue().getCreated().toString());
-    ps.setLong(7, versionsToInsert.get(i).getValue().getBaseEntityVersionId() == null ? 0 : versionsToInsert.get(i).getValue().getBaseEntityVersionId());
+    ps.setString(6, versionsToInsert.get(i).getValue().getEffectiveTime());
+    ps.setString(7, versionsToInsert.get(i).getValue().getCreated().toString());
+    ps.setLong(8, versionsToInsert.get(i).getValue().getBaseEntityVersionId() == null ? 0 : versionsToInsert.get(i).getValue().getBaseEntityVersionId());
   }
 
   public void updateSnapshot(Long codeSystemEntityVersionId, ConceptSnapshot snapshot) {
