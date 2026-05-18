@@ -217,6 +217,7 @@ public class EntityPropertyValueCodingEnrichmentService {
             .map(this::mapDesignation)
             .toList();
     String version = resolved == null || resolved.csVersion() == null ? null : resolved.csVersion().getVersion();
+    String targetEffectiveTime = resolved == null ? null : resolved.entityVersion().getEffectiveTime();
 
     boolean changed = false;
     if (!StringUtils.equals(JsonUtil.toJson(codingValue.getDisplay()), JsonUtil.toJson(display))) {
@@ -225,6 +226,10 @@ public class EntityPropertyValueCodingEnrichmentService {
     }
     if (!StringUtils.equals(codingValue.getVersion(), version)) {
       codingValue.setVersion(version);
+      changed = true;
+    }
+    if (!StringUtils.equals(codingValue.getTargetEffectiveTime(), targetEffectiveTime)) {
+      codingValue.setTargetEffectiveTime(targetEffectiveTime);
       changed = true;
     }
     return changed;

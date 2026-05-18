@@ -44,6 +44,7 @@ public class EntityPropertyValue {
     private String codeSystem;
     private Object display;
     private String version;
+    private String targetEffectiveTime;
 
     public EntityPropertyValueCodingValue(String code, String codeSystem) {
       this.code = code;
