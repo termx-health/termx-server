@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -134,12 +133,12 @@ public class EntityPropertyValueCodingEnrichmentService {
       if (concept == null) {
         continue;
       }
-      Pair<String, String> resolved = resolveTargetVersion(concept, allowedStatuses);
-      if (resolved == null) {
+      TargetSelection resolved = resolveTargetSelection(concept, allowedStatuses);
+      if (resolved == null || resolved.csVersion() == null) {
         continue;
       }
-      String candidateVersion = resolved.getLeft();
-      String candidateStatus = resolved.getRight();
+      String candidateVersion = resolved.csVersion().getVersion();
+      String candidateStatus = resolved.csVersion().getStatus();
       if (!StringUtils.equals(cv.getVersion(), candidateVersion)) {
         candidates.add(new CodingValueUpdateCandidate()
             .setPropertyValueId(pv.getId())
@@ -212,14 +211,12 @@ public class EntityPropertyValueCodingEnrichmentService {
   }
 
   private boolean applyEnrichment(EntityPropertyValueCodingValue codingValue, Concept concept, List<String> allowedStatuses) {
-    List<EntityPropertyValueCodingDesignationValue> display = concept.getLastVersion()
-        .map(CodeSystemEntityVersion::getDesignations)
-        .orElse(List.of())
-        .stream()
-        .map(this::mapDesignation)
-        .toList();
-    Pair<String, String> resolved = resolveTargetVersion(concept, allowedStatuses);
-    String version = resolved == null ? null : resolved.getLeft();
+    TargetSelection resolved = resolveTargetSelection(concept, allowedStatuses);
+    List<EntityPropertyValueCodingDesignationValue> display = resolved == null ? List.of() :
+        Optional.ofNullable(resolved.entityVersion().getDesignations()).orElse(List.of()).stream()
+            .map(this::mapDesignation)
+            .toList();
+    String version = resolved == null || resolved.csVersion() == null ? null : resolved.csVersion().getVersion();
 
     boolean changed = false;
     if (!StringUtils.equals(JsonUtil.toJson(codingValue.getDisplay()), JsonUtil.toJson(display))) {
@@ -233,23 +230,23 @@ public class EntityPropertyValueCodingEnrichmentService {
     return changed;
   }
 
-  private Pair<String, String> resolveTargetVersion(Concept concept, List<String> allowedStatuses) {
+  private record TargetSelection(CodeSystemEntityVersion entityVersion, CodeSystemVersionReference csVersion) {}
+
+  private TargetSelection resolveTargetSelection(Concept concept, List<String> allowedStatuses) {
     if (allowedStatuses == null || allowedStatuses.isEmpty()) {
       return concept.getLastVersion()
-          .map(CodeSystemEntityVersion::getVersions)
-          .filter(v -> v != null && !v.isEmpty())
-          .flatMap(v -> v.stream().findFirst())
-          .map(csv -> Pair.of(csv.getVersion(), csv.getStatus()))
+          .map(ev -> new TargetSelection(ev,
+              Optional.ofNullable(ev.getVersions()).orElse(List.of()).stream().findFirst().orElse(null)))
           .orElse(null);
     }
     return Optional.ofNullable(concept.getVersions()).orElse(List.of()).stream()
         .filter(ev -> !PublicationStatus.retired.equals(ev.getStatus()))
-        .flatMap(ev -> Optional.ofNullable(ev.getVersions()).orElse(List.of()).stream())
-        .filter(csv -> allowedStatuses.contains(csv.getStatus()))
+        .flatMap(ev -> Optional.ofNullable(ev.getVersions()).orElse(List.of()).stream()
+            .map(csv -> new TargetSelection(ev, csv)))
+        .filter(t -> allowedStatuses.contains(t.csVersion().getStatus()))
         .max(Comparator
-            .comparing(CodeSystemVersionReference::getReleaseDate, Comparator.nullsFirst(Comparator.naturalOrder()))
-            .thenComparing(CodeSystemVersionReference::getVersion, Comparator.nullsFirst(Comparator.naturalOrder())))
-        .map(csv -> Pair.of(csv.getVersion(), csv.getStatus()))
+            .comparing((TargetSelection t) -> t.csVersion().getReleaseDate(), Comparator.nullsFirst(Comparator.naturalOrder()))
+            .thenComparing(t -> t.csVersion().getVersion(), Comparator.nullsFirst(Comparator.naturalOrder())))
         .orElse(null);
   }
 
