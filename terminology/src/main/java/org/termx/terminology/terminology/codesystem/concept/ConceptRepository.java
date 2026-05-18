@@ -511,6 +511,14 @@ public class ConceptRepository extends BaseRepository {
   }
 
   private void appendVersionFilter(SqlBuilder sb, ConceptQueryParams params, String csvAlias) {
+    // buildDirectParentSelect only joins the code_system_version (csvAlias) table when
+    // hasVersionFilter is true; without that join, emitting a csvAlias.* predicate causes
+    // a "missing FROM-clause entry" SQL error. ConceptService.prepareParams copies
+    // params.codeSystem into params.codeSystemVersionCodeSystem, so this guard is what
+    // prevents the alias from being referenced when the join was skipped.
+    if (!hasVersionFilter(params)) {
+      return;
+    }
     if (StringUtils.isNotEmpty(params.getCodeSystemVersionCodeSystem())) {
       sb.and().in(csvAlias + ".code_system", splitCsv(params.getCodeSystemVersionCodeSystem()));
     }
