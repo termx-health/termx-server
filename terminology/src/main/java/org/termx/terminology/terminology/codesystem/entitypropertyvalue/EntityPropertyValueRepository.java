@@ -151,6 +151,14 @@ public class EntityPropertyValueRepository extends BaseRepository {
     return getBeans(sb.getSql(), bp, sb.getParams());
   }
 
+  public List<Long> loadCodeSystemEntityVersionIdsByCsAndVersion(String codeSystem, String version) {
+    String sql = "select distinct evcsvm.code_system_entity_version_id " +
+        "from terminology.entity_version_code_system_version_membership evcsvm " +
+        "inner join terminology.code_system_version csv on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A' " +
+        "where evcsvm.sys_status = 'A' and csv.code_system = ? and csv.version = ?";
+    return jdbcTemplate.queryForList(sql, Long.class, codeSystem, version);
+  }
+
   public void updateValues(List<EntityPropertyValue> values) {
     if (values == null || values.isEmpty()) {
       return;
