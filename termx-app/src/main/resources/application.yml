@@ -115,6 +115,11 @@ termx:
         # Same as codesystem.search.default-summary, but for GET /fhir/ValueSet.
         # When non-`false`, inline `compose.include.concept` lists are suppressed.
         default-summary: ${TERMX_FHIR_VS_SEARCH_DEFAULT_SUMMARY:true}
+    conceptmap:
+      search:
+        # Same as codesystem.search.default-summary, but for GET /fhir/ConceptMap.
+        # When non-`false`, the `group.element` mapping list is suppressed.
+        default-summary: ${TERMX_FHIR_CM_SEARCH_DEFAULT_SUMMARY:true}
 
 javamail:
   authentication:

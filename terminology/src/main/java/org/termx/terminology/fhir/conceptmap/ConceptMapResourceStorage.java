@@ -19,19 +19,33 @@ import org.termx.ts.mapset.MapSetAssociation;
 import org.termx.ts.mapset.MapSetAssociationQueryParams;
 import org.termx.ts.mapset.MapSetQueryParams;
 import org.termx.ts.mapset.MapSetVersion;
+import io.micronaut.context.annotation.Value;
 import jakarta.inject.Singleton;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Singleton
-@RequiredArgsConstructor
 public class ConceptMapResourceStorage extends BaseFhirResourceHandler {
   private final MapSetService mapSetService;
   private final MapSetVersionService mapSetVersionService;
   private final MapSetAssociationService mapSetAssociationService;
   private final ProvenanceService provenanceService;
   private final ConceptMapFhirMapper mapper;
+  private final String defaultSearchSummary;
+
+  public ConceptMapResourceStorage(MapSetService mapSetService,
+                                   MapSetVersionService mapSetVersionService,
+                                   MapSetAssociationService mapSetAssociationService,
+                                   ProvenanceService provenanceService,
+                                   ConceptMapFhirMapper mapper,
+                                   @Value("${termx.fhir.conceptmap.search.default-summary:true}") String defaultSearchSummary) {
+    this.mapSetService = mapSetService;
+    this.mapSetVersionService = mapSetVersionService;
+    this.mapSetAssociationService = mapSetAssociationService;
+    this.provenanceService = provenanceService;
+    this.mapper = mapper;
+    this.defaultSearchSummary = defaultSearchSummary;
+  }
 
   @Override
   public String getResourceType() {
@@ -67,10 +81,15 @@ public class ConceptMapResourceStorage extends BaseFhirResourceHandler {
   @Override
   public SearchResult search(SearchCriterion criteria) {
     QueryResult<MapSet> result = mapSetService.query(ConceptMapFhirMapper.fromFhir(criteria));
+    boolean lightweight = isLightweightSummary(criteria.getSummary() != null ? criteria.getSummary() : defaultSearchSummary);
     return new SearchResult(result.getMeta().getTotal(), result.getData().stream().flatMap(ms -> ms.getVersions().stream().map(msv -> {
-      msv.setAssociations(loadAssociations(msv));
+      msv.setAssociations(lightweight ? List.of() : loadAssociations(msv));
       return toFhir(ms, msv);
     })).toList());
+  }
+
+  private static boolean isLightweightSummary(String summary) {
+    return summary != null && !summary.isBlank() && !"false".equalsIgnoreCase(summary);
   }
 
 
