@@ -8,21 +8,30 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 @Singleton
 public class EntityPropertyValueUpdateQueueRepository extends BaseRepository {
 
   public void markForUpdate(List<Long> codeSystemEntityVersionIds) {
+    markForUpdate(codeSystemEntityVersionIds, null);
+  }
+
+  public void markForUpdate(List<Long> codeSystemEntityVersionIds, String allowedStatuses) {
     if (codeSystemEntityVersionIds == null || codeSystemEntityVersionIds.isEmpty()) {
       return;
     }
-    String sql = "insert into terminology.code_system_entity_version_update_queue (code_system_entity_version_id) values (?) " +
-        "on conflict (code_system_entity_version_id) where sys_status = 'A' do nothing";
+    String sql = "insert into terminology.code_system_entity_version_update_queue (code_system_entity_version_id, allowed_statuses) values (?, ?) " +
+        "on conflict (code_system_entity_version_id) where sys_status = 'A' do update set allowed_statuses = excluded.allowed_statuses";
     jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
       @Override
       public void setValues(PreparedStatement ps, int i) throws SQLException {
         ps.setLong(1, codeSystemEntityVersionIds.get(i));
+        if (allowedStatuses == null) {
+          ps.setNull(2, java.sql.Types.VARCHAR);
+        } else {
+          ps.setString(2, allowedStatuses);
+        }
       }
 
       @Override
@@ -32,10 +41,12 @@ public class EntityPropertyValueUpdateQueueRepository extends BaseRepository {
     });
   }
 
-  public List<Pair<Long, Long>> loadNextBatch(int limit) {
-    String sql = "select id, code_system_entity_version_id from terminology.code_system_entity_version_update_queue " +
+  public List<Triple<Long, Long, String>> loadNextBatch(int limit) {
+    String sql = "select id, code_system_entity_version_id, allowed_statuses from terminology.code_system_entity_version_update_queue " +
         "where sys_status = 'A' order by id limit ? for update skip locked";
-    return jdbcTemplate.query(sql, (rs, rowNum) -> Pair.of(rs.getLong("id"), rs.getLong("code_system_entity_version_id")), limit);
+    return jdbcTemplate.query(sql,
+        (rs, rowNum) -> Triple.of(rs.getLong("id"), rs.getLong("code_system_entity_version_id"), rs.getString("allowed_statuses")),
+        limit);
   }
 
   public void complete(List<Long> queueIds) {

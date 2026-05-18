@@ -16,20 +16,36 @@ import org.termx.terminology.terminology.valueset.version.ValueSetVersionService
 import org.termx.ts.valueset.ValueSet;
 import org.termx.ts.valueset.ValueSetQueryParams;
 import org.termx.ts.valueset.ValueSetVersion;
+import org.termx.ts.valueset.ValueSetVersionRuleSet;
 import com.kodality.zmei.fhir.FhirMapper;
+import io.micronaut.context.annotation.Value;
 import jakarta.inject.Singleton;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
+import java.util.Optional;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Singleton
-@RequiredArgsConstructor
 public class ValueSetResourceStorage extends BaseFhirResourceHandler {
   private final ValueSetService valueSetService;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetFhirImportService importService;
   private final ProvenanceService provenanceService;
   private final ValueSetFhirMapper mapper;
+  private final String defaultSearchSummary;
+
+  public ValueSetResourceStorage(ValueSetService valueSetService,
+                                 ValueSetVersionService valueSetVersionService,
+                                 ValueSetFhirImportService importService,
+                                 ProvenanceService provenanceService,
+                                 ValueSetFhirMapper mapper,
+                                 @Value("${termx.fhir.valueset.search.default-summary:true}") String defaultSearchSummary) {
+    this.valueSetService = valueSetService;
+    this.valueSetVersionService = valueSetVersionService;
+    this.importService = importService;
+    this.provenanceService = provenanceService;
+    this.mapper = mapper;
+    this.defaultSearchSummary = defaultSearchSummary;
+  }
 
   @Override
   public String getResourceType() {
@@ -80,8 +96,23 @@ public class ValueSetResourceStorage extends BaseFhirResourceHandler {
   public SearchResult search(SearchCriterion criteria) {
     QueryResult<ValueSet> vsResult = valueSetService.query(ValueSetFhirMapper.fromFhir(criteria));
     QueryResult<ValueSetVersion> vsvResult = valueSetVersionService.query(ValueSetFhirMapper.fromFhirVSVersionParams(criteria).limit(0));
+    boolean lightweight = isLightweightSummary(criteria.getSummary() != null ? criteria.getSummary() : defaultSearchSummary);
     return new SearchResult(vsvResult.getMeta().getTotal(),
-        vsResult.getData().stream().flatMap(vs -> vs.getVersions().stream().map(vsv -> toFhir(vs, vsv))).toList());
+        vsResult.getData().stream().flatMap(vs -> vs.getVersions().stream().map(vsv -> toFhir(vs, applyLightweight(vsv, lightweight)))).toList());
+  }
+
+  private static boolean isLightweightSummary(String summary) {
+    return summary != null && !summary.isBlank() && !"false".equalsIgnoreCase(summary);
+  }
+
+  private static ValueSetVersion applyLightweight(ValueSetVersion vsv, boolean lightweight) {
+    if (!lightweight || vsv == null) {
+      return vsv;
+    }
+    Optional.ofNullable(vsv.getRuleSet())
+        .map(ValueSetVersionRuleSet::getRules)
+        .ifPresent(rules -> rules.forEach(r -> r.setConcepts(null)));
+    return vsv;
   }
 
   private ResourceVersion toFhir(ValueSet vs, ValueSetVersion vsv) {

@@ -41,13 +41,13 @@ info:
 datasources:
   default:
     url: ${DB_URL:`jdbc:postgresql://localhost:5432/termx`}
-    username: termserver_app
+    username: tx_app
     password: ${DB_APP_PASSWORD:test}
     maximum-pool-size: ${DB_POOL_SIZE:10}
     driver-class-name: org.postgresql.Driver
   liquibase:
     url: ${DB_URL:`jdbc:postgresql://localhost:5432/termx`}
-    username: termserver_admin
+    username: tx_admin
     password: ${DB_ADMIN_PASSWORD:test}
     driver-class-name: org.postgresql.Driver
     maximum-pool-size: 1
@@ -104,6 +104,17 @@ termx:
     codesystem:
       lookup:
         default-property-mode: ALL
+      search:
+        # Default value applied to `_summary` when the client does not pass it
+        # on GET /fhir/CodeSystem search. Accepts: true | text | data | count | false.
+        # `true` (or any non-`false` value) suppresses the heavy `concept` list in
+        # search results. Override per request with `?_summary=...`.
+        default-summary: ${TERMX_FHIR_CS_SEARCH_DEFAULT_SUMMARY:true}
+    valueset:
+      search:
+        # Same as codesystem.search.default-summary, but for GET /fhir/ValueSet.
+        # When non-`false`, inline `compose.include.concept` lists are suppressed.
+        default-summary: ${TERMX_FHIR_VS_SEARCH_DEFAULT_SUMMARY:true}
 
 javamail:
   authentication:

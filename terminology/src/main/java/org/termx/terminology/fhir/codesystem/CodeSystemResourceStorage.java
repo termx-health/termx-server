@@ -25,16 +25,15 @@ import org.termx.ts.codesystem.CodeSystemImportAction;
 import org.termx.ts.codesystem.CodeSystemQueryParams;
 import org.termx.ts.codesystem.CodeSystemVersion;
 import com.kodality.zmei.fhir.FhirMapper;
+import io.micronaut.context.annotation.Value;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 
 @Slf4j
 @Singleton
-@RequiredArgsConstructor
 public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
@@ -42,6 +41,23 @@ public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
   private final ProvenanceService provenanceService;
   private final CodeSystemImportService importService;
   private final CodeSystemFhirMapper mapper;
+  private final String defaultSearchSummary;
+
+  public CodeSystemResourceStorage(CodeSystemService codeSystemService,
+                                   CodeSystemVersionService codeSystemVersionService,
+                                   CodeSystemEntityVersionService codeSystemEntityVersionService,
+                                   ProvenanceService provenanceService,
+                                   CodeSystemImportService importService,
+                                   CodeSystemFhirMapper mapper,
+                                   @Value("${termx.fhir.codesystem.search.default-summary:true}") String defaultSearchSummary) {
+    this.codeSystemService = codeSystemService;
+    this.codeSystemVersionService = codeSystemVersionService;
+    this.codeSystemEntityVersionService = codeSystemEntityVersionService;
+    this.provenanceService = provenanceService;
+    this.importService = importService;
+    this.mapper = mapper;
+    this.defaultSearchSummary = defaultSearchSummary;
+  }
 
   @Override
   public String getResourceType() {
@@ -110,10 +126,15 @@ public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
     QueryResult<CodeSystem> csResult = codeSystemService.query(CodeSystemFhirMapper.fromFhir(criteria));
     QueryResult<CodeSystemVersion> csvResult = codeSystemVersionService.query(CodeSystemFhirMapper.fromFhirCSVersionParams(criteria).limit(0));
     String code = criteria.getRawParams().containsKey("code") ? criteria.getRawParams().get("code").get(0) : null;
+    boolean lightweight = isLightweightSummary(criteria.getSummary() != null ? criteria.getSummary() : defaultSearchSummary);
     return new SearchResult(csvResult.getMeta().getTotal(), csResult.getData().stream().flatMap(cs -> cs.getVersions().stream().map(csv -> {
-      csv.setEntities(loadEntities(csv, code, false));
+      csv.setEntities(lightweight ? List.of() : loadEntities(csv, code, false));
       return toFhir(cs, csv);
     })).toList());
+  }
+
+  private static boolean isLightweightSummary(String summary) {
+    return summary != null && !summary.isBlank() && !"false".equalsIgnoreCase(summary);
   }
 
   private List<CodeSystemEntityVersion> loadEntities(CodeSystemVersion version, String code, boolean loadLargeEntities) {
