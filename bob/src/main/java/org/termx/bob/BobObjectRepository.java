@@ -42,6 +42,7 @@ public class BobObjectRepository extends BaseRepository {
 
   private SqlBuilder filter(BobObjectQueryParams params) {
     SqlBuilder sb = new SqlBuilder("where o.sys_status = 'A'");
+    sb.appendIfNotNull(params.getContainer(), (sql, p) -> sql.and("os.container = ?", p));
     sb.appendIfNotNull(params.getMeta(), (sql, p) -> sql.and("o.meta @> ?::jsonb", p));
     return sb;
   }
@@ -90,6 +91,19 @@ public class BobObjectRepository extends BaseRepository {
       throw new IllegalStateException("Failed to create BobStorage");
     }
     return result;
+  }
+
+  public void update(Long objectId, BobObject obj) {
+    SaveSqlBuilder ssb = new SaveSqlBuilder();
+    ssb.property("id", objectId);
+    ssb.jsonProperty("meta", obj.getMeta());
+    ssb.property("description", obj.getDescription());
+
+    SqlBuilder sb = ssb.buildUpdate("bob.object", "id");
+    if (jdbcTemplate == null) {
+      throw new IllegalStateException("jdbcTemplate is not initialized");
+    }
+    jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
   }
 
   public void deleteStorage(Long objectId) {

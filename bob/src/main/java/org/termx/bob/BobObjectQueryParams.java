@@ -9,5 +9,6 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class BobObjectQueryParams extends QueryParams {
+  private String container;
   private String meta;
 }
