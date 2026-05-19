@@ -95,6 +95,14 @@ public class SnomedDeltaCalculateService {
     if (currentBranch != null && baselineBranch != null && !currentBranch.equals(baselineBranch)) {
       throw new IllegalArgumentException("Baseline branchPath (" + baselineBranch + ") differs from current (" + currentBranch + ")");
     }
+    // The Stored archives card filters by JSONB containment on {shortName, branchPath}, so
+    // the delta has to carry both keys or it disappears from the card it should appear in.
+    // Take shortName from the current archive (the new state, which has the meta tags
+    // assigned by the modal upload), falling back to baseline if the current is missing it.
+    // Assigned in a single expression so it stays effectively-final for the async lambda.
+    final String currentShortName = metaString(current, "shortName") != null
+        ? metaString(current, "shortName")
+        : metaString(baseline, "shortName");
 
     LorqueProcess process = lorqueProcessService.start(new LorqueProcess().setProcessName(PROCESS_NAME));
     Long pid = process.getId();
@@ -118,7 +126,7 @@ public class SnomedDeltaCalculateService {
         SnomedDeltaGeneratorRuntime.Result result = runtime.run(baselineTemp, currentTemp, workDir, latestState);
 
         lorqueProcessService.reportProgress(pid, 80, "uploading delta archive to Bob");
-        String deltaUuid = persistDelta(currentUuid, req.getBaselineUuid(), currentBranch, result, latestState);
+        String deltaUuid = persistDelta(currentUuid, req.getBaselineUuid(), currentShortName, currentBranch, result, latestState);
 
         Map<String, Object> resultPayload = new LinkedHashMap<>();
         resultPayload.put("deltaUuid", deltaUuid);
@@ -151,10 +159,15 @@ public class SnomedDeltaCalculateService {
     }
   }
 
-  private String persistDelta(String sourceUuid, String baselineUuid, String branchPath,
+  private String persistDelta(String sourceUuid, String baselineUuid, String shortName, String branchPath,
                               SnomedDeltaGeneratorRuntime.Result result, boolean latestState) {
     Map<String, Object> meta = new LinkedHashMap<>();
     meta.put("kind", "delta");
+    // shortName must be present for the per-CS Stored archives card's JSONB @> filter to
+    // include this delta. Same for branchPath — both are inherited from the source archive.
+    if (shortName != null) {
+      meta.put("shortName", shortName);
+    }
     if (branchPath != null) {
       meta.put("branchPath", branchPath);
     }
