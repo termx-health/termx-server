@@ -1,0 +1,24 @@
+# GitGuardian configuration
+# https://docs.gitguardian.com/internal-repositories-monitoring/gim_settings#exclude-files-from-being-scanned
+#
+# Files listed here contain literal "test" credentials used ONLY by the local
+# development scripts and the integration-test stack (TestContainers). The
+# values are not real secrets; they are deliberately committed so contributors
+# can stand up a local Postgres without any extra configuration.
+#
+# If you add another file with a literal test credential, list it here too -
+# do NOT widen this list to a broad glob, because that would also hide any
+# real secret that lands in those directories by accident.
+
+version: 2
+
+secret:
+  ignored-paths:
+    # Local dev DB setup scripts (defaults to PASSWORD 'test')
+    - README.md
+    - recreate-termserver-db.sh
+    - termx-app/re-init-db.sh
+
+    # Integration-test stack (TestContainers brings up an ephemeral Postgres)
+    - termx-integtest/src/test/resources/init.sql
+    - termx-integtest/src/test/resources/application-test.yml
