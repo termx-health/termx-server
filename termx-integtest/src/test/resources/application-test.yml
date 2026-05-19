@@ -8,16 +8,16 @@ micronaut:
 
 datasources:
   default:
-    url: jdbc:tc:postgresql:14:///termserver?TC_TMPFS=/testtmpfs:rw&TC_DAEMON=true&TC_INITSCRIPT=init.sql
+    url: jdbc:tc:postgresql:14:///termx?TC_TMPFS=/testtmpfs:rw&TC_DAEMON=true&TC_INITSCRIPT=init.sql
     maximum.pool.size: 1
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    username: termserver_app
+    username: tx_app
     password: ${DB_APP_PASSWORD:test}
   liquibase:
-    url: jdbc:tc:postgresql:14:///termserver?TC_TMPFS=/testtmpfs:rw&TC_DAEMON=true&TC_INITSCRIPT=init.sql
+    url: jdbc:tc:postgresql:14:///termx?TC_TMPFS=/testtmpfs:rw&TC_DAEMON=true&TC_INITSCRIPT=init.sql
     maximum.pool.size: 1
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    username: termserver_admin
+    username: tx_admin
     password: ${DB_ADMIN_PASSWORD:test}
 liquibase:
   datasources:
