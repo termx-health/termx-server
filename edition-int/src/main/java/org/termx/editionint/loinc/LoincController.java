@@ -5,10 +5,12 @@ import org.termx.core.auth.Authorized;
 import org.termx.core.sys.job.logger.ImportLogger;
 import org.termx.core.utils.FileUtil;
 import org.termx.editionint.Privilege;
+import org.termx.editionint.loinc.utils.LoincImportFromArchiveRequest;
 import org.termx.editionint.loinc.utils.LoincImportRequest;
 import org.termx.sys.job.JobLogResponse;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.MediaType;
+import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Part;
 import io.micronaut.http.annotation.Post;
@@ -29,6 +31,7 @@ public class LoincController {
 
   private final LoincService loincService;
   private final ImportLogger importLogger;
+  private final LoincImportFromArchiveService loincImportFromArchiveService;
 
   @Authorized(Privilege.CS_WRITE)
   @Post(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA)
@@ -55,6 +58,19 @@ public class LoincController {
 
     Map<String, Object> params = Map.of("request", req, "files", files);
     return importLogger.runJob(JOB_TYPE, params, loincService::importLoinc);
+  }
+
+  /**
+   * Streaming counterpart of {@link #process}: the LOINC release zip already lives in the
+   * {@code "loinc"} Bob container (uploaded via {@code POST /bob/objects?container=loinc}). The
+   * server spools it to a local temp file, unpacks the eight known CSVs by basename, and feeds
+   * the existing {@link LoincService#importLoinc} pipeline as an async {@code ImportLogger}
+   * job. The browser never has to re-upload a multi-hundred-MB release for retries.
+   */
+  @Authorized(Privilege.CS_WRITE)
+  @Post(value = "/import/from-archive")
+  public JobLogResponse processFromArchive(@Body LoincImportFromArchiveRequest request) {
+    return loincImportFromArchiveService.startImport(request);
   }
 
   private static byte[] getBytes(Publisher<CompletedFileUpload> file) {
