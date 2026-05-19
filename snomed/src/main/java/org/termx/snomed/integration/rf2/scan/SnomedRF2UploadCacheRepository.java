@@ -20,6 +20,7 @@ public class SnomedRF2UploadCacheRepository extends BaseRepository {
     ssb.property("filename", upload.getFilename());
     ssb.property("zip_size", upload.getZipSize());
     ssb.property("zip_data", upload.getZipData());
+    ssb.property("bob_object_uuid", upload.getBobObjectUuid());
     ssb.property("scan_lorque_id", upload.getScanLorqueId());
     ssb.property("imported", upload.isImported());
     ssb.property("started", upload.getStarted());
@@ -48,6 +49,7 @@ public class SnomedRF2UploadCacheRepository extends BaseRepository {
     // Soft-delete and clear zip_data: the schema GRANTs in sys-schema.xml don't include DELETE
     // for the app user, and what we actually need is to reclaim the bytea (which can be hundreds
     // of MB per row). The empty-string assignment lets PostgreSQL release the TOAST chunks.
+    // bob-archive rows have zip_data IS NULL — that's fine, the update is a no-op there.
     String sql = "update sys.snomed_rf2_upload set sys_status = 'C', zip_data = ''::bytea "
         + "where sys_status = 'A' and started < current_timestamp - (? || ' days')::interval";
     jdbcTemplate.update(sql, String.valueOf(daysOld));

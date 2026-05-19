@@ -2,6 +2,8 @@ package org.termx.snomed.integration;
 
 import com.kodality.commons.client.HttpClientError;
 import com.kodality.commons.exception.ApiException;
+import org.termx.bob.BobObject;
+import org.termx.bob.BobObjectService;
 import org.termx.snomed.ApiError;
 import org.termx.snomed.client.SnowstormClient;
 import org.termx.snomed.codesystem.SnomedCodeSystem;
@@ -32,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SnomedService {
   private final SnowstormClient snowstormClient;
   private final SnomedImportTrackingRepository trackingRepository;
+  private final BobObjectService bobObjectService;
 
   private static final int MAX_COUNT = 9999;
   private static final int MAX_CONCEPT_COUNT = 100;
@@ -134,7 +137,40 @@ public class SnomedService {
     } catch (CompletionException e) {
       throw rethrowSnowstormImportFailure(e);
     }
+    recordTracking(jobId, req);
+    return Map.of("jobId", jobId);
+  }
 
+  /**
+   * Streaming counterpart of {@link #importRF2File(SnomedImportRequest, byte[])}: the archive
+   * lives in Bob and we re-stream it to Snowstorm via {@link
+   * SnowstormClient#uploadRF2File(String, java.util.function.Supplier)}. Used by the "Proceed
+   * with import" path after a from-archive dry-run scan.
+   */
+  @Transactional
+  public Map<String, String> importRF2FileFromBob(SnomedImportRequest req, String bobObjectUuid) {
+    BobObject archive = bobObjectService.load(bobObjectUuid);
+    if (archive == null) {
+      throw new IllegalArgumentException("Bob archive not found: " + bobObjectUuid);
+    }
+    String jobId;
+    try {
+      jobId = snowstormClient.createImportJob(req).join();
+    } catch (CompletionException e) {
+      throw rethrowSnowstormImportFailure(e);
+    }
+    try {
+      snowstormClient.uploadRF2File(jobId, () -> bobObjectService.loadContentStream(archive)).join();
+    } catch (FileNotFoundException e) {
+      log.warn("SNOMED RF2 upload (from Bob) to Snowstorm failed: {}", e.getMessage());
+    } catch (CompletionException e) {
+      throw rethrowSnowstormImportFailure(e);
+    }
+    recordTracking(jobId, req);
+    return Map.of("jobId", jobId);
+  }
+
+  private void recordTracking(String jobId, SnomedImportRequest req) {
     SnomedImportTracking tracking = new SnomedImportTracking()
         .setSnowstormJobId(jobId)
         .setBranchPath(req.getBranchPath())
@@ -143,10 +179,7 @@ public class SnomedService {
         .setStarted(OffsetDateTime.now())
         .setNotified(false);
     trackingRepository.save(tracking);
-
     log.info("Created SNOMED import tracking record for Snowstorm job: {}", jobId);
-
-    return Map.of("jobId", jobId);
   }
 
   /**

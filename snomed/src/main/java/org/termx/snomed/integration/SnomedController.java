@@ -301,7 +301,17 @@ public class SnomedController {
     req.setBranchPath(cached.getBranchPath());
     req.setType(cached.getRf2Type());
     req.setCreateCodeSystemVersion(cached.isCreateCodeSystemVersion());
-    Map<String, String> result = snomedService.importRF2File(req, cached.getZipData());
+    // Two storage paths share this endpoint:
+    //   • legacy /imports/scan upload → cached.zipData is populated → byte[] import
+    //   • new /imports/scan/from-archive → cached.bobObjectUuid is set, zipData is NULL →
+    //     re-stream Bob → Snowstorm without re-buffering. This is what makes the dry-run →
+    //     proceed flow heap-safe on full International editions.
+    Map<String, String> result;
+    if (cached.getBobObjectUuid() != null) {
+      result = snomedService.importRF2FileFromBob(req, cached.getBobObjectUuid());
+    } else {
+      result = snomedService.importRF2File(req, cached.getZipData());
+    }
     snomedRF2UploadCacheService.markImported(cacheId);
     return result;
   }

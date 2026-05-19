@@ -5,6 +5,9 @@ import com.kodality.commons.util.JsonUtil;
 import jakarta.inject.Singleton;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -79,22 +82,30 @@ public class SnomedRF2ImportFromArchiveService {
   }
 
   /**
-   * Kick off an async dry-run scan from a Bob-stored RF2 zip. Delegates the actual parse to
-   * {@link SnomedRF2ScanService#scanRF2(SnomedImportRequest, byte[], String)} after spooling
-   * the Minio stream into a byte array — the scan code path needs the bytes in memory anyway
-   * because the parser opens the zip from a {@code ByteArrayInputStream}. (A follow-up can
-   * change the parser to accept a {@link java.nio.file.Path} so even the scan is heap-safe.)
+   * Kick off an async dry-run scan from a Bob-stored RF2 zip. The archive is streamed Minio →
+   * local temp file (never fully buffered in heap), then the parser reads it via {@link
+   * InputStream}. The cache row records the Bob UUID so "Proceed with import" can re-stream
+   * straight from Bob → Snowstorm without materialising the bytes.
    */
   public LorqueProcess startScan(SnomedImportFromArchiveRequest req) {
     BobObject archive = requireArchive(req.getArchiveUuid());
-    byte[] bytes;
-    try (InputStream is = bobObjectService.loadContentStream(archive)) {
-      bytes = is.readAllBytes();
+    Path tempFile;
+    try {
+      tempFile = Files.createTempFile("snomed-scan-", ".zip");
     } catch (Exception e) {
-      throw new RuntimeException("Failed to download archive '" + req.getArchiveUuid() + "' from Bob: " + e.getMessage(), e);
+      throw new RuntimeException("Failed to create temp file for SNOMED scan: " + e.getMessage(), e);
+    }
+    try (InputStream is = bobObjectService.loadContentStream(archive)) {
+      Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
+    } catch (Exception e) {
+      try {
+        Files.deleteIfExists(tempFile);
+      } catch (Exception ignored) {}
+      throw new RuntimeException("Failed to spool archive '" + req.getArchiveUuid() + "' from Bob: " + e.getMessage(), e);
     }
     String filename = archive.getStorage() == null ? null : archive.getStorage().getFilename();
-    return scanService.scanRF2(req.toImportRequest(), bytes, filename);
+    // scanRF2FromBob deletes the temp file when the async parse completes.
+    return scanService.scanRF2FromBob(req.toImportRequest(), tempFile, filename, req.getArchiveUuid());
   }
 
   private BobObject requireArchive(String uuid) {

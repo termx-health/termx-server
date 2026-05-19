@@ -18,6 +18,12 @@ public class SnomedRF2Upload {
   private String filename;
   private Long zipSize;
   private byte[] zipData;
+  /**
+   * Set when the scan came in via a Bob-stored archive (POST /imports/scan/from-archive).
+   * In that case {@code zipData} is null and the "proceed with import" path re-streams from
+   * Bob → Snowstorm rather than reading {@code zipData}. Mutually exclusive with {@code zipData}.
+   */
+  private String bobObjectUuid;
   private Long scanLorqueId;
   private boolean imported;
   private OffsetDateTime started;
