@@ -27,6 +27,8 @@ import org.termx.snomed.rf2.SnomedExportRequest;
 import org.termx.snomed.rf2.SnomedImportFromArchiveRequest;
 import org.termx.snomed.rf2.SnomedImportJob;
 import org.termx.snomed.rf2.SnomedImportRequest;
+import org.termx.bob.BobObject;
+import org.termx.snomed.rf2.SnomedDeltaCalculateRequest;
 import org.termx.snomed.rf2.SnomedRF2FileStats;
 import org.termx.snomed.rf2.SnomedRF2Upload;
 import org.termx.snomed.rf2.scan.SnomedRF2ScanEnvelope;
@@ -90,6 +92,7 @@ public class SnomedController {
   private final SnomedConceptUsageService snomedConceptUsageService;
   private final SnomedRF2ImportFromArchiveService snomedRF2ImportFromArchiveService;
   private final SnomedRF2ArchiveStatsService snomedRF2ArchiveStatsService;
+  private final SnomedDeltaCalculateService snomedDeltaCalculateService;
 
 
   //----------------CodeSystems----------------
@@ -302,6 +305,32 @@ public class SnomedController {
   @Get("/archives/{uuid}/file-stats")
   public SnomedRF2FileStats archiveFileStats(@PathVariable String uuid) {
     return snomedRF2ArchiveStatsService.compute(uuid);
+  }
+
+  /**
+   * Peers eligible as a baseline in the archive detail page's "Diff" section: other archives
+   * in the {@code "snomed"} container with the same {@code meta.branchPath} as {@code uuid},
+   * excluding {@code uuid} itself and any delta archives. Read-only and cheap.
+   */
+  @Authorized(Privilege.SNOMED_READ)
+  @Get("/archives/{uuid}/diff-candidates")
+  public List<BobObject> archiveDiffCandidates(@PathVariable String uuid) {
+    return snomedDeltaCalculateService.findDiffCandidates(uuid);
+  }
+
+  /**
+   * Kick off a delta calculation between the path archive (new) and the body's
+   * {@code baselineUuid} (old). Returns the {@link LorqueProcess} the UI polls; on completion
+   * the process result text is JSON {@code {deltaUuid, rowsExported, durationMs, latestState}}
+   * — the UI navigates to the produced delta's detail page using {@code deltaUuid}.
+   *
+   * <p>Async because the IHTSDO tool can take several minutes on full editions; the
+   * subprocess uses up to 4 GB of its own JVM heap (the application JVM is unaffected).</p>
+   */
+  @Authorized(Privilege.SNOMED_WRITE)
+  @Post("/archives/{uuid}/delta")
+  public LorqueProcess calculateArchiveDelta(@PathVariable String uuid, @Body SnomedDeltaCalculateRequest request) {
+    return snomedDeltaCalculateService.startDeltaCalculation(uuid, request);
   }
 
   @Authorized(Privilege.SNOMED_WRITE)
