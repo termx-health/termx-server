@@ -1,0 +1,108 @@
+# Sample local-development overrides.
+#
+# Copy this file to `application-local.yml` (gitignored) and uncomment / edit
+# the sections you actually need. Micronaut only loads `application-local.yml`
+# when the `local` environment is active, which means one of:
+#   * `./scripts/run-backend.sh`            (preferred)
+#   * `./gradlew :termx-app:run -Pdev`      (equivalent)
+#   * IDE run config with `-Dmicronaut.environments=dev,local`
+#
+# Plain `./gradlew run` (without `-Pdev`) does NOT load `application-local.yml`
+# — `logger.levels` etc. will have no effect. See termx-server README "Logging".
+
+
+# ─── Logger levels ─────────────────────────────────────────────────────────────
+# Verbose terminology + everything-else INFO is the most common default. Toggle
+# `io.micronaut` to DEBUG when investigating routing / bean-loading issues.
+logger:
+  levels:
+    root: INFO
+    org.termx.terminology: DEBUG
+    # io.micronaut: INFO
+    # io.micronaut.http.server.netty: DEBUG
+    # org.termx.bob: DEBUG
+    # org.termx.snomed: DEBUG
+
+
+# ─── Object storage (Bob → Minio) ──────────────────────────────────────────────
+# `application.yml` already defaults bob.minio.* to localhost:9000 with
+# `minio/minio123` credentials — matching `./scripts/run-minio.sh`. Override
+# here ONLY if you run Minio on a different host/port, or talk to a remote
+# S3-compatible service.
+#bob:
+#  minio:
+#    url: http://localhost:9000
+#    access-key: minio
+#    secret-key: minio123
+
+
+# ─── Dev auth (yupi) ───────────────────────────────────────────────────────────
+# `./scripts/run-backend.sh` already sets `auth.dev.allowed=true`, so any
+# `Authorization: Bearer yupi` request is accepted. The default yupi session
+# has admin privileges (`*.*.*`). To test reduced privileges without
+# restarting, prefer:
+#   ./gradlew :termx-app:run -Pdev -PyupiPrivileges='*.CodeSystem.read'
+# Or for ad-hoc per-request override, send a JSON SessionInfo inline:
+#   Authorization: Bearer yupi{"username":"qa","privileges":["*.CodeSystem.read"]}
+# As a persistent local override (uncomment below):
+#auth:
+#  dev:
+#    yupi:
+#      privileges: '*.CodeSystem.read,*.CodeSystem.triage'
+
+
+# ─── Snowstorm (SNOMED backend) ────────────────────────────────────────────────
+# `application.yml` points snowstorm.url at the public demo instance, which is
+# slow and read-only. Override here to talk to a local Snowstorm:
+#snowstorm:
+#  url: http://localhost:8080/
+#  user: admin
+#  password: ''
+#  branch: 'MAIN'
+
+
+# ─── Email (SMTP) ──────────────────────────────────────────────────────────────
+# Disabled by default. The application functions without it (notifications get
+# silently skipped). Uncomment to exercise the email flow locally — e.g. with
+# Mailpit (https://mailpit.axllent.org/) running on localhost:1025 / 8025.
+#micronaut:
+#  email:
+#    enabled: true
+#    from:
+#      email: noreply@termx.dev
+#javamail:
+#  authentication:
+#    username: no-auth-required
+#    password: no-auth-required
+#  properties:
+#    mail:
+#      smtp:
+#        host: localhost
+#        port: 1025
+#        auth: false
+#        starttls:
+#          enable: false
+
+
+# ─── Database (Postgres) ───────────────────────────────────────────────────────
+# `application.yml` defaults to localhost:5432/termx with `tx_app` / `test`,
+# which matches `./scripts/recreate-postgres.sh` + `./scripts/recreate-db.sh`.
+# Override here only if your local DB lives elsewhere.
+#datasources:
+#  default:
+#    url: jdbc:postgresql://localhost:5432/termx
+#    username: tx_app
+#    password: test
+#  liquibase:
+#    url: jdbc:postgresql://localhost:5432/termx
+#    username: tx_admin
+#    password: test
+
+
+# ─── SQL trace logging ─────────────────────────────────────────────────────────
+# Useful for chasing slow queries / unexpected joins. NOT cheap — leave off
+# unless actively investigating.
+#logger:
+#  levels:
+#    org.springframework.jdbc.core.JdbcTemplate: DEBUG
+#    org.springframework.jdbc.core.StatementCreatorUtils: TRACE
