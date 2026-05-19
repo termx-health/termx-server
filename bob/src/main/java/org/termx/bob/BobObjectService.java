@@ -41,6 +41,20 @@ public class BobObjectService {
   }
 
   @Transactional
+  public BobObject update(String uuid, BobObject patch) {
+    BobObject existing = load(uuid);
+    if (existing == null) {
+      throw new RuntimeException("BobObject not found: " + uuid);
+    }
+    BobObject merged = new BobObject()
+        .setId(existing.getId())
+        .setMeta(patch.getMeta() != null ? patch.getMeta() : existing.getMeta())
+        .setDescription(patch.getDescription() != null ? patch.getDescription() : existing.getDescription());
+    objectRepository.update(existing.getId(), merged);
+    return load(uuid);
+  }
+
+  @Transactional
   public void delete(String uuid) {
     BobObject object = load(uuid);
     getMinio().delete(object);
