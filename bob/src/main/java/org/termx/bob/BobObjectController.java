@@ -56,7 +56,7 @@ public class BobObjectController {
   }
 
   @Authorized
-  @Get
+  @Get("{?params*}")
   public QueryResult<BobObject> query(BobObjectQueryParams params) {
     if (params.getContainer() == null || params.getContainer().isBlank()) {
       throw new ApiClientException(Issue.error("BOB001", "container query parameter is required"));
