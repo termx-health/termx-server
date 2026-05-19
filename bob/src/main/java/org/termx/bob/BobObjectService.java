@@ -1,6 +1,8 @@
 package org.termx.bob;
 
 
+import com.kodality.commons.exception.ApiClientException;
+import com.kodality.commons.model.Issue;
 import com.kodality.commons.model.QueryResult;
 import org.termx.bob.minio.MinioService;
 import io.micronaut.http.server.types.files.StreamedFile;
@@ -126,6 +128,13 @@ public class BobObjectService {
   }
 
   private MinioService getMinio() {
-    return minioService.orElseThrow(() -> new RuntimeException("minio is not configured"));
+    // ApiClientException so the framework's DefaultExceptionHandler returns a structured 400
+    // with our code instead of a generic XX100 System error. The message tells operators what
+    // to do — local dev forgets scripts/run-minio.sh frequently, prod deploys forget MINIO_URL.
+    return minioService.orElseThrow(() -> new ApiClientException(Issue.error(
+        "BOB101",
+        "Object storage (Minio) is not configured. " +
+            "Local dev: run scripts/run-minio.sh. " +
+            "Production: set MINIO_URL / MINIO_ACCESS_KEY / MINIO_SECRET_KEY env vars.")));
   }
 }
