@@ -1,20 +1,26 @@
-# SNOMED RF2 import redesign
+# Large-terminology import redesign (SNOMED + LOINC)
 
 **Status:** Draft for review · No implementation yet
 **Authors:** TermX team
-**Related code:** [`snomed/`](../snomed/), [`bob/`](../bob/), [`termx-core/sys/lorque/`](../termx-core/src/main/java/org/termx/core/sys/lorque/)
+**Related code:** [`snomed/`](../snomed/), [`edition-int/loinc/`](../edition-int/src/main/java/org/termx/editionint/loinc/), [`bob/`](../bob/), [`termx-core/sys/lorque/`](../termx-core/src/main/java/org/termx/core/sys/lorque/)
 
 ## Context
 
 Uploading a full SNOMED CT International edition through the UI ("Import from RF2") crashes the server with `java.lang.OutOfMemoryError: Java heap space`. The stack trace lands in Micronaut's reactive HTTP pipeline before the import even reaches Snowstorm.
 
-The crash is not a Snowstorm or RF2 problem — it's a TermX-side architecture problem:
+**The same pattern affects LOINC import** (`edition-int/.../LoincController.java:62`) — `FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet())` — and the same fix applies.
 
-1. The controller materializes the ~1 GB ZIP into a `byte[]` in JVM heap before doing anything.
-2. The parser (used by the dry-run scan flow) further accumulates every concept / description / relationship row in `List<…>` fields in heap.
+The crash is not a Snowstorm / RF2 / LOINC problem — it's a TermX-side architecture problem:
+
+1. The controller materializes the multi-hundred-MB upload into a `byte[]` in JVM heap before doing anything.
+2. For SNOMED, the parser (used by the dry-run scan flow) further accumulates every concept / description / relationship row in `List<…>` fields in heap.
 3. The dev-server container runs with `-Xmx1800m`, which has no realistic chance of holding all of that plus normal request traffic.
 
-Bumping heap or catching `OutOfMemoryError` is a band-aid. This doc proposes the durable fix: stream uploads to Minio, do all heavy lifting in a background Lorque job, and use the official IHTSDO `delta-generator-tool` so we push the smallest possible payload to Snowstorm.
+Bumping heap or catching `OutOfMemoryError` is a band-aid. This doc proposes the durable fix:
+
+- **Both SNOMED and LOINC** — stream uploads to Minio and do all heavy lifting in a background Lorque job.
+- **SNOMED specifically** — use the official IHTSDO `delta-generator-tool` so we push only the diff against the previous version to Snowstorm, not the full snapshot.
+- **No fallback to the current synchronous upload path** — the existing flow is fundamentally OOM-prone and is being replaced, not kept around as a backup.
 
 ## Current architecture
 
@@ -33,14 +39,19 @@ Bumping heap or catching `OutOfMemoryError` is a band-aid. This doc proposes the
                 Snowstorm
 ```
 
-Reference points:
+Reference points (SNOMED):
 - `snomed/src/main/java/org/termx/snomed/integration/SnomedController.java:252–267` — the upload endpoint, with `FileUtil.readBytes(Flowable.fromPublisher(file).firstOrError().blockingGet())` at line 255.
 - `snomed/src/main/java/org/termx/snomed/integration/SnomedService.java:123–149` — chains `snowstormClient.createImportJob(req).join()` then `uploadRF2File(jobId, importFile).join()`.
 - `snomed/src/main/java/org/termx/snomed/client/SnowstormClient.java:157–175` — already exposes the two-step Snowstorm import API.
 - `snomed/src/main/java/org/termx/snomed/integration/rf2/scan/SnomedRF2UploadCacheService.java:21–32` — caches uploaded bytes as a **DB blob**; cleanup every 6 hours, 7-day retention.
 - `snomed/src/main/java/org/termx/snomed/integration/rf2/scan/SnomedRF2ZipParser.java:45–59` — file-name patterns (`sct2_Concept_*`, `sct2_Description_*`, `sct2_TextDefinition_*`, `sct2_Relationship_*` / `sct2_StatedRelationship_*`, `der2_cRefset_Language*`).
 
+Reference points (LOINC):
+- `edition-int/src/main/java/org/termx/editionint/loinc/LoincController.java:34–62` — same `byte[]`-in-heap pattern. The CSV parser at `LoincService` reads from a `ByteArrayInputStream`, so the entire archive sits in heap exactly the way SNOMED does.
+
 ## Proposed architecture
+
+The diagram below shows the SNOMED case. **LOINC follows the same shape with one difference:** there is no equivalent of the IHTSDO delta-generator tool for LOINC, so the LOINC job downloads the new archive from Minio and pushes it straight to the LOINC importer (`LoincService`) — no delta computation. Everything else — streamed upload, Minio storage, Lorque async, status polling — is identical and shared.
 
 ```
   UI ──upload──▶ SnomedController (streamed)
@@ -115,56 +126,89 @@ Reference: `snomed/src/main/java/org/termx/snomed/client/SnowstormClient.java:15
 - Per-edition: keep the most recent **N** raw uploads in Minio (default `N=3`). Older ones get GC'd by a scheduled job mirroring the existing 6-hour cleanup loop in `SnomedRF2UploadCacheService:53–54`.
 - Delta archives (intermediate): delete from `/tmp` after the Snowstorm upload completes — they're regenerable.
 
+## Resolved during review
+
+- **Generalize across terminologies.** The storage + async-job foundation (Phase 1) is shared between SNOMED and LOINC. The delta-generator-tool integration (Phase 2) stays SNOMED-specific because the IHTSDO tool only understands RF2; LOINC has no equivalent delta tool and is handled as a streamed-full-import job.
+- **Skip delta-generator when no baseline exists.** First-ever import of an edition (or LOINC version) imports the full snapshot directly. Subsequent imports look up the previous version from Minio and run delta-generator.
+- **No fallback to the current synchronous upload.** The existing `/imports` and LOINC `/import` are being replaced, not kept alongside. The current path is the bug; preserving it as a fallback just preserves the bug.
+- **delta-generator-tool runs as a subprocess** (D3). Tool is officially SNOMED-supported; subprocess gives clean OOM isolation and avoids dragging its full dependency tree into TermX's classpath.
+
 ## Open questions
 
 | # | Question | Notes |
 | --- | --- | --- |
-| Q1 | New `snomed_import` table or extend `lorque_process`? | A dedicated table makes baseline lookup ("most recent succeeded import for edition X") trivial and survives Lorque cleanup. Recommend new table; keep Lorque as the *job-status* mechanism only. |
+| Q1 | New `snomed_import` table or extend `lorque_process`? | A dedicated table makes baseline lookup ("most recent succeeded import for edition X") trivial and survives Lorque cleanup. Recommend new table (probably generalized as `terminology_import` to also cover LOINC); keep Lorque as the *job-status* mechanism only. |
 | Q2 | Exact `delta-generator-tool` CLI shape? | Confirm against [github.com/IHTSDO/delta-generator-tool](https://github.com/IHTSDO/delta-generator-tool) README. Best done by whoever picks up the implementation. |
-| Q3 | Should `SnomedRF2UploadCacheService` (DB-blob cache for the dry-run scan) move to Minio too? | Probably yes for consistency, but out-of-scope for this PR. Track separately. |
-| Q4 | Authorization on the Minio bucket | Read/write from TermX server only, or also presigned URLs for direct browser → Minio uploads (would skip TermX as proxy entirely)? Presigned is more work but eliminates one more "JVM holds the file" path. Recommend deferring to Phase 3. |
+| Q3 | Should `SnomedRF2UploadCacheService` (DB-blob cache for the dry-run scan) move to Minio too? | Probably yes for consistency, but out-of-scope for this redesign. Track separately. |
+| Q4 | Authorization on the Minio bucket | Read/write from TermX server only, or also presigned URLs for direct browser → Minio uploads (would skip TermX as proxy entirely)? Presigned is more work but eliminates one more "JVM holds the file" path. Deferred to Phase 4. |
 | Q5 | What happens if delta-generator fails / produces empty delta? | If empty → no-op, mark Lorque complete with "no changes". If failure → fail Lorque with the subprocess stderr captured. |
+| Q6 | Where do existing-but-unstored-in-Minio versions come from for the backfill? | Realistic options: (a) admin uploads the original archive from their own filesystem through the same upload endpoint with a `skipImport=true` flag; (b) read from the existing `SnomedRF2UploadCacheService` DB blobs where available. (a) is simpler and covers every case (admin always has the source); recommend (a). |
 
 ## Phased delivery
 
-Three PRs, deployable independently. Each leaves the system in a better state than before; later phases build on earlier ones.
+Four PRs, deployable independently. Each leaves the system in a better state than before; later phases build on earlier ones.
 
-### Phase 1 — Stream upload to Minio, route `/imports` through Lorque
+### Phase 1 — Streamed upload + Minio + Lorque, for both SNOMED and LOINC
 
-Smallest unit of work that eliminates the OOM. Does **not** introduce delta-generator yet.
+Smallest unit of work that eliminates the OOM. Does **not** introduce delta-generator yet — SNOMED imports a full snapshot just like before, just streamed through disk + Minio + a Lorque async job. LOINC's only fix is this phase; the rest doesn't apply to it.
 
-- `SnomedController.import(...)` rewritten to stream the multipart body to a temp file (no `blockingGet()`, no full `byte[]`), then `MinioService.store(...)`, then start a Lorque job, then return `LorqueProcess`.
-- New `SnomedRF2ImportJob` (or extend `SnomedService`) that downloads from Minio to `/tmp`, calls `SnowstormClient.createImportJob` → `uploadRF2File`, reports progress, completes/fails the Lorque process.
-- New table (if Q1 is "yes"): `snomed_import` with columns `id, edition_id, effective_time, filename, minio_key, lorque_process_id, status, created_at`.
-- UI: switch the "Import from RF2" button to start polling the Lorque status the same way `/imports/scan` already does.
+A new shared building block:
+- `TerminologyArchiveService` (in `termx-core` or a new shared module) wraps `MinioService` with a stable object-key convention: `terminology-archives/<terminology>/<edition>/<effective-time>/<original-filename>`. `terminology` is `snomed` or `loinc`. Used by both SNOMED and LOINC paths.
+- New table `terminology_import` (resolves Q1): `id, terminology, edition_id, effective_time, filename, minio_key, lorque_process_id, status, created_at`. One row per import attempt; queried as "most recent succeeded for this edition" when Phase 2 lands.
 
-Acceptance: International edition (~1 GB) imports successfully on dev-server with current `-Xmx1800m`; heap usage stays bounded; failure cases (Snowstorm down, malformed ZIP) surface as `lorqueProcessService.fail` instead of HTTP 500.
+Per-terminology changes:
+- **SNOMED** — `SnomedController.import(...)` rewritten to stream the multipart body to a temp file (no `blockingGet()`, no full `byte[]`), `TerminologyArchiveService.store(...)` it, start a Lorque job (`SnomedRF2ImportJob`), return the `LorqueProcess`. The job downloads from Minio to `/tmp`, calls `SnowstormClient.createImportJob` → `uploadRF2File` reading from a `Path`, reports progress, completes/fails Lorque. Old synchronous code path deleted.
+- **LOINC** — `LoincController.import(...)` (`edition-int/.../LoincController.java:34`) gets the same streamed-to-disk + Lorque-async refactor. The CSV parser already reads from an `InputStream`, so wiring it to a file path is mechanical. Old synchronous code path deleted.
+- **UI** — both buttons switch to start polling `/lorque-processes/{id}/status` the same way `/imports/scan` already does (the polling helper exists).
 
-### Phase 2 — Wire delta-generator-tool
+Acceptance: International SNOMED edition (~1 GB) imports successfully on dev-server with current `-Xmx1800m`; LOINC release-bundle imports the same way; heap usage stays bounded; failure cases (Snowstorm down, malformed archive) surface as `lorqueProcessService.fail` instead of HTTP 500.
 
-Builds on Phase 1's job framework.
+### Phase 2 — Backfill API: store existing previously-imported versions in Minio
 
-- Add `delta-generator-tool` jar to the `termx-app` Docker image (multi-stage: download the released jar, copy into final image).
-- New `DeltaGeneratorRunner` service that takes two `Path`s (baseline, new) and a target output `Path`, runs the jar via `ProcessBuilder`, streams stderr to logs, times out at configurable threshold.
-- `SnomedRF2ImportJob` gains a delta step between download and Snowstorm upload: look up baseline, run delta-generator, push delta. First-ever-import path skips delta.
+Small, depends only on Phase 1's `TerminologyArchiveService` + `terminology_import` table. Useful in its own right (recovery / audit) and a prerequisite for Phase 3 to be effective — delta-generator needs a baseline.
 
-Acceptance: a second import of the same edition (with concept changes between) uploads a delta archive that is dramatically smaller than the source ZIP, and Snowstorm shows the expected diff applied.
+Two endpoints (one per terminology, same shape):
+- `POST /snomed/imports/backfill` — accepts the same multipart payload as a regular import, plus form fields `edition`, `effectiveTime`. Stores in Minio, records a `terminology_import` row with `status=BACKFILLED`. Does **not** push anything to Snowstorm.
+- `POST /loinc/imports/backfill` — analogous.
 
-### Phase 3 — Presigned upload URLs (optional / nice-to-have)
+Implementation is mostly reuse of Phase 1's streamed-upload + `TerminologyArchiveService.store` plumbing, just without the Lorque/Snowstorm step at the end.
 
-UI uploads directly to Minio via a presigned URL; TermX server receives only the object key. Eliminates the last "TermX proxies a 1 GB file" path. Could be folded into Phase 1 if we want, but tracking separately because it touches the UI and adds Minio policy considerations.
+Acceptance: admin uploads the SNOMED archive that matches what is already in Snowstorm/TermX today; row appears in `terminology_import`; subsequent normal import for the next release sees it as the baseline (after Phase 3).
+
+### Phase 3 — SNOMED delta-generator-tool integration
+
+Builds on Phases 1 and 2.
+
+- Add `delta-generator-tool` jar to the `termx-app` Docker image (multi-stage: download the released jar from IHTSDO releases, copy into the final image).
+- New `DeltaGeneratorRunner` service that takes two `Path`s (baseline, new) and a target output `Path`, runs the jar via `ProcessBuilder`, streams stderr to logs, has a configurable timeout, and captures the exit code into the Lorque `result_text` on failure.
+- `SnomedRF2ImportJob` gains a delta step between download and Snowstorm upload:
+  - Look up the most-recent succeeded baseline for the edition (from `terminology_import`).
+  - If none → push the full snapshot (Phase 1 behaviour).
+  - If found → download baseline + new to `/tmp`, run delta-generator → `/tmp/delta.zip`, push the delta archive via Snowstorm two-step.
+- Same job framework + UI; no surface change.
+
+Acceptance: a second import of the same edition with one concept changed produces a delta archive dramatically smaller than the source ZIP, and Snowstorm shows the expected diff applied. Empty delta is a clean no-op with Lorque marked complete + "no changes" message.
+
+This phase is **SNOMED-only.** LOINC stays on Phase 1's full-snapshot model — no equivalent diff tool exists.
+
+### Phase 4 — Presigned upload URLs (optional / nice-to-have)
+
+UI requests a presigned PUT URL from TermX, browser uploads directly to Minio, TermX receives only the object key over a small JSON callback. Eliminates the last "TermX proxies a multi-hundred-MB file" path entirely. Applies to both SNOMED and LOINC. Could be folded into Phase 1 but tracked separately because it touches the UI and the Minio policy model.
 
 ## Out of scope for this design
 
 - Refactoring the existing dry-run scan (`/imports/scan`) — it already uses Lorque, just from a DB-blob cache rather than Minio. Migration tracked via Q3.
-- Memory-efficient parsing inside `SnomedRF2ZipParser` — once delta-generator is doing the heavy lifting, the scan's in-memory accumulators stop mattering for the import path. Keep scan as-is.
-- Changes to other terminology imports (FHIR CodeSystem, etc.) — different code paths, different scale.
+- Memory-efficient parsing inside `SnomedRF2ZipParser` — once delta-generator is doing the heavy lifting on disk, the scan's in-memory accumulators stop mattering for the import path. Keep scan as-is.
+- Changes to other terminology imports beyond SNOMED and LOINC (FHIR CodeSystem upload, UCUM, etc.) — different code paths, different scale. Re-evaluate per-terminology if OOM reports come in.
+- Keeping the current synchronous `/imports` / LOINC `/import` as a fallback — the existing flow is the bug we're fixing, not a backup worth preserving.
 
 ## Verification plan (when implementation lands)
 
-1. Local: `JAVA_OPTS=-Xmx1800m` (current dev-server) + International edition import → completes without OOM. (Phase 1 alone.)
-2. Local: second import of the same edition with one concept changed → delta archive is < 1 MB; Snowstorm shows only that change. (Phase 2.)
-3. Failure injection: kill Snowstorm mid-import → Lorque process moves to FAILED with the connection error in `result_text`; UI shows it.
-4. Failure injection: feed delta-generator a corrupted ZIP → subprocess exits non-zero; Lorque captures stderr and marks FAILED.
-5. Container memory: peak RSS during a full import stays under 2 GB.
-6. Minio retention: trigger 4 imports for the same edition; oldest 1 is deleted by the cleanup job.
+1. **Phase 1 — SNOMED.** Local: `JAVA_OPTS=-Xmx1800m` (current dev-server) + International edition import → completes without OOM, peak RSS stays under 2 GB.
+2. **Phase 1 — LOINC.** Same: a full LOINC release-bundle import via the new endpoint completes without OOM under the same heap limits.
+3. **Phase 1 — failure mode.** Kill Snowstorm mid-import → Lorque process moves to FAILED with the connection error in `result_text`; UI shows it. No process holding onto a stale `byte[]` in heap.
+4. **Phase 2 — backfill.** Admin uploads the SNOMED archive that matches what's already in TermX today via `/snomed/imports/backfill` → row appears in `terminology_import` with `status=BACKFILLED`; nothing pushed to Snowstorm; archive readable from Minio.
+5. **Phase 3 — delta path.** With a baseline present from Phase 2, a normal import of the next release produces a delta archive dramatically smaller than the source ZIP; Snowstorm shows only the expected diff applied.
+6. **Phase 3 — empty delta.** Re-import an identical archive → delta-generator produces an empty delta → Lorque marked complete with "no changes" message; nothing pushed to Snowstorm.
+7. **Phase 3 — failure mode.** Feed delta-generator a corrupted ZIP → subprocess exits non-zero; Lorque captures stderr and marks FAILED; TermX JVM heap unaffected.
+8. **Minio retention.** Trigger 4 imports for the same edition; oldest 1 is deleted by the cleanup job (retention policy = N most recent per edition, default `N=3`).
