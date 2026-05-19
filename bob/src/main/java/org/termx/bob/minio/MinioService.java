@@ -19,6 +19,7 @@ import io.minio.StatObjectResponse;
 import io.minio.errors.ErrorResponseException;
 import jakarta.inject.Singleton;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Headers;
@@ -33,6 +34,14 @@ public class MinioService {
   private final MinioClient minioClient;
 
   public void store(BobObject object, byte[] content) {
+    store(object, new ByteArrayInputStream(content), content.length);
+  }
+
+  /**
+   * Streaming upload: the bytes flow Netty/HTTP → temp file → this method → Minio without ever
+   * being held entirely in JVM heap. Use this overload for large archives (SNOMED RF2, LOINC).
+   */
+  public void store(BobObject object, InputStream content, long contentLength) {
     BobStorage storage = object.getStorage();
     checkBucketExists(storage.getContainer());
     String fullPath = storage.getFullPath();
@@ -48,7 +57,7 @@ public class MinioService {
       try (var r = e.response()) {
         if (r.code() == 404) {
           log.info("File '{}' does not exist in bucket '{}', uploading it.", fullPath, storage.getContainer());
-          uploadFile(object, content);
+          uploadFile(object, content, contentLength);
         }
       }
     } catch (Exception e) {
@@ -69,6 +78,24 @@ public class MinioService {
     }
   }
 
+  /**
+   * Returns a raw {@link InputStream} for the object's content — for server-side consumers
+   * (re-uploading to Snowstorm, spooling to a temp file) that don't want the HTTP-response
+   * wrapping from {@link #retrieve(BobObject)}. The caller is responsible for closing it.
+   */
+  public InputStream retrieveStream(BobObject object) {
+    BobStorage storage = object.getStorage();
+    try {
+      return minioClient.getObject(
+          GetObjectArgs.builder()
+              .bucket(storage.getContainer())
+              .object(storage.getFullPath())
+              .build());
+    } catch (Exception e) {
+      throw new RuntimeException(format("Failed to retrieve object '%s' from bucket '%s", storage.getFullPath(), storage.getContainer()), e);
+    }
+  }
+
 
   private void checkBucketExists(String bucket) {
     try {
@@ -81,15 +108,20 @@ public class MinioService {
     }
   }
 
-  private void uploadFile(BobObject object, byte[] content) {
+  private void uploadFile(BobObject object, InputStream content, long contentLength) {
     try {
-      PutObjectArgs req = PutObjectArgs.builder()
+      PutObjectArgs.Builder b = PutObjectArgs.builder()
           .bucket(object.getStorage().getContainer())
           .object(object.getStorage().getFullPath())
-          .contentType(object.getContentType())
-          .stream(new ByteArrayInputStream(content), content.length, -1)
-          .build();
-      minioClient.putObject(req);
+          .contentType(object.getContentType());
+      // contentLength<0 → use multipart with 5MB part size (Minio's smallest part). Lets us
+      // accept truly unknown-size streams; the upper bound -1 means "until EOF".
+      if (contentLength >= 0) {
+        b.stream(content, contentLength, -1);
+      } else {
+        b.stream(content, -1, 5L * 1024 * 1024);
+      }
+      minioClient.putObject(b.build());
     } catch (Exception e) {
       throw new RuntimeException("Failed to upload file '" + object.getStorage().getFilename() + "': " + e.getMessage());
     }

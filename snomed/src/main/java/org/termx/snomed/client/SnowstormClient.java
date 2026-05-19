@@ -28,12 +28,14 @@ import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -166,8 +168,17 @@ public class SnowstormClient {
   }
 
   public CompletableFuture<HttpResponse<String>> uploadRF2File(String jobId, byte[] file) throws FileNotFoundException {
+    return uploadRF2File(jobId, () -> new ByteArrayInputStream(file));
+  }
+
+  /**
+   * Streaming variant of {@link #uploadRF2File(String, byte[])}. The {@link Supplier} is invoked
+   * lazily by the multipart publisher when bytes are pushed to Snowstorm, so callers can pass a
+   * Minio / file InputStream and the JVM never holds the whole archive in heap.
+   */
+  public CompletableFuture<HttpResponse<String>> uploadRF2File(String jobId, Supplier<InputStream> file) throws FileNotFoundException {
     MultipartBodyPublisher publisher = new MultipartBodyPublisher()
-        .addPart("file", () -> new ByteArrayInputStream(file), "file", MediaType.APPLICATION_OCTET_STREAM);
+        .addPart("file", file, "file", MediaType.APPLICATION_OCTET_STREAM);
     HttpRequest request = client.builder("imports/" + jobId + "/archive").POST(publisher.build())
         .header("Content-Type", "multipart/form-data; boundary=" + publisher.getBoundary())
         .build();
