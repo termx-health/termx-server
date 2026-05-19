@@ -11,6 +11,7 @@ dependencies {
 
     implementation("io.micronaut:micronaut-runtime")
     implementation("io.micronaut:micronaut-http-server-netty")
+    implementation("io.projectreactor:reactor-core")
     implementation("io.micronaut.spring:micronaut-spring")
     implementation("io.micronaut:micronaut-management")
     implementation("io.micronaut.micrometer:micronaut-micrometer-registry-prometheus")
