@@ -80,6 +80,21 @@ auth:
       - '/tx-reg'
       - '/tx-ecosystem'
 
+# Object storage (Minio / any S3-compatible service) used by the Binary Object Bank (Bob)
+# — backs /bob/objects, wiki attachments, SNOMED / LOINC archive uploads.
+#
+# Local dev: defaults match scripts/run-minio.sh (which starts a `tx-minio` container with
+# `minio/minio123` credentials on :9000). Run that script once and bob just works.
+#
+# Production: override via env. If MINIO_URL is not set at runtime, the MinioClient bean is
+# not created and any Bob upload returns a clear 503 "object storage not configured" error
+# (handled in BobObjectService.getMinio).
+bob:
+  minio:
+    url: ${MINIO_URL:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:minio}
+    secret-key: ${MINIO_SECRET_KEY:minio123}
+
 snowstorm:
   url: https://snowstorm.termx.org/
   user: termserver-app

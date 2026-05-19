@@ -6,6 +6,7 @@ services:
     container_name: termx-server
     depends_on:
       - termx-postgres
+      - termx-minio
     env_file:
       - server.env
     healthcheck:
@@ -39,6 +40,25 @@ services:
     ports:
       - 5432:5432
     shm_size: 1g
+
+  # Object storage for Bob (Wiki attachments, SNOMED / LOINC archives, etc.).
+  # Default credentials match the dev script `scripts/run-minio.sh` so operators
+  # who lift this compose file get the same values. Override via server.env:
+  #   MINIO_ROOT_USER / MINIO_ROOT_PASSWORD here, MINIO_ACCESS_KEY / MINIO_SECRET_KEY
+  # on the termx-server side — keep them in sync.
+  termx-minio:
+    restart: unless-stopped
+    image: minio/minio:latest
+    container_name: termx-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio123}
+    volumes:
+      - ./minio-data:/data
+    ports:
+      - 9000:9000
+      - 9001:9001
   termx-swagger:
     restart: unless-stopped
     image: swaggerapi/swagger-ui
