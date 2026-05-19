@@ -27,6 +27,7 @@ import org.termx.snomed.rf2.SnomedExportRequest;
 import org.termx.snomed.rf2.SnomedImportFromArchiveRequest;
 import org.termx.snomed.rf2.SnomedImportJob;
 import org.termx.snomed.rf2.SnomedImportRequest;
+import org.termx.snomed.rf2.SnomedRF2FileStats;
 import org.termx.snomed.rf2.SnomedRF2Upload;
 import org.termx.snomed.rf2.scan.SnomedRF2ScanEnvelope;
 import org.termx.snomed.concept.SnomedConceptUsage;
@@ -88,6 +89,7 @@ public class SnomedController {
   private final SnomedRF2UploadCacheService snomedRF2UploadCacheService;
   private final SnomedConceptUsageService snomedConceptUsageService;
   private final SnomedRF2ImportFromArchiveService snomedRF2ImportFromArchiveService;
+  private final SnomedRF2ArchiveStatsService snomedRF2ArchiveStatsService;
 
 
   //----------------CodeSystems----------------
@@ -288,6 +290,18 @@ public class SnomedController {
   @Post(value = "/imports/scan/from-archive")
   public LorqueProcess scanImportFromArchive(@Body SnomedImportFromArchiveRequest request) {
     return snomedRF2ImportFromArchiveService.startScan(request);
+  }
+
+  /**
+   * Per-file row counts for a SNOMED RF2 archive stored in Bob. Feeds the "Files" panel of
+   * the archive detail page (Phase 2a). Streams the archive from Minio through a single
+   * {@link java.util.zip.ZipInputStream} pass; entries whose data-row count is &lt;= 0
+   * (header-only / empty) are filtered out.
+   */
+  @Authorized(Privilege.SNOMED_READ)
+  @Get("/archives/{uuid}/file-stats")
+  public SnomedRF2FileStats archiveFileStats(@PathVariable String uuid) {
+    return snomedRF2ArchiveStatsService.compute(uuid);
   }
 
   @Authorized(Privilege.SNOMED_WRITE)
