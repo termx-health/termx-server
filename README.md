@@ -165,13 +165,20 @@ After installation add properties `snowstorm.url`, `snowstorm.user`, `snowstorm.
 
 ## MinIO
 
+The Binary Object Bank (BOB) — `/bob/objects`, Wiki attachments, SNOMED / LOINC archive uploads — stores blobs in MinIO. For local dev, the bundled helper script starts a `tx-minio` container with the same credentials that `application.yml` defaults to:
+
 ```shell
-docker run \
-  -p 9000:9000 \
-  -p 9001:9001 \
-  --name termx-minio \
-  -e "MINIO_ROOT_USER=minio" \
-  -e "MINIO_ROOT_PASSWORD=supersecretpass" \
-  -d \
-  quay.io/minio/minio server /data --console-address ":9001"
+./scripts/run-minio.sh
 ```
+
+That starts MinIO on `:9000` (S3 API) and `:9001` (web console) with `minio` / `minio123`. The defaults in [`termx-app/src/main/resources/application.yml`](termx-app/src/main/resources/application.yml) (`bob.minio.url=http://localhost:9000`, `access-key=minio`, `secret-key=minio123`) line up out of the box, so `./scripts/run-backend.sh` after `./scripts/run-minio.sh` "just works".
+
+For production, override via env vars on the JVM:
+
+```
+MINIO_URL=https://minio.example.com
+MINIO_ACCESS_KEY=...
+MINIO_SECRET_KEY=...
+```
+
+If `MINIO_URL` is unset and there's no `bob.minio.url` override, the application starts but every `/bob/*` write returns a structured `BOB101 Object storage (Minio) is not configured` error — see [`BobObjectService.getMinio`](bob/src/main/java/org/termx/bob/BobObjectService.java).

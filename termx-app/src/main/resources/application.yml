@@ -91,7 +91,12 @@ auth:
 # (handled in BobObjectService.getMinio).
 bob:
   minio:
-    url: ${MINIO_URL:http://localhost:9000}
+    # Backticks around the default — Micronaut treats `:` as the var/default delimiter,
+    # so `${MINIO_URL:http://…}` parses the default as just `http`, the URL is then
+    # malformed and the okhttp client inside the Minio SDK fails with
+    # NoRouteToHostException. Same backtick pattern as the `datasources.default.url`
+    # line at the top of this file.
+    url: ${MINIO_URL:`http://localhost:9000`}
     access-key: ${MINIO_ACCESS_KEY:minio}
     secret-key: ${MINIO_SECRET_KEY:minio123}
 
