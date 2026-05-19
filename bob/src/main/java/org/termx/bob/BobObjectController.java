@@ -3,14 +3,13 @@ package org.termx.bob;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.exception.ForbiddenException;
 import com.kodality.commons.exception.NotFoundException;
-import com.kodality.commons.micronaut.rest.MultipartBodyReader;
-import com.kodality.commons.micronaut.rest.MultipartBodyReader.Attachment;
 import com.kodality.commons.model.Issue;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import org.termx.core.auth.Authorized;
 import org.termx.core.auth.SessionInfo;
 import org.termx.core.auth.SessionStore;
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -18,16 +17,22 @@ import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Patch;
 import io.micronaut.http.annotation.PathVariable;
+import io.micronaut.http.annotation.Part;
 import io.micronaut.http.annotation.Post;
-import io.micronaut.http.server.multipart.MultipartBody;
+import io.micronaut.http.multipart.StreamingFileUpload;
 import io.micronaut.http.server.types.files.StreamedFile;
 import jakarta.inject.Singleton;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
 
 /**
  * Generic REST surface for the Binary Object Bank ({@code bob.object}).
@@ -77,33 +82,65 @@ public class BobObjectController {
     return objectService.loadContent(object);
   }
 
+  /**
+   * Multipart upload. The {@code file} part is streamed to a temp file on disk and then to Minio,
+   * so the JVM heap holds at most a small buffer regardless of file size. Other parts ({@code
+   * container}, {@code meta}, {@code description}, {@code path}, {@code contentType}) are
+   * received as normal form fields.
+   */
   @Authorized
   @Post(consumes = MediaType.MULTIPART_FORM_DATA)
-  public BobObject create(@Body MultipartBody partz) {
-    MultipartBodyReader.MultipartBody body = MultipartBodyReader.readMultipart(partz);
-
-    String container = require(body.getTextParts().get("container"), "container");
-    Attachment file = body.getAttachments().get("file");
-    if (file == null) {
-      throw new ApiClientException(Issue.error("BOB002", "file part is required"));
+  public Mono<BobObject> create(
+      StreamingFileUpload file,
+      @Part("container") String container,
+      @Nullable @Part("meta") String meta,
+      @Nullable @Part("description") String description,
+      @Nullable @Part("path") String path,
+      @Nullable @Part("contentType") String contentType
+  ) {
+    if (container == null || container.isBlank()) {
+      throw new ApiClientException(Issue.error("BOB001", "container query parameter is required"));
     }
-    String path = body.getTextParts().getOrDefault("path", "/");
-    Map<String, Object> meta = parseJsonMap(body.getTextParts().get("meta"));
-    String description = body.getTextParts().get("description");
-    String contentType = body.getTextParts().getOrDefault("contentType", file.getContentType());
-
     BobObject draft = new BobObject()
-        .setContentType(contentType)
-        .setMeta(meta)
+        .setContentType(contentType != null ? contentType : (file.getContentType().isPresent() ? file.getContentType().get().getName() : null))
+        .setMeta(parseJsonMap(meta))
         .setDescription(description)
         .setStorage(new BobStorage()
             .setContainer(container)
-            .setPath(path)
-            .setFilename(file.getFileName()));
+            .setPath(path != null ? path : "/")
+            .setFilename(file.getFilename()));
     requireAuthorizer(container).checkWrite(session(), draft);
 
-    String uuid = objectService.store(draft, file.getContent());
-    return objectService.load(uuid);
+    // Capture the session up-front; the streaming completion runs on a Netty event loop with
+    // no servlet thread-local, so SessionStore.require() inside the lambda would fail.
+    SessionInfo capturedSession = session();
+
+    Path temp;
+    try {
+      temp = Files.createTempFile("bob-", ".upload");
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to create temp file for upload", e);
+    }
+
+    Publisher<Boolean> transfer = file.transferTo(temp.toFile());
+    return Mono.from(transfer).map(ok -> {
+      if (!Boolean.TRUE.equals(ok)) {
+        try {
+          Files.deleteIfExists(temp);
+        } catch (IOException ignored) {}
+        throw new RuntimeException("Failed to spool upload to disk");
+      }
+      try {
+        SessionStore.setLocal(capturedSession);
+        String uuid = objectService.store(draft, temp);
+        return objectService.load(uuid);
+      } finally {
+        SessionStore.clearLocal();
+        try {
+          Files.deleteIfExists(temp);
+        } catch (IOException ignored) {}
+      }
+    });
   }
 
   @Authorized
@@ -146,13 +183,6 @@ public class BobObjectController {
 
   private SessionInfo session() {
     return SessionStore.require();
-  }
-
-  private static String require(String value, String name) {
-    if (value == null || value.isBlank()) {
-      throw new ApiClientException(Issue.error("BOB003", "{{name}} is required", Map.of("name", name)));
-    }
-    return value;
   }
 
   @SuppressWarnings("unchecked")

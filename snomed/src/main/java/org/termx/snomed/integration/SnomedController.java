@@ -24,6 +24,7 @@ import org.termx.snomed.refset.SnomedRefsetResponse;
 import org.termx.snomed.refset.SnomedRefsetSearchParams;
 import org.termx.snomed.rf2.SnomedExportJob;
 import org.termx.snomed.rf2.SnomedExportRequest;
+import org.termx.snomed.rf2.SnomedImportFromArchiveRequest;
 import org.termx.snomed.rf2.SnomedImportJob;
 import org.termx.snomed.rf2.SnomedImportRequest;
 import org.termx.snomed.rf2.SnomedRF2Upload;
@@ -86,6 +87,7 @@ public class SnomedController {
   private final SnomedRF2ScanService snomedRF2ScanService;
   private final SnomedRF2UploadCacheService snomedRF2UploadCacheService;
   private final SnomedConceptUsageService snomedConceptUsageService;
+  private final SnomedRF2ImportFromArchiveService snomedRF2ImportFromArchiveService;
 
 
   //----------------CodeSystems----------------
@@ -264,6 +266,28 @@ public class SnomedController {
     byte[] importFile = FileUtil.readBytes(upload);
     String filename = upload == null ? null : upload.getFilename();
     return snomedRF2ScanService.scanRF2(req, importFile, filename);
+  }
+
+  /**
+   * Streaming counterpart of {@link #createImportJob}: the archive already lives in the
+   * {@code "snomed"} Bob container (uploaded via {@code POST /bob/objects?container=snomed}),
+   * so we never buffer the zip in JVM heap. Runs asynchronously via Lorque; the response is
+   * a process the UI can poll.
+   */
+  @Authorized(Privilege.SNOMED_WRITE)
+  @Post(value = "/imports/from-archive")
+  public LorqueProcess createImportJobFromArchive(@Body SnomedImportFromArchiveRequest request) {
+    return snomedRF2ImportFromArchiveService.startImport(request);
+  }
+
+  /**
+   * Streaming counterpart of {@link #scanImport}: the archive already lives in the
+   * {@code "snomed"} Bob container, so re-running a dry-run scan does not require re-upload.
+   */
+  @Authorized(Privilege.SNOMED_READ)
+  @Post(value = "/imports/scan/from-archive")
+  public LorqueProcess scanImportFromArchive(@Body SnomedImportFromArchiveRequest request) {
+    return snomedRF2ImportFromArchiveService.startScan(request);
   }
 
   @Authorized(Privilege.SNOMED_WRITE)
