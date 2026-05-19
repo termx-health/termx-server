@@ -1,11 +1,20 @@
 # termx-server / scripts
 
-Standalone CLI helpers that mirror the SNOMED dry-run scan and concept-usage lookup
-features. Useful when you need the same output without spinning up the full
-termx-server stack — ad-hoc reports, batch triage, CI checks, support workflows.
+All developer / operator helper scripts live here. Two flavours:
 
-Both scripts emit JSON whose shape matches the corresponding REST responses, so the
-same UI / tooling can consume the output.
+**Shell scripts** — local dev environment setup, CI helpers, ad-hoc admin actions.
+
+| Script | What it does |
+|---|---|
+| [`run-backend.sh`](run-backend.sh) | Start `termx-app` locally with `dev,local` Micronaut environments (port 8200, dev token `yupi`). |
+| [`recreate-postgres.sh`](recreate-postgres.sh) | Drop and recreate the local Postgres container (`tx-pg`), then create the `termx` database, roles (`tx_admin` / `tx_app` / `tx_viewer`), and the `hstore` extension. Use on a fresh machine or to reset everything. |
+| [`recreate-db.sh`](recreate-db.sh) | Drop and recreate just the `termx` database inside the existing Postgres container — preserves the roles. Pass a custom DB name as the first arg. |
+| [`run-minio.sh`](run-minio.sh) | Start a local Minio container (`tx-minio`) with persistent volume on ports 9000 (API) / 9001 (console). Matches the defaults `bob/MinioService` expects in dev. |
+| [`test-email.sh`](test-email.sh) | Hit `/management/email/status` and `/management/email/test` to verify SMTP configuration. Optional recipient arg. |
+| [`list-deps.sh`](list-deps.sh) | Print the resolved `termx-app` runtime dependency tree, one Maven coordinate per line. |
+| [`cleanup-ghcr-packages.sh`](cleanup-ghcr-packages.sh) | Used by the weekly `cleanup-unused-containers.yml` workflow. Deletes untagged GHCR container versions with zero downloads. |
+
+**Python utilities** — standalone CLI versions of two SNOMED features (dry-run scan + concept-usage lookup). Useful when you need the same output without spinning up the full termx-server stack — ad-hoc reports, batch triage, CI checks, support workflows. Both scripts emit JSON whose shape matches the corresponding REST responses, so the same UI / tooling can consume the output. Sections below.
 
 ## Requirements
 

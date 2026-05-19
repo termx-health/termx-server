@@ -16,8 +16,8 @@ secret:
   ignored-paths:
     # Local dev DB setup scripts (defaults to PASSWORD 'test')
     - README.md
-    - recreate-termserver-db.sh
-    - termx-app/re-init-db.sh
+    - scripts/recreate-db.sh
+    - scripts/recreate-postgres.sh
 
     # Integration-test stack (TestContainers brings up an ephemeral Postgres)
     - termx-integtest/src/test/resources/init.sql

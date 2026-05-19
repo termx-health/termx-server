@@ -8,9 +8,9 @@
 
 set -e
 
-# Get the directory where the script is located
+# Run from repo root (this script lives in scripts/).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR/.."
 
 echo "=========================================="
 echo "Starting TermX Server (Local Dev Mode)"
