@@ -2,7 +2,10 @@ package org.termx.snomed.integration.rf2.scan;
 
 import com.kodality.commons.util.JsonUtil;
 import jakarta.inject.Singleton;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -65,8 +68,74 @@ public class SnomedRF2ScanService {
     return process;
   }
 
+  /**
+   * Streaming scan: the archive lives in Bob (uploaded via {@code POST /bob/objects}) and the
+   * caller has already spooled it to a local temp file. We never read the bytes into heap —
+   * the parser pulls them from {@code zipFile} via {@link InputStream} and the cache row only
+   * records the Bob UUID, so "Proceed with import" can re-stream Bob → Snowstorm without
+   * materialising the bytes anywhere.
+   */
+  public LorqueProcess scanRF2FromBob(SnomedImportRequest request, Path zipFile, String filename, String bobObjectUuid) {
+    long zipSize;
+    try {
+      zipSize = Files.size(zipFile);
+    } catch (java.io.IOException e) {
+      throw new RuntimeException("Failed to stat zip file " + zipFile + ": " + e.getMessage(), e);
+    }
+    SnomedRF2Upload upload = uploadCacheService.saveBobArchive(request, filename, bobObjectUuid, zipSize);
+    LorqueProcess process = lorqueProcessService.start(new LorqueProcess().setProcessName(PROCESS_NAME));
+    uploadCacheService.attachLorqueId(upload.getId(), process.getId());
+
+    Long uploadId = upload.getId();
+    String branchPath = request.getBranchPath();
+    String rf2Type = request.getType();
+    boolean fullMode = "full".equalsIgnoreCase(request.getMode());
+
+    CompletableFuture.runAsync(SessionStore.wrap(() -> {
+      try {
+        lorqueProcessService.reportProgress(process.getId(), 5, "starting (" + (fullMode ? "full" : "summary") + " mode)");
+        SnomedRF2ScanResult result = buildScanStreaming(zipFile, branchPath, rf2Type, fullMode, process.getId()).setUploadCacheId(uploadId);
+        lorqueProcessService.reportProgress(process.getId(), 90, "rendering report");
+        SnomedRF2ScanEnvelope envelope = new SnomedRF2ScanEnvelope().setJson(result).setMarkdown(renderMarkdown(result));
+        byte[] payload = JsonUtil.toJson(envelope).getBytes(StandardCharsets.UTF_8);
+        lorqueProcessService.reportProgress(process.getId(), 100, "done");
+        lorqueProcessService.complete(process.getId(), ProcessResult.binary(payload));
+      } catch (Exception e) {
+        log.error("SNOMED RF2 dry-run scan (from Bob) failed for upload {}", uploadId, e);
+        ProcessResult failure = ProcessResult.text(ExceptionUtils.getMessage(e) + "\n" + ExceptionUtils.getStackTrace(e));
+        lorqueProcessService.fail(process.getId(), failure);
+      } finally {
+        try {
+          Files.deleteIfExists(zipFile);
+        } catch (java.io.IOException ignored) {}
+      }
+    }), VirtualThreadExecutor.get());
+
+    return process;
+  }
+
   public SnomedRF2ScanResult buildScan(byte[] zipBytes, String branchPath, String rf2Type) throws java.io.IOException {
     return buildScan(zipBytes, branchPath, rf2Type, true, null);
+  }
+
+  private SnomedRF2ScanResult buildScanStreaming(Path zipFile, String branchPath, String rf2Type, boolean fullMode, Long lorqueId) throws java.io.IOException {
+    java.util.function.Consumer<String> phaseReporter = phase -> {
+      if (lorqueId == null) {
+        return;
+      }
+      Integer percent = phasePercent(phase);
+      if (percent != null) {
+        lorqueProcessService.reportProgress(lorqueId, percent, "parsing " + phase);
+      }
+    };
+    ParsedRF2 parsed;
+    try (InputStream is = Files.newInputStream(zipFile)) {
+      parsed = parser.parse(is, phaseReporter, fullMode);
+    }
+    if (lorqueId != null) {
+      lorqueProcessService.reportProgress(lorqueId, 80, "computing diff");
+    }
+    return diffEngine.classify(parsed, branchPath, rf2Type);
   }
 
   private SnomedRF2ScanResult buildScan(byte[] zipBytes, String branchPath, String rf2Type, boolean fullMode, Long lorqueId) throws java.io.IOException {

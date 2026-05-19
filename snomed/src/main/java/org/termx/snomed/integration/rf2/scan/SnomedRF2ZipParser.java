@@ -4,6 +4,7 @@ import jakarta.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -33,8 +34,17 @@ public class SnomedRF2ZipParser {
    * two files dominate the wall-clock time on a full International edition zip.
    */
   public ParsedRF2 parse(byte[] zipBytes, java.util.function.Consumer<String> phaseReporter, boolean fullMode) throws IOException {
+    return parse(new ByteArrayInputStream(zipBytes), phaseReporter, fullMode);
+  }
+
+  /**
+   * Streaming variant: callers pass a raw {@link InputStream} (e.g. a {@code FileInputStream}
+   * wrapping a temp-file download from Minio) and the parser never needs the whole zip in
+   * heap. The stream is not closed by this method — close it after the call.
+   */
+  public ParsedRF2 parse(InputStream zipStream, java.util.function.Consumer<String> phaseReporter, boolean fullMode) throws IOException {
     ParsedRF2 parsed = new ParsedRF2();
-    try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+    try (ZipInputStream zis = new ZipInputStream(zipStream)) {
       ZipEntry entry;
       while ((entry = zis.getNextEntry()) != null) {
         if (entry.isDirectory()) {
