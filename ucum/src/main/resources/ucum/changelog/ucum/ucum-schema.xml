@@ -9,6 +9,7 @@
 	</changeSet>
 
 	<changeSet id="default_privileges_for_schema_ucum" author="kodality">
+		<validCheckSum>ANY</validCheckSum>
 		<sql>
 			GRANT USAGE ON SCHEMA ucum TO ${app-username};
 			ALTER DEFAULT PRIVILEGES IN SCHEMA ucum GRANT USAGE ON SEQUENCES TO ${app-username};
