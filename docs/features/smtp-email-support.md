@@ -282,7 +282,7 @@ curl http://localhost:8200/management/email/status
 export AUTH_DEV_ALLOWED=true
 
 # Send test email using provided script
-./termx-app/test-email.sh test@example.com
+./scripts/test-email.sh test@example.com
 
 # Or manually:
 curl -X POST http://localhost:8200/management/email/test \
