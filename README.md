@@ -43,31 +43,31 @@ Or you can also use an existing database.
 
 Pull postgres public image.
 ```bash 
-docker pull postgres:14
+docker pull postgres:18
 ```  
 Run Docker container
 ```bash 
-docker run -d --restart=unless-stopped --name termx-postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:14
+docker run -d --restart=unless-stopped --name tx-pg -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:18
 ``` 
 Connect and create database\users using the following command
 ```bash 
-docker exec -i termx-postgres psql -U postgres <<-EOSQL
-CREATE ROLE termserver_admin LOGIN PASSWORD 'test' NOSUPERUSER INHERIT NOCREATEDB CREATEROLE NOREPLICATION;
-CREATE ROLE termserver_app   LOGIN PASSWORD 'test' NOSUPERUSER INHERIT NOCREATEDB CREATEROLE NOREPLICATION;
-CREATE ROLE termserver_viewer NOLOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
-CREATE DATABASE termserver WITH OWNER = termserver_admin ENCODING = 'UTF8' TABLESPACE = pg_default CONNECTION LIMIT = -1;
-grant temp on database termserver to termserver_app;
-grant connect on database termserver to termserver_app;
+docker exec -i tx-pg psql -U postgres <<-EOSQL
+CREATE ROLE tx_admin LOGIN PASSWORD 'test' NOSUPERUSER INHERIT NOCREATEDB CREATEROLE NOREPLICATION;
+CREATE ROLE tx_app   LOGIN PASSWORD 'test' NOSUPERUSER INHERIT NOCREATEDB CREATEROLE NOREPLICATION;
+CREATE ROLE tx_viewer NOLOGIN NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
+CREATE DATABASE termx WITH OWNER = tx_admin ENCODING = 'UTF8' TABLESPACE = pg_default CONNECTION LIMIT = -1;
+grant temp on database termx to tx_app;
+grant connect on database termx to tx_app;
 CREATE EXTENSION IF NOT EXISTS hstore schema public;
 EOSQL
 ```
 
 If you need to create a separate db for testing:
 ```bash 
-docker exec -i termx-postgres psql -U postgres <<-EOSQL
-CREATE DATABASE termserver_new WITH OWNER = termserver_admin ENCODING = 'UTF8' TABLESPACE = pg_default CONNECTION LIMIT = -1;
-grant temp on database termserver_new to termserver_app;
-grant connect on database termserver_new to termserver_app;
+docker exec -i tx-pg psql -U postgres <<-EOSQL
+CREATE DATABASE termx_new WITH OWNER = tx_admin ENCODING = 'UTF8' TABLESPACE = pg_default CONNECTION LIMIT = -1;
+grant temp on database termx_new to tx_app;
+grant connect on database termx_new to tx_app;
 EOSQL
 ```
 Or recreate it with the helper script:
@@ -76,7 +76,7 @@ Or recreate it with the helper script:
 ```
 To target a different database name:
 ```bash
-./recreate-termserver-db.sh termserver_new
+./recreate-termserver-db.sh termx_new
 ```
 In case you are using an existing database, run SQL commands between EOSQL via sql console.
 
