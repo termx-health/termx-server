@@ -22,6 +22,7 @@ select core.create_table_metadata('sys.lorque_process');
 --rollback drop table sys.lorque_process;
 
 --changeset kodality:grant-lorque_process-delete
+--validCheckSum ANY
 GRANT DELETE ON table sys.lorque_process TO ${app-username};
 --rollback select 1;
 

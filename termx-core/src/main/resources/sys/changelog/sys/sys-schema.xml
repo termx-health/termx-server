@@ -10,6 +10,7 @@
 	</changeSet>
 
 	<changeSet id="default_privileges_for_schema_sys" author="kodality">
+		<validCheckSum>ANY</validCheckSum>
 		<sql>
 			GRANT USAGE ON SCHEMA sys TO ${app-username};
 			ALTER DEFAULT PRIVILEGES IN SCHEMA sys GRANT USAGE ON SEQUENCES TO ${app-username};

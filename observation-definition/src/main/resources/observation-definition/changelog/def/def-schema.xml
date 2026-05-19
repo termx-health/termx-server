@@ -9,6 +9,7 @@
 	</changeSet>
 
 	<changeSet id="default_privileges_for_schema_def" author="kodality">
+		<validCheckSum>ANY</validCheckSum>
 		<sql>
 			GRANT USAGE ON SCHEMA def TO ${app-username};
 			ALTER DEFAULT PRIVILEGES IN SCHEMA def GRANT USAGE ON SEQUENCES TO ${app-username};
