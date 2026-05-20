@@ -63,18 +63,36 @@ public class SnomedRF2ImportFromArchiveService {
     Long processId = process.getId();
 
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
+      // Lifecycle log lines for the post-import email — same pattern as LoincService's
+      // ImportLog.successes. Captured into SnomedImportTracking.details when we save the
+      // row; polling appends one more line on terminal status.
+      java.util.List<String> details = new java.util.ArrayList<>();
+      long phaseStart = System.currentTimeMillis();
       try {
         lorqueProcessService.reportProgress(processId, 5, "creating Snowstorm import job");
         String jobId = snowstormClient.createImportJob(importRequest).join();
+        long createMs = System.currentTimeMillis() - phaseStart;
+        details.add(String.format("Created Snowstorm import job %s on branch %s (type %s) in %d ms",
+            jobId, importRequest.getBranchPath(), importRequest.getType(), createMs));
+        log.info("snomed-rf2-import: {}", details.getLast());
+
         lorqueProcessService.reportProgress(processId, 20, "uploading archive (streaming)");
+        long uploadStart = System.currentTimeMillis();
         snowstormClient.uploadRF2File(jobId, () -> bobObjectService.loadContentStream(archive)).join();
+        long uploadMs = System.currentTimeMillis() - uploadStart;
+        details.add(String.format("Streamed archive (Bob uuid %s) to Snowstorm in %d ms",
+            req.getArchiveUuid(), uploadMs));
+        log.info("snomed-rf2-import: {}", details.getLast());
+
+        details.add("Snowstorm processing started; awaiting polling-based completion notification");
         trackingRepository.save(new SnomedImportTracking()
             .setSnowstormJobId(jobId)
             .setBranchPath(importRequest.getBranchPath())
             .setType(importRequest.getType())
             .setStatus("RUNNING")
             .setStarted(OffsetDateTime.now())
-            .setNotified(false));
+            .setNotified(false)
+            .setDetails(details));
         lorqueProcessService.reportProgress(processId, 100, "Snowstorm job " + jobId);
         lorqueProcessService.complete(processId, ProcessResult.text(JsonUtil.toJson(Map.of("jobId", jobId))));
       } catch (Exception e) {

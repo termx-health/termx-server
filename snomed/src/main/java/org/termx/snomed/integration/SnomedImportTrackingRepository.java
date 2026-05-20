@@ -4,6 +4,7 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.db.util.PgUtil;
 import org.termx.snomed.rf2.SnomedImportTracking;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
@@ -11,7 +12,11 @@ import java.util.List;
 
 @Singleton
 public class SnomedImportTrackingRepository extends BaseRepository {
-  private final PgBeanProcessor bp = new PgBeanProcessor(SnomedImportTracking.class);
+  // text[] columns: register the matching ColumnProcessor so `details` lands as
+  // List<String> on the bean. Same idiom CodeSystemVersionRepository /
+  // ValueSetVersionRepository use for `supported_languages`.
+  private final PgBeanProcessor bp = new PgBeanProcessor(SnomedImportTracking.class, pb ->
+      pb.addColumnProcessor("details", PgBeanProcessor.fromArray()));
 
   public Long save(SnomedImportTracking tracking) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -24,6 +29,10 @@ public class SnomedImportTrackingRepository extends BaseRepository {
     ssb.property("finished", tracking.getFinished());
     ssb.property("error_message", tracking.getErrorMessage());
     ssb.property("notified", tracking.isNotified());
+    // text[] write side — PgUtil.array(...) renders the Postgres `{a,b,c}` literal, the
+    // `?::text[]` cast in the placeholder tells the driver to treat the parameter as an
+    // array. Same pattern as supported_languages in CodeSystemVersionRepository.
+    ssb.property("details", "?::text[]", PgUtil.array(tracking.getDetails()));
 
     SqlBuilder sb = ssb.buildSave("sys.snomed_import_tracking", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());

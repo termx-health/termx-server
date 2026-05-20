@@ -70,7 +70,17 @@ public class SnomedImportPollingService {
         tracking.setFinished(OffsetDateTime.now());
         tracking.setErrorMessage(snowstormJob.getErrorMessage());
         tracking.setNotified(true);
-        
+
+        // Append the terminal-status line to the lifecycle log surfaced in the email.
+        if (tracking.getDetails() == null) {
+          tracking.setDetails(new java.util.ArrayList<>());
+        }
+        Duration processed = Duration.between(tracking.getStarted(), tracking.getFinished());
+        tracking.getDetails().add(String.format(
+            "Snowstorm reported status %s after %s",
+            currentStatus, formatDuration(processed)));
+        log.info("snomed-rf2-import: {}", tracking.getDetails().getLast());
+
         trackingRepository.save(tracking);
         
         long start = System.currentTimeMillis();
@@ -178,6 +188,8 @@ public class SnomedImportPollingService {
             .details-section { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #007bff; border-radius: 3px; }
             .details-section h3 { margin-top: 0; color: #007bff; font-size: 16px; }
             .error-message { color: #dc3545; padding: 10px; background-color: #f8d7da; border-radius: 3px; }
+            .message-list { margin: 0; padding-left: 20px; }
+            .message-list li { margin: 5px 0; }
             .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; color: #6c757d; font-size: 12px; }
           </style>
         </head>
@@ -242,18 +254,34 @@ public class SnomedImportPollingService {
   }
 
   private String buildDetailsSection(SnomedImportTracking tracking, SnomedImportJob snowstormJob) {
+    StringBuilder out = new StringBuilder("<div class='details'>");
+
+    // Lifecycle log lines captured by SnomedRF2ImportFromArchiveService during the upload
+    // and by checkAndNotify() when the terminal status is reached. Mirrors the LOINC
+    // import-completion email "Success Messages" block.
+    if (CollectionUtils.isNotEmpty(tracking.getDetails())) {
+      out.append("""
+          <div class="details-section">
+            <h3>Import Lifecycle</h3>
+            <ul class="message-list">
+          """);
+      for (String line : tracking.getDetails()) {
+        out.append("<li>").append(escapeHtml(line)).append("</li>");
+      }
+      out.append("</ul></div>");
+    }
+
     if (tracking.getErrorMessage() != null || snowstormJob.getErrorMessage() != null) {
       String errorMsg = tracking.getErrorMessage() != null ? tracking.getErrorMessage() : snowstormJob.getErrorMessage();
-      return """
-          <div class="details">
-            <div class="details-section">
-              <h3>Error Details</h3>
-              <div class="error-message">%s</div>
-            </div>
+      out.append("""
+          <div class="details-section">
+            <h3>Error Details</h3>
+            <div class="error-message">%s</div>
           </div>
-          """.formatted(escapeHtml(errorMsg));
+          """.formatted(escapeHtml(errorMsg)));
     }
-    return "";
+    out.append("</div>");
+    return out.toString();
   }
 
   private String formatDuration(Duration duration) {
