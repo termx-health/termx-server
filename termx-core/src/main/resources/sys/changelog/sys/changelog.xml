@@ -17,6 +17,7 @@
   <include file="70-snomed_import_tracking.sql" relativeToChangelogFile="true"/>
   <include file="71-snomed_rf2_upload.sql" relativeToChangelogFile="true"/>
   <include file="72-snomed_rf2_upload_bob_object_uuid.sql" relativeToChangelogFile="true"/>
+  <include file="73-snomed_import_tracking_details.sql" relativeToChangelogFile="true"/>
   <include file="80-ecosystem.sql" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
