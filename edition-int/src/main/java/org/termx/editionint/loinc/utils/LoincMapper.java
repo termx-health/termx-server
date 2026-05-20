@@ -57,11 +57,16 @@ public class LoincMapper {
   }
 
   private static List<CodeSystemImportRequestProperty> toProperties(List<LoincConcept> concepts) {
+    // Collect into a MUTABLE ArrayList — Stream.toList() returns an unmodifiable list (Java 16+),
+    // so the subsequent .add(DISPLAY) / .add(KEY_WORDS) calls below would otherwise throw
+    // UnsupportedOperationException. The previous run hit this only after the giant-VALUES
+    // INSERT bug in CodeSystemEntityRepository.batchUpsert was fixed and the import reached
+    // the LOINC concept code-system import for the first time.
     List<CodeSystemImportRequestProperty> properties = concepts.stream()
         .flatMap(c -> c.getProperties().stream()).collect(Collectors.toSet()).stream()
         .collect(Collectors.toMap(LoincConceptProperty::getName, p -> p, (p, q) -> p)).values().stream()
         .map(property -> new CodeSystemImportRequestProperty().setName(property.getName()).setType(property.getType()).setKind(EntityPropertyKind.property))
-        .toList();
+        .collect(Collectors.toCollection(ArrayList::new));
     properties.add(new CodeSystemImportRequestProperty().setName(DISPLAY).setType(EntityPropertyType.string).setKind(EntityPropertyKind.designation));
     properties.add(new CodeSystemImportRequestProperty().setName(KEY_WORDS).setType(EntityPropertyType.string).setKind(EntityPropertyKind.property));
     return properties;

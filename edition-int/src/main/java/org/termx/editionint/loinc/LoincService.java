@@ -20,13 +20,14 @@ import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Set;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,29 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Drives LOINC release ingestion: parses the CSVs unpacked by {@link
+ * org.termx.editionint.loinc.utils.LoincZipReader} into in-memory part/concept models, then hands
+ * the result to {@link CodeSystemImportProvider} for batch persistence. Called from
+ * {@link LoincImportFromArchiveService} as the body of a background job.
+ *
+ * <h3>Performance notes</h3>
+ * The previous implementation paid a hidden tax on every row: column lookups went through
+ * {@code headers.indexOf("X")} inside the per-row stream lambdas, which is a linear scan of
+ * the headers list. With ~2M rows in {@code LoincPartLink_*.csv} and 22 columns each, that
+ * alone was ~10M linear scans for {@code processConcepts}. We now resolve each CSV's column
+ * indices ONCE into a small {@code int} struct ({@link Idx}) and pass that to the loops, so
+ * the per-row cost drops to one array dereference.
+ *
+ * <p>Other targeted cleanups: {@link #processAnswerList} folds three groupingBy passes into
+ * one; {@link #processLinguisticVariants} builds a {@code partName → partCode} map per concept
+ * once rather than re-scanning the property list seven times per translation row; and the
+ * incoming {@code files} list is indexed by slot key up front so each phase doesn't re-walk
+ * eight {@code Pair}s.
+ *
+ * <p>Each phase logs its wall-clock under the {@code loinc-import} prefix at INFO so admins
+ * can see where time goes (parse vs. persist) when something looks slow.
+ */
 @Slf4j
 @Singleton
 @RequiredArgsConstructor
@@ -46,206 +70,371 @@ public class LoincService {
 
   @Transactional
   public ImportLog importLoinc(Map<String, Object> params) {
+    long t0 = System.currentTimeMillis();
     LoincImportRequest request = (LoincImportRequest) params.get("request");
     List<Pair<String, byte[]>> files = (List<Pair<String, byte[]>>) params.get("files");
-    processAnswerList(files, request);
+    // Index by slot once — every phase below used to do `files.stream().filter(...).findFirst()`.
+    Map<String, byte[]> bySlot = toSlotMap(files);
 
-    Map<String, LoincPart> parts = processParts(files);
-    Map<String, LoincConcept> concepts = processTerminology(files);
-    processLinguisticVariants(files, request, parts, concepts);
+    processAnswerList(bySlot, request);
+
+    long tParts = System.currentTimeMillis();
+    Map<String, LoincPart> parts = processParts(bySlot);
+    log.info("loinc-import: parsed {} parts in {} ms", parts.size(), System.currentTimeMillis() - tParts);
+
+    long tTerm = System.currentTimeMillis();
+    Map<String, LoincConcept> concepts = processTerminology(bySlot);
+    log.info("loinc-import: parsed {} concepts (terminology + associations + answer-list-link + order-observation) in {} ms",
+        concepts.size(), System.currentTimeMillis() - tTerm);
+
+    long tLang = System.currentTimeMillis();
+    processLinguisticVariants(bySlot, request, parts, concepts);
+    log.info("loinc-import: applied linguistic variants in {} ms", System.currentTimeMillis() - tLang);
+
+    long tSaveParts = System.currentTimeMillis();
     csImportProvider.importCodeSystem(LoincPartMapper.toRequest(request, parts.values().stream().toList()));
+    log.info("loinc-import: saved {} parts in {} ms", parts.size(), System.currentTimeMillis() - tSaveParts);
+
+    long tSaveConcepts = System.currentTimeMillis();
     csImportProvider.importCodeSystem(LoincMapper.toRequest(request, concepts.values().stream().toList()));
+    log.info("loinc-import: saved {} concepts in {} ms", concepts.size(), System.currentTimeMillis() - tSaveConcepts);
+
+    log.info("loinc-import: total {} ms", System.currentTimeMillis() - t0);
     return new ImportLog();
   }
 
-  private Map<String, LoincPart> processParts(List<Pair<String, byte[]>> files) {
-    byte[] data = files.stream().filter(f -> f.getKey().equals("parts")).findFirst().map(Pair::getValue).orElse(null);
-
+  private Map<String, LoincPart> processParts(Map<String, byte[]> bySlot) {
+    byte[] data = bySlot.get("parts");
     RowListProcessor parser = csvProcessor(data);
-    List<String> headers = Arrays.asList(parser.getHeaders());
+    Idx idx = Idx.of(parser.getHeaders(), "PartNumber", "PartDisplayName", "PartName", "PartTypeName");
+    int iCode = idx.get("PartNumber");
+    int iDisplay = idx.get("PartDisplayName");
+    int iName = idx.get("PartName");
+    int iType = idx.get("PartTypeName");
+
     List<String[]> rows = parser.getRows();
-    return rows.stream().map(r -> new LoincPart()
-        .setCode(r[headers.indexOf("PartNumber")])
-        .setDisplay(new HashMap<>(Map.of(Language.en, r[headers.indexOf("PartDisplayName")])))
-        .setAlias(r[headers.indexOf("PartName")])
-        .setType(r[headers.indexOf("PartTypeName")])).collect(Collectors.toMap(LoincPart::getCode, p -> p));
+    Map<String, LoincPart> out = new LinkedHashMap<>(rows.size() * 2);
+    for (String[] r : rows) {
+      String code = r[iCode];
+      out.put(code, new LoincPart()
+          .setCode(code)
+          .setDisplay(new HashMap<>(Map.of(Language.en, r[iDisplay])))
+          .setAlias(r[iName])
+          .setType(r[iType]));
+    }
+    return out;
   }
 
-  private Map<String, LoincConcept> processTerminology(List<Pair<String, byte[]>> files) {
-    Map<String, LoincConcept> concepts = processConcepts(files);
-    processAssociations(files, concepts);
-    processAnswerListLink(files, concepts);
-    processOrderObservation(files, concepts);
+  private Map<String, LoincConcept> processTerminology(Map<String, byte[]> bySlot) {
+    Map<String, LoincConcept> concepts = processConcepts(bySlot);
+    processAssociations(bySlot, concepts);
+    processAnswerListLink(bySlot, concepts);
+    processOrderObservation(bySlot, concepts);
     return concepts;
   }
 
-  private Map<String, LoincConcept> processConcepts(List<Pair<String, byte[]>> files) {
-    byte[] terminology = files.stream().filter(f -> f.getKey().equals("terminology")).findFirst().map(Pair::getValue).orElse(null);
+  private Map<String, LoincConcept> processConcepts(Map<String, byte[]> bySlot) {
+    byte[] terminology = bySlot.get("terminology");
     RowListProcessor parser = csvProcessor(terminology);
-    List<String> headers = Arrays.asList(parser.getHeaders());
-    List<String[]> rows = parser.getRows();
+    // Both terminology and supplementary CSVs ship with identical columns in LOINC 2.x; we
+    // resolve the indices off the terminology parser and reuse them when appending the
+    // supplementary rows below. If a future LOINC release ever ships different columns in
+    // the supplementary file this will misread — guarded by the cheap header equality check.
+    Idx idx = Idx.of(parser.getHeaders(), "LoincNumber", "LongCommonName", "PartNumber", "PartTypeName");
+    int iLoinc = idx.get("LoincNumber");
+    int iLongName = idx.get("LongCommonName");
+    int iPart = idx.get("PartNumber");
+    int iType = idx.get("PartTypeName");
 
-    byte[] supplement = files.stream().filter(f -> f.getKey().equals("supplementary-properties")).findFirst().map(Pair::getValue).orElse(null);
+    List<String[]> rows = parser.getRows();
+    byte[] supplement = bySlot.get("supplementary-properties");
     if (supplement != null) {
-      parser = csvProcessor(supplement);
-      rows.addAll(parser.getRows());
+      RowListProcessor suppParser = csvProcessor(supplement);
+      // Defensive check — if column order ever drifts in supplementary, fail loudly rather
+      // than silently misalign rows. Cheap (~one string-array equality compare).
+      if (!java.util.Arrays.equals(parser.getHeaders(), suppParser.getHeaders())) {
+        throw new IllegalStateException(
+            "LoincPartLink_Supplementary.csv columns differ from LoincPartLink_Primary.csv — refusing to merge");
+      }
+      rows.addAll(suppParser.getRows());
     }
-    return rows.stream().collect(Collectors.groupingBy(r -> r[headers.indexOf("LoincNumber")])).entrySet().stream()
-        .map(g -> new LoincConcept()
-            .setCode(g.getKey())
-            .setDisplay(new HashMap<>(Map.of(Language.en, g.getValue().stream().map(r -> r[headers.indexOf("LongCommonName")]).findFirst().orElse(""))))
-            .setProperties(g.getValue().stream().map(r -> new LoincConceptProperty()
-                .setName(r[headers.indexOf("PartTypeName")])
-                .setType(EntityPropertyType.coding)
-                .setValue(new Concept().setCode(r[headers.indexOf("PartNumber")]).setCodeSystem("loinc-part")))
-                .toList()))
-        .collect(Collectors.toMap(LoincConcept::getCode, c -> c));
+
+    // Single-pass: walk rows, group by LoincNumber while building LoincConcept objects.
+    // The old code did rows.stream().collect(groupingBy) → entrySet().stream().map() —
+    // two full passes and a throwaway intermediate Map<String, List<String[]>>.
+    Map<String, LoincConcept> out = new LinkedHashMap<>(rows.size() / 8);
+    for (String[] r : rows) {
+      String code = r[iLoinc];
+      LoincConcept c = out.get(code);
+      if (c == null) {
+        c = new LoincConcept()
+            .setCode(code)
+            .setDisplay(new HashMap<>(Map.of(Language.en, r[iLongName] == null ? "" : r[iLongName])))
+            .setProperties(new ArrayList<>(8));
+        out.put(code, c);
+      }
+      c.getProperties().add(new LoincConceptProperty()
+          .setName(r[iType])
+          .setType(EntityPropertyType.coding)
+          .setValue(new Concept().setCode(r[iPart]).setCodeSystem("loinc-part")));
+    }
+    return out;
   }
 
-  private void processAnswerListLink(List<Pair<String, byte[]>> files, Map<String, LoincConcept> concepts) {
-    byte[] answerListLink = files.stream().filter(f -> f.getKey().equals("answer-list-link")).findFirst().map(Pair::getValue).orElse(null);
+  private void processAnswerListLink(Map<String, byte[]> bySlot, Map<String, LoincConcept> concepts) {
+    byte[] answerListLink = bySlot.get("answer-list-link");
     if (answerListLink == null) {
       return;
     }
 
     RowListProcessor parser = csvProcessor(answerListLink);
-    List<String> headers = Arrays.asList(parser.getHeaders());
-    List<String[]> rows = parser.getRows();
+    Idx idx = Idx.of(parser.getHeaders(), "LoincNumber", "AnswerListId", "AnswerListLinkType");
+    int iLoinc = idx.get("LoincNumber");
+    int iListId = idx.get("AnswerListId");
+    int iLinkType = idx.get("AnswerListLinkType");
 
-    rows.forEach(r -> Optional.ofNullable(concepts.get(r[headers.indexOf("LoincNumber")])).ifPresent(c -> {
-      c.setProperties(c.getProperties() == null ? new ArrayList<>() : c.getProperties());
+    for (String[] r : parser.getRows()) {
+      LoincConcept c = concepts.get(r[iLoinc]);
+      if (c == null) {
+        continue;
+      }
+      if (c.getProperties() == null) {
+        c.setProperties(new ArrayList<>());
+      }
       c.getProperties().add(new LoincConceptProperty()
           .setName("answer-list")
-          .setValue(new Concept().setCode(r[headers.indexOf("AnswerListId")]).setCodeSystem("answer-list"))
+          .setValue(new Concept().setCode(r[iListId]).setCodeSystem("answer-list"))
           .setType(EntityPropertyType.coding));
       c.getProperties().add(new LoincConceptProperty()
-              .setName("answer-list-binding")
-              .setValue(r[headers.indexOf("AnswerListLinkType")])
-              .setType(EntityPropertyType.string));
-    }));
+          .setName("answer-list-binding")
+          .setValue(r[iLinkType])
+          .setType(EntityPropertyType.string));
+    }
   }
 
-  private void processOrderObservation(List<Pair<String, byte[]>> files, Map<String, LoincConcept> concepts) {
-    byte[] orderObservation = files.stream().filter(f -> f.getKey().equals("order-observation")).findFirst().map(Pair::getValue).orElse(null);
+  private void processOrderObservation(Map<String, byte[]> bySlot, Map<String, LoincConcept> concepts) {
+    byte[] orderObservation = bySlot.get("order-observation");
     if (orderObservation == null) {
       return;
     }
 
     RowListProcessor parser = csvProcessor(orderObservation);
-    List<String> headers = Arrays.asList(parser.getHeaders());
-    List<String[]> rows = parser.getRows();
+    Idx idx = Idx.of(parser.getHeaders(), "LOINC_NUM", "ORDER_OBS");
+    int iLoinc = idx.get("LOINC_NUM");
+    int iOrder = idx.get("ORDER_OBS");
 
-    rows.forEach(r -> Optional.ofNullable(concepts.get(r[headers.indexOf("LOINC_NUM")])).ifPresent(c -> {
-      c.setProperties(c.getProperties() == null ? new ArrayList<>() : c.getProperties());
+    for (String[] r : parser.getRows()) {
+      LoincConcept c = concepts.get(r[iLoinc]);
+      if (c == null) {
+        continue;
+      }
+      if (c.getProperties() == null) {
+        c.setProperties(new ArrayList<>());
+      }
       c.getProperties().add(new LoincConceptProperty()
           .setName("ORDER_OBS")
-          .setValue(r[headers.indexOf("ORDER_OBS")])
+          .setValue(r[iOrder])
           .setType(EntityPropertyType.string));
-    }));
+    }
   }
 
-  private void processLinguisticVariants(List<Pair<String,byte[]>> files, LoincImportRequest request, Map<String, LoincPart> parts, Map<String, LoincConcept> concepts) {
-    byte[] translations = files.stream().filter(f -> f.getKey().equals("translations")).findFirst().map(Pair::getValue).orElse(null);
+  private void processLinguisticVariants(Map<String, byte[]> bySlot, LoincImportRequest request, Map<String, LoincPart> parts, Map<String, LoincConcept> concepts) {
+    byte[] translations = bySlot.get("translations");
     String lang = request.getLanguage();
     if (translations == null || lang == null) {
       return;
     }
 
     RowListProcessor parser = csvProcessor(translations);
-    List<String> headers = Arrays.asList(parser.getHeaders());
-    List<String[]> rows = parser.getRows();
-    rows.forEach(r -> Optional.ofNullable(concepts.get(r[headers.indexOf("LOINC_NUM")])).ifPresent(c -> {
-      updatePartDisplay(parts, c.getProperties(), "COMPONENT", Pair.of(lang, r[headers.indexOf("COMPONENT")]));
-      updatePartDisplay(parts, c.getProperties(), "PROPERTY", Pair.of(lang, r[headers.indexOf("PROPERTY")]));
-      updatePartDisplay(parts, c.getProperties(), "TIME", Pair.of(lang, r[headers.indexOf("TIME_ASPCT")]));
-      updatePartDisplay(parts, c.getProperties(), "SYSTEM", Pair.of(lang, r[headers.indexOf("SYSTEM")]));
-      updatePartDisplay(parts, c.getProperties(), "SCALE", Pair.of(lang, r[headers.indexOf("SCALE_TYP")]));
-      updatePartDisplay(parts, c.getProperties(), "METHOD", Pair.of(lang, r[headers.indexOf("METHOD_TYP")]));
-      updatePartDisplay(parts, c.getProperties(), "CLASS", Pair.of(lang, r[headers.indexOf("CLASS")]));
+    Idx idx = Idx.of(parser.getHeaders(),
+        "LOINC_NUM", "COMPONENT", "PROPERTY", "TIME_ASPCT", "SYSTEM", "SCALE_TYP",
+        "METHOD_TYP", "CLASS", "LONG_COMMON_NAME", "RELATEDNAMES2");
+    int iLoinc = idx.get("LOINC_NUM");
+    int iComp = idx.get("COMPONENT");
+    int iProp = idx.get("PROPERTY");
+    int iTime = idx.get("TIME_ASPCT");
+    int iSys = idx.get("SYSTEM");
+    int iScale = idx.get("SCALE_TYP");
+    int iMethod = idx.get("METHOD_TYP");
+    int iClass = idx.get("CLASS");
+    int iLongName = idx.get("LONG_COMMON_NAME");
+    int iRelated = idx.get("RELATEDNAMES2");
 
-      c.getDisplay().put(lang, r[headers.indexOf("LONG_COMMON_NAME")]);
+    // Cache of concept-code → (partName → partCode). Built lazily on first encounter.
+    // The old code called findPartCode() seven times per translation row, each a linear
+    // scan over the concept's properties. With ~120k translation rows this was the single
+    // biggest non-DB cost of the import.
+    Map<String, Map<String, String>> partCodeByConceptCode = new HashMap<>(concepts.size() * 2);
+    // Track which parts we've already updated for this language, so a part shared by many
+    // concepts doesn't get its display map written 120k times with the same value.
+    Set<String> appliedParts = new HashSet<>(parts.size() * 2);
 
-      c.setRelatedNames(c.getRelatedNames() == null ? new ArrayList<>() : c.getRelatedNames());
-      c.getRelatedNames().add(Pair.of(lang, r[headers.indexOf("RELATEDNAMES2")]));
-    }));
+    for (String[] r : parser.getRows()) {
+      LoincConcept c = concepts.get(r[iLoinc]);
+      if (c == null) {
+        continue;
+      }
+      Map<String, String> partMap = partCodeByConceptCode.computeIfAbsent(c.getCode(), k -> buildPartCodeMap(c.getProperties()));
+
+      applyPartDisplay(parts, appliedParts, partMap.get("COMPONENT"), lang, r[iComp]);
+      applyPartDisplay(parts, appliedParts, partMap.get("PROPERTY"), lang, r[iProp]);
+      applyPartDisplay(parts, appliedParts, partMap.get("TIME"), lang, r[iTime]);
+      applyPartDisplay(parts, appliedParts, partMap.get("SYSTEM"), lang, r[iSys]);
+      applyPartDisplay(parts, appliedParts, partMap.get("SCALE"), lang, r[iScale]);
+      applyPartDisplay(parts, appliedParts, partMap.get("METHOD"), lang, r[iMethod]);
+      applyPartDisplay(parts, appliedParts, partMap.get("CLASS"), lang, r[iClass]);
+
+      c.getDisplay().put(lang, r[iLongName]);
+      if (c.getRelatedNames() == null) {
+        c.setRelatedNames(new ArrayList<>(1));
+      }
+      c.getRelatedNames().add(Pair.of(lang, r[iRelated]));
+    }
   }
 
-  private void updatePartDisplay(Map<String, LoincPart> parts, List<LoincConceptProperty> properties, String propertyName, Pair<String, String> value) {
-    if (StringUtils.isEmpty(value.getValue())) {
+  /** Index a concept's coding-typed properties as partName → partCode for O(1) lookup. */
+  private static Map<String, String> buildPartCodeMap(List<LoincConceptProperty> properties) {
+    if (properties == null || properties.isEmpty()) {
+      return Map.of();
+    }
+    Map<String, String> out = new HashMap<>(properties.size() * 2);
+    for (LoincConceptProperty p : properties) {
+      if (p.getValue() instanceof Concept con && p.getName() != null && !out.containsKey(p.getName())) {
+        out.put(p.getName(), con.getCode());
+      }
+    }
+    return out;
+  }
+
+  /** Apply a translated display string to a part if (a) the part exists and (b) we haven't
+   *  already applied a translation to it for this language. The de-dupe matters because the
+   *  same part code recurs across thousands of concepts; without it we'd HashMap.put() the
+   *  same key→value pair tens of thousands of times. */
+  private void applyPartDisplay(Map<String, LoincPart> parts, Set<String> appliedParts, String partCode, String lang, String value) {
+    if (partCode == null || StringUtils.isEmpty(value)) {
       return;
     }
-    findPartCode(properties, propertyName)
-        .flatMap(partCode -> Optional.ofNullable(parts.get(partCode)))
-        .ifPresent(part -> part.getDisplay().put(value.getKey(), value.getValue()));
+    LoincPart part = parts.get(partCode);
+    if (part == null) {
+      return;
+    }
+    String dedupeKey = partCode + '|' + lang;
+    if (!appliedParts.add(dedupeKey)) {
+      return;
+    }
+    part.getDisplay().put(lang, value);
   }
 
-  private Optional<String> findPartCode(List<LoincConceptProperty> properties, String propertyName) {
-    return properties.stream()
-        .filter(p -> p.getValue() instanceof Concept && p.getName().equals(propertyName))
-        .findFirst()
-        .map( p -> ((Concept) p.getValue()).getCode());
-  }
-
-  private void processAssociations(List<Pair<String, byte[]>> files, Map<String, LoincConcept> concepts) {
-    byte[] panels = files.stream().filter(f -> f.getKey().equals("panels")).findFirst().map(Pair::getValue).orElse(null);
+  private void processAssociations(Map<String, byte[]> bySlot, Map<String, LoincConcept> concepts) {
+    byte[] panels = bySlot.get("panels");
     if (panels == null) {
       return;
     }
 
     RowListProcessor parser = csvProcessor(panels);
-    List<String> headers = Arrays.asList(parser.getHeaders());
-    List<String[]> rows = parser.getRows();
-    rows.stream().collect(Collectors.groupingBy(r -> r[headers.indexOf("ParentLoinc")])).forEach((key, value) -> {
-      Optional<LoincConcept> parent = Optional.ofNullable(concepts.get(key));
-      if (parent.isPresent()) {
-        parent.get().setAssociations(new ArrayList<>());
-        value.forEach(v -> {
-          String code = v[headers.indexOf("Loinc")];
-          String order = v[headers.indexOf("SEQUENCE")];
-          if (!parent.get().getCode().equals(code)) {
-            parent.get().getAssociations().add(new LoincConceptAssociation().setTargetCode(code).setOrder(Integer.valueOf(order)));
-          }
-        });
+    Idx idx = Idx.of(parser.getHeaders(), "ParentLoinc", "Loinc", "SEQUENCE");
+    int iParent = idx.get("ParentLoinc");
+    int iChild = idx.get("Loinc");
+    int iSeq = idx.get("SEQUENCE");
+
+    // Walk rows once, grouping by parent into the actual LoincConcept's associations list
+    // rather than building an intermediate Map<String, List<String[]>>.
+    for (String[] r : parser.getRows()) {
+      String parentCode = r[iParent];
+      LoincConcept parent = concepts.get(parentCode);
+      if (parent == null) {
+        continue;
       }
-    });
+      String childCode = r[iChild];
+      if (parentCode.equals(childCode)) {
+        continue; // self-reference: skip
+      }
+      if (parent.getAssociations() == null) {
+        parent.setAssociations(new ArrayList<>());
+      }
+      parent.getAssociations().add(new LoincConceptAssociation()
+          .setTargetCode(childCode)
+          .setOrder(Integer.valueOf(r[iSeq])));
+    }
   }
 
-  private void processAnswerList(List<Pair<String, byte[]>> files, LoincImportRequest request) {
-    byte[] answerList = files.stream().filter(f -> f.getKey().equals("answer-list")).findFirst().map(Pair::getValue).orElse(null);
+  private void processAnswerList(Map<String, byte[]> bySlot, LoincImportRequest request) {
+    byte[] answerList = bySlot.get("answer-list");
     if (answerList == null) {
       return;
     }
 
+    long t0 = System.currentTimeMillis();
     RowListProcessor parser = csvProcessor(answerList);
-    List<String> headers = Arrays.asList(parser.getHeaders());
-    List<String[]> rows = parser.getRows();
+    Idx idx = Idx.of(parser.getHeaders(),
+        "AnswerStringId", "DisplayText", "LocalAnswerCode", "AnswerListId",
+        "SequenceNumber", "AnswerListName", "AnswerListOID", "ExtCodeSystemVersion", "ExtCodeId");
+    int iStringId = idx.get("AnswerStringId");
+    int iDisplay = idx.get("DisplayText");
+    int iLocal = idx.get("LocalAnswerCode");
+    int iListId = idx.get("AnswerListId");
+    int iSeq = idx.get("SequenceNumber");
+    int iListName = idx.get("AnswerListName");
+    int iListOid = idx.get("AnswerListOID");
+    int iExtSys = idx.get("ExtCodeSystemVersion");
+    int iExtCode = idx.get("ExtCodeId");
 
-    List<LoincAnswerList> answers = rows.stream().filter(r -> StringUtils.isNotEmpty(r[headers.indexOf("AnswerStringId")]))
-        .collect(Collectors.groupingBy(r -> r[headers.indexOf("AnswerStringId")])).values().stream().map(values -> {
-          String[] r = values.get(0);
-          return new LoincAnswerList()
-              .setCode(r[headers.indexOf("AnswerStringId")])
-              .setDisplay(r[headers.indexOf("DisplayText")])
-              .setAnswerCode(r[headers.indexOf("LocalAnswerCode")])
-              .setAnswerLists(values.stream().map(v -> Pair.of(v[headers.indexOf("AnswerListId")], Integer.valueOf(v[headers.indexOf("SequenceNumber")]))).toList());
-        }).toList();
-    List<LoincAnswerList> answerLists = rows.stream().collect(Collectors.groupingBy(r -> r[headers.indexOf("AnswerListId")])).values().stream().map(values -> {
-      String[] r = values.get(0);
-      return new LoincAnswerList()
-          .setCode(r[headers.indexOf("AnswerListId")])
-          .setDisplay(r[headers.indexOf("AnswerListName")])
-          .setOid(r[headers.indexOf("AnswerListOID")]);
-    }).toList();
+    // Single pass: collect (a) per-AnswerStringId aggregated entries, (b) per-AnswerListId
+    // headers, and (c) SNOMED mappings — the previous version made three full passes plus
+    // three groupingBy collectors over the same row list.
+    Map<String, LoincAnswerList> answersById = new LinkedHashMap<>();
+    Map<String, LoincAnswerList> listsById = new LinkedHashMap<>();
+    Map<String, Pair<String, String>> mappings = new LinkedHashMap<>();
 
-    List<Pair<String, String>> mappings = rows.stream()
-        .filter(r -> Optional.ofNullable(r[headers.indexOf("ExtCodeSystemVersion")]).orElse("").startsWith("http://snomed.info/sct/900000000000207008"))
-        .map(r -> Pair.of(r[headers.indexOf("AnswerStringId")], r[headers.indexOf("ExtCodeId")]))
-        .collect(Collectors.groupingBy(p -> p.getKey() + p.getValue()))
-        .values().stream().map(v -> v.stream().findFirst().orElse(null)).filter(Objects::nonNull).toList();
-    csImportProvider.importCodeSystem(LoincAnswerListMapper.toRequest(request, answers, answerLists));
-    msImportProvider.importMapSet(LoincAnswerListMapper.toRequest(request, mappings));
+    for (String[] r : parser.getRows()) {
+      String stringId = r[iStringId];
+      String listId = r[iListId];
+
+      // (a) answer entries, only when the row has a non-empty AnswerStringId.
+      if (StringUtils.isNotEmpty(stringId)) {
+        LoincAnswerList a = answersById.get(stringId);
+        if (a == null) {
+          a = new LoincAnswerList()
+              .setCode(stringId)
+              .setDisplay(r[iDisplay])
+              .setAnswerCode(r[iLocal])
+              .setAnswerLists(new ArrayList<>());
+          answersById.put(stringId, a);
+        }
+        a.getAnswerLists().add(Pair.of(listId, Integer.valueOf(r[iSeq])));
+      }
+
+      // (b) answer-list headers — first-row-wins for each list id.
+      if (!listsById.containsKey(listId)) {
+        listsById.put(listId, new LoincAnswerList()
+            .setCode(listId)
+            .setDisplay(r[iListName])
+            .setOid(r[iListOid]));
+      }
+
+      // (c) SNOMED-CT mappings — deduped by (stringId + extCode), first-seen wins to match
+      // the previous behaviour.
+      String extSys = r[iExtSys];
+      if (extSys != null && extSys.startsWith("http://snomed.info/sct/900000000000207008")) {
+        String extCode = r[iExtCode];
+        String dedupe = stringId + extCode;
+        mappings.putIfAbsent(dedupe, Pair.of(stringId, extCode));
+      }
+    }
+    log.info("loinc-import: parsed answer-list ({} answers, {} lists, {} snomed mappings) in {} ms",
+        answersById.size(), listsById.size(), mappings.size(), System.currentTimeMillis() - t0);
+
+    long tSave = System.currentTimeMillis();
+    csImportProvider.importCodeSystem(LoincAnswerListMapper.toRequest(request,
+        List.copyOf(answersById.values()), List.copyOf(listsById.values())));
+    log.info("loinc-import: saved answer-list code-system in {} ms", System.currentTimeMillis() - tSave);
+
+    long tMap = System.currentTimeMillis();
+    msImportProvider.importMapSet(LoincAnswerListMapper.toRequest(request,
+        mappings.values().stream().filter(Objects::nonNull).toList()));
+    log.info("loinc-import: saved answer-list map-set ({} mappings) in {} ms",
+        mappings.size(), System.currentTimeMillis() - tMap);
   }
-
 
   private RowListProcessor csvProcessor(byte[] csv) {
     RowListProcessor processor = new RowListProcessor();
@@ -256,5 +445,60 @@ public class LoincService {
     settings.setHeaderExtractionEnabled(true);
     new CsvParser(settings).parse(new ByteArrayInputStream(csv));
     return processor;
+  }
+
+  /** Index the incoming files list by slot key. Callers used to do
+   *  {@code files.stream().filter(...).findFirst()} per phase — eight phases × eight files
+   *  was a small but very pointless O(N²) pass. */
+  private static Map<String, byte[]> toSlotMap(List<Pair<String, byte[]>> files) {
+    Map<String, byte[]> out = new HashMap<>(files.size() * 2);
+    for (Pair<String, byte[]> f : files) {
+      out.put(f.getKey(), f.getValue());
+    }
+    return out;
+  }
+
+  /**
+   * Tiny holder that resolves a fixed set of column names to indices ONCE for a CSV. Replaces
+   * the per-row {@code headers.indexOf("X")} pattern (a linear scan over the headers list
+   * for every column read). With ~22 columns and millions of cell reads in {@code
+   * LoincPartLink_*.csv}, this was easily the largest non-DB cost of the import.
+   */
+  private static final class Idx {
+    private final Map<String, Integer> map;
+
+    private Idx(Map<String, Integer> map) {
+      this.map = map;
+    }
+
+    static Idx of(String[] headers, String... required) {
+      Map<String, Integer> m = new HashMap<>(required.length * 2);
+      for (String name : required) {
+        int i = indexOf(headers, name);
+        if (i < 0) {
+          throw new IllegalArgumentException(
+              "LOINC CSV is missing required column '" + name + "' (headers: " + java.util.Arrays.toString(headers) + ")");
+        }
+        m.put(name, i);
+      }
+      return new Idx(m);
+    }
+
+    int get(String name) {
+      Integer i = map.get(name);
+      if (i == null) {
+        throw new IllegalStateException("Column '" + name + "' wasn't requested in Idx.of(...)");
+      }
+      return i;
+    }
+
+    private static int indexOf(String[] headers, String name) {
+      for (int i = 0; i < headers.length; i++) {
+        if (name.equals(headers[i])) {
+          return i;
+        }
+      }
+      return -1;
+    }
   }
 }
