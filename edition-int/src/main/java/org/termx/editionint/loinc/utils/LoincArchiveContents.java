@@ -19,6 +19,13 @@ import lombok.experimental.Accessors;
 @Introspected
 public class LoincArchiveContents {
   private List<Entry> entries;
+  /**
+   * Version string extracted from the {@code Loinc_<version>_DifferenceReport.pdf} entry
+   * the LOINC release zips ship at their root. {@code null} when the archive doesn't
+   * follow that convention. Used by the import page as a fallback when the archive's
+   * outer filename / {@code meta.version} doesn't already carry the version.
+   */
+  private String detectedVersion;
 
   @Getter
   @Setter
