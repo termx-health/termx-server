@@ -81,10 +81,21 @@ public class LoincImportFromArchiveService {
   public LoincArchiveContents listArchiveContents(String archiveUuid, String language) {
     BobObject archive = requireArchive(archiveUuid);
     List<Pair<String, String>> raw;
+    String detectedVersion;
+    // Two passes over the archive — one for the CSV listing (describe), one for the
+    // DifferenceReport.pdf-based version detection. Each is a streaming walk of the central
+    // directory + a single InputStream read per entry header; the second pass is cheap
+    // enough that bundling both into one walk would be a premature optimisation.
     try (InputStream is = bobObjectService.loadContentStream(archive)) {
       raw = new LoincZipReader().describe(is, language);
     } catch (Exception e) {
       throw new RuntimeException("Failed to read LOINC archive '" + archiveUuid + "': " + e.getMessage(), e);
+    }
+    try (InputStream is = bobObjectService.loadContentStream(archive)) {
+      detectedVersion = new LoincZipReader().detectVersion(is);
+    } catch (Exception e) {
+      log.warn("Version detection from LOINC archive '{}' failed: {}", archiveUuid, e.getMessage());
+      detectedVersion = null;
     }
     List<LoincArchiveContents.Entry> entries = new ArrayList<>();
     for (Pair<String, String> p : raw) {
@@ -92,7 +103,9 @@ public class LoincImportFromArchiveService {
           .setName(p.getLeft())
           .setSuggestedSlot(p.getRight()));
     }
-    return new LoincArchiveContents().setEntries(entries);
+    return new LoincArchiveContents()
+        .setEntries(entries)
+        .setDetectedVersion(detectedVersion);
   }
 
   private BobObject requireArchive(String uuid) {

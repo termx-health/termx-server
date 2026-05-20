@@ -60,8 +60,6 @@ public class LoincZipReader {
    */
   public List<Pair<String, byte[]>> unpack(InputStream zipStream, String language, Map<String, String> fileMap) {
     List<Pair<String, byte[]>> files = new ArrayList<>();
-    String translationsName = (language == null || language.isBlank()) ? null
-        : (language.toLowerCase() + "LinguisticVariant");
     // Invert the optional override: entryName -> slotKey. Normalise the same way matchKey
     // does so the lookup can succeed regardless of which path-separator / case the caller
     // sends.
@@ -82,7 +80,7 @@ public class LoincZipReader {
           String normalised = entry.getName().replace('\\', '/');
           key = entryToSlot.get(normalised);
         } else {
-          key = matchKey(entry.getName(), translationsName);
+          key = matchKey(entry.getName(), language);
         }
         if (key != null) {
           files.add(Pair.of(key, IOUtils.toByteArray(zipIn)));
@@ -104,8 +102,6 @@ public class LoincZipReader {
    */
   public List<Pair<String, String>> describe(InputStream zipStream, String language) {
     List<Pair<String, String>> entries = new ArrayList<>();
-    String translationsName = (language == null || language.isBlank()) ? null
-        : (language.toLowerCase() + "LinguisticVariant");
     try (ZipInputStream zipIn = new ZipInputStream(zipStream)) {
       ZipEntry entry;
       while ((entry = zipIn.getNextEntry()) != null) {
@@ -118,7 +114,7 @@ public class LoincZipReader {
           zipIn.closeEntry();
           continue;
         }
-        String key = matchKey(entry.getName(), translationsName);
+        String key = matchKey(entry.getName(), language);
         entries.add(Pair.of(normalised, key)); // key may be null — UI shows entry as "Unmapped"
         zipIn.closeEntry();
       }
@@ -127,6 +123,41 @@ public class LoincZipReader {
       throw new RuntimeException(e);
     }
     return entries;
+  }
+
+  /**
+   * Scan the archive for the {@code Loinc_<version>_DifferenceReport.pdf} entry shipped by
+   * LOINC releases (typically directly under the {@code Loinc_<version>/} root). Returns
+   * the detected version string (e.g. {@code "2.82"}) or {@code null} when the archive
+   * doesn't follow this convention. Used as a fallback so the import page can suggest a
+   * version even when the uploaded archive's outer filename didn't carry it (e.g. renamed
+   * to {@code release.zip}).
+   */
+  public String detectVersion(InputStream zipStream) {
+    java.util.regex.Pattern pat =
+        java.util.regex.Pattern.compile("Loinc[_-]([\\d.]+)_DifferenceReport\\.pdf$", java.util.regex.Pattern.CASE_INSENSITIVE);
+    try (ZipInputStream zipIn = new ZipInputStream(zipStream)) {
+      ZipEntry entry;
+      while ((entry = zipIn.getNextEntry()) != null) {
+        if (entry.isDirectory()) {
+          zipIn.closeEntry();
+          continue;
+        }
+        String basename = entry.getName().replace('\\', '/');
+        int slash = basename.lastIndexOf('/');
+        if (slash >= 0) {
+          basename = basename.substring(slash + 1);
+        }
+        java.util.regex.Matcher m = pat.matcher(basename);
+        if (m.find()) {
+          return m.group(1).replaceAll("\\.+$", "");
+        }
+        zipIn.closeEntry();
+      }
+    } catch (IOException | RuntimeException e) {
+      log.warn("Failed to detect version from LOINC pack: {}", e.getMessage());
+    }
+    return null;
   }
 
   private static Map<String, String> invertFileMap(Map<String, String> fileMap) {
@@ -141,7 +172,24 @@ public class LoincZipReader {
     return inverted;
   }
 
-  private static String matchKey(String entryName, String translationsBaseName) {
+  /**
+   * Maps a zip entry name to a LoincService slot key.
+   *
+   * <p>Auto-dispatch is by file <em>basename</em> (case-insensitive, path separators
+   * normalised) so the wrapper directory in real LOINC releases — {@code Loinc_2.82/} above
+   * each entry — doesn't break the match.</p>
+   *
+   * <p>Translations: LOINC distributes translation files as
+   * {@code <lang><Country><variantId>LinguisticVariant.csv} (e.g. {@code etEE25Linguistic
+   * Variant.csv}, {@code elGR17LinguisticVariant.csv}). The admin only picks an ISO-639
+   * code from the language dropdown ({@code et}, {@code en}, …), so we match any file
+   * whose basename starts with that code (case-insensitive) AND ends with
+   * {@code LinguisticVariant} — prefix-matched, not exact.</p>
+   *
+   * @param language raw language code as entered by the admin (e.g. {@code "et"}), or
+   *                 {@code null} when no language is set
+   */
+  private static String matchKey(String entryName, String language) {
     String normalised = entryName.replace('\\', '/');
     int slash = normalised.lastIndexOf('/');
     String basename = slash < 0 ? normalised : normalised.substring(slash + 1);
@@ -161,7 +209,10 @@ public class LoincZipReader {
         return e.getValue();
       }
     }
-    if (translationsBaseName != null && translationsBaseName.equalsIgnoreCase(basename)) {
+    // Translations: prefix-match on the language code + suffix LinguisticVariant.
+    if (language != null && !language.isBlank()
+        && basename.toLowerCase().startsWith(language.toLowerCase())
+        && basename.endsWith("LinguisticVariant")) {
       return "translations";
     }
     return null;
