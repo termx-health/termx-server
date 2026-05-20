@@ -45,6 +45,11 @@ public class SnomedRF2ImportFromArchiveService {
   private final SnomedImportTrackingRepository trackingRepository;
   private final LorqueProcessService lorqueProcessService;
   private final SnomedRF2ScanService scanService;
+  // Used to send an email when the upload-stage fails (catch block below) — Snowstorm
+  // never received the file, so no SnomedImportTracking row gets written and the
+  // pollPendingImports sweep can't pick it up. The polling service exposes
+  // notifyUploadFailure() that builds the same email shape from a synthetic tracking.
+  private final SnomedImportPollingService snomedImportPollingService;
 
   /**
    * Kick off an async import from a Bob-stored RF2 zip. Returns immediately with a {@link
@@ -75,6 +80,10 @@ public class SnomedRF2ImportFromArchiveService {
       } catch (Exception e) {
         log.error("SNOMED RF2 from-archive import failed for archive {}", req.getArchiveUuid(), e);
         lorqueProcessService.fail(processId, ProcessResult.text(ExceptionUtils.getMessage(e) + "\n" + ExceptionUtils.getStackTrace(e)));
+        // Snowstorm never received the file (or never confirmed receipt), so the polling
+        // sweep won't notify recipients. Fire an upload-stage failure email here.
+        snomedImportPollingService.notifyUploadFailure(
+            importRequest.getBranchPath(), req.getArchiveUuid(), ExceptionUtils.getMessage(e));
       }
     }), VirtualThreadExecutor.get());
 

@@ -35,6 +35,11 @@ public class SnomedService {
   private final SnowstormClient snowstormClient;
   private final SnomedImportTrackingRepository trackingRepository;
   private final BobObjectService bobObjectService;
+  // For email-on-upload-failure. The "happy path" + Snowstorm-side completion / failure
+  // is covered by SnomedImportPollingService's scheduled poll, but failures before the
+  // tracking row is written (createImportJob / uploadRF2File rejected) need an explicit
+  // notify call — otherwise the operator gets nothing.
+  private final SnomedImportPollingService snomedImportPollingService;
 
   private static final int MAX_COUNT = 9999;
   private static final int MAX_CONCEPT_COUNT = 100;
@@ -128,6 +133,9 @@ public class SnomedService {
     try {
       jobId = snowstormClient.createImportJob(req).join();
     } catch (CompletionException e) {
+      // No tracking row, no Snowstorm jobId — polling can't catch this. Notify directly.
+      snomedImportPollingService.notifyUploadFailure(req.getBranchPath(), null,
+          "createImportJob failed: " + e.getMessage());
       throw rethrowSnowstormImportFailure(e);
     }
     try {
@@ -135,6 +143,11 @@ public class SnomedService {
     } catch (FileNotFoundException e) {
       log.warn("SNOMED RF2 upload to Snowstorm failed: {}", e.getMessage());
     } catch (CompletionException e) {
+      // jobId exists (Snowstorm accepted the createImportJob), but the file upload didn't
+      // land. No tracking row yet — notify directly. The Snowstorm job will eventually
+      // time out, but the operator gets immediate signal.
+      snomedImportPollingService.notifyUploadFailure(req.getBranchPath(), null,
+          "uploadRF2File failed (Snowstorm jobId=" + jobId + "): " + e.getMessage());
       throw rethrowSnowstormImportFailure(e);
     }
     recordTracking(jobId, req);
@@ -157,6 +170,8 @@ public class SnomedService {
     try {
       jobId = snowstormClient.createImportJob(req).join();
     } catch (CompletionException e) {
+      snomedImportPollingService.notifyUploadFailure(req.getBranchPath(), bobObjectUuid,
+          "createImportJob failed: " + e.getMessage());
       throw rethrowSnowstormImportFailure(e);
     }
     try {
@@ -164,6 +179,8 @@ public class SnomedService {
     } catch (FileNotFoundException e) {
       log.warn("SNOMED RF2 upload (from Bob) to Snowstorm failed: {}", e.getMessage());
     } catch (CompletionException e) {
+      snomedImportPollingService.notifyUploadFailure(req.getBranchPath(), bobObjectUuid,
+          "uploadRF2File from Bob failed (Snowstorm jobId=" + jobId + "): " + e.getMessage());
       throw rethrowSnowstormImportFailure(e);
     }
     recordTracking(jobId, req);
