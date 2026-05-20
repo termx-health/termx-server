@@ -40,11 +40,17 @@ public class ImportLogger {
         }
         logImport(job.getJobId(), importLog);
       } catch (ApiClientException e) {
-        log.error("Job {} resulted in ApiClientException: {}", type, e.getMessage());
+        log.error("Job {} resulted in ApiClientException: {}", type, e.getMessage(), e);
         logImport(job.getJobId(), e);
       } catch (Exception e) {
-        log.error("Job {} resulted in Exception: {}", type, e.getMessage());
-        logImport(job.getJobId(), ApiError.TC200.toApiException(Map.of("type", type, "error", e.getMessage())));
+        // Pass the throwable as a logger argument so the stack trace lands in server logs —
+        // the previous {@code e.getMessage()}-only form silently swallowed NPEs and other
+        // exceptions whose message is null, leaving operators to debug "Exception: null".
+        log.error("Job {} resulted in Exception: {}", type, e.getMessage(), e);
+        // Preserve the message form previously written to the job log so existing UI/API
+        // consumers keep working; the stack-trace remains in server logs only.
+        String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getName();
+        logImport(job.getJobId(), ApiError.TC200.toApiException(Map.of("type", type, "error", msg)));
       }
     }), VirtualThreadExecutor.get());
     return job;
