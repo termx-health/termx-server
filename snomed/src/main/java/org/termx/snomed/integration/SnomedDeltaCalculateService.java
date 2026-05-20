@@ -212,14 +212,28 @@ public class SnomedDeltaCalculateService {
       desc.append(" — ").append(result.getRowsExported()).append(" rows");
     }
 
+    // Critical: route every delta to its own Minio key. The delta-generator-tool always
+    // writes its output to a fixed name ("Delta.zip"), so if we forward that name unchanged
+    // every delta upload writes to `snomed:/Delta.zip` and overwrites whatever the previous
+    // calculation produced. The Bob DB then has multiple rows pointing at the same physical
+    // zip — scans report identical stats because they're parsing the same bytes — reported
+    // live as "two different scan-result URLs show exactly the same information".
+    //
+    // Per-upload random path keeps each delta isolated and reuses the existing Minio cleanup
+    // semantics (delete by Bob uuid removes only that one Minio object). The date suffix on
+    // the filename is purely cosmetic — admins downloading the delta zip from the UI get a
+    // human-readable name like Delta-2026-05-20.zip rather than the upstream "Delta.zip".
+    String storagePath = "/delta-" + java.util.UUID.randomUUID() + "/";
+    String dateSuffix = java.time.LocalDate.now().toString(); // YYYY-MM-DD per ISO-8601
+    String storageFilename = "Delta-" + dateSuffix + ".zip";
     BobObject draft = new BobObject()
         .setContentType("application/zip")
         .setDescription(desc.toString())
         .setMeta(meta)
         .setStorage(new BobStorage()
             .setContainer(SnomedBobContainerAuthorizer.CONTAINER)
-            .setPath("/")
-            .setFilename(result.getDeltaZip().getFileName().toString()));
+            .setPath(storagePath)
+            .setFilename(storageFilename));
     return bobObjectService.store(draft, result.getDeltaZip());
   }
 

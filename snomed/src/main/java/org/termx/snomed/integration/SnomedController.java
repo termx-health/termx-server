@@ -376,6 +376,27 @@ public class SnomedController {
     return JsonUtil.fromJson(json, SnomedRF2ScanEnvelope.class);
   }
 
+  /**
+   * Most-recent scan envelope for a Bob archive, keyed by Bob uuid (the path) rather than by
+   * lorqueId. The archive-detail / scan-result Angular pages used to carry the envelope
+   * across navigations via router state, but that's per-history-entry and lost on refresh /
+   * back-forward cache restore — so two different archive URLs could end up showing whichever
+   * envelope was still cached in router state. With this endpoint the client fetches fresh
+   * by archive uuid every time and same URL always returns same data.
+   *
+   * <p>Returns {@code null} (HTTP 200 with empty body) when no scan has been recorded yet for
+   * this archive — the client treats that as "click Analyze on the archive page".</p>
+   */
+  @Authorized(Privilege.SNOMED_READ)
+  @Get("/archives/{uuid}/latest-scan-result")
+  public SnomedRF2ScanEnvelope latestScanResult(@PathVariable String uuid) {
+    Long lorqueId = snomedRF2UploadCacheService.findLatestScanLorqueIdByBobObjectUuid(uuid);
+    if (lorqueId == null) {
+      return null;
+    }
+    return loadScanResult(lorqueId);
+  }
+
   @Authorized(Privilege.SNOMED_READ)
   @Post("/concept-usage")
   public List<SnomedConceptUsage> findConceptUsage(@Body SnomedConceptUsageRequest request) {
