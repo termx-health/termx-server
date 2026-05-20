@@ -90,11 +90,56 @@ public class SnomedImportPollingService {
     try {
       String subject = buildSubject(tracking, snowstormJob);
       String htmlBody = buildHtmlBody(tracking, snowstormJob);
-      
+
       List<String> recipients = emailService.getImportRecipients();
       emailService.sendToMultiple(recipients, subject, htmlBody, true);
     } catch (Exception e) {
       log.error("Failed to send SNOMED import notification", e);
+    }
+  }
+
+  /**
+   * Notify recipients of an upload-stage SNOMED import failure — used by
+   * {@link SnomedRF2ImportFromArchiveService} (and the legacy {@link SnomedService} paths)
+   * when the import errors out BEFORE the file reaches Snowstorm, so no
+   * {@link SnomedImportTracking} row gets persisted and the regular {@link
+   * #pollPendingImports()} sweep can't pick it up. Reuses this service's HTML scaffold
+   * for consistency with the post-Snowstorm completion email — same subject prefix,
+   * same status badge, same summary table — so an admin sees the same shape of message
+   * whether the failure was on the server side or on Snowstorm's side.
+   *
+   * <p>No-op when email isn't configured or recipients aren't set — matches the
+   * polling path's behaviour. Pass {@code branchPath} so the subject still shows the
+   * affected branch even though we never made it to Snowstorm.
+   */
+  public void notifyUploadFailure(String branchPath, String archiveUuid, String errorMessage) {
+    if (!emailService.hasImportRecipients() || !emailService.isConfigured() || !emailService.isEnabled()) {
+      return;
+    }
+    try {
+      // Build a synthetic tracking with status=FAILED and finished=now so the same
+      // helpers (buildSubject, buildSummaryTable, buildDetailsSection) work unchanged.
+      SnomedImportTracking synthetic = new SnomedImportTracking()
+          .setSnowstormJobId(archiveUuid != null ? "upload-stage-failure:" + archiveUuid : "upload-stage-failure")
+          .setBranchPath(branchPath)
+          .setType("upload")
+          .setStatus("FAILED")
+          .setStarted(OffsetDateTime.now())
+          .setFinished(OffsetDateTime.now())
+          .setErrorMessage(errorMessage)
+          .setNotified(true);
+      // Empty SnomedImportJob — we have no Snowstorm-side data; helpers null-guard.
+      SnomedImportJob noJob = new SnomedImportJob();
+      noJob.setStatus("FAILED");
+      noJob.setErrorMessage(errorMessage);
+
+      String subject = buildSubject(synthetic, noJob);
+      String htmlBody = buildHtmlBody(synthetic, noJob);
+      List<String> recipients = emailService.getImportRecipients();
+      log.info("Sending SNOMED upload-stage failure notification to {} recipient(s)", recipients.size());
+      emailService.sendToMultiple(recipients, subject, htmlBody, true);
+    } catch (Exception e) {
+      log.error("Failed to send SNOMED upload-stage failure notification", e);
     }
   }
 
