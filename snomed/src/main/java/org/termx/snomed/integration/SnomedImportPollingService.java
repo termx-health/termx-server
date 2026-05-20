@@ -253,6 +253,22 @@ public class SnomedImportPollingService {
         );
   }
 
+  // TODO(snomed-import): pull Snowstorm-side entity counts into the email.
+  // Snowstorm's GET /imports/{id} returns only status + branchPath + moduleIds + error —
+  // not "X concepts added, Y descriptions added, Z relationships added". Getting those
+  // requires a second integration:
+  //   * Snapshot the branch state BEFORE submitting the import (e.g. GET /branches/{path}
+  //     to capture the head-effective-time, or GET /branches/{path}/effective-time/{date}
+  //     for per-effective-time counts).
+  //   * After polling sees COMPLETED, run the same queries against the new head and diff
+  //     them.
+  // Caveats — branch-merge windows make the "before" snapshot fragile if the branch was
+  // active when the import landed; SCT release timing can mean entity-counts queries miss
+  // the just-imported delta until Snowstorm's effective-time index is refreshed. Either
+  // add a small retry loop around the post-import query, or skip count reporting and
+  // surface only the timestamps Snowstorm DOES expose. When implemented, append the
+  // resulting lines to tracking.getDetails() before save() so they land in the same
+  // "Import Lifecycle" section the email already renders.
   private String buildDetailsSection(SnomedImportTracking tracking, SnomedImportJob snowstormJob) {
     StringBuilder out = new StringBuilder("<div class='details'>");
 

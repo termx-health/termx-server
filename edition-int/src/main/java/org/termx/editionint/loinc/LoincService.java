@@ -69,6 +69,19 @@ public class LoincService {
   @Inject
   private MapSetImportProvider msImportProvider;
 
+  // TODO(loinc-import): surface the DEEP-stage timings in the post-import email too.
+  // ImportLog.successes currently captures everything LoincService logs at INFO under the
+  // "loinc-import:" prefix, but the heavy lines from CodeSystemImportService and
+  // CodeSystemEntityVersionService — "Concepts created (39 sec)", "Versions saved (58 sec)",
+  // "Designations saved 'N' (62 sec)", "Properties saved 'N' (387 sec)", "Linkage created
+  // (22 sec)", "Associations created (58 sec)" — are NOT captured because those classes
+  // log directly to slf4j with no collector callback. To surface them, plumb a List<String>
+  // (or a small LogCollector) through CodeSystemImportProvider.importCodeSystem →
+  // TerminologyCodeSystemImportProvider → CodeSystemImportService.importCodeSystem →
+  // CodeSystemEntityVersionService.batchUpsert. Each log.info(...) call there gets a
+  // sibling collector.add(MessageFormatter.format(...).getMessage()) line, same pattern as
+  // logAndCapture() below. Owner of the email then sees the full ~17-line timing breakdown
+  // instead of the 9 LoincService-level lines we currently emit.
   @Transactional
   public ImportLog importLoinc(Map<String, Object> params) {
     long t0 = System.currentTimeMillis();
