@@ -1,6 +1,7 @@
 package org.termx.editionint.loinc;
 
 import org.termx.core.sys.job.logger.ImportLog;
+import org.termx.ts.codesystem.CodeSystemImportSummary;
 import org.termx.editionint.loinc.utils.LoincConcept;
 import org.termx.editionint.loinc.utils.LoincConcept.LoincConceptAssociation;
 import org.termx.editionint.loinc.utils.LoincConcept.LoincConceptProperty;
@@ -76,31 +77,68 @@ public class LoincService {
     // Index by slot once — every phase below used to do `files.stream().filter(...).findFirst()`.
     Map<String, byte[]> bySlot = toSlotMap(files);
 
-    processAnswerList(bySlot, request);
+    // Capture the per-phase wall-clock and per-CS summary lines so the post-import email
+    // (ImportNotificationService) renders them under "Success Messages" instead of the
+    // blank list it used to show. {@link #logAndCapture} writes the same string to slf4j
+    // AND appends it to this list — single source of truth across logs + email.
+    List<String> successLines = new ArrayList<>();
+
+    CodeSystemImportSummary answerListSummary = processAnswerList(bySlot, request, successLines);
+    if (answerListSummary != null) {
+      successLines.add(formatSummary(answerListSummary));
+    }
 
     long tParts = System.currentTimeMillis();
     Map<String, LoincPart> parts = processParts(bySlot);
-    log.info("loinc-import: parsed {} parts in {} ms", parts.size(), System.currentTimeMillis() - tParts);
+    logAndCapture(successLines, "loinc-import: parsed {} parts in {} ms", parts.size(), System.currentTimeMillis() - tParts);
 
     long tTerm = System.currentTimeMillis();
     Map<String, LoincConcept> concepts = processTerminology(bySlot);
-    log.info("loinc-import: parsed {} concepts (terminology + associations + answer-list-link + order-observation) in {} ms",
+    logAndCapture(successLines,
+        "loinc-import: parsed {} concepts (terminology + associations + answer-list-link + order-observation) in {} ms",
         concepts.size(), System.currentTimeMillis() - tTerm);
 
     long tLang = System.currentTimeMillis();
     processLinguisticVariants(bySlot, request, parts, concepts);
-    log.info("loinc-import: applied linguistic variants in {} ms", System.currentTimeMillis() - tLang);
+    logAndCapture(successLines, "loinc-import: applied linguistic variants in {} ms", System.currentTimeMillis() - tLang);
 
     long tSaveParts = System.currentTimeMillis();
-    csImportProvider.importCodeSystem(LoincPartMapper.toRequest(request, parts.values().stream().toList()));
-    log.info("loinc-import: saved {} parts in {} ms", parts.size(), System.currentTimeMillis() - tSaveParts);
+    CodeSystemImportSummary partsSummary = csImportProvider.importCodeSystem(
+        LoincPartMapper.toRequest(request, parts.values().stream().toList()));
+    logAndCapture(successLines, "loinc-import: saved {} parts in {} ms", parts.size(), System.currentTimeMillis() - tSaveParts);
+    if (partsSummary != null) {
+      successLines.add(formatSummary(partsSummary));
+    }
 
     long tSaveConcepts = System.currentTimeMillis();
-    csImportProvider.importCodeSystem(LoincMapper.toRequest(request, concepts.values().stream().toList()));
-    log.info("loinc-import: saved {} concepts in {} ms", concepts.size(), System.currentTimeMillis() - tSaveConcepts);
+    CodeSystemImportSummary conceptsSummary = csImportProvider.importCodeSystem(
+        LoincMapper.toRequest(request, concepts.values().stream().toList()));
+    logAndCapture(successLines, "loinc-import: saved {} concepts in {} ms", concepts.size(), System.currentTimeMillis() - tSaveConcepts);
+    if (conceptsSummary != null) {
+      successLines.add(formatSummary(conceptsSummary));
+    }
 
-    log.info("loinc-import: total {} ms", System.currentTimeMillis() - t0);
-    return new ImportLog();
+    logAndCapture(successLines, "loinc-import: total {} ms", System.currentTimeMillis() - t0);
+    return new ImportLog().setSuccesses(successLines);
+  }
+
+  /** Render a {@link CodeSystemImportSummary} as the human-readable line that lands in
+   *  the import-completion email under "Success Messages":
+   *  {@code "loinc@2.82: 109 325 concepts (109 325 added, 0 updated)"}. */
+  private static String formatSummary(CodeSystemImportSummary s) {
+    int total = s.getTotalConcepts() == null ? 0 : s.getTotalConcepts();
+    int added = s.getAddedConcepts() == null ? 0 : s.getAddedConcepts();
+    int updated = s.getUpdatedConcepts() == null ? 0 : s.getUpdatedConcepts();
+    return String.format("%s@%s: %,d concepts (%,d added, %,d updated)",
+        s.getCodeSystem(), s.getVersion(), total, added, updated);
+  }
+
+  /** Logs at INFO and also appends the formatted message to {@code capture} (so it ends up
+   *  in {@link ImportLog#getSuccesses()} and ultimately in the post-import email). Mirrors
+   *  the SLF4J {@code {}} placeholder semantics by reusing the parameterised formatter. */
+  private void logAndCapture(List<String> capture, String pattern, Object... args) {
+    log.info(pattern, args);
+    capture.add(org.slf4j.helpers.MessageFormatter.arrayFormat(pattern, args).getMessage());
   }
 
   private Map<String, LoincPart> processParts(Map<String, byte[]> bySlot) {
@@ -358,10 +396,10 @@ public class LoincService {
     }
   }
 
-  private void processAnswerList(Map<String, byte[]> bySlot, LoincImportRequest request) {
+  private CodeSystemImportSummary processAnswerList(Map<String, byte[]> bySlot, LoincImportRequest request, List<String> capture) {
     byte[] answerList = bySlot.get("answer-list");
     if (answerList == null) {
-      return;
+      return null;
     }
 
     long t0 = System.currentTimeMillis();
@@ -421,19 +459,21 @@ public class LoincService {
         mappings.putIfAbsent(dedupe, Pair.of(stringId, extCode));
       }
     }
-    log.info("loinc-import: parsed answer-list ({} answers, {} lists, {} snomed mappings) in {} ms",
+    logAndCapture(capture, "loinc-import: parsed answer-list ({} answers, {} lists, {} snomed mappings) in {} ms",
         answersById.size(), listsById.size(), mappings.size(), System.currentTimeMillis() - t0);
 
     long tSave = System.currentTimeMillis();
-    csImportProvider.importCodeSystem(LoincAnswerListMapper.toRequest(request,
+    CodeSystemImportSummary summary = csImportProvider.importCodeSystem(LoincAnswerListMapper.toRequest(request,
         List.copyOf(answersById.values()), List.copyOf(listsById.values())));
-    log.info("loinc-import: saved answer-list code-system in {} ms", System.currentTimeMillis() - tSave);
+    logAndCapture(capture, "loinc-import: saved answer-list code-system in {} ms", System.currentTimeMillis() - tSave);
 
     long tMap = System.currentTimeMillis();
     msImportProvider.importMapSet(LoincAnswerListMapper.toRequest(request,
         mappings.values().stream().filter(Objects::nonNull).toList()));
-    log.info("loinc-import: saved answer-list map-set ({} mappings) in {} ms",
+    logAndCapture(capture, "loinc-import: saved answer-list map-set ({} mappings) in {} ms",
         mappings.size(), System.currentTimeMillis() - tMap);
+
+    return summary;
   }
 
   private RowListProcessor csvProcessor(byte[] csv) {
