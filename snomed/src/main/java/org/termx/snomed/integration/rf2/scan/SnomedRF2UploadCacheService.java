@@ -60,6 +60,15 @@ public class SnomedRF2UploadCacheService {
     return repository.load(id);
   }
 
+  /**
+   * Latest scan lorqueId for a Bob archive uuid, or {@code null} if no scan has been
+   * recorded. Drives {@code GET /snomed/archives/{uuid}/latest-scan-result} on the
+   * controller — same-URL → same-data semantics for the scan-result page.
+   */
+  public Long findLatestScanLorqueIdByBobObjectUuid(String bobObjectUuid) {
+    return repository.findLatestScanLorqueIdByBobObjectUuid(bobObjectUuid);
+  }
+
   @Transactional
   public void markImported(Long id) {
     repository.markImported(id);
