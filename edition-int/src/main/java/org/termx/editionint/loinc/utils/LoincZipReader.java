@@ -43,11 +43,32 @@ public class LoincZipReader {
   }
 
   public List<Pair<String, byte[]>> unpack(InputStream zipStream, String language) {
+    return unpack(zipStream, language, null);
+  }
+
+  /**
+   * Unpack the LOINC archive using an explicit slot → entry-name map. When the caller
+   * supplies a {@code fileMap}, the basename-match heuristic is bypassed entirely and the
+   * provided entry names are used verbatim. The map shape mirrors the keys
+   * {@link LoincService} consumes — {@code parts}, {@code terminology}, …, {@code translations}.
+   *
+   * <p>Entries listed in the map but missing from the zip silently produce no output for
+   * that slot. Entries not in the map are ignored, even if they would have been picked up
+   * by the auto-dispatch. A {@code null} or empty map falls back to the auto-dispatch path
+   * (preserves the previous behaviour for /loinc/import/from-archive callers that don't yet
+   * pass a fileMap).</p>
+   */
+  public List<Pair<String, byte[]>> unpack(InputStream zipStream, String language, Map<String, String> fileMap) {
     List<Pair<String, byte[]>> files = new ArrayList<>();
     String translationsName = (language == null || language.isBlank()) ? null
         : (language.toLowerCase() + "LinguisticVariant");
+    // Invert the optional override: entryName -> slotKey. Normalise the same way matchKey
+    // does so the lookup can succeed regardless of which path-separator / case the caller
+    // sends.
+    Map<String, String> entryToSlot = (fileMap == null || fileMap.isEmpty()) ? null
+        : invertFileMap(fileMap);
 
-    log.info("Unpacking LOINC ZIP (lang={})", language);
+    log.info("Unpacking LOINC ZIP (lang={}, fileMap={})", language, entryToSlot != null ? "override" : "auto");
     try (ZipInputStream zipIn = new ZipInputStream(zipStream)) {
       ZipEntry entry;
       while ((entry = zipIn.getNextEntry()) != null) {
@@ -55,7 +76,14 @@ public class LoincZipReader {
           zipIn.closeEntry();
           continue;
         }
-        String key = matchKey(entry.getName(), translationsName);
+        String key;
+        if (entryToSlot != null) {
+          // Explicit override path — exact entry-name match (normalised).
+          String normalised = entry.getName().replace('\\', '/');
+          key = entryToSlot.get(normalised);
+        } else {
+          key = matchKey(entry.getName(), translationsName);
+        }
         if (key != null) {
           files.add(Pair.of(key, IOUtils.toByteArray(zipIn)));
         }
@@ -66,6 +94,51 @@ public class LoincZipReader {
       throw new RuntimeException(e);
     }
     return files;
+  }
+
+  /**
+   * Returns the entries the auto-dispatch *would* pick from this archive, with slot keys
+   * assigned per {@link #matchKey} — the "suggested mapping" surfaced on the import page so
+   * the admin can preview / override before kicking off the import. Stream-walks; never
+   * materialises any entry body.
+   */
+  public List<Pair<String, String>> describe(InputStream zipStream, String language) {
+    List<Pair<String, String>> entries = new ArrayList<>();
+    String translationsName = (language == null || language.isBlank()) ? null
+        : (language.toLowerCase() + "LinguisticVariant");
+    try (ZipInputStream zipIn = new ZipInputStream(zipStream)) {
+      ZipEntry entry;
+      while ((entry = zipIn.getNextEntry()) != null) {
+        if (entry.isDirectory()) {
+          zipIn.closeEntry();
+          continue;
+        }
+        String normalised = entry.getName().replace('\\', '/');
+        if (!normalised.toLowerCase().endsWith(".csv")) {
+          zipIn.closeEntry();
+          continue;
+        }
+        String key = matchKey(entry.getName(), translationsName);
+        entries.add(Pair.of(normalised, key)); // key may be null — UI shows entry as "Unmapped"
+        zipIn.closeEntry();
+      }
+    } catch (IOException | RuntimeException e) {
+      log.error("Error while describing LOINC pack", e);
+      throw new RuntimeException(e);
+    }
+    return entries;
+  }
+
+  private static Map<String, String> invertFileMap(Map<String, String> fileMap) {
+    Map<String, String> inverted = new java.util.HashMap<>();
+    for (Map.Entry<String, String> e : fileMap.entrySet()) {
+      if (e.getValue() == null || e.getValue().isBlank()) {
+        continue;
+      }
+      String entryName = e.getValue().replace('\\', '/');
+      inverted.put(entryName, e.getKey());
+    }
+    return inverted;
   }
 
   private static String matchKey(String entryName, String translationsBaseName) {

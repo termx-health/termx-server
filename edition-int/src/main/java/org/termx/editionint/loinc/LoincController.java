@@ -5,6 +5,7 @@ import org.termx.core.auth.Authorized;
 import org.termx.core.sys.job.logger.ImportLogger;
 import org.termx.core.utils.FileUtil;
 import org.termx.editionint.Privilege;
+import org.termx.editionint.loinc.utils.LoincArchiveContents;
 import org.termx.editionint.loinc.utils.LoincImportFromArchiveRequest;
 import org.termx.editionint.loinc.utils.LoincImportRequest;
 import org.termx.sys.job.JobLogResponse;
@@ -12,8 +13,11 @@ import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Part;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.reactivex.rxjava3.core.Flowable;
 import java.util.List;
@@ -71,6 +75,19 @@ public class LoincController {
   @Post(value = "/import/from-archive")
   public JobLogResponse processFromArchive(@Body LoincImportFromArchiveRequest request) {
     return loincImportFromArchiveService.startImport(request);
+  }
+
+  /**
+   * Lists every {@code .csv} entry inside a Bob-stored LOINC archive plus the slot the
+   * auto-dispatch would assign each one. Drives the per-slot select boxes on the import
+   * page — admins see what's in the chosen zip, the recommended mapping is preselected,
+   * and they can override before clicking Import.
+   */
+  @Authorized(Privilege.CS_WRITE)
+  @Get(value = "/archives/{uuid}/files")
+  public LoincArchiveContents listArchiveFiles(@PathVariable String uuid,
+                                               @Nullable @QueryValue String language) {
+    return loincImportFromArchiveService.listArchiveContents(uuid, language);
   }
 
   private static byte[] getBytes(Publisher<CompletedFileUpload> file) {
