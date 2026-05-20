@@ -40,12 +40,22 @@ public class CodeSystemEntityRepository extends BaseRepository {
     if (newEntities.isEmpty()) {
       return;
     }
-    SqlBuilder sql = new SqlBuilder("insert into terminology.code_system_entity (type, code_system) values ");
-    sql.append(newEntities.stream().map(e -> "(?, ?)").collect(Collectors.joining(",")));
-    sql.add(newEntities.stream().flatMap(e -> Stream.of(e.getType(), codeSystem)).toList());
-    sql.append(" returning id");
-    List<Long> insertedIds = jdbcTemplate.queryForList(sql.getSql(), Long.class, sql.getParams());
-    Streams.forEachPair(newEntities.stream(), insertedIds.stream(), CodeSystemEntity::setId);
+    // The original implementation built a single {@code INSERT … VALUES (?,?),(?,?),…}
+    // with one parameter pair per row. That blew through PostgreSQL's 65,535-parameter
+    // PreparedStatement limit on LOINC's answer-list import (~33k entities → 67,758 params),
+    // and would fail on any bulk-import of comparable size. We chunk into queries that
+    // stay well under the limit. The RETURNING-order trick the caller relies on (input
+    // order = id order) is preserved because INSERT…VALUES guarantees row-by-row
+    // execution in declared order, and we pair returned ids with the chunk's source rows.
+    final int CHUNK_SIZE = 25_000; // 25k × 2 params = 50k params, headroom for schema growth.
+    for (List<CodeSystemEntity> chunk : ListUtils.partition(newEntities, CHUNK_SIZE)) {
+      SqlBuilder sql = new SqlBuilder("insert into terminology.code_system_entity (type, code_system) values ");
+      sql.append(chunk.stream().map(e -> "(?, ?)").collect(Collectors.joining(",")));
+      sql.add(chunk.stream().flatMap(e -> Stream.of(e.getType(), codeSystem)).toList());
+      sql.append(" returning id");
+      List<Long> insertedIds = jdbcTemplate.queryForList(sql.getSql(), Long.class, sql.getParams());
+      Streams.forEachPair(chunk.stream(), insertedIds.stream(), CodeSystemEntity::setId);
+    }
   }
 
   public void cancel(Long id) {
