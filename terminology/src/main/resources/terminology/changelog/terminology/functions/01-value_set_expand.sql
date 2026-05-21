@@ -251,13 +251,22 @@ expressions as (
                      and ep.sys_status = 'A' and ep.id = epv.entity_property_id
                      and (t.filter_ -> 'property' ->> 'name')::text = ep.name
                      and ((t.filter_ ->> 'value') is null or
-                          (t.filter_ ->> 'operator')::text = 'exists' and true = (t.filter_ -> 'value')::boolean or
+                          -- 'exists' boolean check: compare ->> 'value' (text form) to 'true' rather than
+                          -- casting -> 'value' to boolean. The boolean cast fails with "cannot cast jsonb
+                          -- object to type boolean" when a SIBLING filter on the same rule carries a
+                          -- Coding-shaped object value like {"code":"X","codeSystem":"…"} — Postgres can
+                          -- evaluate the cast on those objects even though they belong to a different
+                          -- operator branch, because OR/AND short-circuiting through the CTE planner is
+                          -- not guaranteed. ->> gives '{"code":"X",…}' for objects, 'true'/'false' for
+                          -- JSON booleans — comparison is then a plain text equality, never throws.
+                          (t.filter_ ->> 'operator')::text = 'exists' and (t.filter_ ->> 'value')::text = 'true' or
                           (t.filter_ ->> 'operator')::text = '=' and (epv.value::jsonb = (t.filter_ -> 'value') or (epv.value ->> 'code')::text = (t.filter_ ->> 'value')::text) or
                           (t.filter_ ->> 'operator')::text = 'regex' and (epv.value::text = any(regexp_match(epv.value::text, (t.filter_ ->> 'value')::text||'$')) or (epv.value ->> 'code')::text = any(regexp_match((epv.value ->> 'code')::text, (t.filter_ ->> 'value')::text||'$'))) or
                           (t.filter_ ->> 'operator')::text = 'in' and (epv.value::text = any(string_to_array((t.filter_ ->> 'value')::text, ',')) or (epv.value ->> 'code')::text = any(string_to_array((t.filter_ ->> 'value')::text, ','))) or
                           (t.filter_ ->> 'operator')::text = 'not-in' and (epv.value::text != all(string_to_array((t.filter_ ->> 'value')::text, ',')) and (epv.value ->> 'code')::text != all(string_to_array((t.filter_ ->> 'value')::text, ',')))
                      ))
-          or (t.filter_ ->> 'operator')::text = 'exists' and false = (t.filter_ -> 'value')::boolean and
+          -- Same text-vs-boolean swap as above; symmetric for 'exists = false'.
+          or (t.filter_ ->> 'operator')::text = 'exists' and (t.filter_ ->> 'value')::text = 'false' and
              not exists (select 1 from terminology.entity_property_value epv, terminology.entity_property ep
                           where epv.sys_status = 'A' and c.csev_id = epv.code_system_entity_version_id
                             and ep.sys_status = 'A' and ep.id = epv.entity_property_id
