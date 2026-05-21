@@ -8,10 +8,10 @@ import org.termx.ts.codesystem.CodeSystemEntityVersion
 import org.termx.ts.codesystem.Concept
 import org.termx.ts.codesystem.ConceptQueryParams
 import org.termx.ts.codesystem.Designation
+import org.termx.ts.codesystem.EntityProperty
 import org.termx.ts.codesystem.EntityPropertyType
 import org.termx.ts.codesystem.EntityPropertyValue
 import org.termx.ts.codesystem.EntityPropertyValue.EntityPropertyValueCodingValue
-import org.termx.ts.property.PropertyReference
 import spock.lang.Specification
 
 import static org.termx.ts.codesystem.EntityPropertyType.coding
@@ -35,7 +35,7 @@ class ConceptExportServiceTest extends Specification {
     CodeSystem codeSystem = new CodeSystem()
     codeSystem.setId(codeSystemId)
     codeSystem.setProperties([
-      new PropertyReference().setName("status")
+      new EntityProperty().setName("status")
     ])
     
     // Create concept with designations
@@ -309,9 +309,9 @@ class ConceptExportServiceTest extends Specification {
     CodeSystem codeSystem = new CodeSystem()
     codeSystem.setId("test1")
     codeSystem.setProperties([
-      new PropertyReference().setName("itemWeight"),
-      new PropertyReference().setName("synonym"),
-      new PropertyReference().setName("type")
+      new EntityProperty().setName("itemWeight"),
+      new EntityProperty().setName("synonym"),
+      new EntityProperty().setName("type")
     ])
     
     // Concept a1: has display, itemWeight, 2 synonyms, 2 type codings
@@ -696,9 +696,9 @@ class ConceptExportServiceTest extends Specification {
     CodeSystem codeSystem = new CodeSystem()
     codeSystem.setId("test-cs")
     codeSystem.setProperties([
-      new PropertyReference().setName("itemWeight"),
-      new PropertyReference().setName("synonym"),
-      new PropertyReference().setName("type")
+      new EntityProperty().setName("itemWeight"),
+      new EntityProperty().setName("synonym"),
+      new EntityProperty().setName("type")
     ])
     
     Concept concept = new Concept()
