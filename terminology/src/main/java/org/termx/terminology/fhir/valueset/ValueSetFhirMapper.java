@@ -110,6 +110,31 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return FhirMapper.toJson(toFhir(vs, vsv, provenances));
   }
 
+  /**
+   * Same as {@link #toFhirJson(ValueSet, ValueSetVersion, List)} but additionally
+   * populates {@code ValueSet.expansion.total} with the snapshot's saved concept count
+   * when {@code expansionCount} is non-null. The {@code expansion.contains} list is
+   * NOT populated — only the count — so the response stays small even for value sets
+   * with tens of thousands of expanded concepts. Used by the FHIR read flow on
+   * {@code ?_summary=false} via the open-in-FHIR list link.
+   *
+   * @param expansionCount the snapshot's {@code concepts_total}, or {@code null}
+   *                       when no snapshot exists for this version (no expansion block emitted)
+   */
+  public String toFhirJson(ValueSet vs, ValueSetVersion vsv, List<Provenance> provenances, Integer expansionCount) {
+    com.kodality.zmei.fhir.resource.terminology.ValueSet fhir = toFhir(vs, vsv, provenances);
+    if (expansionCount != null) {
+      ValueSetExpansion expansion = new ValueSetExpansion();
+      expansion.setTotal(expansionCount);
+      // No setContains(...) — the whole point is to surface "there is an expansion of
+      // size N stored" without paying for the inline expansion list. Consumers that
+      // want the actual contains[] can call /fhir/ValueSet/{id}/$expand or hit the
+      // expansion endpoint directly.
+      fhir.setExpansion(expansion);
+    }
+    return FhirMapper.toJson(fhir);
+  }
+
   public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
     if (StringUtils.isNotEmpty(valueSet.getExternalWebSource())) {

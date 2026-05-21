@@ -12,6 +12,7 @@ import org.termx.core.fhir.BaseFhirResourceHandler;
 import org.termx.core.sys.provenance.Provenance;
 import org.termx.core.sys.provenance.ProvenanceService;
 import org.termx.terminology.terminology.valueset.ValueSetService;
+import org.termx.terminology.terminology.valueset.snapshot.ValueSetSnapshotService;
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import org.termx.ts.valueset.ValueSet;
 import org.termx.ts.valueset.ValueSetQueryParams;
@@ -30,6 +31,7 @@ public class ValueSetResourceStorage extends BaseFhirResourceHandler {
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetFhirImportService importService;
   private final ProvenanceService provenanceService;
+  private final ValueSetSnapshotService snapshotService;
   private final ValueSetFhirMapper mapper;
   private final String defaultSearchSummary;
 
@@ -37,12 +39,14 @@ public class ValueSetResourceStorage extends BaseFhirResourceHandler {
                                  ValueSetVersionService valueSetVersionService,
                                  ValueSetFhirImportService importService,
                                  ProvenanceService provenanceService,
+                                 ValueSetSnapshotService snapshotService,
                                  ValueSetFhirMapper mapper,
                                  @Value("${termx.fhir.valueset.search.default-summary:true}") String defaultSearchSummary) {
     this.valueSetService = valueSetService;
     this.valueSetVersionService = valueSetVersionService;
     this.importService = importService;
     this.provenanceService = provenanceService;
+    this.snapshotService = snapshotService;
     this.mapper = mapper;
     this.defaultSearchSummary = defaultSearchSummary;
   }
@@ -122,9 +126,15 @@ public class ValueSetResourceStorage extends BaseFhirResourceHandler {
 
   private ResourceVersion toFhir(ValueSet vs, ValueSetVersion vsv) {
     List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + vsv.getId());
+    // Surface expansion.total when a snapshot exists, WITHOUT loading the (potentially
+    // huge) expansion list. Lets ?_summary=false consumers see "there's an expansion of
+    // size N" on the open-in-FHIR list link from termx-web without paying for the
+    // contains[] payload. Returns null when no snapshot is stored — mapper then emits
+    // no expansion block at all.
+    Integer expansionCount = vs == null ? null : snapshotService.loadConceptsTotal(vs.getId(), vsv.getId());
     return vs == null ? null : new ResourceVersion(
         new VersionId("ValueSet", ValueSetFhirMapper.toFhirId(vs, vsv)),
-        new ResourceContent(mapper.toFhirJson(vs, vsv, provenances), "json")
+        new ResourceContent(mapper.toFhirJson(vs, vsv, provenances, expansionCount), "json")
     );
   }
 
