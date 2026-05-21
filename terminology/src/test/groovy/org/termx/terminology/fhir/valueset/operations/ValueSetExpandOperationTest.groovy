@@ -8,10 +8,13 @@ import org.termx.core.auth.SessionStore
 import org.termx.core.sys.provenance.ProvenanceService
 import org.termx.core.ts.ValueSetExternalExpandProvider
 import org.termx.terminology.fhir.valueset.ValueSetFhirMapper
+import org.termx.terminology.terminology.codesystem.CodeSystemService
 import org.termx.terminology.terminology.valueset.ValueSetService
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptRepository
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService
+import org.termx.ts.codesystem.CodeSystem
+import org.termx.ts.codesystem.CodeSystemQueryParams
 import org.termx.ts.valueset.ValueSet
 import org.termx.ts.valueset.ValueSetSnapshot
 import org.termx.ts.valueset.ValueSetVersion
@@ -39,6 +42,7 @@ class ValueSetExpandOperationTest extends Specification {
   def valueSetVersionConceptService = Mock(ValueSetVersionConceptService)
   def valueSetVersionConceptRepository = Mock(ValueSetVersionConceptRepository)
   def mapper = Mock(ValueSetFhirMapper)
+  def codeSystemService = Mock(CodeSystemService)
   // SNOMED provider — recognised via getCodeSystemId() == "snomed-ct". Delegated
   // to by the operation for `?fhir_vs[=...]` URLs. The mock captures the
   // synthesised rule so tests can assert on the filter (operator + value) the
@@ -54,7 +58,8 @@ class ValueSetExpandOperationTest extends Specification {
       valueSetVersionConceptService,
       valueSetVersionConceptRepository,
       mapper,
-      [snomedProvider])
+      [snomedProvider],
+      codeSystemService)
 
   /**
    * Snapshot the operation hands off to {@link ValueSetFhirMapper#toFhir}.
@@ -148,18 +153,155 @@ class ValueSetExpandOperationTest extends Specification {
 
 
   // ---------------------------------------------------------------------------
-  // URL not matching any stored ValueSet
+  // Implicit ValueSet over a stored CodeSystem
+  //
+  // When `url` doesn't match any stored ValueSet but DOES match a stored
+  // CodeSystem URI, TermX synthesises an inline ValueSet whose
+  // `compose.include[].system` (and optionally `.version`) point at the
+  // CodeSystem, then routes through the existing `expandFromJson` SQL path.
+  // The `?fhir_vs` query convention is SNOMED-only, but a bare `?fhir_vs`
+  // suffix on a non-SNOMED canonical is leniently stripped so client libraries
+  // that always append it (or copy-paste examples) don't 404. The `|<version>`
+  // canonical-with-version syntax is also accepted.
   // ---------------------------------------------------------------------------
 
-  def "expand with url that does not match any stored ValueSet returns 404"() {
-    // Documents the missing implicit-ValueSet-over-CodeSystem feature.
-    // FHIR spec lets a client paginate a CodeSystem by passing its canonical
-    // URL as the $expand `url` parameter; TermX currently does not synthesise
-    // a ValueSet for a CodeSystem URL and instead 404s.
+  def "expand with url matching a stored CodeSystem synthesises inline VS over that CS"() {
+    given:
+    String capturedJson = null
+    valueSetService.query(_) >> QueryResult.empty()
+    codeSystemService.query(_) >> { args ->
+      CodeSystemQueryParams p = args[0]
+      return p.uri == "http://loinc.org/answer-list"
+          ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org/answer-list").tap { setId("loinc-answer-list") }])
+          : QueryResult.empty()
+    }
+    valueSetVersionConceptRepository.expandFromJson(_) >> { args ->
+      capturedJson = args[0] as String
+      return (0..<3).collect { concept(it) }
+    }
+
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://loinc.org/answer-list"))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    capturedJson != null
+    capturedJson.contains("http://loinc.org/answer-list")
+    result.expansion.contains.size() == 3
+  }
+
+  def "expand with url + bare ?fhir_vs strips the suffix and resolves via CS lookup"() {
+    given:
+    String capturedJson = null
+    valueSetService.query(_) >> QueryResult.empty()
+    codeSystemService.query(_) >> { args ->
+      CodeSystemQueryParams p = args[0]
+      return p.uri == "http://loinc.org/answer-list"
+          ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org/answer-list").tap { setId("loinc-answer-list") }])
+          : QueryResult.empty()
+    }
+    valueSetVersionConceptRepository.expandFromJson(_) >> { args ->
+      capturedJson = args[0] as String
+      return [concept(0), concept(1)]
+    }
+
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://loinc.org/answer-list?fhir_vs"))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    capturedJson.contains("http://loinc.org/answer-list")
+    !capturedJson.contains("fhir_vs") // suffix stripped before CS lookup
+    result.expansion.contains.size() == 2
+  }
+
+  def "expand with parent CodeSystem canonical (http://loinc.org) ?fhir_vs synthesises VS for the parent CS"() {
     given:
     valueSetService.query(_) >> QueryResult.empty()
+    codeSystemService.query(_) >> { args ->
+      CodeSystemQueryParams p = args[0]
+      return p.uri == "http://loinc.org"
+          ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org").tap { setId("loinc") }])
+          : QueryResult.empty()
+    }
+    valueSetVersionConceptRepository.expandFromJson(_) >> (0..<5).collect { concept(it) }
+
     def req = new Parameters()
-        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://snomed.info/sct"))
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://loinc.org?fhir_vs"))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    result.expansion.contains.size() == 5
+  }
+
+  def "expand with url containing |<version> canonical syntax extracts the version"() {
+    given:
+    String capturedJson = null
+    valueSetService.query(_) >> QueryResult.empty()
+    codeSystemService.query(_) >> { args ->
+      CodeSystemQueryParams p = args[0]
+      return p.uri == "http://loinc.org/answer-list"
+          ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org/answer-list").tap { setId("loinc-answer-list") }])
+          : QueryResult.empty()
+    }
+    valueSetVersionConceptRepository.expandFromJson(_) >> { args ->
+      capturedJson = args[0] as String
+      return [concept(0)]
+    }
+
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://loinc.org/answer-list|2.82?fhir_vs"))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    capturedJson.contains("http://loinc.org/answer-list")
+    capturedJson.contains("2.82") // version forwarded as compose.include[].version
+    !capturedJson.contains("|2.82") // pipe stripped from the system URI
+    result.expansion.contains.size() == 1
+  }
+
+  def "expand with url + valueSetVersion param pins the include version"() {
+    given:
+    String capturedJson = null
+    valueSetService.query(_) >> QueryResult.empty()
+    codeSystemService.query(_) >> { args ->
+      CodeSystemQueryParams p = args[0]
+      return p.uri == "http://loinc.org/answer-list"
+          ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org/answer-list").tap { setId("loinc-answer-list") }])
+          : QueryResult.empty()
+    }
+    valueSetVersionConceptRepository.expandFromJson(_) >> { args ->
+      capturedJson = args[0] as String
+      return [concept(0)]
+    }
+
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://loinc.org/answer-list"))
+        .addParameter(new Parameters.ParametersParameter("valueSetVersion").setValueString("2.82"))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    capturedJson.contains("http://loinc.org/answer-list")
+    capturedJson.contains("2.82")
+    result.expansion.contains.size() == 1
+  }
+
+  def "expand with url matching neither stored ValueSet nor stored CodeSystem returns 404"() {
+    given:
+    valueSetService.query(_) >> QueryResult.empty()
+    codeSystemService.query(_) >> QueryResult.empty()
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://example.com/nothing"))
 
     when:
     operation.run(req)
