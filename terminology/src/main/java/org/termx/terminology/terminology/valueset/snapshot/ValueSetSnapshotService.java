@@ -41,4 +41,16 @@ public class ValueSetSnapshotService {
   public ValueSetSnapshot load(String valueSet, Long versionId) {
     return repository.load(valueSet, versionId);
   }
+
+  /**
+   * Returns ONLY the saved snapshot's {@code concepts_total} — a single int — without
+   * loading the (potentially large) expansion list. Used by the FHIR read flow on
+   * {@code ?_summary=false} to populate {@code ValueSet.expansion.total} without
+   * shipping the full expansion contents.
+   *
+   * @return concept count of the saved snapshot, or {@code null} if no snapshot exists
+   */
+  public Integer loadConceptsTotal(String valueSet, Long versionId) {
+    return repository.loadConceptsTotal(valueSet, versionId);
+  }
 }

@@ -41,4 +41,17 @@ public class ValueSetSnapshotRepository extends BaseRepository {
     return getBean(sql, bp, valueSet, valueSetVersionId);
   }
 
+  /**
+   * Returns ONLY {@code concepts_total} for the saved snapshot, without loading the
+   * (potentially huge) {@code expansion} jsonb column. Lets the FHIR read flow emit
+   * {@code expansion.total} on {@code ?_summary=false} without paying for the full
+   * expansion list — used by {@link ValueSetResourceStorage} to populate the count
+   * on the open-in-FHIR list link. Returns {@code null} when no snapshot exists.
+   */
+  public Integer loadConceptsTotal(String valueSet, Long valueSetVersionId) {
+    String sql = "select concepts_total from terminology.value_set_snapshot " +
+        "where sys_status = 'A' and value_set = ? and value_set_version_id = ? limit 1";
+    return jdbcTemplate.query(sql, rs -> rs.next() ? rs.getInt(1) : null, valueSet, valueSetVersionId);
+  }
+
 }
