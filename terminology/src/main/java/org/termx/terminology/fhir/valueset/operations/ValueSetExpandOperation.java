@@ -11,10 +11,13 @@ import org.termx.core.ts.ValueSetExternalExpandProvider;
 import org.termx.terminology.fhir.valueset.ValueSetFhirMapper;
 import org.termx.core.sys.provenance.Provenance;
 import org.termx.core.sys.provenance.ProvenanceService;
+import org.termx.terminology.terminology.codesystem.CodeSystemService;
 import org.termx.terminology.terminology.valueset.ValueSetService;
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptRepository;
+import org.termx.ts.codesystem.CodeSystem;
+import org.termx.ts.codesystem.CodeSystemQueryParams;
 import org.termx.ts.codesystem.CodeSystemVersionReference;
 import org.termx.ts.valueset.*;
 import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
@@ -41,6 +44,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   private final ValueSetVersionConceptRepository valueSetVersionConceptRepository;
   private final ValueSetFhirMapper mapper;
   private final List<ValueSetExternalExpandProvider> externalExpandProviders;
+  private final CodeSystemService codeSystemService;
 
   // SNOMED CT implicit-ValueSet URL family
   // https://build.fhir.org/ig/HL7/UTG/en/SNOMEDCT.html
@@ -104,14 +108,27 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       return snomedResp;
     }
 
+    // 4. Stored ValueSet lookup.
     ValueSetQueryParams vsParams = new ValueSetQueryParams();
     vsParams.setUri(url);
     vsParams.setLimit(1);
     vsParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_READ));
-    ValueSet valueSet = valueSetService.query(vsParams).findFirst()
-        .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "value set not found: " + url));
+    ValueSet valueSet = valueSetService.query(vsParams).findFirst().orElse(null);
+    if (valueSet != null) {
+      return expand(valueSet, versionNr, req);
+    }
 
-    return expand(valueSet, versionNr, req);
+    // 5. Implicit ValueSet over a stored CodeSystem with the same URI. Lets
+    //    clients paginate any CodeSystem they know the canonical of, without
+    //    needing a wrapper ValueSet stored on the server. `?fhir_vs` (bare,
+    //    no value) is leniently stripped — non-SNOMED `?fhir_vs=...` patterns
+    //    are not interpreted and the request will 404 below.
+    com.kodality.zmei.fhir.resource.terminology.ValueSet csImplicitResp = tryExpandCodeSystemImplicit(url, versionNr, req);
+    if (csImplicitResp != null) {
+      return csImplicitResp;
+    }
+
+    throw new FhirException(404, IssueType.NOTFOUND, "value set not found: " + url);
   }
 
   public com.kodality.zmei.fhir.resource.terminology.ValueSet expand(ValueSet vs, String versionNr, Parameters req) {
@@ -409,5 +426,84 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .filter(p -> SNOMED_CS_ID.equals(p.getCodeSystemId()))
         .findFirst()
         .orElse(null);
+  }
+
+
+  // ===========================================================================
+  // Implicit ValueSet over a stored CodeSystem
+  // ===========================================================================
+
+  /**
+   * If {@code url} matches a stored CodeSystem URI, synthesise an inline
+   * ValueSet whose {@code compose.include[].system} (and optional
+   * {@code version}) points at that CodeSystem, then route through the inline
+   * expand path. Returns {@code null} when no matching CodeSystem exists so
+   * the caller can 404.
+   *
+   * <p>Tolerated URL forms:
+   * <ul>
+   *   <li>{@code <canonical>}                       — bare canonical</li>
+   *   <li>{@code <canonical>?fhir_vs}               — bare fhir_vs suffix is stripped (SNOMED-only when valued)</li>
+   *   <li>{@code <canonical>|<version>}             — pipe-version syntax; the version is forwarded as compose.include[].version</li>
+   *   <li>{@code <canonical>|<version>?fhir_vs}     — combination of the above</li>
+   * </ul>
+   * The {@code valueSetVersion} parameter wins when both it and the pipe form
+   * carry a version (the latter is the client-supplied source of truth).
+   */
+  private com.kodality.zmei.fhir.resource.terminology.ValueSet tryExpandCodeSystemImplicit(String url, String versionNr, Parameters req) {
+    if (url == null) {
+      return null;
+    }
+    String stripped = url;
+    // Strip bare ?fhir_vs suffix (with or without trailing slash). Non-SNOMED
+    // ?fhir_vs=<pattern> URLs aren't interpreted — they fall through and 404.
+    int qIdx = stripped.indexOf('?');
+    if (qIdx >= 0) {
+      String query = stripped.substring(qIdx + 1);
+      if (!"fhir_vs".equals(query) && !query.isEmpty()) {
+        return null;
+      }
+      stripped = stripped.substring(0, qIdx);
+    }
+    // Parse `|<version>` canonical-with-version syntax.
+    String pipeVersion = null;
+    int pIdx = stripped.indexOf('|');
+    if (pIdx >= 0) {
+      pipeVersion = stripped.substring(pIdx + 1);
+      stripped = stripped.substring(0, pIdx);
+    }
+    if (stripped.isEmpty()) {
+      return null;
+    }
+
+    // Resolve the CodeSystem by URI. We don't need the full body — only
+    // confirmation that the canonical exists. Empty result → fall through 404.
+    CodeSystemQueryParams csParams = new CodeSystemQueryParams();
+    csParams.setUri(stripped);
+    csParams.setLimit(1);
+    CodeSystem cs = codeSystemService.query(csParams).findFirst().orElse(null);
+    if (cs == null) {
+      return null;
+    }
+
+    // Prefer the explicit valueSetVersion parameter; fall back to the
+    // pipe-version. Either is forwarded as compose.include[].version.
+    String resolvedVersion = versionNr != null ? versionNr : pipeVersion;
+
+    com.kodality.zmei.fhir.resource.terminology.ValueSet synthesisedVs = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
+    synthesisedVs.setUrl(stripped);
+    synthesisedVs.setStatus("active");
+    com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose compose =
+        new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose();
+    com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude include =
+        new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude();
+    include.setSystem(stripped);
+    if (resolvedVersion != null) {
+      include.setVersion(resolvedVersion);
+    }
+    compose.setInclude(List.of(include));
+    synthesisedVs.setCompose(compose);
+
+    return expandInline(synthesisedVs, req);
   }
 }
