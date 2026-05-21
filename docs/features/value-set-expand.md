@@ -40,19 +40,32 @@ The `snomed-module` CodeSystem must contain entries with `moduleId` and `branchP
 
 | Parameter | Type | Notes |
 |---|---|---|
-| `url` | `uri` | Required unless `valueSet` is sent. Matches stored `ValueSet.uri`. Recognised SNOMED canonical: see [§5](#5-snomed-fhir_vs-url-family). |
-| `valueSetVersion` | `string` | Stored-VS only. Selects a specific version; defaults to the latest. |
+| `url` | `uri` | Required unless `valueSet` is sent. Resolved in order: stored `ValueSet.uri` → SNOMED canonical (see [§5](#5-snomed-fhir_vs-url-family)) → stored `CodeSystem.uri` (see [§6](#6-implicit-valueset-over-a-stored-codesystem)). |
+| `valueSetVersion` | `string` | Selects a specific version. On stored-VS: picks `ValueSet.version`. On implicit-CS: forwarded as `codeSystemVersion`. Pipe-version syntax in `url` (`<canonical>\|<version>`) is also accepted on implicit-CS; `valueSetVersion` wins when both are supplied. |
 | `valueSet` | `ValueSet` resource | Inline path. Mutually exclusive with `url` (inline takes precedence when both are present). |
-| `offset` | `integer` | Skip the first N concepts. `offset >= expansion.total` → empty `contains`. Honoured on all three paths. |
-| `count` | `integer` | Keep at most N concepts. Honoured on all three paths. |
-| `filter` | `string` | Case-insensitive substring match against `concept.code` and `concept.display`. Applied **before** paging. |
-| `displayLanguage` | `code` / `string` | Preferred designation language for `expansion.contains[].display`. |
+| `offset` | `integer` | Skip the first N concepts. `offset >= expansion.total` → empty `contains`. Honoured on all four paths. Pushed down to the DB on the implicit-CS path (`LIMIT/OFFSET` on the concept query). |
+| `count` | `integer` | Keep at most N concepts. Honoured on all four paths. Pushed down to the DB on the implicit-CS path. |
+| `filter` | `string` | Case-insensitive substring match against `concept.code` and `concept.display`. Applied **before** paging. On the implicit-CS path it maps to `ConceptQueryParams.textContains` (DB-side); on stored-VS, inline-VS, and SNOMED it's applied client-side after the source returns. |
+| `displayLanguage` | `code` / `string` | Preferred designation language for `expansion.contains[].display`. On the implicit-CS path it's threaded into the concept query so the right designation comes back; on other paths the request-time language wins over the version-time language. |
 | `defaultLanguage` | `code` / `string` | Fallback when `displayLanguage` is unset. |
 | `includeDesignations` | `boolean` | When `true`, emit `expansion.contains[].designation[]` from the matched concept's additional designations. |
-| `activeOnly` | `boolean` | Stored-VS / inline-VS only — drops inactive concepts. SNOMED `?fhir_vs=refset/…` already returns active-only members per IG. |
+| `activeOnly` | `boolean` | Stored-VS / inline-VS only — drops inactive concepts. On the implicit-CS path the concept query returns active concepts by default. On SNOMED, `?fhir_vs=refset/…` already returns active-only members per IG. |
 | `excludeNested` | `boolean` | Stored-VS only — flatten the expansion hierarchy. |
 
-`expansion.total` reports the **pre-paging** count; `expansion.offset` reflects the `offset` parameter when present.
+`expansion.total` reports the **post-filter, pre-pagination** count (FHIR R5: *"if the number of codes in an expansion is changed by the parameters supplied, then this should be the count of codes corresponding to the parameters"* — filters change the set, `offset`/`count` only window it). `expansion.offset` reflects the `offset` parameter when present.
+
+### Expansion envelope: what clients can rely on
+
+A response from any of the four paths has these guarantees (pinned by `ValueSetExpandOperationTest`):
+
+| Field | Value |
+|---|---|
+| `expansion.total` | Post-filter, pre-pagination count. Stable across `offset`/`count` sweeps so clients can paginate without re-issuing a `count=0` discovery probe. |
+| `expansion.offset` | The `offset` parameter when supplied, otherwise absent. |
+| `expansion.contains[].system` | The CodeSystem URI the concept belongs to. |
+| `expansion.contains[].code` | The concept code. Always set. |
+| `expansion.contains[].display` | The concept's display in `displayLanguage` (or the default language) when available. Empty / absent when the source CodeSystem doesn't carry a display in any language — see [§8](#8-limitations--known-gaps) for the one path where this can happen unexpectedly. |
+| `expansion.timestamp` | UTC time the expansion was produced. |
 
 ## 4. Use-cases
 
@@ -69,7 +82,7 @@ Content-Type: application/fhir+json
 ]}
 ```
 
-Returns 50 concepts starting at the 100th, with `expansion.total` = the full snapshot size.
+Returns 50 concepts starting at the 100th, with `expansion.total` = the full post-filter snapshot size (not 50 — that's the slice).
 
 ### Inline VS expansion
 
@@ -102,7 +115,7 @@ Returns up to 20 concepts that are descendants-or-self of `404684003 |Clinical f
 
 ### Paginate any CodeSystem by canonical (LOINC, RxNorm, etc.)
 
-When the client knows a stored CodeSystem's canonical but no ValueSet wraps it, address the CodeSystem directly. All four URL forms below resolve to the same implicit synthesised ValueSet and return a paginated slice of LOINC answer-list codes:
+When the client knows a stored CodeSystem's canonical but no ValueSet wraps it, address the CodeSystem directly. All four URL forms below resolve through `ConceptService.query` against the matching CodeSystem and return a paginated slice of LOINC answer-list codes — with `display` populated from the concept's designations and `expansion.total` reporting the full set size:
 
 ```http
 GET /fhir/ValueSet/$expand?url=http://loinc.org/answer-list&count=50
@@ -113,7 +126,8 @@ GET /fhir/ValueSet/$expand?url=http://loinc.org/answer-list&valueSetVersion=2.82
 
 - The bare `?fhir_vs` suffix is stripped before the CodeSystem lookup (the `?fhir_vs=<pattern>` family is SNOMED-only — non-SNOMED canonicals with a valued `?fhir_vs=…` 404).
 - Both the pipe-version syntax (`|2.82`) and the `valueSetVersion` parameter pin the include to a specific CodeSystem version. `valueSetVersion` wins when both are supplied.
-- Combine with `filter` for typeahead UI: `&filter=glucose&count=20`.
+- Combine with `filter` for typeahead UI: `&filter=glucose&count=20`. The filter is pushed down to the DB and matches both concept code and display.
+- Pagination is DB-level — `count=20` against a 72k-concept CodeSystem fetches 20 rows, not 72k-then-slice.
 
 ## 5. SNOMED `?fhir_vs` URL family
 
