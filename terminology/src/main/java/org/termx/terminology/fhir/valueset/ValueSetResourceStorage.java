@@ -76,7 +76,12 @@ public class ValueSetResourceStorage extends BaseFhirResourceHandler {
     }
     ValueSetVersion version = versionNumber == null ? valueSetVersionService.loadLastVersion(vsId) :
         valueSetVersionService.load(vsId, versionNumber).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "resource not found"));
-    return toFhir(valueSet, version);
+    // Mirror CodeSystemResourceStorage: when the caller asked for a lightweight summary
+    // (?_summary=true / text / count), null out the per-rule explicit concept lists so
+    // we never serialise a potentially-huge compose.include.concept array that kefhir's
+    // post-load summary processor would strip anyway. The search path at line 99 already
+    // does this; read had the same gap as CodeSystem until now.
+    return toFhir(valueSet, applyLightweight(version, isCurrentRequestLightweightSummary()));
   }
 
   @Override

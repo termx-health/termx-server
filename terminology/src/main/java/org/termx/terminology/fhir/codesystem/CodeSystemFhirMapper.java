@@ -158,6 +158,11 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 //    toFhirRelatedArtifacts(fhirCodeSystem, relatedArtifacts);
 
     fhirCodeSystem.setVersion(version.getVersion());
+    // count is a FHIR R5 summary element — always emit it. The value comes from
+    // CodeSystemVersion.conceptsTotal (a pre-computed COUNT loaded by versionService.load,
+    // not derived from the in-memory entities list), so it's correct even when entities
+    // are skipped for _summary=true (see CodeSystemResourceStorage.load → lightweight path).
+    fhirCodeSystem.setCount(version.getConceptsTotal());
     fhirCodeSystem.setLanguage(version.getPreferredLanguage());
     fhirCodeSystem.setVersionAlgorithmString(version.getAlgorithm());
     fhirCodeSystem.setEffectivePeriod(new Period(

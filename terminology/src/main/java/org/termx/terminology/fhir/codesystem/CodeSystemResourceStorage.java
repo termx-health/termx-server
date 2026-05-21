@@ -91,8 +91,21 @@ public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
     log.info("Code System load took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
     start = System.currentTimeMillis();
 
-    version.setEntities(loadEntities(version, null, true));
-    log.info("Entities load took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
+    // Honour ?_summary on read: when the client asked for a lightweight summary (true /
+    // text / count) we skip the concept-entity load entirely. The post-load summary
+    // processor in kefhir would strip the `concept` array from the response anyway, so
+    // we'd otherwise be loading ~100 000 rows + designations + property values + JSON-
+    // serialising them just to throw them away.
+    //
+    // The `count` field on the response is still populated — it comes from
+    // CodeSystemVersion.conceptsTotal (single COUNT query inside versionService.load),
+    // not from entities.size() — see CodeSystemFhirMapper.toFhir's setCount() line.
+    //
+    // Default for read (no _summary param) is to load everything, matching the previous
+    // behaviour and the FHIR R5 spec default of _summary=false on read/vread.
+    boolean lightweight = isCurrentRequestLightweightSummary();
+    version.setEntities(lightweight ? List.of() : loadEntities(version, null, true));
+    log.info("Entities load took {} seconds (lightweight={})", (System.currentTimeMillis() - start) / 1000, lightweight);
     start = System.currentTimeMillis();
 
     ResourceVersion resourceVersion = toFhir(codeSystem, version);

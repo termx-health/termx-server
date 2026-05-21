@@ -74,7 +74,13 @@ public class ConceptMapResourceStorage extends BaseFhirResourceHandler {
     }
     MapSetVersion version = versionNumber == null ? mapSetVersionService.loadLastVersion(id) :
         mapSetVersionService.load(id, versionNumber).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "resource not found"));
-    version.setAssociations(loadAssociations(version));
+    // Skip the (potentially-large) per-association query when the caller asked for a
+    // lightweight summary. Same pattern as the search path at line 86, and the matching
+    // CodeSystem and ValueSet read-side fixes. Without entities the resulting FHIR
+    // ConceptMap drops `group.element[]` — exactly what kefhir's post-load summary
+    // processor would strip for ?_summary=true anyway.
+    boolean lightweight = isCurrentRequestLightweightSummary();
+    version.setAssociations(lightweight ? List.of() : loadAssociations(version));
     return toFhir(mapSet, version);
   }
 
