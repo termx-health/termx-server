@@ -1,8 +1,8 @@
 # FHIR `ValueSet/$expand`
 
-**Feature:** Paged, filtered `$expand` over stored ValueSets, inline ValueSets posted in the request body, **implicit ValueSets synthesised over any stored CodeSystem**, and SNOMED CT implicit-ValueSet URLs (`?fhir_vs[=…]`).
+**Feature:** Paged, filtered `$expand` over stored ValueSets, inline ValueSets posted in the request body, **implicit ValueSets over any stored CodeSystem** (delegated to `ConceptService.query`), and SNOMED CT implicit-ValueSet URLs (`?fhir_vs[=…]`).
 **Spans:** [`terminology`](../../terminology) module (`ValueSetExpandOperation`) + delegation to [`snomed`](../../snomed) module (`SnomedValueSetExpandProvider` → Snowstorm).
-**Introduced:** [termx-server#145](https://github.com/termx-health/termx-server/pull/145) — paging/filter fix on stored-VS path, SNOMED implicit-VS URL routing. Extended in [#146](https://github.com/termx-health/termx-server/pull/146) — synthetic VS over any stored CodeSystem URI (`http://loinc.org/answer-list`, `http://loinc.org/answer-list|2.82`, …).
+**Introduced:** [termx-server#145](https://github.com/termx-health/termx-server/pull/145) — paging/filter fix on stored-VS path, SNOMED implicit-VS URL routing. Extended in [#146](https://github.com/termx-health/termx-server/pull/146) — CodeSystem-canonical resolution via inline VS synthesis. Refined in [#147](https://github.com/termx-health/termx-server/pull/147) — `expansion.total` correctness on all paths; implicit-CS path now routes through `ConceptService.query` instead of the SQL function so displays surface correctly and pagination happens at the DB level.
 
 ---
 
@@ -15,7 +15,7 @@
 | 1 | **Inline-VS** | `valueSet` parameter carries a `ValueSet` resource constructed by the client | `ValueSetVersionConceptRepository.expandFromJson(...)` — Postgres function `value_set_expand_jsonb` resolves `compose.include[].system + filter + concept` directly |
 | 2 | **SNOMED implicit-VS** | `url` is `http://snomed.info/sct[/<edition>/version/<date>]?fhir_vs[=…]` | `SnomedValueSetExpandProvider.ruleExpand(...)` — calls Snowstorm via `SnomedService.searchConcepts(ecl=…, branch=…)` |
 | 3 | **Stored-VS** | `url` matches a `ValueSet.uri` already stored in TermX, or the operation runs at instance level (`/ValueSet/{id}/$expand`) | `ValueSetVersionConceptService.expand(...)` — snapshot persisted by TermX (re-uses cache when current) |
-| 4 | **Implicit VS over a stored CodeSystem** | `url` matches a `CodeSystem.uri`; no matching stored VS exists | Synthesises an inline ValueSet with `compose.include[].system=<url>` (+ optional `version`) and routes through path 1 |
+| 4 | **Implicit VS over a stored CodeSystem** | `url` matches a `CodeSystem.uri`; no matching stored VS exists | Delegates to `ConceptService.query(codeSystem=…, codeSystemVersion=…, textContains=filter, limit=count, offset=offset, displayLanguage=…)` — same path the UI's concept-list endpoint uses |
 
 A request that resolves none of the four returns `404 NOTFOUND`.
 
@@ -136,21 +136,24 @@ When no `?fhir_vs` query is present (`http://snomed.info/sct` alone), the operat
 
 ## 6. Implicit ValueSet over a stored CodeSystem
 
-Any `url` that doesn't match a stored ValueSet but **does** match a stored `CodeSystem.uri` is treated as the implicit ValueSet of that CodeSystem. The operation synthesises:
+Any `url` that doesn't match a stored ValueSet but **does** match a stored `CodeSystem.uri` is treated as the implicit ValueSet of that CodeSystem. After URL cleaning (see syntax table below), the operation delegates to `ConceptService.query(...)` — the same internal API the UI's concept-list endpoint uses — with the following parameter mapping:
 
-```json
-{
-  "resourceType": "ValueSet",
-  "url":     "<stripped-canonical>",
-  "status":  "active",
-  "compose": { "include": [{
-    "system":  "<stripped-canonical>",
-    "version": "<resolved-version, if any>"
-  }]}
-}
-```
+| `$expand` parameter | `ConceptQueryParams` field |
+|---|---|
+| `url` (canonical) | `codeSystem` (id of the resolved `CodeSystem.uri`) |
+| `valueSetVersion` / pipe-version | `codeSystemVersion` |
+| `filter` | `textContains` (matches concept code **and** display) |
+| `displayLanguage` / `defaultLanguage` | `displayLanguage` |
+| `count` | `limit` |
+| `offset` | `offset` |
 
-and routes it through the inline-VS path (`expandFromJson`). `filter`, `offset`, `count`, and the rest of the parameter set apply unchanged.
+The response is built from the `QueryResult<Concept>`:
+
+- `expansion.total` ← `result.meta.total` (pre-paging count from the DB)
+- `expansion.contains[].code` ← `concept.code`
+- `expansion.contains[].display` ← `ConceptUtil.getDisplay(concept.versions[0].designations, displayLanguage, [])` — same helper `CodeSystemLookupOperation` uses
+
+**Why this route and not the SQL function?** The `value_set_expand_jsonb` SQL function is built for arbitrary compose rules (filters, exclusions, recursion). For the implicit-CS case the synthesised compose has only `{system, version}` — no filter complexity — and the SQL function's `cs` CTE doesn't fetch designations for system-only includes (LOINC bug observed on dev.termx.org). `ConceptService.query` fetches designations by default, pushes `limit`/`offset` into the DB, and reports the pre-paging total — three properties this path needs and the SQL function doesn't provide for system-only includes.
 
 ### URL syntax tolerated
 
@@ -166,7 +169,7 @@ Non-SNOMED canonicals with a **valued** `?fhir_vs=<pattern>` (e.g. `http://loinc
 
 ## 7. Test coverage
 
-Locked in by `terminology/src/test/groovy/org/termx/terminology/fhir/valueset/operations/ValueSetExpandOperationTest.groovy` — 20 specs.
+Locked in by `terminology/src/test/groovy/org/termx/terminology/fhir/valueset/operations/ValueSetExpandOperationTest.groovy` — 25 specs.
 
 **Stored-VS** (5 specs)
 
@@ -184,6 +187,17 @@ Locked in by `terminology/src/test/groovy/org/termx/terminology/fhir/valueset/op
 - `inline-VS expand with offset=2 count=3 returns slice starting at offset`
 - `inline-VS expand with count=4 (no offset) returns first 4 concepts`
 
+**`expansion.total` correctness** (3 specs) — FHIR R5: total reflects the post-filter, pre-pagination count.
+
+- `inline-VS expand: expansion.total is the full pre-paging count`
+- `inline-VS expand: total reflects the post-filter pre-paging count`
+- `implicit-CS expand: expansion.total is the full pre-paging count from ConceptService`
+
+**`expansion.contains[].display` propagation** (2 specs)
+
+- `inline-VS expand: contains[].display is populated from concept's display field`
+- `implicit-CS expand: contains[].display is picked from the concept's designations`
+
 **SNOMED implicit-VS** (6 specs) — each asserts on the **captured `ValueSetVersionRule`** (operator + value) the operation hands to the mocked `ValueSetExternalExpandProvider`, so the URL→ECL contract is pinned, not just "the call doesn't 404":
 
 - ``SNOMED ?fhir_vs (all concepts) delegates to provider with ECL `*` ``
@@ -193,19 +207,19 @@ Locked in by `terminology/src/test/groovy/org/termx/terminology/fhir/valueset/op
 - `SNOMED ?fhir_vs=ecl/<expr> URL-decodes and passes the expression through`
 - `SNOMED versioned URL passes the edition/version URI on the rule`
 
-**Implicit VS over a stored CodeSystem** (6 specs) — each captures the JSON the operation hands to `expandFromJson` and asserts the synthesised `compose.include[].system` (+ optional `version`):
+**Implicit VS over a stored CodeSystem** (6 specs) — each captures the `ConceptQueryParams` the operation hands to the mocked `ConceptService.query`, so the URL → query-param translation (`codeSystem`, `codeSystemVersion`, `limit`, `offset`) is pinned:
 
-- `expand with url matching a stored CodeSystem synthesises inline VS over that CS`
+- `expand with url matching a stored CodeSystem delegates to ConceptService.query`
 - `expand with url + bare ?fhir_vs strips the suffix and resolves via CS lookup`
-- `expand with parent CodeSystem canonical (http://loinc.org) ?fhir_vs synthesises VS for the parent CS`
+- `expand with parent CodeSystem canonical (http://loinc.org) ?fhir_vs delegates against that CS`
 - `expand with url containing |<version> canonical syntax extracts the version`
 - `expand with url + valueSetVersion param pins the include version`
 - `expand with url matching neither stored ValueSet nor stored CodeSystem returns 404`
 
 ## 8. Limitations & known gaps
 
-- **`expansion.total` on stored-VS path** reports the post-paging slice size because the mapper at `ValueSetFhirMapper.toFhirExpansion(...)` reads `concepts.size()` rather than `snapshot.conceptsTotal`. The operation now passes the original `conceptsTotal` through on a snapshot copy, but the mapper still wins. Cosmetic — clients can fall back to `expansion.contains.length + offset` for now. Separate task.
 - **SNOMED "all concepts" materialises the full result** before client-side paging. `SnomedValueSetExpandProvider.filterConcepts()` uses `SnomedConceptSearchParams.setAll(true)`, which is fine for hundreds of concepts but expensive for the international edition (~350k). The fix is to push `offset`/`count` down into `SnomedService.searchConcepts`; left as a separate optimisation.
 - **`filter` on the SNOMED path is client-side**. Snowstorm's ECL doesn't carry a free-text filter parameter, so TermX applies the substring match after the provider returns. Functionally correct, less efficient than letting Snowstorm filter.
 - **Non-SNOMED `?fhir_vs=<pattern>` URLs are not interpreted.** The full `?fhir_vs=isa/…`, `?fhir_vs=refset[/…]`, `?fhir_vs=ecl/…` family is SNOMED-only; the bare `?fhir_vs` suffix is leniently stripped on any canonical, but non-SNOMED canonicals with a valued `?fhir_vs=…` 404. Equivalent semantics on LOINC etc. would need a per-CodeSystem ECL-like evaluator that TermX doesn't currently embed.
 - **`activeOnly` is honoured only on the stored-VS / inline-VS paths.** For SNOMED, "active" semantics depend on Snowstorm and the ECL expression — most patterns (`isa/`, `refset/`) already return active concepts by default.
+- **Latent: SQL function `value_set_expand_jsonb` drops `display` on system-only includes.** A client posting an inline ValueSet whose `compose.include[]` has only `{system, version}` (no `concept[]`) and going through the inline-VS path will get codes back without displays. The implicit-CS path no longer goes through this function (it routes through `ConceptService.query` instead) so the user-visible bug is fixed for that case. Clients hitting the inline-VS path with system-only includes should either include explicit `concept[]` entries or fetch displays out-of-band; a SQL-level fix is tracked separately.
