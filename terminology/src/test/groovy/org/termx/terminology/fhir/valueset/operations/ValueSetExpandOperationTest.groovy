@@ -9,12 +9,17 @@ import org.termx.core.sys.provenance.ProvenanceService
 import org.termx.core.ts.ValueSetExternalExpandProvider
 import org.termx.terminology.fhir.valueset.ValueSetFhirMapper
 import org.termx.terminology.terminology.codesystem.CodeSystemService
+import org.termx.terminology.terminology.codesystem.concept.ConceptService
 import org.termx.terminology.terminology.valueset.ValueSetService
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptRepository
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService
 import org.termx.ts.codesystem.CodeSystem
+import org.termx.ts.codesystem.CodeSystemEntityVersion
 import org.termx.ts.codesystem.CodeSystemQueryParams
+import org.termx.ts.codesystem.Concept
+import org.termx.ts.codesystem.ConceptQueryParams
+import org.termx.ts.codesystem.Designation
 import org.termx.ts.valueset.ValueSet
 import org.termx.ts.valueset.ValueSetSnapshot
 import org.termx.ts.valueset.ValueSetVersion
@@ -43,6 +48,7 @@ class ValueSetExpandOperationTest extends Specification {
   def valueSetVersionConceptRepository = Mock(ValueSetVersionConceptRepository)
   def mapper = Mock(ValueSetFhirMapper)
   def codeSystemService = Mock(CodeSystemService)
+  def conceptService = Mock(ConceptService)
   // SNOMED provider — recognised via getCodeSystemId() == "snomed-ct". Delegated
   // to by the operation for `?fhir_vs[=...]` URLs. The mock captures the
   // synthesised rule so tests can assert on the filter (operator + value) the
@@ -59,7 +65,8 @@ class ValueSetExpandOperationTest extends Specification {
       valueSetVersionConceptRepository,
       mapper,
       [snomedProvider],
-      codeSystemService)
+      codeSystemService,
+      conceptService)
 
   /**
    * Snapshot the operation hands off to {@link ValueSetFhirMapper#toFhir}.
@@ -156,18 +163,21 @@ class ValueSetExpandOperationTest extends Specification {
   // Implicit ValueSet over a stored CodeSystem
   //
   // When `url` doesn't match any stored ValueSet but DOES match a stored
-  // CodeSystem URI, TermX synthesises an inline ValueSet whose
-  // `compose.include[].system` (and optionally `.version`) point at the
-  // CodeSystem, then routes through the existing `expandFromJson` SQL path.
+  // CodeSystem URI, TermX delegates expansion to the internal
+  // ConceptService.query(...) — the same API the UI's concept-list endpoint
+  // uses. That gives correct displays (from the concept's designations),
+  // DB-level pagination, and a pre-paging total — three things the SQL
+  // function `value_set_expand_jsonb` does NOT do for system-only includes.
+  //
   // The `?fhir_vs` query convention is SNOMED-only, but a bare `?fhir_vs`
   // suffix on a non-SNOMED canonical is leniently stripped so client libraries
   // that always append it (or copy-paste examples) don't 404. The `|<version>`
   // canonical-with-version syntax is also accepted.
   // ---------------------------------------------------------------------------
 
-  def "expand with url matching a stored CodeSystem synthesises inline VS over that CS"() {
+  def "expand with url matching a stored CodeSystem delegates to ConceptService.query"() {
     given:
-    String capturedJson = null
+    ConceptQueryParams capturedParams = null
     valueSetService.query(_) >> QueryResult.empty()
     codeSystemService.query(_) >> { args ->
       CodeSystemQueryParams p = args[0]
@@ -175,9 +185,11 @@ class ValueSetExpandOperationTest extends Specification {
           ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org/answer-list").tap { setId("loinc-answer-list") }])
           : QueryResult.empty()
     }
-    valueSetVersionConceptRepository.expandFromJson(_) >> { args ->
-      capturedJson = args[0] as String
-      return (0..<3).collect { concept(it) }
+    conceptService.query(_) >> { args ->
+      capturedParams = args[0] as ConceptQueryParams
+      def qr = new QueryResult<Concept>([cncpt("a", "Alpha"), cncpt("b", "Beta"), cncpt("c", "Gamma")])
+      qr.meta.total = 3
+      return qr
     }
 
     def req = new Parameters()
@@ -187,24 +199,26 @@ class ValueSetExpandOperationTest extends Specification {
     def result = operation.run(req)
 
     then:
-    capturedJson != null
-    capturedJson.contains("http://loinc.org/answer-list")
+    capturedParams.codeSystem == "loinc-answer-list"
     result.expansion.contains.size() == 3
+    result.expansion.contains*.code == ["a", "b", "c"]
   }
 
   def "expand with url + bare ?fhir_vs strips the suffix and resolves via CS lookup"() {
     given:
-    String capturedJson = null
+    String capturedCs = null
     valueSetService.query(_) >> QueryResult.empty()
     codeSystemService.query(_) >> { args ->
       CodeSystemQueryParams p = args[0]
+      capturedCs = p.uri
       return p.uri == "http://loinc.org/answer-list"
           ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org/answer-list").tap { setId("loinc-answer-list") }])
           : QueryResult.empty()
     }
-    valueSetVersionConceptRepository.expandFromJson(_) >> { args ->
-      capturedJson = args[0] as String
-      return [concept(0), concept(1)]
+    conceptService.query(_) >> {
+      def qr = new QueryResult<Concept>([cncpt("a", "Alpha"), cncpt("b", "Beta")])
+      qr.meta.total = 2
+      return qr
     }
 
     def req = new Parameters()
@@ -214,13 +228,13 @@ class ValueSetExpandOperationTest extends Specification {
     def result = operation.run(req)
 
     then:
-    capturedJson.contains("http://loinc.org/answer-list")
-    !capturedJson.contains("fhir_vs") // suffix stripped before CS lookup
+    capturedCs == "http://loinc.org/answer-list" // suffix stripped before CS lookup
     result.expansion.contains.size() == 2
   }
 
-  def "expand with parent CodeSystem canonical (http://loinc.org) ?fhir_vs synthesises VS for the parent CS"() {
+  def "expand with parent CodeSystem canonical (http://loinc.org) ?fhir_vs delegates against that CS"() {
     given:
+    ConceptQueryParams capturedParams = null
     valueSetService.query(_) >> QueryResult.empty()
     codeSystemService.query(_) >> { args ->
       CodeSystemQueryParams p = args[0]
@@ -228,7 +242,12 @@ class ValueSetExpandOperationTest extends Specification {
           ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org").tap { setId("loinc") }])
           : QueryResult.empty()
     }
-    valueSetVersionConceptRepository.expandFromJson(_) >> (0..<5).collect { concept(it) }
+    conceptService.query(_) >> { args ->
+      capturedParams = args[0] as ConceptQueryParams
+      def qr = new QueryResult<Concept>((0..<5).collect { cncpt("c${it}" as String, "Display ${it}" as String) })
+      qr.meta.total = 5
+      return qr
+    }
 
     def req = new Parameters()
         .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://loinc.org?fhir_vs"))
@@ -237,12 +256,13 @@ class ValueSetExpandOperationTest extends Specification {
     def result = operation.run(req)
 
     then:
+    capturedParams.codeSystem == "loinc"
     result.expansion.contains.size() == 5
   }
 
   def "expand with url containing |<version> canonical syntax extracts the version"() {
     given:
-    String capturedJson = null
+    ConceptQueryParams capturedParams = null
     valueSetService.query(_) >> QueryResult.empty()
     codeSystemService.query(_) >> { args ->
       CodeSystemQueryParams p = args[0]
@@ -250,9 +270,11 @@ class ValueSetExpandOperationTest extends Specification {
           ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org/answer-list").tap { setId("loinc-answer-list") }])
           : QueryResult.empty()
     }
-    valueSetVersionConceptRepository.expandFromJson(_) >> { args ->
-      capturedJson = args[0] as String
-      return [concept(0)]
+    conceptService.query(_) >> { args ->
+      capturedParams = args[0] as ConceptQueryParams
+      def qr = new QueryResult<Concept>([cncpt("a", "Alpha")])
+      qr.meta.total = 1
+      return qr
     }
 
     def req = new Parameters()
@@ -262,15 +284,14 @@ class ValueSetExpandOperationTest extends Specification {
     def result = operation.run(req)
 
     then:
-    capturedJson.contains("http://loinc.org/answer-list")
-    capturedJson.contains("2.82") // version forwarded as compose.include[].version
-    !capturedJson.contains("|2.82") // pipe stripped from the system URI
+    capturedParams.codeSystem == "loinc-answer-list"
+    capturedParams.codeSystemVersion == "2.82"
     result.expansion.contains.size() == 1
   }
 
   def "expand with url + valueSetVersion param pins the include version"() {
     given:
-    String capturedJson = null
+    ConceptQueryParams capturedParams = null
     valueSetService.query(_) >> QueryResult.empty()
     codeSystemService.query(_) >> { args ->
       CodeSystemQueryParams p = args[0]
@@ -278,9 +299,11 @@ class ValueSetExpandOperationTest extends Specification {
           ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org/answer-list").tap { setId("loinc-answer-list") }])
           : QueryResult.empty()
     }
-    valueSetVersionConceptRepository.expandFromJson(_) >> { args ->
-      capturedJson = args[0] as String
-      return [concept(0)]
+    conceptService.query(_) >> { args ->
+      capturedParams = args[0] as ConceptQueryParams
+      def qr = new QueryResult<Concept>([cncpt("a", "Alpha")])
+      qr.meta.total = 1
+      return qr
     }
 
     def req = new Parameters()
@@ -291,8 +314,7 @@ class ValueSetExpandOperationTest extends Specification {
     def result = operation.run(req)
 
     then:
-    capturedJson.contains("http://loinc.org/answer-list")
-    capturedJson.contains("2.82")
+    capturedParams.codeSystemVersion == "2.82"
     result.expansion.contains.size() == 1
   }
 
@@ -375,6 +397,170 @@ class ValueSetExpandOperationTest extends Specification {
     result.expansion.contains.size() == 4
     result.expansion.contains[0].code == "code_0"
     result.expansion.contains[3].code == "code_3"
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // expansion.total
+  //
+  // FHIR R5 ValueSet.expansion.total:
+  //   "Total number of codes in the expansion. If the number of codes in an
+  //    expansion is changed by the parameters supplied, then this should be
+  //    the count of codes corresponding to the parameters."
+  //
+  // The "parameters" here are FILTERS (filter=, activeOnly) that change the
+  // set, NOT pagination (offset/count) which only changes the window. So
+  // `total` must be the post-filter, **pre-paging** count.
+  // ---------------------------------------------------------------------------
+
+  def "inline-VS expand: expansion.total is the full pre-paging count"() {
+    given:
+    valueSetVersionConceptRepository.expandFromJson(_) >> (0..<20).collect { concept(it) }
+
+    def inlineVs = new com.kodality.zmei.fhir.resource.terminology.ValueSet()
+    inlineVs.setUrl("http://example.org/inline")
+    inlineVs.setStatus("active")
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("valueSet").setResource(inlineVs))
+        .addParameter(new Parameters.ParametersParameter("count").setValueInteger(5))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    result.expansion.contains.size() == 5
+    result.expansion.total == 20
+  }
+
+  def "implicit-CS expand: expansion.total is the full pre-paging count from ConceptService"() {
+    // The concept-query API reports the pre-paging total in QueryResult.meta.total.
+    // The operation must forward that as expansion.total — NOT the size of the
+    // paginated `data` list.
+    given:
+    ConceptQueryParams capturedParams = null
+    valueSetService.query(_) >> QueryResult.empty()
+    codeSystemService.query(_) >> { args ->
+      CodeSystemQueryParams p = args[0]
+      return p.uri == "http://loinc.org/answer-list"
+          ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org/answer-list").tap { setId("loinc-answer-list") }])
+          : QueryResult.empty()
+    }
+    conceptService.query(_) >> { args ->
+      capturedParams = args[0] as ConceptQueryParams
+      // 20 concepts returned (DB applied count=20), but the underlying set is 72656
+      def qr = new QueryResult<Concept>((0..<20).collect { cncpt("c${it}" as String, "Display ${it}" as String) })
+      qr.meta.total = 72656
+      return qr
+    }
+
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://loinc.org/answer-list?fhir_vs"))
+        .addParameter(new Parameters.ParametersParameter("count").setValueInteger(20))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    capturedParams.limit == 20 // count pushed down to DB
+    result.expansion.contains.size() == 20
+    result.expansion.total == 72656 // pre-paging count from QueryResult.meta.total
+  }
+
+  def "inline-VS expand: total reflects the post-filter pre-paging count"() {
+    // When `filter` removes concepts, `total` should report the filtered count.
+    // Pagination (offset/count) then slices that filtered set, but total stays
+    // at the post-filter value.
+    given:
+    valueSetVersionConceptRepository.expandFromJson(_) >> [
+        concept(0).tap { it.getConcept().setCode("apple") },
+        concept(1).tap { it.getConcept().setCode("apricot") },
+        concept(2).tap { it.getConcept().setCode("banana") },
+        concept(3).tap { it.getConcept().setCode("blueberry") },
+        concept(4).tap { it.getConcept().setCode("cherry") }]
+
+    def inlineVs = new com.kodality.zmei.fhir.resource.terminology.ValueSet()
+    inlineVs.setUrl("http://example.org/inline")
+    inlineVs.setStatus("active")
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("valueSet").setResource(inlineVs))
+        .addParameter(new Parameters.ParametersParameter("filter").setValueString("ap"))
+        .addParameter(new Parameters.ParametersParameter("count").setValueInteger(1))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    result.expansion.contains.size() == 1
+    result.expansion.total == 2 // apple + apricot match the filter, count=1 slices to 1
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // expansion.contains[].display
+  //
+  // FHIR contract: when the source concept carries a display, the expanded
+  // ValueSet must surface it on contains[].display. The Java projection in
+  // expandInline copies concept.display.name into contains[].display when
+  // present — these tests pin that contract so a future refactor doesn't
+  // regress it.
+  //
+  // (Separately, the SQL function `value_set_expand_jsonb` is responsible for
+  // populating concept.display in the first place. That contract belongs in
+  // an integration test against the real DB, not here.)
+  // ---------------------------------------------------------------------------
+
+  def "inline-VS expand: contains[].display is populated from concept's display field"() {
+    given:
+    valueSetVersionConceptRepository.expandFromJson(_) >> [
+        concept(0).tap { it.setDisplay(new org.termx.ts.codesystem.Designation().setName("Male").setLanguage("en")) },
+        concept(1).tap { it.setDisplay(new org.termx.ts.codesystem.Designation().setName("Female").setLanguage("en")) },
+        concept(2)] // no display
+
+    def inlineVs = new com.kodality.zmei.fhir.resource.terminology.ValueSet()
+    inlineVs.setUrl("http://example.org/inline")
+    inlineVs.setStatus("active")
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("valueSet").setResource(inlineVs))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    result.expansion.contains.size() == 3
+    result.expansion.contains[0].display == "Male"
+    result.expansion.contains[1].display == "Female"
+    result.expansion.contains[2].display == null
+  }
+
+  def "implicit-CS expand: contains[].display is picked from the concept's designations"() {
+    // ConceptService.query returns Concepts with their versions and designations.
+    // The operation uses ConceptUtil.getDisplay(designations, preferredLang, ...)
+    // — same helper CodeSystemLookupOperation uses — to pick the display
+    // matching the requested language.
+    given:
+    valueSetService.query(_) >> QueryResult.empty()
+    codeSystemService.query(_) >> { args ->
+      CodeSystemQueryParams p = args[0]
+      return p.uri == "http://loinc.org/answer-list"
+          ? new QueryResult<>([new CodeSystem().setUri("http://loinc.org/answer-list").tap { setId("loinc-answer-list") }])
+          : QueryResult.empty()
+    }
+    conceptService.query(_) >> {
+      def qr = new QueryResult<Concept>([cncpt("LA29797-0", "Decreased")])
+      qr.meta.total = 1
+      return qr
+    }
+
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://loinc.org/answer-list"))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    result.expansion.contains.size() == 1
+    result.expansion.contains[0].code == "LA29797-0"
+    result.expansion.contains[0].display == "Decreased"
   }
 
 
@@ -606,6 +792,21 @@ class ValueSetExpandOperationTest extends Specification {
             .setCodeSystem("cs")
             .setCodeSystemUri("http://example.org/cs"))
         .setOrderNumber(i)
+  }
+
+  /**
+   * Build a real `Concept` (not a ValueSetVersionConcept) for tests that mock
+   * the concept-query API. The first version carries a single "display"
+   * designation in English — matches what the production code expects from
+   * ConceptService.query when displayLanguage is unset or "en".
+   */
+  private static Concept cncpt(String code, String displayName) {
+    return new Concept().tap { c ->
+      c.setCode(code)
+      c.setVersions([new CodeSystemEntityVersion().setDesignations([
+          new Designation().setName(displayName).setLanguage("en").setDesignationType("display")
+      ])])
+    }
   }
 
   private static ValueSetVersionConcept snomedConcept(String code, String display) {

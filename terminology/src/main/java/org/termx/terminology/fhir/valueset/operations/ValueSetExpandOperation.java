@@ -12,13 +12,20 @@ import org.termx.terminology.fhir.valueset.ValueSetFhirMapper;
 import org.termx.core.sys.provenance.Provenance;
 import org.termx.core.sys.provenance.ProvenanceService;
 import org.termx.terminology.terminology.codesystem.CodeSystemService;
+import org.termx.terminology.terminology.codesystem.concept.ConceptService;
+import org.termx.terminology.terminology.codesystem.concept.ConceptUtil;
 import org.termx.terminology.terminology.valueset.ValueSetService;
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptRepository;
 import org.termx.ts.codesystem.CodeSystem;
+import org.termx.ts.codesystem.CodeSystemEntityVersion;
 import org.termx.ts.codesystem.CodeSystemQueryParams;
 import org.termx.ts.codesystem.CodeSystemVersionReference;
+import org.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.ConceptQueryParams;
+import org.termx.ts.codesystem.Designation;
+import com.kodality.commons.model.QueryResult;
 import org.termx.ts.valueset.*;
 import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
@@ -45,6 +52,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   private final ValueSetFhirMapper mapper;
   private final List<ValueSetExternalExpandProvider> externalExpandProviders;
   private final CodeSystemService codeSystemService;
+  private final ConceptService conceptService;
 
   // SNOMED CT implicit-ValueSet URL family
   // https://build.fhir.org/ig/HL7/UTG/en/SNOMEDCT.html
@@ -172,6 +180,10 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       }).toList();
     }
 
+    // FHIR R5 expansion.total: post-filter, pre-pagination count. Capture HERE.
+    // The mapper reads snapshot.conceptsTotal in preference to expansion.size().
+    int totalAfterFilter = expandedConcepts.size();
+
     Integer offset = req == null ? null : req.findParameter("offset").map(ParametersParameter::getValueInteger)
         .orElse(req.findParameter("offset").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
     if (offset != null) {
@@ -187,13 +199,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // The service may return a cached snapshot (see ValueSetVersionConceptService.expand
     // line ~83 — `version.getSnapshot()` is reused when current and unfiltered), so
     // mutating it would poison shared state. Build a copy with the trimmed expansion
-    // while preserving the original conceptsTotal for FHIR-correct expansion.total.
+    // and the FHIR-correct conceptsTotal (post-filter, pre-paging).
     if (expandedConcepts != snapshot.getExpansion()) {
       snapshot = new ValueSetSnapshot()
           .setId(snapshot.getId())
           .setValueSet(snapshot.getValueSet())
           .setValueSetVersion(snapshot.getValueSetVersion())
-          .setConceptsTotal(snapshot.getConceptsTotal())
+          .setConceptsTotal(totalAfterFilter)
           .setExpansion(expandedConcepts)
           .setDependencies(snapshot.getDependencies())
           .setCreatedAt(snapshot.getCreatedAt())
@@ -220,11 +232,34 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .map(pr -> pr.getValueBoolean() != null && pr.getValueBoolean() || "true".equals(pr.getValueString()))
         .orElse(false);
 
+    // Apply FHIR R5 `filter` (free-text typeahead) before pagination, matching
+    // the stored-VS path semantics. Filters affect `expansion.total`;
+    // pagination does not.
+    String textFilter = req == null ? null : req.findParameter("filter")
+        .map(pp -> pp.getValueString() != null ? pp.getValueString() : pp.getValueCode()).orElse(null);
+    if (textFilter != null && !textFilter.isBlank()) {
+      String needle = textFilter.toLowerCase();
+      expandedConcepts = expandedConcepts.stream().filter(c -> {
+        String code = c.getConcept() != null ? c.getConcept().getCode() : null;
+        String display = c.getDisplay() != null ? c.getDisplay().getName() : null;
+        return (code != null && code.toLowerCase().contains(needle))
+            || (display != null && display.toLowerCase().contains(needle));
+      }).toList();
+    }
+
+    // FHIR R5 ValueSet.expansion.total: "If the number of codes in an expansion
+    // is changed by the parameters supplied, then this should be the count of
+    // codes corresponding to the parameters." Filters change the set; offset
+    // and count only window it. Capture total HERE — after filter, before
+    // pagination — so the response reflects the full set size and clients can
+    // paginate without re-issuing a `count=0` discovery probe.
+    int totalAfterFilter = expandedConcepts.size();
+
     // Apply paging
     Integer offset = req == null ? null : req.findParameter("offset").map(ParametersParameter::getValueInteger)
         .orElse(req.findParameter("offset").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
     if (offset != null) {
-      expandedConcepts = offset > expandedConcepts.size() ? List.of() : expandedConcepts.subList(offset, expandedConcepts.size());
+      expandedConcepts = offset >= expandedConcepts.size() ? List.of() : expandedConcepts.subList(offset, expandedConcepts.size());
     }
     Integer count = req == null ? null : req.findParameter("count").map(ParametersParameter::getValueInteger)
         .orElse(req.findParameter("count").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
@@ -242,10 +277,10 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     response.setCompose(inlineVs.getCompose());
 
     // Build expansion
-    com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion expansion = 
+    com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion expansion =
         new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion();
     expansion.setTimestamp(java.time.OffsetDateTime.now());
-    expansion.setTotal(expandedConcepts.size());
+    expansion.setTotal(totalAfterFilter);
     if (offset != null) {
       expansion.setOffset(offset);
     }
@@ -434,29 +469,30 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   // ===========================================================================
 
   /**
-   * If {@code url} matches a stored CodeSystem URI, synthesise an inline
-   * ValueSet whose {@code compose.include[].system} (and optional
-   * {@code version}) points at that CodeSystem, then route through the inline
-   * expand path. Returns {@code null} when no matching CodeSystem exists so
-   * the caller can 404.
+   * If {@code url} matches a stored CodeSystem URI, delegate expansion to the
+   * internal {@link ConceptService#query} API. This bypasses the SQL function
+   * `value_set_expand_jsonb`, which is built for arbitrary compose rules and
+   * doesn't fetch designations for system-only includes; the concept-query API
+   * does both display resolution and DB-level pagination correctly. Returns
+   * {@code null} when no matching CodeSystem exists so the caller can 404.
    *
    * <p>Tolerated URL forms:
    * <ul>
    *   <li>{@code <canonical>}                       — bare canonical</li>
    *   <li>{@code <canonical>?fhir_vs}               — bare fhir_vs suffix is stripped (SNOMED-only when valued)</li>
-   *   <li>{@code <canonical>|<version>}             — pipe-version syntax; the version is forwarded as compose.include[].version</li>
+   *   <li>{@code <canonical>|<version>}             — pipe-version syntax</li>
    *   <li>{@code <canonical>|<version>?fhir_vs}     — combination of the above</li>
    * </ul>
    * The {@code valueSetVersion} parameter wins when both it and the pipe form
-   * carry a version (the latter is the client-supplied source of truth).
+   * carry a version.
    */
   private com.kodality.zmei.fhir.resource.terminology.ValueSet tryExpandCodeSystemImplicit(String url, String versionNr, Parameters req) {
     if (url == null) {
       return null;
     }
     String stripped = url;
-    // Strip bare ?fhir_vs suffix (with or without trailing slash). Non-SNOMED
-    // ?fhir_vs=<pattern> URLs aren't interpreted — they fall through and 404.
+    // Strip bare ?fhir_vs suffix. Non-SNOMED ?fhir_vs=<pattern> URLs aren't
+    // interpreted — they fall through and 404.
     int qIdx = stripped.indexOf('?');
     if (qIdx >= 0) {
       String query = stripped.substring(qIdx + 1);
@@ -476,8 +512,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       return null;
     }
 
-    // Resolve the CodeSystem by URI. We don't need the full body — only
-    // confirmation that the canonical exists. Empty result → fall through 404.
+    // Resolve the CodeSystem by URI. Empty result → fall through to 404.
     CodeSystemQueryParams csParams = new CodeSystemQueryParams();
     csParams.setUri(stripped);
     csParams.setLimit(1);
@@ -486,24 +521,76 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       return null;
     }
 
-    // Prefer the explicit valueSetVersion parameter; fall back to the
-    // pipe-version. Either is forwarded as compose.include[].version.
     String resolvedVersion = versionNr != null ? versionNr : pipeVersion;
 
-    com.kodality.zmei.fhir.resource.terminology.ValueSet synthesisedVs = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
-    synthesisedVs.setUrl(stripped);
-    synthesisedVs.setStatus("active");
-    com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose compose =
-        new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose();
-    com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude include =
-        new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude();
-    include.setSystem(stripped);
-    if (resolvedVersion != null) {
-      include.setVersion(resolvedVersion);
-    }
-    compose.setInclude(List.of(include));
-    synthesisedVs.setCompose(compose);
+    // Extract paging + filter + display-language parameters
+    String displayLanguage = req == null ? null : req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
+        .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString)
+        .orElse(req.findParameter("defaultLanguage").map(ParametersParameter::getValueCode)
+        .orElse(req.findParameter("defaultLanguage").map(ParametersParameter::getValueString).orElse(null))));
+    String textFilter = req == null ? null : req.findParameter("filter")
+        .map(pp -> pp.getValueString() != null ? pp.getValueString() : pp.getValueCode()).orElse(null);
+    Integer offset = req == null ? null : req.findParameter("offset").map(ParametersParameter::getValueInteger)
+        .orElse(req.findParameter("offset").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
+    Integer count = req == null ? null : req.findParameter("count").map(ParametersParameter::getValueInteger)
+        .orElse(req.findParameter("count").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
 
-    return expandInline(synthesisedVs, req);
+    // Delegate to the concept-query API — same path the UI's concept list uses.
+    // The API matches `textContains` against both code and display, returns
+    // designations for each concept, supports DB-level paging, and reports the
+    // pre-paging total in QueryResult.meta.
+    ConceptQueryParams cqParams = new ConceptQueryParams();
+    cqParams.setCodeSystem(cs.getId());
+    if (resolvedVersion != null) {
+      cqParams.setCodeSystemVersion(resolvedVersion);
+    }
+    if (textFilter != null && !textFilter.isBlank()) {
+      cqParams.setTextContains(textFilter);
+    }
+    if (displayLanguage != null) {
+      cqParams.setDisplayLanguage(displayLanguage);
+    }
+    if (count != null) {
+      cqParams.setLimit(count);
+    }
+    if (offset != null) {
+      cqParams.setOffset(offset);
+    }
+
+    QueryResult<Concept> result = conceptService.query(cqParams);
+    Integer total = result.getMeta() != null ? result.getMeta().getTotal() : null;
+    List<Concept> concepts = result.getData() != null ? result.getData() : Collections.emptyList();
+
+    com.kodality.zmei.fhir.resource.terminology.ValueSet response = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
+    response.setUrl(stripped);
+    response.setStatus("active");
+
+    com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion expansion =
+        new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion();
+    expansion.setTimestamp(java.time.OffsetDateTime.now());
+    expansion.setTotal(total != null ? total : concepts.size());
+    if (offset != null) {
+      expansion.setOffset(offset);
+    }
+
+    final String systemUri = stripped;
+    final String displayLang = displayLanguage;
+    expansion.setContains(concepts.stream().map(c -> {
+      com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains contain =
+          new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains();
+      contain.setSystem(systemUri);
+      contain.setCode(c.getCode());
+      // Pick the right display using the same helper CodeSystemLookupOperation uses.
+      List<Designation> designations = c.getVersions() != null && !c.getVersions().isEmpty() && c.getVersions().get(0).getDesignations() != null
+          ? c.getVersions().get(0).getDesignations()
+          : Collections.emptyList();
+      Designation display = ConceptUtil.getDisplay(designations, displayLang, List.of());
+      if (display != null) {
+        contain.setDisplay(display.getName());
+      }
+      return contain;
+    }).toList());
+    response.setExpansion(expansion);
+    return response;
   }
 }

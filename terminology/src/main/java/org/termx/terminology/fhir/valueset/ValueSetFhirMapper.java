@@ -344,7 +344,11 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     if (concepts == null) {
       return expansion;
     }
-    expansion.setTotal(concepts.size());
+    // FHIR R5: expansion.total is the post-filter, pre-pagination count. The
+    // operation pre-populates snapshot.conceptsTotal with that value before
+    // handing off; fall back to concepts.size() only when the snapshot is
+    // un-paginated (e.g. legacy callers).
+    expansion.setTotal(snapshot.getConceptsTotal() != null ? snapshot.getConceptsTotal() : concepts.size());
     expansion.setParameter(toValueSetParameter(param));
     expansion.setTimestamp(snapshot.getCreatedAt());
 
