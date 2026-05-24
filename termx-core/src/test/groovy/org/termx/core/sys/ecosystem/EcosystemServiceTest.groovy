@@ -112,7 +112,7 @@ class EcosystemServiceTest extends Specification {
     def result = service.query(params)
 
     then:
-    1 * repository.query(params) >> new QueryResult<>([], 0)
+    1 * repository.query(params) >> new QueryResult<>([])
     result.meta.total == 0
   }
 }
