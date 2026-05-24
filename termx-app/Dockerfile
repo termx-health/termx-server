@@ -8,5 +8,24 @@ ENV APP_VERSION=${APP_VERSION:-latest}
 ARG BUILD_TIME
 ENV BUILD_TIME=$BUILD_TIME
 
+# Fail-fast on OutOfMemoryError instead of letting the JVM limp on with
+# a depleted heap. The previous behaviour (no flag) caused the May 2026
+# dev-server incident where a single OOM cascaded into every concurrent
+# request, the Netty selector, AND the SnomedImportPollingService — all
+# died with their own OOMs over several minutes while the container
+# kept running. ExitOnOutOfMemoryError makes the JVM exit immediately;
+# Docker's `restart: unless-stopped` brings it back clean within seconds.
+# HeapDumpOnOutOfMemoryError + HeapDumpPath leave a postmortem .hprof so
+# the next incident can be diagnosed without re-OOMing dev-server to
+# capture a heap dump live.
+#
+# /app/logs is the standard volume-mount path the deploy compose files
+# already export to /opt/.../logs on the host, so dumps survive container
+# recreation. Create it eagerly so the JVM doesn't error if the volume
+# isn't bound (dev runs without a mount).
+RUN mkdir -p /app/logs
+
+ENV JVM_OOM_OPTS="-XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/app/logs/"
+
 COPY build/libs/*-all.jar terminology.jar
-CMD java ${JAVA_OPTS} -jar terminology.jar
+CMD java ${JVM_OOM_OPTS} ${JAVA_OPTS} -jar terminology.jar
