@@ -10,3 +10,9 @@ dependencies {
   testImplementation 'com.flipkart.zjsonpatch:zjsonpatch:0.4.14'
 }
 
+// JUnit 4 tests live in src/test/java; Gradle 9's strict "failOnNoDiscoveredTests"
+// check requires the runner to be declared explicitly.
+test {
+  useJUnit()
+}
+
