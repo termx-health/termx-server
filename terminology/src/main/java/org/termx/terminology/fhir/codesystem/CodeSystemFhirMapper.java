@@ -383,32 +383,59 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
           case EntityPropertyType.decimal -> fhir.setValueDecimal(new BigDecimal(String.valueOf(pv.getValue())));
           case EntityPropertyType.integer -> fhir.setValueInteger(Integer.valueOf(String.valueOf(pv.getValue())));
           case EntityPropertyType.coding -> {
-            Concept concept = JsonUtil.getObjectMapper().convertValue(pv.getValue(), Concept.class);
-            if (concept.getCodeSystem() == null || concept.getCode() == null) {
+            // Read the canonical EntityPropertyValueCodingValue shape (codeSystem +
+            // code + display + version). The import path normalises every Coding
+            // to this shape, so display survives Coding→Concept resolution.
+            // `asCodingValue()` round-trips via JSON, so it also handles the
+            // legacy stored shapes (raw FHIR Coding with `system` would fail
+            // here but is no longer produced; raw Concept lacks display and
+            // would round-trip without it — acceptable for legacy data).
+            EntityPropertyValue.EntityPropertyValueCodingValue coding = pv.asCodingValue();
+            if (coding == null || coding.getCodeSystem() == null || coding.getCode() == null) {
               return null;
             }
 
-            var coding = new Coding(
-                    propertySystemUri.getOrDefault(concept.getCodeSystem(), concept.getCodeSystem()),
-                    concept.getCode());
+            var fhirCoding = new Coding(
+                    propertySystemUri.getOrDefault(coding.getCodeSystem(), coding.getCodeSystem()),
+                    coding.getCode());
 
-            snapshotCodings.stream()
-                    .filter(propertyCoding -> concept.getCode().equals(propertyCoding.code())
-                            && concept.getCodeSystem().equals(propertyCoding.system()))
-                    .findFirst()
-                    .ifPresent(propertyCoding -> {
-                      coding.setDisplay(getDisplay(propertyCoding.display(), language));
-                      coding.setVersion(propertyCoding.version());
-                    });
+            // Prefer the user-supplied display from the stored value. Fall back
+            // to the per-language snapshot lookup (used when the import didn't
+            // carry a display, e.g. file imports that resolve by code only).
+            // EPVCV.display is typed `Object` to accommodate either a plain
+            // String (FHIR import) or a serialised localised name (file import);
+            // route both through `getDisplay` which is JSON-tolerant.
+            if (coding.getDisplay() != null) {
+              String displayStr = coding.getDisplay() instanceof String s ? s : JsonUtil.toJson(coding.getDisplay());
+              fhirCoding.setDisplay(getDisplay(displayStr, language));
+            } else {
+              snapshotCodings.stream()
+                      .filter(propertyCoding -> coding.getCode().equals(propertyCoding.code())
+                              && coding.getCodeSystem().equals(propertyCoding.system()))
+                      .findFirst()
+                      .ifPresent(propertyCoding -> fhirCoding.setDisplay(getDisplay(propertyCoding.display(), language)));
+            }
+            if (coding.getVersion() != null) {
+              fhirCoding.setVersion(coding.getVersion());
+            } else {
+              snapshotCodings.stream()
+                      .filter(propertyCoding -> coding.getCode().equals(propertyCoding.code())
+                              && coding.getCodeSystem().equals(propertyCoding.system()))
+                      .findFirst()
+                      .ifPresent(propertyCoding -> fhirCoding.setVersion(propertyCoding.version()));
+            }
 
-            fhir.setValueCoding(coding);
+            fhir.setValueCoding(fhirCoding);
           }
           case EntityPropertyType.dateTime -> {
             if (pv.getValue() instanceof OffsetDateTime odt) {
               fhir.setValueDateTime(odt);
             } else {
-              OffsetDateTime dateTime = DateUtil.parseOffsetDateTime(pv.getValue() instanceof String s ? s : String.valueOf(pv.getValue()));
-              fhir.setValueDateTime(dateTime.withHour(0).withMinute(0).withSecond(0).withNano(0));
+              // JSONB rehydrates OffsetDateTime as an ISO string. Parse and pass
+              // through verbatim — preserve full precision (hour/minute/second/nano).
+              // The previous code zeroed the time-of-day, which made every dateTime
+              // round-trip lossy.
+              fhir.setValueDateTime(DateUtil.parseOffsetDateTime(pv.getValue() instanceof String s ? s : String.valueOf(pv.getValue())));
             }
           }
         }
@@ -736,11 +763,26 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return propertyValues.stream().filter(v -> !List.of("status", "is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(v.getCode()))
         .map(v -> {
           EntityPropertyValue value = new EntityPropertyValue();
-          value.setValue(Stream.of(
+          // Normalise FHIR Coding to TermX's canonical EntityPropertyValueCodingValue
+          // shape at import time. FHIR uses `system`, TermX uses `codeSystem` —
+          // storing the raw FHIR Coding leaves downstream readers (every existing
+          // call site that does `pv.asCodingValue()`) with codeSystem=null, and
+          // FHIR re-export then silently dropped the property. Normalising here
+          // also gives us a place to preserve the user-supplied `display`, which
+          // the subsequent Coding→Concept resolution step would otherwise discard.
+          Object rawValue = Stream.of(
               v.getValueCode(), v.getValueCoding(),
               v.getValueString(), v.getValueInteger(),
               v.getValueBoolean(), v.getValueDateTime(), v.getValueDecimal()
-          ).filter(Objects::nonNull).findFirst().orElse(null));
+          ).filter(Objects::nonNull).findFirst().orElse(null);
+          if (rawValue instanceof Coding c) {
+            EntityPropertyValue.EntityPropertyValueCodingValue coding =
+                new EntityPropertyValue.EntityPropertyValueCodingValue(c.getCode(), c.getSystem());
+            coding.setDisplay(c.getDisplay());
+            coding.setVersion(c.getVersion());
+            rawValue = coding;
+          }
+          value.setValue(rawValue);
           value.setEntityProperty(v.getCode());
           // Round-trip arbitrary per-value extensions (e.g. customer IG fields
           // that decompose a pipe-string into typed sub-values). Stored verbatim

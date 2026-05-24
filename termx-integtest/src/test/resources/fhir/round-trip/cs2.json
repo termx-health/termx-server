@@ -38,16 +38,16 @@
       "code": "x",
       "display": "X (refs Alpha)",
       "property": [
-        {"code": "ref-cs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "a"}},
-        {"code": "ref-vs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "a"}}
+        {"code": "ref-cs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "a", "display": "Alpha"}},
+        {"code": "ref-vs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "a", "display": "Alpha"}}
       ]
     },
     {
       "code": "y",
       "display": "Y (refs Beta)",
       "property": [
-        {"code": "ref-cs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "b"}},
-        {"code": "ref-vs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "b"}}
+        {"code": "ref-cs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "b", "display": "Beta"}},
+        {"code": "ref-vs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "b", "display": "Beta"}}
       ]
     }
   ]

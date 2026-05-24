@@ -89,16 +89,22 @@ class CodeSystemRoundTripTest extends TermxIntegTest {
     and: "CS1 property definitions round-trip"
     propertyDefs(cs1Out) == propertyDefs(cs1In)
 
-    and: "CS1 concept `a` keeps its six scalar datatype property values"
-    // Coding-value round-trip is exercised on CS2 (where the property definition
-    // carries a `codesystem-property-codesystem` binding extension — the only
-    // shape under which TermX preserves the canonical URL and display).
+    and: "CS1 concept `a` keeps all seven FHIR datatype property values"
+    // p-datetime tests full timestamp precision (12:30:45Z) — not midnight.
+    // p-coding here points to a *stored* CS (rt-cs0) so resolution succeeds;
+    // the user-supplied `display` must still come back on the round-trip.
     conceptProps(cs1Out, "a") == conceptProps(cs1In, "a")
+
+    and: "CS1 concept `c` keeps Coding values whose system is NOT a stored CodeSystem"
+    // Tests the silent-drop bug: import sees an unresolvable Coding (the URL
+    // isn't a CS we know about), stores it, and the export must still emit it
+    // verbatim — not silently drop it because Concept-style field lookup fails.
+    conceptProps(cs1Out, "c") == conceptProps(cs1In, "c")
 
     and: "CS1 concept `b` keeps repeated p-string values AND the per-value extension cluster"
     // The repetition itself ("first" / "second" / pipe-string) is preserved
     // by the existing repository. The extension[] sibling on the pipe-string
-    // entry is what this PR adds — verified by this assertion.
+    // entry is what PR #152 added — still green here.
     conceptProps(cs1Out, "b") == conceptProps(cs1In, "b")
 
     and: "CS2: property-definition binding extensions (codesystem-property-codesystem / -valueset) round-trip"
@@ -106,12 +112,10 @@ class CodeSystemRoundTripTest extends TermxIntegTest {
     def cs2Out = normalise(cs2Output)
     propertyDefs(cs2Out) == propertyDefs(cs2In)
 
-    and: "CS2 per-concept Coding values for refs to CS1 and VS1 survive (system + code)"
-    // `display` is intentionally omitted from these Coding values in the
-    // fixture — it's a known separate bug: on successful Coding→Concept
-    // resolution at import time the user-supplied `display` is dropped (the
-    // TermX Concept doesn't carry it). The export then can't recover it from
-    // the empty snapshot. Tracked separately.
+    and: "CS2 per-concept Coding values keep system + code + display"
+    // The `display` round-trip on Coding-typed property values exercises the
+    // fix for the import-time normalization that previously discarded display
+    // when Coding successfully resolved to a stored TermX Concept.
     conceptProps(cs2Out, "x") == conceptProps(cs2In, "x")
     conceptProps(cs2Out, "y") == conceptProps(cs2In, "y")
 

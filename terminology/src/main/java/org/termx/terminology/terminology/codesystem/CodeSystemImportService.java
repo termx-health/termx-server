@@ -286,13 +286,34 @@ public class CodeSystemImportService {
         pv.setEntityPropertyId(property.get().getId());
         if (property.get().getType().equals(EntityPropertyType.coding)) {
           try {
-            Coding coding = (Coding) pv.getValue();
-            String key = coding.getSystem() + "|" + coding.getCode();
-            Optional<Concept> conceptOpt = conceptCache.computeIfAbsent(key, k ->
-                conceptService.load(coding.getSystem(), coding.getCode())
-                    .or(() -> conceptService.loadByUri(coding.getSystem(), coding.getCode()))
-            );
-            conceptOpt.ifPresent(pv::setValue);
+            // CodeSystemFhirMapper normalises imported FHIR Codings to
+            // EntityPropertyValueCodingValue at the boundary; FileImporter and
+            // similar paths may still hand us a raw FHIR Coding, so accept both.
+            // Whichever shape we receive, store as EPVCV — the canonical TermX
+            // shape that preserves `display` through later round-trips (a bare
+            // Concept doesn't carry display, so the previous Concept-replacement
+            // was lossy).
+            EntityPropertyValue.EntityPropertyValueCodingValue coding;
+            if (pv.getValue() instanceof Coding c) {
+              coding = new EntityPropertyValue.EntityPropertyValueCodingValue(c.getCode(), c.getSystem());
+              coding.setDisplay(c.getDisplay());
+              coding.setVersion(c.getVersion());
+            } else {
+              coding = pv.asCodingValue();
+            }
+            // Resolution: if the Coding refers to a stored TermX concept, fine —
+            // the lookup is still useful for callers that want the internal id,
+            // but we don't replace the stored value (which would drop display).
+            // Unresolvable Codings (e.g. external systems we don't host) round-
+            // trip verbatim instead of being silently dropped on export.
+            if (coding != null && coding.getCodeSystem() != null && coding.getCode() != null) {
+              String key = coding.getCodeSystem() + "|" + coding.getCode();
+              conceptCache.computeIfAbsent(key, k ->
+                  conceptService.load(coding.getCodeSystem(), coding.getCode())
+                      .or(() -> conceptService.loadByUri(coding.getCodeSystem(), coding.getCode()))
+              );
+            }
+            pv.setValue(coding);
           } catch (RuntimeException ignored) {
           }
         }
