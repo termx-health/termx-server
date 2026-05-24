@@ -7,11 +7,17 @@ dependencies {
   api project(":kodality-commons:commons-util")
   api project(":kodality-commons:commons-model")
 
-  testImplementation "junit:junit:4.13"
-  testImplementation("org.spockframework:spock-core:2.2-M1-groovy-3.0") {
-    exclude group: "org.codehaus.groovy", module: "groovy-all"
-  }
-  testImplementation "com.github.tomakehurst:wiremock-jre8:2.33.1"
+  testImplementation "junit:junit:4.13.2"
+  // Versions come from the root build.gradle.kts BOMs (groovy-bom:5.0.3 /
+  // spock-bom:2.4-groovy-5.0). spock-junit4 lets Spock 2.x honour the JUnit 4
+  // @Rule WireMockRule used in HttpClientSpec.
+  testImplementation "org.spockframework:spock-core"
+  testImplementation "org.spockframework:spock-junit4"
+  // WireMock 2.x line (wiremock-jre8) is unmaintained and pulls jetty-alpn
+  // shims without versions, breaking root-level dependency resolution. The
+  // maintained successor is org.wiremock:wiremock 3.x; API for WireMockRule
+  // and WireMock.* statics is preserved.
+  testImplementation "org.wiremock:wiremock:3.13.1"
 }
 
 test {
