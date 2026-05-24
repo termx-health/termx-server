@@ -44,4 +44,9 @@ dependencies {
     testImplementation("org.spockframework:spock-core") {
         exclude(group = "org.codehaus.groovy", module = "groovy-all")
     }
+    // Spock falls back to byte-buddy/cglib/mockito to mock concrete classes
+    // (the JDK proxy only handles interfaces). EcosystemServiceTest mocks
+    // EcosystemRepository, which extends BaseRepository — without this the
+    // suite dies with CannotCreateMockException. :terminology already has it.
+    testRuntimeOnly("net.bytebuddy:byte-buddy:1.17.0")
 }
