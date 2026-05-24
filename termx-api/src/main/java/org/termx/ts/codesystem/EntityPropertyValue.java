@@ -16,6 +16,10 @@ import lombok.experimental.Accessors;
 public class EntityPropertyValue {
   private Long id;
   private Object value;
+  // Per-value FHIR extensions — `CodeSystem.concept.property[].extension`. Stored
+  // as raw JSON so the model stays provider-neutral (termx-api has no zmei/FHIR
+  // dep). Mappers cast to/from `List<Extension>` at the FHIR boundary.
+  private Object extensions;
   private Long entityPropertyId;
   private Long codeSystemEntityVersionId;
 

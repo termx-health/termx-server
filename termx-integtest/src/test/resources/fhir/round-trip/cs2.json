@@ -1,0 +1,54 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "rt-cs2",
+  "url": "http://termx-test.local/CodeSystem/rt-cs2",
+  "version": "1.0.0",
+  "name": "RoundTripCs2",
+  "title": "Round-Trip CS2 (property bindings to CS1 and VS1)",
+  "status": "active",
+  "experimental": false,
+  "content": "complete",
+  "caseSensitive": true,
+  "property": [
+    {
+      "code": "ref-cs",
+      "description": "Reference to a CS1 concept",
+      "type": "Coding",
+      "extension": [
+        {
+          "url": "https://termx.org/fhir/StructureDefinition/codesystem-property-codesystem",
+          "valueCanonical": "http://termx-test.local/CodeSystem/rt-cs1"
+        }
+      ]
+    },
+    {
+      "code": "ref-vs",
+      "description": "Reference to a VS1 concept",
+      "type": "Coding",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/codesystem-property-valueset",
+          "valueCanonical": "http://termx-test.local/ValueSet/rt-vs1"
+        }
+      ]
+    }
+  ],
+  "concept": [
+    {
+      "code": "x",
+      "display": "X (refs Alpha)",
+      "property": [
+        {"code": "ref-cs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "a"}},
+        {"code": "ref-vs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "a"}}
+      ]
+    },
+    {
+      "code": "y",
+      "display": "Y (refs Beta)",
+      "property": [
+        {"code": "ref-cs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "b"}},
+        {"code": "ref-vs", "valueCoding": {"system": "http://termx-test.local/CodeSystem/rt-cs1", "code": "b"}}
+      ]
+    }
+  ]
+}

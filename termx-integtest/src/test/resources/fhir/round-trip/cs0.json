@@ -1,0 +1,15 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "rt-cs0",
+  "url": "http://termx-test.local/CodeSystem/rt-cs0",
+  "version": "1.0.0",
+  "name": "RoundTripCs0",
+  "title": "Round-Trip CS0 (external lookup target)",
+  "status": "active",
+  "experimental": false,
+  "content": "complete",
+  "caseSensitive": true,
+  "concept": [
+    {"code": "ec1", "display": "External 1"}
+  ]
+}

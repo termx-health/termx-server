@@ -1,0 +1,22 @@
+{
+  "resourceType": "ValueSet",
+  "id": "rt-vs1",
+  "url": "http://termx-test.local/ValueSet/rt-vs1",
+  "version": "1.0.0",
+  "name": "RoundTripVs1",
+  "title": "Round-Trip VS1 over CS1",
+  "status": "active",
+  "experimental": false,
+  "compose": {
+    "include": [
+      {
+        "system": "http://termx-test.local/CodeSystem/rt-cs1",
+        "version": "1.0.0",
+        "concept": [
+          {"code": "a", "display": "Alpha"},
+          {"code": "b", "display": "Beta"}
+        ]
+      }
+    ]
+  }
+}
