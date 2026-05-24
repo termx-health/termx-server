@@ -24,11 +24,19 @@
       "display": "Alpha",
       "property": [
         {"code": "p-code",     "valueCode":    "x"},
+        {"code": "p-coding",   "valueCoding":  {"system": "http://termx-test.local/CodeSystem/rt-cs0", "code": "ec1", "display": "External 1"}},
         {"code": "p-string",   "valueString":  "hello"},
         {"code": "p-integer",  "valueInteger": 42},
         {"code": "p-boolean",  "valueBoolean": true},
-        {"code": "p-datetime", "valueDateTime": "2025-06-01T00:00:00Z"},
+        {"code": "p-datetime", "valueDateTime": "2025-06-01T12:30:45Z"},
         {"code": "p-decimal",  "valueDecimal": 3.14}
+      ]
+    },
+    {
+      "code": "c",
+      "display": "Gamma (unstored Coding target)",
+      "property": [
+        {"code": "p-coding", "valueCoding": {"system": "http://unstored.invalid/CodeSystem/external", "code": "u1", "display": "Unstored 1"}}
       ]
     },
     {
