@@ -14,10 +14,10 @@ dependencies {
   implementation "org.dmfs:lib-recur:0.17.1"
 
   testImplementation "junit:junit:4.13.2"
-  testImplementation "org.codehaus.groovy:groovy-all:3.0.10"
-  testImplementation("org.spockframework:spock-core:2.2-M1-groovy-3.0") {
-    exclude group: "org.codehaus.groovy", module: "groovy-all"
-  }
+  // Versions come from the root build.gradle.kts BOMs
+  // (groovy-bom:5.0.3 / spock-bom:2.4-groovy-5.0); see commons-csv for the
+  // backstory on the old stale pinning that broke root-level gradle test.
+  testImplementation "org.spockframework:spock-core"
 }
 
 test {

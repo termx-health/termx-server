@@ -10,10 +10,13 @@ dependencies {
   implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
   implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
 
-  testImplementation "org.codehaus.groovy:groovy-all:3.0.10"
-  testImplementation("org.spockframework:spock-core:2.2-M1-groovy-3.0") {
-    exclude group: "org.codehaus.groovy", module: "groovy-all"
-  }
+  // Versions come from the root build.gradle.kts BOMs:
+  //   org.apache.groovy:groovy-bom:5.0.3
+  //   org.spockframework:spock-bom:2.4-groovy-5.0
+  // The old stale pinning (groovy-all:3.0.10 + spock-core:2.2-M1-groovy-3.0)
+  // collided with org.apache.groovy:groovy:5.0.3 from the BOM and broke
+  // root-level `./gradlew test` with a capability conflict.
+  testImplementation "org.spockframework:spock-core"
 }
 
 test {
