@@ -35,6 +35,19 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 @Slf4j
 @Singleton
 public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
+  /**
+   * Absolute ceiling for inline-loading a CodeSystem version's concept entities into a single
+   * FHIR response body. Above this size the on-wire JSON would be unworkable for any client
+   * and the JDBC + heap cost has been observed to OOM dev-server with 1-2 GB heap on real
+   * publishers (LOINC ~100k, ICD-10 ~70k, SNOMED CT ~370k). When exceeded, {@link #loadEntities}
+   * returns an empty list and logs a WARN — clients should use {@code ?_summary=true},
+   * {@code /$expand}, or the concept-pagination endpoint instead. The {@code count} field on
+   * the response stays accurate because it comes from {@code CodeSystemVersion.conceptsTotal}
+   * (a single COUNT query inside versionService.load), not from {@code entities.size()}.
+   * Override via {@code termx.fhir.codesystem.read.max-inline-entities}.
+   */
+  private final int maxInlineEntities;
+
   private final CodeSystemService codeSystemService;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
@@ -49,7 +62,8 @@ public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
                                    ProvenanceService provenanceService,
                                    CodeSystemImportService importService,
                                    CodeSystemFhirMapper mapper,
-                                   @Value("${termx.fhir.codesystem.search.default-summary:true}") String defaultSearchSummary) {
+                                   @Value("${termx.fhir.codesystem.search.default-summary:true}") String defaultSearchSummary,
+                                   @Value("${termx.fhir.codesystem.read.max-inline-entities:50000}") int maxInlineEntities) {
     this.codeSystemService = codeSystemService;
     this.codeSystemVersionService = codeSystemVersionService;
     this.codeSystemEntityVersionService = codeSystemEntityVersionService;
@@ -57,6 +71,7 @@ public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
     this.importService = importService;
     this.mapper = mapper;
     this.defaultSearchSummary = defaultSearchSummary;
+    this.maxInlineEntities = maxInlineEntities;
   }
 
   @Override
@@ -151,7 +166,24 @@ public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
   }
 
   private List<CodeSystemEntityVersion> loadEntities(CodeSystemVersion version, String code, boolean loadLargeEntities) {
-    if (version == null || (version.getConceptsTotal() > 1000 && !loadLargeEntities)) {
+    if (version == null) {
+      return List.of();
+    }
+    Integer total = version.getConceptsTotal();
+    if (total != null && total > 1000 && !loadLargeEntities) {
+      // Search path: callers that don't ask for the heavy load skip it for anything above 1k.
+      return List.of();
+    }
+    // Hard ceiling: even on the read path with loadLargeEntities=true, refuse to inline
+    // huge concept sets. The previous behaviour pulled every row into one JDBC result set,
+    // OOM-ing the JVM on real publishers (LOINC, ICD-10, SNOMED CT). The CodeSystem still
+    // serialises with an accurate `count`; clients that need the concepts should use
+    // ?_summary=true, /$expand, or the concept-pagination endpoint.
+    if (code == null && total != null && total > maxInlineEntities) {
+      log.warn("CodeSystem {} version {} has {} concepts, exceeding inline cap {} — returning "
+              + "without entities. Clients should call /$expand or paginate /concept instead, "
+              + "or override termx.fhir.codesystem.read.max-inline-entities for this server.",
+          version.getCodeSystem(), version.getVersion(), total, maxInlineEntities);
       return List.of();
     }
     CodeSystemEntityVersionQueryParams codeSystemEntityVersionParams = new CodeSystemEntityVersionQueryParams()
