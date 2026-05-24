@@ -396,37 +396,24 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // and preferredLanguage from it, both nullable.
     ValueSetVersion stubVersion = new ValueSetVersion();
 
-    List<ValueSetVersionConcept> concepts = provider.ruleExpand(rule, stubVersion, displayLanguage);
-    if (concepts == null) {
-      concepts = Collections.emptyList();
-    }
-
-    // Filter (free-text typeahead) — applied client-side because the underlying
-    // Snowstorm ECL doesn't carry a free-text filter.
     String textFilter = req == null ? null : req.findParameter("filter")
         .map(pp -> pp.getValueString() != null ? pp.getValueString() : pp.getValueCode()).orElse(null);
-    if (textFilter != null && !textFilter.isBlank()) {
-      String needle = textFilter.toLowerCase();
-      concepts = concepts.stream().filter(c -> {
-        String code = c.getConcept() != null ? c.getConcept().getCode() : null;
-        String display = c.getDisplay() != null ? c.getDisplay().getName() : null;
-        return (code != null && code.toLowerCase().contains(needle))
-            || (display != null && display.toLowerCase().contains(needle));
-      }).toList();
-    }
-
-    int totalBeforePaging = concepts.size();
-
     Integer offset = req == null ? null : req.findParameter("offset").map(ParametersParameter::getValueInteger)
         .orElse(req.findParameter("offset").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
-    if (offset != null) {
-      concepts = offset >= concepts.size() ? List.of() : concepts.subList(offset, concepts.size());
-    }
     Integer count = req == null ? null : req.findParameter("count").map(ParametersParameter::getValueInteger)
         .orElse(req.findParameter("count").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
-    if (count != null) {
-      concepts = concepts.stream().limit(count).toList();
-    }
+
+    // Push paging + free-text filter down to Snowstorm. The previous implementation
+    // called provider.ruleExpand (which uses setAll(true) → loops Snowstorm at
+    // limit=9999) and sliced in memory — for `?fhir_vs` (ECL=*) against a
+    // SNOMED edition that materialised the entire concept set into heap before
+    // discarding all but `count` items. Real-world OOM, fixed by paging at the
+    // source.
+    QueryResult<ValueSetVersionConcept> page = provider.ruleExpandPaged(rule, stubVersion, displayLanguage, textFilter, offset, count);
+    List<ValueSetVersionConcept> concepts = page.getData() != null ? page.getData() : Collections.emptyList();
+    Integer totalBeforePaging = page.getMeta() != null && page.getMeta().getTotal() != null
+        ? page.getMeta().getTotal()
+        : concepts.size();
 
     com.kodality.zmei.fhir.resource.terminology.ValueSet response = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
     response.setUrl(url);
