@@ -24,7 +24,13 @@ import java.util.stream.Stream;
 @Singleton
 public class EntityPropertyValueRepository extends BaseRepository {
   private static final int INSERT_CHUNK_SIZE = 500;
-  private final PgBeanProcessor bp = new PgBeanProcessor(EntityPropertyValue.class, bp -> bp.addColumnProcessor("value", PgBeanProcessor.fromJson()));
+  private final PgBeanProcessor bp = new PgBeanProcessor(EntityPropertyValue.class, bp -> {
+    bp.addColumnProcessor("value", PgBeanProcessor.fromJson());
+    // `extensions` is jsonb and may be null (column added later — see changelog
+    // 15-entity_property_value_extensions.sql). The fromJson() processor handles
+    // null safely.
+    bp.addColumnProcessor("extensions", PgBeanProcessor.fromJson());
+  });
 
   String select = "select epv.*, ep.name as entity_property, ep.type as entity_property_type ";
   String from = " from terminology.entity_property_value epv " +
@@ -36,6 +42,7 @@ public class EntityPropertyValueRepository extends BaseRepository {
     ssb.property("entity_property_id", value.getEntityPropertyId());
     ssb.property("code_system_entity_version_id", codeSystemEntityVersionId);
     ssb.jsonProperty("value", value.getValue());
+    ssb.jsonProperty("extensions", value.getExtensions());
 
     SqlBuilder sb = ssb.buildSave("terminology.entity_property_value", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
@@ -111,9 +118,13 @@ public class EntityPropertyValueRepository extends BaseRepository {
   public void save(List<Pair<Long, EntityPropertyValue>> values) {
     List<Pair<Long, EntityPropertyValue>> valuesToInsert = values.stream().filter(p -> p.getValue().getId() == null).toList();
     for (List<Pair<Long, EntityPropertyValue>> chunk : ListUtils.partition(valuesToInsert, INSERT_CHUNK_SIZE)) {
-      SqlBuilder sb = new SqlBuilder("insert into terminology.entity_property_value (code_system_entity_version_id, entity_property_id, value) values ");
+      SqlBuilder sb = new SqlBuilder("insert into terminology.entity_property_value (code_system_entity_version_id, entity_property_id, value, extensions) values ");
       for (Pair<Long, EntityPropertyValue> pair : chunk) {
-        sb.append("(?, ?, ?::jsonb),", pair.getKey(), pair.getValue().getEntityPropertyId(), JsonUtil.toJson(pair.getValue().getValue()));
+        sb.append("(?, ?, ?::jsonb, ?::jsonb),",
+            pair.getKey(),
+            pair.getValue().getEntityPropertyId(),
+            JsonUtil.toJson(pair.getValue().getValue()),
+            pair.getValue().getExtensions() == null ? null : JsonUtil.toJson(pair.getValue().getExtensions()));
       }
       String sql = sb.getSql();
       sql = sql.substring(0, sql.length() - 1) + " returning id";
@@ -124,11 +135,11 @@ public class EntityPropertyValueRepository extends BaseRepository {
     }
 
     List<Pair<Long, EntityPropertyValue>> valuesToUpdate = values.stream().filter(p -> p.getValue().getId() != null).toList();
-    String query = "update terminology.entity_property_value SET code_system_entity_version_id = ?, entity_property_id = ? , value = ?::jsonb where id = ?";
+    String query = "update terminology.entity_property_value SET code_system_entity_version_id = ?, entity_property_id = ?, value = ?::jsonb, extensions = ?::jsonb where id = ?";
     jdbcTemplate.batchUpdate(query, new BatchPreparedStatementSetter() {
       @Override public void setValues(PreparedStatement ps, int i) throws SQLException {
         EntityPropertyValueRepository.this.setValues(ps, i, valuesToUpdate);
-        ps.setLong(4, valuesToUpdate.get(i).getValue().getId());
+        ps.setLong(5, valuesToUpdate.get(i).getValue().getId());
       }
       @Override public int getBatchSize() {return valuesToUpdate.size();}
     });
@@ -179,9 +190,11 @@ public class EntityPropertyValueRepository extends BaseRepository {
   }
 
   private void setValues(PreparedStatement ps, int i, List<Pair<Long, EntityPropertyValue>> values) throws SQLException {
+    EntityPropertyValue v = values.get(i).getValue();
     ps.setLong(1, values.get(i).getKey());
-    ps.setLong(2, values.get(i).getValue().getEntityPropertyId());
-    ps.setString(3, JsonUtil.toJson(values.get(i).getValue().getValue()));
+    ps.setLong(2, v.getEntityPropertyId());
+    ps.setString(3, JsonUtil.toJson(v.getValue()));
+    ps.setString(4, v.getExtensions() == null ? null : JsonUtil.toJson(v.getExtensions()));
   }
 
 }

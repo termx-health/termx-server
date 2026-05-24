@@ -11,5 +11,12 @@
   <include file="sys/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="terminology/changelog/changelog.xml" relativeToChangelogFile="false"/>
   <include file="uam/changelog/changelog.xml" relativeToChangelogFile="false"/>
+  <!-- ValueSetRelatedArtifactService is called on every VS toFhir and queries the
+       modeler and wiki schemas to decorate the response with related artifacts.
+       Without these tables present, `GET /fhir/ValueSet/{id}` 500s in the test app.
+       (PageProvider / StructureDefinitionContentReferenceProvider are present on
+       the classpath because termx-app drags both modules in.) -->
+  <include file="modeler/changelog/modeler/changelog.xml" relativeToChangelogFile="false"/>
+  <include file="wiki/changelog/wiki/changelog.xml" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

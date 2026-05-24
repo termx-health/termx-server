@@ -1,0 +1,52 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "rt-cs1",
+  "url": "http://termx-test.local/CodeSystem/rt-cs1",
+  "version": "1.0.0",
+  "name": "RoundTripCs1",
+  "title": "Round-Trip CS1 (all 7 FHIR datatypes)",
+  "status": "active",
+  "experimental": false,
+  "content": "complete",
+  "caseSensitive": true,
+  "property": [
+    {"code": "p-code",     "description": "code value",      "type": "code"},
+    {"code": "p-coding",   "description": "Coding value",    "type": "Coding"},
+    {"code": "p-string",   "description": "string value",    "type": "string"},
+    {"code": "p-integer",  "description": "integer value",   "type": "integer"},
+    {"code": "p-boolean",  "description": "boolean value",   "type": "boolean"},
+    {"code": "p-datetime", "description": "dateTime value",  "type": "dateTime"},
+    {"code": "p-decimal",  "description": "decimal value",   "type": "decimal"}
+  ],
+  "concept": [
+    {
+      "code": "a",
+      "display": "Alpha",
+      "property": [
+        {"code": "p-code",     "valueCode":    "x"},
+        {"code": "p-string",   "valueString":  "hello"},
+        {"code": "p-integer",  "valueInteger": 42},
+        {"code": "p-boolean",  "valueBoolean": true},
+        {"code": "p-datetime", "valueDateTime": "2025-06-01T00:00:00Z"},
+        {"code": "p-decimal",  "valueDecimal": 3.14}
+      ]
+    },
+    {
+      "code": "b",
+      "display": "Beta",
+      "property": [
+        {"code": "p-string", "valueString": "first"},
+        {"code": "p-string", "valueString": "second"},
+        {
+          "code": "p-string",
+          "valueString": "H:9811 | S:420 | B:3",
+          "extension": [
+            {"url": "http://termx-test.local/StructureDefinition/iccc-histology", "valueString": "9811"},
+            {"url": "http://termx-test.local/StructureDefinition/iccc-site",      "valueString": "420"},
+            {"url": "http://termx-test.local/StructureDefinition/iccc-behavior",  "valueString": "3"}
+          ]
+        }
+      ]
+    }
+  ]
+}

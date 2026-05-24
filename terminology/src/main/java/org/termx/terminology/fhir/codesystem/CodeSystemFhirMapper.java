@@ -412,6 +412,17 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
             }
           }
         }
+        // Emit per-value extensions verbatim — the import stored them as the
+        // raw FHIR Extension shape, JSONB rehydrates to Map<String, Object>, and
+        // convertValue marshals back to List<Extension>. URL family is open-ended;
+        // we don't interpret content, just round-trip.
+        if (pv.getExtensions() != null) {
+          List<Extension> extensions = JsonUtil.getObjectMapper()
+              .convertValue(pv.getExtensions(), new com.fasterxml.jackson.core.type.TypeReference<List<Extension>>() {});
+          if (extensions != null && !extensions.isEmpty()) {
+            fhir.setExtension(extensions);
+          }
+        }
         return fhir;
       }).filter(Objects::nonNull).sorted(Comparator.comparing(CodeSystemConceptProperty::getCode)).toList());
     }
@@ -731,6 +742,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
               v.getValueBoolean(), v.getValueDateTime(), v.getValueDecimal()
           ).filter(Objects::nonNull).findFirst().orElse(null));
           value.setEntityProperty(v.getCode());
+          // Round-trip arbitrary per-value extensions (e.g. customer IG fields
+          // that decompose a pipe-string into typed sub-values). Stored verbatim
+          // — the URL family is open-ended, not interpreted here.
+          if (v.getExtension() != null && !v.getExtension().isEmpty()) {
+            value.setExtensions(v.getExtension());
+          }
           return value;
         }).toList();
   }
