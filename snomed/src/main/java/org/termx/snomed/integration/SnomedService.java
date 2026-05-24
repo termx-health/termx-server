@@ -87,6 +87,20 @@ public class SnomedService {
     return snowstormClient.queryConcepts(params).join().getItems();
   }
 
+  /**
+   * Single-page variant of {@link #searchConcepts(SnomedConceptSearchParams)} that
+   * preserves the full {@link SnomedSearchResult} (notably {@code total}). Use this
+   * when the caller has a real page size to honour — the {@code setAll(true)} path
+   * iterates Snowstorm at limit=9999 until exhaustion and materialises the entire
+   * matching ECL set, which is fine for narrow filters but OOMs for ECL=*
+   * against an edition. Snowstorm itself honours {@code limit}/{@code offset}/
+   * {@code term} natively, so push the page down rather than slicing in memory.
+   * Caller must set limit and offset on {@code params}; {@code all} is ignored.
+   */
+  public SnomedSearchResult<SnomedConcept> searchConceptsPage(SnomedConceptSearchParams params) {
+    return snowstormClient.queryConcepts(params).join();
+  }
+
   public List<SnomedDescription> loadDescriptions(List<String> conceptIds) {
     return loadDescriptions(null, conceptIds);
   }

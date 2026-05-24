@@ -590,11 +590,11 @@ class ValueSetExpandOperationTest extends Specification {
   def "SNOMED ?fhir_vs (all concepts) delegates to provider with ECL `*`"() {
     given:
     ValueSetVersionRule capturedRule = null
-    snomedProvider.ruleExpand(_, _, _) >> { args ->
+    snomedProvider.ruleExpandPaged(_, _, _, _, _, _) >> { args ->
       capturedRule = args[0] as ValueSetVersionRule
-      return [snomedConcept("404684003", "Clinical finding"),
-              snomedConcept("123037004", "Body structure"),
-              snomedConcept("71388002", "Procedure")]
+      return pagedResult([snomedConcept("404684003", "Clinical finding"),
+                          snomedConcept("123037004", "Body structure"),
+                          snomedConcept("71388002", "Procedure")])
     }
 
     def req = new Parameters()
@@ -622,12 +622,12 @@ class ValueSetExpandOperationTest extends Specification {
     // descendant-or-self semantics, so the anchor is included by Snowstorm.
     given:
     ValueSetVersionRule capturedRule = null
-    snomedProvider.ruleExpand(_, _, _) >> { args ->
+    snomedProvider.ruleExpandPaged(_, _, _, _, _, _) >> { args ->
       capturedRule = args[0] as ValueSetVersionRule
-      return [snomedConcept("409822003", "Domain bacteria"),
-              snomedConcept("1052801005", "Domain bacteria isolate"),
-              snomedConcept("78239009",   "Gram-positive bacterium"),
-              snomedConcept("87172008",   "Gram-negative bacterium")]
+      return pagedResult([snomedConcept("409822003", "Domain bacteria"),
+                          snomedConcept("1052801005", "Domain bacteria isolate"),
+                          snomedConcept("78239009",   "Gram-positive bacterium"),
+                          snomedConcept("87172008",   "Gram-negative bacterium")])
     }
 
     def req = new Parameters()
@@ -649,11 +649,11 @@ class ValueSetExpandOperationTest extends Specification {
   def "SNOMED ?fhir_vs=refset delegates with is-a 900000000000455006 (Reference set foundation)"() {
     given:
     ValueSetVersionRule capturedRule = null
-    snomedProvider.ruleExpand(_, _, _) >> { args ->
+    snomedProvider.ruleExpandPaged(_, _, _, _, _, _) >> { args ->
       capturedRule = args[0] as ValueSetVersionRule
-      return [snomedConcept("733073007", "OWL axiom reference set"),
-              snomedConcept("900000000000497000", "CTV3 simple map reference set"),
-              snomedConcept("447562003", "ICD-10 complex map reference set")]
+      return pagedResult([snomedConcept("733073007", "OWL axiom reference set"),
+                          snomedConcept("900000000000497000", "CTV3 simple map reference set"),
+                          snomedConcept("447562003", "ICD-10 complex map reference set")])
     }
 
     def req = new Parameters()
@@ -674,10 +674,10 @@ class ValueSetExpandOperationTest extends Specification {
   def "SNOMED ?fhir_vs=refset/<code> delegates with `in` filter (refset members)"() {
     given:
     ValueSetVersionRule capturedRule = null
-    snomedProvider.ruleExpand(_, _, _) >> { args ->
+    snomedProvider.ruleExpandPaged(_, _, _, _, _, _) >> { args ->
       capturedRule = args[0] as ValueSetVersionRule
-      return [snomedConcept("404684003", "Clinical finding (axiom)"),
-              snomedConcept("71388002",  "Procedure (axiom)")]
+      return pagedResult([snomedConcept("404684003", "Clinical finding (axiom)"),
+                          snomedConcept("71388002",  "Procedure (axiom)")])
     }
 
     // 733073007 = OWL axiom reference set
@@ -699,10 +699,10 @@ class ValueSetExpandOperationTest extends Specification {
   def "SNOMED ?fhir_vs=ecl/<expr> URL-decodes and passes the expression through"() {
     given:
     ValueSetVersionRule capturedRule = null
-    snomedProvider.ruleExpand(_, _, _) >> { args ->
+    snomedProvider.ruleExpandPaged(_, _, _, _, _, _) >> { args ->
       capturedRule = args[0] as ValueSetVersionRule
-      return [snomedConcept("363698007", "Finding site"),
-              snomedConcept("116676008", "Associated morphology")]
+      return pagedResult([snomedConcept("363698007", "Finding site"),
+                          snomedConcept("116676008", "Associated morphology")])
     }
 
     // ECL "<< 363787002" — descendants-or-self of 363787002 (Observable entity).
@@ -721,6 +721,50 @@ class ValueSetExpandOperationTest extends Specification {
     result.expansion.contains.size() == 2
   }
 
+  def "SNOMED ?fhir_vs passes offset+count+filter to ruleExpandPaged and reports the upstream total"() {
+    // Regression test for an OOM in production: the previous implementation
+    // called ruleExpand (which loops Snowstorm at limit=9999 via setAll(true))
+    // and sliced in memory — for ECL=* on a SNOMED edition this materialised the
+    // entire concept set into heap before discarding all but `count` items.
+    //
+    // The contract now is: offset, count, and filter are forwarded to
+    // ruleExpandPaged; total comes from the QueryResult (so FHIR
+    // expansion.total reflects the real post-ECL count even though only a page
+    // of items is materialised).
+    given:
+    Integer capturedOffset = null
+    Integer capturedCount = null
+    String capturedFilter = null
+    snomedProvider.ruleExpandPaged(_, _, _, _, _, _) >> { args ->
+      capturedFilter = args[3] as String
+      capturedOffset = args[4] as Integer
+      capturedCount = args[5] as Integer
+      def page = [snomedConcept("404684003", "Clinical finding"),
+                  snomedConcept("123037004", "Body structure")]
+      def result = new QueryResult<>(page)
+      result.getMeta().setTotal(372656)
+      return result
+    }
+
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://snomed.info/sct?fhir_vs"))
+        .addParameter(new Parameters.ParametersParameter("offset").setValueInteger(40))
+        .addParameter(new Parameters.ParametersParameter("count").setValueInteger(2))
+        .addParameter(new Parameters.ParametersParameter("filter").setValueString("clin"))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    capturedOffset == 40
+    capturedCount == 2
+    capturedFilter == "clin"
+
+    result.expansion.total == 372656
+    result.expansion.offset == 40
+    result.expansion.contains.size() == 2
+  }
+
   def "SNOMED versioned URL passes the edition/version URI on the rule"() {
     // IG: implementations populating the version element SHOULD use the URI
     // form `http://snomed.info/sct/<sctid>/version/<YYYYMMDD>`. The provider's
@@ -728,10 +772,10 @@ class ValueSetExpandOperationTest extends Specification {
     // must carry it through on rule.codeSystemVersion.
     given:
     ValueSetVersionRule capturedRule = null
-    snomedProvider.ruleExpand(_, _, _) >> { args ->
+    snomedProvider.ruleExpandPaged(_, _, _, _, _, _) >> { args ->
       capturedRule = args[0] as ValueSetVersionRule
-      return [snomedConcept("409822003", "Domain bacteria"),
-              snomedConcept("78239009",  "Gram-positive bacterium")]
+      return pagedResult([snomedConcept("409822003", "Domain bacteria"),
+                          snomedConcept("78239009",  "Gram-positive bacterium")])
     }
 
     // 900000000000207008 = SNOMED International Edition
@@ -807,6 +851,17 @@ class ValueSetExpandOperationTest extends Specification {
           new Designation().setName(displayName).setLanguage("en").setDesignationType("display")
       ])])
     }
+  }
+
+  /**
+   * Wrap a list as a QueryResult whose total matches the list size. Use for SNOMED
+   * provider stubs where the test doesn't care about the upstream-vs-page-size
+   * distinction (one-page result, total = items in that page).
+   */
+  private static QueryResult<ValueSetVersionConcept> pagedResult(List<ValueSetVersionConcept> concepts) {
+    def r = new QueryResult<ValueSetVersionConcept>(concepts)
+    r.getMeta().setTotal(concepts.size())
+    return r
   }
 
   private static ValueSetVersionConcept snomedConcept(String code, String display) {

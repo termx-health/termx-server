@@ -1,11 +1,13 @@
 package org.termx.snomed.ts;
 
+import com.kodality.commons.model.QueryResult;
 import org.termx.core.ts.CodeSystemProvider;
 import org.termx.core.ts.ValueSetExternalExpandProvider;
 import org.termx.snomed.concept.SnomedConcept;
 import org.termx.snomed.concept.SnomedConceptSearchParams;
 import org.termx.snomed.description.SnomedDescription;
 import org.termx.snomed.integration.SnomedService;
+import org.termx.snomed.search.SnomedSearchResult;
 import org.termx.ts.codesystem.CodeSystemVersionReference;
 import org.termx.ts.codesystem.ConceptQueryParams;
 import org.termx.ts.codesystem.Designation;
@@ -38,6 +40,11 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
   private static final String SNOMED_DESCENDENT_OF = "descendent-of";
   private static final String SNOMED_IN = "in";
 
+  // Snowstorm caps single-page `limit` at 10_000 (Elasticsearch from+size).
+  // A null `count` from the caller means "no client-side cap"; honour Snowstorm's
+  // ceiling rather than throwing.
+  private static final int SNOWSTORM_MAX_PAGE = 9999;
+
   public SnomedValueSetExpandProvider(SnomedMapper snomedMapper, SnomedService snomedService, CodeSystemProvider codeSystemProvider) {
     this.snomedMapper = snomedMapper;
     this.snomedService = snomedService;
@@ -62,6 +69,82 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
       concepts.forEach(c -> c.getConcept().setCodeSystemVersions(List.of(rule.getCodeSystemVersion().getVersion())));
     }
     return concepts;
+  }
+
+  /**
+   * Single-page expansion that pushes paging and the free-text typeahead filter
+   * down to Snowstorm — issues exactly one {@code concepts?ecl=…&limit=…&offset=…&term=…}
+   * call and loads descriptions only for the returned page. Compare with
+   * {@link #ruleExpand} which uses {@code SnomedService.searchConcepts(setAll(true))},
+   * looping Snowstorm at limit=9999 until the full ECL result is materialised in
+   * heap — fine for narrow filters (a refset of 100 codes), an OOM for
+   * {@code ECL=*} against a SNOMED edition.
+   *
+   * <p>Only the "single filter, no concept list" shape is paged here — that's the
+   * shape the SNOMED implicit-VS ({@code ?fhir_vs[=…]}) operation builds.
+   * Anything richer falls back to the default {@link #ruleExpandPaged}, which
+   * goes through {@link #ruleExpand} and slices in memory.
+   *
+   * <p>{@code QueryResult.meta.total} is the post-ECL total from Snowstorm's
+   * response, so FHIR {@code expansion.total} is correct without a second probe.
+   */
+  @Override
+  public QueryResult<ValueSetVersionConcept> ruleExpandPaged(ValueSetVersionRule rule, ValueSetVersion version,
+                                                             String preferredLanguage, String textFilter,
+                                                             Integer offset, Integer count) {
+    if (rule == null
+        || CollectionUtils.isNotEmpty(rule.getConcepts())
+        || rule.getFilters() == null
+        || rule.getFilters().size() != 1) {
+      return super.ruleExpandPaged(rule, version, preferredLanguage, textFilter, offset, count);
+    }
+
+    List<String> supportedLanguages = Optional.ofNullable(version.getSupportedLanguages()).orElse(List.of());
+    List<String> preferredLanguages = preferredLanguage != null ? List.of(preferredLanguage) :
+        version.getPreferredLanguage() != null ? List.of(version.getPreferredLanguage()) : List.of();
+
+    String branch = getBranch(rule.getCodeSystemVersion());
+    String ecl = composeEcl(rule.getFilters().get(0));
+
+    int pageOffset = offset == null ? 0 : Math.max(0, offset);
+    int pageLimit = count == null ? SNOWSTORM_MAX_PAGE : Math.min(Math.max(0, count), SNOWSTORM_MAX_PAGE);
+
+    SnomedConceptSearchParams params = new SnomedConceptSearchParams()
+        .setEcl(ecl)
+        .setBranch(branch);
+    params.setLimit(pageLimit);
+    params.setOffset(pageOffset);
+    if (textFilter != null && !textFilter.isBlank()) {
+      params.setTerm(textFilter);
+    }
+
+    SnomedSearchResult<SnomedConcept> page = snomedService.searchConceptsPage(params);
+    List<SnomedConcept> snomedConcepts = page.getItems() != null ? page.getItems() : List.of();
+    Integer total = page.getTotal();
+
+    Map<String, List<SnomedDescription>> snomedDescriptions = getDescriptions(
+        snomedConcepts.stream().map(SnomedConcept::getConceptId).toList(), branch);
+
+    List<ValueSetVersionConcept> concepts = snomedConcepts.stream().map(sc -> {
+      ValueSetVersionConcept c = new ValueSetVersionConcept();
+      c.setConcept(snomedMapper.toVSConcept(sc));
+      c.setActive(sc.isActive());
+      c.setDisplay(findDisplay(snomedDescriptions.get(sc.getConceptId()), preferredLanguages));
+      c.setAdditionalDesignations(
+          findDesignations(snomedDescriptions.get(sc.getConceptId()), supportedLanguages,
+              c.getDisplay() != null ? c.getDisplay().getDesignationType() : null));
+      return c;
+    }).toList();
+
+    if (rule.getCodeSystemVersion() != null && rule.getCodeSystemVersion().getVersion() != null) {
+      concepts.forEach(c -> c.getConcept().setCodeSystemVersions(List.of(rule.getCodeSystemVersion().getVersion())));
+    }
+
+    QueryResult<ValueSetVersionConcept> result = new QueryResult<>(concepts);
+    result.getMeta().setTotal(total != null ? total : concepts.size());
+    result.getMeta().setOffset(pageOffset);
+    result.getMeta().setItemsPerPage(pageLimit);
+    return result;
   }
 
   private List<ValueSetVersionConcept> filterConcepts(ValueSetRuleFilter filter, List<String> preferredLanguages, List<String> supportedLanguages, String branch) {
