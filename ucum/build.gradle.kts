@@ -29,4 +29,10 @@ dependencies {
     implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.extra["zmeiVersion"]}") { isChanging = true }
 
     implementation("org.fhir:ucum:1.0.10")
+
+    testImplementation("io.micronaut.test:micronaut-test-spock")
+    testImplementation("org.spockframework:spock-core") {
+        exclude(group = "org.codehaus.groovy", module = "groovy-all")
+    }
+    testRuntimeOnly("net.bytebuddy:byte-buddy:1.17.0")
 }

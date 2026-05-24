@@ -7,3 +7,9 @@ dependencies {
 
   testImplementation "junit:junit:4.13.2"
 }
+
+// JUnit 4 tests live in src/test/java; Gradle 9's strict "failOnNoDiscoveredTests"
+// check requires the runner to be declared explicitly.
+test {
+  useJUnit()
+}

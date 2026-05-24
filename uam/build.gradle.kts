@@ -9,6 +9,10 @@ dependencies {
     implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.extra["commonsMicronautVersion"]}")
     implementation("com.kodality.commons:commons-cache:${rootProject.extra["commonsVersion"]}")
 
+    testImplementation("io.micronaut.test:micronaut-test-spock")
+    testImplementation("org.spockframework:spock-core") {
+        exclude(group = "org.codehaus.groovy", module = "groovy-all")
+    }
     testRuntimeOnly("net.bytebuddy:byte-buddy:1.17.0")
     testRuntimeOnly("org.objenesis:objenesis:3.3")
 }
