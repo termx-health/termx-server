@@ -31,6 +31,9 @@ dependencies {
 
     implementation("com.kodality.kefhir:kefhir-core:${rootProject.extra["kefhirVersion"]}") { isChanging = true }
     compileOnly("com.kodality.kefhir:fhir-rest:${rootProject.extra["kefhirVersion"]}") { isChanging = true }
+    // fhir-rest is compileOnly in production (provided by termx-app at runtime), but
+    // FhirEtagFilterSpec needs KefhirRequest / KefhirResponse on the test classpath.
+    testImplementation("com.kodality.kefhir:fhir-rest:${rootProject.extra["kefhirVersion"]}") { isChanging = true }
     implementation("com.kodality.zmei:zmei-fhir:${rootProject.extra["zmeiVersion"]}") { isChanging = true }
     implementation("com.kodality.zmei:zmei-fhir-client:${rootProject.extra["zmeiVersion"]}") { isChanging = true }
     implementation("com.kodality.zmei:zmei-fhir-jackson:${rootProject.extra["zmeiVersion"]}") { isChanging = true }
@@ -49,4 +52,8 @@ dependencies {
     // EcosystemRepository, which extends BaseRepository — without this the
     // suite dies with CannotCreateMockException. :terminology already has it.
     testRuntimeOnly("net.bytebuddy:byte-buddy:1.17.0")
+    // Objenesis instantiates classes without invoking a constructor — needed
+    // when Spock mocks concrete classes that have no no-arg constructor
+    // (ResourceFormatService in FhirEtagFilterSpec is the trigger).
+    testRuntimeOnly("org.objenesis:objenesis:3.4")
 }
