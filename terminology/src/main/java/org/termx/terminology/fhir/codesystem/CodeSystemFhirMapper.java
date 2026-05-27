@@ -23,6 +23,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.termx.core.auth.SessionStore;
 import org.termx.core.fhir.BaseFhirMapper;
 import org.termx.core.sys.provenance.Provenance;
+import org.termx.terminology.ApiError;
 import org.termx.terminology.Privilege;
 import org.termx.terminology.terminology.codesystem.CodeSystemService;
 import org.termx.terminology.terminology.codesystem.concept.ConceptService;
@@ -691,7 +692,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     version.setCode(c.getCode());
     version.setCodeSystem(codeSystem.getId());
     version.setDesignations(fromFhirDesignations(c, codeSystem));
-    version.setPropertyValues(fromFhirProperties(c.getProperty()));
+    version.setPropertyValues(fromFhirProperties(c.getProperty(), c.getCode()));
     version.setAssociations(fromFhirAssociations(parent, parentMap.get(c.getCode()), codeSystem));
     version.setStatus(fromFhirStatus(c.getProperty()));
     return List.of(version);
@@ -756,7 +757,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return d1.getDesignationType().equals(d2.getDesignationType()) && d1.getName().equals(d2.getName()) && d1.getLanguage().equals(d2.getLanguage());
   }
 
-  private static List<EntityPropertyValue> fromFhirProperties(List<CodeSystemConceptProperty> propertyValues) {
+  private static List<EntityPropertyValue> fromFhirProperties(List<CodeSystemConceptProperty> propertyValues, String conceptCode) {
     if (propertyValues == null) {
       return new ArrayList<>();
     }
@@ -775,6 +776,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
               v.getValueString(), v.getValueInteger(),
               v.getValueBoolean(), v.getValueDateTime(), v.getValueDecimal()
           ).filter(Objects::nonNull).findFirst().orElse(null);
+          if (rawValue == null) {
+            throw ApiError.TE809.toApiException(Map.of("concept", conceptCode, "property", v.getCode()));
+          }
           if (rawValue instanceof Coding c) {
             EntityPropertyValue.EntityPropertyValueCodingValue coding =
                 new EntityPropertyValue.EntityPropertyValueCodingValue(c.getCode(), c.getSystem());

@@ -103,7 +103,8 @@ public enum ApiError {
   TE805("TE805", "Target concept and source concepts are the same."),
   TE806("TE806", "FHIR TO FSH converter not provided"),
   TE807("TE807", "'{{format}}' is not supported."),
-  TE808("TE808", "Export failed: at least one designation is missing from export output. CodeSystem: {{codeSystemId}}, Description: {{description}}, Missing designations: {{missingDesignations}}");
+  TE808("TE808", "Export failed: at least one designation is missing from export output. CodeSystem: {{codeSystemId}}, Description: {{description}}, Missing designations: {{missingDesignations}}"),
+  TE809("TE809", "Concept '{{concept}}' property '{{property}}' is missing a value.");
   @Getter
   private String code;
   @Getter

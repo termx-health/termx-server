@@ -89,9 +89,10 @@ public class CodeSystemFileImportService {
 
   @Transactional
   public CodeSystemFileImportResponse process(CodeSystemFileImportRequest request, byte[] file) {
+    String versionNumber = request.getVersion() != null ? request.getVersion().getNumber() : null;
     log.debug("=== IMPORT SERVICE DEBUG: process START ===");
     log.debug("IMPORT SERVICE DEBUG: CodeSystem ID: {}, Version: {}, Type: {}, File size: {} bytes", 
-        request.getCodeSystem().getId(), request.getVersion().getNumber(), request.getType(), file != null ? file.length : 0);
+        request.getCodeSystem().getId(), versionNumber, request.getType(), file != null ? file.length : 0);
     
     if ("json".equals(request.getType())) {
       log.debug("IMPORT SERVICE DEBUG: Processing JSON import");
@@ -120,9 +121,10 @@ public class CodeSystemFileImportService {
 
   @Transactional
   public CodeSystemFileImportResponse save(CodeSystemFileImportRequest request, CodeSystemFileImportResult result) {
+    String versionNumber = request.getVersion() != null ? request.getVersion().getNumber() : null;
     log.debug("=== IMPORT SERVICE DEBUG: save START ===");
     log.debug("IMPORT SERVICE DEBUG: CodeSystem ID: {}, Version: {}, Entities: {}, Properties: {}", 
-        request.getCodeSystem().getId(), request.getVersion().getNumber(), 
+        request.getCodeSystem().getId(), versionNumber,
         result.getEntities().size(), result.getProperties().size());
     
     CodeSystemFileImportResponse resp = new CodeSystemFileImportResponse();
@@ -133,7 +135,7 @@ public class CodeSystemFileImportService {
     CodeSystem existingCodeSystem = codeSystemService.load(reqCodeSystem.getId(), true).orElse(null);
     log.debug("IMPORT SERVICE DEBUG: Existing CodeSystem: {}", existingCodeSystem != null ? "found" : "not found");
     
-    log.debug("IMPORT SERVICE DEBUG: Loading existing CodeSystemVersion: {} / {}", reqCodeSystem.getId(), reqVersion.getNumber());
+    log.debug("IMPORT SERVICE DEBUG: Loading existing CodeSystemVersion: {} / {}", reqCodeSystem.getId(), versionNumber);
     CodeSystemVersion existingCodeSystemVersion = findVersion(reqCodeSystem.getId(), reqVersion.getNumber()).orElse(null);
     log.debug("IMPORT SERVICE DEBUG: Existing CodeSystemVersion: {}", existingCodeSystemVersion != null ? "found" : "not found");
 
