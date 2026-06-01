@@ -7,7 +7,6 @@ import org.termx.core.ts.UcumSearchCacheInvalidator;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.terminology.codesystem.association.CodeSystemAssociationService;
 import org.termx.terminology.terminology.codesystem.CodeSystemRepository;
-import org.termx.terminology.terminology.codesystem.concept.ConceptRefreshViewJob;
 import org.termx.terminology.terminology.codesystem.designation.DesignationService;
 import org.termx.terminology.terminology.codesystem.entitypropertyvalue.EntityPropertyValueService;
 import org.termx.ts.PublicationStatus;
@@ -49,7 +48,6 @@ public class CodeSystemEntityVersionService {
   private final CodeSystemAssociationService codeSystemAssociationService;
   private final CodeSystemRepository codeSystemRepository;
   private final CodeSystemEntityVersionRepository repository;
-  private final ConceptRefreshViewJob conceptRefreshViewJob;
   private final List<CodeSystemExternalProvider> codeSystemProviders;
   private final UcumSearchCacheInvalidator ucumSearchCacheInvalidator;
 
@@ -68,7 +66,6 @@ public class CodeSystemEntityVersionService {
     designationService.save(version.getDesignations(), version.getId());
     entityPropertyValueService.save(version.getPropertyValues(), version.getId());
     codeSystemAssociationService.save(prepareAssociations(version.getAssociations()), version.getId(), version.getCodeSystem());
-    conceptRefreshViewJob.refreshView();
     invalidateCaches(version.getCodeSystem());
     return version;
   }
@@ -102,7 +99,6 @@ public class CodeSystemEntityVersionService {
     codeSystemAssociationService.batchUpsert(associations, codeSystem);
     log.info("Associations saved '{}' ({} sec)", associations.values().stream().flatMap(Collection::stream).toList().size(),
         (System.currentTimeMillis() - start) / 1000);
-    conceptRefreshViewJob.refreshView();
     invalidateCaches(codeSystem);
   }
 
@@ -193,7 +189,6 @@ public class CodeSystemEntityVersionService {
       return;
     }
     repository.activate(currentVersion.getCodeSystem(), List.of(versionId));
-    conceptRefreshViewJob.refreshView();
     invalidateCaches(currentVersion.getCodeSystem());
   }
 
@@ -210,7 +205,6 @@ public class CodeSystemEntityVersionService {
   public void activate(String codeSystem, List<Long> entityVersionIds) {
     long start = System.currentTimeMillis();
     repository.activate(codeSystem, entityVersionIds);
-    conceptRefreshViewJob.refreshView();
     invalidateCaches(codeSystem);
     log.info("Activated (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }
@@ -226,7 +220,6 @@ public class CodeSystemEntityVersionService {
       return;
     }
     repository.retire(currentVersion.getCodeSystem(), List.of(versionId));
-    conceptRefreshViewJob.refreshView();
     invalidateCaches(currentVersion.getCodeSystem());
   }
 
@@ -234,7 +227,6 @@ public class CodeSystemEntityVersionService {
   public void retire(String codeSystem, List<Long> versionIds) {
     long start = System.currentTimeMillis();
     repository.retire(codeSystem, versionIds);
-    conceptRefreshViewJob.refreshView();
     invalidateCaches(codeSystem);
     log.info("Retired (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
   }
@@ -250,7 +242,6 @@ public class CodeSystemEntityVersionService {
       return;
     }
     repository.saveAsDraft(versionId);
-    conceptRefreshViewJob.refreshView();
     invalidateCaches(currentVersion.getCodeSystem());
   }
 
@@ -282,7 +273,6 @@ public class CodeSystemEntityVersionService {
     codeSystemAssociationService.cancel(id);
 
     repository.cancel(id);
-    conceptRefreshViewJob.refreshView();
     invalidateCaches(currentVersion == null ? null : currentVersion.getCodeSystem());
   }
 

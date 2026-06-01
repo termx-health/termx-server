@@ -97,18 +97,35 @@ public class ClosureRepository extends BaseRepository {
   }
 
   /**
-   * Look up subsumption ancestors for the given (codeSystem, code) using the existing
-   * concept_closure materialized view. Returns the list of parent codes (more general) including
-   * transitive ancestors. Excludes the input concept itself.
+   * Look up subsumption ancestors for the given (codeSystem, code) by walking active, non-retired
+   * associations upward (child = source -> parent = target) from the concept itself. Returns the
+   * transitive set of parent codes (more general), within the same code system, excluding the input
+   * concept itself.
+   *
+   * <p>The recursive term carries only the node id, so the set-union deduplicates on revisit and the
+   * walk terminates even if the association graph contains a cycle.
    */
   public List<String> findAncestors(String codeSystem, String code) {
     String sql = """
-        select distinct parent_code
-          from terminology.concept_closure
-         where code_system = ?
-           and child_code = ?
-           and parent_code <> child_code
+        with recursive ancestors as (
+          select cev.id
+            from terminology.code_system_entity_version cev
+           where cev.code_system = ? and cev.code = ? and cev.sys_status = 'A'
+          union
+          select parent.id
+            from ancestors a
+            join terminology.code_system_association csa
+              on csa.source_code_system_entity_version_id = a.id
+             and csa.sys_status = 'A' and csa.status <> 'retired'
+            join terminology.code_system_entity_version parent
+              on parent.id = csa.target_code_system_entity_version_id
+             and parent.sys_status = 'A' and parent.status <> 'retired'
+        )
+        select distinct cev.code
+          from ancestors a
+          join terminology.code_system_entity_version cev on cev.id = a.id
+         where cev.code_system = ? and cev.code <> ?
         """;
-    return jdbcTemplate.queryForList(sql, String.class, codeSystem, code);
+    return jdbcTemplate.queryForList(sql, String.class, codeSystem, code, codeSystem, code);
   }
 }
