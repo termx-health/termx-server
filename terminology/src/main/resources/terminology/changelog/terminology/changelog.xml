@@ -21,7 +21,6 @@
     <include file="14-entity_version_effective_time.sql" relativeToChangelogFile="true"/>
     <include file="15-entity_property_value_extensions.sql" relativeToChangelogFile="true"/>
 
-    <include file="views/concept_closure.sql" relativeToChangelogFile="true"/>
     <include file="views/concept_name.sql" relativeToChangelogFile="true"/>
     <include file="views/concept_order.sql" relativeToChangelogFile="true"/>
 
@@ -33,7 +32,6 @@
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/00-jsonb_search.sql" />
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/01-value_set_expand.sql" />
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/11-code_system_closure.sql" />
-        <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/12-refresh_concept_closure.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/21-cancel_entity.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/22-delete_entity.sql"/>
         <sqlFile splitStatements="false" relativeToChangelogFile="true" path="functions/23-cancel_code_system.sql"/>
@@ -82,6 +80,17 @@
         drop table if exists terminology.project;
         drop table if exists terminology.space;
         drop table if exists terminology.terminology_server;
+      </sql>
+    </changeSet>
+
+    <changeSet id="drop_concept_closure_materialized_view" author="termx">
+      <comment>
+        concept_closure ancestor lookups are computed on demand (ClosureRepository.findAncestors);
+        the materialized view and its refresh function are no longer used. Drop both.
+      </comment>
+      <sql>
+        drop materialized view if exists terminology.concept_closure;
+        drop function if exists terminology.refresh_concept_closure();
       </sql>
     </changeSet>
 </databaseChangeLog>

@@ -419,11 +419,6 @@ public class ConceptRepository extends BaseRepository {
     jdbcTemplate.queryForObject(sb.getSql(), sb.getParams(), Void.class);
   }
 
-  public void refreshClosureView() {
-    String sql = "select terminology.refresh_concept_closure()";
-    jdbcTemplate.queryForObject(sql, String.class);
-  }
-
   private String getJoin(ConceptQueryParams params) {
     String join = "";
     if (params.getCodeSystemUri() != null) {

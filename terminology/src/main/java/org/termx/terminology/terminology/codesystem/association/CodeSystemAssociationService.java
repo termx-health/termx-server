@@ -2,7 +2,6 @@ package org.termx.terminology.terminology.codesystem.association;
 
 import com.kodality.commons.model.QueryResult;
 import org.termx.terminology.ApiError;
-import org.termx.terminology.terminology.codesystem.concept.ConceptRefreshViewJob;
 import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityService;
 import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionRepository;
 import org.termx.ts.codesystem.CodeSystemAssociation;
@@ -30,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class CodeSystemAssociationService {
   private final CodeSystemAssociationRepository repository;
   private final CodeSystemEntityService codeSystemEntityService;
-  private final ConceptRefreshViewJob conceptRefreshViewJob;
   private final CodeSystemEntityVersionRepository codeSystemEntityVersionRepository;
 
   public List<CodeSystemAssociation> loadAll(Long codeSystemEntityVersionId, Long baseEntityVersionId) {
@@ -61,7 +59,6 @@ public class CodeSystemAssociationService {
     association.setType(CodeSystemEntityType.association);
     codeSystemEntityService.save(association);
     repository.save(association, codeSystemEntityVersionId);
-    conceptRefreshViewJob.refreshView();
   }
 
   @Transactional
