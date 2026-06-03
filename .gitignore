@@ -18,5 +18,8 @@ out/
 *.swo
 *.swp
 application-local.yml
+# Env-specific local overrides (e.g. application-local-dev.termx.org.yml) — hold
+# secrets; never commit. Does not match the tracked application-local.sample.yml.
+application-local-*.yml
 CLAUDE.md
 .codex
