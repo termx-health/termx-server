@@ -63,6 +63,16 @@ public class SnomedCodeSystemProvider extends CodeSystemExternalProvider {
 
   private List<Concept> searchConcepts(SnomedConceptSearchParams params) {
     if (CollectionUtils.isNotEmpty(params.getConceptIds()) && params.getTerm() == null) {
+      // TODO: this loads concepts via Snowstorm's /concepts SEARCH endpoint, which only returns the
+      // language-resolved pt + fsn (SnomedMapper.toConceptVersion then maps just those two). So a
+      // CodeSystem/$lookup with properties=designation returns the preferred term + FSN, NOT every
+      // designation of the concept (e.g. for a SNOMED edition it yields the edition PT but misses the
+      // edition's additional synonyms in the same language).
+      // If full designations are ever required here: fetch them per concept from the browser endpoint
+      // and let SnomedMapper.toConceptVersion map snomedConcept.getDescriptions() (it already prefers
+      // descriptions when present). SnomedService.loadDescriptions(branch, conceptIds) +
+      // SnowstormClient already do this for the value-set expand path (see SnomedValueSetExpandProvider
+      // .getDescriptions / findDesignations) — reuse that to populate descriptions before mapping.
       return snomedService.loadConcepts(params.getConceptIds(), params.getBranch()).stream().map(snomedMapper::toConcept).toList();
     }
     return snomedService.searchConcepts(params).stream().map(snomedMapper::toConcept).toList();

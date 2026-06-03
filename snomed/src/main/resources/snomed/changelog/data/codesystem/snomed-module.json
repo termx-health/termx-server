@@ -115,6 +115,106 @@
           "valueString": "21000092105"
         }
       ]
+    },
+    {
+      "code": "cze",
+      "display": "Czech module",
+      "property": [
+        {
+          "code": "branchPath",
+          "valueString": "MAIN/SNOMEDCT-CZ"
+        },
+        {
+          "code": "language",
+          "valueCoding": {
+            "system": "v3-ietf3066",
+            "code": "cs"
+          }
+        },
+        {
+          "code": "moduleId",
+          "valueString": "11000279109"
+        },
+        {
+          "code": "refsetId",
+          "valueString": "41000279108"
+        }
+      ]
+    },
+    {
+      "code": "bel",
+      "display": "Belgian module",
+      "property": [
+        {
+          "code": "branchPath",
+          "valueString": "MAIN/SNOMEDCT-BE"
+        },
+        {
+          "code": "language",
+          "valueCoding": {
+            "system": "v3-ietf3066",
+            "code": "nl"
+          }
+        },
+        {
+          "code": "moduleId",
+          "valueString": "11000172109"
+        },
+        {
+          "code": "refsetId",
+          "valueString": "31000172101"
+        }
+      ]
+    },
+    {
+      "code": "fin",
+      "display": "Finnish module",
+      "property": [
+        {
+          "code": "branchPath",
+          "valueString": "MAIN/SNOMEDCT-FI"
+        },
+        {
+          "code": "language",
+          "valueCoding": {
+            "system": "v3-ietf3066",
+            "code": "fi"
+          }
+        },
+        {
+          "code": "moduleId",
+          "valueString": "11000229106"
+        },
+        {
+          "code": "refsetId",
+          "valueString": "41000229102"
+        }
+      ]
+    },
+    {
+      "code": "swe",
+      "display": "Swedish module",
+      "property": [
+        {
+          "code": "branchPath",
+          "valueString": "MAIN/SNOMEDCT-SE"
+        },
+        {
+          "code": "language",
+          "valueCoding": {
+            "system": "v3-ietf3066",
+            "code": "sv"
+          }
+        },
+        {
+          "code": "moduleId",
+          "valueString": "45991000052106"
+        },
+        {
+          "code": "refsetId",
+          "valueString": "46011000052107"
+        }
+      ]
     }
   ]
 }

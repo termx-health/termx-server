@@ -11,6 +11,17 @@
     </customChange>
   </changeSet>
 
+  <!-- Re-import after adding national edition modules (bel/cze/fin/swe). The FHIR-import custom
+       change checksums the changeset definition (file path), not the file content, so editing
+       snomed-module.json does not re-trigger the original changeset — a fresh id is needed.
+       CodeSystemFhirImport is idempotent (upsert by code), so re-importing the full file is safe. -->
+  <changeSet id="snomed-module-national-editions" author="termx">
+    <validCheckSum>ANY</validCheckSum>
+    <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">
+      <param name="files" value="snomed/changelog/data/codesystem/snomed-module.json"/>
+    </customChange>
+  </changeSet>
+
   <changeSet id="concept-status" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">
