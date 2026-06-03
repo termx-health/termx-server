@@ -18,8 +18,9 @@
     </customChange>
   </changeSet>
 
-  <changeSet id="languages" author="termx">
-    <validCheckSum>ANY</validCheckSum>
+  <!-- runOnChange: re-imports languages.json whenever it changes, so adding languages
+       (e.g. lt/cs/nl) to the value set propagates to already-migrated databases. -->
+  <changeSet id="languages" author="termx" runOnChange="true">
     <customChange class="org.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/languages.json"/>
     </customChange>

@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 
-# Run TermX Server in local development mode
-# This script runs the application with dev profile enabled, which:
-# - Enables dev authentication (Bearer token: yupi)
-# - Loads application-dev.yml and application-local.yml configurations
-# - Runs on port 8200 by default
-# - Kills any process already bound to that port so consecutive starts don't
-#   fall back to a different port or wedge gradle on "Address already in use"
+# Run TermX Server in local development mode.
+# - Runs on port 8200 by default (kills any process already bound to it)
+# - Dev authentication (Bearer token: yupi) is enabled automatically when the
+#   `dev` environment is in the list.
+#
+# Usage: ./scripts/run-backend.sh [environments]
+#   [environments] = the FULL comma-separated Micronaut environment list to activate;
+#                    each loads its application-<env>.yml. Default: dev,local
+#   Examples:
+#     ./scripts/run-backend.sh                       # dev,local
+#     ./scripts/run-backend.sh dev,dev.termx.org     # dev + application-dev.termx.org.yml
+#     ./scripts/run-backend.sh dev,local,myflavor    # any combination you want
 
 set -e
 
@@ -15,6 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
 PORT="${TERMX_SERVER_PORT:-8200}"
+ENVS="${1:-dev,local}"
 
 # Helper: kill any process listening on a given TCP port. Pattern lifted from
 # ~/source/emr/repo/scripts/run-backend.sh so termx and emr behave the same way
@@ -36,10 +42,10 @@ kill_port "$PORT"
 echo "=========================================="
 echo "Starting TermX Server (Local Dev Mode)"
 echo "=========================================="
-echo "Profile: dev,local"
-echo "Port:    ${PORT}"
-echo "Dev Token: yupi"
+echo "Environments: ${ENVS}"
+echo "Port:         ${PORT}"
+echo "Dev Token:    yupi (when 'dev' is in the list)"
 echo ""
 
 # Run the application
-./gradlew :termx-app:run -Pdev
+./gradlew :termx-app:run -Penv="${ENVS}"

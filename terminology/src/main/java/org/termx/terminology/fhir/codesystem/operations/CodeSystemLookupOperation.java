@@ -31,6 +31,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -131,7 +132,9 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
       resp.addParameter(new ParametersParameter().setName("version").setValueString(csVersion.map(CodeSystemVersionReference::getVersion).orElse(null)));
     }
 
-    String preferredLanguage = StringUtils.firstNonBlank(displayLanguage, csVersion.map(CodeSystemVersionReference::getPreferredLanguage).orElse(null));
+    // displayLanguage may be a comma-separated list — prefer the FIRST requested language for the display.
+    String firstDisplayLanguage = StringUtils.isBlank(displayLanguage) ? null : displayLanguage.split(",")[0].trim();
+    String preferredLanguage = StringUtils.firstNonBlank(firstDisplayLanguage, csVersion.map(CodeSystemVersionReference::getPreferredLanguage).orElse(null));
     Designation display = ConceptUtil.getDisplay(designations, preferredLanguage, List.of());
     List<Designation> responseDesignations = designations.stream()
         .filter(d -> languageMatches(d.getLanguage(), displayLanguage))
@@ -178,8 +181,18 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
   }
 
   private static boolean languageMatches(String language, String displayLanguage) {
-    return StringUtils.isBlank(displayLanguage) || language != null &&
-        (language.equals(displayLanguage) || language.startsWith(displayLanguage + "-"));
+    // displayLanguage may be a comma-separated list (e.g. "en,et"); a designation matches when
+    // its language equals (or is a regional variant of) ANY of the requested languages.
+    if (StringUtils.isBlank(displayLanguage)) {
+      return true;
+    }
+    if (language == null) {
+      return false;
+    }
+    return Arrays.stream(displayLanguage.split(","))
+        .map(String::trim)
+        .filter(StringUtils::isNotBlank)
+        .anyMatch(dl -> language.equals(dl) || language.startsWith(dl + "-"));
   }
 
   private static ParametersParameter toParameter(String type, Object value, ConceptSnapshot snapshot, String language) {

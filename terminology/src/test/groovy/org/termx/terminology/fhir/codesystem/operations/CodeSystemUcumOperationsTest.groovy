@@ -319,6 +319,60 @@ class CodeSystemUcumOperationsTest extends Specification {
     parametersWithProperty.parameter.find { it.name == "property" }.part.find { it.name == "code" }.valueString == "status"
   }
 
+  def "lookup honours a comma-separated displayLanguage (designations for each language, display from the first)"() {
+    given:
+    codeSystemService.query(_ as CodeSystemQueryParams) >> new QueryResult([
+        new CodeSystem().setId("ehr-feed-category").setUri("https://helex.org/fhir/CodeSystem/ehr-feed-category")])
+    conceptService.query(_ as ConceptQueryParams) >> new QueryResult([concept("allergy", [
+        designation("display", "en", "Allergy"),
+        designation("synonym", "et", "Allergia"),
+        designation("synonym", "ru", "Аллергия")
+    ])])
+
+    def request = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("system").setValueUri("https://helex.org/fhir/CodeSystem/ehr-feed-category"))
+        .addParameter(new Parameters.ParametersParameter("code").setValueCode("allergy"))
+        .addParameter(new Parameters.ParametersParameter("displayLanguage").setValueCode("en,et"))
+
+    when:
+    def response = lookupOperation.run(new ResourceContent(FhirMapper.toJson(request), "json"))
+    def parameters = FhirMapper.fromJson(response.value, Parameters)
+    def designationLanguages = parameters.parameter.findAll { it.name == "designation" }
+        .collect { it.part.find { p -> p.name == "language" }?.valueString }.toSet()
+
+    then:
+    // display resolves to the FIRST requested language (not the fallback Russian one)
+    parameters.findParameter("display").orElseThrow().valueString == "Allergy"
+    // designations are returned for the requested languages, and only those
+    designationLanguages.contains("et")
+    !designationLanguages.contains("ru")
+  }
+
+  def "lookup with a single displayLanguage returns only that language's designations"() {
+    given:
+    codeSystemService.query(_ as CodeSystemQueryParams) >> new QueryResult([
+        new CodeSystem().setId("ehr-feed-category").setUri("https://helex.org/fhir/CodeSystem/ehr-feed-category")])
+    conceptService.query(_ as ConceptQueryParams) >> new QueryResult([concept("allergy", [
+        designation("display", "en", "Allergy"),
+        designation("synonym", "et", "Allergia"),
+        designation("synonym", "ru", "Аллергия")
+    ])])
+
+    def request = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("system").setValueUri("https://helex.org/fhir/CodeSystem/ehr-feed-category"))
+        .addParameter(new Parameters.ParametersParameter("code").setValueCode("allergy"))
+        .addParameter(new Parameters.ParametersParameter("displayLanguage").setValueCode("et"))
+
+    when:
+    def response = lookupOperation.run(new ResourceContent(FhirMapper.toJson(request), "json"))
+    def parameters = FhirMapper.fromJson(response.value, Parameters)
+    def designationLanguages = parameters.parameter.findAll { it.name == "designation" }
+        .collect { it.part.find { p -> p.name == "language" }?.valueString }.toSet()
+
+    then:
+    designationLanguages == ["et"] as Set
+  }
+
   private static Concept concept(String code, List<Designation> designations, List<EntityPropertyValue> propertyValues = [], ConceptSnapshot snapshot = null) {
     return new Concept()
         .setCode(code)

@@ -127,8 +127,17 @@ tasks.named<JavaExec>("run") {
     if (project.hasProperty("debug")) {
         jvmArgs = listOf("-Xdebug", "-Xrunjdwp:transport=dt_socket,address=${project.property("debug")},server=y,suspend=n")
     }
-    if (project.hasProperty("dev")) {
-        jvmArgs = (jvmArgs ?: listOf()) + listOf("-Dauth.dev.allowed=true", "-Dmicronaut.environments=dev,local")
+    // Environments: pass the FULL comma-separated list with -Penv=dev,local (preferred).
+    // `-Pdev` is kept as a legacy shorthand for `-Penv=dev,local`.
+    // Dev auth (the `yupi` token) is enabled automatically when `dev` is in the list.
+    val envList = ((project.findProperty("env") as String?)?.takeIf { it.isNotBlank() }
+        ?: if (project.hasProperty("dev")) "dev,local" else null)
+        ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+    if (!envList.isNullOrEmpty()) {
+        jvmArgs = (jvmArgs ?: listOf()) + listOf("-Dmicronaut.environments=${envList.joinToString(",")}")
+        if (envList.contains("dev")) {
+            jvmArgs = (jvmArgs ?: listOf()) + listOf("-Dauth.dev.allowed=true")
+        }
     }
     // QA / migration testing: override the yupi default session's privilege set.
     // Example: ./gradlew :termx-app:run -Pdev -PyupiPrivileges='*.*.view'

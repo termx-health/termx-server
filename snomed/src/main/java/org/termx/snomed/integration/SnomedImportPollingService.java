@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -108,6 +109,19 @@ public class SnomedImportPollingService {
         log.info("SNOMED import notification sent ({} sec)", (System.currentTimeMillis() - start) / 1000);
       }
     } catch (Exception e) {
+      // Snowstorm import jobs are ephemeral — after a Snowstorm restart/upgrade the job
+      // is gone and every poll returns 404. Treat that as terminal so we stop retrying
+      // (and spamming the log) forever; the result is simply unknown at that point.
+      String msg = ExceptionUtils.getRootCauseMessage(e);
+      if (msg != null && (msg.contains("returned 404") || msg.contains("Import job not found"))) {
+        log.warn("SNOMED import job {} no longer exists in Snowstorm (404) — marking EXPIRED", tracking.getSnowstormJobId());
+        tracking.setStatus("EXPIRED");
+        tracking.setFinished(OffsetDateTime.now());
+        tracking.setErrorMessage("Import job not found in Snowstorm (job expired after a Snowstorm restart).");
+        tracking.setNotified(true);
+        trackingRepository.save(tracking);
+        return;
+      }
       log.error("Failed to check SNOMED job status for " + tracking.getSnowstormJobId(), e);
     }
   }
