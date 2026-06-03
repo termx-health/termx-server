@@ -62,6 +62,11 @@ public class SnomedRF2ImportFromArchiveService {
     SnomedImportRequest importRequest = req.toImportRequest();
     Long processId = process.getId();
 
+    log.info("snomed-rf2-import: queued import processId={} archiveUuid={} file={} branch={} type={}",
+        processId, req.getArchiveUuid(),
+        archive.getStorage() == null ? null : archive.getStorage().getFilename(),
+        importRequest.getBranchPath(), importRequest.getType());
+
     CompletableFuture.runAsync(SessionStore.wrap(() -> {
       // Lifecycle log lines for the post-import email — same pattern as LoincService's
       // ImportLog.successes. Captured into SnomedImportTracking.details when we save the
