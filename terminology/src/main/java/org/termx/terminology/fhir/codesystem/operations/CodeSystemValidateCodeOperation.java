@@ -61,7 +61,7 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     String versionNumber = parts[1];
     CodeSystemVersion csv = codeSystemVersionService.load(csId, versionNumber)
         .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "Concept version not found"));
-    Parameters resp = run(csv.getCodeSystem(), csv.getId(), req);
+    Parameters resp = run(csv.getCodeSystem(), csv.getId(), null, req);
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }
 
@@ -98,15 +98,19 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
       csvp.setStatus(PublicationStatus.active);
       csvp.setLimit(1);
       csv = codeSystemVersionService.query(csvp).findFirst().orElse(null);
-      if (csv == null) {
-        return error("CodeSystem active version not found");
-      }
     }
 
-    return run(cs.getId(), csv == null ? null : csv.getId(), req);
+    // When the version doesn't resolve to a stored TermX version, pass it through as-is rather than
+    // failing. External providers — notably SNOMED, whose `version` is the edition URI
+    // (http://snomed.info/sct/<module>[/version/<date>]) and is never a stored TermX version — derive
+    // their branch from this string (see SnomedCodeSystemProvider), mirroring CodeSystem/$lookup. A
+    // genuinely bogus version then simply yields no concept ("code is invalid") downstream.
+    Long versionId = csv == null ? null : csv.getId();
+    String versionUri = csv == null ? version : null;
+    return run(cs.getId(), versionId, versionUri, req);
   }
 
-  private Parameters run(String csId, Long versionId, Parameters req) {
+  private Parameters run(String csId, Long versionId, String versionUri, Parameters req) {
     String code = req.findParameter("code").map(pp -> StringUtils.firstNonBlank(pp.getValueCode(), pp.getValueString()))
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "code parameter required"));
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
@@ -119,6 +123,7 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     cp.setCode(code);
     cp.setCodeSystem(csId);
     cp.setCodeSystemVersionId(versionId);
+    cp.setCodeSystemVersion(versionUri);
     cp.setIncludeSupplement(true);
     cp.setDisplayLanguage(displayLanguage);
     cp.setUseSupplement(extractUseSupplement(req));

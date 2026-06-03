@@ -4,12 +4,16 @@ import com.kodality.kefhir.core.api.resource.InstanceOperationDefinition;
 import com.kodality.kefhir.core.api.resource.TypeOperationDefinition;
 import com.kodality.kefhir.core.exception.FhirException;
 import com.kodality.kefhir.core.model.ResourceId;
+import com.kodality.commons.model.QueryResult;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import org.termx.terminology.Privilege;
 import org.termx.core.auth.SessionStore;
 import org.termx.terminology.fhir.valueset.ValueSetFhirMapper;
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
+import org.termx.terminology.terminology.codesystem.concept.ConceptService;
+import org.termx.ts.codesystem.Concept;
+import org.termx.ts.codesystem.ConceptQueryParams;
 import org.termx.ts.codesystem.Designation;
 import org.termx.ts.valueset.ValueSetVersion;
 import org.termx.ts.valueset.ValueSetVersionConcept;
@@ -24,6 +28,8 @@ import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +43,7 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 public class ValueSetValidateCodeOperation implements InstanceOperationDefinition, TypeOperationDefinition {
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final ConceptService conceptService;
 
   public String getResourceType() {
     return ResourceType.ValueSet.name();
@@ -123,7 +130,8 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
 
     Parameters parameters = new Parameters();
     String conceptDisplay = findDisplay(concept, display, displayLanguage);
-    parameters.addParameter(new ParametersParameter("result").setValueBoolean(display == null || display.equals(conceptDisplay)));
+    boolean displayValid = display == null || isDisplayValid(collectDesignations(concept), display, displayLanguage);
+    parameters.addParameter(new ParametersParameter("result").setValueBoolean(displayValid));
     parameters.addParameter(new ParametersParameter("code").setValueCode(concept.getConcept().getCode()));
     parameters.addParameter(new ParametersParameter("system").setValueUri(concept.getConcept().getCodeSystemUri()));
     parameters.addParameter(new ParametersParameter("display").setValueString(conceptDisplay));
@@ -131,7 +139,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     if (conceptVersion != null) {
       parameters.addParameter(new ParametersParameter("version").setValueString(conceptVersion));
     }
-    if (display != null && !display.equals(conceptDisplay)) {
+    if (!displayValid) {
       parameters.addParameter(new ParametersParameter("message").setValueString(String.format("The display '%s' is incorrect", display)));
     }
     if (!concept.isActive()) {
@@ -140,6 +148,59 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       parameters.addParameter(new ParametersParameter("issues").setResource(outcome));
     }
     return parameters;
+  }
+
+  /**
+   * A provided display is valid when it matches the name of any of the concept's designations
+   * (the preferred display or any additional designation). When a {@code displayLanguage} is
+   * supplied (optionally comma-separated), the match is restricted to designations in one of those
+   * languages; otherwise a match in any language is accepted — mirroring FHIR $validate-code, where
+   * an unconstrained display is valid if it matches the code's designation in any language.
+   */
+  private boolean isDisplayValid(List<Designation> designations, String paramDisplay, String displayLanguage) {
+    if (paramDisplay == null) {
+      return true;
+    }
+    List<String> languages = StringUtils.isEmpty(displayLanguage) ? List.of() :
+        Arrays.stream(displayLanguage.split(",")).map(String::trim).filter(StringUtils::isNotEmpty).toList();
+    return designations.stream()
+        .filter(d -> d != null && paramDisplay.equals(d.getName()))
+        .anyMatch(d -> languages.isEmpty()
+            || (d.getLanguage() != null && languages.stream().anyMatch(l -> d.getLanguage().equals(l) || d.getLanguage().startsWith(l + "-"))));
+  }
+
+  /**
+   * Designations to validate the provided display against: the expansion's surfaced designations
+   * PLUS the concept's full designation set loaded straight from the code system. The expansion
+   * narrows {@code additionalDesignations} to the value set version's supported languages, but a
+   * display is valid if it matches ANY designation of the code (e.g. a Russian term carried by the
+   * concept while the value set only declares et/en) — so we must look past the narrowed expansion.
+   */
+  private List<Designation> collectDesignations(ValueSetVersionConcept c) {
+    List<Designation> all = new ArrayList<>();
+    if (c.getDisplay() != null) {
+      all.add(c.getDisplay());
+    }
+    if (CollectionUtils.isNotEmpty(c.getAdditionalDesignations())) {
+      all.addAll(c.getAdditionalDesignations());
+    }
+    String csId = c.getConcept() == null ? null : c.getConcept().getCodeSystem();
+    String code = c.getConcept() == null ? null : c.getConcept().getCode();
+    if (StringUtils.isNotEmpty(csId) && StringUtils.isNotEmpty(code)) {
+      ConceptQueryParams cp = new ConceptQueryParams();
+      cp.setCode(code);
+      cp.setCodeSystem(csId);
+      cp.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_READ));
+      QueryResult<Concept> queryResult = conceptService.query(cp);
+      Concept concept = queryResult == null ? null : queryResult.findFirst().orElse(null);
+      if (concept != null && CollectionUtils.isNotEmpty(concept.getVersions())) {
+        List<Designation> designations = concept.getVersions().getFirst().getDesignations();
+        if (designations != null) {
+          all.addAll(designations);
+        }
+      }
+    }
+    return all;
   }
 
   private String findSystem(Parameters req) {

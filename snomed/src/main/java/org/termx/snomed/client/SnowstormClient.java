@@ -157,14 +157,64 @@ public class SnowstormClient {
   }
 
   public CompletableFuture<String> createImportJob(SnomedImportRequest request) {
-    return client.POST("imports", request).thenApply(resp -> resp.headers().firstValue("location").map(l -> {
-      String[] location = l.split("/");
-      return location[location.length - 1];
-    }).orElseThrow());
+    log.info("snowstorm-client: creating import job (branch={}, type={})", request.getBranchPath(), request.getType());
+    return client.POST("imports", request).thenApply(resp -> {
+      String location = resp.headers().firstValue("location").orElseThrow();
+      String[] parts = location.split("/");
+      String jobId = parts[parts.length - 1];
+      log.info("snowstorm-client: import job created jobId={} (HTTP {}, Location={})", jobId, resp.statusCode(), location);
+      return jobId;
+    });
   }
 
   public CompletableFuture<SnomedImportJob> loadImportJob(String jobId) {
-    return client.GET("imports/" + jobId, SnomedImportJob.class);
+    return client.GET("imports/" + jobId, SnomedImportJob.class).thenApply(job -> {
+      if (job != null) {
+        log.debug("snowstorm-client: import job {} poll -> status={} errorMessage={}", jobId, job.getStatus(), job.getErrorMessage());
+      }
+      return job;
+    });
+  }
+
+  /**
+   * Fetches Snowstorm's own log via the Spring Boot Actuator {@code logfile} endpoint and returns
+   * the tail of import-relevant lines (RF2 import / refset persistence). This surfaces Snowstorm-side
+   * import progress and errors (e.g. Elasticsearch failures during refset persistence) that are NOT
+   * exposed by the import-job status API. Each returned line is also echoed into the termx-server log.
+   *
+   * <p>Requires Snowstorm to be started with {@code --logging.file.name=<path>} and
+   * {@code --management.endpoints.web.exposure.include=health,logfile}; otherwise returns a hint.
+   */
+  public String getImportLogTail(int maxLines) {
+    HttpResponse<String> resp;
+    try {
+      resp = client.executeAsync(client.builder("actuator/logfile").GET().build()).join();
+    } catch (Exception e) {
+      log.warn("snowstorm-client: failed to fetch actuator/logfile: {}", e.getMessage());
+      return "Snowstorm logfile fetch failed: " + e.getMessage();
+    }
+    int sc = resp.statusCode();
+    if (sc != 200 && sc != 206) {
+      return "Snowstorm logfile not available (HTTP " + sc + "). Start Snowstorm with "
+          + "--logging.file.name=<path> and --management.endpoints.web.exposure.include=health,logfile";
+    }
+    String body = resp.body();
+    if (body == null || body.isEmpty()) {
+      return "(Snowstorm logfile empty)";
+    }
+    java.util.List<String> lines = new java.util.ArrayList<>();
+    for (String l : body.split("\n")) {
+      if (l.contains("ReleaseImporter") || l.contains("ImportService")
+          || l.contains("ImportComponentFactory") || l.contains("rf2import")
+          || l.contains("ComponentService")) {
+        lines.add(l);
+      }
+    }
+    int from = Math.max(0, lines.size() - Math.max(1, maxLines));
+    java.util.List<String> tail = lines.subList(from, lines.size());
+    log.info("snowstorm-client: ===== Snowstorm import log tail ({} of {} lines) =====", tail.size(), lines.size());
+    tail.forEach(l -> log.info("snowstorm-log| {}", l));
+    return String.join("\n", tail);
   }
 
   public CompletableFuture<HttpResponse<String>> uploadRF2File(String jobId, byte[] file) throws FileNotFoundException {
@@ -177,12 +227,19 @@ public class SnowstormClient {
    * Minio / file InputStream and the JVM never holds the whole archive in heap.
    */
   public CompletableFuture<HttpResponse<String>> uploadRF2File(String jobId, Supplier<InputStream> file) throws FileNotFoundException {
+    log.info("snowstorm-client: uploading RF2 archive to job {} (streaming multipart)", jobId);
     MultipartBodyPublisher publisher = new MultipartBodyPublisher()
         .addPart("file", file, "file", MediaType.APPLICATION_OCTET_STREAM);
     HttpRequest request = client.builder("imports/" + jobId + "/archive").POST(publisher.build())
         .header("Content-Type", "multipart/form-data; boundary=" + publisher.getBoundary())
         .build();
-    return client.executeAsync(request);
+    return client.executeAsync(request).whenComplete((resp, ex) -> {
+      if (ex != null) {
+        log.error("snowstorm-client: RF2 upload to job {} failed", jobId, ex);
+      } else {
+        log.info("snowstorm-client: RF2 upload to job {} accepted -> HTTP {}", jobId, resp.statusCode());
+      }
+    });
   }
 
   public CompletableFuture<SnomedConcept> loadConcept(String conceptId) {

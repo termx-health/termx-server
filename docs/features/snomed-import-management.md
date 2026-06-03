@@ -66,6 +66,68 @@ After scanning a new release the manager copies the JSON of `SnomedRF2ScanResult
 
 The manager uploads several national-extension zips with different `meta.shortName` (e.g. `SNOMED-US`, `SNOMED-UK-CLINICAL`). The Bob list endpoint with a JSONB containment filter (`meta=...`) keeps the *Stored archives* card scoped per code-system, so each CodeSystem edit page only shows its own uploads.
 
+## Command-line runbook: importing/updating editions against Snowstorm
+
+The UI flows above are plain HTTP calls, which is handy for scripting bulk or repeated
+imports (e.g. onboarding several national extensions in one sitting). The same three
+primitives apply — **upload to Bob → (optionally) compute a delta → push to Snowstorm** —
+plus a read-only/write toggle on the Snowstorm deployment itself.
+
+> **Snowstorm runs read-only by default.** Content changes require Snowstorm to be started
+> in write mode (drop `--snowstorm.rest-api.readonly=true`) for the duration of the import,
+> then switched back. Snowstorm's native basic-auth is all-or-nothing (it gates reads too),
+> so there is no "read-open / write-keyed" mode — keep the write window short. The full
+> toggle commands live in `snowstorm-edition-runbook.md` at the workspace root.
+>
+> **Snowstorm ≥ 10.11.2 is required for delta imports.** Older builds (e.g. 10.2.1) throw a
+> `ConcurrentModificationException` in elasticvc's `endOldVersions` during concurrent
+> refset/description persistence, surfaced as a misleading `search_phase_execution_exception:
+> all shards failed`. Keep Elasticsearch at the certified **8.11.1**.
+
+```bash
+A='Authorization: Bearer yupi'; APP=http://localhost:8200; SNOW=<snowstorm-base-url>
+
+# 1. Upload an edition archive to Bob (tag shortName + branchPath) -> returns NEW_UUID
+curl -sX POST $APP/bob/objects -H "$A" -F file=@<EDITION.zip> -F container=snomed \
+  -F 'meta={"shortName":"<SHORTNAME>","branchPath":"<BRANCH>"}'
+
+# 2. UPDATE of an existing edition — compute a delta vs the current baseline -> DELTA_UUID in Bob
+curl -sX POST $APP/snomed/archives/<NEW_UUID>/delta -H "$A" -H 'Content-Type: application/json' \
+  -d '{"baselineUuid":"<BASELINE_UUID>","latestState":true}'
+curl -s  -H "$A" $APP/lorque-processes/<PID>/status          # poll until completed
+
+# 3. NEW extension only — create the code system first (dependent on International MAIN)
+curl -sX POST $SNOW/codesystems -H 'Content-Type: application/json' \
+  -d '{"shortName":"<SHORTNAME>","branchPath":"<BRANCH>","name":"<NAME>","dependantVersionEffectiveTime":<INTL_YYYYMMDD>}'
+
+# 4. Push to Snowstorm — apply the delta (update) or a SNAPSHOT (new edition)
+curl -sX POST $APP/snomed/imports/from-archive -H "$A" -H 'Content-Type: application/json' \
+  -d '{"archiveUuid":"<DELTA_OR_EDITION_UUID>","branchPath":"<BRANCH>","type":"DELTA","createCodeSystemVersion":false}'
+
+# 5. Poll the Snowstorm import job (jobId from the termx-server log / sys.snomed_import_tracking)
+curl -s $SNOW/imports/<JOBID>                                # RUNNING -> COMPLETED / FAILED
+curl -s $SNOW/<BRANCH>/concepts?limit=1                      # verify concept count
+```
+
+### Worked examples
+
+Editions processed against the public Snowstorm in one batch (local app driving dev Bob → public Snowstorm):
+
+| Edition | shortName | branch | action | rows |
+|---|---|---|---|---|
+| International | `SNOMEDCT` | `MAIN` | delta 2024-05-01 → 2026-06-01 | 1,204,812 |
+| Estonia | `SNOMEDCT-EE` | `MAIN/SNOMEDCT-EE` | delta 2024-05-30 → 2026-05-30 | 9,915 |
+| Czech (Simplex) | `SNOMEDCT-CZ` | `MAIN/SNOMEDCT-CZ` | new edition — SNAPSHOT 2026-04-14 | — |
+| LOINC extension | `SNOMEDCT-LOINC` | `MAIN/LOINC` | new edition — SNAPSHOT 2026-03-21 | — |
+
+Notes from these runs:
+- A ~553 MB edition uploads to Bob in ~40 s; the `DeltaGeneratorTool` diffs two full editions in
+  ~40 s; a 1.2M-row delta imports into Snowstorm 10.11.2 in ~15–25 min.
+- `latestState: true` produces a latest-state delta between two SNAPSHOT editions.
+- A self-contained "Simplex/Edition" package bundles the International core; importing it as a
+  *dependent* extension can duplicate International components on the branch — decide standalone
+  vs dependent before import.
+
 ## Implementation Highlights
 
 ### Backend
@@ -96,7 +158,7 @@ The manager uploads several national-extension zips with different `meta.shortNa
 ## Operational Notes
 
 - **Heap-safe end-to-end** — neither the dry-run scan, the delta tool, nor the Snowstorm push ever buffers the full RF2 archive in JVM heap. The legacy `POST /snomed/imports` path (which does buffer) is kept only for backwards-compatible callers.
-- **Snowstorm import status** — `sys.snomed_import_tracking` records the Snowstorm jobId returned by `createImportJob`; admins can poll Snowstorm directly with that jobId for completion / errors. There is no automatic poller yet.
+- **Snowstorm import status** — `sys.snomed_import_tracking` records the Snowstorm jobId returned by `createImportJob`. `SnomedImportPollingService` sweeps pending rows (every 30 s) and, on terminal status, records the result, captures the tail of Snowstorm's own import log via `SnowstormClient.getImportLogTail()` (Snowstorm Actuator `logfile` endpoint, also exposed at `GET /snomed/snowstorm-import-log`), and emails recipients. The poller only runs when `micronaut.email.import.recipients` is set. Admins can also poll Snowstorm directly with the jobId.
 - **Delta tool licensing** — the IHTSDO `delta-generator-tool` is vendored as a jar inside the repo; updates require swapping the file and bumping the path constant in `SnomedDeltaGeneratorRuntime`.
 - **Concept-usage scope** — the lookup walks CodeSystem supplements, ValueSet rules, and stored expansions only. It does not currently flag SNOMED references inside MapSet associations or external StructureDefinitions.
 - **No automatic re-scan on archive replace** — uploading a new zip with the same effective time creates a new Bob row; admins must trigger scan and delta calculation explicitly.

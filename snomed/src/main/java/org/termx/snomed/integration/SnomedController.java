@@ -286,6 +286,18 @@ public class SnomedController {
   }
 
   /**
+   * Pulls Snowstorm's own import log (via its Actuator {@code logfile} endpoint) into termx-server.
+   * Surfaces RF2-import progress and Snowstorm/Elasticsearch errors that the import-job status API
+   * does not expose. Returns the tail of import-relevant lines as plain text (also echoed to the
+   * termx-server log). Requires Snowstorm started with the logfile actuator endpoint enabled.
+   */
+  @Authorized(Privilege.SNOMED_READ)
+  @Get(value = "/snowstorm-import-log", produces = MediaType.TEXT_PLAIN)
+  public String snowstormImportLog(@QueryValue @Nullable Integer tail) {
+    return snowstormClient.getImportLogTail(tail == null ? 500 : tail);
+  }
+
+  /**
    * Streaming counterpart of {@link #scanImport}: the archive already lives in the
    * {@code "snomed"} Bob container, so re-running a dry-run scan does not require re-upload.
    */

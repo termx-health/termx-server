@@ -17,6 +17,13 @@ out/
 *.ipr
 *.swo
 *.swp
-application-local.yml
+# Personal/local config overrides (hold secrets) — ignore every application-<env>.yml
+# (application-local.yml, application-devremote.yml, …) EXCEPT the tracked base configs
+# below. `application.yml` has no dash so it is never matched.
+application-*.yml
+!application-dev.yml
+!application-demo.yml
+!application-test.yml
+!application-local.sample.yml
 CLAUDE.md
 .codex

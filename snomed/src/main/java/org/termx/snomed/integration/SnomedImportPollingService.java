@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -81,8 +82,24 @@ public class SnomedImportPollingService {
             currentStatus, formatDuration(processed)));
         log.info("snomed-rf2-import: {}", tracking.getDetails().getLast());
 
+        // Pull Snowstorm's own import log (Actuator logfile) into termx-server so the
+        // RF2-import progress / Elasticsearch errors that the job-status API omits are
+        // captured in our logs and the notification email.
+        try {
+          String snowstormLog = snowstormClient.getImportLogTail(60);
+          if (snowstormLog != null && !snowstormLog.isBlank() && !snowstormLog.startsWith("Snowstorm logfile")) {
+            tracking.getDetails().add("--- Snowstorm import log (tail) ---");
+            for (String line : snowstormLog.split("\n")) {
+              tracking.getDetails().add(line);
+            }
+          }
+        } catch (Exception e) {
+          log.warn("snomed-rf2-import: could not capture Snowstorm log for job {}: {}",
+              tracking.getSnowstormJobId(), e.getMessage());
+        }
+
         trackingRepository.save(tracking);
-        
+
         long start = System.currentTimeMillis();
         List<String> recipients = emailService.getImportRecipients();
         log.info("Sending SNOMED import notification ({}) to {} recipient(s)", currentStatus, recipients.size());
@@ -92,6 +109,19 @@ public class SnomedImportPollingService {
         log.info("SNOMED import notification sent ({} sec)", (System.currentTimeMillis() - start) / 1000);
       }
     } catch (Exception e) {
+      // Snowstorm import jobs are ephemeral — after a Snowstorm restart/upgrade the job
+      // is gone and every poll returns 404. Treat that as terminal so we stop retrying
+      // (and spamming the log) forever; the result is simply unknown at that point.
+      String msg = ExceptionUtils.getRootCauseMessage(e);
+      if (msg != null && (msg.contains("returned 404") || msg.contains("Import job not found"))) {
+        log.warn("SNOMED import job {} no longer exists in Snowstorm (404) — marking EXPIRED", tracking.getSnowstormJobId());
+        tracking.setStatus("EXPIRED");
+        tracking.setFinished(OffsetDateTime.now());
+        tracking.setErrorMessage("Import job not found in Snowstorm (job expired after a Snowstorm restart).");
+        tracking.setNotified(true);
+        trackingRepository.save(tracking);
+        return;
+      }
       log.error("Failed to check SNOMED job status for " + tracking.getSnowstormJobId(), e);
     }
   }
