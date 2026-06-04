@@ -10,6 +10,7 @@
   "version": "1.0.0",
   "name": "SNOMEDModule",
   "title": "SNOMED module",
+  "description": "Maps SNOMED CT edition modules to their Snowstorm branches so TermX can serve SNOMED through the FHIR terminology operations. Each concept is one SNOMED edition (e.g. International, Estonian, Czech). When a SNOMED operation ($lookup / $validate-code / $expand) is invoked with a version URI of the form `http://snomed.info/sct/{moduleId}[/version/{effectiveTime}]`, TermX extracts `{moduleId}`, looks it up in this code system, and routes the Snowstorm request to the matching `branchPath` (appending the dated version branch, e.g. `MAIN/SNOMEDCT-EE/2024-05-30`, when an `effectiveTime` is present). The resolved branch also determines the `Accept-Language` TermX sends to Snowstorm, so edition-specific designations (Estonian, Czech, …) are returned. If a module has no entry here, the version URI cannot be resolved to a branch and the lookup falls back to the default International branch (English only). `refsetId` is the edition's language reference set, used when authoring SNOMED translations. This mapping is read by `SnomedCodeSystemProvider` and `SnomedValueSetExpandProvider` (see `loadModules` / `getBranch`).",
   "status": "draft",
   "experimental": false,
   "date": "2024-08-09T13:28:27.329951Z",
@@ -21,6 +22,7 @@
   "property": [
     {
       "code": "branchPath",
+      "description": "Snowstorm branch this edition lives on (e.g. MAIN/SNOMEDCT-EE). TermX routes requests to this branch; a dated version branch is appended when the version URI carries an effectiveTime.",
       "type": "string"
     },
     {
@@ -41,10 +43,12 @@
     },
     {
       "code": "moduleId",
+      "description": "SNOMED CT edition module concept id. Matched against the {moduleId} segment of the version URI (http://snomed.info/sct/{moduleId}) to select this edition's branch.",
       "type": "string"
     },
     {
       "code": "refsetId",
+      "description": "Language reference set id for this edition, used when authoring SNOMED translations.",
       "type": "string"
     }
   ],
