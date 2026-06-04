@@ -39,12 +39,44 @@ kill_port() {
 
 kill_port "$PORT"
 
+# Resolve whether the Liquibase datasource is enabled for the active environments.
+# Mirrors Micronaut precedence: base application.yml first, then each application-<env>.yml
+# in list order (environments listed later win). Best-effort read of the YAML property
+# `liquibase.datasources.liquibase.enabled` so the banner reflects what the app will do.
+RES_DIR="termx-app/src/main/resources"
+
+liquibase_enabled_in_file() {
+  local f="$1"
+  [ -f "$f" ] || return 0
+  awk '
+    /^liquibase:[[:space:]]*$/ { inblock=1; next }
+    inblock && /^[^[:space:]]/ { inblock=0 }
+    inblock && /enabled:[[:space:]]*(true|false)/ {
+      v=$0; sub(/.*enabled:[[:space:]]*/, "", v); sub(/[^a-z].*$/, "", v); print v; exit
+    }
+  ' "$f"
+}
+
+LIQUIBASE_ENABLED=""
+for e in application ${ENVS//,/ }; do
+  if [ "$e" = "application" ]; then f="$RES_DIR/application.yml"; else f="$RES_DIR/application-$e.yml"; fi
+  v="$(liquibase_enabled_in_file "$f")"
+  [ -n "$v" ] && LIQUIBASE_ENABLED="$v"
+done
+
+case "$LIQUIBASE_ENABLED" in
+  true)  LIQUIBASE_STATE="enabled" ;;
+  false) LIQUIBASE_STATE="DISABLED (migrations will NOT run)" ;;
+  *)     LIQUIBASE_STATE="enabled (default)" ;;
+esac
+
 echo "=========================================="
 echo "Starting TermX Server (Local Dev Mode)"
 echo "=========================================="
 echo "Environments: ${ENVS}"
 echo "Port:         ${PORT}"
 echo "Dev Token:    yupi (when 'dev' is in the list)"
+echo "Liquibase:    ${LIQUIBASE_STATE}"
 echo ""
 
 # Run the application
