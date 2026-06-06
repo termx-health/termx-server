@@ -151,3 +151,7 @@ add column external_web_source text;
 --rollback  drop column if exists external_web_source,
 --rollback  add column external_web_source boolean;
 --
+
+--changeset termx:map_set_version-supported_languages
+alter table terminology.map_set_version add column if not exists supported_languages text[];
+--rollback alter table terminology.map_set_version drop column if exists supported_languages;

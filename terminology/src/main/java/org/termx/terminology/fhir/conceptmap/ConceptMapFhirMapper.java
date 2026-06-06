@@ -59,6 +59,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import com.kodality.zmei.fhir.Extension;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +81,9 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final MapSetRelatedArtifactService relatedArtifactService;
+
+  // One repeated extension per language the map set version declares.
+  private static final String CM_LANGUAGE_EXTENSION_URL = "https://termx.org/fhir/StructureDefinition/conceptmap-language";
 
   public ConceptMapFhirMapper(ConceptService conceptService,
                               CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
@@ -127,6 +131,8 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     if (StringUtils.isNotEmpty(versionDescription)) {
       fhirConceptMap.addExtension(toFhirVersionDescriptionExtension(versionDescription));
     }
+    Optional.ofNullable(version.getSupportedLanguages()).orElse(List.of())
+        .forEach(language -> fhirConceptMap.addExtension(new Extension(CM_LANGUAGE_EXTENSION_URL).setValueCode(language)));
     fhirConceptMap.setPurpose(toFhirName(mapSet.getPurpose(), version.getPreferredLanguage()));
     fhirConceptMap.setTopic(toFhirTopic(mapSet.getTopic()));
     fhirConceptMap.setUseContext(toFhirUseContext(mapSet.getUseContext()));
@@ -376,6 +382,11 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     version.setScope(fromFhirScope(conceptMap));
     version.setAssociations(fromFhirAssociations(conceptMap));
     version.setIdentifiers(fromFhirVersionIdentifiers(conceptMap.getIdentifier()));
+    // Declared languages come from the conceptmap-language extensions; union with the preferred language.
+    version.setSupportedLanguages(Stream.concat(
+            fromFhirLanguageExtensions(conceptMap.getExtension(), CM_LANGUAGE_EXTENSION_URL).stream(),
+            Stream.ofNullable(version.getPreferredLanguage()))
+        .filter(Objects::nonNull).distinct().toList());
     return version;
   }
 
