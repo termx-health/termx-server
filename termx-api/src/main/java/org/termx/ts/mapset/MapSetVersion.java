@@ -17,6 +17,7 @@ import lombok.experimental.Accessors;
 public class MapSetVersion extends MapSetVersionReference {
   private String mapSet;
   private String preferredLanguage;
+  private List<String> supportedLanguages;
   private LocalizedName description;
   private String algorithm;
   private LocalDate releaseDate;

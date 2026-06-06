@@ -230,7 +230,58 @@ Locked in by `terminology/src/test/groovy/org/termx/terminology/fhir/valueset/op
 - `expand with url + valueSetVersion param pins the include version`
 - `expand with url matching neither stored ValueSet nor stored CodeSystem returns 404`
 
-## 8. Limitations & known gaps
+## 8. Snapshot reuse & display-language rendering
+
+**Problem this solves.** Opening a value set in the FHIR view (e.g. the classifier's
+`/fhir/ValueSet/<id>--<version>`, which calls `$expand`, typically with a `displayLanguage`)
+used to **recompute and overwrite the stored snapshot on every read** — even for `active` and
+`retired` versions. Symptoms: the "concept snapshot" date in the author view kept jumping to the
+current date, frozen (published/retired) expansions were silently replaced, and every
+language-qualified read re-ran the full expansion.
+
+Root cause: `ValueSetVersionConceptService.expand(...)` reused the stored snapshot **only** when the
+version was `active` **and** no `displayLanguage`/`includeDesignations` was requested; otherwise it
+recomputed **and** persisted (`createSnapshot`, which stamps `createdAt = now`). So retired versions
+and any language-qualified read overwrote the canonical snapshot.
+
+**Design (implemented in `ValueSetVersionConceptService`).**
+
+- **(a) Reuse for any published version.** `draft` is the only status that is (re)expanded on demand
+  while authoring. `active` **and** `retired` are frozen and served from the stored snapshot (when
+  current — see `isSnapshotCurrent`, which revalidates dynamic-rule dependencies).
+- **(b) Foreign display language ⇒ designations only.** When a published version is asked for a
+  `displayLanguage` that is **not** among the version's `supportedLanguages`, only the *display
+  designations* for that language are loaded (`loadDisplayDesignations`, an entity-version lookup —
+  **no** rule re-expansion), overlaid onto the snapshot's concepts. The concepts and the stored
+  snapshot are left unchanged.
+- **(c) Only writers persist.** A snapshot is (over)written **only** when the caller holds
+  `ValueSet.write` or `ValueSet.maintain` on that value set (`canPersistSnapshot`). A public /
+  read-only FHIR `$expand` therefore never mutates the stored snapshot.
+- **(d) Snapshot carries all VS languages.** `decorate` populates each concept's
+  `additionalDesignations` with the designations for every language in `supportedLanguages`, so the
+  canonical snapshot is language-complete.
+- **(e) Resources advertise their languages (round-trip).** The FHIR resource carries one repeated
+  extension per language the version declares (`version.supportedLanguages`):
+  `{url: "https://termx.org/fhir/StructureDefinition/<resource>-language", valueCode: <lang>}` for
+  `valueset` / `codesystem` / `conceptmap` — added in each `*FhirMapper.toFhir` (ValueSet on both
+  read and `$expand`). Preferred over `expansion.parameter`, which is meant to echo *applied*
+  parameters. **Import reads it back**: `*FhirMapper.fromFhir*` unions these extension `valueCode`s
+  into the imported version's `supportedLanguages` (via `BaseFhirMapper.fromFhirLanguageExtensions`),
+  so export→import round-trips. (MapSet gained a `supportedLanguages` column —
+  `map_set_version.supported_languages` — to store this.)
+- **(f) Native display language ⇒ no DB.** When the requested `displayLanguage` **is** one of the
+  version's `supportedLanguages`, the display is re-picked from the designations already in the
+  snapshot (`ConceptUtil.getDisplay`) — **no DB query and no snapshot rewrite**.
+
+**Net effect.** The FHIR path now matches the author view: published versions are read-only with
+respect to their snapshot; only a `draft` (saved by a user with write/maintain) refreshes it. The
+snapshot date no longer churns on reads.
+
+**Follow-up (not yet done).** For `draft` versions a language-qualified `$expand` still recomputes
+the full expansion rather than reusing concepts + loading designations only; the (b) optimisation
+could be extended to draft once authoring semantics are confirmed.
+
+## 9. Limitations & known gaps
 
 - **SNOMED "all concepts" materialises the full result** before client-side paging. `SnomedValueSetExpandProvider.filterConcepts()` uses `SnomedConceptSearchParams.setAll(true)`, which is fine for hundreds of concepts but expensive for the international edition (~350k). The fix is to push `offset`/`count` down into `SnomedService.searchConcepts`; left as a separate optimisation.
 - **`filter` on the SNOMED path is client-side**. Snowstorm's ECL doesn't carry a free-text filter parameter, so TermX applies the substring match after the provider returns. Functionally correct, less efficient than letting Snowstorm filter.

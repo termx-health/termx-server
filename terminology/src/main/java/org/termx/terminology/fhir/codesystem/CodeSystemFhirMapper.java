@@ -60,6 +60,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   private static final Set<String> IMPLICIT_PROPERTY_DEFINITIONS = Set.of(DISPLAY, DEFINITION);
   private static final String PROPERTY_VALUE_SET_EXTENSION_URL = "http://hl7.org/fhir/StructureDefinition/codesystem-property-valueset";
   private static final String PROPERTY_CODE_SYSTEM_EXTENSION_URL = "https://termx.org/fhir/StructureDefinition/codesystem-property-codesystem";
+  // One repeated extension per language the code system version provides designations in.
+  private static final String CS_LANGUAGE_EXTENSION_URL = "https://termx.org/fhir/StructureDefinition/codesystem-language";
 
   public CodeSystemFhirMapper(ConceptService conceptService,
                               CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
@@ -104,6 +106,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (StringUtils.isNotEmpty(versionDescription)) {
       fhirCodeSystem.addExtension(toFhirVersionDescriptionExtension(versionDescription));
     }
+    Optional.ofNullable(version.getSupportedLanguages()).orElse(List.of())
+        .forEach(language -> fhirCodeSystem.addExtension(new Extension(CS_LANGUAGE_EXTENSION_URL).setValueCode(language)));
     fhirCodeSystem.setPurpose(toFhirName(codeSystem.getPurpose(), version.getPreferredLanguage()));
     fhirCodeSystem.setTopic(toFhirTopic(codeSystem.getTopic()));
     fhirCodeSystem.setUseContext(toFhirUseContext(codeSystem.getUseContext()));
@@ -548,8 +552,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         .map(CodeSystemConcept::getDesignation)
         .filter(Objects::nonNull).flatMap(List::stream)
         .map(CodeSystemConceptDesignation::getLanguage);
-    version.setSupportedLanguages(Stream.concat(
-          supportedLanguages,
+    // Declared languages come from the codesystem-language extensions; union them with the languages
+    // observed on designations and the preferred language so nothing is lost on round-trip.
+    Stream<String> declaredLanguages = fromFhirLanguageExtensions(fhirCodeSystem.getExtension(), CS_LANGUAGE_EXTENSION_URL).stream();
+    version.setSupportedLanguages(Stream.concat(Stream.concat(
+          declaredLanguages,
+          supportedLanguages),
           Stream.of(version.getPreferredLanguage()))
         .filter(Objects::nonNull)
         .distinct().toList());

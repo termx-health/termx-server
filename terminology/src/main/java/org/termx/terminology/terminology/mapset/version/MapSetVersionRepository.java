@@ -3,6 +3,7 @@ package org.termx.terminology.terminology.mapset.version;
 import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
+import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
@@ -15,6 +16,7 @@ import jakarta.inject.Singleton;
 @Singleton
 public class MapSetVersionRepository extends BaseRepository {
   private final PgBeanProcessor bp = new PgBeanProcessor(MapSetVersion.class, bp -> {
+    bp.addColumnProcessor("supported_languages", PgBeanProcessor.fromArray());
     bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("scope", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("statistics", PgBeanProcessor.fromJson());
@@ -43,6 +45,7 @@ public class MapSetVersionRepository extends BaseRepository {
     ssb.property("version", version.getVersion());
     ssb.property("status", version.getStatus());
     ssb.property("preferred_language", version.getPreferredLanguage());
+    ssb.property("supported_languages", "?::text[]", PgUtil.array(version.getSupportedLanguages()));
     ssb.jsonProperty("description", version.getDescription());
     ssb.property("algorithm", version.getAlgorithm());
     ssb.property("release_date", version.getReleaseDate());

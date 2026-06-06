@@ -261,4 +261,17 @@ public abstract class BaseFhirMapper {
     }
     return extensions.stream().filter(e -> "https://fhir.ee/StructureDefinition/version-description".equals(e.getUrl())).findFirst().map(Extension::getValueString).orElse(null);
   }
+
+  /** Reads the {@code valueCode}s of the repeated language extensions ({@code url}) into a distinct list. */
+  protected static List<String> fromFhirLanguageExtensions(List<Extension> extensions, String url) {
+    if (extensions == null) {
+      return List.of();
+    }
+    return extensions.stream()
+        .filter(e -> url.equals(e.getUrl()))
+        .map(Extension::getValueCode)
+        .filter(java.util.Objects::nonNull)
+        .distinct()
+        .toList();
+  }
 }

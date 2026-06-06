@@ -118,4 +118,37 @@ class CodeSystemFhirMapperSpec extends Specification {
     property.rule.valueSet == "vs-1"
     property.rule.codeSystems == ["cs-1", "cs-2"]
   }
+
+  def "toFhir exports codesystem-language extensions from supportedLanguages"() {
+    given:
+    conceptService.load(_, _) >> Optional.empty()
+    def codeSystem = new CodeSystem().setId("cs").setUri("http://fhir.ee/CodeSystem/cs").setName("cs")
+        .setTitle(new LocalizedName([en: "cs"])).setContent("not-present")
+    def version = new CodeSystemVersion().setVersion("1.0.0").setPreferredLanguage("en")
+        .setReleaseDate(LocalDate.parse("2026-03-18")).setStatus(PublicationStatus.draft)
+        .setSupportedLanguages(["et", "en"])
+
+    when:
+    def fhir = mapper.toFhir(codeSystem, version, [])
+    def languages = fhir.extension.findAll { it.url == "https://termx.org/fhir/StructureDefinition/codesystem-language" }.collect { it.valueCode }
+
+    then:
+    languages == ["et", "en"]
+  }
+
+  def "fromFhir imports codesystem-language extensions into the version supportedLanguages"() {
+    given:
+    def fhir = new com.kodality.zmei.fhir.resource.terminology.CodeSystem()
+        .setId("cs").setUrl("http://fhir.ee/CodeSystem/cs").setName("cs").setTitle("cs").setContent("not-present")
+        .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/codesystem-language").setValueCode("et"))
+        .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/codesystem-language").setValueCode("ru"))
+
+    when:
+    def imported = mapper.fromFhirCodeSystem(fhir)
+    def languages = imported.versions.first().supportedLanguages
+
+    then:
+    languages.contains("et")
+    languages.contains("ru")
+  }
 }

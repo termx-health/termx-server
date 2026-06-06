@@ -1,6 +1,8 @@
 package org.termx.terminology.terminology.valueset.expansion;
 
 import com.kodality.commons.util.DateUtil;
+import org.termx.core.auth.SessionStore;
+import org.termx.terminology.Privilege;
 import org.termx.terminology.terminology.codesystem.concept.ConceptUtil;
 import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import org.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
@@ -19,6 +21,7 @@ import org.termx.ts.codesystem.EntityPropertyType;
 import org.termx.ts.codesystem.EntityPropertyValue;
 import org.termx.ts.property.PropertyReference;
 import org.termx.ts.valueset.ValueSetSnapshot;
+import org.termx.ts.valueset.ValueSetVersionReference;
 import org.termx.ts.valueset.ValueSetSnapshotDependency;
 import org.termx.ts.valueset.ValueSetVersion;
 import org.termx.ts.valueset.ValueSetVersionConcept;
@@ -32,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,19 +78,126 @@ public class ValueSetVersionConceptService {
     if (version == null) {
       return null;
     }
+    // "Default rendering" = no caller-specific language/designations. Only this view is stored as the
+    // canonical snapshot; a request for a specific displayLanguage is a read-only view that must
+    // never overwrite the stored snapshot.
+    boolean draft = PublicationStatus.draft.equals(version.getStatus());
+    boolean defaultView = !includeDesignations && StringUtils.isEmpty(preferredLanguage);
     ValueSetSnapshot snapshot = version.getSnapshot();
-    if (!includeDesignations &&
-        StringUtils.isEmpty(preferredLanguage) &&
-        PublicationStatus.active.equals(version.getStatus()) &&
-        snapshot != null && snapshot.getExpansion() != null &&
-        isSnapshotCurrent(version, snapshot)) {
-      return snapshot;
-    }
-    
-    List<ValueSetVersionConcept> expansion = expand(version, preferredLanguage, includeDesignations);
-    snapshot = valueSetSnapshotService.createSnapshot(vs, version.getId(), expansion, resolveDependencies(version));
+    boolean snapshotUsable = snapshot != null && snapshot.getExpansion() != null && isSnapshotCurrent(version, snapshot);
 
-    return snapshot;
+    // (a) Published versions (active or retired) are frozen — serve from the stored snapshot; only a
+    // draft is (re)expanded on demand while authoring.
+    if (!draft && snapshotUsable) {
+      if (defaultView) {
+        return snapshot;
+      }
+      // (b)/(f) Render the requested displayLanguage WITHOUT recomputing concepts or rewriting the snapshot.
+      return renderLanguage(version, snapshot, preferredLanguage);
+    }
+
+    List<ValueSetVersionConcept> expansion = expand(version, preferredLanguage, includeDesignations);
+
+    // (c) Persist (overwrite) the canonical snapshot only for the default rendering AND only when the
+    // caller may write the value set. A public / read-only FHIR $expand never overwrites the stored
+    // snapshot — previously every $expand with a displayLanguage, or against a retired version,
+    // recreated it, replacing the frozen content and bumping its date on each read.
+    if (defaultView && canPersistSnapshot(vs)) {
+      return valueSetSnapshotService.createSnapshot(vs, version.getId(), expansion, resolveDependencies(version));
+    }
+    return transientSnapshot(vs, version.getId(), expansion);
+  }
+
+  /**
+   * Render a stored snapshot for a specific displayLanguage without recomputing the concepts or
+   * rewriting the snapshot. (f) When the language is one the value set version declares
+   * ({@code supportedLanguages}), the snapshot already carries its designations, so the display is
+   * re-picked from the snapshot with no DB access. (b) Otherwise only the display designations for
+   * that language are loaded (no rule re-expansion), overlaid onto the existing concepts.
+   */
+  private ValueSetSnapshot renderLanguage(ValueSetVersion version, ValueSetSnapshot snapshot, String displayLanguage) {
+    List<ValueSetVersionConcept> source = Optional.ofNullable(snapshot.getExpansion()).orElse(List.of());
+    List<String> supportedLanguages = Optional.ofNullable(version.getSupportedLanguages()).orElse(List.of());
+    List<String> preferredLanguages = version.getPreferredLanguage() != null ? List.of(version.getPreferredLanguage()) : List.of();
+    Map<Long, Designation> loaded = supportedLanguages.contains(displayLanguage) ? Map.of() : loadDisplayDesignations(source, displayLanguage);
+
+    List<ValueSetVersionConcept> rendered = source.stream().map(c -> {
+      List<Designation> all = new ArrayList<>();
+      if (c.getDisplay() != null) {
+        all.add(c.getDisplay());
+      }
+      if (c.getAdditionalDesignations() != null) {
+        all.addAll(c.getAdditionalDesignations());
+      }
+      Long conceptVersionId = c.getConcept() == null ? null : c.getConcept().getConceptVersionId();
+      Designation extra = conceptVersionId == null ? null : loaded.get(conceptVersionId);
+      if (extra != null) {
+        all.add(extra);
+      }
+      Designation display = ConceptUtil.getDisplay(all, displayLanguage, preferredLanguages);
+      if (display == null) {
+        return c;
+      }
+      List<Designation> additional = extra == null ? c.getAdditionalDesignations()
+          : Stream.concat(Optional.ofNullable(c.getAdditionalDesignations()).orElse(List.of()).stream(), Stream.of(extra)).toList();
+      return withDisplay(c, display, additional);
+    }).toList();
+    return transientSnapshot(snapshot.getValueSet(), version.getId(), rendered);
+  }
+
+  /** Load ONLY the display designations for {@code language} for the given concepts (no rule expansion). */
+  private Map<Long, Designation> loadDisplayDesignations(List<ValueSetVersionConcept> concepts, String language) {
+    List<String> versionIds = concepts.stream()
+        .map(c -> c.getConcept() == null ? null : c.getConcept().getConceptVersionId())
+        .filter(Objects::nonNull).distinct().map(String::valueOf).toList();
+    if (versionIds.isEmpty()) {
+      return Map.of();
+    }
+    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
+    params.setIds(String.join(",", versionIds));
+    params.limit(versionIds.size());
+    Map<Long, Designation> result = new HashMap<>();
+    for (CodeSystemEntityVersion v : codeSystemEntityVersionService.query(params).getData()) {
+      if (v.getId() == null || v.getDesignations() == null) {
+        continue;
+      }
+      v.getDesignations().stream()
+          .filter(d -> "display".equals(d.getDesignationType()) && !PublicationStatus.retired.equals(d.getStatus()))
+          .filter(d -> d.getLanguage() != null && (d.getLanguage().equals(language) || d.getLanguage().startsWith(language)))
+          .min(Comparator.comparing(Designation::isPreferred).reversed())
+          .ifPresent(d -> result.putIfAbsent(v.getId(), d));
+    }
+    return result;
+  }
+
+  /** Shallow copy of a snapshot concept overriding only its display (and optionally additionalDesignations). */
+  private static ValueSetVersionConcept withDisplay(ValueSetVersionConcept c, Designation display, List<Designation> additionalDesignations) {
+    return new ValueSetVersionConcept()
+        .setId(c.getId())
+        .setConcept(c.getConcept())
+        .setDisplay(display)
+        .setAdditionalDesignations(additionalDesignations)
+        .setOrderNumber(c.getOrderNumber())
+        .setEnumerated(c.isEnumerated())
+        .setActive(c.isActive())
+        .setStatus(c.getStatus())
+        .setAssociations(c.getAssociations())
+        .setPropertyValues(c.getPropertyValues());
+  }
+
+  private static ValueSetSnapshot transientSnapshot(String vs, Long versionId, List<ValueSetVersionConcept> expansion) {
+    return new ValueSetSnapshot()
+        .setValueSet(vs)
+        .setValueSetVersion(new ValueSetVersionReference().setId(versionId))
+        .setExpansion(expansion)
+        .setConceptsTotal(expansion.size());
+  }
+
+  /** A snapshot may be (over)written only by a caller with write/maintain rights on the value set. */
+  private static boolean canPersistSnapshot(String valueSet) {
+    return SessionStore.get()
+        .map(s -> s.hasPrivilege(valueSet + "." + Privilege.VS_WRITE) || s.hasPrivilege(valueSet + "." + Privilege.VS_MAINTAIN))
+        .orElse(false);
   }
 
   public List<ValueSetVersionConcept> expand(ValueSetVersion version, String preferredLanguage) {
@@ -100,7 +211,7 @@ public class ValueSetVersionConceptService {
 
     if (!includeDesignations &&
         StringUtils.isEmpty(preferredLanguage) &&
-        PublicationStatus.active.equals(version.getStatus()) &&
+        !PublicationStatus.draft.equals(version.getStatus()) &&
         version.getSnapshot() != null && version.getSnapshot().getExpansion() != null &&
         isSnapshotCurrent(version, version.getSnapshot())) {
       return version.getSnapshot().getExpansion();
