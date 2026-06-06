@@ -260,15 +260,16 @@ and any language-qualified read overwrote the canonical snapshot.
 - **(d) Snapshot carries all VS languages.** `decorate` populates each concept's
   `additionalDesignations` with the designations for every language in `supportedLanguages`, so the
   canonical snapshot is language-complete.
-- **(e) Resources advertise their languages (round-trip).** The FHIR resource carries one repeated
-  extension per language the version declares (`version.supportedLanguages`):
-  `{url: "https://termx.org/fhir/StructureDefinition/<resource>-language", valueCode: <lang>}` for
-  `valueset` / `codesystem` / `conceptmap` — added in each `*FhirMapper.toFhir` (ValueSet on both
-  read and `$expand`). Preferred over `expansion.parameter`, which is meant to echo *applied*
-  parameters. **Import reads it back**: `*FhirMapper.fromFhir*` unions these extension `valueCode`s
-  into the imported version's `supportedLanguages` (via `BaseFhirMapper.fromFhirLanguageExtensions`),
-  so export→import round-trips. (MapSet gained a `supportedLanguages` column —
-  `map_set_version.supported_languages` — to store this.)
+- **(e) Resources advertise their languages (round-trip).** The FHIR resource (CodeSystem /
+  ValueSet / ConceptMap) carries one repeated extension per language the version declares
+  (`version.supportedLanguages`):
+  `{url: "https://termx.org/fhir/StructureDefinition/supported-language", valueCode: <lang>}` —
+  a single common URL (`BaseFhirMapper.SUPPORTED_LANGUAGE_EXTENSION_URL`) added in each
+  `*FhirMapper.toFhir` (ValueSet on both read and `$expand`). Preferred over `expansion.parameter`,
+  which is meant to echo *applied* parameters. **Import reads it back**: `*FhirMapper.fromFhir*`
+  unions these extension `valueCode`s into the imported version's `supportedLanguages` (via
+  `BaseFhirMapper.fromFhirLanguageExtensions`), so export→import round-trips. (MapSet gained a
+  `supportedLanguages` column — `map_set_version.supported_languages` — to store this.)
 - **(f) Native display language ⇒ no DB.** When the requested `displayLanguage` **is** one of the
   version's `supportedLanguages`, the display is re-picked from the designations already in the
   snapshot (`ConceptUtil.getDisplay`) — **no DB query and no snapshot rewrite**.

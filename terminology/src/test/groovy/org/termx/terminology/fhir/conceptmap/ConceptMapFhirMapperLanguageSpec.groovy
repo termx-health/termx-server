@@ -31,7 +31,7 @@ class ConceptMapFhirMapperLanguageSpec extends Specification {
   def mapper = new ConceptMapFhirMapper(conceptService, codeSystemService, valueSetService, mapSetService,
       codeSystemVersionService, valueSetVersionService, valueSetVersionConceptService, relatedArtifactService)
 
-  def "toFhir exports conceptmap-language extensions from supportedLanguages"() {
+  def "toFhir exports supported-language extensions from supportedLanguages"() {
     given:
     conceptService.load(_, _) >> Optional.empty()
     relatedArtifactService.findRelatedArtifacts(_) >> []
@@ -43,18 +43,18 @@ class ConceptMapFhirMapperLanguageSpec extends Specification {
 
     when:
     def fhir = mapper.toFhir(mapSet, version, [])
-    def languages = fhir.extension.findAll { it.url == "https://termx.org/fhir/StructureDefinition/conceptmap-language" }.collect { it.valueCode }
+    def languages = fhir.extension.findAll { it.url == "https://termx.org/fhir/StructureDefinition/supported-language" }.collect { it.valueCode }
 
     then:
     languages == ["et", "en"]
   }
 
-  def "fromFhir imports conceptmap-language extensions into the version supportedLanguages"() {
+  def "fromFhir imports supported-language extensions into the version supportedLanguages"() {
     given:
     def fhir = new ConceptMap()
         .setId("ms").setUrl("http://fhir.ee/ConceptMap/ms").setName("ms").setLanguage("en")
-        .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/conceptmap-language").setValueCode("et"))
-        .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/conceptmap-language").setValueCode("ru"))
+        .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/supported-language").setValueCode("et"))
+        .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/supported-language").setValueCode("ru"))
 
     when:
     def imported = mapper.fromFhir(fhir)
