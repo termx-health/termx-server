@@ -262,6 +262,9 @@ public abstract class BaseFhirMapper {
     return extensions.stream().filter(e -> "https://fhir.ee/StructureDefinition/version-description".equals(e.getUrl())).findFirst().map(Extension::getValueString).orElse(null);
   }
 
+  /** Common extension URL: one repeated entry per language a resource version supports. */
+  public static final String SUPPORTED_LANGUAGE_EXTENSION_URL = "https://termx.org/fhir/StructureDefinition/supported-language";
+
   /** Reads the {@code valueCode}s of the repeated language extensions ({@code url}) into a distinct list. */
   protected static List<String> fromFhirLanguageExtensions(List<Extension> extensions, String url) {
     if (extensions == null) {

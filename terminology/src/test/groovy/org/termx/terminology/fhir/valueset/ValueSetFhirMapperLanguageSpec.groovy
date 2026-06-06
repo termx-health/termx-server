@@ -24,7 +24,7 @@ class ValueSetFhirMapperLanguageSpec extends Specification {
 
   def mapper = new ValueSetFhirMapper(conceptService, codeSystemService, valueSetService, mapSetService, relatedArtifactService)
 
-  def "toFhir exports valueset-language extensions from supportedLanguages"() {
+  def "toFhir exports supported-language extensions from supportedLanguages"() {
     given:
     conceptService.load(_, _) >> Optional.empty()
     relatedArtifactService.findRelatedArtifacts(_) >> []
@@ -36,18 +36,18 @@ class ValueSetFhirMapperLanguageSpec extends Specification {
 
     when:
     def fhir = mapper.toFhir(valueSet, version, [])
-    def languages = fhir.extension.findAll { it.url == "https://termx.org/fhir/StructureDefinition/valueset-language" }.collect { it.valueCode }
+    def languages = fhir.extension.findAll { it.url == "https://termx.org/fhir/StructureDefinition/supported-language" }.collect { it.valueCode }
 
     then:
     languages == ["et", "en"]
   }
 
-  def "fromFhir imports valueset-language extensions into the version supportedLanguages"() {
+  def "fromFhir imports supported-language extensions into the version supportedLanguages"() {
     given:
     def fhir = new com.kodality.zmei.fhir.resource.terminology.ValueSet()
         .setId("vs").setUrl("http://fhir.ee/ValueSet/vs").setName("vs").setLanguage("en")
-        .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/valueset-language").setValueCode("et"))
-        .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/valueset-language").setValueCode("ru"))
+        .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/supported-language").setValueCode("et"))
+        .addExtension(new Extension("https://termx.org/fhir/StructureDefinition/supported-language").setValueCode("ru"))
 
     when:
     def imported = ValueSetFhirMapper.fromFhirValueSet(fhir)

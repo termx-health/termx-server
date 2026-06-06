@@ -89,9 +89,6 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   private final ValueSetRelatedArtifactService relatedArtifactService;
   private static final String concept_definition = "http://hl7.org/fhir/StructureDefinition/valueset-concept-definition";
   private static final String concept_order = "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder";
-  // One repeated extension per language the value set version provides designations in. Present on
-  // both the plain read and $expand so clients can discover available languages without expanding.
-  private static final String vs_language = "https://termx.org/fhir/StructureDefinition/valueset-language";
 
   public ValueSetFhirMapper(ConceptService conceptService,
                             CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
@@ -171,7 +168,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     Optional.ofNullable(valueSet.getSourceReference()).ifPresent(ref -> fhirValueSet.addExtension(toFhirSourceReferenceExtension("http://hl7.org/fhir/StructureDefinition/valueset-sourceReference", ref)));
     Optional.ofNullable(valueSet.getReplaces()).flatMap(id -> Optional.ofNullable(valueSetService.load(id)).map(ValueSet::getUri)).ifPresent(uri -> fhirValueSet.addExtension(toFhirReplacesExtension(uri)));
     Optional.ofNullable(version.getSupportedLanguages()).orElse(List.of())
-        .forEach(language -> fhirValueSet.addExtension(new Extension(vs_language).setValueCode(language)));
+        .forEach(language -> fhirValueSet.addExtension(new Extension(SUPPORTED_LANGUAGE_EXTENSION_URL).setValueCode(language)));
     fhirValueSet.setDate(toFhirOffsetDateTime(provenances));
     fhirValueSet.setLastReviewDate(toFhirDate(provenances, "reviewed"));
     fhirValueSet.setApprovalDate(toFhirDate(provenances, "approved"));
@@ -329,7 +326,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
 
   public com.kodality.zmei.fhir.resource.terminology.ValueSet toFhir(ValueSet valueSet, ValueSetVersion version, List<Provenance> provenances, ValueSetSnapshot snapshot, Parameters param) {
     com.kodality.zmei.fhir.resource.terminology.ValueSet fhirValueSet = toFhir(valueSet, version, provenances);
-    // The set of languages carried by the expansion is advertised as repeated `valueset-language`
+    // The set of languages carried by the expansion is advertised as repeated `supported-language`
     // extensions on the resource (added in the base toFhir from version.supportedLanguages).
     fhirValueSet.setExpansion(toFhirExpansion(snapshot, fhirValueSet.getCompose().getProperty(), param));
     return fhirValueSet;
@@ -642,9 +639,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     if (description != null) {
       version.setDescription(new LocalizedName(Map.of(Optional.ofNullable(version.getPreferredLanguage()).orElse(Language.en), description)));
     }
-    // Declared languages come from the valueset-language extensions; union with the preferred language.
+    // Declared languages come from the supported-language extensions; union with the preferred language.
     version.setSupportedLanguages(Stream.concat(
-            fromFhirLanguageExtensions(valueSet.getExtension(), vs_language).stream(),
+            fromFhirLanguageExtensions(valueSet.getExtension(), SUPPORTED_LANGUAGE_EXTENSION_URL).stream(),
             Stream.ofNullable(version.getPreferredLanguage()))
         .filter(Objects::nonNull).distinct().toList());
     return version;
