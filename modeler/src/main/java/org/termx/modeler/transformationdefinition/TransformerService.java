@@ -116,6 +116,10 @@ public class TransformerService {
   }
 
   public TransformationResult transform(String source, TransformationDefinition def) {
+    if (StringUtils.isBlank(source)) {
+      return new TransformationResult().setResult("");
+    }
+
     try {
       ValidationEngine eng = new ValidationEngine(getEngine());
 
