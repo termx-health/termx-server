@@ -37,6 +37,9 @@ endpoints:
 
 info:
   version: ${APP_VERSION:dev}
+  build-time: ${BUILD_TIME:}
+  commit: ${GIT_COMMIT:}
+  pr: ${PR_NUMBER:}
 
 datasources:
   default:

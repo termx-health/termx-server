@@ -8,6 +8,14 @@ ENV APP_VERSION=${APP_VERSION:-latest}
 ARG BUILD_TIME
 ENV BUILD_TIME=$BUILD_TIME
 
+# Short commit sha and the merged PR number, surfaced on /info so a running
+# container can be traced back to an exact build (version is just the image tag,
+# e.g. "latest", which isn't enough on dev).
+ARG GIT_COMMIT
+ENV GIT_COMMIT=$GIT_COMMIT
+ARG PR_NUMBER
+ENV PR_NUMBER=$PR_NUMBER
+
 # Fail-fast on OutOfMemoryError instead of letting the JVM limp on with
 # a depleted heap. The previous behaviour (no flag) caused the May 2026
 # dev-server incident where a single OOM cascaded into every concurrent
