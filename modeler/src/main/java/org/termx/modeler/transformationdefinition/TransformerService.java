@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -155,6 +156,8 @@ public class TransformerService {
         return new TransformationResult().setError("Transformation error: " + ApiError.MO102.getMessage() + " " + e.getMessage() + ".");
       }
       return new TransformationResult().setError("Transformation error: " + e.getMessage());
+    } catch (NoSuchElementException e) {
+      return new TransformationResult().setError("Transformation error: " + e.getMessage());
     }
   }
 
@@ -194,7 +197,9 @@ public class TransformerService {
     // this should not be needed. ValidationEngine#getSourceResourceFromStructureMap searches for definition by alias, however alias is nullable. workaround.
     sm.getStructure().stream().filter(s -> s.getAlias() == null)
         .forEach(s -> s.setAlias(eng.getContext().listStructures().stream()
-            .filter(sd -> sd.getUrl().equals(s.getUrl())).findFirst().orElseThrow().getName()));
+            .filter(sd -> sd.getUrl().equals(s.getUrl())).findFirst()
+            .orElseThrow(() -> new NoSuchElementException("StructureDefinition '" + s.getUrl() + "' was not found."))
+            .getName()));
 
     //fix snapshots?
     ContextUtilities cu = new ContextUtilities(eng.getContext());
@@ -217,7 +222,8 @@ public class TransformerService {
       case url -> queryResource(res.getReference().getResourceUrl(), res.getReference().getResourceServerId());
       case local -> switch (res.getType()) {
         case definition -> {
-          var sd = structureDefinitionService.load(Long.valueOf(res.getReference().getLocalId())).orElseThrow();
+          var sd = structureDefinitionService.load(Long.valueOf(res.getReference().getLocalId()))
+                  .orElseThrow(() -> new NoSuchElementException("StructureDefinition '" + res.getName() + "' was not found."));
           if ("fsh".equals(sd.getContentFormat())) {
             yield fshConverter.orElseThrow().toFhir(sd.getContent()).join();
           }
