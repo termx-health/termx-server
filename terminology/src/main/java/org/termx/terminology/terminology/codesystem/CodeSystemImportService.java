@@ -230,11 +230,9 @@ public class CodeSystemImportService {
       var partialVersion = prepareEntityVersion(concept.getVersions().getFirst(), entityProperties, conceptCache);
       entityVersionMap.put(concept.getId(), List.of(partialVersion));
     }
-    if (!cleanRun) {
-      mergeWithCurrentVersions(getCurrentCodeSystemVersion(version).getId(), entityVersionMap);
-    } else {
-      codeSystemEntityVersionService.cancelAllDraftVersions(version, concepts);
-    }
+    Map<Long, EntityProperty> propertiesById = entityProperties.stream()
+        .filter(p -> p.getId() != null).collect(Collectors.toMap(EntityProperty::getId, p -> p, (a, b) -> a));
+    holdUnchangedAndMerge(version, concepts, entityVersionMap, propertiesById, retiredConceptIds, cleanRun);
     codeSystemEntityVersionService.batchSave(entityVersionMap, version.getCodeSystem());
     log.info("Concept versions created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
 
@@ -340,31 +338,90 @@ public class CodeSystemImportService {
   }
 
 
-  private void mergeWithCurrentVersions(Long csVersionId, Map<Long, List<CodeSystemEntityVersion>> versions) {
-    List<Long> entityIds = versions.keySet().stream().toList();
-    IntStream.range(0, (entityIds.size() + 10000 - 1) / 10000)
-        .mapToObj(i -> entityIds.subList(i * 10000, Math.min(versions.size(), (i + 1) * 10000))).forEach(batch -> {
+  /**
+   * Decides, per concept, whether the imported version differs from the one already stored. Concepts
+   * whose content is identical (see {@link ConceptContentSignature}) are HELD — the existing version
+   * is reused (no unlink, no new version, no churn); only its status is (re)applied later. Changed or
+   * new concepts are processed per mode:
+   * <ul>
+   *   <li>merge — existing draft is updated in place, existing active gets a new version;</li>
+   *   <li>replace — existing drafts of changed/new concepts are cancelled (held ones are left alone).</li>
+   * </ul>
+   * Held concepts are removed from {@code entityVersionMap} so {@code batchSave} skips them; their id
+   * is copied onto the prepared version so the later activate/retire/link steps target the kept row.
+   *
+   * <p>Retiring is treated as a change: an active concept being retired gets a NEW (retired) version
+   * (the active one is preserved as history), exactly like a content change on an active concept.
+   */
+  private void holdUnchangedAndMerge(CodeSystemVersion version, List<Concept> concepts,
+                                     Map<Long, List<CodeSystemEntityVersion>> entityVersionMap,
+                                     Map<Long, EntityProperty> propertiesById, List<Long> retiredEntityIds, boolean cleanRun) {
+    Long csVersionId = getCurrentCodeSystemVersion(version).getId();
+    Map<Long, CodeSystemEntityVersion> existing = loadExistingVersions(csVersionId, entityVersionMap.keySet());
+    List<Long> changedEntityIds = new ArrayList<>();
+
+    for (Long entityId : new ArrayList<>(entityVersionMap.keySet())) {
+      CodeSystemEntityVersion prepared = entityVersionMap.get(entityId).getFirst();
+      CodeSystemEntityVersion existingVersion = existing.get(entityId);
+
+      // Retiring an active concept must create a new version (don't flip the active one in place).
+      boolean retireTransition = existingVersion != null
+          && retiredEntityIds.contains(entityId)
+          && PublicationStatus.active.equals(existingVersion.getStatus());
+
+      if (existingVersion != null && !retireTransition
+          && ConceptContentSignature.sameContent(prepared, existingVersion, propertiesById)) {
+        // Unchanged: keep the stored version. Reuse its id so activate/retire/link target it, and
+        // drop it from the batch so no new/duplicate version is written.
+        prepared.setId(existingVersion.getId());
+        prepared.setStatus(existingVersion.getStatus());
+        entityVersionMap.remove(entityId);
+        continue;
+      }
+
+      changedEntityIds.add(entityId);
+      if (!cleanRun && existingVersion != null) {
+        if (PublicationStatus.draft.equals(existingVersion.getStatus())) {
+          entityVersionMap.put(entityId, mergeWithDraftVersion(entityVersionMap.get(entityId), existingVersion));
+        } else if (PublicationStatus.active.equals(existingVersion.getStatus())) {
+          entityVersionMap.put(entityId, mergeWithActiveVersion(entityVersionMap.get(entityId), existingVersion, csVersionId));
+        }
+      }
+    }
+
+    if (cleanRun) {
+      // Replace: cancel drafts only for changed/new concepts — held concepts keep their version.
+      List<Concept> changed = concepts.stream().filter(c -> changedEntityIds.contains(c.getId())).toList();
+      if (!changed.isEmpty()) {
+        codeSystemEntityVersionService.cancelAllDraftVersions(version, changed);
+      }
+    }
+  }
+
+  /** Existing version of each concept on the current code system version, preferring the draft, else the active one. */
+  private Map<Long, CodeSystemEntityVersion> loadExistingVersions(Long csVersionId, java.util.Set<Long> entityIds) {
+    Map<Long, CodeSystemEntityVersion> result = new HashMap<>();
+    List<Long> ids = new ArrayList<>(entityIds);
+    IntStream.range(0, (ids.size() + 10000 - 1) / 10000)
+        .mapToObj(i -> ids.subList(i * 10000, Math.min(ids.size(), (i + 1) * 10000))).forEach(batch -> {
           CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams()
               .setCodeSystemEntityIds(batch.stream().map(String::valueOf).collect(Collectors.joining(",")))
               .setCodeSystemVersionId(csVersionId)
-              .setStatus(String.join(",", PublicationStatus.active, PublicationStatus.draft))
+              .setStatus(String.join(",", PublicationStatus.active, PublicationStatus.draft, PublicationStatus.retired))
               .all();
-          Map<Long, List<CodeSystemEntityVersion>> existingVersions =
+          Map<Long, List<CodeSystemEntityVersion>> grouped =
               codeSystemEntityVersionService.query(params).getData().stream().collect(Collectors.groupingBy(CodeSystemEntityVersion::getCodeSystemEntityId));
-          existingVersions.keySet().forEach(entityId -> {
-            Optional<CodeSystemEntityVersion> lastDraftVersion =
-                existingVersions.get(entityId).stream().filter(v -> PublicationStatus.draft.equals(v.getStatus())).max(
-                    Comparator.comparing(CodeSystemEntityVersion::getCreated));
-            Optional<CodeSystemEntityVersion> lastActiveVersion =
-                existingVersions.get(entityId).stream().filter(v -> PublicationStatus.active.equals(v.getStatus()))
-                    .max(Comparator.comparing(CodeSystemEntityVersion::getCreated));
-            if (lastDraftVersion.isPresent()) {
-              versions.put(entityId, mergeWithDraftVersion(versions.get(entityId), lastDraftVersion.get()));
-            } else if (lastActiveVersion.isPresent()) {
-              versions.put(entityId, mergeWithActiveVersion(versions.get(entityId), lastActiveVersion.get(), csVersionId));
-            }
+          grouped.forEach((entityId, versions) -> {
+            Optional<CodeSystemEntityVersion> draft = versions.stream().filter(v -> PublicationStatus.draft.equals(v.getStatus()))
+                .max(Comparator.comparing(CodeSystemEntityVersion::getCreated));
+            Optional<CodeSystemEntityVersion> active = versions.stream().filter(v -> PublicationStatus.active.equals(v.getStatus()))
+                .max(Comparator.comparing(CodeSystemEntityVersion::getCreated));
+            Optional<CodeSystemEntityVersion> retired = versions.stream().filter(v -> PublicationStatus.retired.equals(v.getStatus()))
+                .max(Comparator.comparing(CodeSystemEntityVersion::getCreated));
+            draft.or(() -> active).or(() -> retired).ifPresent(v -> result.put(entityId, v));
           });
         });
+    return result;
   }
 
   private List<CodeSystemEntityVersion> mergeWithActiveVersion(List<CodeSystemEntityVersion> newVersions, CodeSystemEntityVersion activeVersion,
@@ -380,20 +437,22 @@ public class CodeSystemImportService {
 
   private List<CodeSystemEntityVersion> mergeVersions(List<CodeSystemEntityVersion> targetVersions, CodeSystemEntityVersion sourceVersion) {
     targetVersions.forEach(v -> {
-      v.setPropertyValues(Optional.ofNullable(v.getPropertyValues()).orElse(new ArrayList<>()));
+      // Wrap in a mutable ArrayList: prepareEntityVersion* produce immutable Stream.toList() lists,
+      // so addAll(...) below would otherwise throw UnsupportedOperationException.
+      v.setPropertyValues(new ArrayList<>(Optional.ofNullable(v.getPropertyValues()).orElse(List.of())));
       v.getPropertyValues().addAll(Optional.ofNullable(sourceVersion.getPropertyValues()).orElse(new ArrayList<>()).stream()
           .filter(pv -> v.getPropertyValues().stream().noneMatch(
               pv1 -> Objects.equals(pv.getEntityPropertyId(), pv1.getEntityPropertyId()) &&
                   Objects.equals(JsonUtil.toJson(pv.getValue()), JsonUtil.toJson(pv1.getValue()))))
           .toList());
-      v.setDesignations(Optional.ofNullable(v.getDesignations()).orElse(new ArrayList<>()));
+      v.setDesignations(new ArrayList<>(Optional.ofNullable(v.getDesignations()).orElse(List.of())));
       v.getDesignations().addAll(Optional.ofNullable(sourceVersion.getDesignations()).orElse(new ArrayList<>()).stream()
           .filter(d -> v.getDesignations().stream().noneMatch(
               d1 -> Objects.equals(d.getName(), d1.getName()) &&
                   Objects.equals(d.getLanguage(), d1.getLanguage()) &&
                   Objects.equals(d.getDesignationTypeId(), d1.getDesignationTypeId())))
           .toList());
-      v.setAssociations(Optional.ofNullable(v.getAssociations()).orElse(new ArrayList<>()));
+      v.setAssociations(new ArrayList<>(Optional.ofNullable(v.getAssociations()).orElse(List.of())));
       v.getAssociations().addAll(Optional.ofNullable(sourceVersion.getAssociations()).orElse(new ArrayList<>()).stream()
           .filter(a -> v.getAssociations().stream()
               .noneMatch(a1 -> a.getAssociationType().equals(a1.getAssociationType()) && a.getTargetCode().equals(a1.getTargetCode()))).toList());
