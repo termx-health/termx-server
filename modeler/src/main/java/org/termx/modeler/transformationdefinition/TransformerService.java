@@ -148,7 +148,7 @@ public class TransformerService {
     } catch (IOException | FHIRException e) {
       if (e instanceof FHIRException err && err.getCause() instanceof NullPointerException) {
         // fixme: is there better way to detect 'StructureDefinition.getSnapshot()" because "sd" is null' error
-        return new TransformationResult().setError("Transformation error: " + ApiError.MO102.getMessage());
+        return new TransformationResult().setError("Transformation error: " + ApiError.MO102.getMessage() + " " + e.getMessage() + ".");
       }
       return new TransformationResult().setError("Transformation error: " + e.getMessage());
     }

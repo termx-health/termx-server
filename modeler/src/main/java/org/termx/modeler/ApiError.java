@@ -9,7 +9,7 @@ import lombok.Getter;
 @Getter
 public enum ApiError {
   MO101("MO101", "FHIR object is not accessible by the URL. Please validate URL(s)."),
-  MO102("MO102", "StructureDefinition is missing or invalid."),
+  MO102("MO102", "StructureDefinition could not be resolved."),
   ;
 
   private String code;
