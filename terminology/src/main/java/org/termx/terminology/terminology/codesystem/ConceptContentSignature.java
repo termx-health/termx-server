@@ -55,11 +55,14 @@ public final class ConceptContentSignature {
     }
     Map<Long, EntityProperty> props = propertiesById == null ? Map.of() : propertiesById;
 
-    // Order is significant and preserved (the import file defines the order). Identity uses CODES,
-    // never internal DB ids (the file only carries codes).
+    // Compared in a CANONICAL order, not the list order: the DB load order is not guaranteed
+    // (designations/associations have no ORDER BY), so relying on it would make unchanged concepts
+    // look changed. Designations are ordered by language then text; properties/associations by their
+    // identity. Identity uses CODES, never internal DB ids (the file only carries codes).
     List<String> designations = Optional.ofNullable(version.getDesignations()).orElse(List.of()).stream()
         .filter(d -> d != null && !PublicationStatus.retired.equals(d.getStatus()))
-        .map(d -> "D|" + designationTypeCode(d, props) + "|" + nz(d.getLanguage()) + "|" + bool(d.isPreferred()) + "|" + nz(trim(d.getName())))
+        .map(d -> "D|" + nz(d.getLanguage()) + "|" + nz(trim(d.getName())) + "|" + designationTypeCode(d, props) + "|" + bool(d.isPreferred()))
+        .sorted()
         .toList();
 
     List<String> properties = Optional.ofNullable(version.getPropertyValues()).orElse(List.of()).stream()
@@ -70,11 +73,13 @@ public final class ConceptContentSignature {
           String type = p != null ? p.getType() : pv.getEntityPropertyType();
           return "P|" + code + "|" + normalize(pv.getValue(), type);
         })
+        .sorted()
         .toList();
 
     List<String> associations = Optional.ofNullable(version.getAssociations()).orElse(List.of()).stream()
         .filter(Objects::nonNull)
         .map(a -> "A|" + nz(a.getAssociationType()) + "|" + nz(a.getTargetCode()) + "|" + (a.getOrderNumber() == null ? "" : a.getOrderNumber()))
+        .sorted()
         .toList();
 
     return "code=" + nz(trim(version.getCode()))

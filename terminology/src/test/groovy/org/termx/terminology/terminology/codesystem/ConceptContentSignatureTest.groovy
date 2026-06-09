@@ -96,13 +96,13 @@ class ConceptContentSignatureTest extends Specification {
     ConceptContentSignature.sameContent(imported, stored, [:])
   }
 
-  def "reordering designations IS a change (order is significant)"() {
-    given:
+  def "reordering designations does NOT change the signature (canonical order by language, text)"() {
+    given: "same designations, different list order — DB load order is not guaranteed"
     def a = new CodeSystemEntityVersion().setCode("A").setDesignations([designation("Apple", "en"), designation("Apfel", "de")])
     def b = new CodeSystemEntityVersion().setCode("A").setDesignations([designation("Apfel", "de"), designation("Apple", "en")])
 
     expect:
-    !ConceptContentSignature.sameContent(a, b, [:])
+    ConceptContentSignature.sameContent(a, b, [:])
   }
 
   def "a real change is detected"() {

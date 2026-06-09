@@ -80,8 +80,10 @@ reloaded from the database — only a genuine content change creates a version.
 - **By code, not id:** designation type is compared by its code (`designationType`), property by its
   name, association by `associationType|targetCode|orderNumber` — internal DB ids never enter the
   fingerprint (the import file only carries codes).
-- **Order is significant** (the file defines the order); designation/property/association lists are
-  compared in order, not as unordered sets.
+- **Canonical order** (not list order): the DB load order is not guaranteed (designations and
+  associations have no `ORDER BY`), so the lists are sorted before comparison — designations by
+  **language then text**, properties/associations by their identity — and the order a file happens to
+  list them in does not matter.
 - **Value normalization** (identical on both sides): decimal by value ignoring scale
   (`2.5` = `2.50`), integer (`5` = `"5"` = `5.0`), boolean (`true` = `"1"`), dateTime as a UTC
   instant (`java.util.Date` = epoch millis = `2026-06-08` = `…T00:00:00Z`), coding by `code|system`.
