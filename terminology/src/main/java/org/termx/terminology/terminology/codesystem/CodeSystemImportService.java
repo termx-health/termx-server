@@ -358,7 +358,7 @@ public class CodeSystemImportService {
                                      Map<Long, EntityProperty> propertiesById, List<Long> retiredEntityIds, boolean cleanRun) {
     Long csVersionId = getCurrentCodeSystemVersion(version).getId();
     Map<Long, CodeSystemEntityVersion> existing = loadExistingVersions(csVersionId, entityVersionMap.keySet());
-    List<Long> changedEntityIds = new ArrayList<>();
+    java.util.Set<Long> changedEntityIds = new java.util.HashSet<>();   // Set, not List: O(1) contains for the replace filter below
 
     for (Long entityId : new ArrayList<>(entityVersionMap.keySet())) {
       CodeSystemEntityVersion prepared = entityVersionMap.get(entityId).getFirst();

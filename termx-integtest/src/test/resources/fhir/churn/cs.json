@@ -1,0 +1,38 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "churn-cs",
+  "url": "http://termx-test.local/CodeSystem/churn-cs",
+  "version": "1.0.0",
+  "name": "ChurnCs",
+  "title": "Concept-version churn test",
+  "status": "active",
+  "experimental": false,
+  "content": "complete",
+  "caseSensitive": true,
+  "property": [
+    {"code": "p-decimal", "type": "decimal"},
+    {"code": "p-datetime", "type": "dateTime"}
+  ],
+  "concept": [
+    {
+      "code": "a",
+      "display": "Alpha",
+      "designation": [
+        {"language": "en", "value": "Alpha synonym"},
+        {"language": "de", "value": "Alfa"}
+      ],
+      "property": [
+        {"code": "p-decimal", "valueDecimal": 3.14},
+        {"code": "p-datetime", "valueDateTime": "2025-06-01T12:30:45Z"}
+      ]
+    },
+    {
+      "code": "b",
+      "display": "Beta",
+      "designation": [
+        {"language": "en", "value": "Beta synonym"},
+        {"language": "de", "value": "Beeta"}
+      ]
+    }
+  ]
+}
