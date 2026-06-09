@@ -247,7 +247,63 @@ credentials (`minio`/`minio123`).
 
 ---
 
-## 7. Related docs
+## 7. Caveats, gotchas & known divergences
+
+### Variable-name divergences
+- **MinIO: `MINIO_*` vs `BOB_MINIO_*`.** The base `application.yml` declares `MINIO_URL` /
+  `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY`, while quick-start, the public install guide, and the
+  large-import feature doc use `BOB_MINIO_*`. Both resolve to the same `bob.minio.*` properties (the
+  `BOB_MINIO_*` form via Micronaut relaxed binding). **Use `BOB_MINIO_*`** and don't set the two
+  spellings to different values.
+- **Snowstorm & Keycloak have no `${ENV}` placeholders.** `snowstorm.*` is hard-coded in
+  `application.yml` (with sensible defaults); `keycloak.*` only appears in profile files
+  (`application-demo.yml` / `application-dev.yml`). You still override them with `SNOWSTORM_*` /
+  `KEYCLOAK_*` env vars (Micronaut binds env → property). Because `keycloak.*` has **no base
+  default**, the user-management features effectively **require** the four `KEYCLOAK_*` vars when used.
+
+### Config-parsing gotchas
+- **Colons in URL defaults are backticked in YAML, not in env.** A default like
+  `` ${MINIO_URL:`http://localhost:9000`} `` is backticked so Micronaut doesn't treat `:` as the
+  value/default delimiter. When you *set* the env var, give the plain URL — no backticks.
+- **Web JSON-typed vars must be valid JSON.** `UI_LANGUAGES`, `CONTENT_LANGUAGES`, `EXTRA_LANGUAGES`,
+  `EMBEDDED`, `GUEST_DISABLED` are parsed as JSON; an empty value is dropped and the built-in default
+  applies, and a malformed value silently falls back.
+- **`env.js` is served `no-store`.** Changing `web.env` takes effect on container **restart** (the
+  entrypoint re-runs `envsubst`) — no image rebuild needed.
+
+### Operational gotchas
+- **Keep DB passwords in sync.** `DB_APP_PASSWORD` / `DB_ADMIN_PASSWORD` (server) must match the
+  `tx_app` / `tx_admin` role passwords created by the Postgres init, or the server can't connect /
+  Liquibase fails.
+- **MinIO root password is sticky.** MinIO persists root credentials in its data dir; changing
+  `MINIO_ROOT_PASSWORD` after first start is ignored unless you wipe the data volume. The per-app
+  `BOB_MINIO_*` user must match what the init container created.
+- **No object storage ⇒ import endpoints fail (503).** SNOMED/LOINC archive import and wiki file
+  storage require MinIO; without `BOB_MINIO_*` those features are unavailable.
+- **Request-size limits.** SNOMED International archives are ≈1 GB; raise both
+  `micronaut.server.max-request-size` (default 1.5 GB) and the reverse-proxy body limit or uploads fail.
+- **OOM ⇒ container restart by design.** The image runs with `-XX:+ExitOnOutOfMemoryError` and dumps
+  to `/app/logs`, so Docker's restart policy recovers it — size `JAVA_OPTS -Xmx` for your workload.
+- **Server listens on `:8200`** in the container; the dev script's `TERMX_SERVER_PORT` does not apply
+  to the published image.
+
+### Security — never ship defaults
+Default DB passwords (`test`), default MinIO creds (`minio`/`minio123`, or quick-start
+`bob`/`bobobobo`), `AUTH_MOCK_ENABLED=true`, and dev tokens (`auth.dev.allowed` → `Bearer yupi`) are
+for local/dev only. Set real secrets and disable mock/dev auth in production.
+
+### Source-of-truth & staleness
+- **Authoritative defaults = the current `termx-app/src/main/resources/application*.yml`.**
+- The **public installation guide** (`knowledge-base/installation-guide.md`) predates the
+  Kodality → TermX rename: it shows `docker.kodality.com/...` images, a `termserver` DB name, and
+  `auth.kodality.dev` URLs. The **variable names** are still valid; the image registry, DB name and
+  example URLs are **not** — prefer the **`termx-quick-start`** stack as the current working reference.
+- Dev-only auth knobs not tabled above: `auth.dev.allowed` (enables the `Bearer yupi` token) and
+  `auth.dev.yupi.privileges` (default `*.*.*`).
+
+---
+
+## 8. Related docs
 - [`large-terminology-import.md`](large-terminology-import.md) — SNOMED/LOINC archive import, storage, retention.
 - [`smtp-email-support.md`](smtp-email-support.md) — email setup.
 - [`mock-auth.md`](mock-auth.md) — mock auth provider.
