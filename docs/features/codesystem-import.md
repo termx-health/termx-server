@@ -70,6 +70,14 @@ FHIR resource) to persisted concepts and **entity versions**, the merge vs. repl
 6. `activate` the active versions, `retire` the retired ones, then `linkEntityVersions` to bind the
    versions to the code-system version; finally upsert associations.
 
+> **Clean-version vs merge.** The per-concept hold above only applies to a normal import. A
+> *clean-version* import (`cleanRun` / the "clean version" option — which the **FHIR import path
+> always uses**) first cancels and recreates the whole CS version (`saveCodeSystemVersion`), so the
+> per-concept lookup finds nothing and every concept necessarily gets a fresh version. Rebuilding the
+> version is the point of that mode; it is separate from the merge described here. (A non-clean
+> re-import into an already-*active* version is rejected with `TE104` — re-import targets a draft
+> version, or uses clean-version.)
+
 ## 5. Content signature & version churn
 
 `ConceptContentSignature` produces a canonical, **type-aware** fingerprint of a concept version so
