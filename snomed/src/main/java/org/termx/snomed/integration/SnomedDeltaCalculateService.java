@@ -260,7 +260,22 @@ public class SnomedDeltaCalculateService {
     if (o.getStorage() == null || !SnomedBobContainerAuthorizer.CONTAINER.equals(o.getStorage().getContainer())) {
       throw new IllegalArgumentException("Archive '" + uuid + "' is not in the SNOMED container");
     }
+    // The delta-generator expects RF2 zips. Without this check a non-RF2 object in the SNOMED
+    // container (e.g. a JSON nomenclature file) reaches the tool, which then finds 0 components and
+    // crashes in createArchive. Reject it here with the offending filename/content-type.
+    if (!isRf2Archive(o.getStorage().getFilename(), o.getContentType())) {
+      throw new IllegalArgumentException("Archive '" + uuid + "' is not an RF2 zip (filename='"
+          + o.getStorage().getFilename() + "', contentType='" + o.getContentType()
+          + "'). The SNOMED delta requires RF2 .zip archives for both the baseline and the current edition.");
+    }
     return o;
+  }
+
+  /** An RF2 archive is a zip — accept when either the filename ends in .zip or the content-type says zip. */
+  static boolean isRf2Archive(String filename, String contentType) {
+    boolean zipName = filename != null && filename.toLowerCase().endsWith(".zip");
+    boolean zipType = contentType != null && contentType.toLowerCase().contains("zip");
+    return zipName || zipType;
   }
 
   private static String metaString(BobObject o, String key) {
