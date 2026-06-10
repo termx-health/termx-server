@@ -71,41 +71,68 @@ class CodeSystemImportChurnTest extends TermxIntegTest {
     versionIds(csId, "a").size() == 2
   }
 
-  def "CLEAN-VERSION re-import reconciles in place: unchanged held, removed concept retired"() {
+  def "CLEAN-VERSION: re-importing identical content holds every concept version (no churn)"() {
     given:
-    def json = readFixtureString("fhir/churn/cs.json")   // concepts a and b
-    def csId = "churn-cs-clean"
-    def jsonCs = json.replace('"id": "churn-cs"', '"id": "' + csId + '"').replace('/churn-cs"', '/' + csId + '"')
+    def cs = "churn-clean-identical"
+    def json = fixtureFor(cs)
 
-    when: "first clean-version import (active)"
-    importService.importCodeSystem(domainCs(jsonCs), [], cleanAction())
-    def a0 = versionIds(csId, "a")
-    def b0 = versionIds(csId, "b")
+    when: "imported clean-version, then re-imported with identical content"
+    importService.importCodeSystem(domainCs(json), [], cleanAction())
+    def a0 = versionIds(cs, "a")
+    def b0 = versionIds(cs, "b")
+    importService.importCodeSystem(domainCs(json), [], cleanAction())
 
-    then: "one active version per concept"
+    then: "the version is reconciled in place — same concept versions kept, nothing churns"
     a0.size() == 1
     b0.size() == 1
+    versionIds(cs, "a") == a0
+    versionIds(cs, "b") == b0
+  }
 
-    when: "the identical content is re-imported with clean-version"
-    importService.importCodeSystem(domainCs(jsonCs), [], cleanAction())
+  def "CLEAN-VERSION: a changed concept gets exactly one new version"() {
+    given:
+    def cs = "churn-clean-changed"
+    def json = fixtureFor(cs)
 
-    then: "the version is reconciled in place — the same concept versions are kept, no churn"
-    versionIds(csId, "a") == a0
-    versionIds(csId, "b") == b0
+    when: "imported clean-version, then re-imported with a changed decimal on 'a'"
+    importService.importCodeSystem(domainCs(json), [], cleanAction())
+    def a0 = versionIds(cs, "a")
+    def b0 = versionIds(cs, "b")
+    importService.importCodeSystem(domainCs(json.replace('"valueDecimal": 3.14', '"valueDecimal": 9.99')), [], cleanAction())
 
-    when: "concept 'b' is removed from the file and re-imported with clean-version"
-    def withoutB = domainCs(jsonCs)
+    then: "'a' gets a new version; unchanged 'b' is held"
+    a0.size() == 1
+    versionIds(cs, "a") != a0
+    versionIds(cs, "a").size() == 2
+    versionIds(cs, "b") == b0
+  }
+
+  def "CLEAN-VERSION: a concept removed from the file is retired, the rest held"() {
+    given:
+    def cs = "churn-clean-removed"
+    def json = fixtureFor(cs)
+
+    when: "imported clean-version, then re-imported with concept 'b' removed"
+    importService.importCodeSystem(domainCs(json), [], cleanAction())
+    def a0 = versionIds(cs, "a")
+    def withoutB = domainCs(json)
     withoutB.setConcepts(withoutB.getConcepts().findAll { it.code != "b" })
     importService.importCodeSystem(withoutB, [], cleanAction())
 
-    then: "'a' is still held; 'b' is retired (no active version remains)"
-    versionIds(csId, "a") == a0
-    activeVersionIds(csId, "b").isEmpty()
+    then: "'a' is held; 'b' is retired (no active version remains)"
+    versionIds(cs, "a") == a0
+    activeVersionIds(cs, "b").isEmpty()
   }
 
   private org.termx.ts.codesystem.CodeSystem domainCs(String json) {
     def fhir = FhirMapper.fromJson(json, com.kodality.zmei.fhir.resource.terminology.CodeSystem)
     return fhirMapper.fromFhirCodeSystem(fhir)
+  }
+
+  /** The shared fixture, retargeted to a unique code-system id so each test is independent. */
+  private String fixtureFor(String csId) {
+    def json = readFixtureString("fhir/churn/cs.json")
+    return json.replace('"id": "churn-cs"', '"id": "' + csId + '"').replace('/churn-cs"', '/' + csId + '"')
   }
 
   private static CodeSystemImportAction mergeAction() {
