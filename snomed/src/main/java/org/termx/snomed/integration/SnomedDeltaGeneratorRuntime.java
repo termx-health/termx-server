@@ -54,6 +54,7 @@ public class SnomedDeltaGeneratorRuntime {
   private static final String XMS = "-Xms1G";
 
   private static final Pattern ROWS_EXPORTED = Pattern.compile("Rows exported:\\s*(\\d+)");
+  private static final Pattern LATEST_COMPONENTS = Pattern.compile("Latest versions collected for\\s*(\\d+)\\s*components");
 
   private Path extractedJar;
 
@@ -76,6 +77,20 @@ public class SnomedDeltaGeneratorRuntime {
    * row count parsed from stdout, and the trailing log lines for surfacing in Lorque result
    * text.</p>
    */
+  /**
+   * The upstream tool throws {@code ArrayIndexOutOfBoundsException} in {@code createArchive} (instead
+   * of writing an empty archive) when it finds no changed components — i.e. the current archive has
+   * nothing newer than the baseline. Detect that from its "Latest versions collected for 0 components"
+   * line so we can fail with an actionable message instead of the raw stack trace.
+   */
+  static boolean isEmptyDelta(String log) {
+    if (log == null) {
+      return false;
+    }
+    Matcher m = LATEST_COMPONENTS.matcher(log);
+    return m.find() && "0".equals(m.group(1));
+  }
+
   public Result run(Path oldZip, Path newZip, Path workDir, boolean latestState) throws IOException, InterruptedException {
     Path jar = (extractedJar != null) ? extractedJar : ensureJarExtracted();
 
@@ -115,6 +130,12 @@ public class SnomedDeltaGeneratorRuntime {
     SnomedDeltaGeneratorRuntime.log.info("delta-generator exit={} duration={}ms rowsExported={}", exitCode, duration, rowsExported);
 
     if (exitCode != 0) {
+      if (isEmptyDelta(log.toString())) {
+        throw new IOException("delta-generator produced an empty delta: the current archive has no "
+            + "components newer than the baseline, so there is nothing to import. This usually means the "
+            + "selected current edition is not newer than the baseline (same or earlier effectiveTime) — "
+            + "choose a newer edition as the current archive. Tool log tail:\n" + tail(log.toString(), 20));
+      }
       throw new IOException("delta-generator-tool exited with code " + exitCode
           + ". Last log lines:\n" + tail(log.toString(), 40));
     }
