@@ -284,6 +284,10 @@ credentials (`minio`/`minio123`).
   `micronaut.server.max-request-size` (default 1.5 GB) and the reverse-proxy body limit or uploads fail.
 - **OOM ⇒ container restart by design.** The image runs with `-XX:+ExitOnOutOfMemoryError` and dumps
   to `/app/logs`, so Docker's restart policy recovers it — size `JAVA_OPTS -Xmx` for your workload.
+  **Set a container memory limit** (`mem_limit` / `--memory`) at least as large as `-Xmx` plus
+  headroom: with no cap the JVM's effective ceiling is the host's physical RAM, so the heap can grow
+  well past `-Xmx` under heavy load (large Snowstorm RF2 imports running alongside FHIR CodeSystem
+  caching) before the flag trips. A cap makes the restart predictable and protects co-located services.
 - **Server listens on `:8200`** in the container; the dev script's `TERMX_SERVER_PORT` does not apply
   to the published image.
 
