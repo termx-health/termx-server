@@ -21,6 +21,7 @@ It replaces the previous synchronous upload flow that buffered the entire archiv
 - Generic `/bob/objects` REST API for upload, list, get, patch, delete — built on `BobObjectService`. Per-container authz: `snomed` requires `snomed-ct.CodeSystem.*`, `loinc` requires `loinc.CodeSystem.*`, `wiki` keeps existing Wiki privileges. The UI consumes this directly.
 - *Stored archives* UI component — a new list view in the SNOMED and LOINC pages renders `GET /bob/objects?container={terminology}` with filters (edition, status, effective time), per-row *Trigger import* and *Delete* actions, and a top-of-page *Upload archive (no import)* button for seeding baselines.
 - All failures (Snowstorm unavailable, malformed archive, `delta-generator-tool` non-zero exit) land as `lorqueProcessService.fail(...)` with the underlying error in `result_text`, never as an HTTP 500 or a dropped connection.
+- **Empty / non-forward delta.** If the current archive is not newer than the baseline, the delta is empty and the upstream `delta-generator-tool` crashes (`ArrayIndexOutOfBoundsException` in `createArchive`). TermX guards this on both sides: `startDeltaCalculation` rejects the request up front when `current.effectiveTime <= baseline.effectiveTime` (a clear `IllegalArgumentException`), and `SnomedDeltaGeneratorRuntime` detects the tool's "Latest versions collected for 0 components" log and fails with an actionable message instead of the raw stack trace.
 
 ## Configuration
 

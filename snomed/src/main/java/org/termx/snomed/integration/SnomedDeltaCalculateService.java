@@ -95,6 +95,18 @@ public class SnomedDeltaCalculateService {
     if (currentBranch != null && baselineBranch != null && !currentBranch.equals(baselineBranch)) {
       throw new IllegalArgumentException("Baseline branchPath (" + baselineBranch + ") differs from current (" + currentBranch + ")");
     }
+    // Fail fast on a non-forward delta. If the current edition is not newer than the baseline the
+    // delta is empty, and the upstream delta-generator crashes (ArrayIndexOutOfBounds) instead of
+    // producing an empty archive — so reject it here with a clear message rather than after a
+    // multi-minute subprocess run. effectiveTime is YYYYMMDD, so a lexical compare is chronological.
+    String currentEffectiveTime = metaString(current, "effectiveTime");
+    String baselineEffectiveTime = metaString(baseline, "effectiveTime");
+    if (currentEffectiveTime != null && baselineEffectiveTime != null
+        && currentEffectiveTime.compareTo(baselineEffectiveTime) <= 0) {
+      throw new IllegalArgumentException("Current edition effectiveTime (" + currentEffectiveTime
+          + ") is not newer than the baseline (" + baselineEffectiveTime + "); the delta would be empty. "
+          + "Select a newer edition as the current archive.");
+    }
     // The Stored archives card filters by JSONB containment on {shortName, branchPath}, so
     // the delta has to carry both keys or it disappears from the card it should appear in.
     // Take shortName from the current archive (the new state, which has the meta tags
