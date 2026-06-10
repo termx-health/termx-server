@@ -71,6 +71,38 @@ class CodeSystemImportChurnTest extends TermxIntegTest {
     versionIds(csId, "a").size() == 2
   }
 
+  def "CLEAN-VERSION re-import reconciles in place: unchanged held, removed concept retired"() {
+    given:
+    def json = readFixtureString("fhir/churn/cs.json")   // concepts a and b
+    def csId = "churn-cs-clean"
+    def jsonCs = json.replace('"id": "churn-cs"', '"id": "' + csId + '"').replace('/churn-cs"', '/' + csId + '"')
+
+    when: "first clean-version import (active)"
+    importService.importCodeSystem(domainCs(jsonCs), [], cleanAction())
+    def a0 = versionIds(csId, "a")
+    def b0 = versionIds(csId, "b")
+
+    then: "one active version per concept"
+    a0.size() == 1
+    b0.size() == 1
+
+    when: "the identical content is re-imported with clean-version"
+    importService.importCodeSystem(domainCs(jsonCs), [], cleanAction())
+
+    then: "the version is reconciled in place — the same concept versions are kept, no churn"
+    versionIds(csId, "a") == a0
+    versionIds(csId, "b") == b0
+
+    when: "concept 'b' is removed from the file and re-imported with clean-version"
+    def withoutB = domainCs(jsonCs)
+    withoutB.setConcepts(withoutB.getConcepts().findAll { it.code != "b" })
+    importService.importCodeSystem(withoutB, [], cleanAction())
+
+    then: "'a' is still held; 'b' is retired (no active version remains)"
+    versionIds(csId, "a") == a0
+    activeVersionIds(csId, "b").isEmpty()
+  }
+
   private org.termx.ts.codesystem.CodeSystem domainCs(String json) {
     def fhir = FhirMapper.fromJson(json, com.kodality.zmei.fhir.resource.terminology.CodeSystem)
     return fhirMapper.fromFhirCodeSystem(fhir)
@@ -78,6 +110,10 @@ class CodeSystemImportChurnTest extends TermxIntegTest {
 
   private static CodeSystemImportAction mergeAction() {
     return new CodeSystemImportAction().setActivate(false).setCleanRun(false).setCleanConceptRun(false)
+  }
+
+  private static CodeSystemImportAction cleanAction() {
+    return new CodeSystemImportAction().setActivate(true).setCleanRun(true).setCleanConceptRun(false)
   }
 
   private Set<Long> versionIds(String csId, String code) {
