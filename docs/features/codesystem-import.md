@@ -27,7 +27,7 @@ FHIR resource) to persisted concepts and **entity versions**, the merge vs. repl
 |------|----|--------|
 | `activate` | version status = `active` | publish the version after import (requires `CS_MAINTAIN`) |
 | `retire` | — | retire the version after import |
-| `cleanRun` | "clean version" | wipe and recreate the whole version |
+| `cleanRun` | "clean version" | reconcile the version in place (reuse the row, hold unchanged concepts, retire concepts absent from the file) |
 | `cleanConceptRun` | "replace concepts" | **REPLACE** concept set (vs **MERGE**) |
 | `generateValueSet` | — | also generate a value set from the code system |
 | `spaceToAdd` | — | attach to a space/package |
@@ -70,13 +70,14 @@ FHIR resource) to persisted concepts and **entity versions**, the merge vs. repl
 6. `activate` the active versions, `retire` the retired ones, then `linkEntityVersions` to bind the
    versions to the code-system version; finally upsert associations.
 
-> **Clean-version vs merge.** The per-concept hold above only applies to a normal import. A
-> *clean-version* import (`cleanRun` / the "clean version" option — which the **FHIR import path
-> always uses**) first cancels and recreates the whole CS version (`saveCodeSystemVersion`), so the
-> per-concept lookup finds nothing and every concept necessarily gets a fresh version. Rebuilding the
-> version is the point of that mode; it is separate from the merge described here. (A non-clean
-> re-import into an already-*active* version is rejected with `TE104` — re-import targets a draft
-> version, or uses clean-version.)
+> **Clean-version reconciles in place.** A *clean-version* import (`cleanRun` / the "clean version"
+> option — which the **FHIR import path always uses**) **reuses the existing CS version row** instead
+> of cancelling and recreating it (`saveCodeSystemVersion`). So the per-concept hold above applies
+> here too: unchanged concepts keep their entity versions (no churn), changed concepts get a new
+> version, and concepts **absent from the import are retired** (`cancelOrRetireRedundantConcepts`) so
+> the version still ends up matching the file exactly. The only difference from a plain merge is that
+> retire-of-absent. (A non-clean re-import into an already-*active* version is still rejected with
+> `TE104`; clean-version is how you re-import a published edition.)
 
 ## 5. Content signature & version churn
 

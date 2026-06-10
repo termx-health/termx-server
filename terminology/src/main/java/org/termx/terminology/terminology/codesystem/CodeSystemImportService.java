@@ -100,7 +100,14 @@ public class CodeSystemImportService {
     saveCodeSystemVersion(codeSystemVersion, action.isCleanRun());
 
     List<EntityProperty> entityProperties = saveProperties(codeSystem.getProperties(), codeSystem.getId());
-    saveConcepts(prepareConcepts(codeSystem.getConcepts(), codeSystem.getBaseCodeSystem()), codeSystemVersion, entityProperties, action.isCleanConceptRun());
+    // Retire concepts absent from the import when reconciling the version to the file (clean-version)
+    // or explicitly replacing concepts. Use replace-mode version handling only for replace-concepts on
+    // a draft — clean-version reconciles the (reused) version in place with merge-mode handling, so a
+    // changed active concept gets one new version (and the old is unlinked), not a duplicate.
+    boolean retireRedundant = action.isCleanRun() || action.isCleanConceptRun();
+    boolean replaceConceptVersions = action.isCleanConceptRun() && !action.isCleanRun();
+    saveConcepts(prepareConcepts(codeSystem.getConcepts(), codeSystem.getBaseCodeSystem()), codeSystemVersion, entityProperties,
+        replaceConceptVersions, retireRedundant);
 
     if (action.isActivate()) {
       SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_MAINTAIN);
@@ -171,8 +178,11 @@ public class CodeSystemImportService {
     Optional<CodeSystemVersion> existingVersion = codeSystemVersionService.load(codeSystemVersion.getCodeSystem(), codeSystemVersion.getVersion());
 
     if (cleanRun && existingVersion.isPresent()) {
-      log.info("Cancelling existing code system version {}", codeSystemVersion.getVersion());
-      codeSystemVersionService.cancel(existingVersion.get().getId(), existingVersion.get().getCodeSystem());
+      // Reconcile in place: reuse the existing version row instead of cancelling and recreating it.
+      // Recreating gave every concept a brand-new entity version (churn); reusing lets saveConcepts
+      // hold the unchanged ones. Concepts absent from the import are retired by saveConcepts.
+      log.info("Reconciling existing code system version {} in place", codeSystemVersion.getVersion());
+      codeSystemVersion.setId(existingVersion.get().getId());
     } else if (existingVersion.isPresent() && !existingVersion.get().getStatus().equals(PublicationStatus.draft)) {
       throw ApiError.TE104.toApiException(Map.of("version", codeSystemVersion.getVersion()));
     }
@@ -202,7 +212,8 @@ public class CodeSystemImportService {
     return entityPropertyService.save(codeSystem, entityProperties);
   }
 
-  public void saveConcepts(List<Concept> concepts, CodeSystemVersion version, List<EntityProperty> entityProperties, boolean cleanRun) {
+  public void saveConcepts(List<Concept> concepts, CodeSystemVersion version, List<EntityProperty> entityProperties,
+                           boolean replaceConceptVersions, boolean retireRedundant) {
     SessionStore.require().checkPermitted(version.getCodeSystem(), Privilege.CS_WRITE);
 
     log.info("Creating '{}' concepts", concepts.size());
@@ -210,9 +221,11 @@ public class CodeSystemImportService {
     conceptService.batchSave(concepts, version.getCodeSystem());
     log.info("Concepts created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
 
-    // if we import in replace mode
-    if (cleanRun) {
-      log.info("Cleaning concepts");
+    // Reconcile the version to exactly the imported set: retire concepts that are no longer present
+    // (clean-version or replace-concepts). Held concepts keep their version; this only touches the
+    // ones absent from the import.
+    if (retireRedundant) {
+      log.info("Retiring concepts absent from the import");
       conceptService.cancelOrRetireRedundantConcepts(concepts, version);
     }
 
@@ -232,7 +245,7 @@ public class CodeSystemImportService {
     }
     Map<Long, EntityProperty> propertiesById = entityProperties.stream()
         .filter(p -> p.getId() != null).collect(Collectors.toMap(EntityProperty::getId, p -> p, (a, b) -> a));
-    holdUnchangedAndMerge(version, concepts, entityVersionMap, propertiesById, retiredConceptIds, cleanRun);
+    holdUnchangedAndMerge(version, concepts, entityVersionMap, propertiesById, retiredConceptIds, replaceConceptVersions);
     codeSystemEntityVersionService.batchSave(entityVersionMap, version.getCodeSystem());
     log.info("Concept versions created (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
 

@@ -61,7 +61,7 @@ class CodeSystemImportServiceMergeTest extends Specification {
     def concept = concept(version(null, PublicationStatus.active, [designation("Apple")]))
 
     when:
-    service.saveConcepts([concept], csVersion(), [], false)
+    service.saveConcepts([concept], csVersion(), [], false, false)
 
     then:
     concept.versions.first().id == 999L
@@ -74,7 +74,7 @@ class CodeSystemImportServiceMergeTest extends Specification {
     def concept = concept(version(null, PublicationStatus.active, [designation("Apricot")]))
 
     when:
-    service.saveConcepts([concept], csVersion(), [], false)
+    service.saveConcepts([concept], csVersion(), [], false, false)
 
     then:
     concept.versions.first().id == null
@@ -87,7 +87,7 @@ class CodeSystemImportServiceMergeTest extends Specification {
     def concept = concept(version(null, PublicationStatus.active, [designation("Apple")]))
 
     when:
-    service.saveConcepts([concept], csVersion(), [], true)
+    service.saveConcepts([concept], csVersion(), [], true, true)
 
     then:
     concept.versions.first().id == 999L
@@ -100,7 +100,7 @@ class CodeSystemImportServiceMergeTest extends Specification {
     def concept = concept(version(null, PublicationStatus.active, [designation("Apricot")]))
 
     when:
-    service.saveConcepts([concept], csVersion(), [], true)
+    service.saveConcepts([concept], csVersion(), [], true, true)
 
     then:
     concept.versions.first().id == null
@@ -113,7 +113,7 @@ class CodeSystemImportServiceMergeTest extends Specification {
     def concept = concept(version(null, PublicationStatus.retired, [designation("Apple")]))
 
     when:
-    service.saveConcepts([concept], csVersion(), [], false)
+    service.saveConcepts([concept], csVersion(), [], false, false)
 
     then:
     concept.versions.first().id == null
@@ -126,7 +126,7 @@ class CodeSystemImportServiceMergeTest extends Specification {
     def concept = concept(version(null, PublicationStatus.retired, [designation("Apple")]))
 
     when:
-    service.saveConcepts([concept], csVersion(), [], false)
+    service.saveConcepts([concept], csVersion(), [], false, false)
 
     then:
     concept.versions.first().id == 999L
