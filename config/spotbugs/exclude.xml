@@ -105,6 +105,14 @@
         <Class name="~.*TerminologyServerService"/>
     </Match>
 
+    <!-- Retain the defensive null-guard on conceptService.query() in collectDesignations. -->
+    <!-- query() is non-null in production, but the guard keeps the operation robust and lets -->
+    <!-- unit tests exercise display validation without stubbing the secondary concept lookup. -->
+    <Match>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
+        <Class name="~.*ValueSetValidateCodeOperation"/>
+    </Match>
+
     <!-- Suppress expose rep warnings in test code (tests often need to manipulate data structures) -->
     <!-- Covers JUnit (*Test), Spock specs (*Spec and their generated $_closure inner classes) and test-support fixtures -->
     <Match>
