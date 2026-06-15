@@ -117,4 +117,66 @@
         <Bug pattern="SBSC_USE_STRINGBUFFER_CONCATENATION"/>
     </Match>
 
+    <!-- ============================================================================ -->
+    <!-- Vendored modules: kodality-commons (com.kodality.commons.*) and zmei         -->
+    <!-- (com.kodality.zmei.*), plus the Apache Commons DbUtils code vendored into    -->
+    <!-- commons-db. These are borrowed library/model code; the genuine bugs (charset,-->
+    <!-- thread-safety, final fields, map iteration) are fixed in place, while the    -->
+    <!-- remaining findings below are either intentional patterns or false positives. -->
+    <!-- First-party code is org.termx.*, so these package-scoped matches never        -->
+    <!-- touch our own code.                                                          -->
+    <!-- ============================================================================ -->
+
+    <!-- Exposing internal representation on vendored Lombok data/model classes        -->
+    <!-- (QueryResult, Reference, Bundle, ApiException, CsvRecord, …) and the shared    -->
+    <!-- singleton ObjectMapper/Writer accessors (JsonUtil, FhirMapper). These rely on -->
+    <!-- direct field access / shared instances; defensive copies would change         -->
+    <!-- mutate-through semantics across the whole codebase or defeat the singletons.  -->
+    <Match>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+            <Bug pattern="MS_EXPOSE_REP"/>
+        </Or>
+        <Or>
+            <Class name="~com\.kodality\..*"/>
+            <Class name="~org\.apache\.commons\.dbutils\..*"/>
+        </Or>
+    </Match>
+
+    <!-- FHIR model class names are domain terms, not Java exceptions -->
+    <!-- e.g. Coverage.CoverageCostToBeneficiaryException is a FHIR backbone element -->
+    <Match>
+        <Bug pattern="NM_CLASS_NOT_EXCEPTION"/>
+        <Class name="~com\.kodality\.zmei\.fhir\..*"/>
+    </Match>
+
+    <!-- BaseBeanRepository intentionally mirrors the framework-injected jdbcTemplate -->
+    <!-- member of its superclass (see the NP_NULL_ON_SOME_PATH suppression above) -->
+    <Match>
+        <Or>
+            <Bug pattern="HSM_HIDING_METHOD"/>
+            <Bug pattern="MF_CLASS_MASKS_FIELD"/>
+        </Or>
+        <Class name="~.*BaseBeanRepository"/>
+    </Match>
+
+    <!-- Intentional static holders populated at bean construction (e.g. BeanContext -->
+    <!-- captures the Micronaut ApplicationContext; test deserializers seed statics) -->
+    <Match>
+        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/>
+        <Class name="~com\.kodality\..*"/>
+    </Match>
+
+    <!-- Vendored test-only findings: instanceof assertions verifying polymorphic FHIR -->
+    <!-- deserialization, public test fixtures, and \n in test assertion messages -->
+    <Match>
+        <Or>
+            <Bug pattern="JUA_DONT_ASSERT_INSTANCEOF_IN_TESTS"/>
+            <Bug pattern="PA_PUBLIC_PRIMITIVE_ATTRIBUTE"/>
+            <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+        </Or>
+        <Class name="~com\.kodality\..*"/>
+    </Match>
+
 </FindBugsFilter>

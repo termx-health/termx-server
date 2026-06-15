@@ -5,6 +5,7 @@ import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Post;
 import jakarta.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.kie.api.builder.Message;
@@ -26,7 +27,7 @@ public class DroolsController {
   public DroolsExecuteResponse execute(@Body DroolsExecuteRequest request) {
     Class<?> objectClass = droolsConfiguration.getClassMappings().get(request.getRuleContext());
     Object fact = JsonUtil.fromJson(request.getInput(), objectClass);
-    droolsRunner.run(request.getRule().getBytes(), fact);
+    droolsRunner.run(request.getRule().getBytes(StandardCharsets.UTF_8), fact);
 
     DroolsExecuteResponse response = new DroolsExecuteResponse();
     response.setOutput(JsonUtil.toJson(fact));
@@ -35,6 +36,6 @@ public class DroolsController {
 
   @Post("/validate")
   public List<Message> validate(@Body DroolsValidateRequest request) {
-    return droolsRunner.validate(request.getRule().getBytes());
+    return droolsRunner.validate(request.getRule().getBytes(StandardCharsets.UTF_8));
   }
 }

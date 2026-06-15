@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.kodality.zmei.fhir.datatypes.Reference;
 import com.kodality.zmei.fhir.resource.Resource;
 import com.kodality.zmei.fhir.resource.ResourceType;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,7 +38,7 @@ public class Binary extends Resource {
 
   @JsonIgnore
   public void setDataBytes(byte[] bytes) {
-    setData(new String(Base64.getEncoder().encode(bytes)));
+    setData(new String(Base64.getEncoder().encode(bytes), StandardCharsets.UTF_8));
   }
 
   @JsonIgnore
@@ -47,12 +48,12 @@ public class Binary extends Resource {
 
   @JsonIgnore
   public void setDataString(String data) {
-    setDataBytes(data.getBytes());
+    setDataBytes(data.getBytes(StandardCharsets.UTF_8));
   }
 
   @JsonIgnore
   public String getDataString() {
-    return new String(getDataBytes());
+    return new String(getDataBytes(), StandardCharsets.UTF_8);
   }
 
 

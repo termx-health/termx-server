@@ -57,7 +57,7 @@ public class JsonUtil {
     return mapper;
   }
 
-  public static ObjectWriter getPrettyWriter() {
+  public static synchronized ObjectWriter getPrettyWriter() {
     if (prettyWriter == null) {
       prettyWriter = getObjectMapper().writer().withDefaultPrettyPrinter();
     }
