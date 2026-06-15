@@ -1,6 +1,6 @@
 plugins {
     `maven-publish`
-    id("org.owasp.dependencycheck") version "8.4.2"
+    id("org.owasp.dependencycheck") version "12.1.0"
     id("io.micronaut.minimal.library") version "4.6.2"
     id("io.micronaut.minimal.application") version "4.6.2"
     id("com.gradleup.shadow") version "9.3.2" apply false
@@ -10,6 +10,15 @@ plugins {
 
 group = "org.termx"
 version = file("VERSION").readText().trim()
+
+// OWASP dependency-check: NIST retired the legacy NVD v1.1 JSON data feeds (they now return 403),
+// so this runs against the NVD API 2.0. An NVD API key (the NVD_API_KEY secret, optional locally)
+// lifts the strict anonymous rate limit; CI also caches the downloaded CVE database between runs.
+dependencyCheck {
+    nvd {
+        apiKey = System.getenv("NVD_API_KEY")
+    }
+}
 
 allprojects {
     apply(plugin = "java-library")

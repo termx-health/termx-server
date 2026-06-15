@@ -28,9 +28,19 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      # Persist the OWASP dependency-check NVD database across runs so each weekly run
+      # only fetches incremental CVE updates instead of re-downloading the full feed.
+      - name: Cache NVD database
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/dependency-check-data
+          key: nvd-data-${{ github.run_id }}
+          restore-keys: nvd-data-
+
       - name: Run checks
         working-directory: .
         run: ./gradlew check pmdCheck spotbugsCheck dependencyCheckAggregate
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
