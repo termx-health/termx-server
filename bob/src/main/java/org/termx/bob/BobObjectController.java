@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
@@ -44,6 +45,7 @@ import reactor.core.publisher.Mono;
  * left empty so the {@link org.termx.core.auth.AuthorizationFilter} allows authenticated
  * users past the static check, and the dynamic per-container authz runs inside each handler.</p>
  */
+@Slf4j
 @Singleton
 @Controller("/bob/objects")
 public class BobObjectController {
@@ -127,7 +129,9 @@ public class BobObjectController {
       if (!Boolean.TRUE.equals(ok)) {
         try {
           Files.deleteIfExists(temp);
-        } catch (IOException ignored) {}
+        } catch (IOException e) {
+          log.debug("Failed to delete temp upload file {}", temp, e);
+        }
         throw new RuntimeException("Failed to spool upload to disk");
       }
       try {
@@ -138,7 +142,9 @@ public class BobObjectController {
         SessionStore.clearLocal();
         try {
           Files.deleteIfExists(temp);
-        } catch (IOException ignored) {}
+        } catch (IOException e) {
+          log.debug("Failed to delete temp upload file {}", temp, e);
+        }
       }
     });
   }

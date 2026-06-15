@@ -191,8 +191,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       cp.setCode(code);
       cp.setCodeSystem(csId);
       cp.setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_READ));
-      QueryResult<Concept> queryResult = conceptService.query(cp);
-      Concept concept = queryResult == null ? null : queryResult.findFirst().orElse(null);
+      Concept concept = conceptService.query(cp).findFirst().orElse(null);
       if (concept != null && CollectionUtils.isNotEmpty(concept.getVersions())) {
         List<Designation> designations = concept.getVersions().getFirst().getDesignations();
         if (designations != null) {

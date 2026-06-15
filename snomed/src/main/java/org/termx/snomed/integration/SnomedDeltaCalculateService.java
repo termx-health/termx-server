@@ -4,6 +4,7 @@ import com.kodality.commons.exception.NotFoundException;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import jakarta.inject.Singleton;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -302,7 +303,8 @@ public class SnomedDeltaCalculateService {
     }
     try (Stream<Path> s = Files.walk(dir)) {
       s.sorted(Comparator.reverseOrder()).forEach(SnomedDeltaCalculateService::deleteQuietly);
-    } catch (Exception ignored) {
+    } catch (IOException | RuntimeException ignored) {
+      // best-effort cleanup of a scratch tree; nothing actionable if it fails
     }
   }
 }

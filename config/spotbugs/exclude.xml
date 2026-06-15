@@ -29,6 +29,7 @@
             <Class name="~.*SpaceGithubController\$.*"/>
             <Class name="~.*SpaceGithubDataWikiHandler\$.*"/>
             <Class name="~.*SpaceGithubDataWikiSsgHandler\$.*"/>
+            <Class name="~.*ClosureService\$ClosureDelta"/>
         </Or>
     </Match>
 
@@ -87,19 +88,44 @@
         <Bug pattern="BX_UNBOXING_IMMEDIATELY_REBOXED"/>
     </Match>
 
+    <!-- Suppress expose rep warnings for constructor-injected framework beans -->
+    <!-- These controllers/storages store Micronaut-injected @Singleton services; defensive copying a DI bean is meaningless -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Or>
+            <Class name="~.*BobObjectController"/>
+            <Class name="~.*CodeSystemResourceStorage"/>
+        </Or>
+    </Match>
+
+    <!-- Suppress boolean-return-null warning for the nullable tri-state JSON config reader -->
+    <!-- booleanValue() returns null to mean "field absent", mirroring its textValue()/stringList() siblings -->
+    <Match>
+        <Bug pattern="NP_BOOLEAN_RETURN_NULL"/>
+        <Class name="~.*TerminologyServerService"/>
+    </Match>
+
     <!-- Suppress expose rep warnings in test code (tests often need to manipulate data structures) -->
+    <!-- Covers JUnit (*Test), Spock specs (*Spec and their generated $_closure inner classes) and test-support fixtures -->
     <Match>
         <Or>
             <Bug pattern="EI_EXPOSE_REP"/>
             <Bug pattern="EI_EXPOSE_REP2"/>
         </Or>
-        <Class name="~.*Test.*"/>
+        <Or>
+            <Class name="~.*Test.*"/>
+            <Class name="~.*Spec(\$.*)?"/>
+            <Class name="~.*SchemaAssertingTerminologyCapabilityInitializer.*"/>
+        </Or>
     </Match>
 
     <!-- Suppress uncalled private method warnings in test classes (helper methods used by test frameworks) -->
     <Match>
         <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD"/>
-        <Class name="~.*Test.*"/>
+        <Or>
+            <Class name="~.*Test.*"/>
+            <Class name="~.*Spec(\$.*)?"/>
+        </Or>
     </Match>
 
     <!-- Suppress nonnull field not initialized warnings for Lombok data classes (fields initialized via setters) -->
