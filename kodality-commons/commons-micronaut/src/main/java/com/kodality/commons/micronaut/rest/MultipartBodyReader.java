@@ -3,6 +3,7 @@ package com.kodality.commons.micronaut.rest;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.multipart.CompletedFileUpload;
 import io.micronaut.http.server.netty.multipart.NettyCompletedAttribute;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
@@ -25,7 +26,7 @@ public class MultipartBodyReader {
           result.getAttachments().put(x.getName(), a);
         }
         if (part instanceof NettyCompletedAttribute) {
-          result.getTextParts().put(part.getName(), new String(part.getBytes()));
+          result.getTextParts().put(part.getName(), new String(part.getBytes(), StandardCharsets.UTF_8));
         }
       } catch (Exception e) {
         return Flux.error(e);

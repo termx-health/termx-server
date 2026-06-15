@@ -14,8 +14,8 @@ import org.dmfs.rfc5545.recur.RecurrenceRule.Part;
 import org.dmfs.rfc5545.recur.RecurrenceRuleIterator;
 
 public class RecurrenceUtil {
-  public static String FREQ = "DAILY";
-  public static int INTERVAL = 1;
+  private static final String FREQ = "DAILY";
+  private static final int INTERVAL = 1;
 
   public static List<LocalDateTime> findRecurrenceDates(List<Integer> hours, LocalDateTime start, LocalDateTime end) {
     try {

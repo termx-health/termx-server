@@ -95,8 +95,9 @@ public class BeanProcessor extends GenerousBeanProcessor {
   }
 
   private <T> void invokeRowProcessors(ResultSet rs, T bean) throws SQLException {
-    for (String property : rowProcessors.keySet()) {
-      RowProcessor processor = rowProcessors.get(property);
+    for (Map.Entry<String, RowProcessor> entry : rowProcessors.entrySet()) {
+      String property = entry.getKey();
+      RowProcessor processor = entry.getValue();
       Object data = processor.process(rs);
       if (data == null) {
         continue;
