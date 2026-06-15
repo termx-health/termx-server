@@ -25,6 +25,7 @@ public class StructureDefinitionVersionRepository extends BaseRepository {
     ssb.property("content_format", v.getContentFormat());
     ssb.property("status", v.getStatus());
     ssb.property("release_date", v.getReleaseDate());
+    ssb.property("algorithm", v.getAlgorithm());
     ssb.jsonProperty("description", v.getDescription());
     SqlBuilder sb = ssb.buildSave("modeler.structure_definition_version", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());

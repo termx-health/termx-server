@@ -7,6 +7,7 @@ import org.termx.modeler.structuredefinition.StructureDefinitionVersion;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kodality.commons.model.QueryResult;
 import org.termx.core.utils.ObjectUtil;
+import org.termx.core.utils.VersionSortUtil;
 import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +48,11 @@ public class StructureDefinitionService {
   }
 
   public List<StructureDefinitionVersion> listVersions(Long structureDefinitionId) {
-    return versionRepository.listByStructureDefinition(structureDefinitionId);
+    return VersionSortUtil.sortDescending(
+        versionRepository.listByStructureDefinition(structureDefinitionId),
+        StructureDefinitionVersion::getVersion,
+        StructureDefinitionVersion::getAlgorithm,
+        v -> v.getReleaseDate() == null ? null : v.getReleaseDate().toLocalDate());
   }
 
   public QueryResult<StructureDefinition> query(StructureDefinitionQueryParams params) {

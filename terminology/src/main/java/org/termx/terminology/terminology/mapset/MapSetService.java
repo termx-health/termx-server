@@ -3,6 +3,7 @@ package org.termx.terminology.terminology.mapset;
 import com.kodality.commons.model.QueryResult;
 import org.termx.terminology.ApiError;
 import org.termx.core.fhir.BaseFhirMapper;
+import org.termx.core.utils.VersionSortUtil;
 import org.termx.terminology.terminology.mapset.association.MapSetAssociationService;
 import org.termx.terminology.terminology.mapset.property.MapSetPropertyService;
 import org.termx.terminology.terminology.mapset.version.MapSetVersionService;
@@ -80,7 +81,9 @@ public class MapSetService {
       versionParams.setMapSet(mapSet.getId());
       versionParams.setVersion(params.getVersionVersion());
       versionParams.all();
-      mapSet.setVersions(mapSetVersionService.query(versionParams).getData());
+      mapSet.setVersions(VersionSortUtil.sortDescending(
+          mapSetVersionService.query(versionParams).getData(),
+          MapSetVersion::getVersion, MapSetVersion::getAlgorithm, MapSetVersion::getReleaseDate));
     }
     return mapSet;
   }
