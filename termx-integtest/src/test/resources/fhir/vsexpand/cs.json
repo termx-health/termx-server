@@ -1,0 +1,24 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "vsexpand-cs",
+  "url": "http://termx-test.local/CodeSystem/vsexpand-cs",
+  "version": "1.0.0",
+  "name": "VsExpandCs",
+  "title": "value_set_expand jsonb->boolean cast regression",
+  "status": "active",
+  "experimental": false,
+  "content": "complete",
+  "caseSensitive": true,
+  "property": [
+    {"code": "method", "type": "string"}
+  ],
+  "concept": [
+    {
+      "code": "a",
+      "display": "Alpha",
+      "property": [
+        {"code": "method", "valueString": "CHROM"}
+      ]
+    }
+  ]
+}
