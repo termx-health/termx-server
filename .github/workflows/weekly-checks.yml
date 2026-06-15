@@ -10,6 +10,11 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     name: Tests, PMD, SpotBugs, OWASP
+
+    permissions:
+      packages: read
+      contents: read
+
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -26,3 +31,6 @@ jobs:
       - name: Run checks
         working-directory: .
         run: ./gradlew check pmdCheck spotbugsCheck dependencyCheckAggregate
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
