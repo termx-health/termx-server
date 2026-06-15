@@ -3,6 +3,7 @@ package org.termx.terminology.terminology.valueset;
 import com.kodality.commons.model.QueryResult;
 import org.termx.terminology.ApiError;
 import org.termx.core.fhir.BaseFhirMapper;
+import org.termx.core.utils.VersionSortUtil;
 import org.termx.terminology.terminology.valueset.ruleset.ValueSetVersionRuleService;
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
 import org.termx.ts.valueset.ValueSet;
@@ -71,7 +72,9 @@ public class ValueSetService {
     ValueSetVersionQueryParams params = new ValueSetVersionQueryParams();
     params.setValueSet(valueSet.getId());
     params.all();
-    valueSet.setVersions(valueSetVersionService.query(params).getData());
+    valueSet.setVersions(VersionSortUtil.sortDescending(
+        valueSetVersionService.query(params).getData(),
+        ValueSetVersion::getVersion, ValueSetVersion::getAlgorithm, ValueSetVersion::getReleaseDate));
     return valueSet;
   }
 

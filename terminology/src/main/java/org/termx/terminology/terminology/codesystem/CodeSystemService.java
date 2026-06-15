@@ -2,6 +2,7 @@ package org.termx.terminology.terminology.codesystem;
 
 import com.kodality.commons.model.QueryResult;
 import org.termx.core.fhir.BaseFhirMapper;
+import org.termx.core.utils.VersionSortUtil;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.terminology.codesystem.concept.ConceptService;
 import org.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
@@ -123,7 +124,9 @@ public class CodeSystemService {
     versionParams.setReleaseDateGe(params.getVersionReleaseDateGe());
     versionParams.setExpirationDateLe(params.getVersionExpirationDateLe());
     versionParams.all();
-    codeSystem.setVersions(codeSystemVersionService.query(versionParams).getData());
+    codeSystem.setVersions(VersionSortUtil.sortDescending(
+        codeSystemVersionService.query(versionParams).getData(),
+        CodeSystemVersion::getVersion, CodeSystemVersion::getAlgorithm, CodeSystemVersion::getReleaseDate));
   }
 
   @Transactional

@@ -21,4 +21,5 @@ public class StructureDefinitionVersion {
   private String status;
   private OffsetDateTime releaseDate;
   private LocalizedName description;
+  private String algorithm;
 }
