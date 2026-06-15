@@ -39,7 +39,25 @@ jobs:
 
       - name: Run checks
         working-directory: .
-        run: ./gradlew check pmdCheck spotbugsCheck dependencyCheckAggregate
+        run: ./gradlew check pmdCheck spotbugsCheck
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # OWASP dependency-check is isolated and retried: the NVD API intermittently fails the
+      # bulk CVE download, and a transient hiccup shouldn't sink an otherwise-passing run.
+      - name: OWASP dependency-check
+        working-directory: .
+        run: |
+          for attempt in 1 2 3; do
+            echo "::group::dependencyCheckAggregate attempt $attempt"
+            ./gradlew dependencyCheckAggregate && { echo "::endgroup::"; exit 0; }
+            echo "::endgroup::"
+            echo "attempt $attempt failed; retrying after backoff"
+            sleep 60
+          done
+          echo "dependencyCheckAggregate failed after 3 attempts"
+          exit 1
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

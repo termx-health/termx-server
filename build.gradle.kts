@@ -17,6 +17,11 @@ version = file("VERSION").readText().trim()
 dependencyCheck {
     nvd {
         apiKey = System.getenv("NVD_API_KEY")
+        // The NVD API intermittently returns empty/error responses on the bulk download, which
+        // otherwise aborts the build (NvdCveClient NPE). Pace the calls and retry to ride it out;
+        // once the cached DB is seeded, later runs only fetch small incremental updates.
+        delay = 4000
+        maxRetryCount = 30
     }
 }
 
