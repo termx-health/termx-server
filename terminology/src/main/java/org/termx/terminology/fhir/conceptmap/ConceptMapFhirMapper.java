@@ -191,7 +191,12 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
   }
 
   private List<ConceptMapGroup> toFhirGroup(List<MapSetAssociation> associations, MapSetVersionScope scope, String preferredLanguage) {
-    if (associations == null) {
+    // No associations => no groups to emit. Bail out before buildDisplayMap(), which would otherwise
+    // load every concept in the scope's code systems / expand its value sets just to populate display
+    // lookups that are only ever read inside the per-association loop below. This is the lightweight
+    // (?_summary=true) path and the read path with associations skipped; both previously paid that cost
+    // for nothing and timed out on large-scope ConceptMaps.
+    if (associations == null || associations.isEmpty()) {
       return new ArrayList<>();
     }
     List<MapSetResourceReference> allCS = new ArrayList<>();
