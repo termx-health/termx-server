@@ -6,7 +6,6 @@ import org.termx.editionint.loinc.utils.LoincImportRequest
 import org.termx.editionint.loinc.utils.LoincMapper
 import org.termx.ts.codesystem.Concept
 import org.termx.ts.codesystem.EntityPropertyType
-import spock.lang.PendingFeature
 import spock.lang.Specification
 
 class LoincMapperTest extends Specification {
@@ -32,14 +31,10 @@ class LoincMapperTest extends Specification {
     classProp.rule == null
   }
 
-  // PINS issue #48 Bug 2. processLinguisticVariants() merges a translation file into each concept's
-  // display map under its language (e.g. "cs"), so cs designations ARE imported — but toCodeSystem()
-  // and toVersion() hardcode supportedLanguages=[en], so the code system never declares the
-  // translation language. That mismatch is the only thing that distinguishes the (Czech) translation
-  // designations from the English ones, and is the most likely cause of the "strange view until the
-  // concept is re-saved" symptom. @PendingFeature: expected to fail today; flips (failing the build)
-  // when the importer is fixed to declare imported translation languages — remove the annotation then.
-  @PendingFeature(reason = "Issue #48 Bug 2: LOINC translation import does not declare the translation language as supported")
+  // Issue #48 Bug 2. processLinguisticVariants() merges a translation file into each concept's display
+  // map under its language (e.g. "cs"), so cs designations are imported; the importer now also declares
+  // those languages on the code system / version (previously hardcoded to [en]), which is what made the
+  // Czech designations render correctly only after a manual re-save.
   def "(#48 bug2) importing a translation language declares it as a supported language"() {
     given: "a concept carrying English + Czech displays, exactly as processLinguisticVariants leaves it"
     def concept = new LoincConcept().setCode("1234-5").setDisplay([en: "Glucose", cs: "Glukóza"]).setProperties([])
