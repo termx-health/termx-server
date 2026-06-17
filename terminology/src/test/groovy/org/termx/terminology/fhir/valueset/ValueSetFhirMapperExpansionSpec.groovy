@@ -122,6 +122,28 @@ class ValueSetFhirMapperExpansionSpec extends Specification {
     contains[0].contains[0].contains == []
   }
 
+  def "fromFhir preserves designation.use code as designationType (compose + expansion)"() {
+    given: "a FHIR ValueSet whose concept carries a typed designation, in both compose and expansion"
+    def fhir = new com.kodality.zmei.fhir.resource.terminology.ValueSet().setId("vs").setUrl("http://fhir.ee/ValueSet/vs").setName("vs").setLanguage("en")
+    def designation = new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation()
+        .setValue("alias name").setLanguage("en").setUse(new com.kodality.zmei.fhir.datatypes.Coding("alias"))
+    fhir.setCompose(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose().setInclude([
+        new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude().setSystem("http://cs")
+            .setConcept([new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConcept().setCode("A").setDisplay("A").setDesignation([designation])])]))
+    fhir.setExpansion(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion().setContains([
+        new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains().setSystem("http://cs").setCode("A").setDisplay("A").setDesignation([designation])]))
+
+    when:
+    def imported = ValueSetFhirMapper.fromFhirValueSet(fhir)
+    def composeDesignation = imported.versions.first().ruleSet.rules.first().concepts.first().additionalDesignations.first()
+    def expansionDesignation = imported.versions.first().snapshot.expansion.first().additionalDesignations.first()
+
+    then: "the designation type is recovered from use.code, not dropped"
+    composeDesignation.name == "alias name"
+    composeDesignation.designationType == "alias"
+    expansionDesignation.designationType == "alias"
+  }
+
   private static ValueSetVersionConcept concept(String code, List<CodeSystemAssociation> associations) {
     new ValueSetVersionConcept()
         .setConcept(new ValueSetVersionConceptValue().setCode(code).setCodeSystem("cs").setCodeSystemUri("http://cs"))
