@@ -33,6 +33,7 @@ class BatchBundleIT extends TermxIntegTest {
 
   static final ObjectMapper MAPPER = new ObjectMapper()
   static final String VS_URL = "http://hl7.org/fhir/test/ValueSet/simple-enumerated"
+  static final String VS_ALL_URL = "http://hl7.org/fhir/test/ValueSet/simple-all"
   static final String CS_URL = "http://hl7.org/fhir/test/CodeSystem/simple"
 
   void setup() {
@@ -41,10 +42,12 @@ class BatchBundleIT extends TermxIntegTest {
     SessionStore.setLocal(sessionInfo)
     csImportService.importCodeSystem(fixture("fhir/simple/codesystem-simple.json"), "simple")
     vsImportService.importValueSet(fixture("fhir/simple/valueset-enumerated.json"), "simple-enumerated")
+    vsImportService.importValueSet(fixture("fhir/simple/valueset-all.json"), "simple-all")
   }
 
   void cleanup() {
     vsService.cancel("simple-enumerated")
+    vsService.cancel("simple-all")
     csService.cancel("simple")
     SessionStore.clearLocal()
   }
@@ -99,6 +102,50 @@ class BatchBundleIT extends TermxIntegTest {
     parameterBoolean(validateResource, "result") == Boolean.TRUE
   }
 
+  def "a batch entry failing with a non-FhirException yields a per-entry OperationOutcome, not a whole-batch 500 (kefhir#7)"() {
+    given: "a session scoped to simple-enumerated only, validating a code in BOTH that VS (permitted) and simple-all (forbidden)"
+    def bundle = """{
+      "resourceType": "Bundle",
+      "type": "batch",
+      "entry": [
+        {
+          "resource": { "resourceType": "Parameters", "parameter": [
+            { "name": "url", "valueUri": "${VS_URL}" },
+            { "name": "system", "valueUri": "${CS_URL}" },
+            { "name": "code", "valueCode": "code1" } ] },
+          "request": { "method": "POST", "url": "ValueSet/\$validate-code" }
+        },
+        {
+          "resource": { "resourceType": "Parameters", "parameter": [
+            { "name": "url", "valueUri": "${VS_ALL_URL}" },
+            { "name": "system", "valueUri": "${CS_URL}" },
+            { "name": "code", "valueCode": "code1" } ] },
+          "request": { "method": "POST", "url": "ValueSet/\$validate-code" }
+        }
+      ]
+    }"""
+
+    when: "the batch is posted with a session that may only read simple-enumerated"
+    def request = client.builder("/fhir")
+        .header("Content-Type", "application/fhir+json")
+        .header("Accept", "application/fhir+json")
+        .header("Authorization", 'Bearer yupi{"username":"test","privileges":["simple-enumerated.ValueSet.read"]}')
+        .POST(BodyPublishers.ofString(bundle))
+        .build()
+    def response = client.execute(request, BodyHandlers.ofString())
+    def body = MAPPER.readTree(response.body())
+
+    then: "the whole batch still succeeds — before kefhir R5.8 the ForbiddenException 500'd the entire request"
+    response.statusCode() == 200
+    body.get("type").asText() == "batch-response"
+    body.get("entry").size() == 2
+
+    and: "the forbidden entry is its own OperationOutcome (error status), and the permitted entry still ran"
+    resourceOfType(body, "OperationOutcome") != null
+    responseStatusOf(body, "OperationOutcome") == "500"
+    resourceOfType(body, "Parameters") != null
+  }
+
   private String fixture(String path) {
     def stream = getClass().getClassLoader().getResourceAsStream(path)
     assert stream != null, "fixture not found: ${path}"
@@ -110,6 +157,15 @@ class BatchBundleIT extends TermxIntegTest {
       def resource = entry.get("resource")
       if (resource != null && resource.get("resourceType")?.asText() == resourceType) {
         return resource
+      }
+    }
+    return null
+  }
+
+  private static String responseStatusOf(JsonNode bundle, String resourceType) {
+    for (def entry : bundle.get("entry")) {
+      if (entry.get("resource")?.get("resourceType")?.asText() == resourceType) {
+        return entry.path("response").path("status").asText(null)
       }
     }
     return null
