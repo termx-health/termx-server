@@ -92,8 +92,13 @@ public class CodeSystemSupplementService {
 
   @Transactional
   public List<CodeSystemEntityVersion> supplementFromIds(String cs, String csv, List<Long> ids) {
-    Map<Long, List<CodeSystemEntityVersion>> versions = entityVersionService.query(new CodeSystemEntityVersionQueryParams()
-            .setIds(ids.stream().map(String::valueOf).collect(Collectors.joining(",")))).getData().stream()
+    // Fetch every requested entity version. Without all() the query keeps the default page size
+    // (101), so "add all codes" to a supplement silently dropped everything beyond the first 101
+    // ids regardless of how many were selected. Issue #55.
+    CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams()
+        .setIds(ids.stream().map(String::valueOf).collect(Collectors.joining(",")));
+    params.all();
+    Map<Long, List<CodeSystemEntityVersion>> versions = entityVersionService.query(params).getData().stream()
         .collect(Collectors.groupingBy(CodeSystemEntityVersion::getCodeSystemEntityId));
 
     CodeSystem codeSystem = codeSystemService.load(cs).orElseThrow();

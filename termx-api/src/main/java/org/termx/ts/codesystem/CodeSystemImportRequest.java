@@ -89,6 +89,9 @@ public class CodeSystemImportRequest {
     private String name;
     private String type;
     private String kind;
+    // Binding to the external code system(s)/value set a Coding-typed property's values point to.
+    // Carried through to EntityProperty.rule so the FHIR export can emit codesystem-property-codesystem.
+    private EntityPropertyRule rule;
   }
 }
 

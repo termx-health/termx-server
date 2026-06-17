@@ -156,6 +156,7 @@ public class ValueSetVersionConceptService {
     CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
     params.setIds(String.join(",", versionIds));
     params.limit(versionIds.size());
+    params.setDecorateBaseCodeSystem(false); // language render path — don't fan out to base code systems. Issue #36.
     Map<Long, Designation> result = new HashMap<>();
     for (CodeSystemEntityVersion v : codeSystemEntityVersionService.query(params).getData()) {
       if (v.getId() == null || v.getDesignations() == null) {
@@ -253,6 +254,9 @@ public class ValueSetVersionConceptService {
     CodeSystemEntityVersionQueryParams params = new CodeSystemEntityVersionQueryParams();
     params.setIds(String.join(",", versionIds));
     params.limit(versionIds.size());
+    // Don't pull every dependent (base) code system's designations/properties per concept — that is
+    // what blows large expansions up to gigabytes. Issue #36.
+    params.setDecorateBaseCodeSystem(false);
     List<CodeSystemEntityVersion> entityVersions = codeSystemEntityVersionService.query(params).getData();
     Map<String, List<CodeSystemEntityVersion>> groupedVersions = entityVersions.stream().collect(Collectors.groupingBy(v -> v.getCodeSystem() + v.getCode()));
 
@@ -268,7 +272,14 @@ public class ValueSetVersionConceptService {
           List<String> csVersions = versions.stream().flatMap(v -> Optional.ofNullable(v.getVersions()).orElse(List.of()).stream().map(CodeSystemVersionReference::getVersion)).toList();
           c.getConcept().setCodeSystemVersions(csVersions);
 
-          List<Designation> designations = versions.stream()
+          // When a code exists as separate entity versions across several code system versions
+          // (e.g. LOINC 2.80 and 2.81), a value set rule bound to one version must only surface that
+          // version's designations. The expand never returns code system versions newer than the bound
+          // one, so the most recent entity version present here is the bound (or the newest still valid
+          // as of the bound) version. Collecting designations from every returned version leaked the
+          // other versions' designations. Issue #49.
+          List<CodeSystemEntityVersion> designationVersions = latestCodeSystemVersion(versions);
+          List<Designation> designations = designationVersions.stream()
               .filter(v -> CollectionUtils.isNotEmpty(v.getDesignations()))
               .flatMap(v -> v.getDesignations().stream())
               .filter(d -> !PublicationStatus.retired.equals(d.getStatus())).toList();
@@ -327,6 +338,31 @@ public class ValueSetVersionConceptService {
           }
         }).toList();
     return res;
+  }
+
+  /**
+   * Keep only the entity versions that belong to the most recent code system version among
+   * {@code versions} (by release date; an unreleased/null release date counts as newest, matching the
+   * expand SQL's {@code release_date desc nulls first} ordering). Used to scope designations to the
+   * version a value set rule is bound to. See issue #49.
+   */
+  static List<CodeSystemEntityVersion> latestCodeSystemVersion(List<CodeSystemEntityVersion> versions) {
+    if (versions == null || versions.size() <= 1) {
+      return versions == null ? List.of() : versions;
+    }
+    return versions.stream()
+        .max(Comparator.comparing(ValueSetVersionConceptService::maxReleaseDate))
+        .map(ValueSetVersionConceptService::maxReleaseDate)
+        .map(top -> versions.stream().filter(v -> top.equals(maxReleaseDate(v))).toList())
+        .orElse(versions);
+  }
+
+  private static java.time.LocalDate maxReleaseDate(CodeSystemEntityVersion version) {
+    return Optional.ofNullable(version.getVersions()).orElse(List.of()).stream()
+        .map(CodeSystemVersionReference::getReleaseDate)
+        .map(d -> d == null ? java.time.LocalDate.MAX : d)
+        .max(Comparator.naturalOrder())
+        .orElse(java.time.LocalDate.MIN);
   }
 
   private boolean calculatedActive(List<CodeSystemEntityVersion> versions) {

@@ -9,7 +9,12 @@ import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.PipeUtil;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.termx.terminology.terminology.valueset.snapshot.SnapshotExpansionCodec;
 import org.termx.ts.valueset.ValueSetVersion;
+import org.termx.ts.valueset.ValueSetVersionConcept;
 import org.termx.ts.valueset.ValueSetVersionQueryParams;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
@@ -78,18 +83,18 @@ public class ValueSetVersionRepository extends BaseRepository {
 
   public ValueSetVersion load(String valueSet, String version) {
     String sql = select + "from terminology.value_set_version vsv where vsv.sys_status = 'A' and vsv.value_set = ? and vsv.version = ?";
-    return getBean(sql, bp, valueSet, version);
+    return withCompressedExpansion(getBean(sql, bp, valueSet, version));
   }
 
   public ValueSetVersion load(Long id) {
     String sql = select + "from terminology.value_set_version vsv where vsv.sys_status = 'A' and vsv.id = ?";
-    return getBean(sql, bp, id);
+    return withCompressedExpansion(getBean(sql, bp, id));
   }
 
   public ValueSetVersion loadLastVersion(String valueSet) {
     String sql = select +
         "from terminology.value_set_version vsv where vsv.sys_status = 'A' and vsv.value_set = ? and (vsv.status = 'active' or vsv.status = 'draft') order by vsv.id, vsv.release_date desc";
-    return getBean(sql, bp, valueSet);
+    return withCompressedExpansion(getBean(sql, bp, valueSet));
   }
 
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
@@ -113,7 +118,45 @@ public class ValueSetVersionRepository extends BaseRepository {
           "where vsv.sys_status = 'A'");
       sb.append(filter(params));
       sb.append(limit(params));
-      return getBeans(sb.getSql(), bp, sb.getParams());
+      List<ValueSetVersion> beans = getBeans(sb.getSql(), bp, sb.getParams());
+      fillCompressedExpansions(beans);
+      return beans;
+    });
+  }
+
+  /**
+   * The version-load SQL inlines {@code vss.expansion} (the legacy uncompressed jsonb). Snapshots
+   * written after the gzip migration leave that column null and store the expansion in
+   * {@code expansion_bytea} instead, so for those the inlined expansion comes back null — fill it
+   * here by decompressing the bytea. Legacy rows keep their inlined expansion and skip this entirely.
+   * Issue #36.
+   */
+  private ValueSetVersion withCompressedExpansion(ValueSetVersion version) {
+    fillCompressedExpansions(version == null ? List.of() : List.of(version));
+    return version;
+  }
+
+  private void fillCompressedExpansions(List<ValueSetVersion> versions) {
+    List<Long> versionIds = versions.stream()
+        .filter(v -> v.getSnapshot() != null && v.getSnapshot().getExpansion() == null)
+        .map(ValueSetVersion::getId).toList();
+    if (versionIds.isEmpty()) {
+      return;
+    }
+    SqlBuilder sb = new SqlBuilder("select value_set_version_id, expansion_bytea from terminology.value_set_snapshot "
+        + "where sys_status = 'A' and expansion_bytea is not null");
+    sb.and().in("value_set_version_id", versionIds);
+    Map<Long, List<ValueSetVersionConcept>> byVersion = jdbcTemplate.query(sb.getSql(), rs -> {
+      Map<Long, List<ValueSetVersionConcept>> m = new HashMap<>();
+      while (rs.next()) {
+        m.put(rs.getLong("value_set_version_id"), SnapshotExpansionCodec.decode(rs.getBytes("expansion_bytea")));
+      }
+      return m;
+    }, sb.getParams());
+    versions.forEach(v -> {
+      if (v.getSnapshot() != null && byVersion.containsKey(v.getId())) {
+        v.getSnapshot().setExpansion(byVersion.get(v.getId()));
+      }
     });
   }
 
