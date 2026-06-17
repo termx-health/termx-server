@@ -1,6 +1,7 @@
 package org.termx.snomed.ts;
 
 import com.kodality.commons.model.QueryResult;
+import org.termx.snomed.ApiError;
 import org.termx.core.ts.CodeSystemProvider;
 import org.termx.core.ts.ValueSetExternalExpandProvider;
 import org.termx.snomed.concept.SnomedConcept;
@@ -38,6 +39,8 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
   private static final String SNOMED = "snomed-ct";
   private static final String SNOMED_IS_A = "is-a";
   private static final String SNOMED_DESCENDENT_OF = "descendent-of";
+  private static final String SNOMED_CHILD_OF = "child-of";
+  private static final String SNOMED_GENERALIZES = "generalizes";
   private static final String SNOMED_IN = "in";
 
   // Snowstorm caps single-page `limit` at 10_000 (Elasticsearch from+size).
@@ -194,6 +197,9 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
   }
 
   private Designation findDisplay(List<SnomedDescription> snomedDescriptions, List<String> preferredLanguages) {
+    if (snomedDescriptions == null) {
+      return null;
+    }
     SnomedDescription description = snomedDescriptions.stream()
         .filter(d -> CollectionUtils.isEmpty(preferredLanguages) || d.getLang() != null && preferredLanguages.contains(d.getLang()))
         .sorted((d1, d2) -> Boolean.compare(!d1.getTypeId().equals("900000000000013009"), !d2.getTypeId().equals("900000000000013009")))
@@ -205,6 +211,9 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
   }
 
   private List<Designation> findDesignations(List<SnomedDescription> snomedDescriptions, List<String> supportedLanguages, String displayId) {
+    if (snomedDescriptions == null) {
+      return List.of();
+    }
     return snomedDescriptions.stream()
         .filter(d -> CollectionUtils.isEmpty(supportedLanguages) || d.getLang() != null && supportedLanguages.contains(d.getLang()))
         .filter(d -> !d.getDescriptionId().equals(displayId))
@@ -213,18 +222,19 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
   }
 
   private String composeEcl(ValueSetRuleFilter f) {
-    String ecl = "";
-    if (f.getOperator().equals(SNOMED_IS_A)) {
-      ecl += "<<";
-    }
-    if (f.getOperator().equals(SNOMED_DESCENDENT_OF)) {
-      ecl += "<";
-    }
-    if (f.getOperator().equals(SNOMED_IN)) {
-      ecl += "^";
-    }
-    ecl += f.getValue();
-    return ecl;
+    String operator = f.getOperator() == null ? "" : f.getOperator();
+    // Map the FHIR filter operator to its ECL constraint operator. Operators with no ECL
+    // equivalent (is-not-a, descendent-leaf, regex, =, in-on-property, not-in, exists) are rejected
+    // rather than silently emitting a bare, unconstrained value.
+    String prefix = switch (operator) {
+      case SNOMED_IS_A -> "<<";          // descendant-or-self
+      case SNOMED_DESCENDENT_OF -> "<";  // descendants
+      case SNOMED_CHILD_OF -> "<!";      // direct children
+      case SNOMED_GENERALIZES -> ">>";   // ancestor-or-self
+      case SNOMED_IN -> "^";             // members of the reference set
+      default -> throw ApiError.SN301.toApiException(Map.of("operator", operator));
+    };
+    return prefix + f.getValue();
   }
 
   private String getBranch(CodeSystemVersionReference codeSystemVersion) {

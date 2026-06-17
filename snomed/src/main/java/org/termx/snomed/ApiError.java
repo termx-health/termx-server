@@ -11,6 +11,7 @@ public enum ApiError {
   SN101("SN101", "Branch name is required"),
   SN102("SN102", "Branch name can contain only: A-Z charaters, numbers, slash and hyphen"),
   SN201("SN201", "Snowstorm rejected the import request: HTTP {{status}} ({{url}})"),
+  SN301("SN301", "ValueSet filter operator '{{operator}}' has no SNOMED CT (ECL) equivalent and is not supported for SNOMED expansion"),
   ;
 
   private String code;

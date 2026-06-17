@@ -2,6 +2,7 @@ package org.termx.terminology.terminology.valueset.ruleset;
 
 import com.kodality.commons.model.QueryResult;
 import org.termx.terminology.ApiError;
+import org.termx.ts.valueset.ValueSetRuleFilterOperator;
 import org.termx.ts.valueset.ValueSetVersionConcept;
 import org.termx.ts.valueset.ValueSetVersionRuleQueryParams;
 import org.termx.ts.valueset.ValueSetVersionRuleSet;
@@ -39,7 +40,10 @@ public class ValueSetVersionRuleService {
     repository.retain(rules, ruleSet.getId());
     if (rules != null) {
       Long rulSetId = ruleSet.getId();
-      rules.forEach(rule -> repository.save(rule, rulSetId));
+      rules.forEach(rule -> {
+        validate(rule);
+        repository.save(rule, rulSetId);
+      });
     }
   }
 
@@ -65,6 +69,15 @@ public class ValueSetVersionRuleService {
   }
 
   private void validate(ValueSetVersionRule rule) {
+    if (rule.getFilters() != null) {
+      rule.getFilters().stream()
+          .filter(f -> f != null && (f.getOperator() == null || !ValueSetRuleFilterOperator.ALL.contains(f.getOperator())))
+          .findFirst()
+          .ifPresent(f -> {
+            throw ApiError.TE310.toApiException(Map.of("operator", String.valueOf(f.getOperator()), "supported", String.join(", ", ValueSetRuleFilterOperator.ALL)));
+          });
+    }
+
     if (rule.getConcepts() != null) {
       boolean notDefined = rule.getConcepts().stream().anyMatch(c -> c.getConcept() == null || c.getConcept().getCode() == null);
       if (notDefined) {
