@@ -9,8 +9,12 @@ import org.termx.terminology.terminology.codesystem.entityproperty.EntityPropert
 import org.termx.terminology.terminology.valueset.snapshot.ValueSetSnapshotService
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionRepository
 import org.termx.ts.codesystem.CodeSystemEntityVersion
+import org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams
+import org.termx.ts.codesystem.CodeSystemVersionReference
 import org.termx.ts.codesystem.Designation
 import org.termx.ts.valueset.ValueSetSnapshot
+
+import java.time.LocalDate
 import org.termx.ts.valueset.ValueSetVersion
 import org.termx.ts.valueset.ValueSetVersionConcept
 import org.termx.ts.valueset.ValueSetVersionRuleSet
@@ -165,6 +169,85 @@ class ValueSetVersionConceptServiceTest extends Specification {
     result != null
     result.expansion != null
     0 * valueSetSnapshotService.createSnapshot(_, _, _, _)
+  }
+
+  def "(#49) decorate scopes designations to the latest bound code system version"() {
+    given: "a code that exists as a separate entity version in LOINC 2.80 and 2.81, each with its own designations"
+    entityPropertyService.query(_) >> QueryResult.empty()
+    def v280 = new CodeSystemEntityVersion().setId(80L).setCodeSystem("loinc").setCode("1234-5").setStatus("active")
+        .setVersions([csVersionRef("2.80", LocalDate.of(2023, 1, 1))])
+        .setDesignations([designation("display", "en", "name 2.80"), designation("abbreviation", "en", "ab80")])
+    def v281 = new CodeSystemEntityVersion().setId(81L).setCodeSystem("loinc").setCode("1234-5").setStatus("active")
+        .setVersions([csVersionRef("2.81", LocalDate.of(2024, 1, 1))])
+        .setDesignations([designation("display", "en", "name 2.81"), designation("abbreviation", "en", "ab81")])
+    codeSystemEntityVersionService.query(_) >> new QueryResult([v280, v281])
+
+    and: "the expand returned both entity versions for the same code (cumulative version window)"
+    def concepts = [loincConcept("1234-5", 80L), loincConcept("1234-5", 81L)]
+
+    when:
+    def result = newService().decorate(concepts, loincVersion(), "en")
+
+    then: "only the newest (2.81) version's designations survive"
+    result.size() == 1
+    def c = result.first()
+    c.display.name == "name 2.81"
+    c.additionalDesignations*.name as Set == ["ab81"] as Set
+    !(c.additionalDesignations*.name.contains("ab80"))
+
+    and: "the concept still reports membership in every version it appears in"
+    c.concept.codeSystemVersions as Set == ["2.80", "2.81"] as Set
+  }
+
+  def "(#49) latestCodeSystemVersion keeps a single version and treats an unreleased version as newest"() {
+    expect:
+    ValueSetVersionConceptService.latestCodeSystemVersion([]) == []
+    ValueSetVersionConceptService.latestCodeSystemVersion(null) == []
+
+    when: "a released version competes with an unreleased (null release date) one"
+    def released = new CodeSystemEntityVersion().setId(1L).setVersions([csVersionRef("1.0", LocalDate.of(2024, 1, 1))])
+    def unreleased = new CodeSystemEntityVersion().setId(2L).setVersions([csVersionRef("2.0", null)])
+    def kept = ValueSetVersionConceptService.latestCodeSystemVersion([released, unreleased])
+
+    then: "the unreleased one wins (draft = newest), matching the expand SQL ordering"
+    kept*.id == [2L]
+  }
+
+  def "(#36) expansion queries entity versions with base-code-system fan-out disabled"() {
+    given:
+    entityPropertyService.query(_) >> QueryResult.empty()
+    CodeSystemEntityVersionQueryParams captured = null
+
+    when:
+    newService().decorate([loincConcept("1234-5", 80L)], loincVersion(), "en")
+
+    then: "the per-concept base/dependent code system designation+property fan-out is switched off (issue #36)"
+    1 * codeSystemEntityVersionService.query(_) >> { args -> captured = args[0] as CodeSystemEntityVersionQueryParams; QueryResult.empty() }
+    captured != null
+    !captured.decorateBaseCodeSystem
+  }
+
+  private static ValueSetVersionConcept loincConcept(String code, Long conceptVersionId) {
+    return new ValueSetVersionConcept()
+        .setConcept(new ValueSetVersionConcept.ValueSetVersionConceptValue()
+            .setCode(code)
+            .setConceptVersionId(conceptVersionId)
+            .setCodeSystem("loinc")
+            .setCodeSystemUri("http://loinc.org"))
+        .setActive(true)
+  }
+
+  private static ValueSetVersion loincVersion() {
+    return new ValueSetVersion()
+        .setId(1L)
+        .setStatus("draft")
+        .setRuleSet(new ValueSetVersionRuleSet()
+            .setInactive(false)
+            .setRules([new ValueSetVersionRule().setType("include").setCodeSystem("loinc")]))
+  }
+
+  private static CodeSystemVersionReference csVersionRef(String version, LocalDate releaseDate) {
+    return new CodeSystemVersionReference().setVersion(version).setReleaseDate(releaseDate)
   }
 
   private ValueSetVersionConceptService newService() {

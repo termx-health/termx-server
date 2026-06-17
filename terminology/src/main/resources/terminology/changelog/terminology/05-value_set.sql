@@ -246,3 +246,12 @@ add column external_web_source text;
 --changeset termx:value_set_snapshot-dependencies
 alter table terminology.value_set_snapshot add column dependencies jsonb;
 --
+
+--changeset termx:value_set_snapshot-expansion-bytea
+-- Store the (potentially gigabyte-scale) expansion as gzip-compressed JSON. A single jsonb value is
+-- capped near 1 GB by Postgres and could not hold large expansions (issue #36). Existing rows keep
+-- their uncompressed jsonb in `expansion`; new/regenerated snapshots write `expansion_bytea` and
+-- leave `expansion` null, so readers must fall back across both columns.
+alter table terminology.value_set_snapshot add column expansion_bytea bytea;
+alter table terminology.value_set_snapshot alter column expansion drop not null;
+--

@@ -142,6 +142,7 @@ public class TerminologyCodeSystemImportProvider extends CodeSystemImportProvide
       property.setName(p.getName());
       property.setType(p.getType());
       property.setKind(p.getKind());
+      property.setRule(p.getRule());
       property.setStatus(PublicationStatus.active);
       return property;
     }).toList();

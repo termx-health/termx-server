@@ -108,7 +108,7 @@ public class CodeSystemEntityVersionService {
 
   public QueryResult<CodeSystemEntityVersion> query(CodeSystemEntityVersionQueryParams params) {
     QueryResult<CodeSystemEntityVersion> versions = repository.query(params);
-    versions.setData(decorate(versions.getData()));
+    versions.setData(decorate(versions.getData(), params.isDecorateBaseCodeSystem()));
     return versions;
   }
 
@@ -130,6 +130,10 @@ public class CodeSystemEntityVersionService {
   }
 
   public List<CodeSystemEntityVersion> decorate(List<CodeSystemEntityVersion> versions) {
+    return decorate(versions, true);
+  }
+
+  public List<CodeSystemEntityVersion> decorate(List<CodeSystemEntityVersion> versions, boolean decorateBaseCodeSystem) {
     if (CollectionUtils.isEmpty(versions)) {
       return versions;
     }
@@ -161,6 +165,10 @@ public class CodeSystemEntityVersionService {
             }
           });
         });
+
+    if (!decorateBaseCodeSystem) {
+      return versions;
+    }
 
     versions.stream().filter(v -> v.getCodeSystemBase() != null).collect(Collectors.groupingBy(CodeSystemEntityVersion::getCodeSystemBase)).entrySet().forEach(es -> {
       codeSystemProviders.forEach(provider -> {

@@ -26,4 +26,9 @@ public class CodeSystemEntityVersionQueryParams extends QueryParams {
   private String codeSystemVersion;
   private String codeSystemUri;
   private Boolean unlinked;
+  // When false, skip appending designations/properties matched by code from a code system's
+  // base_code_system. Value set expansion sets this off to avoid materializing every dependent
+  // code system's designations for every concept (issue #36). Supplements are unaffected — they
+  // link via baseEntityVersionId, a separate path.
+  private boolean decorateBaseCodeSystem = true;
 }
