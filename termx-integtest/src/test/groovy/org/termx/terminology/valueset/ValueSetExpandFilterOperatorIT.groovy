@@ -130,6 +130,21 @@ class ValueSetExpandFilterOperatorIT extends TermxIntegTest {
     expand(filter("method", "=", "CHROM")) == ["A", "B"] as Set
   }
 
+  def "'in' on a string custom property matches concepts whose property is in the set"() {
+    expect:
+    expand(filter("method", "in", "CHROM,OTHER")) == ["A", "B"] as Set
+  }
+
+  def "'=' on a Coding custom property matches by code"() {
+    expect: "coded.code = cd-a on A"
+    expand(filter("coded", "=", "cd-a")) == ["A"] as Set
+  }
+
+  def "'in' on a Coding custom property matches by code"() {
+    expect:
+    expand(filter("coded", "in", "cd-a,cd-b")) == ["A", "B"] as Set
+  }
+
   // --- helpers ---------------------------------------------------------------
 
   private Set<String> expand(ValueSetRuleFilter... filters) {
