@@ -681,7 +681,8 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return new ValueSetSnapshot().setExpansion(expansion.setTimestamp(expansion.getTimestamp()).getContains().stream().map(c -> new ValueSetVersionConcept()
         .setConcept(new ValueSetVersionConceptValue().setCode(c.getCode()).setCodeSystemUri(c.getSystem()))
         .setDisplay(new Designation().setName(c.getDisplay()).setLanguage(Optional.ofNullable(valueSet.getLanguage()).orElse(Language.en)))
-        .setAdditionalDesignations(Optional.ofNullable(c.getDesignation()).orElse(List.of()).stream().map(d -> new Designation().setName(d.getValue()).setLanguage(d.getLanguage())).toList())
+        .setAdditionalDesignations(Optional.ofNullable(c.getDesignation()).orElse(List.of()).stream()
+            .map(d -> new Designation().setName(d.getValue()).setLanguage(d.getLanguage()).setDesignationType(fromFhirDesignationType(d))).toList())
         .setActive(c.getInactive() == null || !c.getInactive())
     ).toList());
   }
@@ -797,9 +798,17 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return designation.stream().map(d -> new Designation()
         .setLanguage(d.getLanguage() == null ? Language.en : d.getLanguage())
         .setName(d.getValue())
+        .setDesignationType(fromFhirDesignationType(d))
         .setDesignationKind("text")
         .setCaseSignificance(CaseSignificance.entire_term_case_insensitive)
         .setStatus(PublicationStatus.active)).toList();
+  }
+
+  /** Recover the designation type from a FHIR designation's {@code use} code. Only the code is read
+   *  (the bare-Coding shape TermX emits, see toFhir*); a missing use leaves the type unset rather than
+   *  fabricating "display". */
+  private static String fromFhirDesignationType(ValueSetComposeIncludeConceptDesignation d) {
+    return d.getUse() == null ? null : d.getUse().getCode();
   }
 
   private static List<ValueSetRuleFilter> fromFhirFilters(List<ValueSetComposeIncludeFilter> filters) {
