@@ -89,6 +89,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   private final ValueSetRelatedArtifactService relatedArtifactService;
   private static final String concept_definition = "http://hl7.org/fhir/StructureDefinition/valueset-concept-definition";
   private static final String concept_order = "http://hl7.org/fhir/StructureDefinition/valueset-conceptOrder";
+  private static final String VALUESET_SUPPLEMENT_EXTENSION = "http://hl7.org/fhir/StructureDefinition/valueset-supplement";
 
   public ValueSetFhirMapper(ConceptService conceptService,
                             CodeSystemService codeSystemService, ValueSetService valueSetService, MapSetService mapSetService,
@@ -242,7 +243,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       if (rule.getCodeSystemBaseUri() != null) {
         include.setSystem(rule.getCodeSystemBaseUri());
         include.setVersion(baseVersion);
-        fhirValueSet.addExtension(new Extension("http://hl7.org/fhir/StructureDefinition/valueset-supplement").setValueCanonical(PipeUtil.toPipe(rule.getCodeSystemUri(), version)));
+        fhirValueSet.addExtension(new Extension(VALUESET_SUPPLEMENT_EXTENSION).setValueCanonical(PipeUtil.toPipe(rule.getCodeSystemUri(), version)));
         if (rule.getCodeSystem() != null && rule.getCodeSystemVersion() != null) {
           include.setConcept(toFhirConcept(rule.getConcepts(), conceptService.query(new ConceptQueryParams().setCodeSystem(rule.getCodeSystem()).setCodeSystemVersion(rule.getCodeSystemVersion().getVersion()).all()).getData()));
         }
@@ -657,10 +658,37 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       ruleSet.setLockedDate(valueSet.getCompose().getLockedDate().atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime());
     }
     ruleSet.setRules(fromFhirRules(valueSet.getCompose().getInclude(), valueSet.getCompose().getExclude()));
+    applyValueSetSupplement(valueSet, ruleSet);
     if (CollectionUtils.isNotEmpty(valueSet.getCompose().getProperty())) {
       ruleSet.getRules().forEach(r -> r.setProperties(valueSet.getCompose().getProperty()));
     }
     return ruleSet;
+  }
+
+  /**
+   * Round-trips the {@code valueset-supplement} extension that {@link #toFhirCompose} emits: the
+   * include carries the BASE code system in {@code system}, and the extension carries the supplement
+   * canonical ({@code supplementUri|version}). Bind the include rule to the supplement (recording the
+   * base in {@code codeSystemBaseUri}) so $expand surfaces the supplement's designations. Only the
+   * unambiguous single-supplement / single-include case is mapped; anything else is left untouched
+   * (round-tripping multiple supplements is a TODO — the extension is VS-level so it can't be paired
+   * to a specific include). Issue #47.
+   */
+  private static void applyValueSetSupplement(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet, ValueSetVersionRuleSet ruleSet) {
+    List<Extension> supplements = valueSet.getExtensions(VALUESET_SUPPLEMENT_EXTENSION).toList();
+    List<ValueSetVersionRule> includes = ruleSet.getRules() == null ? List.of() :
+        ruleSet.getRules().stream().filter(r -> ValueSetVersionRuleType.include.equals(r.getType())).toList();
+    if (supplements.size() != 1 || includes.size() != 1 || StringUtils.isEmpty(supplements.get(0).getValueCanonical())) {
+      return;
+    }
+    String[] parts = PipeUtil.parsePipe(supplements.get(0).getValueCanonical());
+    ValueSetVersionRule rule = includes.get(0);
+    String baseVersion = rule.getCodeSystemVersion() == null ? null : rule.getCodeSystemVersion().getVersion();
+    rule.setCodeSystemBaseUri(rule.getCodeSystemUri());
+    rule.setCodeSystemUri(parts[0]);
+    rule.setCodeSystemVersion(new CodeSystemVersionReference()
+        .setVersion(parts.length > 1 ? parts[1] : null)
+        .setBaseCodeSystemVersion(baseVersion == null ? null : new CodeSystemVersionReference().setVersion(baseVersion)));
   }
 
   private static List<ValueSetVersionRule> fromFhirRules(List<ValueSetComposeInclude> include, List<ValueSetComposeInclude> exclude) {
