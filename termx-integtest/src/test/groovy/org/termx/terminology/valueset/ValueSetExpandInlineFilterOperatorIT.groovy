@@ -115,9 +115,9 @@ class ValueSetExpandInlineFilterOperatorIT extends TermxIntegTest {
   // UI/FHIR import produces). The stored path matches it via jsonb equality. Tracked as a follow-up
   // inconsistency; not asserted here so as not to pin buggy behaviour.
 
-  def "legacy 'parent =' shorthand returns the descendants of the value (no self)"() {
-    expect: "preserved backwards-compatible behaviour: descendants of A"
-    expandInline("parent", "=", "A") == ["B", "C", "D"] as Set
+  def "legacy 'parent =' shorthand returns the direct children of the value (child-of semantics)"() {
+    expect: "parent = A => direct children of A only (B, C), not deeper descendants"
+    expandInline("parent", "=", "A") == ["B", "C"] as Set
   }
 
   // --- helpers ---------------------------------------------------------------

@@ -346,13 +346,14 @@ WITH recursive vs AS (
          '(' || replace(pattern, ',', '|') || ')')
 )
 , hier as (
-  -- Forward-hierarchy descendants, shaped per operator: child-of keeps only level 1,
-  -- descendent-leaf keeps only descendants that have no child of their own, is-not-a is
-  -- handled by complement below (excluded here). Membership in the rule's version is enforced.
+  -- Forward-hierarchy descendants, shaped per operator: child-of (and the legacy `parent =`
+  -- shorthand) keep only level 1 — direct children; descendent-leaf keeps only descendants that have
+  -- no child of their own; is-not-a is handled by the complement below (excluded here). Membership in
+  -- the rule's version is enforced. NB: operator '=' reaches `r` only via `parent =`.
   select z.rn, z.rule_id, z.type, z.fcnt, z."codeSystem", z.code_system_version_id, z.csev_id, z.code, z."codeSystemUri", z."baseCodeSystemUri"
     from r z
    where z.operator <> 'is-not-a'
-     and (z.operator <> 'child-of' or z.level = 1)
+     and (z.operator not in ('child-of', '=') or z.level = 1)
      and (z.operator <> 'descendent-leaf' or not exists (
             select 1 from r r1 where r1.rule_id = z.rule_id and r1."codeSystem" = z."codeSystem" and r1.parent = z.csev_id))
      and exists (select 1 from terminology.entity_version_code_system_version_membership m
