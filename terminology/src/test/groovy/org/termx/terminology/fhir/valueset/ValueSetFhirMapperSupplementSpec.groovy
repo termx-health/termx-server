@@ -57,6 +57,40 @@ class ValueSetFhirMapperSupplementSpec extends Specification {
     importedRule.codeSystemVersion.baseCodeSystemVersion.version == "1.0"
   }
 
+  def "(#47) multiple supplement-bound rules round-trip when every include is a supplement (paired by order)"() {
+    given:
+    conceptService.load(_, _) >> Optional.empty()
+    relatedArtifactService.findRelatedArtifacts(_) >> []
+    def ruleA = supplementRule("http://example.org/CodeSystem/base-a-lt", "http://example.org/CodeSystem/base-a", "2026", "1.0")
+    def ruleB = supplementRule("http://example.org/CodeSystem/base-b-lt", "http://example.org/CodeSystem/base-b", "2025", "2.0")
+    def valueSet = new ValueSet().setId("vs").setUri("http://fhir.ee/ValueSet/vs").setName("vs").setTitle(new LocalizedName([en: "vs"]))
+    def version = new ValueSetVersion().setVersion("1.0.0").setStatus(PublicationStatus.draft)
+        .setReleaseDate(LocalDate.parse("2026-03-18"))
+        .setRuleSet(new ValueSetVersionRuleSet().setRules([ruleA, ruleB]))
+
+    when:
+    def fhir = mapper.toFhir(valueSet, version, [])
+    def rules = ValueSetFhirMapper.fromFhirValueSet(fhir).versions.first().ruleSet.rules
+
+    then: "two valueset-supplement extensions are emitted"
+    fhir.extension.findAll { it.url == SUPPLEMENT_EXT }.size() == 2
+
+    and: "both rules' supplement bindings are restored, correctly paired to their base by order"
+    def a = rules.find { it.codeSystemBaseUri == "http://example.org/CodeSystem/base-a" }
+    def b = rules.find { it.codeSystemBaseUri == "http://example.org/CodeSystem/base-b" }
+    a.codeSystemUri == "http://example.org/CodeSystem/base-a-lt"
+    a.codeSystemVersion.version == "2026"
+    b.codeSystemUri == "http://example.org/CodeSystem/base-b-lt"
+    b.codeSystemVersion.version == "2025"
+  }
+
+  private static ValueSetVersionRule supplementRule(String supplementUri, String baseUri, String supplementVersion, String baseVersion) {
+    return new ValueSetVersionRule().setType("include")
+        .setCodeSystemUri(supplementUri).setCodeSystemBaseUri(baseUri)
+        .setCodeSystemVersion(new CodeSystemVersionReference().setVersion(supplementVersion)
+            .setBaseCodeSystemVersion(new CodeSystemVersionReference().setVersion(baseVersion)))
+  }
+
   def "(#47) a plain (non-supplement) include is unaffected"() {
     given:
     conceptService.load(_, _) >> Optional.empty()

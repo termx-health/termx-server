@@ -666,23 +666,34 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   }
 
   /**
-   * Round-trips the {@code valueset-supplement} extension that {@link #toFhirCompose} emits: the
-   * include carries the BASE code system in {@code system}, and the extension carries the supplement
-   * canonical ({@code supplementUri|version}). Bind the include rule to the supplement (recording the
-   * base in {@code codeSystemBaseUri}) so $expand surfaces the supplement's designations. Only the
-   * unambiguous single-supplement / single-include case is mapped; anything else is left untouched
-   * (round-tripping multiple supplements is a TODO — the extension is VS-level so it can't be paired
-   * to a specific include). Issue #47.
+   * Round-trips the {@code valueset-supplement} extension that {@link #toFhirCompose} emits: each
+   * include carries the BASE code system in {@code system}, and one extension per supplement-bound
+   * rule carries the supplement canonical ({@code supplementUri|version}). Binds the include rule(s)
+   * to the supplement (recording the base in {@code codeSystemBaseUri}) so $expand surfaces the
+   * supplement's designations.
+   *
+   * <p>The extension is VS-level and carries no link to a specific include, so it can only be paired
+   * by order — which is safe only when EVERY include is supplement-bound (the export emits one
+   * extension per include in the same order). A mix of plain and supplement includes is ambiguous
+   * (we can't tell which includes the extensions belong to) and is left untouched. Issue #47.
    */
   private static void applyValueSetSupplement(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet, ValueSetVersionRuleSet ruleSet) {
     List<Extension> supplements = valueSet.getExtensions(VALUESET_SUPPLEMENT_EXTENSION).toList();
     List<ValueSetVersionRule> includes = ruleSet.getRules() == null ? List.of() :
         ruleSet.getRules().stream().filter(r -> ValueSetVersionRuleType.include.equals(r.getType())).toList();
-    if (supplements.size() != 1 || includes.size() != 1 || StringUtils.isEmpty(supplements.get(0).getValueCanonical())) {
+    if (supplements.isEmpty() || includes.size() != supplements.size()) {
       return;
     }
-    String[] parts = PipeUtil.parsePipe(supplements.get(0).getValueCanonical());
-    ValueSetVersionRule rule = includes.get(0);
+    for (int i = 0; i < includes.size(); i++) {
+      bindSupplement(includes.get(i), supplements.get(i).getValueCanonical());
+    }
+  }
+
+  private static void bindSupplement(ValueSetVersionRule rule, String supplementCanonical) {
+    if (StringUtils.isEmpty(supplementCanonical)) {
+      return;
+    }
+    String[] parts = PipeUtil.parsePipe(supplementCanonical);
     String baseVersion = rule.getCodeSystemVersion() == null ? null : rule.getCodeSystemVersion().getVersion();
     rule.setCodeSystemBaseUri(rule.getCodeSystemUri());
     rule.setCodeSystemUri(parts[0]);
