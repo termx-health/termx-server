@@ -4,6 +4,7 @@ import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
 import com.kodality.commons.util.JsonUtil;
+import io.micronaut.context.annotation.Value;
 import java.time.OffsetDateTime;
 import org.termx.ts.valueset.ValueSetSnapshot;
 import org.termx.ts.valueset.ValueSetSnapshotDependency;
@@ -17,23 +18,28 @@ import lombok.extern.slf4j.Slf4j;
 public class ValueSetSnapshotRepository extends BaseRepository {
 
   // Safety valve below the ~1 GB Postgres field limit: if even the compressed expansion is larger,
-  // don't try to store it (the INSERT would fail and break $expand). Issue #36.
-  private static final long MAX_EXPANSION_BYTES = 900L * 1024 * 1024;
+  // don't store the contents (the INSERT would fail and break $expand). Issue #36. Configurable so
+  // operators can tune it (and tests can exercise the path); default ~900 MB.
+  @Value("${termx.terminology.snapshot.max-expansion-bytes:943718400}")
+  long maxExpansionBytes;
 
   public void save(ValueSetSnapshot snapshot) {
     byte[] gz = SnapshotExpansionCodec.encode(snapshot.getExpansion());
-    if (gz.length > MAX_EXPANSION_BYTES) {
-      log.warn("Value set {} version {} expansion not cached: {} concepts compress to {} MB, over the {} MB snapshot limit (issue #36)",
+    boolean tooLarge = gz.length > maxExpansionBytes;
+    if (tooLarge) {
+      // Observable skip: still record the snapshot row (so concepts_total is queryable and the
+      // FHIR read flow can surface expansion.total) but leave the contents unstored. Issue #36.
+      log.warn("Value set {} version {} expansion NOT cached: {} concepts compress to {} MB, over the {} MB limit "
+              + "(termx.terminology.snapshot.max-expansion-bytes) — storing snapshot metadata only. Issue #36",
           snapshot.getValueSet(), snapshot.getValueSetVersion() == null ? null : snapshot.getValueSetVersion().getId(),
-          snapshot.getConceptsTotal(), gz.length / (1024 * 1024), MAX_EXPANSION_BYTES / (1024 * 1024));
-      return;
+          snapshot.getConceptsTotal(), gz.length / (1024 * 1024), maxExpansionBytes / (1024 * 1024));
     }
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", snapshot.getId());
     ssb.property("value_set", snapshot.getValueSet());
     ssb.property("value_set_version_id", snapshot.getValueSetVersion().getId());
     ssb.property("concepts_total", snapshot.getConceptsTotal());
-    ssb.property("expansion_bytea", gz);
+    ssb.property("expansion_bytea", tooLarge ? null : gz);
     ssb.property("expansion", "?::jsonb", (Object) null); // clear any legacy uncompressed jsonb on (re)generation
     ssb.jsonProperty("dependencies", snapshot.getDependencies(), false);
     ssb.property("created_at", snapshot.getCreatedAt());
