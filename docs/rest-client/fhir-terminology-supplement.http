@@ -1,0 +1,279 @@
+# TermX FHIR terminology — REST Client suite (supplements + value set expansion)
+#
+# Open this file in VS Code with the "REST Client" extension (humao.rest-client) and click
+# "Send Request" above each request. Run them top to bottom: the SETUP block creates the
+# resources the test blocks depend on. Every request lists its expected result so the
+# correctness can be verified at a glance.
+#
+# Demonstrates:
+#   • a base CodeSystem (English) + two language supplements (Estonian "et", Russian "ru")
+#   • a STORED ("static") ValueSet that references a supplement via the FHIR
+#     `valueset-supplement` extension, expanded with `displayLanguage`
+#   • an INLINE ValueSet ($expand with the value set passed in the request body)
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# Configure these two variables for your server, then run the requests in order.
+# @fhir   — the FHIR base URL of your TermX server (no trailing slash).
+#           e.g. https://demo.termx.org/fhir   (some deployments expose it under /api/fhir)
+# @token  — a Bearer token with write access (needed to create the CodeSystems/ValueSets).
+#           Local dev shortcut (auth.dev.allowed=true): use   yupi{"privileges":["*.*.*"]}
+@fhir  = https://demo.termx.org/fhir
+@token = yupi{"privileges":["*.*.*"]}
+
+@base   = http://example.org/fhir/CodeSystem/tx-rest-demo-color
+@etCs   = http://example.org/fhir/CodeSystem/tx-rest-demo-color-et
+@ruCs   = http://example.org/fhir/CodeSystem/tx-rest-demo-color-ru
+@vsEt   = http://example.org/fhir/ValueSet/tx-rest-demo-color-vs-et
+@vsRu   = http://example.org/fhir/ValueSet/tx-rest-demo-color-vs-ru
+
+
+###############################################################################
+# SETUP — create the code systems and value sets
+###############################################################################
+
+### 1. Base CodeSystem (English) — red / green / blue
+# expect: 200/201, a CodeSystem with content=complete and 3 concepts.
+PUT {{fhir}}/CodeSystem/tx-rest-demo-color
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "CodeSystem",
+  "id": "tx-rest-demo-color",
+  "url": "{{base}}",
+  "version": "1.0.0",
+  "name": "TxRestDemoColor",
+  "title": "TermX REST demo — colors",
+  "status": "active",
+  "content": "complete",
+  "language": "en",
+  "concept": [
+    { "code": "red",   "display": "Red" },
+    { "code": "green", "display": "Green" },
+    { "code": "blue",  "display": "Blue" }
+  ]
+}
+
+### 2. Estonian supplement (content=supplement, supplements the base) — adds "et" displays
+# expect: 200/201, content=supplement, supplements points at the base CS.
+PUT {{fhir}}/CodeSystem/tx-rest-demo-color-et
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "CodeSystem",
+  "id": "tx-rest-demo-color-et",
+  "url": "{{etCs}}",
+  "version": "1.0.0",
+  "name": "TxRestDemoColorEt",
+  "title": "TermX REST demo — colors (Estonian supplement)",
+  "status": "active",
+  "content": "supplement",
+  "supplements": "{{base}}",
+  "concept": [
+    { "code": "red",   "designation": [ { "language": "et", "value": "punane" } ] },
+    { "code": "green", "designation": [ { "language": "et", "value": "roheline" } ] },
+    { "code": "blue",  "designation": [ { "language": "et", "value": "sinine" } ] }
+  ]
+}
+
+### 3. Russian supplement (content=supplement, supplements the base) — adds "ru" displays
+# expect: 200/201, content=supplement, supplements points at the base CS.
+PUT {{fhir}}/CodeSystem/tx-rest-demo-color-ru
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "CodeSystem",
+  "id": "tx-rest-demo-color-ru",
+  "url": "{{ruCs}}",
+  "version": "1.0.0",
+  "name": "TxRestDemoColorRu",
+  "title": "TermX REST demo — colors (Russian supplement)",
+  "status": "active",
+  "content": "supplement",
+  "supplements": "{{base}}",
+  "concept": [
+    { "code": "red",   "designation": [ { "language": "ru", "value": "красный" } ] },
+    { "code": "green", "designation": [ { "language": "ru", "value": "зелёный" } ] },
+    { "code": "blue",  "designation": [ { "language": "ru", "value": "синий" } ] }
+  ]
+}
+
+### 4. STATIC ValueSet — includes the BASE and references the Estonian supplement
+#    via the standard `valueset-supplement` extension (include.system = base CS).
+# expect: 200/201.
+POST {{fhir}}/ValueSet
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "ValueSet",
+  "id": "tx-rest-demo-color-vs-et",
+  "url": "{{vsEt}}",
+  "version": "1.0.0",
+  "name": "TxRestDemoColorVsEt",
+  "title": "TermX REST demo — colors VS (Estonian)",
+  "status": "active",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/valueset-supplement",
+      "valueCanonical": "{{etCs}}|1.0.0"
+    }
+  ],
+  "compose": { "include": [ { "system": "{{base}}", "version": "1.0.0" } ] }
+}
+
+### 5. STATIC ValueSet — same, but referencing the Russian supplement
+# expect: 200/201.
+POST {{fhir}}/ValueSet
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "ValueSet",
+  "id": "tx-rest-demo-color-vs-ru",
+  "url": "{{vsRu}}",
+  "version": "1.0.0",
+  "name": "TxRestDemoColorVsRu",
+  "title": "TermX REST demo — colors VS (Russian)",
+  "status": "active",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/valueset-supplement",
+      "valueCanonical": "{{ruCs}}|1.0.0"
+    }
+  ],
+  "compose": { "include": [ { "system": "{{base}}", "version": "1.0.0" } ] }
+}
+
+
+###############################################################################
+# STATIC (STORED) VALUE SET TESTS
+###############################################################################
+
+### 6. Read back the stored ValueSet
+# expect: 200, the ValueSet from request #4 (with the valueset-supplement extension preserved).
+GET {{fhir}}/ValueSet/tx-rest-demo-color-vs-et
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 7. $expand (by id), default language
+# expect: expansion.contains = red/green/blue with ENGLISH displays (Red/Green/Blue).
+GET {{fhir}}/ValueSet/tx-rest-demo-color-vs-et/$expand
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 8. $expand (by id) with displayLanguage=et  ← the supplement in action
+# expect: red/green/blue with ESTONIAN displays — punane / roheline / sinine.
+GET {{fhir}}/ValueSet/tx-rest-demo-color-vs-et/$expand?displayLanguage=et
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 9. $expand (by id) with displayLanguage=en — explicit English
+# expect: red/green/blue with English displays (Red/Green/Blue).
+GET {{fhir}}/ValueSet/tx-rest-demo-color-vs-et/$expand?displayLanguage=en
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 10. $expand (by URL) of the Russian VS with displayLanguage=ru
+# expect: red/green/blue with RUSSIAN displays — красный / зелёный / синий.
+GET {{fhir}}/ValueSet/$expand?url={{vsRu}}&displayLanguage=ru
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 11. $validate-code (by URL) — a code that IS in the value set
+# expect: Parameters with result=true, code=red, system=base, display=Red.
+GET {{fhir}}/ValueSet/$validate-code?url={{vsEt}}&system={{base}}&code=red
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 12. $validate-code (by URL) — a code that is NOT in the value set
+# expect: Parameters with result=false (and a "not in the value set"-style message).
+GET {{fhir}}/ValueSet/$validate-code?url={{vsEt}}&system={{base}}&code=purple
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+
+###############################################################################
+# INLINE VALUE SET TESTS  ($expand with the value set passed in the body)
+#
+# NOTE: inline expansion runs the server's JSON expand. It returns the compose's
+# concepts but does NOT re-pick displayLanguage or resolve the valueset-supplement
+# extension the way a STORED value set does — for supplement / language behaviour
+# use a stored ValueSet (tests #8 / #10). Inline is ideal for ad-hoc, unsaved sets.
+###############################################################################
+
+### 13. Inline $expand — include ALL of the base code system
+# expect: red/green/blue with English displays. No resource is stored.
+POST {{fhir}}/ValueSet/$expand
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "valueSet",
+      "resource": {
+        "resourceType": "ValueSet",
+        "url": "http://example.org/fhir/ValueSet/inline-colors",
+        "status": "active",
+        "compose": { "include": [ { "system": "{{base}}" } ] }
+      }
+    }
+  ]
+}
+
+### 14. Inline $expand — enumerated subset (only red + blue)
+# expect: exactly red and blue (English displays); green excluded.
+POST {{fhir}}/ValueSet/$expand
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "valueSet",
+      "resource": {
+        "resourceType": "ValueSet",
+        "url": "http://example.org/fhir/ValueSet/inline-colors-subset",
+        "status": "active",
+        "compose": {
+          "include": [
+            {
+              "system": "{{base}}",
+              "concept": [ { "code": "red" }, { "code": "blue" } ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+
+### 15. Inline $expand of the BASE with includeDesignations — shows the supplement contrast
+# expect: red/green/blue with English displays and NO Estonian/Russian designations.
+#         The et/ru translations live in separate supplement code systems; inline expansion of
+#         the base does not resolve supplements. To surface supplement translations, expand a
+#         STORED value set that references the supplement (tests #8 / #10).
+POST {{fhir}}/ValueSet/$expand
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    { "name": "includeDesignations", "valueBoolean": true },
+    {
+      "name": "valueSet",
+      "resource": {
+        "resourceType": "ValueSet",
+        "url": "http://example.org/fhir/ValueSet/inline-colors-designations",
+        "status": "active",
+        "compose": { "include": [ { "system": "{{base}}" } ] }
+      }
+    }
+  ]
+}
