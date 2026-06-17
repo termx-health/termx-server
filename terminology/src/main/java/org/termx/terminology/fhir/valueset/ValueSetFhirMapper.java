@@ -524,17 +524,24 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return rootConcepts.stream()
         .map(c -> {
           ValueSetExpansionContains contains = toFhirExpansionContains(c, properties, param);
-          contains.setContains(getChildConcepts(targetCodeConcepts, c.getConcept().getCode(), properties, param));
+          contains.setContains(getChildConcepts(targetCodeConcepts, c.getConcept().getCode(), properties, param, Set.of(c.getConcept().getCode())));
           return contains;
         }).toList();
   }
 
   private static List<ValueSetExpansionContains> getChildConcepts(Map<String, List<ValueSetVersionConcept>> targetCodeConcepts, String targetCode,
-                                                                  List<String> properties, Parameters param) {
+                                                                  List<String> properties, Parameters param, Set<String> ancestors) {
     return targetCodeConcepts.getOrDefault(targetCode, List.of()).stream()
+        // Stop a branch whose concept is already on the path from the root: a cyclic association
+        // (self-loop or A->B->A) would otherwise recurse forever. A concept may still appear under
+        // multiple distinct parents (diamond), only an ancestor-of-itself is cut.
+        .filter(c -> !ancestors.contains(c.getConcept().getCode()))
         .map(c -> {
           ValueSetExpansionContains contains = toFhirExpansionContains(c, properties, param);
-          contains.setContains(getChildConcepts(targetCodeConcepts, c.getConcept().getCode(), properties, param));
+          String code = c.getConcept().getCode();
+          Set<String> branch = new HashSet<>(ancestors);
+          branch.add(code);
+          contains.setContains(getChildConcepts(targetCodeConcepts, code, properties, param, branch));
           return contains;
         }).toList();
   }

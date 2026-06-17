@@ -7,6 +7,7 @@ import org.termx.terminology.terminology.mapset.MapSetService
 import org.termx.terminology.terminology.relatedartifacts.ValueSetRelatedArtifactService
 import org.termx.terminology.terminology.valueset.ValueSetService
 import org.termx.ts.PublicationStatus
+import org.termx.ts.codesystem.CodeSystemAssociation
 import org.termx.ts.codesystem.Designation
 import org.termx.ts.codesystem.EntityPropertyType
 import org.termx.ts.codesystem.EntityPropertyValue
@@ -18,8 +19,10 @@ import org.termx.ts.valueset.ValueSetVersionConcept.ValueSetVersionConceptValue
 import org.termx.ts.valueset.ValueSetVersionRuleSet
 import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule
 import spock.lang.Specification
+import spock.lang.Timeout
 
 import java.time.LocalDate
+import java.util.concurrent.TimeUnit
 
 class ValueSetFhirMapperExpansionSpec extends Specification {
   def conceptService = Mock(ConceptService)
@@ -91,5 +94,43 @@ class ValueSetFhirMapperExpansionSpec extends Specification {
 
     and: "every emitted property is declared up front in expansion.property"
     fhir.expansion.property*.code == ["klic", "klickomp", "klicproc", "status"]
+  }
+
+  @Timeout(value = 10, unit = TimeUnit.SECONDS)
+  def "nested expansion terminates on cyclic associations instead of recursing forever"() {
+    given: "a root R with a child A that has a self-loop association (R <- A, A <- A)"
+    conceptService.load(_, _) >> Optional.empty()
+    relatedArtifactService.findRelatedArtifacts(_) >> []
+    def valueSet = new ValueSet().setId("vs").setUri("http://fhir.ee/ValueSet/vs").setName("vs").setTitle(new LocalizedName([en: "vs"]))
+    def version = new ValueSetVersion().setVersion("1.0.0").setPreferredLanguage("en")
+        .setReleaseDate(LocalDate.parse("2026-06-17")).setStatus(PublicationStatus.active)
+        .setRuleSet(new ValueSetVersionRuleSet().setRules([new ValueSetVersionRule().setType("include").setCodeSystem("cs")]))
+
+    and:
+    def root = concept("R", [])
+    def child = concept("A", [assoc("R"), assoc("A")]) // points at its parent AND itself
+    // nested (non-flat) rendering is the default when excludeNested is not set
+    def snapshot = new ValueSetSnapshot().setValueSet("vs").setConceptsTotal(2).setExpansion([root, child])
+
+    when:
+    def fhir = mapper.toFhir(valueSet, version, [], snapshot, null)
+    def contains = fhir.expansion.contains
+
+    then: "it returns; R contains A once, and the self-loop under A is cut"
+    contains*.code == ["R"]
+    contains[0].contains*.code == ["A"]
+    contains[0].contains[0].contains == []
+  }
+
+  private static ValueSetVersionConcept concept(String code, List<CodeSystemAssociation> associations) {
+    new ValueSetVersionConcept()
+        .setConcept(new ValueSetVersionConceptValue().setCode(code).setCodeSystem("cs").setCodeSystemUri("http://cs"))
+        .setDisplay(new Designation().setName(code).setLanguage("en"))
+        .setActive(true).setStatus("active")
+        .setAssociations(associations)
+  }
+
+  private static CodeSystemAssociation assoc(String targetCode) {
+    new CodeSystemAssociation().setTargetCode(targetCode).setAssociationType("is-a")
   }
 }
