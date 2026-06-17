@@ -1,0 +1,75 @@
+name: FHIR tx conformance
+
+# Runs the official HL7 tx-ecosystem terminology test suite against a deployed termx FHIR endpoint
+# and publishes the TestReport, so the conformance score is tracked over time. This points at an
+# already-running server (the way the HL7 ecosystem comparison works) rather than booting termx in CI.
+
+on:
+  schedule:
+    # Daily 04:00 UTC
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+    inputs:
+      tx_url:
+        description: "FHIR base URL of the termx server under test (e.g. https://demo.termx.org/api/fhir)"
+        required: false
+      suite:
+        description: "Optional: run only this suite (e.g. simple-cases)"
+        required: false
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    name: tx-ecosystem conformance
+    steps:
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "25"
+          distribution: "temurin"
+
+      - name: Resolve target server
+        id: target
+        run: |
+          TX_URL="${{ github.event.inputs.tx_url }}"
+          if [ -z "$TX_URL" ]; then TX_URL="${{ vars.TX_CONFORMANCE_URL }}"; fi
+          if [ -z "$TX_URL" ]; then
+            echo "::error::No target FHIR URL. Set the 'tx_url' input or the TX_CONFORMANCE_URL repo variable."
+            exit 1
+          fi
+          echo "tx_url=$TX_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download FHIR validator
+        run: curl -fsSL -o validator_cli.jar https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar
+
+      - name: Run tx-ecosystem tests
+        id: run
+        continue-on-error: true
+        run: |
+          SUITE_ARG=""
+          if [ -n "${{ github.event.inputs.suite }}" ]; then SUITE_ARG="-suite ${{ github.event.inputs.suite }}"; fi
+          java -jar validator_cli.jar txTests -tx "${{ steps.target.outputs.tx_url }}" $SUITE_ARG -output report | tee run.log
+
+      - name: Summarize score
+        if: always()
+        run: |
+          if [ -f report/report.json ]; then
+            result=$(jq -r '.result // "?"' report/report.json)
+            score=$(jq -r '.score // "?"' report/report.json)
+            total=$(jq '[.test[]?] | length' report/report.json)
+            passed=$(jq '[.test[]? | select(.action[0].operation.result == "pass")] | length' report/report.json)
+            server=$(jq -r '.participant[0].uri // "?"' report/report.json)
+            echo "::notice::tx conformance result=$result score=$score passed=$passed/$total against $server"
+          else
+            echo "::warning::no report.json produced — see run.log"
+          fi
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tx-conformance-report
+          path: |
+            report/
+            run.log
+          if-no-files-found: warn

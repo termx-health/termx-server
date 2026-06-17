@@ -33,6 +33,16 @@ ENV PR_NUMBER=$PR_NUMBER
 # isn't bound (dev runs without a mount).
 RUN mkdir -p /app/logs
 
+# FHIR terminology conformance testing (tx-ecosystem): bake in the HL7 FHIR validator so
+# POST /tx-conformance/runs works out of the box. The jar is ~180MB and is NOT committed to the repo
+# — it is fetched here. Pin VALIDATOR_CLI_URL to a specific release for a reproducible image; the
+# default tracks the latest validator. TERMX_CONFORMANCE_VALIDATOR_JAR points the app at it.
+ARG VALIDATOR_CLI_URL="https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar"
+RUN curl -fsSL -o /app/validator_cli.jar "${VALIDATOR_CLI_URL}"
+ENV TERMX_CONFORMANCE_VALIDATOR_JAR=/app/validator_cli.jar
+# This server's own FHIR base, used as the -tx target of the conformance run (override per deployment).
+ENV TERMX_CONFORMANCE_TX_URL=http://localhost:8200/fhir
+
 ENV JVM_OOM_OPTS="-XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/app/logs/"
 
 COPY build/libs/*-all.jar terminology.jar
