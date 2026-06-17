@@ -120,6 +120,16 @@ class ValueSetExpandFilterOperatorIT extends TermxIntegTest {
     expand(filter("method", "exists", true)) == ["A", "B"] as Set
   }
 
+  def "exists=false matches every concept that has NO value of the property"() {
+    expect: "the complement of the exists=true set"
+    expand(filter("method", "exists", false)) == ["C", "D", "X"] as Set
+  }
+
+  def "'=' on a custom property matches concepts whose property equals the value"() {
+    expect: "method = CHROM on A and B"
+    expand(filter("method", "=", "CHROM")) == ["A", "B"] as Set
+  }
+
   // --- helpers ---------------------------------------------------------------
 
   private Set<String> expand(ValueSetRuleFilter... filters) {

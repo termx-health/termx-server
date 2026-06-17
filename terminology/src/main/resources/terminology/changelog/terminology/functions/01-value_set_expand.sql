@@ -289,8 +289,10 @@ expressions as (
                          (t.filter_ ->> 'operator')::text = 'not-in' and d.name != all(string_to_array((t.filter_ ->> 'value')::text, ','))
                     ))
   union
-  -- all recursive (hierarchical) concepts calculated before
-  select c.*, r.rn, r.fcnt, r.level from c
+  -- all recursive (hierarchical) concepts calculated before.
+  -- is-not-a concepts come from the left-joined `r` being NULL, so fall back to the filter row `t`
+  -- for rn/fcnt — otherwise their rn is NULL and the AND check (#196) would drop them.
+  select c.*, coalesce(r.rn, t.rn), coalesce(r.fcnt, t.fcnt), r.level from c
   left join r  on c.code_system = r.code_system  and c.rule_id = r.rule_id  and c.csev_id = r.csev_id
   left join rc on c.code_system = rc.code_system and c.rule_id = rc.rule_id and c.csev_id = rc.csev_id
   left join t  on t.code_system = c.code_system  and t.rule_id = c.rule_id
@@ -312,9 +314,13 @@ expressions as (
      and rc.operator <> 'is-not-a'
 ),
 expression_concepts as (
-  select rule_id, type, csev_code, obj, fcnt, count(*)
+  -- A rule's filters combine with logical AND (FHIR compose.include[].filter[]): a concept is kept
+  -- only when it matched every filter of the rule. Each row in `expressions` carries the rn of the
+  -- filter that produced it, so a concept that satisfied all `fcnt` filters has `fcnt` distinct rn. (#196)
+  select rule_id, type, csev_code, obj, fcnt
     from expressions
    group by rule_id, type, csev_code, obj, fcnt
+  having count(distinct rn) = fcnt
 ),
 cs_all as (
   select t.rule_id, t."type", t.code_system, t.original_code_system_version_id, t.code_system_version_id, csev.id csev_id, csev.code csev_code,
