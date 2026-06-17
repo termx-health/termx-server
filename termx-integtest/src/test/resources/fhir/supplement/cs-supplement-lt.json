@@ -1,0 +1,12 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "suppl-lt",
+  "url": "http://example.org/CodeSystem/suppl-lt",
+  "version": "1.0.0",
+  "name": "supplLt",
+  "title": "Suppl LT",
+  "status": "active",
+  "content": "supplement",
+  "supplements": "http://example.org/CodeSystem/suppl-base",
+  "concept": [ { "code": "code1", "designation": [ { "language": "lt", "value": "Gliukozė" } ] } ]
+}

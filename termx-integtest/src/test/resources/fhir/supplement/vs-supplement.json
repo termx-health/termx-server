@@ -1,0 +1,11 @@
+{
+  "resourceType": "ValueSet",
+  "id": "suppl-vs",
+  "url": "http://example.org/ValueSet/suppl-vs",
+  "version": "1.0.0",
+  "name": "supplVs",
+  "title": "Suppl VS",
+  "status": "active",
+  "extension": [ { "url": "http://hl7.org/fhir/StructureDefinition/valueset-supplement", "valueCanonical": "http://example.org/CodeSystem/suppl-lt|1.0.0" } ],
+  "compose": { "include": [ { "system": "http://example.org/CodeSystem/suppl-base", "version": "1.0.0" } ] }
+}

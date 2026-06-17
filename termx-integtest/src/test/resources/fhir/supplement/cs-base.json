@@ -1,0 +1,12 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "suppl-base",
+  "url": "http://example.org/CodeSystem/suppl-base",
+  "version": "1.0.0",
+  "name": "supplBase",
+  "title": "Suppl Base",
+  "status": "active",
+  "content": "complete",
+  "language": "en",
+  "concept": [ { "code": "code1", "display": "Glucose" } ]
+}
