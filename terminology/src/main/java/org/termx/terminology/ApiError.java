@@ -53,6 +53,7 @@ public enum ApiError {
   TE307("TE307", "Value set expansion failed."),
   TE308("TE308", "Rule concept line does not contain concept code information."),
   TE309("TE309", "Rule concepts contain duplicates: {{duplicates}}."),
+  TE310("TE310", "Unsupported value set rule filter operator: '{{operator}}'. Supported operators: {{supported}}."),
   TE401("TE401", "Version '{{version}}' of map set '{{mapSet}}' doesn't exist."),
   TE501("TE501", "Naming system '{{namingSystem}}' not found."),
   TE601("TE601", "Cannot convert units of different kinds."),
