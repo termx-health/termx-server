@@ -3,7 +3,6 @@ package org.termx.terminology.fhir.conformance;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -39,7 +38,9 @@ public class TxConformanceService {
           bundle = downloadBundle(req.getArchiveUuid());
         }
         String report = runner.run(req, bundle);
-        return new ProcessResult().setContent(report.getBytes(StandardCharsets.UTF_8)).setContentType("application/json");
+        // Store as 'text' so LorqueProcessService.decorate populates resultText (the UI JSON.parses it);
+        // the content is the FHIR TestReport JSON. Matches the SNOMED import-from-archive convention.
+        return ProcessResult.text(report);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         throw new RuntimeException("tx conformance run interrupted", e);
