@@ -260,10 +260,12 @@ expressions as (
                           -- not guaranteed. ->> gives '{"code":"X",…}' for objects, 'true'/'false' for
                           -- JSON booleans — comparison is then a plain text equality, never throws.
                           (t.filter_ ->> 'operator')::text = 'exists' and (t.filter_ ->> 'value')::text = 'true' or
-                          (t.filter_ ->> 'operator')::text = '=' and (epv.value::jsonb = (t.filter_ -> 'value') or (epv.value ->> 'code')::text = (t.filter_ ->> 'value')::text) or
-                          (t.filter_ ->> 'operator')::text = 'regex' and (epv.value::text = any(regexp_match(epv.value::text, (t.filter_ ->> 'value')::text||'$')) or (epv.value ->> 'code')::text = any(regexp_match((epv.value ->> 'code')::text, (t.filter_ ->> 'value')::text||'$'))) or
-                          (t.filter_ ->> 'operator')::text = 'in' and (epv.value::text = any(string_to_array((t.filter_ ->> 'value')::text, ',')) or (epv.value ->> 'code')::text = any(string_to_array((t.filter_ ->> 'value')::text, ','))) or
-                          (t.filter_ ->> 'operator')::text = 'not-in' and (epv.value::text != all(string_to_array((t.filter_ ->> 'value')::text, ',')) and (epv.value ->> 'code')::text != all(string_to_array((t.filter_ ->> 'value')::text, ',')))
+                          -- scalar values are read with `#>> '{}'` (UNQUOTED text); `::text` would keep
+                          -- the jsonb quotes and never match a plain string. Coding values via ->> 'code'.
+                          (t.filter_ ->> 'operator')::text = '=' and (epv.value::jsonb = (t.filter_ -> 'value') or (epv.value #>> '{}') = (t.filter_ ->> 'value')::text or (epv.value ->> 'code')::text = (t.filter_ ->> 'value')::text) or
+                          (t.filter_ ->> 'operator')::text = 'regex' and ((epv.value #>> '{}') = any(regexp_match((epv.value #>> '{}'), (t.filter_ ->> 'value')::text||'$')) or (epv.value ->> 'code')::text = any(regexp_match((epv.value ->> 'code')::text, (t.filter_ ->> 'value')::text||'$'))) or
+                          (t.filter_ ->> 'operator')::text = 'in' and ((epv.value #>> '{}') = any(string_to_array((t.filter_ ->> 'value')::text, ',')) or (epv.value ->> 'code')::text = any(string_to_array((t.filter_ ->> 'value')::text, ','))) or
+                          (t.filter_ ->> 'operator')::text = 'not-in' and ((epv.value #>> '{}') != all(string_to_array((t.filter_ ->> 'value')::text, ',')) and coalesce(epv.value ->> 'code', '') != all(string_to_array((t.filter_ ->> 'value')::text, ',')))
                      ))
           -- Same text-vs-boolean swap as above; symmetric for 'exists = false'.
           or (t.filter_ ->> 'operator')::text = 'exists' and (t.filter_ ->> 'value')::text = 'false' and

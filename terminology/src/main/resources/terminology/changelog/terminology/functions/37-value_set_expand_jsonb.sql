@@ -283,22 +283,30 @@ WITH recursive vs AS (
               (t.filter_ ->> 'op') = 'not-in' and con.code != all(string_to_array((t.filter_ ->> 'value')::text, ','))
          ))
          or
-         -- custom property with '=', 'in', 'regex' (loose match preserved, incl. Coding-shaped values)
+         -- custom property with '=', 'in', 'regex'. A scalar (string/number) value is compared via
+         -- `epv.value #>> '{}'` (the UNQUOTED text form — `::text` would keep the jsonb quotes and never
+         -- match a plain string); a Coding value via `epv.value ->> 'code'`. The filter value may itself
+         -- be a scalar or a Coding object ({"code":…}), so both forms are accepted. No cross-joined
+         -- unnest (which previously produced zero rows, hence no match, for scalar filter values).
          ((t.filter_ ->> 'property') not in ('code', 'concept') and (t.filter_ ->> 'op') in ('=','in','regex') and
           exists (select 1
-                    from terminology.entity_property_value epv, terminology.entity_property ep,
-                        unnest(string_to_array(t.filter_ ->> 'value', ',')) AS pattern1,
-                        unnest(string_to_array(t.filter_ -> 'value' ->> 'code', ',')) AS pattern2
+                    from terminology.entity_property_value epv, terminology.entity_property ep
                   where epv.sys_status = 'A' and csev.id = epv.code_system_entity_version_id
                     and ep.sys_status = 'A' and ep.code_system = con.code_system and ep.id = epv.entity_property_id
                     and (t.filter_ ->> 'property') = ep.name
-                    and (
-                         ep.type <> 'Coding' and ((t.filter_ ->> 'value') is null or (t.filter_ -> 'value') = epv.value::jsonb or
-                         (epv.value ->> 'code')::text ~ trim(pattern1))
-                         or
-                         ep.type = 'Coding' and  ((t.filter_ -> 'value' ->> 'code') is null or (t.filter_ -> 'value' -> 'code') = epv.value::jsonb or
-                         (epv.value ->> 'code')::text ~ trim(pattern2))
-                    )
+                    and ((t.filter_ ->> 'value') is null
+                         or (t.filter_ ->> 'op') = '=' and (
+                              epv.value::jsonb = (t.filter_ -> 'value')
+                              or (epv.value #>> '{}') = (t.filter_ ->> 'value')
+                              or (epv.value ->> 'code') = (t.filter_ ->> 'value')
+                              or (epv.value ->> 'code') = (t.filter_ -> 'value' ->> 'code'))
+                         or (t.filter_ ->> 'op') = 'in' and (
+                              (epv.value #>> '{}') = any(string_to_array((t.filter_ ->> 'value'), ','))
+                              or (epv.value ->> 'code') = any(string_to_array((t.filter_ ->> 'value'), ','))
+                              or (epv.value ->> 'code') = any(string_to_array((t.filter_ -> 'value' ->> 'code'), ',')))
+                         or (t.filter_ ->> 'op') = 'regex' and (
+                              (epv.value #>> '{}') ~ (t.filter_ ->> 'value')
+                              or (epv.value ->> 'code') ~ (t.filter_ ->> 'value')))
                  ))
          or
          -- custom property with 'exists' (value true => has >=1 value; value false => has none)
@@ -316,15 +324,15 @@ WITH recursive vs AS (
                      and (t.filter_ ->> 'property') = ep.name)
          ))
          or
-         -- custom property with 'not-in' (the concept has no value of the property in the set)
+         -- custom property with 'not-in' (no value of the property is in the set)
          ((t.filter_ ->> 'property') not in ('code', 'concept') and (t.filter_ ->> 'op') = 'not-in' and
           not exists (select 1
-                        from terminology.entity_property_value epv, terminology.entity_property ep,
-                            unnest(string_to_array(t.filter_ ->> 'value', ',')) AS pattern1
+                        from terminology.entity_property_value epv, terminology.entity_property ep
                        where epv.sys_status = 'A' and csev.id = epv.code_system_entity_version_id
                          and ep.sys_status = 'A' and ep.code_system = con.code_system and ep.id = epv.entity_property_id
                          and (t.filter_ ->> 'property') = ep.name
-                         and (epv.value::text = trim(pattern1) or (epv.value ->> 'code')::text = trim(pattern1))))
+                         and ((epv.value #>> '{}') = any(string_to_array((t.filter_ ->> 'value'), ','))
+                              or (epv.value ->> 'code') = any(string_to_array((t.filter_ ->> 'value'), ',')))))
   )
 )
 , d as (

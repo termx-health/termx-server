@@ -110,10 +110,30 @@ class ValueSetExpandInlineFilterOperatorIT extends TermxIntegTest {
     expandInline("method", "exists", false) == ["C", "D", "X"] as Set
   }
 
-  // NB: a string-valued custom-property '=' (e.g. method = "CHROM") returns empty on the inline path —
-  // value_set_expand(text) expects Coding-OBJECT values for custom-property filters (the only form the
-  // UI/FHIR import produces). The stored path matches it via jsonb equality. Tracked as a follow-up
-  // inconsistency; not asserted here so as not to pin buggy behaviour.
+  def "'=' on a string custom property matches concepts whose property equals the value"() {
+    expect: "method = CHROM on A and B"
+    expandInline("method", "=", "CHROM") == ["A", "B"] as Set
+  }
+
+  def "'in' on a string custom property matches concepts whose property is in the set"() {
+    expect:
+    expandInline("method", "in", "CHROM,OTHER") == ["A", "B"] as Set
+  }
+
+  def "'=' on a Coding custom property matches by code (scalar value)"() {
+    expect: "coded.code = cd-a on A"
+    expandInline("coded", "=", "cd-a") == ["A"] as Set
+  }
+
+  def "'=' on a Coding custom property matches by code (Coding-object value)"() {
+    expect:
+    expandInline("coded", "=", [code: "cd-a"]) == ["A"] as Set
+  }
+
+  def "'in' on a Coding custom property matches by code"() {
+    expect:
+    expandInline("coded", "in", "cd-a,cd-b") == ["A", "B"] as Set
+  }
 
   def "legacy 'parent =' shorthand returns the direct children of the value (child-of semantics)"() {
     expect: "parent = A => direct children of A only (B, C), not deeper descendants"

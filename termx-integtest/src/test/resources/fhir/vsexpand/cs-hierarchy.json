@@ -11,18 +11,19 @@
   "caseSensitive": true,
   "hierarchyMeaning": "is-a",
   "property": [
-    {"code": "method", "type": "string"}
+    {"code": "method", "type": "string"},
+    {"code": "coded", "type": "Coding"}
   ],
   "concept": [
     {
       "code": "A",
       "display": "Alpha",
-      "property": [{"code": "method", "valueString": "CHROM"}],
+      "property": [{"code": "method", "valueString": "CHROM"}, {"code": "coded", "valueCoding": {"code": "cd-a"}}],
       "concept": [
         {
           "code": "B",
           "display": "Bravo",
-          "property": [{"code": "method", "valueString": "CHROM"}],
+          "property": [{"code": "method", "valueString": "CHROM"}, {"code": "coded", "valueCoding": {"code": "cd-b"}}],
           "concept": [
             {"code": "D", "display": "Delta"}
           ]
