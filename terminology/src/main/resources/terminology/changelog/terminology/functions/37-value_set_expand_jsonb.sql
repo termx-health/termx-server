@@ -349,7 +349,7 @@ WITH recursive vs AS (
   -- Forward-hierarchy descendants, shaped per operator: child-of keeps only level 1,
   -- descendent-leaf keeps only descendants that have no child of their own, is-not-a is
   -- handled by complement below (excluded here). Membership in the rule's version is enforced.
-  select z.rule_id, z.type, z.fcnt, z."codeSystem", z.code_system_version_id, z.csev_id, z.code, z."codeSystemUri", z."baseCodeSystemUri"
+  select z.rn, z.rule_id, z.type, z.fcnt, z."codeSystem", z.code_system_version_id, z.csev_id, z.code, z."codeSystemUri", z."baseCodeSystemUri"
     from r z
    where z.operator <> 'is-not-a'
      and (z.operator <> 'child-of' or z.level = 1)
@@ -359,42 +359,45 @@ WITH recursive vs AS (
                   where m.sys_status = 'A' and m.code_system_entity_version_id = z.csev_id and m.code_system_version_id = z.code_system_version_id)
   union
   -- generalizes ancestors
-  select rr.rule_id, rr.type, rr.fcnt, rr."codeSystem", rr.code_system_version_id, rr.csev_id, rr.code, rr."codeSystemUri", rr."baseCodeSystemUri"
+  select rr.rn, rr.rule_id, rr.type, rr.fcnt, rr."codeSystem", rr.code_system_version_id, rr.csev_id, rr.code, rr."codeSystemUri", rr."baseCodeSystemUri"
     from rr
    where exists (select 1 from terminology.entity_version_code_system_version_membership m
                   where m.sys_status = 'A' and m.code_system_entity_version_id = rr.csev_id and m.code_system_version_id = rr.code_system_version_id)
   union
   -- the filter value concept itself for is-a / generalizes
-  select rc.rule_id, rc.type, rc.fcnt, rc."codeSystem", rc.code_system_version_id, rc.csev_id, rc.code, rc."codeSystemUri", rc."baseCodeSystemUri"
+  select rc.rn, rc.rule_id, rc.type, rc.fcnt, rc."codeSystem", rc.code_system_version_id, rc.csev_id, rc.code, rc."codeSystemUri", rc."baseCodeSystemUri"
     from rc
    where rc.operator in ('is-a','generalizes')
      and exists (select 1 from terminology.entity_version_code_system_version_membership m
                   where m.sys_status = 'A' and m.code_system_entity_version_id = rc.csev_id and m.code_system_version_id = rc.code_system_version_id)
   union
   -- is-not-a: every member of the version that is neither in the forward set nor the concept itself
-  select p.rule_id, p.type, p.fcnt, p."codeSystem", p.code_system_version_id, p.csev_id, p.code, p."codeSystemUri", p."baseCodeSystemUri"
+  select p.rn, p.rule_id, p.type, p.fcnt, p."codeSystem", p.code_system_version_id, p.csev_id, p.code, p."codeSystemUri", p."baseCodeSystemUri"
     from pool p
    where not exists (select 1 from r r2 where r2.rule_id = p.rule_id and r2."codeSystem" = p."codeSystem" and r2.csev_id = p.csev_id and r2.operator = 'is-not-a')
      and not exists (select 1 from rc rc2 where rc2.rule_id = p.rule_id and rc2."codeSystem" = p."codeSystem" and rc2.csev_id = p.csev_id)
 )
 , all_findings as (
-  select z.rule_id, z."type", z.fcnt, z."codeSystem", z.code_system_version_id, z.csev_id, z.code,
+  select z.rn, z.rule_id, z."type", z.fcnt, z."codeSystem", z.code_system_version_id, z.csev_id, z.code,
          jsonb_build_object('conceptVersionId', z.csev_id, 'code', z.code, 'codeSystem', z."codeSystem", 'codeSystemUri', z."codeSystemUri", 'baseCodeSystemUri', z."baseCodeSystemUri") obj
     from hier as z
   union
-  select z.rule_id, z."type", z.fcnt, z."codeSystem", z.code_system_version_id, z.csev_id, z.code,
+  select z.rn, z.rule_id, z."type", z.fcnt, z."codeSystem", z.code_system_version_id, z.csev_id, z.code,
          jsonb_build_object('conceptVersionId', z.csev_id, 'code', z.code, 'codeSystem', z."codeSystem", 'codeSystemUri', z."codeSystemUri", 'baseCodeSystemUri', z."baseCodeSystemUri")
     from c as z
   union
-  select z.rule_id, z."type", z.fcnt, z."codeSystem", z.code_system_version_id, z.csev_id, z.code,
+  select z.rn, z.rule_id, z."type", z.fcnt, z."codeSystem", z.code_system_version_id, z.csev_id, z.code,
          jsonb_build_object('conceptVersionId', z.csev_id, 'code', z.code, 'codeSystem', z."codeSystem", 'codeSystemUri', z."codeSystemUri", 'baseCodeSystemUri', z."baseCodeSystemUri")
     from d as z
 )
 , expression_concepts as (
-  select rule_id, type, code, obj, fcnt, count(*)
+  -- A rule's filters combine with logical AND (FHIR compose.include[].filter[]): a concept is kept
+  -- only when it matched every filter of the rule. Each finding carries the rn of the filter that
+  -- produced it, so a concept that satisfied all `fcnt` filters has `fcnt` distinct rn. (#196)
+  select rule_id, type, code, obj, fcnt
     from all_findings
    group by rule_id, type, code, obj, fcnt
-  having fcnt = count(*)
+  having count(distinct rn) = fcnt
 )
 , cs as (
   select r.type, csev.code,

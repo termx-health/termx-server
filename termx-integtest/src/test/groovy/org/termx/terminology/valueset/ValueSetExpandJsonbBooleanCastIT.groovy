@@ -73,7 +73,10 @@ class ValueSetExpandJsonbBooleanCastIT extends TermxIntegTest {
     // 'exists' filter it deterministically reaches the boolean cast: the old code evaluated
     // `(filter_ -> 'value')::boolean` whenever operator = 'exists', and casting a jsonb OBJECT to
     // boolean raises "cannot cast jsonb object to type boolean". A second, clean exists=true filter
-    // gives a positive match so we can also assert the fixed function still expands normally.
+    // sits beside it so the cast path is reached even when a sibling filter matches normally.
+    // NB: since #196 the two filters AND, and the object-valued 'exists' (value is neither 'true' nor
+    // 'false') matches nothing, so the rule expands to the empty set — the point here is purely that
+    // the jsonb->boolean cast no longer throws.
     def cleanExistsFilter = new ValueSetRuleFilter()
         .setProperty(new PropertyReference().setName("method"))
         .setOperator("exists")
@@ -104,9 +107,23 @@ class ValueSetExpandJsonbBooleanCastIT extends TermxIntegTest {
     def versionId = valueSetVersionService.load(VS_ID, VS_VERSION).orElseThrow().getId()
     def expansion = conceptRepository.expand(versionId)
 
-    then: "no DataIntegrityViolationException / cast error, and the 'exists'-matched concept is returned"
+    then: "no DataIntegrityViolationException / cast error (the object value reaches the exists branch safely)"
     noExceptionThrown()
-    expansion.find { it.concept?.code == "a" } != null
+    expansion != null
+
+    and: "a clean exists=true filter on its own still expands normally — concept 'a' has the property"
+    def cleanRule = new ValueSetVersionRule().setType("include").setCodeSystem(CS_ID).setFilters([cleanExistsFilter])
+    def cleanVersion = new ValueSetVersion().setStatus(PublicationStatus.draft)
+        .setRuleSet(new ValueSetVersionRuleSet().setRules([cleanRule]))
+    cleanVersion.setValueSet(VS_ID)
+    cleanVersion.setVersion("1.0.1")
+    def cleanRequest = new ValueSetTransactionRequest()
+    cleanRequest.setValueSet(new ValueSet().setId(VS_ID).setUri("http://termx-test.local/ValueSet/" + VS_ID)
+        .setTitle(new com.kodality.commons.model.LocalizedName().add("en", "VsExpand cast regression")))
+    cleanRequest.setVersion(cleanVersion)
+    valueSetService.save(cleanRequest)
+    def cleanVersionId = valueSetVersionService.load(VS_ID, "1.0.1").orElseThrow().getId()
+    conceptRepository.expand(cleanVersionId).find { it.concept?.code == "a" } != null
   }
 
   private org.termx.ts.codesystem.CodeSystem domainCs(String json) {
