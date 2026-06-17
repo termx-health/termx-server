@@ -5,6 +5,7 @@ dependencies {
     api(project(":termx-api"))
     api(project(":termx-core"))
     api(project(":task"))
+    implementation(project(":bob")) // tx-conformance: custom test-bundle storage (MinIO/Bob)
 
     implementation("com.kodality.commons:commons-util:${rootProject.extra["commonsVersion"]}")
     implementation("com.kodality.commons:commons-db:${rootProject.extra["commonsVersion"]}")

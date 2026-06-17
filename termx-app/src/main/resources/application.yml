@@ -123,6 +123,12 @@ chef.url: https://demo.termx.org/chef
 termx:
   web-url: https://demo.termx.org
   api-url: https://demo.termx.org/api
+  # FHIR terminology conformance testing (tx-ecosystem suite via the FHIR validator's txTests).
+  # validator-jar: absolute path to validator_cli.jar (NOT bundled — provided by the deployment, e.g.
+  # downloaded in the Dockerfile). tx-url: this server's externally-reachable FHIR base for -tx.
+  conformance:
+    validator-jar: ${TERMX_CONFORMANCE_VALIDATOR_JAR:}
+    tx-url: ${TERMX_CONFORMANCE_TX_URL:`http://localhost:8200/fhir`}
   fhir:
     codesystem:
       lookup:
