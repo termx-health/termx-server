@@ -102,8 +102,14 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       return expandInline(inlineVs, req);
     }
 
-    // 2. Fall back to url-based lookup (existing logic)
-    String url = req.findParameter("url").map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueString())
+    // 2. Fall back to url-based lookup (existing logic).
+    // `url` is a uri/canonical, so accept valueUri (what the FHIR spec & tx-ecosystem tests send) in
+    // addition to valueUrl/valueString — previously a POSTed `url` as valueUri was missed → 400.
+    String url = req.findParameter("url")
+        .map(pp -> pp.getValueUrl() != null ? pp.getValueUrl()
+            : pp.getValueUri() != null ? pp.getValueUri()
+            : pp.getValueCanonical() != null ? pp.getValueCanonical()
+            : pp.getValueString())
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "parameter 'url' or 'valueSet' required"));
     String versionNr = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
 

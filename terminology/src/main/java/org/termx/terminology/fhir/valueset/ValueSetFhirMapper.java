@@ -390,10 +390,20 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         .setValueBoolean(p.getValueBoolean())
         .setValueInteger(p.getValueInteger())
         .setValueDecimal(p.getValueDecimal())
-        .setValueUri(p.getValueUri())
+        // expansion.parameter.value is a uri (not url/canonical), so fold those in — otherwise a
+        // request param like `url` carried as valueUrl/valueCanonical produced an expansion.parameter
+        // with a name but no value, which is invalid FHIR and crashes strict clients (e.g. the validator).
+        .setValueUri(p.getValueUri() != null ? p.getValueUri() : p.getValueUrl() != null ? p.getValueUrl() : p.getValueCanonical())
         .setValueCode(p.getValueCode())
         .setValueDateTime(p.getValueDateTime())
-    ).toList();
+    ).filter(ValueSetFhirMapper::hasValue).toList();
+  }
+
+  /** A FHIR expansion.parameter MUST have a value — drop any that ended up valueless rather than emit invalid output. */
+  private static boolean hasValue(ValueSetExpansionParameter p) {
+    return p.getValueString() != null || p.getValueBoolean() != null || p.getValueInteger() != null
+        || p.getValueDecimal() != null || p.getValueUri() != null || p.getValueCode() != null
+        || p.getValueDateTime() != null;
   }
 
   private static ValueSetExpansionContains toFhirExpansionContains(ValueSetVersionConcept c, List<String> allProperties, Parameters param) {
