@@ -140,9 +140,9 @@ class BatchBundleIT extends TermxIntegTest {
     body.get("type").asText() == "batch-response"
     body.get("entry").size() == 2
 
-    and: "the forbidden entry is its own OperationOutcome (error status), and the permitted entry still ran"
+    and: "the forbidden entry is its own OperationOutcome with the right status (403, not a blanket 500), and the permitted entry still ran"
     resourceOfType(body, "OperationOutcome") != null
-    responseStatusOf(body, "OperationOutcome") == "500"
+    responseStatusOf(body, "OperationOutcome") == "403"
     resourceOfType(body, "Parameters") != null
   }
 
