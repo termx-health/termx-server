@@ -50,6 +50,14 @@ class FhirTestCasesTest extends TermxIntegTest {
     SessionStore.setLocal(sessionInfo)
   }
 
+  // TODO(conformance-suite): re-enable this JSON-driven suite (test-cases.json, 152 cases across 11
+  // suites). Two things are needed: (1) the check* helpers currently use bare `==` expressions that
+  // don't actually assert — combine them into a returned boolean so `then: runTest(...)` asserts; and
+  // (2) triage the ~82 failures a real run surfaces. The failures cluster: language (26/26) and big
+  // (5/5) fail wholesale, plus partials in parameters/validation/extensions/alt-codes — a mix of
+  // harness/fixture drift and real gaps. The language cluster overlaps issue #47 (displayLanguage /
+  // supplement designations) and should be triaged together with it. Best re-enabled suite-by-suite
+  // as each cluster goes green, rather than all at once.
   @Unroll
   @Ignore
   def "SUIT #test.left.name TEST #test.right.name"() {
