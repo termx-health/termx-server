@@ -97,6 +97,35 @@ class ValueSetExpandMultiFilterIT extends TermxIntegTest {
     expandInlineIncludes([include1, include2]) == ["B", "C", "X"] as Set
   }
 
+  def "stored path subtracts an exclude rule (include is-a A EXCEPT code = C)"() {
+    given:
+    def include = new ValueSetVersionRule().setType("include").setCodeSystem(CS_ID).setFilters([f("concept", "is-a", "A")])
+    def exclude = new ValueSetVersionRule().setType("exclude").setCodeSystem(CS_ID).setFilters([f("code", "=", "C")])
+
+    expect: "{A,B,C,D} minus {C}"
+    expandStoredRules([include, exclude]) == ["A", "B", "D"] as Set
+  }
+
+  def "inline path subtracts an exclude block (include is-a A EXCEPT code = C)"() {
+    given:
+    def valueSet = [resourceType: "ValueSet", compose: [inactive: false,
+        include: [[system: CS_URI, version: VS_VERSION, filter: [[property: "concept", op: "is-a", value: "A"]]]],
+        exclude: [[system: CS_URI, version: VS_VERSION, filter: [[property: "code", op: "=", value: "C"]]]]]]
+
+    expect:
+    conceptRepository.expandFromJson(JsonUtil.toJson(valueSet)).collect { it.concept?.code }.findAll { it != null } as Set == ["A", "B", "D"] as Set
+  }
+
+  def "stored path ANDs two hierarchical filters (is-a A AND is-a B = B,D)"() {
+    expect: "is-a A = {A,B,C,D}; is-a B = {B,D}; their AND = {B,D}"
+    expandStored([f("concept", "is-a", "A"), f("concept", "is-a", "B")]) == ["B", "D"] as Set
+  }
+
+  def "inline path ANDs two hierarchical filters (is-a A AND is-a B = B,D)"() {
+    expect:
+    expandInline([[property: "concept", op: "is-a", value: "A"], [property: "concept", op: "is-a", value: "B"]]) == ["B", "D"] as Set
+  }
+
   // --- helpers ---------------------------------------------------------------
 
   private Set<String> expandStoredRules(List<ValueSetVersionRule> rules) {

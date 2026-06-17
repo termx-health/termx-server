@@ -105,6 +105,21 @@ class ValueSetExpandInlineFilterOperatorIT extends TermxIntegTest {
     expandInline("method", "exists", true) == ["A", "B"] as Set
   }
 
+  def "exists=false matches every concept that has NO value of the property"() {
+    expect:
+    expandInline("method", "exists", false) == ["C", "D", "X"] as Set
+  }
+
+  // NB: a string-valued custom-property '=' (e.g. method = "CHROM") returns empty on the inline path —
+  // value_set_expand(text) expects Coding-OBJECT values for custom-property filters (the only form the
+  // UI/FHIR import produces). The stored path matches it via jsonb equality. Tracked as a follow-up
+  // inconsistency; not asserted here so as not to pin buggy behaviour.
+
+  def "legacy 'parent =' shorthand returns the descendants of the value (no self)"() {
+    expect: "preserved backwards-compatible behaviour: descendants of A"
+    expandInline("parent", "=", "A") == ["B", "C", "D"] as Set
+  }
+
   // --- helpers ---------------------------------------------------------------
 
   private Set<String> expandInline(String property, String op, Object value) {
