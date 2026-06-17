@@ -24,4 +24,10 @@ public class TxConformanceRunRequest {
   private String mode;
   /** UUID of a {@code bob.object} in the {@code tx-conformance} container holding a custom test bundle. */
   private String archiveUuid;
+  /**
+   * When true, load the tx-ecosystem test fixtures (the {@code http://hl7.org/fhir/test/…} CodeSystems
+   * and ValueSets the suites reference) into this server before running — so a run is self-contained.
+   * Writes test content into the server; intended for dedicated conformance instances. Default false.
+   */
+  private boolean loadSetup;
 }

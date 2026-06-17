@@ -129,6 +129,9 @@ termx:
   conformance:
     validator-jar: ${TERMX_CONFORMANCE_VALIDATOR_JAR:}
     tx-url: ${TERMX_CONFORMANCE_TX_URL:`http://localhost:8200/fhir`}
+    # Optional: dir holding the tx-ecosystem test fixtures to load when a run requests loadSetup=true.
+    # Defaults to the FHIR validator's package cache (~/.fhir/packages/hl7.fhir.uv.tx-ecosystem#current/package/tests).
+    test-package-dir: ${TERMX_CONFORMANCE_TEST_PACKAGE_DIR:}
   fhir:
     codesystem:
       lookup:
