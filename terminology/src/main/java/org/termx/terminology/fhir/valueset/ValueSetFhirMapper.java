@@ -1,5 +1,6 @@
 package org.termx.terminology.fhir.valueset;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kodality.commons.exception.ApiClientException;
 import com.kodality.commons.model.LocalizedName;
 import com.kodality.commons.util.DateUtil;
@@ -59,6 +60,7 @@ import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty;
 import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter;
+import com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionProperty;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.CollectionUtils;
@@ -70,10 +72,12 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
@@ -358,6 +362,16 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     expansion.setParameter(toValueSetParameter(param));
     expansion.setTimestamp(snapshot.getCreatedAt());
 
+    // Declare the properties that may appear in contains.property: the value set's declared properties,
+    // narrowed by any request-level `property` parameter. A contains.property must reference a declared
+    // expansion.property to be valid FHIR.
+    List<String> requestedProperties = (param == null || param.getParameter() == null) ? List.of() :
+        param.getParameter().stream().filter(p -> "property".equals(p.getName())).map(ParametersParameter::getValueString).filter(StringUtils::isNotEmpty).toList();
+    expansion.setProperty(Optional.ofNullable(properties).orElse(List.of()).stream().distinct()
+        .filter(code -> requestedProperties.isEmpty() || requestedProperties.contains(code))
+        .map(code -> new ValueSetExpansionProperty().setCode(code))
+        .collect(toList()));
+
     if (flat) {
       expansion.setContains(concepts.stream().map(c -> toFhirExpansionContains(c, properties, param)).collect(toList()));
     } else {
@@ -419,8 +433,17 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
           extension.setValueString(d.getName());
           return extension;
         }).toList() : null);
+    Set<String> seenProperties = new HashSet<>();
     contains.setProperty(c.getPropertyValues() == null ? new ArrayList<>() :
-        c.getPropertyValues().stream().filter(p -> CollectionUtils.isEmpty(properties) || properties.contains(p.getEntityProperty())).map(p -> {
+        c.getPropertyValues().stream()
+            // Only surface properties the value set declares (compose.property); a request-level `property`
+            // parameter narrows it further. Without this, every internal property leaks into the expansion
+            // as an undeclared `contains.property`, which bloats the response and is not valid per FHIR.
+            .filter(p -> allProperties.contains(p.getEntityProperty()))
+            .filter(p -> CollectionUtils.isEmpty(properties) || properties.contains(p.getEntityProperty()))
+            // Guard against duplicate property rows carried by legacy snapshots.
+            .filter(p -> seenProperties.add(p.getEntityProperty() + "|" + p.getValue()))
+            .map(p -> {
           ValueSetExpansionContainsProperty property = new ValueSetExpansionContainsProperty();
           property.setCode(p.getEntityProperty());
           switch (p.getEntityPropertyType()) {
@@ -430,8 +453,21 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
             case EntityPropertyType.decimal -> property.setValueDecimal(new BigDecimal(String.valueOf(p.getValue())));
             case EntityPropertyType.integer -> property.setValueInteger(Integer.valueOf(String.valueOf(p.getValue())));
             case EntityPropertyType.coding -> {
-              Concept concept = JsonUtil.getObjectMapper().convertValue(p.getValue(), Concept.class);
-              property.setValueCoding(new Coding(concept.getCodeSystem(), concept.getCode()));
+              // Canonical coding shape (code + codeSystem + display + version). The coding-refresh
+              // enrichment (PR #109/#111, bd73af4f) resolves and persists the target version; surface it
+              // on the FHIR Coding the same way CodeSystemFhirMapper does. Legacy shapes (raw Concept)
+              // round-trip without a version, which is acceptable.
+              var coding = p.asCodingValue();
+              if (coding != null && coding.getCodeSystem() != null && coding.getCode() != null) {
+                Coding valueCoding = new Coding(coding.getCodeSystem(), coding.getCode()).setVersion(coding.getVersion());
+                // Surface the localized display the coding-refresh enrichment resolved onto the value
+                // (stored as a list of {name, language, use}); pick the requested language, same as CodeSystemFhirMapper.
+                if (coding.getDisplay() != null) {
+                  String displayStr = coding.getDisplay() instanceof String s ? s : JsonUtil.toJson(coding.getDisplay());
+                  valueCoding.setDisplay(codingDisplay(displayStr, lang));
+                }
+                property.setValueCoding(valueCoding);
+              }
             }
             case EntityPropertyType.dateTime -> {
               if (p.getValue() instanceof OffsetDateTime odt) {
@@ -454,6 +490,27 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   private static void addAssociations(ValueSetVersionConcept c, List<String> allProperties, List<String> properties, ValueSetExpansionContains contains, String key) {
     if (allProperties.contains(key) && (CollectionUtils.isEmpty(properties) || properties.contains(key)) && c.getAssociations() != null) {
       c.getAssociations().forEach(a -> contains.getProperty().add(new ValueSetExpansionContainsProperty().setCode(key).setValueCode(a.getTargetCode())));
+    }
+  }
+
+  private record CodingDisplay(String language, String name) {}
+
+  /** Resolve a coding value's display (a serialised list of {name, language, ...}) to the name for the requested language. */
+  private static String codingDisplay(String display, String language) {
+    if (display == null) {
+      return null;
+    }
+    try {
+      List<CodingDisplay> names = JsonUtil.getObjectMapper().readValue(display, JsonUtil.getListType(CodingDisplay.class));
+      if (names.isEmpty()) {
+        return null;
+      }
+      if (language == null) {
+        return names.get(0).name();
+      }
+      return names.stream().filter(n -> language.equals(n.language())).map(CodingDisplay::name).findFirst().orElseGet(() -> names.get(0).name());
+    } catch (JsonProcessingException e) {
+      return display;
     }
   }
 
