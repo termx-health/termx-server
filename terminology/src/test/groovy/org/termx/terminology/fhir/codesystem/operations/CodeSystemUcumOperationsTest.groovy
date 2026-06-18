@@ -254,7 +254,8 @@ class CodeSystemUcumOperationsTest extends Specification {
     def propertyCodes = properties.collect { property -> property.part.find { it.name == "code" }?.valueCode }.toSet()
 
     then:
-    propertyCodes == ["status", "comment"] as Set
+    // "inactive" is now emitted as a standard computed $lookup property alongside the defined ones
+    propertyCodes == ["status", "comment", "inactive"] as Set
   }
 
   def "lookup returns coding property display from snapshot"() {
