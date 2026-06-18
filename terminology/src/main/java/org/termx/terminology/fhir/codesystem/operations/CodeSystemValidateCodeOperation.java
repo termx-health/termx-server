@@ -71,7 +71,7 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     return new ResourceContent(FhirMapper.toJson(resp), "json");
   }
 
-  private Parameters run(Parameters req) {
+  public Parameters run(Parameters req) {
     String url = req.findParameter("url")
         .map(pp -> StringUtils.firstNonBlank(pp.getValueUrl(), pp.getValueCanonical(), pp.getValueUri(), pp.getValueString()))
         .or(() -> req.findParameter("system")
