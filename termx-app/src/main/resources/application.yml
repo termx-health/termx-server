@@ -110,6 +110,15 @@ snowstorm:
   branch: 'MAIN'
   namespace: '1000265'
 
+# External LOINC FHIR terminology server (default the official fhir.loinc.org). When configured, TermX
+# resolves http://loinc.org codes by delegating $lookup/$validate-code there instead of importing LOINC.
+loinc:
+  url: ${LOINC_URL:`https://fhir.loinc.org`}
+  # Full Authorization header value (the server is HTTP Basic), e.g. "Basic <base64 user:pass>". Empty = off.
+  authentication: ${LOINC_AUTHENTICATION:}
+  # local | local-first | external — see LoincCodeSystemProvider.
+  source: ${LOINC_SOURCE:local-first}
+
 terminology-ecosystem:
   coordination-server-url: ${TERMINOLOGY_ECOSYSTEM_URL:http://tx.fhir.org/tx-reg}
 
