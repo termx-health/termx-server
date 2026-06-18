@@ -135,6 +135,17 @@ public class TxConformanceSetupLoader {
       if (resp.statusCode() / 100 == 2) {
         return true;
       }
+      // The tx-ecosystem ships the same canonical (url) at the same version more than once — e.g. a value
+      // set referenced by several suites, or duplicated across test folders. reconcileCanonicalId folds
+      // these to one resource, so the second POST of an identical, already-active version is rejected
+      // (TE104 "already final" / TE102 "already exists"). Since the import is transactional, an active
+      // version means a complete prior load — the content is present either way, so treat it as loaded
+      // (matching this loader's "duplicates on re-run are tolerated" contract) rather than re-posting it
+      // every pass and reporting it as unresolved.
+      if (alreadyPresent(resp.body())) {
+        log.info("tx conformance setup: {} {} -> already present, treating as loaded", method, url);
+        return true;
+      }
       // Honest logging: report the real status + a snippet of the error so an incomplete setup is
       // diagnosable, instead of the misleading blanket "already present".
       log.info("tx conformance setup: {} {} -> {}: {}", method, url, resp.statusCode(), summarize(resp.body()));
@@ -166,6 +177,18 @@ public class TxConformanceSetupLoader {
         return "";
       }
     }
+  }
+
+  /**
+   * True when an import failure means the resource is already present (a duplicate of an already-loaded,
+   * activated canonical): TE104 "version already final" or TE102 "version already exists". Such a resource's
+   * content is in the server, so the loader treats it as loaded rather than retrying it every pass.
+   */
+  static boolean alreadyPresent(String responseBody) {
+    if (responseBody == null) {
+      return false;
+    }
+    return responseBody.contains("TE104") || responseBody.contains("TE102");
   }
 
   private static String summarize(String responseBody) {
