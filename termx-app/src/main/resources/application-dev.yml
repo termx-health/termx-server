@@ -10,6 +10,15 @@ termx:
   web-url: http://localhost:4200
   api-url: https://localhost:8200
 
+# ─── Snowstorm (SNOMED backend) — shared dev instance ────────────────────────────
+# Shared across developers: the dev.termx.org Snowstorm, Estonian edition branch.
+# Overridable per-env via SNOWSTORM_URL / SNOWSTORM_BRANCH. user/password inherit
+# from application.yml (blank → client sends no auth → read-only), which is enough
+# for expand/validate-code/lookup against the shared instance.
+snowstorm:
+  url: ${SNOWSTORM_URL:`https://snomed.termx.org/snowstorm/snomed-ct/`}
+  branch: ${SNOWSTORM_BRANCH:`MAIN/SNOMEDCT-EE`}
+
 github:
   client:
     id: 'Iv23lipQQ7hPChW6Hv2P'
