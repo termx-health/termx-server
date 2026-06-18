@@ -49,6 +49,7 @@ class ValueSetExpandOperationTest extends Specification {
   def mapper = Mock(ValueSetFhirMapper)
   def codeSystemService = Mock(CodeSystemService)
   def conceptService = Mock(ConceptService)
+  def conceptSupplementService = Mock(org.termx.terminology.terminology.codesystem.concept.ConceptSupplementService)
   // SNOMED provider — recognised via getCodeSystemId() == "snomed-ct". Delegated
   // to by the operation for `?fhir_vs[=...]` URLs. The mock captures the
   // synthesised rule so tests can assert on the filter (operator + value) the
@@ -66,7 +67,8 @@ class ValueSetExpandOperationTest extends Specification {
       mapper,
       [snomedProvider],
       codeSystemService,
-      conceptService)
+      conceptService,
+      conceptSupplementService)
 
   /**
    * Snapshot the operation hands off to {@link ValueSetFhirMapper#toFhir}.

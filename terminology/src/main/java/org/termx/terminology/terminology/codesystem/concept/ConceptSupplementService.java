@@ -15,6 +15,7 @@ import org.termx.ts.codesystem.CodeSystemQueryParams;
 import org.termx.ts.codesystem.Concept;
 import org.termx.ts.codesystem.ConceptQueryParams;
 import org.termx.ts.codesystem.Designation;
+import org.termx.ts.valueset.ValueSetVersionConcept;
 import io.micronaut.core.util.CollectionUtils;
 import jakarta.inject.Singleton;
 import java.util.ArrayList;
@@ -60,6 +61,81 @@ public class ConceptSupplementService {
     }
     mergeRuntimeSupplements(List.of(concept), params);
     return concept;
+  }
+
+  /**
+   * Layers supplement designations onto an already-expanded ValueSet member list (display + additional
+   * designations), by base code system and code — the expansion counterpart of {@link #mergeRuntimeSupplements}.
+   * The $lookup/$validate-code path merges supplements inside {@link ConceptService#query}; $expand builds its
+   * members through other routes (the SQL expand and the external SNOMED expand provider) that never touch that
+   * merge, so a supplement on e.g. SNOMED never surfaced in an expansion. This closes that gap for both the
+   * stored and inline expand paths. Triggered by {@code useSupplement} or {@code includeSupplement}+displayLanguage.
+   */
+  public void mergeSupplementsIntoExpansion(List<ValueSetVersionConcept> members, ConceptQueryParams params) {
+    if (CollectionUtils.isEmpty(members) || !shouldLoadSupplements(params)) {
+      return;
+    }
+    List<Concept> conceptView = members.stream()
+        .map(ValueSetVersionConcept::getConcept).filter(Objects::nonNull)
+        .filter(c -> StringUtils.isNotBlank(c.getCode()) && StringUtils.isNotBlank(c.getCodeSystem()))
+        .map(c -> {
+          Concept view = new Concept();
+          view.setCode(c.getCode());
+          view.setCodeSystem(c.getCodeSystem());
+          return view;
+        })
+        .toList();
+    Map<String, List<ResolvedSupplement>> supplementsByBaseCodeSystem = resolveSupplements(conceptView, params);
+    if (supplementsByBaseCodeSystem.isEmpty()) {
+      return;
+    }
+
+    members.stream()
+        .filter(m -> m.getConcept() != null && StringUtils.isNotBlank(m.getConcept().getCodeSystem()))
+        .collect(Collectors.groupingBy(m -> m.getConcept().getCodeSystem()))
+        .forEach((baseCodeSystem, csMembers) -> {
+          List<ResolvedSupplement> supplements = supplementsByBaseCodeSystem.get(baseCodeSystem);
+          if (CollectionUtils.isEmpty(supplements)) {
+            return;
+          }
+          List<String> codes = csMembers.stream().map(m -> m.getConcept().getCode()).filter(StringUtils::isNotBlank).distinct().toList();
+          Map<String, List<Designation>> byCode = new LinkedHashMap<>();
+          supplements.forEach(supplement -> loadSupplementConcepts(supplement.id(), codes, supplement.version(), params).forEach(concept -> {
+            List<Designation> designations = concept.getVersions() == null ? List.of() : concept.getVersions().stream()
+                .flatMap(v -> Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream())
+                .filter(d -> languageMatches(d.getLanguage(), params.getDisplayLanguage()))
+                .map(d -> d.setSupplement(true))
+                .toList();
+            if (CollectionUtils.isNotEmpty(designations)) {
+              byCode.computeIfAbsent(concept.getCode(), key -> new ArrayList<>()).addAll(designations);
+            }
+          }));
+          csMembers.forEach(member -> applySupplementDesignations(member, byCode.getOrDefault(member.getConcept().getCode(), List.of()), params.getDisplayLanguage()));
+        });
+  }
+
+  /** Appends supplement designations to a member (deduped) and, when a displayLanguage is requested, surfaces a matching supplement designation as the member's display. */
+  private static void applySupplementDesignations(ValueSetVersionConcept member, List<Designation> supplementDesignations, String displayLanguage) {
+    if (CollectionUtils.isEmpty(supplementDesignations)) {
+      return;
+    }
+    List<Designation> additional = new ArrayList<>(Optional.ofNullable(member.getAdditionalDesignations()).orElse(List.of()));
+    supplementDesignations.forEach(d -> {
+      if (additional.stream().noneMatch(a -> designationKey(a).equals(designationKey(d)))) {
+        additional.add(d);
+      }
+    });
+    member.setAdditionalDesignations(additional);
+    if (StringUtils.isNotBlank(displayLanguage)) {
+      supplementDesignations.stream()
+          .filter(d -> languageMatches(d.getLanguage(), displayLanguage) && d.getName() != null)
+          .findFirst()
+          .ifPresent(member::setDisplay);
+    }
+  }
+
+  private static String designationKey(Designation d) {
+    return d.getLanguage() + "|" + d.getDesignationType() + "|" + d.getName();
   }
 
   private void applySupplements(String baseCodeSystem, List<Concept> concepts, List<ResolvedSupplement> supplements, ConceptQueryParams params) {
