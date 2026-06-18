@@ -227,9 +227,10 @@ public class ValueSetVersionConceptService {
       externalExpansion.addAll(provider.expand(ruleSet, version, preferredLanguage));
     }
     expansion.addAll(externalExpansion);
-    if (!ruleSet.isInactive()) {
-      return expansion.stream().filter(ValueSetVersionConcept::isActive).toList();
-    }
+    // FHIR: inactive concepts are part of the expansion by default (rendered with inactive=true) and are
+    // excluded only at render time when activeOnly=true (see ValueSetFhirMapper.toFhirExpansion). The
+    // snapshot is request-agnostic, so it must carry the superset including inactive concepts; previously
+    // they were dropped here unless compose.inactive was set, which hid them from every consumer.
     return expansion;
   }
 
