@@ -216,7 +216,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     List<ValueSetVersionConcept> vsConcepts = valueSetVersionConceptService.expand(vsVersion, displayLanguage);
     ValueSetVersionConcept concept = vsConcepts.stream()
         .filter(c -> finalCode.equals(c.getConcept().getCode()))
-        .filter(c -> finalSystem == null || finalSystem.equals(c.getConcept().getCodeSystemUri()))
+        .filter(c -> systemMatches(c, finalSystem))
         .filter(c -> finalVersion == null || (c.getConcept().getCodeSystemVersions() != null && c.getConcept().getCodeSystemVersions().contains(finalVersion)))
         .findFirst().orElse(null);
 
@@ -227,7 +227,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     if (concept == null && finalVersion != null && finalSystem != null) {
       ValueSetVersionConcept anyVersion = vsConcepts.stream()
           .filter(c -> finalCode.equals(c.getConcept().getCode()))
-          .filter(c -> finalSystem.equals(c.getConcept().getCodeSystemUri()))
+          .filter(c -> systemMatches(c, finalSystem))
           .findFirst().orElse(null);
       if (anyVersion != null) {
         List<String> available = Optional.ofNullable(anyVersion.getConcept().getCodeSystemVersions()).orElse(List.of());
@@ -261,6 +261,18 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       parameters.addParameter(new ParametersParameter("issues").setResource(outcome));
     }
     return parameters;
+  }
+
+  /**
+   * Whether a value set member satisfies the requested {@code system}. A member matches its own code system
+   * uri, but ALSO its base code system uri: a {@code valueset-supplement}-bound value set carries the
+   * supplement as the member's code system, yet the codes belong to (and are presented/validated against) the
+   * base — so {@code $validate-code} with {@code system=<base>} must still find them. A null system matches any.
+   */
+  private static boolean systemMatches(ValueSetVersionConcept c, String system) {
+    return system == null
+        || system.equals(c.getConcept().getCodeSystemUri())
+        || system.equals(c.getConcept().getBaseCodeSystemUri());
   }
 
   /**
