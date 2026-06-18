@@ -122,6 +122,14 @@ loinc:
 terminology-ecosystem:
   coordination-server-url: ${TERMINOLOGY_ECOSYSTEM_URL:http://tx.fhir.org/tx-reg}
 
+kefhir:
+  validation:
+    # TermX IS the terminology authority — it validates codes through its own operations
+    # ($validate-code/$expand), not the inbound FHIR profile validator. Strict terminology checks on
+    # inbound resources reject ones referencing code systems not in the validator's context (e.g. a
+    # passed-in tx-resource's CodeSystem.versionAlgorithm), which 400s otherwise-valid operation calls.
+    no-terminology-checks: ${KEFHIR_NO_TERMINOLOGY_CHECKS:true}
+
 chef.url: https://demo.termx.org/chef
 #github:
 #  client:
