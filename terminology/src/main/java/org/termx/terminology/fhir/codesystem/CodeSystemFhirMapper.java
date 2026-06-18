@@ -503,10 +503,13 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     }
     codeSystem.setUri(fhirCS.getUrl());
     codeSystem.setPublisher(fhirCS.getPublisher());
-    codeSystem.setName(fhirCS.getName());
-    // FHIR title is optional, but TermX stores it NOT NULL — default an absent title to the resource name.
+    // FHIR name and title are optional, but TermX stores title NOT NULL. Fall back title -> name -> id;
+    // id itself already derives from the url's last segment when absent (see fhirIdOrFromUrl above), so a
+    // resource carrying only a url still loads instead of hitting the not-null constraint.
+    String name = StringUtils.isNotEmpty(fhirCS.getName()) ? fhirCS.getName() : codeSystem.getId();
+    codeSystem.setName(name);
     codeSystem.setTitle(fromFhirName(
-        StringUtils.isNotEmpty(fhirCS.getTitle()) ? fhirCS.getTitle() : fhirCS.getName(),
+        StringUtils.isNotEmpty(fhirCS.getTitle()) ? fhirCS.getTitle() : name,
         fhirCS.getLanguage(), fhirCS.getPrimitiveElement("title")));
     codeSystem.setDescription(fromFhirName(fhirCS.getDescription(), fhirCS.getLanguage(), fhirCS.getPrimitiveElement("description")));
     codeSystem.setPurpose(fromFhirName(fhirCS.getPurpose(), fhirCS.getLanguage(), fhirCS.getPrimitiveElement("purpose")));
@@ -552,7 +555,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   private static List<CodeSystemVersion> fromFhirVersion(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     CodeSystemVersion version = new CodeSystemVersion();
-    version.setCodeSystem(fhirCodeSystem.getId());
+    // Use the same id the code system resolves to (derived from the url's last segment when the resource
+    // carries no explicit id) — otherwise the version's code_system FK is null for id-less fixtures.
+    version.setCodeSystem(fhirIdOrFromUrl(fhirCodeSystem.getId(), fhirCodeSystem.getUrl()));
     version.setVersion(fhirCodeSystem.getVersion() == null ? "1.0.0" : fhirCodeSystem.getVersion());
     version.setPreferredLanguage(fhirCodeSystem.getLanguage() == null ? Language.en : fhirCodeSystem.getLanguage());
     var supportedLanguages = Optional.ofNullable(fhirCodeSystem.getConcept()).map(List::stream).orElse(Stream.of())
@@ -690,7 +695,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirConcepts.forEach(c -> {
       Concept concept = new Concept();
       concept.setCode(c.getCode());
-      concept.setCodeSystem(fhirCodeSystem.getId());
+      concept.setCodeSystem(fhirIdOrFromUrl(fhirCodeSystem.getId(), fhirCodeSystem.getUrl()));
       concept.setVersions(fromFhirConcepts(c, fhirCodeSystem, parent, parentMap));
       concepts.add(concept);
       if (c.getConcept() != null) {
@@ -705,7 +710,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
                                                                 CodeSystemConcept parent, Map<String, List<String>> parentMap) {
     CodeSystemEntityVersion version = new CodeSystemEntityVersion();
     version.setCode(c.getCode());
-    version.setCodeSystem(codeSystem.getId());
+    version.setCodeSystem(fhirIdOrFromUrl(codeSystem.getId(), codeSystem.getUrl()));
     version.setDesignations(fromFhirDesignations(c, codeSystem));
     version.setPropertyValues(fromFhirProperties(c.getProperty(), c.getCode()));
     version.setAssociations(fromFhirAssociations(parent, parentMap.get(c.getCode()), codeSystem));
@@ -821,7 +826,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       association.setAssociationType(codeSystem.getHierarchyMeaning() == null ? "is-a" : codeSystem.getHierarchyMeaning());
       association.setStatus(PublicationStatus.active);
       association.setTargetCode(parent.getCode());
-      association.setCodeSystem(codeSystem.getId());
+      association.setCodeSystem(fhirIdOrFromUrl(codeSystem.getId(), codeSystem.getUrl()));
       associations.add(association);
     }
     if (CollectionUtils.isNotEmpty(parents)) {
@@ -830,7 +835,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         association.setAssociationType(codeSystem.getHierarchyMeaning() == null ? "is-a" : codeSystem.getHierarchyMeaning());
         association.setStatus(PublicationStatus.active);
         association.setTargetCode(p);
-        association.setCodeSystem(codeSystem.getId());
+        association.setCodeSystem(fhirIdOrFromUrl(codeSystem.getId(), codeSystem.getUrl()));
         return association;
       }).toList());
     }

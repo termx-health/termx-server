@@ -57,4 +57,22 @@ class ValueSetFhirMapperLanguageSpec extends Specification {
     languages.contains("et")
     languages.contains("ru")
   }
+
+  def "fromFhir defaults an absent title and name to the id (derived from the url's last segment)"() {
+    given: "a ValueSet with neither title nor name nor id — only a url"
+    def fhir = new com.kodality.zmei.fhir.resource.terminology.ValueSet()
+        .setUrl("http://hl7.org/fhir/test/ValueSet/simple-all")
+        .setStatus("active")
+
+    when:
+    def vs = ValueSetFhirMapper.fromFhirValueSet(fhir)
+
+    then: "title is non-null (TermX stores it NOT NULL) and falls back through name -> id -> url last segment"
+    vs.id == "simple-all"
+    vs.name == "simple-all"
+    vs.title != null
+    vs.title.values().contains("simple-all")
+    and: "the version's value_set FK uses the derived id (else the version insert hits a not-null violation)"
+    vs.versions.first().valueSet == "simple-all"
+  }
 }
