@@ -151,4 +151,39 @@ class CodeSystemFhirMapperSpec extends Specification {
     languages.contains("et")
     languages.contains("ru")
   }
+
+  def "meta.profile round-trips: import populates profile, export emits meta.profile"() {
+    given:
+    conceptService.load(_, _) >> Optional.empty()
+    def fhir = new com.kodality.zmei.fhir.resource.terminology.CodeSystem()
+        .setId("cs").setUrl("http://fhir.ee/CodeSystem/cs").setName("cs").setContent("not-present")
+    fhir.setMeta(new com.kodality.zmei.fhir.resource.Meta().setProfile([
+        org.termx.ts.FhirProfile.SHAREABLE_CODE_SYSTEM, "http://example.org/StructureDefinition/custom"]))
+
+    when: "import"
+    def imported = mapper.fromFhirCodeSystem(fhir)
+
+    then: "both the recognized and the custom profile are stored verbatim"
+    imported.profile == [org.termx.ts.FhirProfile.SHAREABLE_CODE_SYSTEM, "http://example.org/StructureDefinition/custom"]
+
+    when: "export the stored profile back out"
+    def version = new CodeSystemVersion().setVersion("1.0.0").setPreferredLanguage("en")
+        .setReleaseDate(LocalDate.parse("2026-06-18")).setStatus(PublicationStatus.draft)
+    def out = mapper.toFhir(imported.setTitle(new LocalizedName([en: "cs"])), version, [])
+
+    then:
+    out.meta.profile == [org.termx.ts.FhirProfile.SHAREABLE_CODE_SYSTEM, "http://example.org/StructureDefinition/custom"]
+  }
+
+  def "no declared profile leaves meta unset on export"() {
+    given:
+    conceptService.load(_, _) >> Optional.empty()
+    def cs = new CodeSystem().setId("cs").setUri("http://fhir.ee/CodeSystem/cs").setName("cs")
+        .setTitle(new LocalizedName([en: "cs"])).setContent("not-present")
+    def version = new CodeSystemVersion().setVersion("1.0.0").setPreferredLanguage("en")
+        .setReleaseDate(LocalDate.parse("2026-06-18")).setStatus(PublicationStatus.draft)
+
+    expect:
+    mapper.toFhir(cs, version, []).meta == null
+  }
 }

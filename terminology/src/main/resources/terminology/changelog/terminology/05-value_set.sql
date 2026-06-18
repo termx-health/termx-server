@@ -266,3 +266,9 @@ alter table terminology.value_set_version_rule_set alter column inactive drop no
 --rollback update terminology.value_set_version_rule_set set inactive = false where inactive is null;
 --rollback alter table terminology.value_set_version_rule_set alter column inactive set not null;
 --
+
+--changeset termx:value_set-profile
+-- FHIR meta.profile: conformance profiles the resource claims (0..*). Default empty (no profile).
+alter table terminology.value_set add column profile text[];
+--rollback alter table terminology.value_set drop column profile;
+--

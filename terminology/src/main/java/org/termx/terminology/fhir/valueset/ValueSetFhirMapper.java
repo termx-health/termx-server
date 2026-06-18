@@ -148,6 +148,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       fhirValueSet.addExtension(toFhirWebSourceExtension(valueSet.getExternalWebSource()));
     }
     fhirValueSet.setId(toFhirId(valueSet, version));
+    if (CollectionUtils.isNotEmpty(valueSet.getProfile())) {
+      fhirValueSet.setMeta(new com.kodality.zmei.fhir.resource.Meta().setProfile(valueSet.getProfile()));
+    }
     fhirValueSet.setUrl(valueSet.getUri());
     fhirValueSet.setName(valueSet.getName());
     if (CollectionUtils.isNotEmpty(valueSet.getOtherTitle())) {
@@ -713,6 +716,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   public static ValueSet fromFhirValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     ValueSet vs = new ValueSet();
     vs.setId(ValueSetFhirMapper.fhirIdOrFromUrl(valueSet.getId(), valueSet.getUrl()));
+    if (valueSet.getMeta() != null && CollectionUtils.isNotEmpty(valueSet.getMeta().getProfile())) {
+      vs.setProfile(valueSet.getMeta().getProfile());
+    }
     vs.setUri(valueSet.getUrl());
     vs.setPublisher(valueSet.getPublisher());
     vs.setName(valueSet.getName());

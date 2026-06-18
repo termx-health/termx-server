@@ -24,6 +24,8 @@ public class MapSet extends UniqueResource<MapSet> {
   private String uri;
   private String publisher;
   private String name;
+  // FHIR meta.profile — the conformance profiles this resource claims (see org.termx.ts.FhirProfile).
+  private List<String> profile;
   private List<OtherTitle> otherTitle;
   private LocalizedName title;
   private LocalizedName description;
