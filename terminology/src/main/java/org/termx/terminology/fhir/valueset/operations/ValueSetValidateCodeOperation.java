@@ -238,7 +238,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     }
 
     if (concept == null) {
-      return error(String.format("The provided code %s is not in the value set", (system != null ? system  + "#" : "") + code));
+      return notInValueSet(finalCode, finalSystem, vsConcepts);
     }
 
     Parameters parameters = new Parameters();
@@ -418,6 +418,35 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     return new Parameters()
         .addParameter(new ParametersParameter("result").setValueBoolean(false))
         .addParameter(new ParametersParameter("message").setValueString(message));
+  }
+
+  /**
+   * Response for a code that is not in the value set: 200 with result=false, the code/system/version echoed,
+   * and a structured {@code issues} OperationOutcome ({@code code-invalid} with tx-issue-type {@code not-in-vs}
+   * and {@code invalid-code} at {@code code}) — the FHIR tx ecosystem shape, instead of a flat message only.
+   */
+  private static Parameters notInValueSet(String code, String system, List<ValueSetVersionConcept> vsConcepts) {
+    String version = vsConcepts.stream()
+        .filter(c -> system == null || systemMatches(c, system))
+        .map(c -> c.getConcept().getCodeSystemVersions())
+        .filter(java.util.Objects::nonNull).flatMap(List::stream)
+        .findFirst().orElse(null);
+    String message = String.format("The provided code %s is not in the value set", (system != null ? system + "#" : "") + code);
+    Parameters result = new Parameters()
+        .addParameter(new ParametersParameter("result").setValueBoolean(false))
+        .addParameter(new ParametersParameter("code").setValueCode(code));
+    if (system != null) {
+      result.addParameter(new ParametersParameter("system").setValueUri(system));
+    }
+    if (version != null) {
+      result.addParameter(new ParametersParameter("version").setValueString(version));
+    }
+    result.addParameter(new ParametersParameter("message").setValueString(message));
+    result.addParameter(new ParametersParameter("issues").setResource(
+        org.termx.terminology.fhir.TxIssues.outcome(
+            org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", message, "code"),
+            org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", message, "code"))));
+    return result;
   }
 
 }
