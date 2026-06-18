@@ -1,6 +1,7 @@
 package org.termx.terminology.terminology.valueset;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
+import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
@@ -36,6 +37,7 @@ public class ValueSetRepository extends BaseRepository {
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
     bp.addColumnProcessor("configuration_attributes", PgBeanProcessor.fromJson(JsonUtil.getListType(ConfigurationAttribute.class)));
     bp.addColumnProcessor("last_version", "latestVersion", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("profile", PgBeanProcessor.fromArray());
   });
 
   private static final String selectBase = "select distinct on (vs.id) vs.*, null::json as last_version ";
@@ -69,6 +71,7 @@ public class ValueSetRepository extends BaseRepository {
     ssb.property("uri", valueSet.getUri());
     ssb.property("publisher", valueSet.getPublisher());
     ssb.property("name", valueSet.getName());
+    ssb.property("profile", "?::text[]", PgUtil.array(valueSet.getProfile()));
     ssb.jsonProperty("other_title", valueSet.getOtherTitle());
     ssb.jsonProperty("title", valueSet.getTitle());
     ssb.jsonProperty("description", valueSet.getDescription());

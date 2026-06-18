@@ -158,3 +158,9 @@ add column external_web_source text;
 --rollback  drop column if exists external_web_source,
 --rollback  add column external_web_source boolean;
 --
+
+--changeset termx:code_system-profile
+-- FHIR meta.profile: conformance profiles the resource claims (0..*). Default empty (no profile).
+alter table terminology.code_system add column profile text[];
+--rollback alter table terminology.code_system drop column profile;
+--
