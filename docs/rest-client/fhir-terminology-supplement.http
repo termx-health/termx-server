@@ -182,6 +182,15 @@ GET {{fhir}}/ValueSet/$expand?url={{vsRu}}&displayLanguage=ru
 Authorization: Bearer {{token}}
 Accept: application/fhir+json
 
+### 10b. $expand with includeDesignations=true — the supplement's localized DESIGNATIONS
+#     surface in contains[].designation (not only the chosen display), each exactly once.
+# expect: red/green/blue; every contains[].designation lists the Estonian value
+#         (punane / roheline / sinine) sourced from the supplement, with NO duplicate
+#         of a designation already on the base concept.
+GET {{fhir}}/ValueSet/tx-rest-demo-color-vs-et/$expand?displayLanguage=et&includeDesignations=true
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
 ### 11. $validate-code (by URL) — a code that IS in the value set
 # expect: Parameters with result=true, code=red, system=base, display=Red.
 GET {{fhir}}/ValueSet/$validate-code?url={{vsEt}}&system={{base}}&code=red

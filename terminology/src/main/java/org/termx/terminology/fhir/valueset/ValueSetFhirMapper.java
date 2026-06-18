@@ -476,8 +476,12 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
         c.getConcept().getCodeSystemVersions().stream().findFirst().orElse(null) : null);
     contains.setInactive(!c.isActive() ? true : null);
     contains.setDisplay(c.getDisplay() == null || (lang != null && !c.getDisplay().getLanguage().startsWith(lang)) ? null : c.getDisplay().getName());
+    // A supplement can contribute the same designation already present on the base concept, so dedup by
+    // (language, value, type) — otherwise the same localized designation is emitted twice in the expansion.
+    Set<String> seenDesignations = new HashSet<>();
     contains.setDesignation(CollectionUtils.isNotEmpty(c.getAdditionalDesignations()) && includeDesignations ? c.getAdditionalDesignations().stream()
         .filter(d -> !"definition".equals(d.getDesignationType()))
+        .filter(d -> seenDesignations.add(d.getLanguage() + "|" + d.getName() + "|" + d.getDesignationType()))
         .sorted(Comparator.comparing(d -> !d.isPreferred())).map(designation -> {
           ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
           d.setValue(designation.getName());
