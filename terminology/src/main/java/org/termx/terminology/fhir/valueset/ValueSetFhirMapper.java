@@ -73,6 +73,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -365,7 +366,13 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     // handing off; fall back to concepts.size() only when the snapshot is
     // un-paginated (e.g. legacy callers).
     expansion.setTotal(snapshot.getConceptsTotal() != null ? snapshot.getConceptsTotal() : concepts.size());
-    expansion.setParameter(toValueSetParameter(param));
+    // expansion.parameter records how the expansion was produced: the echoed control parameters
+    // (activeOnly, excludeNested, count, …) followed by the derived `used-codesystem` entries — one per
+    // distinct code system version that actually contributed a concept. The tx-ecosystem suite asserts
+    // these `used-codesystem` outputs; the selection identifiers (url/valueSet/…) are NOT echoed here.
+    List<ValueSetExpansionParameter> parameters = new ArrayList<>(Optional.ofNullable(toValueSetParameter(param)).orElse(List.of()));
+    parameters.addAll(toUsedCodeSystemParameters(concepts));
+    expansion.setParameter(parameters.isEmpty() ? null : parameters);
     expansion.setTimestamp(snapshot.getCreatedAt());
 
     // Declare the properties that may appear in contains.property: the value set's declared properties,
@@ -386,12 +393,19 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return expansion;
   }
 
+  // $expand parameters that identify WHICH value set to expand rather than HOW. FHIR records the "how"
+  // params in expansion.parameter but not the selection identifiers, and the tx-ecosystem suite flags an
+  // echoed `url` (etc.) as an unexpected expansion.parameter. Filtered out of the echo below.
+  private static final Set<String> EXPANSION_SELECTION_PARAMETERS = Set.of("url", "valueSet", "valueSetVersion", "context", "contextDirection");
+
   private static List<ValueSetExpansionParameter> toValueSetParameter(Parameters param) {
     if (param == null || param.getParameter() == null) {
       return null;
     }
 
-    return param.getParameter().stream().map(p -> new ValueSetExpansionParameter().setName(p.getName())
+    return param.getParameter().stream()
+        .filter(p -> !EXPANSION_SELECTION_PARAMETERS.contains(p.getName()))
+        .map(p -> new ValueSetExpansionParameter().setName(p.getName())
         .setValueString(p.getValueString())
         .setValueBoolean(p.getValueBoolean())
         .setValueInteger(p.getValueInteger())
@@ -410,6 +424,35 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return p.getValueString() != null || p.getValueBoolean() != null || p.getValueInteger() != null
         || p.getValueDecimal() != null || p.getValueUri() != null || p.getValueCode() != null
         || p.getValueDateTime() != null;
+  }
+
+  /**
+   * Derives the {@code used-codesystem} expansion parameters: one {@code valueUri} per distinct code
+   * system version that actually contributed a concept to this expansion, formatted as {@code system|version}
+   * (or bare {@code system} when no version is known). Iteration order is preserved (LinkedHashSet) so the
+   * output is stable. This is an output of the expansion — it reports what was used, not what was requested.
+   */
+  private static List<ValueSetExpansionParameter> toUsedCodeSystemParameters(List<ValueSetVersionConcept> concepts) {
+    Set<String> uris = new LinkedHashSet<>();
+    for (ValueSetVersionConcept c : concepts) {
+      ValueSetVersionConceptValue v = c.getConcept();
+      if (v == null) {
+        continue;
+      }
+      // A base concept surfaced through a supplement carries baseCodeSystemUri and no version; a regular
+      // concept carries codeSystemUri plus its applicable code system version(s).
+      String system = v.getBaseCodeSystemUri() != null ? v.getBaseCodeSystemUri() : v.getCodeSystemUri();
+      if (system == null) {
+        continue;
+      }
+      List<String> versions = v.getBaseCodeSystemUri() == null ? v.getCodeSystemVersions() : null;
+      if (CollectionUtils.isEmpty(versions)) {
+        uris.add(system);
+      } else {
+        versions.stream().filter(StringUtils::isNotEmpty).forEach(ver -> uris.add(system + "|" + ver));
+      }
+    }
+    return uris.stream().map(uri -> new ValueSetExpansionParameter().setName("used-codesystem").setValueUri(uri)).collect(toList());
   }
 
   private static ValueSetExpansionContains toFhirExpansionContains(ValueSetVersionConcept c, List<String> allProperties, Parameters param) {

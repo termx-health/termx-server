@@ -144,6 +144,45 @@ class ValueSetFhirMapperExpansionSpec extends Specification {
     expansionDesignation.designationType == "alias"
   }
 
+  def "expansion derives used-codesystem params and does not echo the url selection parameter"() {
+    given: "a value set version with two concepts: two share CS version 1.0.0, one comes from a second CS"
+    conceptService.load(_, _) >> Optional.empty()
+    relatedArtifactService.findRelatedArtifacts(_) >> []
+    def valueSet = new ValueSet().setId("vs").setUri("http://fhir.ee/ValueSet/vs").setName("vs").setTitle(new LocalizedName([en: "vs"]))
+    def version = new ValueSetVersion().setVersion("1.0.0").setPreferredLanguage("en")
+        .setReleaseDate(LocalDate.parse("2026-06-17")).setStatus(PublicationStatus.active)
+        .setRuleSet(new ValueSetVersionRuleSet().setRules([new ValueSetVersionRule().setType("include").setCodeSystem("cs")]))
+
+    and:
+    def a = new ValueSetVersionConcept().setConcept(new ValueSetVersionConceptValue().setCode("A")
+        .setCodeSystem("cs1").setCodeSystemUri("http://cs1").setCodeSystemVersions(["1.0.0"]))
+        .setDisplay(new Designation().setName("A").setLanguage("en")).setActive(true).setStatus("active")
+    def b = new ValueSetVersionConcept().setConcept(new ValueSetVersionConceptValue().setCode("B")
+        .setCodeSystem("cs1").setCodeSystemUri("http://cs1").setCodeSystemVersions(["1.0.0"]))
+        .setDisplay(new Designation().setName("B").setLanguage("en")).setActive(true).setStatus("active")
+    def c = new ValueSetVersionConcept().setConcept(new ValueSetVersionConceptValue().setCode("C")
+        .setCodeSystem("cs2").setCodeSystemUri("http://cs2").setCodeSystemVersions(["2.1.0"]))
+        .setDisplay(new Designation().setName("C").setLanguage("en")).setActive(true).setStatus("active")
+    def snapshot = new ValueSetSnapshot().setValueSet("vs").setConceptsTotal(3).setExpansion([a, b, c])
+
+    and: "a request carrying the url selection param plus a real excludeNested control param"
+    def param = new com.kodality.zmei.fhir.resource.other.Parameters().setParameter([
+        new com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter().setName("url").setValueUri("http://fhir.ee/ValueSet/vs"),
+        new com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter().setName("excludeNested").setValueBoolean(true),
+    ])
+
+    when:
+    def fhir = mapper.toFhir(valueSet, version, [], snapshot, param)
+    def params = fhir.expansion.parameter
+
+    then: "the url selection identifier is NOT echoed; excludeNested is"
+    params.find { it.name == "url" } == null
+    params.find { it.name == "excludeNested" }.valueBoolean == true
+
+    and: "one used-codesystem per distinct system|version, deduped across the two cs1 concepts, order preserved"
+    params.findAll { it.name == "used-codesystem" }*.valueUri == ["http://cs1|1.0.0", "http://cs2|2.1.0"]
+  }
+
   private static ValueSetVersionConcept concept(String code, List<CodeSystemAssociation> associations) {
     new ValueSetVersionConcept()
         .setConcept(new ValueSetVersionConceptValue().setCode(code).setCodeSystem("cs").setCodeSystemUri("http://cs"))
