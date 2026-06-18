@@ -10,6 +10,7 @@ import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter
 import org.termx.terminology.fhir.codesystem.CodeSystemFhirImportService
 import org.termx.terminology.fhir.valueset.ValueSetFhirImportService
 import org.termx.terminology.fhir.valueset.operations.ValueSetExpandOperation
+import org.termx.terminology.fhir.valueset.operations.ValueSetValidateCodeOperation
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService
 
@@ -30,6 +31,7 @@ class ValueSetSupplementExpandIT extends TermxIntegTest {
   @Inject ValueSetVersionService vsVersionService
   @Inject ValueSetVersionConceptService vsConceptService
   @Inject ValueSetExpandOperation vsExpand
+  @Inject ValueSetValidateCodeOperation vsValidate
 
   void setup() {
     def sessionInfo = new SessionInfo()
@@ -83,6 +85,47 @@ class ValueSetSupplementExpandIT extends TermxIntegTest {
 
     and: "the supplement's lt designation appears exactly once (not duplicated by the base+supplement merge)"
     contains.designation.findAll { it.language == "lt" && it.value == "Gliukozė" }.size() == 1
+  }
+
+  def "\$validate-code on a supplement-bound value set validates a code under the BASE system"() {
+    given: "a validate-code request naming the BASE code system (the value set rule is bound to the supplement)"
+    def req = new Parameters().setParameter([
+        new ParametersParameter().setName("url").setValueUri("http://example.org/ValueSet/suppl-vs"),
+        new ParametersParameter().setName("system").setValueUri("http://example.org/CodeSystem/suppl-base"),
+        new ParametersParameter().setName("code").setValueCode("code1")])
+
+    when:
+    def resp = vsValidate.run(req)
+
+    then: "the base system matches the member (whose code system is the supplement) via its base code system uri"
+    resp.findParameter("result").orElseThrow().valueBoolean
+    resp.findParameter("code").orElseThrow().valueCode == "code1"
+  }
+
+  def "\$validate-code on a supplement-bound value set also accepts the supplement system and no system"() {
+    expect:
+    validate(system, "code1").findParameter("result").orElseThrow().valueBoolean
+
+    where:
+    system << ["http://example.org/CodeSystem/suppl-lt", null]
+  }
+
+  def "\$validate-code on a supplement-bound value set rejects a code not in the value set"() {
+    when:
+    def resp = validate("http://example.org/CodeSystem/suppl-base", "nope")
+
+    then:
+    !resp.findParameter("result").orElseThrow().valueBoolean
+  }
+
+  private Parameters validate(String system, String code) {
+    def params = [
+        new ParametersParameter().setName("url").setValueUri("http://example.org/ValueSet/suppl-vs"),
+        new ParametersParameter().setName("code").setValueCode(code)]
+    if (system != null) {
+      params.add(new ParametersParameter().setName("system").setValueUri(system))
+    }
+    vsValidate.run(new Parameters().setParameter(params))
   }
 
   private String fixture(String path) {
