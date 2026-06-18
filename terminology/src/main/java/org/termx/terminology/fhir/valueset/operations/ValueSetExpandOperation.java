@@ -24,6 +24,7 @@ import org.termx.ts.codesystem.CodeSystemQueryParams;
 import org.termx.ts.codesystem.CodeSystemVersionReference;
 import org.termx.ts.codesystem.Concept;
 import org.termx.ts.codesystem.ConceptQueryParams;
+import io.micronaut.core.util.StringUtils;
 import org.termx.ts.codesystem.Designation;
 import com.kodality.commons.model.QueryResult;
 import org.termx.ts.valueset.*;
@@ -53,6 +54,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   private final List<ValueSetExternalExpandProvider> externalExpandProviders;
   private final CodeSystemService codeSystemService;
   private final ConceptService conceptService;
+  private final org.termx.terminology.terminology.codesystem.concept.ConceptSupplementService conceptSupplementService;
 
   // SNOMED CT implicit-ValueSet URL family
   // https://build.fhir.org/ig/HL7/UTG/en/SNOMEDCT.html
@@ -177,6 +179,15 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
     ValueSetSnapshot snapshot = valueSetVersionConceptService.expand(vs.getId(), version.getVersion(), displayLanguage, includeDesignations);
     List<ValueSetVersionConcept> expandedConcepts = snapshot.getExpansion();
+
+    // Layer supplements (e.g. a SNOMED-based supplement's localized designations) onto the expanded
+    // members. The external SNOMED expand provider fetches base concepts from Snowstorm but never applies
+    // supplements, so they were absent from $expand. Only run on the freshly-computed (non-cached) view —
+    // a displayLanguage or includeDesignations request bypasses the request-agnostic default snapshot, so
+    // the members here are safe to enrich in place.
+    if (StringUtils.isNotEmpty(displayLanguage) || includeDesignations) {
+      conceptSupplementService.mergeSupplementsIntoExpansion(expandedConcepts, supplementParams(displayLanguage, req));
+    }
     List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + version.getId());
 
     // FHIR R5 ValueSet/$expand `filter`: free-text typeahead filter applied to the
@@ -228,6 +239,93 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     return mapper.toFhir(vs, version, provenances, snapshot, req);
   }
 
+  /**
+   * Enriches members the SQL expand couldn't resolve — those from an external (provider-backed, e.g.
+   * SNOMED via Snowstorm) code system come back with no display/designations because the in-DB expand
+   * has no access to the provider. Fetches them through the concept providers by code system + code and
+   * grafts the display + designations. Only members missing a display are fetched, so a pure-local
+   * expansion makes no provider calls.
+   */
+  private void enrichExternalMembers(List<ValueSetVersionConcept> members, String displayLanguage) {
+    java.util.Map<String, List<ValueSetVersionConcept>> byCodeSystem = new java.util.LinkedHashMap<>();
+    for (ValueSetVersionConcept m : members) {
+      if (m.getConcept() == null || StringUtils.isEmpty(m.getConcept().getCode())) {
+        continue;
+      }
+      if (m.getDisplay() != null && StringUtils.isNotEmpty(m.getDisplay().getName())) {
+        continue;
+      }
+      String csId = resolveCodeSystemId(m.getConcept());
+      if (StringUtils.isEmpty(csId)) {
+        continue;
+      }
+      byCodeSystem.computeIfAbsent(csId, key -> new java.util.ArrayList<>()).add(m);
+    }
+    byCodeSystem.forEach((csId, csMembers) -> {
+      List<String> codes = csMembers.stream().map(m -> m.getConcept().getCode()).distinct().toList();
+      java.util.Map<String, Concept> byCode = conceptService.query(new ConceptQueryParams()
+              .setCodeSystem(csId).setCodes(codes).setDisplayLanguage(displayLanguage).limit(codes.size()))
+          .getData().stream().collect(java.util.stream.Collectors.toMap(Concept::getCode, c -> c, (a, b) -> a));
+      csMembers.forEach(m -> {
+        Concept src = byCode.get(m.getConcept().getCode());
+        if (src == null || src.getVersions() == null || src.getVersions().isEmpty()) {
+          return;
+        }
+        List<Designation> designations = java.util.Optional.ofNullable(src.getVersions().get(0).getDesignations()).orElse(List.of());
+        Designation display = ConceptUtil.getDisplay(designations, displayLanguage, List.of());
+        if (display != null) {
+          m.setDisplay(display);
+        }
+        if (m.getAdditionalDesignations() == null || m.getAdditionalDesignations().isEmpty()) {
+          m.setAdditionalDesignations(designations);
+        }
+      });
+    });
+  }
+
+  /** Resolves the internal code system id for an expansion member, mapping a canonical url to the stored id when the id is absent (inline/external members); null when it resolves to no stored code system (nothing to enrich from). */
+  private String resolveCodeSystemId(ValueSetVersionConcept.ValueSetVersionConceptValue c) {
+    if (StringUtils.isNotEmpty(c.getCodeSystem())) {
+      java.util.Optional<CodeSystem> loaded = codeSystemService.load(c.getCodeSystem());
+      if (loaded != null && loaded.isPresent()) {
+        return c.getCodeSystem();
+      }
+    }
+    String uri = StringUtils.isNotEmpty(c.getCodeSystemUri()) ? c.getCodeSystemUri() : c.getCodeSystem();
+    if (StringUtils.isEmpty(uri)) {
+      return null;
+    }
+    // Unresolvable code system → no provider to enrich from; skip rather than query with a bogus id.
+    var byUri = codeSystemService.query(new CodeSystemQueryParams().setUri(uri).limit(1));
+    return byUri == null ? null : byUri.findFirst().map(CodeSystem::getId).orElse(null);
+  }
+
+  /** Builds the supplement context for an expansion: auto-load supplements for the requested displayLanguage, plus any explicit {@code useSupplement}. */
+  private static ConceptQueryParams supplementParams(String displayLanguage, Parameters req) {
+    return new ConceptQueryParams()
+        .setIncludeSupplement(true)
+        .setDisplayLanguage(displayLanguage)
+        .setUseSupplement(extractUseSupplement(req));
+  }
+
+  private static String extractUseSupplement(Parameters req) {
+    if (req == null || req.getParameter() == null) {
+      return null;
+    }
+    String joined = req.getParameter().stream()
+        .filter(p -> "useSupplement".equals(p.getName()))
+        .map(p -> {
+          String v = p.getValueCanonical() != null ? p.getValueCanonical()
+              : p.getValueUri() != null ? p.getValueUri()
+              : p.getValueUrl() != null ? p.getValueUrl() : p.getValueString();
+          return v;
+        })
+        .filter(StringUtils::isNotEmpty)
+        .distinct()
+        .collect(java.util.stream.Collectors.joining(","));
+    return StringUtils.isEmpty(joined) ? null : joined;
+  }
+
   /** Finds a ValueSet supplied inline via a tx-resource parameter whose url matches the requested url. */
   private static com.kodality.zmei.fhir.resource.terminology.ValueSet findTxResourceValueSet(Parameters req, String url) {
     if (req.getParameter() == null || url == null) {
@@ -258,6 +356,12 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     boolean includeDesignations = req != null && req.findParameter("includeDesignations")
         .map(pr -> pr.getValueBoolean() != null && pr.getValueBoolean() || "true".equals(pr.getValueString()))
         .orElse(false);
+
+    // The SQL expand can't reach external providers (e.g. SNOMED via Snowstorm), so those members arrive
+    // bare. Enrich them with display/designations from the providers, then layer supplements onto the
+    // whole expansion — so a SNOMED-based supplement surfaces in an inline/tx-resource $expand too.
+    enrichExternalMembers(expandedConcepts, displayLanguage);
+    conceptSupplementService.mergeSupplementsIntoExpansion(expandedConcepts, supplementParams(displayLanguage, req));
 
     // Apply FHIR R5 `filter` (free-text typeahead) before pagination, matching
     // the stored-VS path semantics. Filters affect `expansion.total`;
