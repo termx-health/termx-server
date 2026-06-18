@@ -76,7 +76,22 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
         .map(pp -> StringUtils.firstNonBlank(pp.getValueUrl(), pp.getValueCanonical(), pp.getValueUri(), pp.getValueString()))
         .or(() -> req.findParameter("system")
             .map(pp -> StringUtils.firstNonBlank(pp.getValueUrl(), pp.getValueCanonical(), pp.getValueUri(), pp.getValueString())))
-        .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
+        .orElse(null);
+
+    // tx-resource / inline: validate against a CodeSystem supplied inline (the FHIR validator passes the
+    // code system in the request rather than relying on stored content — e.g. urn:iso:std:iso:3166) —
+    // either an explicit `codeSystem` parameter or a `tx-resource` whose url matches the requested url.
+    com.kodality.zmei.fhir.resource.terminology.CodeSystem inlineCs = req.findParameter("codeSystem")
+        .filter(pp -> pp.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+        .map(pp -> (com.kodality.zmei.fhir.resource.terminology.CodeSystem) pp.getResource())
+        .orElseGet(() -> findTxResourceCodeSystem(req, url));
+    if (inlineCs != null) {
+      return validateInline(inlineCs, req);
+    }
+
+    if (url == null) {
+      throw new FhirException(400, IssueType.INVALID, "url parameter required");
+    }
     String version = req.findParameter("version").map(ParametersParameter::getValueString).orElse(null);
 
     CodeSystemQueryParams csp = new CodeSystemQueryParams();
@@ -164,6 +179,114 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     return new Parameters()
         .addParameter(new ParametersParameter("result").setValueBoolean(false))
         .addParameter(new ParametersParameter("message").setValueString(message));
+  }
+
+  /** Finds a CodeSystem supplied inline via a tx-resource parameter whose url matches the requested url. */
+  private static com.kodality.zmei.fhir.resource.terminology.CodeSystem findTxResourceCodeSystem(Parameters req, String url) {
+    if (req.getParameter() == null || url == null) {
+      return null;
+    }
+    return req.getParameter().stream()
+        .filter(p -> "tx-resource".equals(p.getName()))
+        .map(ParametersParameter::getResource)
+        .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+        .map(r -> (com.kodality.zmei.fhir.resource.terminology.CodeSystem) r)
+        .filter(cs -> url.equals(cs.getUrl()))
+        .findFirst().orElse(null);
+  }
+
+  /**
+   * Validates a code against an inline CodeSystem — the path used when the code system is supplied in the
+   * request (tx-resource / codeSystem parameter) rather than stored. Walks the inline concept tree by code
+   * and validates any provided display against the concept's display / designations / definition.
+   */
+  private Parameters validateInline(com.kodality.zmei.fhir.resource.terminology.CodeSystem inlineCs, Parameters req) {
+    String code = req.findParameter("code").map(pp -> StringUtils.firstNonBlank(pp.getValueCode(), pp.getValueString())).orElse(null);
+    String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
+    String displayLanguage = req.findParameter("displayLanguage")
+        .map(pp -> StringUtils.firstNonBlank(pp.getValueCode(), pp.getValueString())).orElse(null);
+    if (req.findParameter("coding").isPresent()) {
+      var coding = req.findParameter("coding").map(ParametersParameter::getValueCoding).orElse(null);
+      code = coding != null && coding.getCode() != null ? coding.getCode() : code;
+      display = coding != null && coding.getDisplay() != null ? coding.getDisplay() : display;
+    }
+    if (req.findParameter("codeableConcept").isPresent()) {
+      var cc = req.findParameter("codeableConcept").map(ParametersParameter::getValueCodeableConcept).orElse(null);
+      var coding = cc != null && cc.getCoding() != null ? cc.getCoding().stream().findFirst().orElse(null) : null;
+      code = coding != null && coding.getCode() != null ? coding.getCode() : code;
+      display = coding != null && coding.getDisplay() != null ? coding.getDisplay() : display;
+    }
+    if (code == null) {
+      throw new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required");
+    }
+
+    String finalCode = code;
+    var concept = findInlineConcept(inlineCs.getConcept(), finalCode);
+    if (concept == null) {
+      return error("Unknown code '" + code + "' in the CodeSystem '" + inlineCs.getUrl() + "'");
+    }
+
+    Set<String> validDisplays = inlineDisplays(concept, displayLanguage, inlineCs);
+    String conceptDisplay = validDisplays.stream().findFirst().orElse(null);
+    if (display != null && !validDisplays.contains(display)) {
+      return new Parameters()
+          .addParameter(new ParametersParameter("result").setValueBoolean(false))
+          .addParameter(new ParametersParameter("code").setValueCode(code))
+          .addParameter(new ParametersParameter("display").setValueString(conceptDisplay))
+          .addParameter(new ParametersParameter("message").setValueString("The display '" + display + "' is incorrect"));
+    }
+
+    Parameters result = new Parameters()
+        .addParameter(new ParametersParameter("result").setValueBoolean(true))
+        .addParameter(new ParametersParameter("code").setValueCode(code));
+    if (StringUtils.isNotEmpty(inlineCs.getUrl())) {
+      result.addParameter(new ParametersParameter("system").setValueUri(inlineCs.getUrl()));
+    }
+    if (StringUtils.isNotEmpty(conceptDisplay)) {
+      result.addParameter(new ParametersParameter("display").setValueString(conceptDisplay));
+    }
+    return result;
+  }
+
+  /** Depth-first search of the inline concept hierarchy by code. */
+  private static com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept findInlineConcept(
+      List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts, String code) {
+    if (CollectionUtils.isEmpty(concepts)) {
+      return null;
+    }
+    for (var c : concepts) {
+      if (code.equals(c.getCode())) {
+        return c;
+      }
+      var nested = findInlineConcept(c.getConcept(), code);
+      if (nested != null) {
+        return nested;
+      }
+    }
+    return null;
+  }
+
+  /** The valid displays for an inline concept: its display, definition and designations, language-narrowed. */
+  private static Set<String> inlineDisplays(com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept c,
+                                            String displayLanguage,
+                                            com.kodality.zmei.fhir.resource.terminology.CodeSystem cs) {
+    LinkedHashSet<String> displays = new LinkedHashSet<>();
+    String csLang = cs.getLanguage();
+    boolean langOk = displayLanguage == null || csLang == null || csLang.equals(displayLanguage) || csLang.startsWith(displayLanguage);
+    if (langOk && StringUtils.isNotEmpty(c.getDisplay())) {
+      displays.add(c.getDisplay());
+    }
+    if (langOk && StringUtils.isNotEmpty(c.getDefinition())) {
+      displays.add(c.getDefinition());
+    }
+    if (c.getDesignation() != null) {
+      c.getDesignation().stream()
+          .filter(d -> d.getValue() != null)
+          .filter(d -> displayLanguage == null || d.getLanguage() == null
+              || displayLanguage.equals(d.getLanguage()) || d.getLanguage().startsWith(displayLanguage))
+          .forEach(d -> displays.add(d.getValue()));
+    }
+    return displays;
   }
 
   private static String extractUseSupplement(Parameters req) {
