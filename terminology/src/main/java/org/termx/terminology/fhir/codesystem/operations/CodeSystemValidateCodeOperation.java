@@ -146,7 +146,7 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
 
     Concept concept = conceptService.query(cp).findFirst().orElse(null);
     if (concept == null) {
-      return error("Code '" + code + "' is invalid");
+      return invalidCode(csId, code, versionUri);
     }
 
     Set<String> validDisplays = extractDisplays(concept, displayLanguage);
@@ -179,6 +179,37 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     return new Parameters()
         .addParameter(new ParametersParameter("result").setValueBoolean(false))
         .addParameter(new ParametersParameter("message").setValueString(message));
+  }
+
+  /**
+   * Response for a code that is not in the code system: 200 with result=false, the resolved system/version
+   * echoed, and a structured {@code issues} OperationOutcome ({@code code-invalid} / tx-issue-type
+   * {@code invalid-code} at {@code code}) — the FHIR tx ecosystem shape, instead of a flat message.
+   */
+  private Parameters invalidCode(String csId, String code, String versionUri) {
+    CodeSystem cs = codeSystemService.load(csId).orElse(null);
+    String csUri = cs != null && StringUtils.isNotEmpty(cs.getUri()) ? cs.getUri() : csId;
+    String version = versionUri;
+    if (version == null) {
+      CodeSystemVersion last = codeSystemVersionService.loadLastVersion(csId);
+      version = last == null ? null : last.getVersion();
+    }
+    String message = "Unknown code '" + code + "' in the CodeSystem '" + csUri + "'"
+        + (StringUtils.isNotEmpty(version) ? " version '" + version + "'" : "");
+    Parameters result = new Parameters()
+        .addParameter(new ParametersParameter("result").setValueBoolean(false))
+        .addParameter(new ParametersParameter("code").setValueCode(code));
+    if (cs != null && StringUtils.isNotEmpty(cs.getUri())) {
+      result.addParameter(new ParametersParameter("system").setValueUri(cs.getUri()));
+    }
+    if (StringUtils.isNotEmpty(version)) {
+      result.addParameter(new ParametersParameter("version").setValueString(version));
+    }
+    result.addParameter(new ParametersParameter("message").setValueString(message));
+    result.addParameter(new ParametersParameter("issues").setResource(
+        org.termx.terminology.fhir.TxIssues.outcome(
+            org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", message, "code"))));
+    return result;
   }
 
   /** Finds a CodeSystem supplied inline via a tx-resource parameter whose url matches the requested url. */
