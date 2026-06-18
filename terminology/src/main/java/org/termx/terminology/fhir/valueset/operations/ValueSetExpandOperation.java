@@ -122,6 +122,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       return snomedResp;
     }
 
+    // 3b. tx-resource: the FHIR validator passes referenced resources inline. When `url` names a ValueSet
+    //     supplied as a tx-resource, expand that inline definition instead of looking it up in storage.
+    com.kodality.zmei.fhir.resource.terminology.ValueSet txResourceVs = findTxResourceValueSet(req, url);
+    if (txResourceVs != null) {
+      return expandInline(txResourceVs, req);
+    }
+
     // 4. Stored ValueSet lookup.
     ValueSetQueryParams vsParams = new ValueSetQueryParams();
     vsParams.setUri(url);
@@ -219,6 +226,20 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
 
     return mapper.toFhir(vs, version, provenances, snapshot, req);
+  }
+
+  /** Finds a ValueSet supplied inline via a tx-resource parameter whose url matches the requested url. */
+  private static com.kodality.zmei.fhir.resource.terminology.ValueSet findTxResourceValueSet(Parameters req, String url) {
+    if (req.getParameter() == null || url == null) {
+      return null;
+    }
+    return req.getParameter().stream()
+        .filter(p -> "tx-resource".equals(p.getName()))
+        .map(ParametersParameter::getResource)
+        .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.ValueSet)
+        .map(r -> (com.kodality.zmei.fhir.resource.terminology.ValueSet) r)
+        .filter(vs -> url.equals(vs.getUrl()))
+        .findFirst().orElse(null);
   }
 
   private com.kodality.zmei.fhir.resource.terminology.ValueSet expandInline(
