@@ -79,7 +79,9 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
 
     // tx-resource / inline: validate against a ValueSet supplied inline (the FHIR validator passes the
     // value set in the request rather than relying on stored content) — either an explicit `valueSet`
-    // parameter or a `tx-resource` whose url matches the requested url.
+    // parameter or a `tx-resource` whose url matches the requested url. This path is unauthenticated-safe
+    // (no per-resource read privilege check), which is what the conformance runner exercises as a guest,
+    // so it must itself produce the full tx-ecosystem response shape (issues, version).
     com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs = req.findParameter("valueSet")
         .filter(pp -> pp.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.ValueSet)
         .map(pp -> (com.kodality.zmei.fhir.resource.terminology.ValueSet) pp.getResource())
@@ -155,15 +157,35 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .filter(c -> finalCode.equals(c.getCode()) && (finalSystem == null || finalSystem.equals(c.getSystem())))
         .findFirst().orElse(null);
 
+    String vsCanonical = inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "");
     Parameters resp = new Parameters();
     if (match == null) {
-      resp.addParameter(new ParametersParameter("result").setValueBoolean(false));
+      // Code not in the value set: the tx-ecosystem expects a 200 with result=false, the code/system/version
+      // echoed, and a structured `issues` OperationOutcome (not-in-vs at the value set + invalid-code at the
+      // code system), not a flat message alone. Mirror the stored-content path's shape.
+      String csVersion = Optional.ofNullable(expanded.getExpansion())
+          .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
+          .filter(c -> finalSystem == null || finalSystem.equals(c.getSystem()))
+          .map(c -> c.getVersion())
+          .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+      String codeRef = (system != null ? system + "#" : "") + code;
+      String notInVs = String.format("The provided code '%s' was not found in the value set '%s'", codeRef, vsCanonical);
+      String unknownCode = system == null ? String.format("Unknown code '%s'", code)
+          : String.format("Unknown code '%s' in the CodeSystem '%s'%s", code, system, csVersion != null ? " version '" + csVersion + "'" : "");
       resp.addParameter(new ParametersParameter("code").setValueCode(code));
       if (system != null) {
         resp.addParameter(new ParametersParameter("system").setValueUri(system));
       }
-      resp.addParameter(new ParametersParameter("message").setValueString(
-          String.format("The provided code %s is not in the value set", (system != null ? system + "#" : "") + code)));
+      if (csVersion != null) {
+        resp.addParameter(new ParametersParameter("version").setValueString(csVersion));
+      }
+      resp.addParameter(new ParametersParameter("message").setValueString(notInVs + "; " + unknownCode));
+      resp.addParameter(new ParametersParameter("result").setValueBoolean(false));
+      String codeLoc = codeLocation(req);
+      resp.addParameter(new ParametersParameter("issues").setResource(
+          org.termx.terminology.fhir.TxIssues.outcome(
+              org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, codeLoc),
+              org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, codeLoc))));
       return resp;
     }
     String finalDisplay = display;
@@ -175,8 +197,19 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       resp.addParameter(new ParametersParameter("system").setValueUri(match.getSystem()));
     }
     resp.addParameter(new ParametersParameter("display").setValueString(match.getDisplay()));
+    if (match.getVersion() != null) {
+      resp.addParameter(new ParametersParameter("version").setValueString(match.getVersion()));
+    }
     if (!displayValid) {
-      resp.addParameter(new ParametersParameter("message").setValueString(String.format("The display '%s' is incorrect", display)));
+      // Invalid display: 200 with result=false plus a structured `issues` OperationOutcome (invalid-display
+      // at the `display` element), mirroring HL7's "Wrong Display Name … Valid display is …" wording.
+      String message = String.format("Wrong Display Name '%s' for %s#%s. Valid display is '%s' (for the language(s) '%s')",
+          display, match.getSystem(), match.getCode(), match.getDisplay(),
+          StringUtils.isEmpty(displayLanguage) ? "--" : displayLanguage);
+      resp.addParameter(new ParametersParameter("message").setValueString(message));
+      resp.addParameter(new ParametersParameter("issues").setResource(
+          org.termx.terminology.fhir.TxIssues.outcome(
+              org.termx.terminology.fhir.TxIssues.issue("error", "invalid", "invalid-display", message, displayLocation(req)))));
     }
     return resp;
   }
@@ -250,7 +283,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     }
 
     if (concept == null) {
-      return notInValueSet(finalCode, finalSystem, vsConcepts);
+      return notInValueSet(finalCode, finalSystem, vsConcepts, codeLocation(req));
     }
 
     Parameters parameters = new Parameters();
@@ -265,7 +298,18 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       parameters.addParameter(new ParametersParameter("version").setValueString(conceptVersion));
     }
     if (!displayValid) {
-      parameters.addParameter(new ParametersParameter("message").setValueString(String.format("The display '%s' is incorrect", display)));
+      // Invalid display: the tx-ecosystem expects a 200 with result=false AND a structured `issues`
+      // OperationOutcome (tx-issue-type invalid-display at the `display` element) plus a `message`, not a
+      // flat message alone. Message mirrors HL7's "Wrong Display Name … Valid display is …" wording.
+      String displayLang = concept.getDisplay() != null ? concept.getDisplay().getLanguage() : null;
+      String message = String.format("Wrong Display Name '%s' for %s#%s. Valid display is '%s'%s (for the language(s) '%s')",
+          display, concept.getConcept().getCodeSystemUri(), concept.getConcept().getCode(), conceptDisplay,
+          displayLang != null ? " (" + displayLang + ")" : "",
+          StringUtils.isEmpty(displayLanguage) ? "--" : displayLanguage);
+      parameters.addParameter(new ParametersParameter("message").setValueString(message));
+      parameters.addParameter(new ParametersParameter("issues").setResource(
+          org.termx.terminology.fhir.TxIssues.outcome(
+              org.termx.terminology.fhir.TxIssues.issue("error", "invalid", "invalid-display", message, displayLocation(req)))));
     }
     if (!concept.isActive()) {
       OperationOutcome outcome = new OperationOutcome();
@@ -384,6 +428,26 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     return all;
   }
 
+  /**
+   * The FHIR expression an OperationOutcome issue about the code points at, which depends on how the code was
+   * supplied: a bare {@code code} parameter → {@code code}; a {@code coding} → {@code Coding.code}; a
+   * {@code codeableConcept} → {@code CodeableConcept.coding[0].code}. The tx-ecosystem checks this exact path.
+   */
+  private static String codeLocation(Parameters req) {
+    if (req.findParameter("codeableConcept").isPresent()) {
+      return "CodeableConcept.coding[0].code";
+    }
+    return req.findParameter("coding").isPresent() ? "Coding.code" : "code";
+  }
+
+  /** The issue expression for a display problem, by input form ({@code display} / {@code Coding.display} / {@code CodeableConcept.coding[0].display}). */
+  private static String displayLocation(Parameters req) {
+    if (req.findParameter("codeableConcept").isPresent()) {
+      return "CodeableConcept.coding[0].display";
+    }
+    return req.findParameter("coding").isPresent() ? "Coding.display" : "display";
+  }
+
   private String findSystem(Parameters req) {
     return req.findParameter("system").map(p ->
         p.getValueUrl() != null ? p.getValueUrl() :
@@ -437,7 +501,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
    * and a structured {@code issues} OperationOutcome ({@code code-invalid} with tx-issue-type {@code not-in-vs}
    * and {@code invalid-code} at {@code code}) — the FHIR tx ecosystem shape, instead of a flat message only.
    */
-  private static Parameters notInValueSet(String code, String system, List<ValueSetVersionConcept> vsConcepts) {
+  private static Parameters notInValueSet(String code, String system, List<ValueSetVersionConcept> vsConcepts, String codeLocation) {
     String version = vsConcepts.stream()
         .filter(c -> system == null || systemMatches(c, system))
         .map(c -> c.getConcept().getCodeSystemVersions())
@@ -456,8 +520,8 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     result.addParameter(new ParametersParameter("message").setValueString(message));
     result.addParameter(new ParametersParameter("issues").setResource(
         org.termx.terminology.fhir.TxIssues.outcome(
-            org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", message, "code"),
-            org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", message, "code"))));
+            org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", message, codeLocation),
+            org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", message, codeLocation))));
     return result;
   }
 

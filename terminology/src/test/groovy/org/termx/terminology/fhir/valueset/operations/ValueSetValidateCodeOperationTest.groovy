@@ -69,9 +69,13 @@ class ValueSetValidateCodeOperationTest extends Specification {
     when:
     def resp = operation.run(vsVersion, req("allergy", "Nonsense", null))
 
-    then:
+    then: "result is false with the HL7 'Wrong Display Name' message and a structured invalid-display issue"
     !bool(resp, "result")
-    resp.findParameter("message").get().getValueString() == "The display 'Nonsense' is incorrect"
+    resp.findParameter("message").get().getValueString().startsWith("Wrong Display Name 'Nonsense'")
+    def issue = resp.findParameter("issues").get().getResource().getIssue().first()
+    issue.getCode() == "invalid"
+    issue.getDetails().getCoding().first().getCode() == "invalid-display"
+    issue.getLocation() == ["display"]
   }
 
   def "restricts the match to the requested displayLanguage"() {
