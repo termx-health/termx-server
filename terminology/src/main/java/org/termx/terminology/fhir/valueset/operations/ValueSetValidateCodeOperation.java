@@ -182,6 +182,18 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   public Parameters run(ValueSetVersion vsVersion, Parameters req) {
+    Parameters response = doRun(vsVersion, req);
+    // FHIR $validate-code echoes the codeableConcept it was given back to the caller (it isn't reconstructed
+    // from the matched code), so surface the request's codeableConcept on every response shape.
+    if (response != null) {
+      req.findParameter("codeableConcept")
+          .filter(cc -> response.findParameter("codeableConcept").isEmpty())
+          .ifPresent(response::addParameter);
+    }
+    return response;
+  }
+
+  private Parameters doRun(ValueSetVersion vsVersion, Parameters req) {
     SessionStore.require().checkPermitted(vsVersion.getValueSet(), Privilege.VS_READ);
     String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
     String system = findSystem(req);
