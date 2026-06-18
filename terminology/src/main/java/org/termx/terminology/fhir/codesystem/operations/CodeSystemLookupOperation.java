@@ -9,8 +9,10 @@ import com.kodality.kefhir.core.model.ResourceId;
 import com.kodality.kefhir.structure.api.ResourceContent;
 import org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper;
 import org.termx.terminology.terminology.codesystem.CodeSystemService;
+import org.termx.terminology.terminology.codesystem.association.CodeSystemAssociationService;
 import org.termx.terminology.terminology.codesystem.concept.ConceptService;
 import org.termx.terminology.terminology.codesystem.concept.ConceptUtil;
+import org.termx.ts.codesystem.CodeSystemAssociationQueryParams;
 import org.termx.ts.codesystem.CodeSystem;
 import org.termx.ts.codesystem.CodeSystemEntityVersion;
 import org.termx.ts.codesystem.CodeSystemQueryParams;
@@ -52,17 +54,24 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
 
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
+  private final CodeSystemAssociationService associationService;
   private final LookupDefaultPropertyMode defaultPropertyMode;
 
   public CodeSystemLookupOperation(ConceptService conceptService, CodeSystemService codeSystemService,
+                                   CodeSystemAssociationService associationService,
                                    @Value("${termx.fhir.codesystem.lookup.default-property-mode:ALL}") LookupDefaultPropertyMode defaultPropertyMode) {
     this.conceptService = conceptService;
     this.codeSystemService = codeSystemService;
+    this.associationService = associationService;
     this.defaultPropertyMode = defaultPropertyMode;
   }
 
   CodeSystemLookupOperation(ConceptService conceptService, CodeSystemService codeSystemService) {
-    this(conceptService, codeSystemService, LookupDefaultPropertyMode.ALL);
+    this(conceptService, codeSystemService, null, LookupDefaultPropertyMode.ALL);
+  }
+
+  CodeSystemLookupOperation(ConceptService conceptService, CodeSystemService codeSystemService, LookupDefaultPropertyMode defaultPropertyMode) {
+    this(conceptService, codeSystemService, null, defaultPropertyMode);
   }
 
   public String getResourceType() {
@@ -179,7 +188,45 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
       }
       resp.addParameter(property);
     });
+
+    // Standard computed properties FHIR $lookup exposes beyond the code system's own defined properties:
+    // inactive (the code's active state) and the parent/child hierarchy (from is-a associations).
+    boolean allProps = properties.isEmpty() && defaultPropertyMode == LookupDefaultPropertyMode.ALL;
+    if (allProps || properties.contains("inactive")) {
+      resp.addParameter(new ParametersParameter("property")
+          .addPart(new ParametersParameter("code").setValueCode("inactive"))
+          .addPart(new ParametersParameter("value").setValueBoolean(isInactive(c))));
+    }
+    Long versionId = c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getId).orElse(null);
+    if (associationService != null && versionId != null) {
+      if (allProps || properties.contains("parent")) {
+        associationService.query(new CodeSystemAssociationQueryParams()
+            .setSourceEntityVersionId(String.valueOf(versionId)).setAssociationType("is-a").limit(-1)).getData()
+            .forEach(a -> addHierarchyProperty(resp, "parent", a.getTargetCode()));
+      }
+      if (allProps || properties.contains("child")) {
+        associationService.query(new CodeSystemAssociationQueryParams()
+            .setTargetEntityVersionId(String.valueOf(versionId)).setAssociationType("is-a").limit(-1)).getData()
+            .forEach(a -> addHierarchyProperty(resp, "child", a.getSourceCode()));
+      }
+    }
     return resp;
+  }
+
+  private static void addHierarchyProperty(Parameters resp, String code, String value) {
+    if (StringUtils.isNotEmpty(value)) {
+      resp.addParameter(new ParametersParameter("property")
+          .addPart(new ParametersParameter("code").setValueCode(code))
+          .addPart(new ParametersParameter("value").setValueCode(value)));
+    }
+  }
+
+  /** A concept is inactive when it carries {@code inactive=true} or a {@code status} of retired/deprecated. */
+  private static boolean isInactive(Concept c) {
+    return c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getPropertyValues).orElse(List.of()).stream()
+        .anyMatch(pv -> ("inactive".equals(pv.getEntityProperty())
+            && (Boolean.TRUE.equals(pv.getValue()) || "true".equalsIgnoreCase(String.valueOf(pv.getValue()))))
+            || ("status".equals(pv.getEntityProperty()) && List.of("retired", "deprecated").contains(String.valueOf(pv.getValue()))));
   }
 
   /** A concept is abstract (not for direct use) when it carries a {@code notSelectable=true} property. */
