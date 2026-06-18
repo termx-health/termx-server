@@ -88,15 +88,32 @@ public class ValueSetImportService {
     if (StringUtils.isEmpty(valueSet.getUri())) {
       return;
     }
-    valueSetService.query(new org.termx.ts.valueset.ValueSetQueryParams().setUri(valueSet.getUri()).limit(1)).findFirst()
+    // (1) Same canonical (url) already stored under a different id — adopt it (a new version of it).
+    String byUri = valueSetService.query(new org.termx.ts.valueset.ValueSetQueryParams().setUri(valueSet.getUri()).limit(1)).findFirst()
         .map(ValueSet::getId)
         .filter(existingId -> !existingId.equals(valueSet.getId()))
-        .ifPresent(existingId -> {
-          log.info("Reconciling value set '{}' to existing canonical id '{}' (uri {})", valueSet.getId(), existingId, valueSet.getUri());
-          valueSet.setId(existingId);
-          // Propagate the adopted id to the nested versions, whose value_set FK still points at the old id.
-          Optional.ofNullable(valueSet.getVersions()).orElse(List.of()).forEach(v -> v.setValueSet(existingId));
-        });
+        .orElse(null);
+    if (byUri != null) {
+      rekey(valueSet, byUri, "Reconciling value set to existing canonical id");
+      return;
+    }
+    // (2) Our id is already taken by a value set with a DIFFERENT url. The url is the canonical identity, not
+    // the FHIR resource id (the tx-ecosystem reuses id "sct-procedures" across several urls). Re-key off our
+    // own url so this distinct canonical doesn't fold into the other one.
+    ValueSet clash = StringUtils.isEmpty(valueSet.getId()) ? null : valueSetService.load(valueSet.getId());
+    if (clash != null && !valueSet.getUri().equals(clash.getUri())) {
+      String urlId = org.termx.core.fhir.BaseFhirMapper.fhirIdOrFromUrl(null, valueSet.getUri());
+      if (StringUtils.isNotEmpty(urlId) && !urlId.equals(valueSet.getId())) {
+        rekey(valueSet, urlId, "Re-keying value set off url (id collides with a different canonical)");
+      }
+    }
+  }
+
+  /** Re-points a value set and its nested versions at {@code newId}. */
+  private void rekey(ValueSet valueSet, String newId, String why) {
+    log.info("{}: '{}' -> '{}' (uri {})", why, valueSet.getId(), newId, valueSet.getUri());
+    valueSet.setId(newId);
+    Optional.ofNullable(valueSet.getVersions()).orElse(List.of()).forEach(v -> v.setValueSet(newId));
   }
 
   private void saveValueSet(ValueSet valueSet) {

@@ -155,20 +155,38 @@ public class CodeSystemImportService {
     if (StringUtils.isEmpty(codeSystem.getUri())) {
       return;
     }
-    codeSystemService.query(new org.termx.ts.codesystem.CodeSystemQueryParams().setUri(codeSystem.getUri()).limit(1)).findFirst()
+    // (1) The same canonical (url) is already stored under a different id — adopt that id so this import
+    // becomes a NEW VERSION of it (the tx-ecosystem ships versions of one canonical as separate resources).
+    String byUri = codeSystemService.query(new org.termx.ts.codesystem.CodeSystemQueryParams().setUri(codeSystem.getUri()).limit(1)).findFirst()
         .map(CodeSystem::getId)
         .filter(existingId -> !existingId.equals(codeSystem.getId()))
-        .ifPresent(existingId -> {
-          log.info("Reconciling code system '{}' to existing canonical id '{}' (uri {})", codeSystem.getId(), existingId, codeSystem.getUri());
-          codeSystem.setId(existingId);
-          // Propagate the adopted id to every nested reference (versions, concepts and their entity versions),
-          // whose code_system FK still points at the old id.
-          Optional.ofNullable(codeSystem.getVersions()).orElse(List.of()).forEach(v -> v.setCodeSystem(existingId));
-          Optional.ofNullable(codeSystem.getConcepts()).orElse(List.of()).forEach(concept -> {
-            concept.setCodeSystem(existingId);
-            Optional.ofNullable(concept.getVersions()).orElse(List.of()).forEach(ev -> ev.setCodeSystem(existingId));
-          });
-        });
+        .orElse(null);
+    if (byUri != null) {
+      rekey(codeSystem, byUri, "Reconciling code system to existing canonical id");
+      return;
+    }
+    // (2) Our id is already taken by a code system with a DIFFERENT url. A FHIR resource id is not the
+    // canonical identity (the url is) — the tx-ecosystem deliberately reuses id "simple" for url "overload".
+    // Keying on the resource id would fold this distinct canonical into the other one (phantom versions), so
+    // re-key off our own url instead.
+    CodeSystem clash = StringUtils.isEmpty(codeSystem.getId()) ? null : codeSystemService.load(codeSystem.getId()).orElse(null);
+    if (clash != null && !codeSystem.getUri().equals(clash.getUri())) {
+      String urlId = org.termx.core.fhir.BaseFhirMapper.fhirIdOrFromUrl(null, codeSystem.getUri());
+      if (StringUtils.isNotEmpty(urlId) && !urlId.equals(codeSystem.getId())) {
+        rekey(codeSystem, urlId, "Re-keying code system off url (id collides with a different canonical)");
+      }
+    }
+  }
+
+  /** Re-points a code system and all its nested versions/concepts/entity-versions at {@code newId}. */
+  private void rekey(CodeSystem codeSystem, String newId, String why) {
+    log.info("{}: '{}' -> '{}' (uri {})", why, codeSystem.getId(), newId, codeSystem.getUri());
+    codeSystem.setId(newId);
+    Optional.ofNullable(codeSystem.getVersions()).orElse(List.of()).forEach(v -> v.setCodeSystem(newId));
+    Optional.ofNullable(codeSystem.getConcepts()).orElse(List.of()).forEach(concept -> {
+      concept.setCodeSystem(newId);
+      Optional.ofNullable(concept.getVersions()).orElse(List.of()).forEach(ev -> ev.setCodeSystem(newId));
+    });
   }
 
   private void saveCodeSystem(CodeSystem codeSystem) {
