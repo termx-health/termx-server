@@ -1,5 +1,8 @@
 package org.termx.terminology.fhir.conformance;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.kodality.commons.util.JsonUtil;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
@@ -41,12 +44,18 @@ public class TxConformanceSetupLoader {
   private static final String FHIR_JSON = "application/fhir+json";
 
   private final String packageDir;
+  // Writing setup content requires CodeSystem/ValueSet create+update privileges, but the loader calls the
+  // FHIR endpoint over HTTP — where, unauthenticated, it is a guest and every write is 403 Forbidden. A
+  // bearer token (the dev token locally, a service token on a dedicated conformance instance) authorizes it.
+  private final String authToken;
   private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
-  public TxConformanceSetupLoader(@Value("${termx.conformance.test-package-dir:}") String packageDir) {
+  public TxConformanceSetupLoader(@Value("${termx.conformance.test-package-dir:}") String packageDir,
+                                  @Value("${termx.conformance.setup-auth-token:}") String authToken) {
     // Default to the FHIR validator's package cache, where txTests downloads the tx-ecosystem fixtures.
     this.packageDir = StringUtils.isNotEmpty(packageDir) ? packageDir
         : System.getProperty("user.home") + "/.fhir/packages/hl7.fhir.uv.tx-ecosystem#current/package/tests";
+    this.authToken = authToken;
   }
 
   /** Loads every setup CodeSystem then ValueSet under the package dir into {@code fhirBaseUrl}. */
@@ -58,17 +67,35 @@ public class TxConformanceSetupLoader {
     }
     List<Path> codeSystems = findSetupFiles(root, "codesystem-");
     List<Path> valueSets = findSetupFiles(root, "valueset-");
+    int total = codeSystems.size() + valueSets.size();
     log.info("tx conformance setup: loading {} CodeSystems and {} ValueSets into {}", codeSystems.size(), valueSets.size(), fhirBaseUrl);
 
+    // Dependency order is not knowable up front: supplement/derived CodeSystems reference a base
+    // CodeSystem, and ValueSets reference CodeSystems and other ValueSets. Rather than topologically
+    // sort, load in repeated passes until a pass resolves nothing new (fixpoint). Each remaining resource
+    // is retried while progress is still being made, so multi-level chains (A←B←C) resolve over passes.
+    List<Path> remaining = new ArrayList<>();
+    codeSystems.forEach(p -> remaining.add(p));
+    valueSets.forEach(p -> remaining.add(p));
     int ok = 0;
-    int failed = 0;
-    for (Path p : codeSystems) {
-      if (send(fhirBaseUrl + "/CodeSystem/" + idOf(p), "PUT", p)) { ok++; } else { failed++; }
+    int pass = 0;
+    boolean progressed = true;
+    while (progressed && !remaining.isEmpty()) {
+      progressed = false;
+      pass++;
+      for (java.util.Iterator<Path> it = remaining.iterator(); it.hasNext(); ) {
+        Path p = it.next();
+        boolean isCs = p.getFileName().toString().toLowerCase().startsWith("codesystem-");
+        String url = isCs ? fhirBaseUrl + "/CodeSystem/" + idOf(p) : fhirBaseUrl + "/ValueSet";
+        if (send(url, isCs ? "PUT" : "POST", p)) {
+          it.remove();
+          ok++;
+          progressed = true;
+        }
+      }
+      log.info("tx conformance setup: pass {} — {}/{} loaded, {} still pending", pass, ok, total, remaining.size());
     }
-    for (Path p : valueSets) {
-      if (send(fhirBaseUrl + "/ValueSet", "POST", p)) { ok++; } else { failed++; }
-    }
-    log.info("tx conformance setup: loaded {} resources ({} failed/duplicate)", ok, failed);
+    log.info("tx conformance setup: loaded {} of {} resources in {} pass(es) ({} unresolved)", ok, total, pass, remaining.size());
   }
 
   /** Setup resources: {@code codesystem-*.json} / {@code valueset-*.json}, excluding test request/response artifacts. */
@@ -96,21 +123,56 @@ public class TxConformanceSetupLoader {
 
   private boolean send(String url, String method, Path body) {
     try {
-      HttpRequest req = HttpRequest.newBuilder(URI.create(url))
+      HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(url))
           .timeout(Duration.ofSeconds(60))
           .header("Content-Type", FHIR_JSON)
-          .header("Accept", FHIR_JSON)
-          .method(method, BodyPublishers.ofFile(body))
-          .build();
+          .header("Accept", FHIR_JSON);
+      if (StringUtils.isNotEmpty(authToken)) {
+        b.header("Authorization", "Bearer " + authToken);
+      }
+      HttpRequest req = b.method(method, BodyPublishers.ofString(sanitize(body))).build();
       HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
       if (resp.statusCode() / 100 == 2) {
         return true;
       }
-      log.debug("tx conformance setup: {} {} -> {} (likely already present)", method, url, resp.statusCode());
+      // Honest logging: report the real status + a snippet of the error so an incomplete setup is
+      // diagnosable, instead of the misleading blanket "already present".
+      log.info("tx conformance setup: {} {} -> {}: {}", method, url, resp.statusCode(), summarize(resp.body()));
       return false;
     } catch (Exception e) {
       log.warn("tx conformance setup: {} {} failed: {}", method, url, e.getMessage());
       return false;
     }
+  }
+
+  /**
+   * Reads the fixture and strips metadata termx's resource validation rejects but that has no bearing on
+   * the terminology operations under test — currently {@code versionAlgorithm[x]} (a version-comparison
+   * hint that references code systems termx does not host, failing the whole import on an otherwise valid
+   * resource). Returns the original bytes verbatim if anything goes wrong, so stripping never blocks a load.
+   */
+  static String sanitize(Path body) {
+    try {
+      JsonNode root = JsonUtil.getObjectMapper().readTree(body.toFile());
+      if (root instanceof ObjectNode obj) {
+        obj.remove("versionAlgorithmString");
+        obj.remove("versionAlgorithmCoding");
+      }
+      return JsonUtil.getObjectMapper().writeValueAsString(root);
+    } catch (Exception e) {
+      try {
+        return Files.readString(body);
+      } catch (Exception ignored) {
+        return "";
+      }
+    }
+  }
+
+  private static String summarize(String responseBody) {
+    if (responseBody == null) {
+      return "";
+    }
+    String b = responseBody.replaceAll("\\s+", " ").trim();
+    return b.length() > 200 ? b.substring(0, 200) + "…" : b;
   }
 }
