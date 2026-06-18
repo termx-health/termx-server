@@ -155,3 +155,8 @@ add column external_web_source text;
 --changeset termx:map_set_version-supported_languages
 alter table terminology.map_set_version add column if not exists supported_languages text[];
 --rollback alter table terminology.map_set_version drop column if exists supported_languages;
+--changeset termx:map_set-profile
+-- FHIR meta.profile: conformance profiles the resource claims (0..*). Default empty (no profile).
+alter table terminology.map_set add column profile text[];
+--rollback alter table terminology.map_set drop column profile;
+--

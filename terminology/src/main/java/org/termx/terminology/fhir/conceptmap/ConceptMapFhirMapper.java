@@ -113,6 +113,9 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
         fhirConceptMap.addExtension(toFhirWebSourceExtension(mapSet.getExternalWebSource()));
     }
     fhirConceptMap.setId(toFhirId(mapSet, version));
+    if (CollectionUtils.isNotEmpty(mapSet.getProfile())) {
+      fhirConceptMap.setMeta(new com.kodality.zmei.fhir.resource.Meta().setProfile(mapSet.getProfile()));
+    }
     fhirConceptMap.setUrl(mapSet.getUri());
     fhirConceptMap.setPublisher(conceptService.load("publisher", mapSet.getPublisher()).flatMap(Concept::getLastVersion).flatMap(CodeSystemEntityVersion::getDisplay).orElse(mapSet.getPublisher()));
     fhirConceptMap.setName(mapSet.getName());
@@ -338,6 +341,9 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
   public MapSet fromFhir(ConceptMap cm) {
     MapSet ms = new MapSet();
     ms.setId(ConceptMapFhirMapper.parseCompositeId(cm.getId())[0]);
+    if (cm.getMeta() != null && CollectionUtils.isNotEmpty(cm.getMeta().getProfile())) {
+      ms.setProfile(cm.getMeta().getProfile());
+    }
     ms.setUri(cm.getUrl());
     ms.setPublisher(cm.getPublisher());
     ms.setName(cm.getName());

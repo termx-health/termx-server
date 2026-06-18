@@ -4,6 +4,7 @@ import com.kodality.commons.db.bean.PgBeanProcessor;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
+import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.model.Identifier;
 import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
@@ -43,6 +44,7 @@ public class CodeSystemRepository extends BaseRepository {
     bp.addColumnProcessor("properties", PgBeanProcessor.fromJson(JsonUtil.getListType(EntityProperty.class)));
     bp.addColumnProcessor("last_version", "latestVersion", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("configuration_attributes", PgBeanProcessor.fromJson(JsonUtil.getListType(ConfigurationAttribute.class)));
+    bp.addColumnProcessor("profile", PgBeanProcessor.fromArray());
   });
 
   private static final String selectBase = "select distinct on (cs.id) cs.*, " +
@@ -101,6 +103,7 @@ public class CodeSystemRepository extends BaseRepository {
     ssb.property("uri", codeSystem.getUri());
     ssb.property("publisher", codeSystem.getPublisher());
     ssb.property("name", codeSystem.getName());
+    ssb.property("profile", "?::text[]", PgUtil.array(codeSystem.getProfile()));
     ssb.jsonProperty("other_title", codeSystem.getOtherTitle());
     ssb.jsonProperty("title", codeSystem.getTitle());
     ssb.jsonProperty("description", codeSystem.getDescription());

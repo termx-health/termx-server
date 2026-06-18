@@ -1,6 +1,7 @@
 package org.termx.terminology.terminology.mapset;
 
 import com.kodality.commons.db.bean.PgBeanProcessor;
+import com.kodality.commons.db.util.PgUtil;
 import com.kodality.commons.db.repo.BaseRepository;
 import com.kodality.commons.db.sql.SaveSqlBuilder;
 import com.kodality.commons.db.sql.SqlBuilder;
@@ -36,6 +37,7 @@ public class MapSetRepository extends BaseRepository {
     bp.addColumnProcessor("contacts", PgBeanProcessor.fromJson(JsonUtil.getListType(ContactDetail.class)));
     bp.addColumnProcessor("properties", PgBeanProcessor.fromJson(JsonUtil.getListType(MapSetProperty.class)));
     bp.addColumnProcessor("configuration_attributes", PgBeanProcessor.fromJson(JsonUtil.getListType(ConfigurationAttribute.class)));
+    bp.addColumnProcessor("profile", PgBeanProcessor.fromArray());
   });
 
   private static final String select = "select distinct on (ms.id) ms.*, " +
@@ -59,6 +61,7 @@ public class MapSetRepository extends BaseRepository {
     ssb.property("uri", mapSet.getUri());
     ssb.property("publisher", mapSet.getPublisher());
     ssb.property("name", mapSet.getName());
+    ssb.property("profile", "?::text[]", PgUtil.array(mapSet.getProfile()));
     ssb.jsonProperty("other_title", mapSet.getOtherTitle());
     ssb.jsonProperty("title", mapSet.getTitle());
     ssb.jsonProperty("description", mapSet.getDescription());
