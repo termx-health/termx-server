@@ -15,7 +15,13 @@ import lombok.experimental.Accessors;
 public class ValueSetVersionRuleSet {
   private Long id;
   private OffsetDateTime lockedDate;
-  private boolean inactive;
+  /**
+   * Tri-state mirror of FHIR {@code ValueSet.compose.inactive} (nullable on purpose):
+   * {@code null}/absent → server default (inactive concepts included, rendered with {@code inactive=true},
+   * filtered only at render time by {@code activeOnly}); {@code TRUE} → include inactive; {@code FALSE} →
+   * explicitly exclude inactive from the expansion.
+   */
+  private Boolean inactive;
   private List<ValueSetVersionRule> rules;
 
   @Getter
