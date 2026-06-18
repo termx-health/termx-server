@@ -725,10 +725,13 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }
     vs.setUri(valueSet.getUrl());
     vs.setPublisher(valueSet.getPublisher());
-    vs.setName(valueSet.getName());
-    // FHIR title is optional, but TermX stores it NOT NULL — default an absent title to the resource name.
+    // FHIR name and title are optional, but TermX stores title NOT NULL. Fall back title -> name -> id;
+    // id itself already derives from the url's last segment when absent (see fhirIdOrFromUrl above), so a
+    // resource carrying only a url still loads instead of hitting the not-null constraint.
+    String name = StringUtils.isNotEmpty(valueSet.getName()) ? valueSet.getName() : vs.getId();
+    vs.setName(name);
     vs.setTitle(fromFhirName(
-        StringUtils.isNotEmpty(valueSet.getTitle()) ? valueSet.getTitle() : valueSet.getName(),
+        StringUtils.isNotEmpty(valueSet.getTitle()) ? valueSet.getTitle() : name,
         valueSet.getLanguage(), valueSet.getPrimitiveElement("title")));
     vs.setDescription(fromFhirName(valueSet.getDescription(), valueSet.getLanguage(), valueSet.getPrimitiveElement("description")));
     vs.setPurpose(fromFhirName(valueSet.getPurpose(), valueSet.getLanguage(), valueSet.getPrimitiveElement("purpose")));
@@ -761,7 +764,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
 
   private static ValueSetVersion fromFhirVersion(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     ValueSetVersion version = new ValueSetVersion();
-    version.setValueSet(valueSet.getId());
+    // Use the same id the value set resolves to (derived from the url's last segment when the resource
+    // carries no explicit id) — otherwise the version's value_set FK is null for id-less fixtures.
+    version.setValueSet(fhirIdOrFromUrl(valueSet.getId(), valueSet.getUrl()));
     version.setVersion(valueSet.getVersion() == null ? "1.0.0" : valueSet.getVersion());
     version.setStatus(PublicationStatus.draft);
     version.setAlgorithm(valueSet.getVersionAlgorithmString());

@@ -186,4 +186,43 @@ class CodeSystemFhirMapperSpec extends Specification {
     expect:
     mapper.toFhir(cs, version, []).meta == null
   }
+
+  def "fromFhir defaults an absent title and name to the id (derived from the url's last segment)"() {
+    given: "a CodeSystem with neither title nor name nor id — only a url (as many tx-ecosystem fixtures are)"
+    def fhir = new com.kodality.zmei.fhir.resource.terminology.CodeSystem()
+        .setUrl("http://hl7.org/fhir/test/CodeSystem/search")
+        .setStatus("active")
+        .setContent("complete")
+        .setConcept([new com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept().setCode("a")])
+
+    when:
+    def cs = mapper.fromFhirCodeSystem(fhir)
+
+    then: "title is non-null (TermX stores it NOT NULL) and falls back through name -> id -> url last segment"
+    cs.id == "search"
+    cs.name == "search"
+    cs.title != null
+    cs.title.values().contains("search")
+    and: "the version's code_system FK uses the derived id (else the version insert hits a not-null violation)"
+    cs.versions.first().codeSystem == "search"
+    and: "concept and its entity version also carry the derived code_system id (their FKs are NOT NULL too)"
+    cs.concepts.first().codeSystem == "search"
+    cs.concepts.first().versions.first().codeSystem == "search"
+  }
+
+  def "fromFhir keeps an explicit title and only defaults the missing name"() {
+    given:
+    def fhir = new com.kodality.zmei.fhir.resource.terminology.CodeSystem()
+        .setUrl("http://hl7.org/fhir/test/CodeSystem/simple")
+        .setTitle("Simple CS")
+        .setStatus("active")
+        .setContent("complete")
+
+    when:
+    def cs = mapper.fromFhirCodeSystem(fhir)
+
+    then:
+    cs.name == "simple"
+    cs.title.values().contains("Simple CS")
+  }
 }
