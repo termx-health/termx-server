@@ -29,11 +29,15 @@ public class TxConformanceService {
   private final TxConformanceRunner runner;
   private final LorqueProcessService lorqueProcessService;
   private final BobObjectService bobObjectService;
+  private final TxConformanceSetupLoader setupLoader;
 
   public LorqueProcess run(TxConformanceRunRequest request) {
     return lorqueProcessService.run("tx-conformance", request, req -> {
       Path bundle = null;
       try {
+        if (req.isLoadSetup()) {
+          setupLoader.load(runner.getTxUrl());
+        }
         if (StringUtils.isNotEmpty(req.getArchiveUuid())) {
           bundle = downloadBundle(req.getArchiveUuid());
         }

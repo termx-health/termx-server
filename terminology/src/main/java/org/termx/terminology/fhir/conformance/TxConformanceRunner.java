@@ -45,6 +45,11 @@ public class TxConformanceRunner {
     this.txUrl = txUrl;
   }
 
+  /** The FHIR base URL this server is tested at ({@code -tx}); also the target for setup loading. */
+  public String getTxUrl() {
+    return txUrl;
+  }
+
   /** Runs the suite and returns the raw {@code report.json} (a FHIR {@code TestReport}). */
   public String run(TxConformanceRunRequest req, Path inputBundle) throws IOException, InterruptedException {
     if (StringUtils.isEmpty(validatorJar)) {
