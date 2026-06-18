@@ -224,7 +224,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       return null;
     }
     ValueSetCompose compose = new ValueSetCompose();
-    compose.setInactive(ruleSet.isInactive());
+    compose.setInactive(ruleSet.getInactive());
     if (ruleSet.getLockedDate() != null) {
       compose.setLockedDate(ruleSet.getLockedDate().toLocalDate());
     }
@@ -777,7 +777,8 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       return null;
     }
     ValueSetVersionRuleSet ruleSet = new ValueSetVersionRuleSet();
-    ruleSet.setInactive(valueSet.getCompose().getInactive() != null && valueSet.getCompose().getInactive());
+    // Preserve the tri-state: absent compose.inactive stays null (server default), not coerced to false.
+    ruleSet.setInactive(valueSet.getCompose().getInactive());
     if (valueSet.getCompose().getLockedDate() != null) {
       ruleSet.setLockedDate(valueSet.getCompose().getLockedDate().atStartOfDay().atZone(ZoneId.systemDefault()).toOffsetDateTime());
     }

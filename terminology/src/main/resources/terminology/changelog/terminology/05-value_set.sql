@@ -255,3 +255,14 @@ alter table terminology.value_set_snapshot add column dependencies jsonb;
 alter table terminology.value_set_snapshot add column expansion_bytea bytea;
 alter table terminology.value_set_snapshot alter column expansion drop not null;
 --
+
+--changeset termx:value_set_version_rule_set-inactive-nullable
+-- Restore the tri-state for compose.inactive: null = server default (include inactive, render inactive=true,
+-- filter only by activeOnly), true = include, false = exclude. The earlier -not_null changeset coerced
+-- absent values to false, conflating "default" with "explicitly exclude"; that conflation is unrecoverable,
+-- so existing rows are intentionally left as-is (false stays an explicit exclude) and only the constraint is
+-- dropped — new/edited value sets that omit compose.inactive now persist null and get the FHIR default.
+alter table terminology.value_set_version_rule_set alter column inactive drop not null;
+--rollback update terminology.value_set_version_rule_set set inactive = false where inactive is null;
+--rollback alter table terminology.value_set_version_rule_set alter column inactive set not null;
+--

@@ -227,7 +227,12 @@ public class ValueSetVersionConceptService {
       externalExpansion.addAll(provider.expand(ruleSet, version, preferredLanguage));
     }
     expansion.addAll(externalExpansion);
-    if (!ruleSet.isInactive()) {
+    // FHIR compose.inactive (tri-state): only an explicit FALSE excludes inactive concepts from the
+    // expansion. When null (server default) or TRUE, inactive concepts stay in the request-agnostic
+    // snapshot — rendered with inactive=true and filtered only at render time by activeOnly
+    // (see ValueSetFhirMapper.toFhirExpansion). Previously a primitive-false default dropped them here,
+    // hiding inactive codes from every consumer ($expand, $validate-code, ConceptMap, CS validation).
+    if (Boolean.FALSE.equals(ruleSet.getInactive())) {
       return expansion.stream().filter(ValueSetVersionConcept::isActive).toList();
     }
     return expansion;
