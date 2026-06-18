@@ -347,7 +347,10 @@ public class ConceptMapFhirMapper extends BaseFhirMapper {
     ms.setUri(cm.getUrl());
     ms.setPublisher(cm.getPublisher());
     ms.setName(cm.getName());
-    ms.setTitle(fromFhirName(cm.getTitle(), cm.getLanguage(), cm.getPrimitiveElement("title")));
+    // FHIR title is optional, but TermX stores it NOT NULL — default an absent title to the resource name.
+    ms.setTitle(fromFhirName(
+        StringUtils.isNotEmpty(cm.getTitle()) ? cm.getTitle() : cm.getName(),
+        cm.getLanguage(), cm.getPrimitiveElement("title")));
     ms.setDescription(fromFhirName(cm.getDescription(), cm.getLanguage(), cm.getPrimitiveElement("description")));
     ms.setPurpose(fromFhirName(cm.getPurpose(), cm.getLanguage(), cm.getPrimitiveElement("purpose")));
     ms.setNarrative(cm.getText() == null ? null : cm.getText().getDiv());

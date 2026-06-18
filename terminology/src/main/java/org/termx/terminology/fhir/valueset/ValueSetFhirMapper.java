@@ -722,7 +722,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     vs.setUri(valueSet.getUrl());
     vs.setPublisher(valueSet.getPublisher());
     vs.setName(valueSet.getName());
-    vs.setTitle(fromFhirName(valueSet.getTitle(), valueSet.getLanguage(), valueSet.getPrimitiveElement("title")));
+    // FHIR title is optional, but TermX stores it NOT NULL — default an absent title to the resource name.
+    vs.setTitle(fromFhirName(
+        StringUtils.isNotEmpty(valueSet.getTitle()) ? valueSet.getTitle() : valueSet.getName(),
+        valueSet.getLanguage(), valueSet.getPrimitiveElement("title")));
     vs.setDescription(fromFhirName(valueSet.getDescription(), valueSet.getLanguage(), valueSet.getPrimitiveElement("description")));
     vs.setPurpose(fromFhirName(valueSet.getPurpose(), valueSet.getLanguage(), valueSet.getPrimitiveElement("purpose")));
     vs.setNarrative(valueSet.getText() == null ? null : valueSet.getText().getDiv());

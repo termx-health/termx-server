@@ -504,7 +504,10 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     codeSystem.setUri(fhirCS.getUrl());
     codeSystem.setPublisher(fhirCS.getPublisher());
     codeSystem.setName(fhirCS.getName());
-    codeSystem.setTitle(fromFhirName(fhirCS.getTitle(), fhirCS.getLanguage(), fhirCS.getPrimitiveElement("title")));
+    // FHIR title is optional, but TermX stores it NOT NULL — default an absent title to the resource name.
+    codeSystem.setTitle(fromFhirName(
+        StringUtils.isNotEmpty(fhirCS.getTitle()) ? fhirCS.getTitle() : fhirCS.getName(),
+        fhirCS.getLanguage(), fhirCS.getPrimitiveElement("title")));
     codeSystem.setDescription(fromFhirName(fhirCS.getDescription(), fhirCS.getLanguage(), fhirCS.getPrimitiveElement("description")));
     codeSystem.setPurpose(fromFhirName(fhirCS.getPurpose(), fhirCS.getLanguage(), fhirCS.getPrimitiveElement("purpose")));
     codeSystem.setNarrative(fhirCS.getText() == null ? null : fhirCS.getText().getDiv());
