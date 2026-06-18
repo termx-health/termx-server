@@ -44,6 +44,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final ConceptService conceptService;
+  private final ValueSetExpandOperation expandOperation;
 
   public String getResourceType() {
     return ResourceType.ValueSet.name();
@@ -72,9 +73,24 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   public Parameters run(Parameters req) {
-    String url =
-        req.findParameter("url").map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueUri() != null ? pp.getValueUri() : pp.getValueString())
-            .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "url parameter required"));
+    String url = req.findParameter("url")
+        .map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueUri() != null ? pp.getValueUri() : pp.getValueString())
+        .orElse(null);
+
+    // tx-resource / inline: validate against a ValueSet supplied inline (the FHIR validator passes the
+    // value set in the request rather than relying on stored content) — either an explicit `valueSet`
+    // parameter or a `tx-resource` whose url matches the requested url.
+    com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs = req.findParameter("valueSet")
+        .filter(pp -> pp.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.ValueSet)
+        .map(pp -> (com.kodality.zmei.fhir.resource.terminology.ValueSet) pp.getResource())
+        .orElseGet(() -> findTxResourceValueSet(req, url));
+    if (inlineVs != null) {
+      return validateInline(inlineVs, req);
+    }
+
+    if (url == null) {
+      throw new FhirException(400, IssueType.INVALID, "url parameter required");
+    }
     String version = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
 
     ValueSetVersion vsVersion = version == null ? valueSetVersionService.loadLastVersionByUri(url) :
@@ -83,6 +99,86 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       return error("valueset version not found");
     }
     return run(vsVersion, req);
+  }
+
+  /** Finds a ValueSet supplied inline via a tx-resource parameter whose url matches the requested url. */
+  private static com.kodality.zmei.fhir.resource.terminology.ValueSet findTxResourceValueSet(Parameters req, String url) {
+    if (req.getParameter() == null || url == null) {
+      return null;
+    }
+    return req.getParameter().stream()
+        .filter(p -> "tx-resource".equals(p.getName()))
+        .map(ParametersParameter::getResource)
+        .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.ValueSet)
+        .map(r -> (com.kodality.zmei.fhir.resource.terminology.ValueSet) r)
+        .filter(vs -> url.equals(vs.getUrl()))
+        .findFirst().orElse(null);
+  }
+
+  /**
+   * Validates a code against an inline ValueSet by expanding it (reusing {@link ValueSetExpandOperation})
+   * and checking membership in the expansion — the path used when the value set is supplied in the request
+   * rather than stored.
+   */
+  private Parameters validateInline(com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs, Parameters req) {
+    String displayLanguage = req.findParameter("displayLanguage").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
+    String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
+    String system = findSystem(req);
+    String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
+    if (req.findParameter("coding").isPresent()) {
+      Coding coding = req.findParameter("coding").map(ParametersParameter::getValueCoding).orElse(null);
+      code = coding != null && coding.getCode() != null ? coding.getCode() : code;
+      system = coding != null && coding.getSystem() != null ? coding.getSystem() : system;
+      display = coding != null && coding.getDisplay() != null ? coding.getDisplay() : display;
+    }
+    if (req.findParameter("codeableConcept").isPresent()) {
+      CodeableConcept cc = req.findParameter("codeableConcept").map(ParametersParameter::getValueCodeableConcept).orElse(null);
+      Coding coding = cc != null && cc.getCoding() != null ? cc.getCoding().stream().findFirst().orElse(null) : null;
+      code = coding != null && coding.getCode() != null ? coding.getCode() : code;
+      system = coding != null && coding.getSystem() != null ? coding.getSystem() : system;
+    }
+    if (code == null) {
+      throw new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required");
+    }
+
+    Parameters expandReq = new Parameters();
+    expandReq.addParameter(new ParametersParameter("valueSet").setResource(inlineVs));
+    expandReq.addParameter(new ParametersParameter("includeDesignations").setValueBoolean(true));
+    if (displayLanguage != null) {
+      expandReq.addParameter(new ParametersParameter("displayLanguage").setValueCode(displayLanguage));
+    }
+    com.kodality.zmei.fhir.resource.terminology.ValueSet expanded = expandOperation.run(expandReq);
+    String finalCode = code;
+    String finalSystem = system;
+    var match = Optional.ofNullable(expanded.getExpansion())
+        .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
+        .filter(c -> finalCode.equals(c.getCode()) && (finalSystem == null || finalSystem.equals(c.getSystem())))
+        .findFirst().orElse(null);
+
+    Parameters resp = new Parameters();
+    if (match == null) {
+      resp.addParameter(new ParametersParameter("result").setValueBoolean(false));
+      resp.addParameter(new ParametersParameter("code").setValueCode(code));
+      if (system != null) {
+        resp.addParameter(new ParametersParameter("system").setValueUri(system));
+      }
+      resp.addParameter(new ParametersParameter("message").setValueString(
+          String.format("The provided code %s is not in the value set", (system != null ? system + "#" : "") + code)));
+      return resp;
+    }
+    String finalDisplay = display;
+    boolean displayValid = finalDisplay == null || finalDisplay.equals(match.getDisplay())
+        || Optional.ofNullable(match.getDesignation()).orElse(List.of()).stream().anyMatch(d -> finalDisplay.equals(d.getValue()));
+    resp.addParameter(new ParametersParameter("result").setValueBoolean(displayValid));
+    resp.addParameter(new ParametersParameter("code").setValueCode(match.getCode()));
+    if (match.getSystem() != null) {
+      resp.addParameter(new ParametersParameter("system").setValueUri(match.getSystem()));
+    }
+    resp.addParameter(new ParametersParameter("display").setValueString(match.getDisplay()));
+    if (!displayValid) {
+      resp.addParameter(new ParametersParameter("message").setValueString(String.format("The display '%s' is incorrect", display)));
+    }
+    return resp;
   }
 
   public Parameters run(ValueSetVersion vsVersion, Parameters req) {
