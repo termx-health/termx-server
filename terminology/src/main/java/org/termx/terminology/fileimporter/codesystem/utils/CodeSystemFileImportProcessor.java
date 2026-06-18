@@ -142,8 +142,9 @@ public class CodeSystemFileImportProcessor {
             log.debug("IMPORT DEBUG: Row {} - Stored code value for csvPrefix '{}', order {}: '{}'",
                 rowIndex + 1, csvPrefix, order, cellValue);
           }
-        } else if (parsed != null && !parsed.isCoding && prop.getColumnName().contains("#")) {
-          // This might be a designation column in new format (type#language##order or type#language)
+        } else if (parsed != null && !parsed.isCoding
+            && (prop.getColumnName().contains("#") || prop.getColumnName().contains(":"))) {
+          // This might be a designation column (type:language##order or type:language; "#" kept for backward compatibility)
           DesignationParseResult designationParsed = parseDesignationColumn(prop.getColumnName());
           if (designationParsed != null) {
             // This is a designation column in new format
@@ -377,7 +378,26 @@ public class CodeSystemFileImportProcessor {
   }
   
   /**
-   * Parses column names in the new format: {property}##{order} or {property}#code##{order} or {property}#system##{order}
+   * Returns the order-suffix separator present in the column name: "##" (legacy) or "::" (new,
+   * colon-consistent with the ":" designation separator), preferring "##" when both happen to appear.
+   * Returns null when no order suffix is present.
+   */
+  private static String orderSeparator(String columnName) {
+    if (columnName == null) {
+      return null;
+    }
+    if (columnName.contains("##")) {
+      return "##";
+    }
+    if (columnName.contains("::")) {
+      return "::";
+    }
+    return null;
+  }
+
+  /**
+   * Parses column names in the new format: {property}::{order} or {property}#code::{order} or {property}#system::{order}.
+   * The "::" order separator mirrors the ":" designation separator; "##" is still accepted for backward compatibility.
    * Returns null if the column doesn't match the new format.
    */
   private static ColumnParseResult parseNewFormatColumn(String columnName) {
@@ -390,12 +410,13 @@ public class CodeSystemFileImportProcessor {
       return null;
     }
     
-    boolean hasOrderSuffix = columnName.contains("##");
+    String orderSep = orderSeparator(columnName);
+    boolean hasOrderSuffix = orderSep != null;
     int order = 1; // Default order when suffix is omitted
     String prefix = columnName;
-    
+
     if (hasOrderSuffix) {
-      String[] parts = columnName.split("##", 2);
+      String[] parts = columnName.split(orderSep, 2);
       if (parts.length != 2) {
         log.debug("IMPORT DEBUG: parseNewFormatColumn - Failed to split order suffix from '{}'", columnName);
         return null;
@@ -456,18 +477,20 @@ public class CodeSystemFileImportProcessor {
    */
   private static DesignationParseResult parseDesignationColumn(String columnName) {
     log.debug("IMPORT DEBUG: parseDesignationColumn - Parsing column name: '{}'", columnName);
-    // Pattern: {type}#{language}##{order} or {type}#{language} when order is 1
+    // Pattern: {type}:{language}##{order} or {type}:{language} when order is 1.
+    // The ":" separator mirrors FHIR shorthand (e.g. "definition:et"); "#" is still accepted for backward compatibility.
     if (columnName == null) {
       log.debug("IMPORT DEBUG: parseDesignationColumn - Column name is null");
       return null;
     }
     
-    boolean hasOrderSuffix = columnName.contains("##");
+    String orderSep = orderSeparator(columnName);
+    boolean hasOrderSuffix = orderSep != null;
     int order = 1; // Default order when suffix is omitted
     String typeLang = columnName;
-    
+
     if (hasOrderSuffix) {
-      String[] parts = columnName.split("##", 2);
+      String[] parts = columnName.split(orderSep, 2);
       if (parts.length != 2) {
         log.debug("IMPORT DEBUG: parseDesignationColumn - Failed to split order suffix from '{}'", columnName);
         return null;
@@ -482,11 +505,13 @@ public class CodeSystemFileImportProcessor {
       }
     }
     
-    if (typeLang.contains("#")) {
-      String[] typeLangParts = typeLang.split("#", 2);
+    // Prefer the ":" separator; fall back to "#" for backward compatibility.
+    String separator = typeLang.contains(":") ? ":" : (typeLang.contains("#") ? "#" : null);
+    if (separator != null) {
+      String[] typeLangParts = typeLang.split(separator, 2);
       if (typeLangParts.length == 2) {
         DesignationParseResult result = new DesignationParseResult(typeLangParts[0], typeLangParts[1], order);
-        log.debug("IMPORT DEBUG: parseDesignationColumn - Result: type='{}', language='{}', order={}", 
+        log.debug("IMPORT DEBUG: parseDesignationColumn - Result: type='{}', language='{}', order={}",
             result.type, result.language, result.order);
         return result;
       }

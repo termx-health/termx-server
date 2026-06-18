@@ -1,11 +1,13 @@
 # CodeSystem Concept Import Specification
 
 ## Version
-**1.0.3** (Compatible with Export Format 1.0.2)
+**1.1.0** (Compatible with Export Format 1.1.0)
 
 ## Overview
 
 The CodeSystem Concept Import functionality imports concepts from CSV, TSV, or XLSX files into a CodeSystem version. The import processor supports both the new export format (with optional order suffixes) and legacy formats for backward compatibility.
+
+Designation columns encode the value's language with a `type:language` header (e.g. `definition:et`), matching the FHIR language-tagged shorthand. Exported files use `:`; the older `#` separator (e.g. `definition#et`) is still accepted on import for backward compatibility.
 
 ## Supported File Formats
 
@@ -25,18 +27,23 @@ The import processor recognizes columns in the following formats:
 ### Designation Columns
 
 #### New Format (Recommended)
-Format: `{designationType}#{language}##{order}` (when multiple) or `{designationType}#{language}` (when single)
+Format: `{designationType}:{language}::{order}` (when multiple) or `{designationType}:{language}` (when single)
+
+The `:` separator mirrors the FHIR language-tagged shorthand (e.g. `definition:et` in a FHIR CodeSystem/ValueSet JSON), so the same `type:language` notation is used across FHIR resources and CSV/Excel files. Exported CSV/TSV/XLSX files use `:` as well.
 
 - `{designationType}` - The designation type (e.g., "display", "definition")
 - `{language}` - The language code (e.g., "en", "ru", "ru-RU"). Can be empty string
 - `{order}` - **Optional** sequential number starting from 1. Defaults to 1 when suffix is omitted
 
 **Examples:**
-- `display#en` - Single English display designation (order defaults to 1)
-- `display#en##1`, `display#en##2` - Multiple English display designations
-- `definition#en` - Single English definition designation (order defaults to 1)
-- `definition#en##1`, `definition#en##2` - Multiple English definition designations
-- `definition#ru` - Single Russian definition designation (order defaults to 1)
+- `display:en` - Single English display designation (order defaults to 1)
+- `display:en::1`, `display:en::2` - Multiple English display designations
+- `definition:en` - Single English definition designation (order defaults to 1)
+- `definition:en::1`, `definition:en::2` - Multiple English definition designations
+- `definition:ru` - Single Russian definition designation (order defaults to 1)
+
+#### `#` / `##` Separators (Backward Compatibility)
+The `#` character is still accepted on import as the value/language separator, so files produced by earlier TermX versions (e.g. `display#en`, `definition#ru##2`) continue to import unchanged. New exports always emit `:` for the value/language separator and `::` for the order suffix. The legacy `##` order suffix is still accepted on import (and can be freely mixed with `:`, e.g. `definition:ru##2`). Note that `#` is also used for coding sub-columns (`#code`/`#system`) — see below.
 
 #### Legacy Format (Backward Compatibility)
 - Simple column names that are mapped to designation properties via import configuration
@@ -46,7 +53,7 @@ Format: `{designationType}#{language}##{order}` (when multiple) or `{designation
 #### Simple Property Types
 
 ##### New Format (Recommended)
-Format: `{propertyName}##{order}` (when multiple) or `{propertyName}` (when single)
+Format: `{propertyName}::{order}` (when multiple) or `{propertyName}` (when single)
 
 - `{propertyName}` - The property name
 - `{order}` - **Optional** sequential number starting from 1. Defaults to 1 when suffix is omitted
@@ -54,7 +61,7 @@ Format: `{propertyName}##{order}` (when multiple) or `{propertyName}` (when sing
 **Examples:**
 - `itemWeight` - Single itemWeight value (order defaults to 1)
 - `synonym` - Single synonym value (order defaults to 1)
-- `synonym##1`, `synonym##2` - Multiple synonym values
+- `synonym::1`, `synonym::2` - Multiple synonym values
 
 ##### Legacy Format (Backward Compatibility)
 - Simple column names that are mapped to properties via import configuration
@@ -63,7 +70,7 @@ Format: `{propertyName}##{order}` (when multiple) or `{propertyName}` (when sing
 #### Coding Property Types
 
 ##### New Format (Recommended)
-Format: `{csvPrefix}#code##{order}` and `{csvPrefix}#system##{order}` (when multiple) or `{csvPrefix}#code` and `{csvPrefix}#system` (when single)
+Format: `{csvPrefix}#code::{order}` and `{csvPrefix}#system::{order}` (when multiple) or `{csvPrefix}#code` and `{csvPrefix}#system` (when single)
 
 - `{csvPrefix}` - A **file-local label** used only to pair code and system columns that belong together (same prefix, same order). It **does not** have to match the TermX **entity property** name chosen in the import mapping UI/API.
 - `code` or `system` - Indicates whether this column contains the code or system
@@ -71,13 +78,13 @@ Format: `{csvPrefix}#code##{order}` and `{csvPrefix}#system##{order}` (when mult
 
 **Important**: Code and system columns must be paired. The import processor:
 - Identifies columns with `#code` or `#system` suffix as coding property columns
-- Groups them by **CSV prefix** and order (so `type#code##1` pairs with `type#system##1`)
+- Groups them by **CSV prefix** and order (so `type#code::1` pairs with `type#system::1`)
 - Emits each combined coding value under the **mapped** property name from import configuration (e.g. CSV `type#…` columns may map to entity property `flag`)
 - Creates a single coding value from each code/system pair
 
 **Examples:**
 - `type#code`, `type#system` - Single type coding value (order defaults to 1 for both)
-- `type#code##1`, `type#system##1`, `type#code##2`, `type#system##2` - Multiple type coding values
+- `type#code::1`, `type#system::1`, `type#code::2`, `type#system::2` - Multiple type coding values
 
 **Processing Logic:**
 1. Columns with `#code` or `#system` are identified as coding property columns
@@ -94,9 +101,9 @@ Format: `{csvPrefix}#code##{order}` and `{csvPrefix}#system##{order}` (when mult
 
 The import processor uses the following logic to parse designation columns:
 
-1. **Check for order suffix**: If column contains `##`, extract the order number
+1. **Check for order suffix**: If column contains `::` (or legacy `##`), extract the order number
 2. **Default order**: If no suffix, order defaults to 1
-3. **Split type and language**: Split by `#` to extract designation type and language
+3. **Split type and language**: Split by `:` to extract designation type and language; if no `:` is present, fall back to `#` (backward compatibility)
 4. **Create designation property**: Create a property value with:
    - Property name: designation type
    - Property type: "designation"
@@ -109,9 +116,9 @@ The import processor uses the following logic to parse designation columns:
 The import processor uses the following logic to parse property columns:
 
 1. **Check for coding suffix**: If column contains `#code` or `#system`, treat as coding property
-2. **Check for order suffix**: If column contains `##`, extract the order number
+2. **Check for order suffix**: If column contains `::` (or legacy `##`), extract the order number
 3. **Default order**: If no suffix, order defaults to 1
-4. **Extract CSV prefix for pairing**: Remove `#code`, `#system`, and `##{order}` suffixes to obtain the file-local prefix used to group pairs
+4. **Extract CSV prefix for pairing**: Remove `#code`, `#system`, and `::{order}` suffixes to obtain the file-local prefix used to group pairs
 5. **Group coding pairs**: For coding properties, group code and system columns by that CSV prefix and order; **output** property values use the configured mapped entity property name
 6. **Create property values**: 
    - For coding: Create single value from code/system pair
@@ -122,10 +129,10 @@ The import processor uses the following logic to parse property columns:
 The import processor processes columns in the following order to prevent false matches:
 
 1. **Coding property columns first**: Columns containing `#code` or `#system` are identified and processed as property columns
-2. **Designation columns second**: Columns matching designation pattern (`{type}#{language}`) are processed as designations
+2. **Designation columns second**: Columns matching the designation pattern (`{type}:{language}`, or legacy `{type}#{language}`) are processed as designations
 3. **Simple property columns last**: Remaining columns are processed as simple properties
 
-This order ensures that `type#code##1` is correctly identified as a coding property column, not a designation column.
+This order ensures that `type#code::1` is correctly identified as a coding property column, not a designation column. Because coding sub-columns keep using `#code`/`#system`, the new `:` value/language separator and `::` order suffix never collide with them.
 
 ## Data Transformation
 
@@ -318,16 +325,16 @@ The `import` flag (whether to import a column) is automatically set based on col
 
 **File (CSV):**
 ```csv
-code,display#en,itemWeight,synonym##1,synonym##2
+code,display:en,itemWeight,synonym::1,synonym::2
 a1,A1,10,x,Y
 b1,B1,,g1,g2
 ```
 
 **Configuration:**
 - `code` → `concept-code` (identifier, preferred)
-- `display#en` → `display` (designation, language: "en")
+- `display:en` → `display` (designation, language: "en")
 - `itemWeight` → `itemWeight` (property, type: `decimal`)
-- `synonym##1`, `synonym##2` → `synonym` (property, type: `string`)
+- `synonym::1`, `synonym::2` → `synonym` (property, type: `string`)
 
 **Result:**
 - Concept `a1`: display "A1" (en), itemWeight=10, synonyms=["x", "Y"]
@@ -337,16 +344,16 @@ b1,B1,,g1,g2
 
 **File (CSV):**
 ```csv
-code,display#en,type#code##1,type#system##1,type#code##2,type#system##2
+code,display:en,type#code::1,type#system::1,type#code::2,type#system::2
 a1,A1,AdverseEvent,http://hl7.org/fhir/fhir-types,Age,http://hl7.org/fhir/fhir-types
 b1,B1,Account,http://hl7.org/fhir/fhir-types,,
 ```
 
 **Configuration:**
 - `code` → `concept-code` (identifier, preferred)
-- `display#en` → `display` (designation, language: "en")
-- `type#code##1`, `type#system##1` → `type` (property, type: `coding`)
-- `type#code##2`, `type#system##2` → `type` (property, type: `coding`)
+- `display:en` → `display` (designation, language: "en")
+- `type#code::1`, `type#system::1` → `type` (property, type: `coding`)
+- `type#code::2`, `type#system::2` → `type` (property, type: `coding`)
 
 The same CSV headers can be mapped to a different entity property name (e.g. all four columns → `flag`); the `type` segment in the file is only used to pair columns, not as the TermX property id.
 
@@ -362,15 +369,15 @@ The same CSV headers can be mapped to a different entity property name (e.g. all
 
 **File (CSV):**
 ```csv
-code,display#en,definition#en,definition#en##2,definition#ru
+code,display:en,definition:en,definition:en::2,definition:ru
 b1,B1,bar-bar,bar,бар
 ```
 
 **Configuration:**
 - `code` → `concept-code` (identifier, preferred)
-- `display#en` → `display` (designation, language: "en")
-- `definition#en`, `definition#en##2` → `definition` (designation, language: "en")
-- `definition#ru` → `definition` (designation, language: "ru")
+- `display:en` → `display` (designation, language: "en")
+- `definition:en`, `definition:en::2` → `definition` (designation, language: "en")
+- `definition:ru` → `definition` (designation, language: "ru")
 
 **Result:**
 - Concept `b1`:
@@ -381,13 +388,13 @@ b1,B1,bar-bar,bar,бар
 
 **File (CSV):**
 ```csv
-code,display#en,itemWeight,synonym,type#code,type#system
+code,display:en,itemWeight,synonym,type#code,type#system
 a1,A1,10,x,AdverseEvent,http://hl7.org/fhir/fhir-types
 ```
 
 **Configuration:**
 - `code` → `concept-code` (identifier, preferred)
-- `display#en` → `display` (designation, language: "en")
+- `display:en` → `display` (designation, language: "en")
 - `itemWeight` → `itemWeight` (property, type: `decimal`)
 - `synonym` → `synonym` (property, type: `string`)
 - `type#code`, `type#system` → `type` (property, type: `coding`)
@@ -401,6 +408,31 @@ a1,A1,10,x,AdverseEvent,http://hl7.org/fhir/fhir-types
 
 **Note**: Since there's only one value for each property, the order suffix is omitted. The import processor defaults to order 1.
 
+### Example 5: FHIR-aligned `:` Separator (with a Legacy `#` Column)
+
+A file may freely mix the new `:` separator with legacy `#` designation columns; both are parsed into designations with the correct language.
+
+**File (CSV):**
+```csv
+code,display:en,definition:en,definition:ru,synonym#et
+a1,A1,First,Первый,sünonüüm
+```
+
+**Configuration:**
+- `code` → `concept-code` (identifier, preferred)
+- `display:en` → `display` (designation, language: "en")
+- `definition:en` → `definition` (designation, language: "en")
+- `definition:ru` → `definition` (designation, language: "ru")
+- `synonym#et` → `synonym` (designation, language: "et") — legacy `#` separator, still accepted
+
+**Result:**
+- Concept `a1`:
+  - display "A1" (en)
+  - definitions=["First" (en), "Первый" (ru)]
+  - synonym "sünonüüm" (et)
+
+**Note**: A round-trip export of this concept produces `:`-separated headers (`display:en`, `definition:en`, `definition:ru`, `synonym:et`).
+
 ## Backward Compatibility
 
 The import processor maintains backward compatibility with legacy formats:
@@ -410,7 +442,7 @@ The import processor maintains backward compatibility with legacy formats:
 3. **Legacy coding columns**: Single column with code value, system from configuration
 
 The processor automatically detects the format based on column names:
-- New format: Contains `#` or `##` patterns
+- New format: Contains `:`, `::`, `#`, or `##` patterns
 - Legacy format: Simple column names
 
 ## Implementation Details
@@ -441,7 +473,7 @@ The processor automatically detects the format based on column names:
 4. **Row Processing**: For each row:
    - Create entity map
    - Process coding property columns (identify and pair code/system)
-   - Process designation columns (parse type#language format)
+   - Process designation columns (parse type:language format, or legacy type#language)
    - Process simple property columns
    - Extract identifier (concept code)
    - Add auto concept order (if enabled)
@@ -460,9 +492,9 @@ The processor automatically detects the format based on column names:
 
 When migrating from legacy format to new format:
 
-1. **Update column names**: Rename columns to new format (e.g., `synonym` → `synonym##1`, `synonym##2`)
+1. **Update column names**: Rename columns to new format (e.g., `synonym` → `synonym::1`, `synonym::2`)
 2. **Update coding columns**: Split single coding column into `property#code` and `property#system` columns
-3. **Update designation columns**: Use `type#language` format instead of simple column names
+3. **Update designation columns**: Use `type:language` format (FHIR-aligned, e.g. `definition:et`) instead of simple column names; legacy `type#language` columns still import
 4. **Update import configuration**: Map new column names to properties
 5. **Test import**: Verify that all data is imported correctly
 

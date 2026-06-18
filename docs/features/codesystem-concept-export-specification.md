@@ -1,7 +1,7 @@
 # CodeSystem Concept Export Specification
 
 ## Version
-**1.0.2** (Breaking Change - New Format with Validation and Column Ordering)
+**1.1.0** (Designation columns use the FHIR-aligned `:` separator; `#` remains import-only for backward compatibility)
 
 ## Overview
 
@@ -23,23 +23,25 @@ The CodeSystem Concept Export functionality exports concepts from a CodeSystem v
 - `code` - The concept code (always first column)
 
 ### Designation Columns
-Format: `{designationType}#{language}##{order}` (when multiple) or `{designationType}#{language}` (when single)
+Format: `{designationType}:{language}::{order}` (when multiple) or `{designationType}:{language}` (when single)
+
+The `:` separator matches the FHIR language-tagged shorthand (e.g. `definition:et`). Prior versions emitted `#` (e.g. `definition#et`); that separator is no longer produced by export but is still accepted on import for backward compatibility.
 
 - `{designationType}` - The designation type (e.g., "display", "definition")
 - `{language}` - The language code (e.g., "en", "ru", "ru-RU"). Empty string if language is null
-- `{order}` - **Optional** sequential number starting from 1 for multiple designations of the same type and language. Skipped when there's only one designation of that type#language combination (when maxCount == 1).
+- `{order}` - **Optional** sequential number starting from 1 for multiple designations of the same type and language. Skipped when there's only one designation of that type:language combination (when maxCount == 1).
 
 **Examples:**
-- `display#en` - Single English display designation (order suffix skipped)
-- `display#en##1`, `display#en##2` - Multiple English display designations (order suffix required)
-- `definition#en` - Single English definition designation (order suffix skipped)
-- `definition#en##1`, `definition#en##2` - Multiple English definition designations (order suffix required)
-- `definition#ru` - Single Russian definition designation (order suffix skipped)
+- `display:en` - Single English display designation (order suffix skipped)
+- `display:en::1`, `display:en::2` - Multiple English display designations (order suffix required)
+- `definition:en` - Single English definition designation (order suffix skipped)
+- `definition:en::1`, `definition:en::2` - Multiple English definition designations (order suffix required)
+- `definition:ru` - Single Russian definition designation (order suffix skipped)
 
 ### Property Columns
 
 #### Simple Property Types
-Format: `{propertyName}##{order}` (when multiple) or `{propertyName}` (when single)
+Format: `{propertyName}::{order}` (when multiple) or `{propertyName}` (when single)
 
 - `{propertyName}` - The property name
 - `{order}` - **Optional** sequential number starting from 1 for multiple values of the same property. Skipped when there's only one value for that property (when maxCount == 1).
@@ -47,10 +49,10 @@ Format: `{propertyName}##{order}` (when multiple) or `{propertyName}` (when sing
 **Examples:**
 - `itemWeight` - Single itemWeight value (order suffix skipped)
 - `synonym` - Single synonym value (order suffix skipped)
-- `synonym##1`, `synonym##2` - Multiple synonym values (order suffix required)
+- `synonym::1`, `synonym::2` - Multiple synonym values (order suffix required)
 
 #### Coding Property Types
-Format: `{propertyName}#code##{order}` and `{propertyName}#system##{order}` (when multiple) or `{propertyName}#code` and `{propertyName}#system` (when single)
+Format: `{propertyName}#code::{order}` and `{propertyName}#system::{order}` (when multiple) or `{propertyName}#code` and `{propertyName}#system` (when single)
 
 - `{propertyName}` - The property name
 - `code` or `system` - Indicates whether this column contains the code or system
@@ -58,7 +60,7 @@ Format: `{propertyName}#code##{order}` and `{propertyName}#system##{order}` (whe
 
 **Examples:**
 - `type#code`, `type#system` - Single type coding value (order suffix skipped)
-- `type#code##1`, `type#system##1`, `type#code##2`, `type#system##2` - Multiple type coding values (order suffix required)
+- `type#code::1`, `type#system::1`, `type#code::2`, `type#system::2` - Multiple type coding values (order suffix required)
 
 ### Special Columns
 - `status` - Concept status (active, draft, retired, etc.)
@@ -74,15 +76,15 @@ Format: `{propertyName}#code##{order}` and `{propertyName}#system##{order}` (whe
 Columns appear in the following order:
 
 1. **Base column**: `code` (always first)
-2. **Display designation columns**: All `display#{language}` columns, sorted alphabetically by `{language}` (with or without order suffix)
-3. **Other designation columns**: All non-display designation columns (e.g., `definition`, `alias`), sorted alphabetically by `{type}#{language}` (with or without order suffix)
+2. **Display designation columns**: All `display:{language}` columns, sorted alphabetically by `{language}` (with or without order suffix)
+3. **Other designation columns**: All non-display designation columns (e.g., `definition`, `alias`), sorted alphabetically by `{type}:{language}` (with or without order suffix)
 4. **Property columns**: 
    - Ordered by their position in the CodeSystem properties definition (`codeSystem.getProperties()`)
    - Properties not in the definition are sorted alphabetically after defined properties
    - For coding properties: `code` column comes before `system` column for the same order
    - Within the same property: order 1 comes before order 2, etc.
-   - Example: `itemWeight`, `synonym`, `synonym##2`, `type#code`, `type#system`, `type#code##2`, `type#system##2` (when single values skip suffix)
-   - Example: `itemWeight##1`, `synonym##1`, `synonym##2`, `type#code##1`, `type#system##1`, `type#code##2`, `type#system##2` (when multiple values use suffix)
+   - Example: `itemWeight`, `synonym`, `synonym::2`, `type#code`, `type#system`, `type#code::2`, `type#system::2` (when single values skip suffix)
+   - Example: `itemWeight::1`, `synonym::1`, `synonym::2`, `type#code::1`, `type#system::1`, `type#code::2`, `type#system::2` (when multiple values use suffix)
 5. **Special columns**: `status`, `is-a`, `parent`, `child`, `partOf`, `groupedBy`, `classifiedWith`
 
 ## Data Formatting
@@ -135,9 +137,9 @@ Columns appear in the following order:
 ## Header Generation Logic
 
 ### Designation Headers
-1. Scan up to 1000 concepts to find all designation type#language combinations
-2. Count maximum occurrences per `{type}#{language}` combination
-3. Generate columns: `{type}#{language}##1`, `{type}#{language}##2`, ..., `{type}#{language}##{maxCount}` (or `{type}#{language}` when maxCount == 1)
+1. Scan up to 1000 concepts to find all designation type:language combinations
+2. Count maximum occurrences per `{type}:{language}` combination
+3. Generate columns: `{type}:{language}::1`, `{type}:{language}::2`, ..., `{type}:{language}::{maxCount}` (or `{type}:{language}` when maxCount == 1)
 4. Separate display designations from other designations
 5. Sort display designation columns alphabetically
 6. Sort other designation columns alphabetically
@@ -148,8 +150,8 @@ Columns appear in the following order:
 2. Determine property type from first occurrence
 3. Count maximum occurrences per property name
 4. Generate columns based on property type:
-   - **Simple types**: `{propertyName}##1`, `{propertyName}##2`, ... (or `{propertyName}` when maxCount == 1)
-   - **Coding types**: `{propertyName}#code##1`, `{propertyName}#system##1`, `{propertyName}#code##2`, `{propertyName}#system##2`, ... (or `{propertyName}#code` and `{propertyName}#system` when maxCount == 1)
+   - **Simple types**: `{propertyName}::1`, `{propertyName}::2`, ... (or `{propertyName}` when maxCount == 1)
+   - **Coding types**: `{propertyName}#code::1`, `{propertyName}#system::1`, `{propertyName}#code::2`, `{propertyName}#system::2`, ... (or `{propertyName}#code` and `{propertyName}#system` when maxCount == 1)
 5. Sort property columns:
    - By their order in CodeSystem properties definition (`codeSystem.getProperties()`)
    - Properties not in definition sorted alphabetically after defined properties
@@ -159,9 +161,9 @@ Columns appear in the following order:
 ## Row Generation Logic
 
 ### Designation Values
-1. Group designations by `{type}#{language}` key
-2. For each designation column `{type}#{language}##{order}`:
-   - Find the designation group matching `{type}#{language}`
+1. Group designations by `{type}:{language}` key
+2. For each designation column `{type}:{language}::{order}`:
+   - Find the designation group matching `{type}:{language}`
    - Get the designation at index `{order} - 1` (0-based)
    - Extract the name/value
    - If no designation at that order, use empty string
@@ -169,7 +171,7 @@ Columns appear in the following order:
 ### Property Values
 1. Group property values by property name
 2. For each property column:
-   - **Column Type Detection**: Headers containing `#code` or `#system` are identified as property columns (coding properties) and processed first, before designation columns. This prevents false matches (e.g., `type#code##1` would match designation pattern but is actually a coding property).
+   - **Column Type Detection**: Headers containing `#code` or `#system` are identified as property columns (coding properties) and processed first, before designation columns. This prevents false matches (e.g., `type#code::1` would match designation pattern but is actually a coding property).
    - Parse column header to extract property name, type, and order
    - Find the property value group matching the property name
    - Get the property value at index `{order} - 1` (0-based)
@@ -207,7 +209,7 @@ Columns appear in the following order:
 
 **Export:**
 ```csv
-code,display#en,itemWeight,synonym,synonym##2
+code,display:en,itemWeight,synonym,synonym::2
 a1,A1,10,x,Y
 ```
 
@@ -222,11 +224,11 @@ a1,A1,10,x,Y
 
 **Export:**
 ```csv
-code,display#en,type#code##1,type#system##1,type#code##2,type#system##2
+code,display:en,type#code::1,type#system::1,type#code::2,type#system::2
 a1,A1,AdverseEvent,http://hl7.org/fhir/fhir-types,Age,http://hl7.org/fhir/fhir-types
 ```
 
-**Note**: Since there are multiple coding values (maxCount == 2), the order suffix is required for all columns (`##1`, `##2`).
+**Note**: Since there are multiple coding values (maxCount == 2), the order suffix is required for all columns (`::1`, `::2`).
 
 ### Example 3: Concept with Multiple Designations
 
@@ -238,7 +240,7 @@ a1,A1,AdverseEvent,http://hl7.org/fhir/fhir-types,Age,http://hl7.org/fhir/fhir-t
 
 **Export:**
 ```csv
-code,display#en,definition#en,definition#en##2,definition#ru,synonym,synonym##2
+code,display:en,definition:en,definition:en::2,definition:ru,synonym,synonym::2
 b1,B1,bar-bar,bar,бар,g1,g2
 ```
 
@@ -250,26 +252,26 @@ b1,B1,bar-bar,bar,бар,g1,g2
 
 **Export:**
 ```csv
-code,display#en,definition#en,definition#en##2,definition#ru,itemWeight,synonym##1,synonym##2,type#code##1,type#system##1,type#code##2,type#system##2
+code,display:en,definition:en,definition:en::2,definition:ru,itemWeight,synonym::1,synonym::2,type#code::1,type#system::1,type#code::2,type#system::2
 a1,A1,,,,10,x,Y,AdverseEvent,http://hl7.org/fhir/fhir-types,Age,http://hl7.org/fhir/fhir-types
 b1,B1,bar-bar,bar,бар,,g1,g2,Account,http://hl7.org/fhir/fhir-types,ActivityDefinition,http://hl7.org/fhir/fhir-types
 ```
 
 **Note**: 
-- Since there are multiple `synonym` values (maxCount == 2), the order suffix is required (`synonym##1`, `synonym##2`)
-- Since there are multiple `type` coding values (maxCount == 2), the order suffix is required for all columns (`type#code##1`, `type#system##1`, `type#code##2`, `type#system##2`)
+- Since there are multiple `synonym` values (maxCount == 2), the order suffix is required (`synonym::1`, `synonym::2`)
+- Since there are multiple `type` coding values (maxCount == 2), the order suffix is required for all columns (`type#code::1`, `type#system::1`, `type#code::2`, `type#system::2`)
 
 ## Import Compatibility
 
 The export format is designed to be compatible with the import functionality. The import processor recognizes:
 
-1. **Designation columns**: `{type}#{language}##{order}` format (with suffix) or `{type}#{language}` format (without suffix for single values)
-2. **Simple property columns**: `{propertyName}##{order}` format (with suffix) or `{propertyName}` format (without suffix for single values)
-3. **Coding property columns**: `{propertyName}#code##{order}` and `{propertyName}#system##{order}` format (with suffix) or `{propertyName}#code` and `{propertyName}#system` format (without suffix for single values)
+1. **Designation columns**: `{type}:{language}::{order}` format (with suffix) or `{type}:{language}` format (without suffix for single values)
+2. **Simple property columns**: `{propertyName}::{order}` format (with suffix) or `{propertyName}` format (without suffix for single values)
+3. **Coding property columns**: `{propertyName}#code::{order}` and `{propertyName}#system::{order}` format (with suffix) or `{propertyName}#code` and `{propertyName}#system` format (without suffix for single values)
 
 The import processor:
 - Parses column headers to extract type, language, property name, and order
-- Supports both formats: with `##{order}` suffix and without (defaults to order 1 when suffix is skipped)
+- Supports both formats: with `::{order}` suffix and without (defaults to order 1 when suffix is skipped)
 - Reconstructs designations and property values in the correct order
 - Combines code and system columns for coding properties
 
@@ -282,7 +284,7 @@ The import processor:
 - **Exception Details**: The exception includes comprehensive diagnostic information:
   - **Code system ID**: The identifier of the CodeSystem being exported
   - **Code system description**: The title (English) or name, falling back to ID if neither is available
-  - **Missing designations**: Comma-separated list of missing designations in format `conceptCode:type#language`
+  - **Missing designations**: Comma-separated list of missing designations in format `conceptCode:type:language`
   - **Diagnostic information**: Structured log message containing:
     - CodeSystem ID
     - CodeSystem description
@@ -293,16 +295,16 @@ The import processor:
   1. Collect all active and draft designations from all concepts in the export
   2. For each designation, check if a corresponding column exists in headers
   3. A designation matches a header if:
-     - The header exactly matches `{type}#{language}` (for single values without suffix)
-     - The header starts with `{type}#{language}##` (for multiple values with order suffix)
+     - The header exactly matches `{type}:{language}` (for single values without suffix)
+     - The header starts with `{type}:{language}::` (for multiple values with order suffix; legacy `##` also accepted)
   4. If any designation has no matching header, collect it as missing
   5. If any missing designations are found, throw exception with diagnostic information
   6. Additionally, if there are any designations (active or draft) in the database but no designation columns in the export headers, throw exception
-- **Example**: If concept "a1" has a designation `display#en` in the database but the export headers don't include a `display#en` or `display#en##1` column, an exception is thrown with:
+- **Example**: If concept "a1" has a designation `display:en` in the database but the export headers don't include a `display:en` or `display:en::1` column, an exception is thrown with:
   - CodeSystem ID: "test1"
   - Description: "Test1" (from title or name)
-  - Missing designations: "a1:display#en"
-  - Diagnostic info: "CodeSystem Structure - ID: test1, Description: Test1, Total concepts: 2, Concepts with designations: 2, Missing designations: a1:display#en"
+  - Missing designations: "a1:display:en"
+  - Diagnostic info: "CodeSystem Structure - ID: test1, Description: Test1, Total concepts: 2, Concepts with designations: 2, Missing designations: a1:display:en"
 
 ## Error Handling
 
@@ -350,14 +352,14 @@ This specification represents a **breaking change** from previous export formats
 2. **Coding properties**: Split into separate code and system columns
 3. **Designations**: Now included with order-based format
 4. **Column ordering**: Changed to group code/system together for coding properties
-5. **Optional order suffix**: Order suffix (`##{order}`) is skipped when there's only one value, making the format cleaner for common single-value cases
+5. **Optional order suffix**: Order suffix (`::{order}`) is skipped when there's only one value, making the format cleaner for common single-value cases
 
 ## Migration Notes
 
 - Old export files will not be compatible with the new import format
 - Users must re-export CodeSystems to get the new format
 - The import processor supports both old and new formats for backward compatibility during transition
-- The import processor supports both formats: with `##{order}` suffix (for backward compatibility) and without suffix (new cleaner format for single values)
+- The import processor supports both formats: with `::{order}` suffix (for backward compatibility) and without suffix (new cleaner format for single values)
 
 ## Implementation Details
 
@@ -372,8 +374,8 @@ This specification represents a **breaking change** from previous export formats
   - **Column Processing Order**: Property columns (with `#code` or `#system`) are processed before designation columns to prevent false matches
   - Headers containing `#code` or `#system` are identified as property columns first
   - Only headers without `#code` or `#system` are checked as designation columns
-- `parseColumnHeader()`: Parses property column headers (supports both with and without `##{order}` suffix)
-- `parseDesignationColumn()`: Parses designation column headers (supports both with and without `##{order}` suffix)
+- `parseColumnHeader()`: Parses property column headers (supports both with and without `::{order}` suffix)
+- `parseDesignationColumn()`: Parses designation column headers (supports both with and without `::{order}` suffix)
 - `validateDesignationsPresent()`: Validates that all designations from database are present in export output structure
   - Collects all active and draft designations from all concepts
   - Checks each designation against generated headers
