@@ -83,10 +83,15 @@ public class TerminologyResourceNormalizer extends ResourceBeforeSaveInterceptor
     return false;
   }
 
+  // Concept-level fields whose language variants TermX models as designations (use.code = the field name).
+  private static final List<String> DESIGNATION_FIELDS = List.of("display", "definition");
+
   /**
-   * Recursively folds {@code "<field>:<lang>"} keys into {@code _<field>.extension[translation]} and removes
-   * them. The base value ({@code <field>}) is left untouched; only the language variants move to the standard
-   * translation extension, which the mapper already understands.
+   * Recursively folds {@code "<field>:<lang>"} shorthand keys (e.g. {@code definition:en}) into the standard
+   * structure TermX imports, then removes the non-standard colon-key the strict parser cannot read:
+   * for concept-level {@code display}/{@code definition} the variant becomes a {@code designation}
+   * ({@code use.code = field}, {@code language = lang}); any other field becomes a {@code _<field>} translation
+   * extension. The base value ({@code <field>}) is left untouched.
    */
   private static boolean foldLanguageTaggedShorthand(ObjectNode node) {
     boolean changed = false;
@@ -104,7 +109,11 @@ public class TerminologyResourceNormalizer extends ResourceBeforeSaveInterceptor
       String field = key.substring(0, key.indexOf(':'));
       String lang = key.substring(key.indexOf(':') + 1);
       String value = node.get(key).asText();
-      addTranslation(node, field, lang, value);
+      if (DESIGNATION_FIELDS.contains(field)) {
+        addDesignation(node, field, lang, value);
+      } else {
+        addTranslation(node, field, lang, value);
+      }
       node.remove(key);
       changed = true;
     }
@@ -123,13 +132,28 @@ public class TerminologyResourceNormalizer extends ResourceBeforeSaveInterceptor
     return changed;
   }
 
+  /** Adds a language-specific designation (TermX's multilingual model for concept display/definition). */
+  private static void addDesignation(ObjectNode concept, String field, String lang, String value) {
+    com.fasterxml.jackson.databind.node.ArrayNode designations = concept.has("designation") && concept.get("designation").isArray()
+        ? (com.fasterxml.jackson.databind.node.ArrayNode) concept.get("designation") : concept.putArray("designation");
+    // skip if a designation of this kind+language already exists
+    for (JsonNode d : designations) {
+      if (lang.equals(d.path("language").asText(null)) && field.equals(d.path("use").path("code").asText(null))) {
+        return;
+      }
+    }
+    ObjectNode designation = designations.addObject();
+    designation.put("language", lang);
+    designation.putObject("use").put("code", field);
+    designation.put("value", value);
+  }
+
   private static void addTranslation(ObjectNode node, String field, String lang, String value) {
     String primitive = "_" + field;
     ObjectNode underscore = node.has(primitive) && node.get(primitive).isObject()
         ? (ObjectNode) node.get(primitive) : node.putObject(primitive);
     com.fasterxml.jackson.databind.node.ArrayNode extensions = underscore.has("extension") && underscore.get("extension").isArray()
         ? (com.fasterxml.jackson.databind.node.ArrayNode) underscore.get("extension") : underscore.putArray("extension");
-    // skip if a translation for this language is already present (the standard form wins; no duplication)
     for (JsonNode ext : extensions) {
       if (TRANSLATION_EXTENSION.equals(ext.path("url").asText(null)) && hasLang(ext, lang)) {
         return;
