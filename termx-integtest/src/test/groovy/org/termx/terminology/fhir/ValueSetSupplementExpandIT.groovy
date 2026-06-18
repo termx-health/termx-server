@@ -5,8 +5,11 @@ import jakarta.inject.Inject
 import org.termx.TermxIntegTest
 import org.termx.core.auth.SessionInfo
 import org.termx.core.auth.SessionStore
+import com.kodality.zmei.fhir.resource.other.Parameters
+import com.kodality.zmei.fhir.resource.other.Parameters.ParametersParameter
 import org.termx.terminology.fhir.codesystem.CodeSystemFhirImportService
 import org.termx.terminology.fhir.valueset.ValueSetFhirImportService
+import org.termx.terminology.fhir.valueset.operations.ValueSetExpandOperation
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService
 import org.termx.terminology.terminology.valueset.version.ValueSetVersionService
 
@@ -26,6 +29,7 @@ class ValueSetSupplementExpandIT extends TermxIntegTest {
   @Inject ValueSetFhirImportService vsImportService
   @Inject ValueSetVersionService vsVersionService
   @Inject ValueSetVersionConceptService vsConceptService
+  @Inject ValueSetExpandOperation vsExpand
 
   void setup() {
     def sessionInfo = new SessionInfo()
@@ -60,6 +64,25 @@ class ValueSetSupplementExpandIT extends TermxIntegTest {
     concept != null
     concept.display.language == "lt"
     concept.display.name == "Gliukozė"
+  }
+
+  def "the FHIR \$expand response surfaces the supplement's localized designation to the user (once)"() {
+    given: "an \$expand request for displayLanguage=lt with designations included"
+    def req = new Parameters().setParameter([
+        new ParametersParameter().setName("url").setValueUri("http://example.org/ValueSet/suppl-vs"),
+        new ParametersParameter().setName("displayLanguage").setValueCode("lt"),
+        new ParametersParameter().setName("includeDesignations").setValueBoolean(true)])
+
+    when:
+    def expanded = vsExpand.run(req)
+    def contains = expanded.expansion.contains.find { it.code == "code1" }
+
+    then: "the localized display and designation from the supplement are returned to the user"
+    contains != null
+    contains.display == "Gliukozė"
+
+    and: "the supplement's lt designation appears exactly once (not duplicated by the base+supplement merge)"
+    contains.designation.findAll { it.language == "lt" && it.value == "Gliukozė" }.size() == 1
   }
 
   private String fixture(String path) {
