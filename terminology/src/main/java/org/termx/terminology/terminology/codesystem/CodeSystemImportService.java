@@ -88,6 +88,7 @@ public class CodeSystemImportService {
 
   @Transactional
   public CodeSystem importCodeSystem(CodeSystem codeSystem, List<AssociationType> associationTypes, CodeSystemImportAction action) {
+    reconcileCanonicalId(codeSystem);
     SessionStore.require().checkPermitted(codeSystem.getId(), Privilege.CS_WRITE);
 
     long start = System.currentTimeMillis();
@@ -96,6 +97,7 @@ public class CodeSystemImportService {
     associationTypeService.createIfNotExist(associationTypes);
 
     saveCodeSystem(codeSystem);
+    // (see reconcileCanonicalId — id may have been adopted from an existing same-uri code system)
     CodeSystemVersion codeSystemVersion = codeSystem.getVersions().getFirst();
     saveCodeSystemVersion(codeSystemVersion, action.isCleanRun());
 
@@ -140,6 +142,33 @@ public class CodeSystemImportService {
       concepts.forEach(c -> baseVersionIds.getOrDefault(c.getCode(), Optional.empty()).ifPresent(baseVersionId -> c.getVersions().getFirst().setBaseEntityVersionId(baseVersionId)));
     }
     return concepts;
+  }
+
+  /**
+   * Folds an incoming code system into an existing canonical: a FHIR resource's identity is its {@code url},
+   * but the tx-ecosystem ships multiple versions of one canonical as SEPARATE resources sharing a url with
+   * distinct ids. TermX keys on id and has a unique index on uri, so without this the second such resource
+   * collides on {@code code_system_ukey}. When a code system with the same uri already exists under a
+   * different id, adopt that id so the import becomes a NEW VERSION of the existing canonical.
+   */
+  private void reconcileCanonicalId(CodeSystem codeSystem) {
+    if (StringUtils.isEmpty(codeSystem.getUri())) {
+      return;
+    }
+    codeSystemService.query(new org.termx.ts.codesystem.CodeSystemQueryParams().setUri(codeSystem.getUri()).limit(1)).findFirst()
+        .map(CodeSystem::getId)
+        .filter(existingId -> !existingId.equals(codeSystem.getId()))
+        .ifPresent(existingId -> {
+          log.info("Reconciling code system '{}' to existing canonical id '{}' (uri {})", codeSystem.getId(), existingId, codeSystem.getUri());
+          codeSystem.setId(existingId);
+          // Propagate the adopted id to every nested reference (versions, concepts and their entity versions),
+          // whose code_system FK still points at the old id.
+          Optional.ofNullable(codeSystem.getVersions()).orElse(List.of()).forEach(v -> v.setCodeSystem(existingId));
+          Optional.ofNullable(codeSystem.getConcepts()).orElse(List.of()).forEach(concept -> {
+            concept.setCodeSystem(existingId);
+            Optional.ofNullable(concept.getVersions()).orElse(List.of()).forEach(ev -> ev.setCodeSystem(existingId));
+          });
+        });
   }
 
   private void saveCodeSystem(CodeSystem codeSystem) {
