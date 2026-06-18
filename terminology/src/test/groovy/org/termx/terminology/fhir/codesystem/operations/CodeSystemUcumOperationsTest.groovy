@@ -31,6 +31,8 @@ class CodeSystemUcumOperationsTest extends Specification {
 
   def setup() {
     SessionStore.setLocal(new SessionInfo().setPrivileges(["*.*.*"] as Set))
+    codeSystemService.load(_) >> Optional.of(new CodeSystem().setId("ucum").setUri("http://unitsofmeasure.org").setName("UCUM"))
+    codeSystemService.load(_, _) >> Optional.of(new CodeSystem().setId("ucum").setUri("http://unitsofmeasure.org").setName("UCUM"))
   }
 
   def cleanup() {
@@ -125,7 +127,7 @@ class CodeSystemUcumOperationsTest extends Specification {
 
     then:
     valuesByUse["abbreviation"] == "ml"
-    valuesByUse["definition"] == "Milliliter"
+    parameters.findParameter("definition").orElseThrow().valueString == "Milliliter"
   }
 
   def "lookup auto-loads supplements by displayLanguage"() {
@@ -180,7 +182,7 @@ class CodeSystemUcumOperationsTest extends Specification {
     then:
     parameters.findParameter("display").orElseThrow().valueString == "milliliter"
     valuesByUse["abbreviation"] == "ml"
-    valuesByUse["definition"] == "Milliliter"
+    parameters.findParameter("definition").orElseThrow().valueString == "Milliliter"
     designationLanguages == ["lt"] as Set
   }
 
@@ -249,7 +251,7 @@ class CodeSystemUcumOperationsTest extends Specification {
     def response = lookupOperation.run(new ResourceContent(FhirMapper.toJson(request), "json"))
     def parameters = FhirMapper.fromJson(response.value, Parameters)
     def properties = parameters.parameter.findAll { it.name == "property" }
-    def propertyCodes = properties.collect { property -> property.part.find { it.name == "code" }?.valueString }.toSet()
+    def propertyCodes = properties.collect { property -> property.part.find { it.name == "code" }?.valueCode }.toSet()
 
     then:
     propertyCodes == ["status", "comment"] as Set
@@ -316,7 +318,7 @@ class CodeSystemUcumOperationsTest extends Specification {
     then:
     parametersWithoutProperty.parameter.findAll { it.name == "property" }.isEmpty()
     parametersWithProperty.parameter.findAll { it.name == "property" }.size() == 1
-    parametersWithProperty.parameter.find { it.name == "property" }.part.find { it.name == "code" }.valueString == "status"
+    parametersWithProperty.parameter.find { it.name == "property" }.part.find { it.name == "code" }.valueCode == "status"
   }
 
   def "lookup honours a comma-separated displayLanguage (designations for each language, display from the first)"() {

@@ -31,6 +31,7 @@ class CodeSystemValidateCodeOperationTest extends Specification {
   def setup() {
     SessionStore.setLocal(new SessionInfo().setPrivileges(["*.*.*"] as Set))
     codeSystemService.query(_) >> new QueryResult([new CodeSystem().setId("snomed-ct")])
+    codeSystemService.load(_) >> Optional.of(new CodeSystem().setId("snomed-ct").setUri("http://snomed.info/sct").setName("SNOMED CT"))
   }
 
   def cleanup() {
