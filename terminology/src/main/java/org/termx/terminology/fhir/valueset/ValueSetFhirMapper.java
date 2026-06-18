@@ -715,7 +715,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
 
   public static ValueSet fromFhirValueSet(com.kodality.zmei.fhir.resource.terminology.ValueSet valueSet) {
     ValueSet vs = new ValueSet();
-    vs.setId(ValueSetFhirMapper.parseCompositeId(valueSet.getId())[0]);
+    vs.setId(ValueSetFhirMapper.fhirIdOrFromUrl(valueSet.getId(), valueSet.getUrl()));
     if (valueSet.getMeta() != null && CollectionUtils.isNotEmpty(valueSet.getMeta().getProfile())) {
       vs.setProfile(valueSet.getMeta().getProfile());
     }

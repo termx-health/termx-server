@@ -132,6 +132,9 @@ termx:
     # Optional: dir holding the tx-ecosystem test fixtures to load when a run requests loadSetup=true.
     # Defaults to the FHIR validator's package cache (~/.fhir/packages/hl7.fhir.uv.tx-ecosystem#current/package/tests).
     test-package-dir: ${TERMX_CONFORMANCE_TEST_PACKAGE_DIR:}
+    # Bearer token the setup loader uses to write fixtures over HTTP (writes need CodeSystem/ValueSet
+    # create+update privileges — unauthenticated guest writes are 403). Locally this is the dev token.
+    setup-auth-token: ${TERMX_CONFORMANCE_SETUP_AUTH_TOKEN:}
   fhir:
     codesystem:
       lookup:

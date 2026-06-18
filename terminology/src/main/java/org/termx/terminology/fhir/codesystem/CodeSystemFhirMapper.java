@@ -497,7 +497,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   public CodeSystem fromFhirCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCS) {
     CodeSystem codeSystem = new CodeSystem();
-    codeSystem.setId(CodeSystemFhirMapper.parseCompositeId(fhirCS.getId())[0]);
+    codeSystem.setId(CodeSystemFhirMapper.fhirIdOrFromUrl(fhirCS.getId(), fhirCS.getUrl()));
     if (fhirCS.getMeta() != null && CollectionUtils.isNotEmpty(fhirCS.getMeta().getProfile())) {
       codeSystem.setProfile(fhirCS.getMeta().getProfile());
     }

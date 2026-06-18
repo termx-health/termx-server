@@ -53,6 +53,9 @@ public abstract class BaseFhirMapper {
   );
 
   public static String[] parseCompositeId(String id) {
+    if (id == null) {
+      return new String[]{null, null};
+    }
     id = URLDecoder.decode(id, StandardCharsets.UTF_8);
     if (!id.contains(SEPARATOR)) {
       return new String[]{id, null};
@@ -60,6 +63,27 @@ public abstract class BaseFhirMapper {
     String one = StringUtils.substringBefore(id, SEPARATOR);
     String two = StringUtils.substringAfter(id, SEPARATOR);
     return new String[]{one, StringUtils.isEmpty(two) ? null : two};
+  }
+
+  /**
+   * Resolves the termx resource id for an incoming FHIR resource. Uses the resource's own {@code id}
+   * (composite-id aware) when present; otherwise derives a stable id from the last path segment of the
+   * canonical {@code url}. FHIR allows id-less resources (identity carried by {@code url}); termx keys on
+   * id, so without this an id-less CodeSystem/ValueSet NPEs in {@code parseCompositeId}. Returns null only
+   * when neither id nor a usable url is present.
+   */
+  public static String fhirIdOrFromUrl(String id, String url) {
+    if (StringUtils.isNotEmpty(id)) {
+      return parseCompositeId(id)[0];
+    }
+    if (StringUtils.isEmpty(url)) {
+      return null;
+    }
+    String last = url.contains("/") ? StringUtils.substringAfterLast(url, "/") : url;
+    // Sanitize to the FHIR id grammar ([A-Za-z0-9-.]{1,64}); replace anything else with '-'.
+    last = last.replaceAll("[^A-Za-z0-9.-]", "-");
+    last = StringUtils.left(last, 64);
+    return StringUtils.isNotEmpty(last) ? last : null;
   }
 
   protected static Integer getOffset(SearchCriterion fhir) {
