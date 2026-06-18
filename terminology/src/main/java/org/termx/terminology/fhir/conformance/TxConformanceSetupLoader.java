@@ -103,10 +103,31 @@ public class TxConformanceSetupLoader {
     try (Stream<Path> s = Files.walk(root)) {
       return s.filter(Files::isRegularFile)
           .filter(p -> isSetupFile(p.getFileName().toString(), prefix))
-          .sorted(Comparator.comparing(Path::toString))
+          // Canonical resources (FHIR id == url's last segment) FIRST, so they claim their natural id before
+          // a resource that reuses that id under a different url. The tx-ecosystem ships
+          // codesystem-overload-1.json with id "simple" but url ".../overload"; loaded before the real
+          // codesystem-simple.json it would hijack the "simple" code system and pollute it with phantom
+          // versions. termx keys on the resource id, so order matters; this makes it deterministic.
+          .sorted(Comparator.comparingInt(TxConformanceSetupLoader::canonicalRank).thenComparing(Path::toString))
           .toList();
     } catch (Exception e) {
       throw new RuntimeException("failed scanning test package " + root, e);
+    }
+  }
+
+  /** 0 when the resource's FHIR id matches its url's last segment (a "canonical" resource), 1 otherwise. */
+  static int canonicalRank(Path p) {
+    try {
+      JsonNode r = JsonUtil.getObjectMapper().readTree(p.toFile());
+      String id = r.path("id").asText("");
+      String url = r.path("url").asText("");
+      if (id.isEmpty() || url.isEmpty()) {
+        return 0;
+      }
+      String last = url.contains("/") ? url.substring(url.lastIndexOf('/') + 1) : url;
+      return id.equals(last) ? 0 : 1;
+    } catch (Exception e) {
+      return 0;
     }
   }
 
