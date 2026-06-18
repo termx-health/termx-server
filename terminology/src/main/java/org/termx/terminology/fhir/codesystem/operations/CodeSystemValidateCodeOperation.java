@@ -143,8 +143,21 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
           .addParameter(new ParametersParameter("message").setValueString("The display '" + display + "' is incorrect"));
     }
 
-    return new Parameters()
-        .addParameter(new ParametersParameter("result").setValueBoolean(true));
+    // A successful validation echoes the resolved coding so the client can confirm what was validated.
+    CodeSystem cs = codeSystemService.load(csId).orElse(null);
+    Parameters result = new Parameters()
+        .addParameter(new ParametersParameter("result").setValueBoolean(true))
+        .addParameter(new ParametersParameter("code").setValueCode(code));
+    if (cs != null && StringUtils.isNotEmpty(cs.getUri())) {
+      result.addParameter(new ParametersParameter("system").setValueUri(cs.getUri()));
+    }
+    if (StringUtils.isNotEmpty(conceptDisplay)) {
+      result.addParameter(new ParametersParameter("display").setValueString(conceptDisplay));
+    }
+    if (StringUtils.isNotEmpty(versionUri)) {
+      result.addParameter(new ParametersParameter("version").setValueString(versionUri));
+    }
+    return result;
   }
 
   private static Parameters error(String message) {

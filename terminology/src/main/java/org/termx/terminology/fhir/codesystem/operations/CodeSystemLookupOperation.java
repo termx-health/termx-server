@@ -19,6 +19,7 @@ import org.termx.ts.codesystem.Concept;
 import org.termx.ts.codesystem.ConceptSnapshot;
 import org.termx.ts.codesystem.ConceptQueryParams;
 import org.termx.ts.codesystem.Designation;
+import org.termx.ts.codesystem.EntityProperty;
 import org.termx.ts.codesystem.EntityPropertyType;
 import org.termx.ts.codesystem.EntityPropertyValue;
 import com.kodality.zmei.fhir.FhirMapper;
@@ -33,9 +34,11 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hl7.fhir.r4.model.ResourceType;
 import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
@@ -44,6 +47,8 @@ import org.hl7.fhir.r5.model.OperationOutcome.IssueType;
 public class CodeSystemLookupOperation implements InstanceOperationDefinition, TypeOperationDefinition {
   private static final String UCUM = "ucum";
   private static final String UCUM_URI = "http://unitsofmeasure.org";
+  private static final String DEFINITION = "definition";
+  private static final String NOT_SELECTABLE = "notSelectable";
 
   private final ConceptService conceptService;
   private final CodeSystemService codeSystemService;
@@ -121,32 +126,43 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
     Concept c = conceptService.query(cQueryParams).findFirst()
         .orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "Concept not found"));
 
+    CodeSystem cs = codeSystemService.load(csId, true).orElse(null);
     List<Designation> designations = new ArrayList<>(c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getDesignations).orElse(List.of()));
 
-    Parameters resp = new Parameters();
-    resp.addParameter(new ParametersParameter().setName("name").setValueString(c.getCodeSystem()));
-
-
     Optional<CodeSystemVersionReference> csVersion = c.getVersions().stream().findFirst().flatMap(v -> Optional.ofNullable(v.getVersions()).orElse(List.of()).stream().findFirst());
-    if (csVersion.isPresent()) {
-      resp.addParameter(new ParametersParameter().setName("version").setValueString(csVersion.map(CodeSystemVersionReference::getVersion).orElse(null)));
-    }
-
     // displayLanguage may be a comma-separated list — prefer the FIRST requested language for the display.
     String firstDisplayLanguage = StringUtils.isBlank(displayLanguage) ? null : displayLanguage.split(",")[0].trim();
     String preferredLanguage = StringUtils.firstNonBlank(firstDisplayLanguage, csVersion.map(CodeSystemVersionReference::getPreferredLanguage).orElse(null));
     Designation display = ConceptUtil.getDisplay(designations, preferredLanguage, List.of());
-    List<Designation> responseDesignations = designations.stream()
-        .filter(d -> languageMatches(d.getLanguage(), displayLanguage))
-        .toList();
+    Designation definition = designations.stream()
+        .filter(d -> DEFINITION.equals(d.getDesignationType()) && (preferredLanguage == null || preferredLanguage.equals(d.getLanguage())))
+        .findFirst().or(() -> designations.stream().filter(d -> DEFINITION.equals(d.getDesignationType())).findFirst()).orElse(null);
+
+    Parameters resp = new Parameters();
+    // name is a display name for the code system (the resource name), not its id.
+    resp.addParameter(new ParametersParameter().setName("name").setValueString(cs != null ? cs.getName() : c.getCodeSystem()));
+    resp.addParameter(new ParametersParameter().setName("code").setValueCode(code));
+    if (cs != null && StringUtils.isNotEmpty(cs.getUri())) {
+      resp.addParameter(new ParametersParameter().setName("system").setValueUri(cs.getUri()));
+    }
+    csVersion.ifPresent(v -> resp.addParameter(new ParametersParameter().setName("version").setValueString(v.getVersion())));
     resp.addParameter(new ParametersParameter().setName("display").setValueString(display != null ? display.getName() : null));
-    responseDesignations.stream().filter(d -> display != d).forEach(d -> {
-      resp.addParameter(new ParametersParameter("designation")
-          .addPart(new ParametersParameter("use").setValueCoding(new Coding(d.getDesignationType())))
-          .addPart(new ParametersParameter("value").setValueString(d.getName()))
-          .addPart(new ParametersParameter("language").setValueString(d.getLanguage()))
-      );
-    });
+    if (definition != null && StringUtils.isNotEmpty(definition.getName())) {
+      resp.addParameter(new ParametersParameter().setName("definition").setValueString(definition.getName()));
+    }
+    resp.addParameter(new ParametersParameter().setName("abstract").setValueBoolean(isAbstract(c)));
+
+    designations.stream()
+        .filter(d -> d != display && d != definition)
+        .filter(d -> languageMatches(d.getLanguage(), displayLanguage))
+        .forEach(d -> resp.addParameter(new ParametersParameter("designation")
+            .addPart(new ParametersParameter("use").setValueCoding(new Coding(d.getDesignationType())))
+            .addPart(new ParametersParameter("value").setValueString(d.getName()))
+            .addPart(new ParametersParameter("language").setValueString(d.getLanguage()))));
+
+    Map<String, String> propertyDescriptions = cs == null || cs.getProperties() == null ? Map.of() :
+        cs.getProperties().stream().filter(p -> p.getName() != null && p.getDescription() != null && !p.getDescription().isEmpty())
+            .collect(Collectors.toMap(EntityProperty::getName, p -> p.getDescription().values().stream().findFirst().orElse(null), (a, b) -> a));
 
     List<String> properties = req.getParameter().stream()
         .filter(p -> "property".equals(p.getName()))
@@ -154,11 +170,23 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
         .toList();
     List<EntityPropertyValue> propertyValues = c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getPropertyValues).orElse(List.of());
     propertyValues.stream().filter(pv -> shouldReturnProperty(properties, pv)).forEach(pv -> {
-      resp.addParameter(new ParametersParameter("property")
-          .addPart(new ParametersParameter("code").setValueString(pv.getEntityProperty()))
-          .addPart(toParameter(pv.getEntityPropertyType(), pv.getValue(), c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getSnapshot).orElse(null), displayLanguage)));
+      ParametersParameter property = new ParametersParameter("property")
+          .addPart(new ParametersParameter("code").setValueCode(pv.getEntityProperty()))
+          .addPart(toParameter(pv.getEntityPropertyType(), pv.getValue(), c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getSnapshot).orElse(null), displayLanguage));
+      String description = propertyDescriptions.get(pv.getEntityProperty());
+      if (StringUtils.isNotEmpty(description)) {
+        property.addPart(new ParametersParameter("description").setValueString(description));
+      }
+      resp.addParameter(property);
     });
     return resp;
+  }
+
+  /** A concept is abstract (not for direct use) when it carries a {@code notSelectable=true} property. */
+  private static boolean isAbstract(Concept c) {
+    return c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getPropertyValues).orElse(List.of()).stream()
+        .filter(pv -> NOT_SELECTABLE.equals(pv.getEntityProperty()))
+        .anyMatch(pv -> Boolean.TRUE.equals(pv.getValue()) || "true".equalsIgnoreCase(String.valueOf(pv.getValue())));
   }
 
   private boolean shouldReturnProperty(List<String> requestedProperties, EntityPropertyValue propertyValue) {
