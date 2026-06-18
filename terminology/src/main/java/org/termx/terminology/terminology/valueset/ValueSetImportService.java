@@ -53,6 +53,7 @@ public class ValueSetImportService {
 
   @Transactional
   public ValueSet importValueSet(ValueSet valueSet, ValueSetImportAction action) {
+    reconcileCanonicalId(valueSet);
     SessionStore.require().checkPermitted(valueSet.getId(), Privilege.VS_WRITE);
 
     long start = System.currentTimeMillis();
@@ -74,6 +75,28 @@ public class ValueSetImportService {
     }
     log.info("IMPORT FINISHED (" + (System.currentTimeMillis() - start) / 1000 + " sec)");
     return valueSet;
+  }
+
+  /**
+   * Folds an incoming value set into an existing canonical: a FHIR resource's identity is its {@code url},
+   * but the tx-ecosystem ships multiple versions of one canonical as SEPARATE resources sharing a url with
+   * distinct ids. TermX keys on id and has a unique index on uri, so without this the second such resource
+   * collides on {@code value_set_ukey}. When a value set with the same uri already exists under a different
+   * id, adopt that id so the import becomes a NEW VERSION of the existing canonical.
+   */
+  private void reconcileCanonicalId(ValueSet valueSet) {
+    if (StringUtils.isEmpty(valueSet.getUri())) {
+      return;
+    }
+    valueSetService.query(new org.termx.ts.valueset.ValueSetQueryParams().setUri(valueSet.getUri()).limit(1)).findFirst()
+        .map(ValueSet::getId)
+        .filter(existingId -> !existingId.equals(valueSet.getId()))
+        .ifPresent(existingId -> {
+          log.info("Reconciling value set '{}' to existing canonical id '{}' (uri {})", valueSet.getId(), existingId, valueSet.getUri());
+          valueSet.setId(existingId);
+          // Propagate the adopted id to the nested versions, whose value_set FK still points at the old id.
+          Optional.ofNullable(valueSet.getVersions()).orElse(List.of()).forEach(v -> v.setValueSet(existingId));
+        });
   }
 
   private void saveValueSet(ValueSet valueSet) {
