@@ -220,6 +220,23 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .filter(c -> finalVersion == null || (c.getConcept().getCodeSystemVersions() != null && c.getConcept().getCodeSystemVersions().contains(finalVersion)))
         .findFirst().orElse(null);
 
+    // Graceful degradation for an unknown systemVersion: the requested version names a code system
+    // version that does not exist (the code itself IS in the value set, just under a different version).
+    // Per the FHIR tx ecosystem this is a 200 with result=false plus an UNKNOWN_CODESYSTEM_VERSION issue
+    // listing the valid versions — not a 404/"not in value set".
+    if (concept == null && finalVersion != null && finalSystem != null) {
+      ValueSetVersionConcept anyVersion = vsConcepts.stream()
+          .filter(c -> finalCode.equals(c.getConcept().getCode()))
+          .filter(c -> finalSystem.equals(c.getConcept().getCodeSystemUri()))
+          .findFirst().orElse(null);
+      if (anyVersion != null) {
+        List<String> available = Optional.ofNullable(anyVersion.getConcept().getCodeSystemVersions()).orElse(List.of());
+        if (!available.contains(finalVersion)) {
+          return unknownSystemVersion(anyVersion, finalSystem, finalVersion, available, display, displayLanguage);
+        }
+      }
+    }
+
     if (concept == null) {
       return error(String.format("The provided code %s is not in the value set", (system != null ? system  + "#" : "") + code));
     }
@@ -243,6 +260,50 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       outcome.setIssue(List.of(new OperationOutcomeIssue().setCode("deleted").setSeverity("warning").setDetails(new CodeableConcept().setText("Concept is inactive"))));
       parameters.addParameter(new ParametersParameter("issues").setResource(outcome));
     }
+    return parameters;
+  }
+
+  /**
+   * Builds the response for a requested {@code systemVersion} that does not exist: result=false, the code's
+   * display/system/available version echoed, and an {@code issues} OperationOutcome carrying the
+   * UNKNOWN_CODESYSTEM_VERSION error (with the valid versions) plus the versionless-include mismatch warning.
+   * Mirrors the FHIR tx ecosystem's "graceful degradation" — a 200, not a 4xx.
+   */
+  private Parameters unknownSystemVersion(ValueSetVersionConcept concept, String system, String requestedVersion,
+                                          List<String> availableVersions, String display, String displayLanguage) {
+    String availableVersion = availableVersions.stream().findFirst().orElse(null);
+    String message = String.format(
+        "A definition for CodeSystem '%s' version '%s' could not be found, so the code cannot be validated. Valid versions: %s",
+        system, requestedVersion, String.join(", ", availableVersions));
+
+    OperationOutcomeIssue notFound = new OperationOutcomeIssue()
+        .setSeverity("error").setCode("not-found")
+        .setDetails(new CodeableConcept(new Coding("http://hl7.org/fhir/tools/CodeSystem/tx-issue-type", "not-found")).setText(message))
+        .setLocation(List.of("system")).setExpression(List.of("system"));
+    OperationOutcomeIssue mismatch = new OperationOutcomeIssue()
+        .setSeverity("warning").setCode("invalid")
+        .setDetails(new CodeableConcept(new Coding("http://hl7.org/fhir/tools/CodeSystem/tx-issue-type", "vs-invalid")).setText(String.format(
+            "The code system '%s' version '%s' for the versionless include in the ValueSet include is different to the one in the value ('%s')",
+            system, availableVersion, requestedVersion)))
+        .setLocation(List.of("version")).setExpression(List.of("version"));
+
+    OperationOutcome outcome = new OperationOutcome();
+    outcome.setIssue(List.of(notFound, mismatch));
+
+    Parameters parameters = new Parameters();
+    parameters.addParameter(new ParametersParameter("code").setValueCode(concept.getConcept().getCode()));
+    String conceptDisplay = findDisplay(concept, display, displayLanguage);
+    if (conceptDisplay != null) {
+      parameters.addParameter(new ParametersParameter("display").setValueString(conceptDisplay));
+    }
+    parameters.addParameter(new ParametersParameter("issues").setResource(outcome));
+    parameters.addParameter(new ParametersParameter("message").setValueString(message));
+    parameters.addParameter(new ParametersParameter("result").setValueBoolean(false));
+    parameters.addParameter(new ParametersParameter("system").setValueUri(system));
+    if (availableVersion != null) {
+      parameters.addParameter(new ParametersParameter("version").setValueString(availableVersion));
+    }
+    parameters.addParameter(new ParametersParameter("x-caused-by-unknown-system").setValueCanonical(system + "|" + requestedVersion));
     return parameters;
   }
 

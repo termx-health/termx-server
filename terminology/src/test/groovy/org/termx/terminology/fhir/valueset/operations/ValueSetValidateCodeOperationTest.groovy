@@ -125,6 +125,30 @@ class ValueSetValidateCodeOperationTest extends Specification {
     !resp.findParameter("message").isPresent()
   }
 
+  def "an unknown systemVersion degrades gracefully: result false + UNKNOWN_CODESYSTEM_VERSION issue + valid versions"() {
+    given: "the code is in the value set, but only under code system version 0.1.0"
+    def c = concept()
+    c.getConcept().setCodeSystemVersions(["0.1.0"])
+    valueSetVersionConceptService.expand(vsVersion, _) >> [c]
+
+    when: "validating with systemVersion 1.0.0, which does not exist"
+    def p = new Parameters()
+    p.addParameter(new ParametersParameter("code").setValueCode("allergy"))
+    p.addParameter(new ParametersParameter("system").setValueUri("https://helex.org/fhir/CodeSystem/ehr-feed-category"))
+    p.addParameter(new ParametersParameter("systemVersion").setValueString("1.0.0"))
+    def resp = operation.run(vsVersion, p)
+
+    then: "a 200-style graceful response: result false, available version echoed, message + issues + x-caused-by-unknown-system"
+    !bool(resp, "result")
+    resp.findParameter("version").get().getValueString() == "0.1.0"
+    resp.findParameter("message").get().getValueString().contains("version '1.0.0' could not be found")
+    resp.findParameter("message").get().getValueString().contains("Valid versions: 0.1.0")
+    resp.findParameter("x-caused-by-unknown-system").get().getValueCanonical() == "https://helex.org/fhir/CodeSystem/ehr-feed-category|1.0.0"
+    def oo = resp.findParameter("issues").get().getResource()
+    oo.getIssue().find { it.code == "not-found" && it.severity == "error" } != null
+    oo.getIssue().find { it.code == "invalid" && it.severity == "warning" } != null
+  }
+
   private static ValueSetVersionConcept concept() {
     return new ValueSetVersionConcept()
         .setActive(true)
