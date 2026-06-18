@@ -25,8 +25,9 @@ class ValueSetValidateCodeOperationTest extends Specification {
   def valueSetVersionService = Mock(ValueSetVersionService)
   def valueSetVersionConceptService = Mock(ValueSetVersionConceptService)
   def conceptService = Mock(ConceptService)
+  def expandOperation = Mock(org.termx.terminology.fhir.valueset.operations.ValueSetExpandOperation)
 
-  def operation = new ValueSetValidateCodeOperation(valueSetVersionService, valueSetVersionConceptService, conceptService)
+  def operation = new ValueSetValidateCodeOperation(valueSetVersionService, valueSetVersionConceptService, conceptService, expandOperation)
 
   ValueSetVersion vsVersion = new ValueSetVersion().setValueSet("ehr-feed-category").setVersion("1.0.0")
 
