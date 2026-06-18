@@ -334,6 +334,12 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     // The set of languages carried by the expansion is advertised as repeated `supported-language`
     // extensions on the resource (added in the base toFhir from version.supportedLanguages).
     fhirValueSet.setExpansion(toFhirExpansion(snapshot, fhirValueSet.getCompose().getProperty(), param));
+    // An $expand response is a rendered view, not the value-set definition. The expansion replaces the
+    // compose, and termx stamps an effectivePeriod (defaulting start to the import date) — both are flagged
+    // as unexpected properties by the tx-ecosystem expand tests. Drop them from the expansion view
+    // (compose is read AFTER, above, for declared properties; the read path keeps both).
+    fhirValueSet.setCompose(null);
+    fhirValueSet.setEffectivePeriod(null);
     return fhirValueSet;
   }
 
