@@ -160,7 +160,7 @@ public class ConceptExportService {
             .collect(Collectors.groupingBy(d -> {
               String type = d.getDesignationType() != null ? d.getDesignationType().trim() : "";
               String lang = d.getLanguage() != null ? d.getLanguage().trim() : "";
-              return type + "#" + lang;
+              return type + ":" + lang;
             }));
         
         log.debug("EXPORT DEBUG: composeHeaders - Concept: {}, Version: {}, Designation groups after filtering: {}", 
@@ -197,14 +197,14 @@ public class ConceptExportService {
     log.debug("EXPORT DEBUG: designationMaxCounts size: {}", designationMaxCounts.size());
     designationMaxCounts.forEach((typeLang, maxCount) -> {
       log.debug("EXPORT DEBUG: Processing designation typeLang: {}, maxCount: {}", typeLang, maxCount);
-      boolean isDisplay = typeLang.startsWith("display#");
+      boolean isDisplay = typeLang.startsWith("display:");
       for (int order = 1; order <= maxCount; order++) {
-        // Omit ##1 suffix when there's only one designation of this type#language
+        // Omit ##1 suffix when there's only one designation of this type:language
         String columnName;
         if (maxCount == 1) {
           columnName = typeLang;
         } else {
-          columnName = typeLang + "##" + order;
+          columnName = typeLang + "::" + order;
         }
         if (isDisplay) {
           displayDesignationColumns.add(columnName);
@@ -244,8 +244,8 @@ public class ConceptExportService {
             columns.add(propertyName + "#code");
             columns.add(propertyName + "#system");
           } else {
-            columns.add(propertyName + "#code##" + order);
-            columns.add(propertyName + "#system##" + order);
+            columns.add(propertyName + "#code::" + order);
+            columns.add(propertyName + "#system::" + order);
           }
         }
       } else {
@@ -256,7 +256,7 @@ public class ConceptExportService {
           if (maxCount == 1) {
             columns.add(propertyName);
           } else {
-            columns.add(propertyName + "##" + order);
+            columns.add(propertyName + "::" + order);
           }
         }
       }
@@ -338,7 +338,7 @@ public class ConceptExportService {
         .collect(Collectors.groupingBy(d -> {
           String type = d.getDesignationType() != null ? d.getDesignationType().trim() : "";
           String lang = d.getLanguage() != null ? d.getLanguage().trim() : "";
-          return type + "#" + lang;
+          return type + ":" + lang;
         }, Collectors.toList()));
     
     // Group property values by property name, preserving order
@@ -460,13 +460,13 @@ public class ConceptExportService {
             row.add(""); // Could not parse column header or property name is null
           }
         } else {
-          // Check if this is a designation column (format: type#language##order)
+          // Check if this is a designation column (format: type:language##order)
           DesignationColumnInfo designationInfo = parseDesignationColumn(h);
           log.debug("EXPORT DEBUG: composeRow - Concept: {}, Header: {}, DesignationInfo: {}", 
               c.getCode(), h, designationInfo != null ? ("type=" + designationInfo.type + ", lang=" + designationInfo.language + ", order=" + designationInfo.order) : "null");
           
           if (designationInfo != null && designationInfo.type != null && !designationInfo.type.isEmpty()) {
-            String typeLang = designationInfo.type + "#" + (designationInfo.language != null ? designationInfo.language : "");
+            String typeLang = designationInfo.type + ":" + (designationInfo.language != null ? designationInfo.language : "");
             if (designationsByTypeLang.containsKey(typeLang)) {
               List<Designation> designations = designationsByTypeLang.get(typeLang);
               if (designationInfo.order > 0 && designationInfo.order <= designations.size()) {
@@ -548,23 +548,43 @@ public class ConceptExportService {
     return row.toArray();
   }
   
+  /**
+   * Returns the order-suffix separator present in the column name: "::" (the format produced by
+   * export, colon-consistent with the ":" designation separator) or "##" (legacy), preferring "##"
+   * when both happen to appear. Returns null when no order suffix is present.
+   */
+  private static String orderSeparator(String columnName) {
+    if (columnName == null) {
+      return null;
+    }
+    if (columnName.contains("##")) {
+      return "##";
+    }
+    if (columnName.contains("::")) {
+      return "::";
+    }
+    return null;
+  }
+
   private ColumnInfo parseColumnHeader(String header) {
-    // Pattern: {property-name}##{order} for simple types (or {property-name} when order is 1)
-    // Pattern: {property-name}#code##{order} or {property-name}#system##{order} for coding types
+    // Pattern: {property-name}::{order} for simple types (or {property-name} when order is 1)
+    // Pattern: {property-name}#code::{order} or {property-name}#system::{order} for coding types
     // Pattern: {property-name}#code or {property-name}#system when order is 1
+    // "##" is also accepted as the order separator for backward compatibility.
     log.debug("EXPORT DEBUG: parseColumnHeader - Parsing header: {}", header);
-    
+
     if (header == null) {
       log.debug("EXPORT DEBUG: parseColumnHeader - Header is null");
       return null;
     }
-    
-    boolean hasOrderSuffix = header.contains("##");
+
+    String orderSep = orderSeparator(header);
+    boolean hasOrderSuffix = orderSep != null;
     int order = 1; // Default order when suffix is omitted
     String prefix = header;
-    
+
     if (hasOrderSuffix) {
-      String[] parts = header.split("##", 2);
+      String[] parts = header.split(orderSep, 2);
       if (parts.length != 2) {
         log.debug("EXPORT DEBUG: parseColumnHeader - Header '{}' has ## but split failed", header);
         return null;
@@ -616,11 +636,12 @@ public class ConceptExportService {
   }
   
   private static String extractPropertyName(String columnName) {
-    // Remove #code, #system, and ##order suffixes to get the base property name
-    // Handle both formats: with ## suffix and without (for single values)
+    // Remove #code, #system, and order suffixes to get the base property name
+    // Handle both formats: with order suffix ("::" or legacy "##") and without (for single values)
     String beforeOrder = columnName;
-    if (columnName.contains("##")) {
-      beforeOrder = columnName.split("##")[0];
+    String orderSep = orderSeparator(columnName);
+    if (orderSep != null) {
+      beforeOrder = columnName.split(orderSep)[0];
     }
     if (beforeOrder.endsWith("#code")) {
       return beforeOrder.substring(0, beforeOrder.length() - 5);
@@ -631,10 +652,11 @@ public class ConceptExportService {
   }
   
   private static int extractOrder(String columnName) {
-    // Extract order from column name, defaulting to 1 when no ## suffix is present
-    if (columnName != null && columnName.contains("##")) {
+    // Extract order from column name, defaulting to 1 when no order suffix ("::" or legacy "##") is present
+    String orderSep = orderSeparator(columnName);
+    if (orderSep != null) {
       try {
-        String[] parts = columnName.split("##", 2);
+        String[] parts = columnName.split(orderSep, 2);
         return Integer.parseInt(parts[1]);
       } catch (NumberFormatException e) {
         return 1; // Default to order 1 on parse error
@@ -644,17 +666,21 @@ public class ConceptExportService {
   }
   
   private DesignationColumnInfo parseDesignationColumn(String header) {
-    // Pattern: {type}#{language}##{order} or {type}#{language} when order is 1
+    // Pattern: {type}:{language}::{order} or {type}:{language} when order is 1.
+    // Export emits ":" for the value/language separator and "::" for the order suffix; coding
+    // sub-columns use "#code"/"#system", so matching the designation ":" cleanly tells them apart.
+    // "##" is still accepted as the order separator for backward compatibility.
     if (header == null) {
       return null;
     }
-    
-    boolean hasOrderSuffix = header.contains("##");
+
+    String orderSep = orderSeparator(header);
+    boolean hasOrderSuffix = orderSep != null;
     int order = 1; // Default order when suffix is omitted
     String typeLang = header;
-    
+
     if (hasOrderSuffix) {
-      String[] parts = header.split("##", 2);
+      String[] parts = header.split(orderSep, 2);
       if (parts.length != 2) {
         return null;
       }
@@ -666,8 +692,8 @@ public class ConceptExportService {
       }
     }
     
-    if (typeLang != null && typeLang.contains("#")) {
-      String[] typeLangParts = typeLang.split("#", 2);
+    if (typeLang != null && typeLang.contains(":")) {
+      String[] typeLangParts = typeLang.split(":", 2);
       if (typeLangParts.length == 2) {
         String type = typeLangParts[0] != null ? typeLangParts[0] : "";
         String lang = typeLangParts[1] != null ? typeLangParts[1] : "";
@@ -758,7 +784,7 @@ public class ConceptExportService {
             
             if (type != null && !type.trim().isEmpty()) {
               String lang = d.getLanguage() != null ? d.getLanguage().trim() : "";
-              String typeLang = type.trim() + "#" + lang;
+              String typeLang = type.trim() + ":" + lang;
               designationsByConcept.computeIfAbsent(c.getCode(), k -> new java.util.ArrayList<>()).add(typeLang);
               totalDesignationsFound++;
               log.debug("EXPORT DEBUG: Added designation to collection - Concept: {}, TypeLang: '{}'", c.getCode(), typeLang);
@@ -808,11 +834,11 @@ public class ConceptExportService {
       String conceptCode = entry.getKey();
       for (String typeLang : entry.getValue()) {
         // Check if this typeLang has a corresponding column in headers
-        // It could be without suffix (single value) or with ##1, ##2, etc.
+        // It could be without suffix (single value) or with an order suffix (::1, ::2, or legacy ##1, ##2)
         boolean found = false;
         String matchingHeader = null;
         for (String header : headers) {
-          if (header.equals(typeLang) || header.startsWith(typeLang + "##")) {
+          if (header.equals(typeLang) || header.startsWith(typeLang + "::") || header.startsWith(typeLang + "##")) {
             found = true;
             matchingHeader = header;
             break;

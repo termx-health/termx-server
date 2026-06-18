@@ -137,13 +137,13 @@ This document validates that the current implementation matches the specificatio
 - ✅ `code` is always first column (line 110)
 
 **Designation Columns:**
-- ✅ Format: `{designationType}#{language}##{order}` when multiple, `{designationType}#{language}` when single
+- ✅ Format: `{designationType}:{language}::{order}` when multiple, `{designationType}:{language}` when single (export emits `:`; legacy `#` separator still accepted on import)
 - ✅ Order suffix skipped when maxCount == 1 (lines 202-208)
 - ✅ Language can be empty string (line 162: `d.getLanguage() != null ? d.getLanguage().trim() : ""`)
 
 **Property Columns:**
-- ✅ Simple properties: `{propertyName}##{order}` when multiple, `{propertyName}` when single (lines 255-261)
-- ✅ Coding properties: `{propertyName}#code##{order}` and `{propertyName}#system##{order}` when multiple, `{propertyName}#code` and `{propertyName}#system` when single (lines 242-250)
+- ✅ Simple properties: `{propertyName}::{order}` when multiple, `{propertyName}` when single (lines 255-261)
+- ✅ Coding properties: `{propertyName}#code::{order}` and `{propertyName}#system::{order}` when multiple, `{propertyName}#code` and `{propertyName}#system` when single (lines 242-250)
 - ✅ Order suffix skipped when maxCount == 1 (lines 256-260, 243-249)
 
 ##### ✅ Column Ordering
@@ -186,7 +186,7 @@ This document validates that the current implementation matches the specificatio
 
 **Designation Headers:**
 - ✅ Scans up to 1000 concepts (line 119)
-- ✅ Counts maximum occurrences per `{type}#{language}` (lines 160-176)
+- ✅ Counts maximum occurrences per `{type}:{language}` (or legacy `{type}#{language}`) (lines 160-176)
 - ✅ Generates columns with optional order suffix (lines 201-215)
 - ✅ Separates display from other designations (lines 195-196)
 - ✅ Sorts display designations alphabetically (line 218)
@@ -207,7 +207,7 @@ This document validates that the current implementation matches the specificatio
 - ✅ Only headers without `#code` or `#system` checked as designation columns (lines 462-544)
 
 **Designation Values:**
-- ✅ Grouped by `{type}#{language}` key (lines 325-329)
+- ✅ Grouped by `{type}:{language}` (or legacy `{type}#{language}`) key (lines 325-329)
 - ✅ Designation at index `{order} - 1` extracted (line 475)
 - ✅ Empty string if no designation at that order (line 481)
 
@@ -266,13 +266,13 @@ This document validates that the current implementation matches the specificatio
 - ✅ `code` recognized as identifier (via `concept-code` property mapping)
 
 **Designation Columns:**
-- ✅ New format: `{designationType}#{language}##{order}` or `{designationType}#{language}` (method `parseDesignationColumn()`, line 315)
+- ✅ New format: `{designationType}:{language}::{order}` or `{designationType}:{language}`; legacy `#` separator still accepted (method `parseDesignationColumn()`)
 - ✅ Order defaults to 1 when suffix omitted (line 320-330 in parseDesignationColumn)
 - ✅ Legacy format supported via configuration mapping
 
 **Property Columns:**
-- ✅ Simple properties: `{propertyName}##{order}` or `{propertyName}` (method `parseNewFormatColumn()`, line 252)
-- ✅ Coding properties: `{propertyName}#code##{order}` and `{propertyName}#system##{order}` or `{propertyName}#code` and `{propertyName}#system` (lines 252-314)
+- ✅ Simple properties: `{propertyName}::{order}` or `{propertyName}` (method `parseNewFormatColumn()`, line 252)
+- ✅ Coding properties: `{propertyName}#code::{order}` and `{propertyName}#system::{order}` or `{propertyName}#code` and `{propertyName}#system` (lines 252-314)
 - ✅ Order defaults to 1 when suffix omitted (line 252-314)
 
 ##### ✅ Column Parsing Logic
@@ -281,17 +281,17 @@ This document validates that the current implementation matches the specificatio
 - ✅ Coding property columns processed first (lines 89-100)
 - ✅ Designation columns processed second (lines 101-118)
 - ✅ Simple property columns processed last (lines 125-131)
-- ✅ Prevents false matches (e.g., `type#code##1` identified as property, not designation)
+- ✅ Prevents false matches (e.g., `type#code::1` identified as property, not designation)
 
 **Designation Column Parsing:**
-- ✅ Checks for order suffix (`##`) (line 315-330)
+- ✅ Checks for order suffix (`::`, legacy `##`) (line 315-330)
 - ✅ Defaults to order 1 if no suffix (line 320-330)
-- ✅ Splits type and language by `#` (line 315-330)
+- ✅ Splits type and language by `:` (preferred), falling back to `#` for backward compatibility
 - ✅ Creates designation property value with type, language, order (lines 109-117)
 
 **Property Column Parsing:**
 - ✅ Checks for coding suffix (`#code` or `#system`) (line 252-314)
-- ✅ Checks for order suffix (`##`) (line 252-314)
+- ✅ Checks for order suffix (`::`, legacy `##`) (line 252-314)
 - ✅ Defaults to order 1 if no suffix (line 252-314)
 - ✅ Groups coding pairs by property name and order (lines 94-100, 135-151)
 
@@ -429,9 +429,9 @@ This document validates that the current implementation matches the specificatio
 - ✅ CSV, TSV, XLSX
 
 **Column Formats:**
-- ✅ Designations: `type#language` and `type#language##order`
-- ✅ Simple properties: `property` and `property##order`
-- ✅ Coding properties: `property#code`/`property#system` and `property#code##order`/`property#system##order`
+- ✅ Designations: `type:language` and `type:language::order` (legacy `#` still accepted)
+- ✅ Simple properties: `property` and `property::order`
+- ✅ Coding properties: `property#code`/`property#system` and `property#code::order`/`property#system::order`
 
 **Property Types:**
 - ✅ String, Integer, Decimal, Boolean, DateTime, Coding
@@ -529,13 +529,13 @@ Validates that CSV files can be imported with the new column format when there's
 **Key Validations:**
 - CSV file parsing works correctly
 - Columns without order suffix default to order 1
-- Designations are correctly parsed using `type#language` format
+- Designations are correctly parsed using `type:language` format (legacy `type#language` still accepted)
 - Simple properties (string, decimal) are correctly parsed
 - Coding properties are correctly paired (code and system columns)
 - Empty cells are properly skipped
 
 **Business Scenario:**
-A user exports a CodeSystem with single values for each property. The export omits the order suffix (e.g., `itemWeight` instead of `itemWeight##1`). When importing this file back, the system must correctly recognize these columns and import the data.
+A user exports a CodeSystem with single values for each property. The export omits the order suffix (e.g., `itemWeight` instead of `itemWeight::1`). When importing this file back, the system must correctly recognize these columns and import the data.
 
 **Expected Behavior:**
 - All properties are imported with correct values
@@ -551,7 +551,7 @@ Validates that CSV files can be imported with multiple values per property using
 
 **Key Validations:**
 - Multiple values for the same property are correctly ordered
-- Order suffixes (`##1`, `##2`) are correctly parsed
+- Order suffixes (`::1`, `::2`) are correctly parsed
 - Multiple designations of the same type/language are correctly ordered
 - Multiple coding values are correctly paired by order
 - Incomplete coding pairs (missing code or system) are handled correctly
@@ -562,8 +562,8 @@ A user exports a CodeSystem with multiple values for properties (e.g., multiple 
 **Expected Behavior:**
 - Multiple property values are imported in correct order
 - Multiple designations are imported with correct order
-- Coding properties are paired correctly (code##1 with system##1, code##2 with system##2)
-- Incomplete pairs (e.g., code##2 present but system##2 empty) are handled gracefully
+- Coding properties are paired correctly (code::1 with system::1, code::2 with system::2)
+- Incomplete pairs (e.g., code::2 present but system::2 empty) are handled gracefully
 
 ---
 
@@ -615,12 +615,12 @@ A user exports a CodeSystem to Excel format or receives an Excel file from anoth
 Validates that code and system columns are correctly paired by order, ensuring coding properties are created correctly.
 
 **Key Validations:**
-- Code and system columns are paired by order (##1 with ##1, ##2 with ##2)
+- Code and system columns are paired by order (::1 with ::1, ::2 with ::2)
 - Multiple coding values are correctly ordered
 - Missing code or system values are handled correctly (incomplete pairs are skipped)
 
 **Business Scenario:**
-A user imports a file with coding properties. The system must correctly pair code and system columns that have the same property name and order, creating proper coding values. If a pair is incomplete (e.g., code##2 exists but system##2 is empty), the system should handle this gracefully.
+A user imports a file with coding properties. The system must correctly pair code and system columns that have the same property name and order, creating proper coding values. If a pair is incomplete (e.g., code::2 exists but system::2 is empty), the system should handle this gracefully.
 
 **Expected Behavior:**
 - Coding properties are correctly paired by order
@@ -723,7 +723,7 @@ Validates that columns with `#code` or `#system` are correctly identified as pro
 - Both property and designation columns can coexist with similar names
 
 **Business Scenario:**
-A user has both a coding property named "type" and a designation with type "type" and language "code". The column `type#code##1` should be treated as a coding property column, while `type#code` (without order suffix) could be a designation. The system must correctly distinguish between these.
+A user has both a coding property named "type" and a designation with type "type" and language "code". The column `type#code::1` should be treated as a coding property column, while `type#code` (without order suffix) could be a designation. The system must correctly distinguish between these.
 
 **Expected Behavior:**
 - Coding property columns (with `#code` or `#system`) are processed as properties
@@ -784,9 +784,9 @@ Validation fails inside the isolated dry-run transaction; the user sees a struct
 - ✅ XLSX (Excel format - structure tested)
 
 #### Column Formats Covered
-- ✅ Designations: `type#language` and `type#language##order`
-- ✅ Simple properties: `property` and `property##order`
-- ✅ Coding properties: `property#code`/`property#system` and `property#code##order`/`property#system##order`
+- ✅ Designations: `type:language` and `type:language::order` (legacy `#` still accepted)
+- ✅ Simple properties: `property` and `property::order`
+- ✅ Coding properties: `property#code`/`property#system` and `property#code::order`/`property#system::order`
 
 #### Property Types Covered
 - ✅ String
@@ -1148,9 +1148,9 @@ A user imports a CodeSystem with multiple date properties, each using a differen
 - ✅ XLSX (Excel format - structure tested)
 
 #### Column Formats Covered
-- ✅ Designations: `type#language` and `type#language##order`
-- ✅ Simple properties: `property` and `property##order`
-- ✅ Coding properties: `property#code`/`property#system` and `property#code##order`/`property#system##order`
+- ✅ Designations: `type:language` and `type:language::order` (legacy `#` still accepted)
+- ✅ Simple properties: `property` and `property::order`
+- ✅ Coding properties: `property#code`/`property#system` and `property#code::order`/`property#system::order`
 
 #### Property Types Covered
 - ✅ String

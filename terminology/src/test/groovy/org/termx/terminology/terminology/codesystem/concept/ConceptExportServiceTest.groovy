@@ -194,17 +194,17 @@ class ConceptExportServiceTest extends Specification {
     codeIndex >= 0
     row[codeIndex] == "test1"
     
-    // Single display should not have ##1 suffix
-    def displayIndex = headers.findIndexOf { it == "display#en" || it == "display#en##1" }
+    // Single display should not have ::1 suffix
+    def displayIndex = headers.findIndexOf { it == "display:en" || it == "display:en::1" }
     displayIndex >= 0
     row[displayIndex] == "Test Display"
     
-    // Multiple definitions: first one may or may not have suffix, second one should have ##2
-    def def1Index = headers.findIndexOf { it == "definition#en" || it == "definition#en##1" }
+    // Multiple definitions: first one may or may not have suffix, second one should have ::2
+    def def1Index = headers.findIndexOf { it == "definition:en" || it == "definition:en::1" }
     def1Index >= 0
     row[def1Index] == "Definition 1"
     
-    def def2Index = headers.indexOf("definition#en##2")
+    def def2Index = headers.indexOf("definition:en::2")
     def2Index >= 0
     row[def2Index] == "Definition 2"
   }
@@ -525,7 +525,7 @@ class ConceptExportServiceTest extends Specification {
     (b1Type2.getCode() == "ActivityDefinition" && b1Type2.getCodeSystem() == "http://hl7.org/fhir/fhir-types")
   }
   
-  def "should use optional order suffix - omit ##1 for single values"() {
+  def "should use optional order suffix - omit ::1 for single values"() {
     given: "concepts with single and multiple values"
     CodeSystem codeSystem = new CodeSystem()
     codeSystem.setId("test-cs")
@@ -606,18 +606,18 @@ class ConceptExportServiceTest extends Specification {
     headers[0] == "code"
     
     // Display designations come first after code
-    def displayIndex = headers.indexOf("display#en##1")
+    def displayIndex = headers.indexOf("display:en::1")
     displayIndex > 0
-    headers.contains("display#en##1")
-    headers.contains("display#en##2")
+    headers.contains("display:en::1")
+    headers.contains("display:en::2")
     
     // Since concept1 has 1 itemWeight and concept2 has 0, maxCount is 1, so no suffix
     headers.contains("itemWeight")
-    !headers.contains("itemWeight##1")
+    !headers.contains("itemWeight::1")
     
-    // Since concept2 has 2 synonyms, maxCount is 2, so we get ##1 and ##2
-    headers.contains("synonym##1")
-    headers.contains("synonym##2")
+    // Since concept2 has 2 synonyms, maxCount is 2, so we get ::1 and ::2
+    headers.contains("synonym::1")
+    headers.contains("synonym::2")
     
     // Properties come after designations
     def itemWeightIndex = headers.indexOf("itemWeight")
@@ -676,17 +676,17 @@ class ConceptExportServiceTest extends Specification {
     
     then: "both active and draft designations should be included"
     // Since we have 2 displays (active + draft), maxCount is 2
-    headers.contains("display#en##1")
-    headers.contains("display#en##2")
+    headers.contains("display:en::1")
+    headers.contains("display:en::2")
     
     // Since we have 2 definitions (active + draft), maxCount is 2
-    headers.contains("definition#en##1")
-    headers.contains("definition#en##2")
+    headers.contains("definition:en::1")
+    headers.contains("definition:en::2")
     
     // Column order: code, display, other designations
     headers[0] == "code"
-    def displayIndex = headers.indexOf("display#en##1")
-    def definitionIndex = headers.indexOf("definition#en##1")
+    def displayIndex = headers.indexOf("display:en::1")
+    def definitionIndex = headers.indexOf("definition:en::1")
     displayIndex > 0
     definitionIndex > displayIndex
   }
@@ -745,11 +745,11 @@ class ConceptExportServiceTest extends Specification {
     
     // Display designations come after code
     def codeIndex = headers.indexOf("code")
-    def displayIndex = headers.indexOf("display#en")
+    def displayIndex = headers.indexOf("display:en")
     displayIndex > codeIndex
     
     // Other designations come after display
-    def definitionIndex = headers.indexOf("definition#en")
+    def definitionIndex = headers.indexOf("definition:en")
     definitionIndex > displayIndex
     
     // Properties come after designations

@@ -105,6 +105,112 @@ b1,B1,,g1,,"""
   }
 
   /**
+   * BUSINESS: Test CSV import using the ":" designation separator (FHIR-style, e.g. "definition:et").
+   *
+   * Validates that:
+   * - "type:language" designation columns are parsed (value + language)
+   * - The ":" separator works together with "##" order suffixes
+   * - "#" designation columns keep working in the same file (backward compatibility)
+   * - Coding columns ("#code"/"#system") are unaffected by the new separator
+   */
+  def "should import CSV file using ':' designation separator (and keep '#' for backward compatibility)"() {
+    given: "CSV file mixing ':' designations, a legacy '#' designation, ordered designations and a coding property"
+    String csvContent = """code,display:en,definition:en,definition:en##2,definition:ru,synonym#et,type#code,type#system
+a1,A1,First,Second,Первый,sünonüüm,AdverseEvent,http://hl7.org/fhir/fhir-types
+b1,B1,,,,,,"""
+
+    byte[] file = csvContent.getBytes("UTF-8")
+
+    CodeSystemFileImportRequest request = new CodeSystemFileImportRequest(
+      type: "csv",
+      properties: [
+        new FileProcessingProperty(columnName: "code", propertyName: "concept-code", propertyType: "string", preferred: true),
+        new FileProcessingProperty(columnName: "display:en", propertyName: "display", propertyType: "designation", language: "en"),
+        new FileProcessingProperty(columnName: "definition:en", propertyName: "definition", propertyType: "designation", language: "en"),
+        new FileProcessingProperty(columnName: "definition:en##2", propertyName: "definition", propertyType: "designation", language: "en"),
+        new FileProcessingProperty(columnName: "definition:ru", propertyName: "definition", propertyType: "designation", language: "ru"),
+        new FileProcessingProperty(columnName: "synonym#et", propertyName: "synonym", propertyType: "designation", language: "et"),
+        new FileProcessingProperty(columnName: "type#code", propertyName: "type", propertyType: "coding"),
+        new FileProcessingProperty(columnName: "type#system", propertyName: "type", propertyType: "coding")
+      ]
+    )
+
+    when: "processing the import"
+    CodeSystemFileImportResult result = CodeSystemFileImportProcessor.process(request, file)
+
+    then: "':' and '#' designation columns are both parsed with the correct value and language"
+    result.entities.size() == 2
+
+    def a1Entity = result.entities.find { it.get("concept-code")?.get(0)?.getValue() == "a1" }
+    a1Entity != null
+    a1Entity.get("display")?.size() == 1
+    a1Entity.get("display")?.get(0)?.getValue() == "A1"
+    a1Entity.get("display")?.get(0)?.getLang() == "en"
+    a1Entity.get("definition")?.size() == 3
+    a1Entity.get("definition")?.collect { it.getValue() }?.containsAll(["First", "Second", "Первый"])
+    a1Entity.get("definition")?.find { it.getValue() == "Первый" }?.getLang() == "ru"
+    // legacy "#" designation column still works
+    a1Entity.get("synonym")?.size() == 1
+    a1Entity.get("synonym")?.get(0)?.getValue() == "sünonüüm"
+    a1Entity.get("synonym")?.get(0)?.getLang() == "et"
+    // coding columns unaffected
+    def typeValue = a1Entity.get("type")?.get(0)?.getValue()
+    typeValue instanceof Map
+    typeValue.get("code") == "AdverseEvent"
+    typeValue.get("codeSystem") == "http://hl7.org/fhir/fhir-types"
+  }
+
+  /**
+   * BUSINESS: Test CSV import using the "::" order separator (colon-consistent with ":").
+   *
+   * Validates that:
+   * - Fully colon-based designation columns ("type:language::order") are parsed
+   * - The "::" order separator works for designations, simple properties and coding columns
+   * - Legacy "##" order separator still works in the same file (backward compatibility)
+   */
+  def "should import CSV file using '::' order separator (and keep '##' for backward compatibility)"() {
+    given: "CSV mixing '::' order suffixes with a legacy '##' column and a coding property"
+    String csvContent = """code,display:en,definition:en::1,definition:en::2,synonym::1,synonym##2,type#code::1,type#system::1,type#code::2,type#system::2
+a1,A1,First,Second,x,Y,AdverseEvent,http://hl7.org/fhir/fhir-types,Age,http://hl7.org/fhir/fhir-types"""
+
+    byte[] file = csvContent.getBytes("UTF-8")
+
+    CodeSystemFileImportRequest request = new CodeSystemFileImportRequest(
+      type: "csv",
+      properties: [
+        new FileProcessingProperty(columnName: "code", propertyName: "concept-code", propertyType: "string", preferred: true),
+        new FileProcessingProperty(columnName: "display:en", propertyName: "display", propertyType: "designation", language: "en"),
+        new FileProcessingProperty(columnName: "definition:en::1", propertyName: "definition", propertyType: "designation", language: "en"),
+        new FileProcessingProperty(columnName: "definition:en::2", propertyName: "definition", propertyType: "designation", language: "en"),
+        new FileProcessingProperty(columnName: "synonym::1", propertyName: "synonym", propertyType: "string"),
+        new FileProcessingProperty(columnName: "synonym##2", propertyName: "synonym", propertyType: "string"),
+        new FileProcessingProperty(columnName: "type#code::1", propertyName: "type", propertyType: "coding"),
+        new FileProcessingProperty(columnName: "type#system::1", propertyName: "type", propertyType: "coding"),
+        new FileProcessingProperty(columnName: "type#code::2", propertyName: "type", propertyType: "coding"),
+        new FileProcessingProperty(columnName: "type#system::2", propertyName: "type", propertyType: "coding")
+      ]
+    )
+
+    when: "processing the import"
+    CodeSystemFileImportResult result = CodeSystemFileImportProcessor.process(request, file)
+
+    then: "'::' and '##' order suffixes are both honoured across designations, properties and codings"
+    result.entities.size() == 1
+
+    def a1Entity = result.entities.find { it.get("concept-code")?.get(0)?.getValue() == "a1" }
+    a1Entity != null
+    a1Entity.get("display")?.get(0)?.getValue() == "A1"
+    a1Entity.get("definition")?.size() == 2
+    a1Entity.get("definition")?.collect { it.getValue() }?.containsAll(["First", "Second"])
+    // "::1" + legacy "##2" both map to the same simple property
+    a1Entity.get("synonym")?.size() == 2
+    a1Entity.get("synonym")?.collect { it.getValue() }?.containsAll(["x", "Y"])
+    // two coding pairs ordered via "::"
+    a1Entity.get("type")?.size() == 2
+    a1Entity.get("type")?.collect { it.getValue().get("code") }?.containsAll(["AdverseEvent", "Age"])
+  }
+
+  /**
    * BUSINESS: Test CSV import with new format columns (multiple values with order suffix)
    * 
    * Validates that:
