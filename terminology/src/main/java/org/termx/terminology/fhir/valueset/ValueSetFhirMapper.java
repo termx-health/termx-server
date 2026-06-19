@@ -313,6 +313,32 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     }).collect(toList());
   }
 
+  /** The FHIR language token systems for a {@code designation} parameter — a {@code system|code} with one of these matches by language. */
+  private static final Set<String> LANGUAGE_SYSTEMS = Set.of("urn:ietf:bcp:47", "http://hl7.org/fhir/ValueSet/languages");
+
+  /**
+   * Whether a designation passes the {@code designation} parameter filter. An empty filter matches everything
+   * (no restriction). A token matches when it equals (or is a language-prefix of) the designation's language,
+   * or equals its use/type code; a {@code system|code} token matches the use coding's system+code, or — when
+   * the system is a language system — the language.
+   */
+  private static boolean designationMatchesFilter(Designation d, List<String> tokens) {
+    if (CollectionUtils.isEmpty(tokens)) {
+      return true;
+    }
+    return tokens.stream().anyMatch(token -> {
+      String[] parts = token.contains("|") ? PipeUtil.parsePipe(token) : new String[]{null, token};
+      String system = parts.length > 1 ? parts[0] : null;
+      String code = parts.length > 1 ? parts[1] : parts[0];
+      if (system != null && !LANGUAGE_SYSTEMS.contains(system)) {
+        return code != null && code.equals(d.getDesignationType());
+      }
+      boolean languageMatch = d.getLanguage() != null && code != null
+          && (d.getLanguage().equals(code) || d.getLanguage().startsWith(code + "-"));
+      return languageMatch || (code != null && code.equals(d.getDesignationType()));
+    });
+  }
+
   private static ValueSetComposeIncludeConceptDesignation toFhirDesignation(Designation d) {
     ValueSetComposeIncludeConceptDesignation designation = new ValueSetComposeIncludeConceptDesignation();
     designation.setValue(d.getName());
@@ -479,6 +505,14 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     String lang = Optional.ofNullable(param).map(Resource::getLanguage).orElse(null);
     List<String> properties = ((param == null) || (param.getParameter() == null)) ? List.of() :
         param.getParameter().stream().filter(p -> "property".equals(p.getName())).map(ParametersParameter::getValueString).toList();
+    // FHIR $expand `designation` parameter (0..*): each token names a language or a use. When present, the
+    // expansion's contains[].designation is restricted to designations that match one of them (instead of
+    // emitting every designation). A bare token is a language; a `system|code` token matches a use coding
+    // (or a language when the system is the BCP-47 language system).
+    List<String> designationFilter = ((param == null) || (param.getParameter() == null)) ? List.of() :
+        param.getParameter().stream().filter(p -> "designation".equals(p.getName()))
+            .map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString())
+            .filter(StringUtils::isNotEmpty).toList();
 
     ValueSetExpansionContains contains = new ValueSetExpansionContains();
     contains.setCode(c.getConcept().getCode());
@@ -492,6 +526,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     Set<String> seenDesignations = new HashSet<>();
     contains.setDesignation(CollectionUtils.isNotEmpty(c.getAdditionalDesignations()) && includeDesignations ? c.getAdditionalDesignations().stream()
         .filter(d -> !"definition".equals(d.getDesignationType()))
+        .filter(d -> designationMatchesFilter(d, designationFilter))
         .filter(d -> seenDesignations.add(d.getLanguage() + "|" + d.getName() + "|" + d.getDesignationType()))
         .sorted(Comparator.comparing(d -> !d.isPreferred())).map(designation -> {
           ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
