@@ -41,3 +41,27 @@ with t (name, kind, type, uri, description) as (values
      where e.pexists = true and e.name = dep.name)
 select 1;
 --rollback select 1;
+
+--changeset termx:concept-defined-properties-6
+-- Designation-usage defined properties for the common SNOMED CT designation types, so a FHIR
+-- designation.use of http://snomed.info/sct#900000000000013009 / #900000000000003001 maps to a named,
+-- shared property (snomed-synonym / snomed-fsn) instead of an unrecognised bare code. The `uri` carries the
+-- full system#code, which the import matches against and the export reconstructs the use Coding from.
+with t (name, kind, type, uri, description) as (values
+  ('snomed-synonym',   'designation', 'string', 'http://snomed.info/sct#900000000000013009', '{"en": "SNOMED CT Synonym"}'::jsonb),
+  ('snomed-fsn',       'designation', 'string', 'http://snomed.info/sct#900000000000003001', '{"en": "SNOMED CT Fully Specified Name"}'::jsonb),
+  ('snomed-preferred', 'designation', 'string', 'http://snomed.info/sct#900000000000548007', '{"en": "SNOMED CT Preferred Term"}'::jsonb)
+)
+, e as (select t.*, (exists(select 1 from terminology.defined_entity_property dep where t.name = dep.name)) as pexists from t)
+, inserted as (
+    insert into terminology.defined_entity_property(name, kind, type, uri, description)
+    select e.name, e.kind, e.type, e.uri, e.description
+      from e
+     where e.pexists = false)
+, updated as (
+    update terminology.defined_entity_property dep
+       set kind = e.kind, type = e.type, uri = e.uri, description = e.description
+      from e
+     where e.pexists = true and e.name = dep.name)
+select 1;
+--rollback select 1;

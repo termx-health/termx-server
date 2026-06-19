@@ -225,4 +225,67 @@ class CodeSystemFhirMapperSpec extends Specification {
     cs.name == "simple"
     cs.title.values().contains("Simple CS")
   }
+
+  def "a SNOMED-url code system derives the concept display: preferred > FSN > synonym"() {
+    given:
+    def fhir = com.kodality.zmei.fhir.FhirMapper.fromJson('''
+      {"resourceType":"CodeSystem","url":"http://snomed.info/sct","status":"active","content":"complete","language":"en","concept":[
+        {"code":"100","designation":[
+          {"use":{"system":"http://snomed.info/sct","code":"900000000000003001"},"language":"en","value":"Foo (finding)"},
+          {"use":{"system":"http://snomed.info/sct","code":"900000000000013009"},"language":"en","value":"Foo"},
+          {"use":{"system":"http://snomed.info/sct","code":"900000000000548007"},"language":"en","value":"Foo preferred"}]},
+        {"code":"200","designation":[
+          {"use":{"system":"http://snomed.info/sct","code":"900000000000003001"},"language":"en","value":"Bar (finding)"}]},
+        {"code":"300","designation":[
+          {"use":{"system":"http://snomed.info/sct","code":"900000000000013009"},"language":"en","value":"Baz syn"}]}]}''',
+        com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+
+    when:
+    def cs = mapper.fromFhirCodeSystem(fhir)
+
+    then: "preferred wins; else FSN; else synonym"
+    displayOf(cs, "100") == "Foo preferred"
+    displayOf(cs, "200") == "Bar (finding)"
+    displayOf(cs, "300") == "Baz syn"
+  }
+
+  def "a non-SNOMED code system does NOT derive a display from SNOMED designations"() {
+    given:
+    def fhir = com.kodality.zmei.fhir.FhirMapper.fromJson('''
+      {"resourceType":"CodeSystem","url":"http://example.org/x","status":"active","content":"complete","language":"en","concept":[
+        {"code":"a","designation":[
+          {"use":{"system":"http://snomed.info/sct","code":"900000000000013009"},"language":"en","value":"A syn"}]}]}''',
+        com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+
+    when:
+    def cs = mapper.fromFhirCodeSystem(fhir)
+
+    then: "the display-derivation rule is SNOMED-url only"
+    displayOf(cs, "a") == null
+  }
+
+  def "a SNOMED designation use maps to the snomed-synonym designation type"() {
+    given:
+    def fhir = com.kodality.zmei.fhir.FhirMapper.fromJson('''
+      {"resourceType":"CodeSystem","url":"http://example.org/x","status":"active","content":"complete","language":"en","concept":[
+        {"code":"a","display":"A","designation":[
+          {"use":{"system":"http://snomed.info/sct","code":"900000000000013009"},"language":"en","value":"A syn"}]}]}''',
+        com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+
+    when:
+    def cs = mapper.fromFhirCodeSystem(fhir)
+
+    then:
+    designationTypeOf(cs, "a", "A syn") == "snomed-synonym"
+  }
+
+  private static String displayOf(cs, String code) {
+    def concept = cs.concepts.find { it.code == code }
+    concept?.versions?.first()?.designations?.find { it.designationType == "display" }?.name
+  }
+
+  private static String designationTypeOf(cs, String code, String value) {
+    def concept = cs.concepts.find { it.code == code }
+    concept?.versions?.first()?.designations?.find { it.name == value }?.designationType
+  }
 }
