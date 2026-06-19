@@ -71,10 +71,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       SNOMED_URL + "#900000000000548007", "snomed-preferred");
   // Reverse: a known designation-property name → its use Coding {system, code}, for export reconstruction.
   private static final Map<String, String[]> DESIGNATION_NAME_USE = Map.of(
+      DISPLAY, new String[]{"http://terminology.hl7.org/CodeSystem/designation-usage", "display"},
+      DEFINITION, new String[]{"https://termx.org/fhir/CodeSystem/designation-usage", "definition"},
+      "alias", new String[]{"https://termx.org/fhir/CodeSystem/designation-usage", "alias"},
       "snomed-synonym", new String[]{SNOMED_URL, "900000000000013009"},
       "snomed-fsn", new String[]{SNOMED_URL, "900000000000003001"},
-      "snomed-preferred", new String[]{SNOMED_URL, "900000000000548007"},
-      "alias", new String[]{"https://termx.org/fhir/CodeSystem/designation-usage", "alias"});
+      "snomed-preferred", new String[]{SNOMED_URL, "900000000000548007"});
   // SNOMED concepts carry their label as designations; with no explicit display, derive it in this priority.
   private static final List<String> SNOMED_DISPLAY_PRIORITY = List.of("snomed-preferred", "snomed-fsn", "snomed-synonym");
 
@@ -94,8 +96,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return use.getCode();
   }
 
-  /** The use Coding for an exported designation: a known designation-property name → its {system, code}; otherwise a bare code. */
-  private static Coding designationUseCoding(String designationType) {
+  /** The use Coding for an exported designation: a known designation-property name → its {system, code}; otherwise a bare code. Shared with $expand/$lookup. */
+  public static Coding designationUseCoding(String designationType) {
     String[] sysCode = DESIGNATION_NAME_USE.get(designationType);
     return sysCode != null ? new Coding(sysCode[0], sysCode[1]) : new Coding(designationType);
   }

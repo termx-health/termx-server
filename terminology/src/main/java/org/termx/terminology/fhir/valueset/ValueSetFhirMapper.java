@@ -545,7 +545,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
           ValueSetComposeIncludeConceptDesignation d = new ValueSetComposeIncludeConceptDesignation();
           d.setValue(designation.getName());
           d.setLanguage(designation.getLanguage());
-          d.setUse(new Coding(designation.getDesignationType() == null ? "display" : designation.getDesignationType()));
+          // Reconstruct the use Coding's system+code from the designation type (a known type → its real
+          // {system, code}; an unknown CS-specific type → a bare code), instead of emitting the bare name.
+          d.setUse(org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(
+              designation.getDesignationType() == null ? "display" : designation.getDesignationType()));
           return d;
         }).collect(toList()) : new ArrayList<>());
     if (c.getDisplay() != null && (lang != null && !c.getDisplay().getLanguage().startsWith(lang))) {

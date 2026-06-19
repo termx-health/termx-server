@@ -165,7 +165,8 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
         .filter(d -> d != display && d != definition)
         .filter(d -> languageMatches(d.getLanguage(), displayLanguage))
         .forEach(d -> resp.addParameter(new ParametersParameter("designation")
-            .addPart(new ParametersParameter("use").setValueCoding(new Coding(d.getDesignationType())))
+            .addPart(new ParametersParameter("use").setValueCoding(
+                org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(d.getDesignationType())))
             .addPart(new ParametersParameter("value").setValueString(d.getName()))
             .addPart(new ParametersParameter("language").setValueString(d.getLanguage()))));
 

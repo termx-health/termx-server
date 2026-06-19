@@ -43,6 +43,24 @@ class ValueSetExpandDesignationIT extends TermxIntegTest {
     contains.designation.collect { it.language }
   }
 
+  def "the designation use Coding is reconstructed with its system+code (not the bare type name)"() {
+    when: "expanding with designations; c1 carries a SNOMED-synonym designation"
+    def params = [
+        new ParametersParameter().setName("url").setValueUri("http://example.org/dg-vs"),
+        new ParametersParameter().setName("includeDesignations").setValueBoolean(true)]
+    def contains = vsExpand.run(new Parameters().setParameter(params)).expansion.contains.find { it.code == "c1" }
+
+    then: "the SNOMED synonym designation's use carries the real system+code, not 'snomed-synonym'"
+    def syn = contains.designation.find { it.value == "colour one (synonym)" }
+    syn.use.system == "http://snomed.info/sct"
+    syn.use.code == "900000000000013009"
+
+    and: "a plain (display-type) designation uses the standard designation-usage system, not a bare code"
+    def et = contains.designation.find { it.language == "et" }
+    et.use.system == "http://terminology.hl7.org/CodeSystem/designation-usage"
+    et.use.code == "display"
+  }
+
   def "includeDesignations with no designation filter returns every designation"() {
     expect:
     expandDesignationLanguages().toSorted() == ["en", "en", "et", "ru"]
