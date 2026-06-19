@@ -486,7 +486,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
    * the same shape as the stored-snapshot path.
    */
   public static List<ValueSetExpansionParameter> expansionParameters(Parameters param, List<ValueSetVersionConcept> concepts) {
+    // The echoed "how" control parameters are ordered by name (the tx-ecosystem sorts them — e.g.
+    // excludeNested before includeDesignations), followed by the derived used-codesystem entries in member order.
     List<ValueSetExpansionParameter> parameters = new ArrayList<>(Optional.ofNullable(toValueSetParameter(param)).orElse(List.of()));
+    parameters.sort(java.util.Comparator.comparing(ValueSetExpansionParameter::getName, java.util.Comparator.nullsLast(String::compareTo)));
     parameters.addAll(toUsedCodeSystemParameters(concepts));
     return parameters;
   }
