@@ -65,6 +65,24 @@ class ValueSetExpandDesignationIT extends TermxIntegTest {
         new ParametersParameter().setName("designation").setValueCode("ru")).toSorted() == ["et", "ru"]
   }
 
+  def "the designation filter also applies to the inline (tx-resource) expand path"() {
+    given: "an INLINE value set (passed in the request) over the same base, restricted to et designations"
+    def req = com.kodality.zmei.fhir.FhirMapper.fromJson("""
+      {"resourceType":"Parameters","parameter":[
+        {"name":"includeDesignations","valueBoolean":true},
+        {"name":"designation","valueCode":"et"},
+        {"name":"valueSet","resource":{
+          "resourceType":"ValueSet","url":"http://example.org/dg-vs-inline","status":"active",
+          "compose":{"include":[{"system":"http://example.org/dg-cs"}]}}}]}""", Parameters)
+
+    when:
+    def contains = vsExpand.run(req).expansion.contains.find { it.code == "c1" }
+
+    then: "only the Estonian designation is returned on the inline path too"
+    contains != null
+    contains.designation.collect { it.language } == ["et"]
+  }
+
   private String fixture(String path) {
     def stream = getClass().getClassLoader().getResourceAsStream(path)
     assert stream != null, "fixture not found: ${path}"

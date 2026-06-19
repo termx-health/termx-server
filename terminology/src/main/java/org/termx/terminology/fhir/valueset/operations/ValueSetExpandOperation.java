@@ -372,6 +372,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     boolean includeDesignations = req != null && req.findParameter("includeDesignations")
         .map(pr -> pr.getValueBoolean() != null && pr.getValueBoolean() || "true".equals(pr.getValueString()))
         .orElse(false);
+    // FHIR $expand `designation` filter tokens (same semantics as the stored path) — restrict which
+    // designations the inline expansion returns. Empty = return all.
+    List<String> designationFilter = ValueSetFhirMapper.designationFilterTokens(req);
 
     // The SQL expand can't reach external providers (e.g. SNOMED via Snowstorm), so those members arrive
     // bare. Enrich them with display/designations from the providers, then layer supplements onto the
@@ -485,8 +488,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           }
           if (includeDesignations && concept.getAdditionalDesignations() != null) {
             contain.setDesignation(concept.getAdditionalDesignations().stream()
+                .filter(d -> ValueSetFhirMapper.designationMatchesFilter(d, designationFilter))
                 .map(d -> {
-                  com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation designation = 
+                  com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation designation =
                       new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation();
                   designation.setLanguage(d.getLanguage());
                   designation.setValue(d.getName());
