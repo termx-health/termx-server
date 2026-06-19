@@ -525,13 +525,25 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       if (ccInput) {
         nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("information", "code-invalid", "this-code-not-in-vs", providedNotFound, ccLoc));
       }
+      // An inactive (retired/deprecated) but otherwise-valid code carries a code-rule error (status review) and
+      // a code-comment warning (valid but not active), and the response echoes `inactive`.
+      boolean inactiveConcept = csConcept.found() && csConcept.inactive();
+      if (inactiveConcept) {
+        nfIssues.add(0, org.termx.terminology.fhir.TxIssues.issue("error", "business-rule", "code-rule",
+            String.format("The concept '%s' has a status of inactive and its use should be reviewed", code)));
+        nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment",
+            String.format("The concept '%s' is valid but is not active", code)));
+      }
       if (!ccInput) {
         resp.addParameter(new ParametersParameter("code").setValueCode(code));
-        if (system != null) {
-          resp.addParameter(new ParametersParameter("system").setValueUri(system));
-        }
         if (csConcept.found() && csConcept.display() != null) {
           resp.addParameter(new ParametersParameter("display").setValueString(csConcept.display()));
+        }
+        if (inactiveConcept) {
+          resp.addParameter(new ParametersParameter("inactive").setValueBoolean(true));
+        }
+        if (system != null) {
+          resp.addParameter(new ParametersParameter("system").setValueUri(system));
         }
         if (csVersion != null) {
           resp.addParameter(new ParametersParameter("version").setValueString(csVersion));
@@ -544,8 +556,17 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       return resp;
     }
     String finalDisplay = display;
-    boolean displayValid = finalDisplay == null || finalDisplay.equals(match.getDisplay())
+    // Display validation, by severity (mirrors the reference engine): a provided display that matches the
+    // member's primary display is valid with no issue; one that matches a designation but not the primary
+    // (e.g. a different language) is valid with an information-level invalid-display; one that matches nothing
+    // is an error (result=false) unless lenient-display-validation is set, when it is a warning (result=true).
+    boolean matchesPrimary = finalDisplay == null || finalDisplay.equals(match.getDisplay());
+    boolean matchesAny = matchesPrimary
         || Optional.ofNullable(match.getDesignation()).orElse(List.of()).stream().anyMatch(d -> finalDisplay.equals(d.getValue()));
+    boolean lenientDisplay = req.findParameter("lenient-display-validation")
+        .map(p -> Boolean.TRUE.equals(p.getValueBoolean()) || "true".equals(p.getValueString())).orElse(false);
+    String displaySeverity = matchesPrimary ? null : matchesAny ? "information" : lenientDisplay ? "warning" : "error";
+    boolean displayValid = !"error".equals(displaySeverity);
 
     List<OperationOutcomeIssue> issues = new ArrayList<>(vr.issues());
     resp.addParameter(new ParametersParameter("result").setValueBoolean(displayValid && !vr.hasError()));
@@ -561,14 +582,14 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     if (vr.xCausedBy() != null) {
       resp.addParameter(new ParametersParameter("x-caused-by-unknown-system").setValueCanonical(vr.xCausedBy()));
     }
-    if (!displayValid) {
-      // Invalid display: 200 with result=false plus a structured `issues` OperationOutcome (invalid-display
-      // at the `display` element), mirroring HL7's "Wrong Display Name … Valid display is …" wording.
+    if (displaySeverity != null) {
+      // Invalid display: a structured `issues` OperationOutcome (invalid-display at the `display`/`Coding.display`
+      // element) at the computed severity, mirroring HL7's "Wrong Display Name … Valid display is …" wording.
       String message = String.format("Wrong Display Name '%s' for %s#%s. Valid display is '%s' (for the language(s) '%s')",
           display, match.getSystem(), match.getCode(), match.getDisplay(),
           StringUtils.isEmpty(displayLanguage) ? "--" : displayLanguage);
       resp.addParameter(new ParametersParameter("message").setValueString(message));
-      issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "invalid", "invalid-display", message, displayLocation(req)));
+      issues.add(org.termx.terminology.fhir.TxIssues.issue(displaySeverity, "invalid", "invalid-display", message, displayLocation(req)));
     } else if (vr.message() != null) {
       resp.addParameter(new ParametersParameter("message").setValueString(vr.message()));
     }
