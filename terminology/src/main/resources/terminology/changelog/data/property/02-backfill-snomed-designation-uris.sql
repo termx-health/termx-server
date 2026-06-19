@@ -25,6 +25,8 @@ update terminology.entity_property ep
   join terminology.defined_entity_property dep on dep.name = m.new_name and dep.kind = 'designation'
  where ep.kind = 'designation'
    and ep.name = m.code
+   -- only rows that have not already been backfilled (still missing the uri or the defined-property link)
+   and (ep.uri is null or ep.defined_entity_property_id is null)
    -- skip the (rare) collision where the same code system already declares the target-named property
    and not exists (select 1 from terminology.entity_property e2
                     where e2.code_system = ep.code_system and e2.name = m.new_name and e2.id <> ep.id);
