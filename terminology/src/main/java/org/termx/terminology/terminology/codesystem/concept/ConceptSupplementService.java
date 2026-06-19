@@ -99,9 +99,13 @@ public class ConceptSupplementService {
           List<String> codes = csMembers.stream().map(m -> m.getConcept().getCode()).filter(StringUtils::isNotBlank).distinct().toList();
           Map<String, List<Designation>> byCode = new LinkedHashMap<>();
           supplements.forEach(supplement -> loadSupplementConcepts(supplement.id(), baseCodeSystem, codes, supplement.version(), params).forEach(concept -> {
+            // Include ALL of the supplement's designations, not just the displayLanguage's: per FHIR,
+            // includeDesignations returns every designation, and displayLanguage only selects which one
+            // becomes the display (done in applySupplementDesignations below). Filtering here dropped a
+            // useSupplement-named supplement's designations whenever displayLanguage differed (e.g. an
+            // explicit Russian supplement requested with displayLanguage=en surfaced nothing).
             List<Designation> designations = concept.getVersions() == null ? List.of() : concept.getVersions().stream()
                 .flatMap(v -> Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream())
-                .filter(d -> languageMatches(d.getLanguage(), params.getDisplayLanguage()))
                 .map(d -> d.setSupplement(true))
                 .toList();
             if (CollectionUtils.isNotEmpty(designations)) {
@@ -148,9 +152,10 @@ public class ConceptSupplementService {
 
     Map<String, List<Designation>> supplementDesignations = new LinkedHashMap<>();
     supplements.forEach(supplement -> loadSupplementConcepts(supplement.id(), baseCodeSystem, codes, supplement.version(), params).forEach(concept -> {
+      // Include ALL supplement designations regardless of displayLanguage (it only selects the display) —
+      // see mergeSupplementsIntoExpansion.
       List<Designation> designations = concept.getVersions() == null ? List.of() : concept.getVersions().stream()
           .flatMap(v -> Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream())
-          .filter(d -> languageMatches(d.getLanguage(), params.getDisplayLanguage()))
           .map(d -> d.setSupplement(true))
           .toList();
       if (CollectionUtils.isNotEmpty(designations)) {

@@ -156,6 +156,46 @@ class ValueSetSupplementExpandIT extends TermxIntegTest {
     contains.designation.findAll { it.language == "lt" && it.value == "Gliukozė" }.size() == 1
   }
 
+  def "inline \$expand with useSupplement surfaces the supplement's designations even when displayLanguage is a different language"() {
+    given: "an inline value set over the BASE, naming the lt supplement, but displayLanguage=en (a different language)"
+    def req = inlineExpand("""
+      {"resourceType":"Parameters","parameter":[
+        {"name":"displayLanguage","valueCode":"en"},
+        {"name":"useSupplement","valueCanonical":"http://example.org/CodeSystem/suppl-lt"},
+        {"name":"includeDesignations","valueBoolean":true},
+        {"name":"valueSet","resource":{
+          "resourceType":"ValueSet","url":"http://example.org/ValueSet/inline-suppl-otherlang","status":"active",
+          "compose":{"include":[{"system":"http://example.org/CodeSystem/suppl-base"}]}}}]}""")
+
+    when:
+    def contains = vsExpand.run(req).expansion.contains.find { it.code == "code1" }
+
+    then: "displayLanguage=en only picks the display (base English); the explicitly-named supplement's lt designation still surfaces"
+    contains != null
+    contains.display == "Glucose"
+    contains.designation.findAll { it.language == "lt" && it.value == "Gliukozė" }.size() == 1
+  }
+
+  def "inline \$expand with useSupplement and a matching displayLanguage uses the supplement display AND surfaces its designation (http example #17)"() {
+    given: "an inline value set over the BASE, naming the lt supplement, with displayLanguage=lt (matching)"
+    def req = inlineExpand("""
+      {"resourceType":"Parameters","parameter":[
+        {"name":"displayLanguage","valueCode":"lt"},
+        {"name":"useSupplement","valueCanonical":"http://example.org/CodeSystem/suppl-lt"},
+        {"name":"includeDesignations","valueBoolean":true},
+        {"name":"valueSet","resource":{
+          "resourceType":"ValueSet","url":"http://example.org/ValueSet/inline-suppl-use-matching","status":"active",
+          "compose":{"include":[{"system":"http://example.org/CodeSystem/suppl-base"}]}}}]}""")
+
+    when:
+    def contains = vsExpand.run(req).expansion.contains.find { it.code == "code1" }
+
+    then: "the display is re-picked to the supplement's Lithuanian value and the lt designation surfaces"
+    contains != null
+    contains.display == "Gliukozė"
+    contains.designation.findAll { it.language == "lt" && it.value == "Gliukozė" }.size() == 1
+  }
+
   private static Parameters inlineExpand(String json) {
     com.kodality.zmei.fhir.FhirMapper.fromJson(json, Parameters)
   }
