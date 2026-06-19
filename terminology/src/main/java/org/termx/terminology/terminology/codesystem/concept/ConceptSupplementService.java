@@ -1,6 +1,5 @@
 package org.termx.terminology.terminology.codesystem.concept;
 
-import com.kodality.commons.model.QueryResult;
 import org.termx.terminology.terminology.codesystem.CodeSystemRepository;
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import org.termx.ts.PublicationStatus;
@@ -34,7 +33,6 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @RequiredArgsConstructor
 public class ConceptSupplementService {
-  private final ConceptRepository conceptRepository;
   private final CodeSystemRepository codeSystemRepository;
   private final CodeSystemVersionService codeSystemVersionService;
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
@@ -100,7 +98,7 @@ public class ConceptSupplementService {
           }
           List<String> codes = csMembers.stream().map(m -> m.getConcept().getCode()).filter(StringUtils::isNotBlank).distinct().toList();
           Map<String, List<Designation>> byCode = new LinkedHashMap<>();
-          supplements.forEach(supplement -> loadSupplementConcepts(supplement.id(), codes, supplement.version(), params).forEach(concept -> {
+          supplements.forEach(supplement -> loadSupplementConcepts(supplement.id(), baseCodeSystem, codes, supplement.version(), params).forEach(concept -> {
             List<Designation> designations = concept.getVersions() == null ? List.of() : concept.getVersions().stream()
                 .flatMap(v -> Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream())
                 .filter(d -> languageMatches(d.getLanguage(), params.getDisplayLanguage()))
@@ -149,7 +147,7 @@ public class ConceptSupplementService {
     }
 
     Map<String, List<Designation>> supplementDesignations = new LinkedHashMap<>();
-    supplements.forEach(supplement -> loadSupplementConcepts(supplement.id(), codes, supplement.version(), params).forEach(concept -> {
+    supplements.forEach(supplement -> loadSupplementConcepts(supplement.id(), baseCodeSystem, codes, supplement.version(), params).forEach(concept -> {
       List<Designation> designations = concept.getVersions() == null ? List.of() : concept.getVersions().stream()
           .flatMap(v -> Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream())
           .filter(d -> languageMatches(d.getLanguage(), params.getDisplayLanguage()))
@@ -163,36 +161,37 @@ public class ConceptSupplementService {
     concepts.forEach(concept -> mergeConceptDesignations(concept, supplementDesignations.getOrDefault(concept.getCode(), List.of())));
   }
 
-  private List<Concept> loadSupplementConcepts(String supplementCodeSystem, List<String> codes, String version, ConceptQueryParams params) {
-    ConceptQueryParams supplementParams = new ConceptQueryParams()
-        .setCodeSystem(supplementCodeSystem)
-        .setCodes(codes)
-        .setCodeSystemVersion(version)
-        .setPermittedCodeSystems(params.getPermittedCodeSystems())
-        .limit(codes.size());
-
-    QueryResult<Concept> result = conceptRepository.query(supplementParams);
-    result.setData(decorate(result.getData(), supplementParams));
-    return result.getData();
-  }
-
-  private List<Concept> decorate(List<Concept> concepts, ConceptQueryParams params) {
-    if (CollectionUtils.isEmpty(concepts)) {
-      return concepts;
-    }
+  /**
+   * Loads a supplement's localized designations for the given base-system codes. A {@code content=supplement}
+   * code system does NOT create its own concept rows: its designations live on code system entity versions
+   * whose ENTITY belongs to the base code system but which are MEMBERS of the supplement's code system
+   * version (linked via {@code base_entity_version_id}). So we cannot find them through {@code ConceptRepository}
+   * by entity {@code code_system} (that yielded nothing) — we load the entity versions by code-system-version
+   * membership ({@code <supplement>|<version>}) and read their designations.
+   */
+  private List<Concept> loadSupplementConcepts(String supplementCodeSystem, String baseCodeSystem, List<String> codes, String version, ConceptQueryParams params) {
     CodeSystemEntityVersionQueryParams versionParams = new CodeSystemEntityVersionQueryParams();
-    versionParams.setCodeSystem(params.getCodeSystem());
-    versionParams.setCodeSystemVersion(params.getCodeSystemVersion());
-    versionParams.setCodeSystemVersionId(params.getCodeSystemVersionId());
-    versionParams.setCodeSystemVersions(params.getCodeSystemVersions());
+    versionParams.setCodeSystemVersions(supplementCodeSystem + "|" + version);
+    versionParams.setCode(String.join(",", codes));
+    // The membership query filters permitted code systems on BOTH the entity's code system (the base) and the
+    // version's code system (the supplement); a null (unrestricted) list matches NOTHING, so pass both
+    // explicitly when unrestricted. A restricted caller's grants are honored as-is.
+    versionParams.setPermittedCodeSystems(params.getPermittedCodeSystems() != null
+        ? params.getPermittedCodeSystems()
+        : List.of(baseCodeSystem, supplementCodeSystem));
     versionParams.all();
 
-    List<String> entityIds = concepts.stream().map(Concept::getId).filter(Objects::nonNull).map(String::valueOf).toList();
-    versionParams.setCodeSystemEntityIds(String.join(",", entityIds));
-    Map<String, List<CodeSystemEntityVersion>> versions = codeSystemEntityVersionService.query(versionParams).getData().stream()
-        .collect(Collectors.groupingBy(CodeSystemEntityVersion::getCode));
-    concepts.forEach(concept -> concept.setVersions(versions.getOrDefault(concept.getCode(), concept.getVersions())));
-    return concepts;
+    return codeSystemEntityVersionService.query(versionParams).getData().stream()
+        .collect(Collectors.groupingBy(CodeSystemEntityVersion::getCode, LinkedHashMap::new, Collectors.toList()))
+        .entrySet().stream()
+        .map(entry -> {
+          Concept concept = new Concept();
+          concept.setCode(entry.getKey());
+          concept.setCodeSystem(supplementCodeSystem);
+          concept.setVersions(entry.getValue());
+          return concept;
+        })
+        .toList();
   }
 
   private Map<String, List<ResolvedSupplement>> resolveSupplements(List<Concept> concepts, ConceptQueryParams params) {
