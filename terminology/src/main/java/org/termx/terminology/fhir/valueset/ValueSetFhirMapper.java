@@ -322,7 +322,15 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
    * or equals its use/type code; a {@code system|code} token matches the use coding's system+code, or — when
    * the system is a language system — the language.
    */
-  private static boolean designationMatchesFilter(Designation d, List<String> tokens) {
+  /** The {@code designation} parameter tokens of an $expand request (a language, or a {@code system|code} use/language token), in order. */
+  public static List<String> designationFilterTokens(Parameters param) {
+    return ((param == null) || (param.getParameter() == null)) ? List.of() :
+        param.getParameter().stream().filter(p -> "designation".equals(p.getName()))
+            .map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString())
+            .filter(StringUtils::isNotEmpty).toList();
+  }
+
+  public static boolean designationMatchesFilter(Designation d, List<String> tokens) {
     if (CollectionUtils.isEmpty(tokens)) {
       return true;
     }
@@ -509,10 +517,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     // expansion's contains[].designation is restricted to designations that match one of them (instead of
     // emitting every designation). A bare token is a language; a `system|code` token matches a use coding
     // (or a language when the system is the BCP-47 language system).
-    List<String> designationFilter = ((param == null) || (param.getParameter() == null)) ? List.of() :
-        param.getParameter().stream().filter(p -> "designation".equals(p.getName()))
-            .map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString())
-            .filter(StringUtils::isNotEmpty).toList();
+    List<String> designationFilter = designationFilterTokens(param);
 
     ValueSetExpansionContains contains = new ValueSetExpansionContains();
     contains.setCode(c.getConcept().getCode());
