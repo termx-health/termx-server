@@ -903,7 +903,8 @@ class ValueSetExpandOperationTest extends Specification {
 
     valueSetService.query(_) >> new QueryResult<>([vs])
     valueSetVersionService.loadLastVersion("vs1") >> vsv
-    valueSetVersionConceptService.expand("vs1", "1.0.0", null, false) >> snapshot
+    // No displayLanguage requested, so the operation falls back to the value set version's preferredLanguage ("en").
+    valueSetVersionConceptService.expand("vs1", "1.0.0", "en", false) >> snapshot
     provenanceService.find("ValueSetVersion|7") >> []
   }
 }

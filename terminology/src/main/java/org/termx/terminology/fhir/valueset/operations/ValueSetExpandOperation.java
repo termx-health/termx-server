@@ -170,10 +170,17 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       throw new FhirException(404, IssueType.NOTFOUND, "value set version not found");
     }
 
-    String displayLanguage = req == null ? null : req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
+    String requestedLanguage = req == null ? null : req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
         .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString)
         .orElse(req.findParameter("defaultLanguage").map(ParametersParameter::getValueCode)
         .orElse(req.findParameter("defaultLanguage").map(ParametersParameter::getValueString).orElse(null))));
+    // Default the display language: an explicit request wins; otherwise fall back to the value set's own
+    // resource language (FHIR ValueSet.language → version.preferredLanguage), and finally to "en". So a
+    // localized value set (e.g. language=et with an Estonian supplement) renders its Estonian displays by
+    // default instead of always English.
+    String vsLanguage = version.getPreferredLanguage();
+    String displayLanguage = StringUtils.isNotEmpty(requestedLanguage) ? requestedLanguage
+        : StringUtils.isNotEmpty(vsLanguage) ? vsLanguage : "en";
     boolean includeDesignations = req != null && req.findParameter("includeDesignations")
         .map(pr -> pr.getValueBoolean() != null && pr.getValueBoolean() || "true".equals(pr.getValueString()))
         .orElse(false);
@@ -183,10 +190,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
     // Layer supplements (e.g. a SNOMED-based supplement's localized designations) onto the expanded
     // members. The external SNOMED expand provider fetches base concepts from Snowstorm but never applies
-    // supplements, so they were absent from $expand. Only run on the freshly-computed (non-cached) view —
-    // a displayLanguage or includeDesignations request bypasses the request-agnostic default snapshot, so
-    // the members here are safe to enrich in place.
-    if (StringUtils.isNotEmpty(displayLanguage) || includeDesignations) {
+    // supplements, so they were absent from $expand. Fire only when a language/designations were actually
+    // requested, the value set declares its own resource language (its displays are meant to be localized),
+    // or a supplement is explicitly named — NOT for a plain English-default expand, so the common path
+    // keeps its request-agnostic snapshot without paying for supplement auto-discovery.
+    boolean applySupplements = StringUtils.isNotEmpty(requestedLanguage) || StringUtils.isNotEmpty(vsLanguage)
+        || includeDesignations || StringUtils.isNotEmpty(extractUseSupplement(req));
+    if (applySupplements) {
       conceptSupplementService.mergeSupplementsIntoExpansion(expandedConcepts, supplementParams(displayLanguage, req));
     }
     List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + version.getId());
