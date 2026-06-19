@@ -292,3 +292,87 @@ Content-Type: application/fhir+json
     }
   ]
 }
+
+### 16. Inline $expand of the BASE with displayLanguage=et — supplement AUTO-DISCOVERY
+#     The inline VS only references the base CS. Passing displayLanguage=et makes the
+#     server auto-load every supplement CS that supplements the base and carries "et"
+#     designations (here: tx-rest-demo-color-et), then re-pick the localized display.
+# expect: red/green/blue with ESTONIAN displays — punane / roheline / sinine;
+#         with includeDesignations=true the et designations appear in contains[].designation.
+POST {{fhir}}/ValueSet/$expand
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    { "name": "displayLanguage", "valueCode": "et" },
+    { "name": "includeDesignations", "valueBoolean": true },
+    {
+      "name": "valueSet",
+      "resource": {
+        "resourceType": "ValueSet",
+        "url": "http://example.org/fhir/ValueSet/inline-colors-supplemented",
+        "status": "active",
+        "compose": { "include": [ { "system": "{{base}}" } ] }
+      }
+    }
+  ]
+}
+
+### 17. Inline $expand of the BASE naming the supplement EXPLICITLY by URL
+#     The inline VS references the base CS; `useSupplement` names the supplement CS
+#     canonical (here the Russian supplement, pinned to |1.0.0) — no stored wrapper
+#     ValueSet and no valueset-supplement extension needed. displayLanguage=ru re-picks
+#     the localized display. This is the inline equivalent of the stored tests #8 / #10.
+# expect: red/green/blue with RUSSIAN displays — красный / зелёный / синий;
+#         the ru values also appear in contains[].designation (includeDesignations=true).
+POST {{fhir}}/ValueSet/$expand
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    { "name": "displayLanguage", "valueCode": "ru" },
+    { "name": "useSupplement", "valueCanonical": "{{ruCs}}|1.0.0" },
+    { "name": "includeDesignations", "valueBoolean": true },
+    {
+      "name": "valueSet",
+      "resource": {
+        "resourceType": "ValueSet",
+        "url": "http://example.org/fhir/ValueSet/inline-colors-use-supplement",
+        "status": "active",
+        "compose": { "include": [ { "system": "{{base}}" } ] }
+      }
+    }
+  ]
+}
+
+### 18. Inline $expand — ALL supplements, ALL languages at once
+#     Name every supplement via repeated `useSupplement` (et + ru) and OMIT displayLanguage.
+#     With no language requested, the display stays English (the base) but the designation
+#     filter is wide open, so EVERY supplement designation surfaces — et and ru together.
+# expect: red/green/blue with English displays; each contains[].designation carries BOTH
+#         the Estonian (punane/roheline/sinine) and Russian (красный/зелёный/синий) values.
+POST {{fhir}}/ValueSet/$expand
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    { "name": "useSupplement", "valueCanonical": "{{etCs}}|1.0.0" },
+    { "name": "useSupplement", "valueCanonical": "{{ruCs}}|1.0.0" },
+    { "name": "includeDesignations", "valueBoolean": true },
+    {
+      "name": "valueSet",
+      "resource": {
+        "resourceType": "ValueSet",
+        "url": "http://example.org/fhir/ValueSet/inline-colors-all-supplements",
+        "status": "active",
+        "compose": { "include": [ { "system": "{{base}}" } ] }
+      }
+    }
+  ]
+}
