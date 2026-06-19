@@ -140,6 +140,45 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     return run(vsVersion, req);
   }
 
+  private record CsConcept(boolean found, String display, boolean inactive) {
+  }
+
+  /** Looks a code up in the tx-resource CodeSystem(s) for {@code system} (recursing nested concepts) — its display + whether it's inactive/retired. */
+  private static CsConcept txCsConcept(Parameters req, String system, String code) {
+    if (req.getParameter() == null || system == null || code == null) {
+      return new CsConcept(false, null, false);
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs
+          && system.equals(cs.getUrl())) {
+        CsConcept found = findConcept(cs.getConcept(), code);
+        if (found.found()) {
+          return found;
+        }
+      }
+    }
+    return new CsConcept(false, null, false);
+  }
+
+  private static CsConcept findConcept(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts, String code) {
+    if (concepts == null) {
+      return new CsConcept(false, null, false);
+    }
+    for (var c : concepts) {
+      if (code.equals(c.getCode())) {
+        boolean inactive = c.getProperty() != null && c.getProperty().stream().anyMatch(pr ->
+            ("status".equals(pr.getCode()) && ("retired".equals(pr.getValueCode()) || "deprecated".equals(pr.getValueCode())))
+                || ("inactive".equals(pr.getCode()) && Boolean.TRUE.equals(pr.getValueBoolean())));
+        return new CsConcept(true, c.getDisplay(), inactive);
+      }
+      CsConcept nested = findConcept(c.getConcept(), code);
+      if (nested.found()) {
+        return nested;
+      }
+    }
+    return new CsConcept(false, null, false);
+  }
+
   /** All ValueSets supplied inline via tx-resource params whose canonical url matches (any version). */
   private static List<com.kodality.zmei.fhir.resource.terminology.ValueSet> txResourceValueSets(Parameters req, String url) {
     if (req.getParameter() == null || url == null) {
@@ -454,22 +493,37 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           .filter(java.util.Objects::nonNull).findFirst().orElse(null);
       String codeRef = (system != null ? system + "#" : "") + code;
       String notInVs = String.format("The provided code '%s' was not found in the value set '%s'", codeRef, vsCanonical);
-      String unknownCode = system == null ? String.format("Unknown code '%s'", code)
-          : String.format("Unknown code '%s' in the CodeSystem '%s'%s", code, system, csVersion != null ? " version '" + csVersion + "'" : "");
-      resp.addParameter(new ParametersParameter("code").setValueCode(code));
-      if (system != null) {
-        resp.addParameter(new ParametersParameter("system").setValueUri(system));
-      }
-      if (csVersion != null) {
-        resp.addParameter(new ParametersParameter("version").setValueString(csVersion));
-      }
-      resp.addParameter(new ParametersParameter("message").setValueString(notInVs + "; " + unknownCode));
-      resp.addParameter(new ParametersParameter("result").setValueBoolean(false));
+      // FHIR $validate-code echoes the input as given: a codeableConcept input echoes `codeableConcept` (added
+      // by the run() wrapper) and NOT a decomposed `code`/`system`/`version`.
+      boolean ccInput = req.findParameter("codeableConcept").isPresent();
+      // Split: a code that IS defined in the code system but not in the value set echoes its display/version and
+      // a single `not-in-vs` issue; a code that the code system does not define adds an `invalid-code` issue.
+      CsConcept csConcept = txCsConcept(req, system, code);
       String codeLoc = codeLocation(req);
+      List<OperationOutcomeIssue> nfIssues = new ArrayList<>();
+      nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, codeLoc));
+      String message = notInVs;
+      if (!csConcept.found() && system != null) {
+        String unknownCode = String.format("Unknown code '%s' in the CodeSystem '%s'%s", code, system, csVersion != null ? " version '" + csVersion + "'" : "");
+        nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, codeLoc));
+        message = notInVs + "; " + unknownCode;
+      }
+      if (!ccInput) {
+        resp.addParameter(new ParametersParameter("code").setValueCode(code));
+        if (system != null) {
+          resp.addParameter(new ParametersParameter("system").setValueUri(system));
+        }
+        if (csConcept.found() && csConcept.display() != null) {
+          resp.addParameter(new ParametersParameter("display").setValueString(csConcept.display()));
+        }
+        if (csVersion != null) {
+          resp.addParameter(new ParametersParameter("version").setValueString(csVersion));
+        }
+      }
+      resp.addParameter(new ParametersParameter("message").setValueString(message));
+      resp.addParameter(new ParametersParameter("result").setValueBoolean(false));
       resp.addParameter(new ParametersParameter("issues").setResource(
-          org.termx.terminology.fhir.TxIssues.outcome(
-              org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, codeLoc),
-              org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, codeLoc))));
+          org.termx.terminology.fhir.TxIssues.outcome(nfIssues.toArray(OperationOutcomeIssue[]::new))));
       return resp;
     }
     String finalDisplay = display;
