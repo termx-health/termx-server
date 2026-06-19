@@ -50,6 +50,16 @@ public class ProfileTolerantResourceValidator extends ResourceBeforeSaveIntercep
   // Such a message means "could not check this profile", not "the resource is invalid" — so it is tolerated.
   private static final String UNCHECKED_PROFILE = "has not been checked because it is unknown";
 
+  // HL7-jurisdiction best-practice ("SHOULD"/"SHOULD NOT") advisories the org.hl7.fhir validator escalates to
+  // ERROR. A terminology server is handed arbitrary CodeSystems/ValueSets as operation INPUTS (tx-resource on
+  // $expand/$validate-code) — it must not 400 a structurally-valid resource over an HL7 publishing best
+  // practice it does not itself assert (e.g. a CodeSystem supplement that carries caseSensitive). These are
+  // SHOULD-level only; the matching SHALL invariants (…_SUPPL_MISSING/…_SUPPL_WRONG) are left enforced.
+  private static final java.util.Set<String> TOLERATED_BEST_PRACTICE_MESSAGE_IDS = java.util.Set.of(
+      "CODESYSTEM_CS_HL7_PRESENT_ELEMENT_SUPPL",
+      "CODESYSTEM_CS_NO_VS_SUPPLEMENT1",
+      "CODESYSTEM_CS_NO_VS_SUPPLEMENT2");
+
   @Inject
   private ResourceFormatService resourceFormatService;
   @Inject
@@ -96,6 +106,7 @@ public class ProfileTolerantResourceValidator extends ResourceBeforeSaveIntercep
       List<SingleValidationMessage> errors = hapiContextHolder.getValidator().validateWithResult(content.getValue()).getMessages().stream()
           .filter(m -> isError(m.getSeverity()))
           .filter(m -> !isUncheckedProfile(m))
+          .filter(m -> !TOLERATED_BEST_PRACTICE_MESSAGE_IDS.contains(m.getMessageId()))
           .collect(toList());
       if (!errors.isEmpty()) {
         throw new FhirException(400, errors.stream().map(msg -> {
