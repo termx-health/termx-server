@@ -491,22 +491,39 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           .filter(c -> finalSystem == null || finalSystem.equals(c.getSystem()))
           .map(c -> c.getVersion())
           .filter(java.util.Objects::nonNull).findFirst().orElse(null);
-      String codeRef = (system != null ? system + "#" : "") + code;
-      String notInVs = String.format("The provided code '%s' was not found in the value set '%s'", codeRef, vsCanonical);
+      // The resolved code system version (the message echoes it on the "Unknown code …" issue).
+      String csv = vr.echoVersion() != null ? vr.echoVersion() : csVersion;
+      // The code reference in the message carries the provided display in parens, as the reference engine does.
+      String codeRef = (system != null ? system + "#" : "") + code + (display != null ? " ('" + display + "')" : "");
+      String providedNotFound = String.format("The provided code '%s' was not found in the value set '%s'", codeRef, vsCanonical);
       // FHIR $validate-code echoes the input as given: a codeableConcept input echoes `codeableConcept` (added
-      // by the run() wrapper) and NOT a decomposed `code`/`system`/`version`.
+      // by the run() wrapper) and NOT a decomposed `code`/`system`/`version`. A codeableConcept's primary
+      // not-in-vs issue is "No valid coding was found …", with a separate information-level this-code-not-in-vs.
       boolean ccInput = req.findParameter("codeableConcept").isPresent();
+      boolean codingInput = req.findParameter("coding").isPresent();
+      boolean bareCode = !ccInput && !codingInput;
+      String ccLoc = "CodeableConcept.coding[0].code";
+      String notInVsText = ccInput ? String.format("No valid coding was found for the value set '%s'", vsCanonical) : providedNotFound;
       // Split: a code that IS defined in the code system but not in the value set echoes its display/version and
       // a single `not-in-vs` issue; a code that the code system does not define adds an `invalid-code` issue.
       CsConcept csConcept = txCsConcept(req, system, code);
-      String codeLoc = codeLocation(req);
       List<OperationOutcomeIssue> nfIssues = new ArrayList<>();
-      nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, codeLoc));
-      String message = notInVs;
+      // Issue locations follow the reference engine: a bare `code` input points at `code`; coding/codeableConcept
+      // not-in-vs has no location; an invalid-code on a codeableConcept points at CodeableConcept.coding[0].code.
+      nfIssues.add(bareCode
+          ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVsText, "code")
+          : org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVsText));
+      String message = notInVsText;
       if (!csConcept.found() && system != null) {
-        String unknownCode = String.format("Unknown code '%s' in the CodeSystem '%s'%s", code, system, csVersion != null ? " version '" + csVersion + "'" : "");
-        nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, codeLoc));
-        message = notInVs + "; " + unknownCode;
+        String unknownCode = String.format("Unknown code '%s' in the CodeSystem '%s'%s", code, system, csv != null ? " version '" + csv + "'" : "");
+        nfIssues.add(bareCode ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, "code")
+            : ccInput ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, ccLoc)
+            : org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode));
+        message = (ccInput ? providedNotFound : notInVsText) + "; " + unknownCode;
+      }
+      // A codeableConcept also carries an information-level this-code-not-in-vs issue (the "provided code" text).
+      if (ccInput) {
+        nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("information", "code-invalid", "this-code-not-in-vs", providedNotFound, ccLoc));
       }
       if (!ccInput) {
         resp.addParameter(new ParametersParameter("code").setValueCode(code));
