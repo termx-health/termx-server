@@ -679,10 +679,74 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           }
           return contain;
         }).toList();
+
+    // FHIR hierarchical expansion: when excludeNested is explicitly false, nest each member under its parent
+    // (ValueSet.expansion.contains.contains) instead of returning a flat list. Membership/total stay flat; this
+    // only reshapes the presentation. The parent of each code comes from the tx-resource CodeSystem's nested
+    // concept tree. When excludeNested is absent or true, the flat list is kept (the default and prior behaviour).
+    // An enumerated value set (explicit compose.include.concept list) is a flat selection, not a view of the
+    // code system hierarchy — it is never nested, even with excludeNested=false.
+    boolean enumerated = !expandedConcepts.isEmpty() && expandedConcepts.stream().allMatch(ValueSetVersionConcept::isEnumerated);
+    boolean nestHierarchy = !enumerated && req != null && req.findParameter("excludeNested").isPresent()
+        && req.findParameter("excludeNested")
+            .map(p -> !(Boolean.TRUE.equals(p.getValueBoolean()) || "true".equals(p.getValueString()))).orElse(false);
+    if (nestHierarchy) {
+      contains = nestContains(contains, hierarchyParents(req));
+    }
     expansion.setContains(contains);
 
     response.setExpansion(expansion);
     return response;
+  }
+
+  /** code-system child→parent map ({@code system|code} → parent code) from the tx-resource CodeSystems' nested concept trees. */
+  private static java.util.Map<String, String> hierarchyParents(Parameters req) {
+    java.util.Map<String, String> parents = new java.util.HashMap<>();
+    if (req == null || req.getParameter() == null) {
+      return parents;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs) {
+        collectParents(cs.getConcept(), cs.getUrl(), null, parents);
+      }
+    }
+    return parents;
+  }
+
+  private static void collectParents(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts,
+                                     String system, String parentCode, java.util.Map<String, String> parents) {
+    if (concepts == null) {
+      return;
+    }
+    for (var c : concepts) {
+      if (parentCode != null) {
+        parents.put(system + "|" + c.getCode(), parentCode);
+      }
+      collectParents(c.getConcept(), system, c.getCode(), parents);
+    }
+  }
+
+  /** Reshapes a flat (ordered) contains list into a tree: each member whose parent is also present nests under it; the rest are roots. */
+  private static List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> nestContains(
+      List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> flat, java.util.Map<String, String> parents) {
+    java.util.Map<String, com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> byCode = new java.util.LinkedHashMap<>();
+    for (var c : flat) {
+      byCode.put(c.getSystem() + "|" + c.getCode(), c);
+    }
+    List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> roots = new java.util.ArrayList<>();
+    for (var c : flat) {
+      String parentCode = parents.get(c.getSystem() + "|" + c.getCode());
+      var parent = parentCode == null ? null : byCode.get(c.getSystem() + "|" + parentCode);
+      if (parent != null) {
+        if (parent.getContains() == null) {
+          parent.setContains(new java.util.ArrayList<>());
+        }
+        parent.getContains().add(c);
+      } else {
+        roots.add(c);
+      }
+    }
+    return roots;
   }
 
   /**
