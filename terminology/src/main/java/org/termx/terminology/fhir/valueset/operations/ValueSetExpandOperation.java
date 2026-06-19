@@ -510,7 +510,10 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // Echo `experimental` from the source — the tx-ecosystem expects it on the $expand result (even when
     // false), and a $expand response is a rendering of the value set, so its descriptive metadata carries over.
     response.setExperimental(inlineVs.getExperimental());
-    response.setCompose(inlineVs.getCompose());
+    // An $expand response is a rendered view, not the value-set definition — the expansion replaces the
+    // compose (the tx-ecosystem marks compose optional on the expand result and the reference server omits it;
+    // echoing the source compose, including its raw include version, mismatches). The stored path already
+    // drops it in ValueSetFhirMapper; mirror that here.
 
     // Build expansion
     com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion expansion =
