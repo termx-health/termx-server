@@ -392,6 +392,21 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .toList();
   }
 
+  /** Canonical urls of tx-resource CodeSystems that declare no version (so a used-codesystem should be the bare system uri). */
+  private static java.util.Set<String> versionlessTxCodeSystems(Parameters req) {
+    java.util.Set<String> systems = new java.util.HashSet<>();
+    if (req == null || req.getParameter() == null) {
+      return systems;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs
+          && cs.getUrl() != null && StringUtils.isEmpty(cs.getVersion())) {
+        systems.add(cs.getUrl());
+      }
+    }
+    return systems;
+  }
+
   /** Versions of the CodeSystem(s) supplied inline via tx-resource params whose canonical url matches {@code system}. */
   private static List<String> txResourceCodeSystemVersions(Parameters req, String system) {
     if (req == null || req.getParameter() == null || system == null) {
@@ -620,6 +635,19 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // used-codesystem entries — same shape as the stored-snapshot path (reuses the mapper helper).
     List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter> expansionParameters =
         ValueSetFhirMapper.expansionParameters(req, expandedConcepts);
+    // A used-codesystem must reflect the source: when the tx-resource CodeSystem declares no version, the
+    // import-defaulted version (e.g. 1.0.0) must be dropped so used-codesystem is the bare system uri.
+    java.util.Set<String> versionlessSystems = versionlessTxCodeSystems(req);
+    if (!versionlessSystems.isEmpty()) {
+      for (var pp : expansionParameters) {
+        if ("used-codesystem".equals(pp.getName()) && pp.getValueUri() != null) {
+          int pipe = pp.getValueUri().indexOf('|');
+          if (pipe > 0 && versionlessSystems.contains(pp.getValueUri().substring(0, pipe))) {
+            pp.setValueUri(pp.getValueUri().substring(0, pipe));
+          }
+        }
+      }
+    }
     expansion.setParameter(expansionParameters.isEmpty() ? null : expansionParameters);
     // Declare the requested properties so contains[].property references a declared expansion.property (valid FHIR).
     // Each declared property carries its uri — from the tx-resource CodeSystem's property definition, falling back
