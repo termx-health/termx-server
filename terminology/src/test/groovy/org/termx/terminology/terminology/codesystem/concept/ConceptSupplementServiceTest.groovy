@@ -6,6 +6,7 @@ import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersi
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService
 import org.termx.ts.codesystem.CodeSystem
 import org.termx.ts.codesystem.CodeSystemContent
+import org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams
 import org.termx.ts.codesystem.CodeSystemQueryParams
 import org.termx.ts.codesystem.CodeSystemVersion
 import org.termx.ts.codesystem.CodeSystemVersionQueryParams
@@ -14,12 +15,11 @@ import org.termx.ts.codesystem.ConceptQueryParams
 import spock.lang.Specification
 
 class ConceptSupplementServiceTest extends Specification {
-  def conceptRepository = Mock(ConceptRepository)
   def codeSystemRepository = Mock(CodeSystemRepository)
   def codeSystemVersionService = Mock(CodeSystemVersionService)
   def codeSystemEntityVersionService = Mock(CodeSystemEntityVersionService)
 
-  def service = new ConceptSupplementService(conceptRepository, codeSystemRepository, codeSystemVersionService, codeSystemEntityVersionService)
+  def service = new ConceptSupplementService(codeSystemRepository, codeSystemVersionService, codeSystemEntityVersionService)
 
   def "mergeRuntimeSupplements resolves supplements without CodeSystemService"() {
     given:
@@ -49,7 +49,14 @@ class ConceptSupplementServiceTest extends Specification {
           it.codeSystem == "ucum-supplement-lt" &&
           it.status == "active"
     }) >> new QueryResult([supplementVersion])
-    1 * conceptRepository.query({ it.codeSystem == "ucum-supplement-lt" && it.codeSystemVersion == "2026" && it.codes == ["mg"] }) >> new QueryResult([])
-    0 * codeSystemEntityVersionService._
+    // The supplement's designations are loaded by code-system-VERSION membership (a supplement creates no
+    // concept rows of its own — its designations sit on base-entity versions that are members of the
+    // supplement version), scoped to the base + supplement code systems when the session is unrestricted.
+    1 * codeSystemEntityVersionService.query({
+      it instanceof CodeSystemEntityVersionQueryParams &&
+          it.codeSystemVersions == "ucum-supplement-lt|2026" &&
+          it.code == "mg" &&
+          it.permittedCodeSystems == ["ucum", "ucum-supplement-lt"]
+    }) >> new QueryResult([])
   }
 }

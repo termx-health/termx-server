@@ -118,6 +118,48 @@ class ValueSetSupplementExpandIT extends TermxIntegTest {
     !resp.findParameter("result").orElseThrow().valueBoolean
   }
 
+  def "inline \$expand auto-discovers a supplement for displayLanguage and surfaces its localized display (http example #16)"() {
+    given: "an inline value set referencing ONLY the base code system, expanded with displayLanguage=lt"
+    def req = inlineExpand("""
+      {"resourceType":"Parameters","parameter":[
+        {"name":"displayLanguage","valueCode":"lt"},
+        {"name":"includeDesignations","valueBoolean":true},
+        {"name":"valueSet","resource":{
+          "resourceType":"ValueSet","url":"http://example.org/ValueSet/inline-suppl-auto","status":"active",
+          "compose":{"include":[{"system":"http://example.org/CodeSystem/suppl-base"}]}}}]}""")
+
+    when:
+    def contains = vsExpand.run(req).expansion.contains.find { it.code == "code1" }
+
+    then: "the lt supplement is auto-loaded by language; its Lithuanian display + designation surface"
+    contains != null
+    contains.display == "Gliukozė"
+    contains.designation.findAll { it.language == "lt" && it.value == "Gliukozė" }.size() == 1
+  }
+
+  def "inline \$expand with useSupplement and no displayLanguage keeps the base display but adds the supplement designation (http example #18)"() {
+    given: "an inline value set over the BASE, naming the supplement explicitly, NO displayLanguage"
+    def req = inlineExpand("""
+      {"resourceType":"Parameters","parameter":[
+        {"name":"useSupplement","valueCanonical":"http://example.org/CodeSystem/suppl-lt"},
+        {"name":"includeDesignations","valueBoolean":true},
+        {"name":"valueSet","resource":{
+          "resourceType":"ValueSet","url":"http://example.org/ValueSet/inline-suppl-use","status":"active",
+          "compose":{"include":[{"system":"http://example.org/CodeSystem/suppl-base"}]}}}]}""")
+
+    when:
+    def contains = vsExpand.run(req).expansion.contains.find { it.code == "code1" }
+
+    then: "display stays the base English; the supplement's lt designation is surfaced"
+    contains != null
+    contains.display == "Glucose"
+    contains.designation.findAll { it.language == "lt" && it.value == "Gliukozė" }.size() == 1
+  }
+
+  private static Parameters inlineExpand(String json) {
+    com.kodality.zmei.fhir.FhirMapper.fromJson(json, Parameters)
+  }
+
   private Parameters validate(String system, String code) {
     def params = [
         new ParametersParameter().setName("url").setValueUri("http://example.org/ValueSet/suppl-vs"),

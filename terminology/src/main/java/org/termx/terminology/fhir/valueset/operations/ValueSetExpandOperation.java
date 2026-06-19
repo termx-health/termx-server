@@ -306,7 +306,12 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     return new ConceptQueryParams()
         .setIncludeSupplement(true)
         .setDisplayLanguage(displayLanguage)
-        .setUseSupplement(extractUseSupplement(req));
+        .setUseSupplement(extractUseSupplement(req))
+        // The supplement's own concepts are loaded through ConceptService, which filters by permitted code
+        // systems — a null list matches NOTHING (`code_system in (null)`), so without this the supplement
+        // designations never load and the inline expansion silently keeps the base display. Scope it to the
+        // caller's CS_READ grants.
+        .setPermittedCodeSystems(SessionStore.require().getPermittedResourceIds(Privilege.CS_READ));
   }
 
   private static String extractUseSupplement(Parameters req) {
