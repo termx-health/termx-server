@@ -1,0 +1,122 @@
+# TermX FHIR terminology — REST Client suite ($expand designations)
+#
+# Open this file in VS Code with the "REST Client" extension (humao.rest-client) and click
+# "Send Request" above each request. Run them top to bottom: the SETUP block creates the
+# resources the test blocks depend on. Every request lists its expected result so the
+# correctness can be verified at a glance.
+#
+# Demonstrates the FHIR $expand designation controls:
+#   • includeDesignations — surface contains[].designation (language + use + value)
+#   • designation (0..*)  — restrict which designations appear, by language or use token
+#   • displayLanguage     — which designation becomes the contains[].display
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# Configure these for your server, then run the requests in order.
+# @fhir   — the FHIR base URL of your TermX server (no trailing slash).
+# @token  — a Bearer token with write access. Local dev (auth.dev.allowed=true): yupi{"privileges":["*.*.*"]}
+@fhir  = https://dev.termx.org/api/fhir
+@token = yupi{"privileges":["*.*.*"]}
+
+@cs = http://example.org/fhir/CodeSystem/tx-rest-demo-designations
+@vs = http://example.org/fhir/ValueSet/tx-rest-demo-designations
+
+
+###############################################################################
+# SETUP — a CodeSystem whose concept carries designations in several languages
+#         (and one with a SNOMED `use` coding), plus a ValueSet over it.
+###############################################################################
+
+### 1. Base CodeSystem — concept "c1" with et / ru designations + an en synonym (use coding)
+# expect: 200/201.
+PUT {{fhir}}/CodeSystem/tx-rest-demo-designations
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "CodeSystem",
+  "id": "tx-rest-demo-designations",
+  "url": "{{cs}}",
+  "version": "1.0.0",
+  "name": "TxRestDemoDesignations",
+  "title": "TermX REST demo — designations",
+  "status": "active",
+  "content": "complete",
+  "language": "en",
+  "concept": [
+    {
+      "code": "c1",
+      "display": "Color one",
+      "designation": [
+        { "language": "et", "value": "Värv üks" },
+        { "language": "ru", "value": "Цвет один" },
+        { "use": { "system": "http://snomed.info/sct", "code": "900000000000013009" }, "language": "en", "value": "colour one (synonym)" }
+      ]
+    }
+  ]
+}
+
+### 2. ValueSet over the whole code system
+# expect: 200/201.
+POST {{fhir}}/ValueSet
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "ValueSet",
+  "id": "tx-rest-demo-designations",
+  "url": "{{vs}}",
+  "version": "1.0.0",
+  "name": "TxRestDemoDesignationsVs",
+  "title": "TermX REST demo — designations VS",
+  "status": "active",
+  "compose": { "include": [ { "system": "{{cs}}" } ] }
+}
+
+
+###############################################################################
+# $expand — designation output and the `designation` filter
+###############################################################################
+
+### 3. includeDesignations=true — every designation is returned
+# expect: contains[0].designation lists ALL of: en "Color one" (use display), en "colour one (synonym)"
+#         (use 900000000000013009), ru "Цвет один", et "Värv üks". display = "Color one".
+GET {{fhir}}/ValueSet/tx-rest-demo-designations/$expand?includeDesignations=true
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 4. designation=et — restrict the returned designations to Estonian
+# expect: contains[0].designation has ONLY the et designation ("Värv üks"); display stays "Color one".
+GET {{fhir}}/ValueSet/tx-rest-demo-designations/$expand?includeDesignations=true&designation=et
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 5. designation=ru — restrict to Russian
+# expect: contains[0].designation has ONLY the ru designation ("Цвет один").
+GET {{fhir}}/ValueSet/tx-rest-demo-designations/$expand?includeDesignations=true&designation=ru
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 6. designation=urn:ietf:bcp:47|et — a system|code LANGUAGE token (same as #4)
+# expect: contains[0].designation has ONLY the et designation.
+GET {{fhir}}/ValueSet/tx-rest-demo-designations/$expand?includeDesignations=true&designation=urn:ietf:bcp:47|et
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 7. designation=et&designation=ru — multiple tokens union the matches
+# expect: contains[0].designation has BOTH the et and ru designations (and nothing else).
+GET {{fhir}}/ValueSet/tx-rest-demo-designations/$expand?includeDesignations=true&designation=et&designation=ru
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 8. designation by USE coding — http://snomed.info/sct|900000000000013009
+# expect: contains[0].designation has ONLY the en synonym ("colour one (synonym)") that carries that use.
+GET {{fhir}}/ValueSet/tx-rest-demo-designations/$expand?includeDesignations=true&designation=http://snomed.info/sct|900000000000013009
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 9. displayLanguage=et — picks the Estonian designation as the display
+# expect: contains[0].display = "Värv üks" (the displayLanguage selects the display; the `designation`
+#         filter is independent of it).
+GET {{fhir}}/ValueSet/tx-rest-demo-designations/$expand?displayLanguage=et&includeDesignations=true
+Authorization: Bearer {{token}}
+Accept: application/fhir+json

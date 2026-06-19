@@ -1,0 +1,10 @@
+{
+  "resourceType": "ValueSet",
+  "id": "dg-vs",
+  "url": "http://example.org/dg-vs",
+  "version": "1.0.0",
+  "name": "DgVs",
+  "title": "Designation demo VS",
+  "status": "active",
+  "compose": { "include": [ { "system": "http://example.org/dg-cs" } ] }
+}

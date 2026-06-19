@@ -1,0 +1,22 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "dg-cs",
+  "url": "http://example.org/dg-cs",
+  "version": "1.0.0",
+  "name": "DgCs",
+  "title": "Designation demo CS",
+  "status": "active",
+  "content": "complete",
+  "language": "en",
+  "concept": [
+    {
+      "code": "c1",
+      "display": "Color one",
+      "designation": [
+        { "language": "et", "value": "Värv üks" },
+        { "language": "ru", "value": "Цвет один" },
+        { "use": { "system": "http://snomed.info/sct", "code": "900000000000013009" }, "language": "en", "value": "colour one (synonym)" }
+      ]
+    }
+  ]
+}
