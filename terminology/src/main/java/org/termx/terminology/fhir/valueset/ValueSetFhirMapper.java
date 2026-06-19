@@ -441,9 +441,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   // params in expansion.parameter but not the selection identifiers, and the tx-ecosystem suite flags an
   // echoed `url` (etc.) as an unexpected expansion.parameter. Filtered out of the echo below.
   // `force-system-version` IS echoed (it materially changed the expansion); `system-version`/`check-system-version`
-  // are advisory and the tx-ecosystem does not echo them.
+  // are advisory and the tx-ecosystem does not echo them. `property` selects which concept properties to surface
+  // on contains[] (declared via expansion.property) — it is not echoed as an expansion.parameter either.
   private static final Set<String> EXPANSION_SELECTION_PARAMETERS = Set.of("url", "valueSet", "valueSetVersion", "context", "contextDirection",
-      "system-version", "check-system-version");
+      "system-version", "check-system-version", "property");
 
   private static List<ValueSetExpansionParameter> toValueSetParameter(Parameters param) {
     if (param == null || param.getParameter() == null) {

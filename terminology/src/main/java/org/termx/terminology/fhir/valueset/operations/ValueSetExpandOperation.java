@@ -622,11 +622,20 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         ValueSetFhirMapper.expansionParameters(req, expandedConcepts);
     expansion.setParameter(expansionParameters.isEmpty() ? null : expansionParameters);
     // Declare the requested properties so contains[].property references a declared expansion.property (valid FHIR).
+    // Each declared property carries its uri — from the tx-resource CodeSystem's property definition, falling back
+    // to the FHIR concept-properties uri for the built-in codes (definition/status/…).
     if (!requestedProperties.isEmpty()) {
+      java.util.Map<String, String> propertyUris = propertyUris(req);
       expansion.setProperty(requestedProperties.stream()
-          .map(code -> new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionProperty().setCode(code))
+          .map(code -> new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionProperty().setCode(code)
+              .setUri(propertyUris.getOrDefault(code, "http://hl7.org/fhir/concept-properties#" + code)))
           .toList());
     }
+
+    // Designation use codings as stated by the tx-resource CodeSystem(s), keyed by use code — so a custom
+    // designation surfaces its real use system (e.g. {.../designations, olde-english}) on contains[].designation.
+    java.util.Map<String, com.kodality.zmei.fhir.datatypes.Coding> designationUses = designationUses(req);
+    java.util.Set<String> noLanguageDesignations = noLanguageDesignations(req);
 
     // FHIR adds `version` to a contains member only when the expansion spans more than one code system
     // version (a mixed/multi-version value set), to disambiguate; a single-version expansion omits it.
@@ -658,17 +667,38 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
             contain.setAbstractField(true);
           }
           if (includeDesignations && concept.getAdditionalDesignations() != null) {
-            contain.setDesignation(concept.getAdditionalDesignations().stream()
+            List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation> designations =
+                concept.getAdditionalDesignations().stream()
                 .filter(d -> ValueSetFhirMapper.designationMatchesFilter(d, designationFilter))
+                // With no explicit `designation` filter, the designation that simply repeats the member's display
+                // and the definition are surfaced via contains.display / a definition property — the tx-ecosystem
+                // omits those designation entries. When the caller explicitly filters designations, return exactly
+                // what was asked for (don't second-guess).
+                .filter(d -> !designationFilter.isEmpty()
+                    || (!"display".equals(d.getDesignationType()) && !"definition".equals(d.getDesignationType())))
                 .map(d -> {
                   com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation designation =
                       new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation();
-                  designation.setLanguage(d.getLanguage());
                   designation.setValue(d.getName());
-                  designation.setUse(org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(
-                      d.getDesignationType() == null ? "display" : d.getDesignationType()));
+                  // Emit the designation's `language`, EXCEPT where the tx-resource CodeSystem shows this
+                  // designation has no stated language (import defaults a missing language to the resource
+                  // language, but the tx-ecosystem omits it). For a stored code system the set is empty, so the
+                  // stored language is preserved.
+                  if (!noLanguageDesignations.contains(d.getName())) {
+                    designation.setLanguage(d.getLanguage());
+                  }
+                  // Prefer the designation's own use coding as stated by the (tx-resource) CodeSystem — it carries
+                  // the use system for custom designations (e.g. {.../designations, olde-english}); the static
+                  // name→use map only knows the common ones.
+                  com.kodality.zmei.fhir.datatypes.Coding use = designationUses.get(d.getDesignationType());
+                  designation.setUse(use != null ? use
+                      : org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(
+                          d.getDesignationType() == null ? "display" : d.getDesignationType()));
                   return designation;
-                }).toList());
+                }).toList();
+            if (!designations.isEmpty()) {
+              contain.setDesignation(designations);
+            }
           }
           if (!requestedProperties.isEmpty()) {
             List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty> props =
@@ -697,6 +727,87 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
     response.setExpansion(expansion);
     return response;
+  }
+
+  /** CodeSystem property code→uri from the tx-resource CodeSystems' property definitions. */
+  private static java.util.Map<String, String> propertyUris(Parameters req) {
+    java.util.Map<String, String> uris = new java.util.HashMap<>();
+    if (req == null || req.getParameter() == null) {
+      return uris;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs
+          && cs.getProperty() != null) {
+        for (var prop : cs.getProperty()) {
+          if (prop.getCode() != null && prop.getUri() != null) {
+            uris.putIfAbsent(prop.getCode(), prop.getUri());
+          }
+        }
+      }
+    }
+    return uris;
+  }
+
+  /** Designation use codings stated by the tx-resource CodeSystems, keyed by the use code (so custom designations keep their use system). */
+  private static java.util.Map<String, com.kodality.zmei.fhir.datatypes.Coding> designationUses(Parameters req) {
+    java.util.Map<String, com.kodality.zmei.fhir.datatypes.Coding> uses = new java.util.HashMap<>();
+    if (req == null || req.getParameter() == null) {
+      return uses;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs) {
+        collectDesignationUses(cs.getConcept(), uses);
+      }
+    }
+    return uses;
+  }
+
+  private static void collectDesignationUses(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts,
+                                             java.util.Map<String, com.kodality.zmei.fhir.datatypes.Coding> uses) {
+    if (concepts == null) {
+      return;
+    }
+    for (var c : concepts) {
+      if (c.getDesignation() != null) {
+        for (var d : c.getDesignation()) {
+          if (d.getUse() != null && d.getUse().getCode() != null) {
+            uses.putIfAbsent(d.getUse().getCode(), d.getUse());
+          }
+        }
+      }
+      collectDesignationUses(c.getConcept(), uses);
+    }
+  }
+
+  /** Designation values that the tx-resource CodeSystems state WITHOUT a language (so the import-defaulted language is dropped on echo). */
+  private static java.util.Set<String> noLanguageDesignations(Parameters req) {
+    java.util.Set<String> values = new java.util.HashSet<>();
+    if (req == null || req.getParameter() == null) {
+      return values;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs) {
+        collectNoLanguageDesignations(cs.getConcept(), values);
+      }
+    }
+    return values;
+  }
+
+  private static void collectNoLanguageDesignations(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts,
+                                                    java.util.Set<String> values) {
+    if (concepts == null) {
+      return;
+    }
+    for (var c : concepts) {
+      if (c.getDesignation() != null) {
+        for (var d : c.getDesignation()) {
+          if (d.getValue() != null && d.getLanguage() == null) {
+            values.add(d.getValue());
+          }
+        }
+      }
+      collectNoLanguageDesignations(c.getConcept(), values);
+    }
   }
 
   /** code-system child→parent map ({@code system|code} → parent code) from the tx-resource CodeSystems' nested concept trees. */
