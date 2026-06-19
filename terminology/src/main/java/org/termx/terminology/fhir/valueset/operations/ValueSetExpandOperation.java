@@ -55,6 +55,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   private final CodeSystemService codeSystemService;
   private final ConceptService conceptService;
   private final org.termx.terminology.terminology.codesystem.concept.ConceptSupplementService conceptSupplementService;
+  private final org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService codeSystemEntityVersionService;
 
   // SNOMED CT implicit-ValueSet URL family
   // https://build.fhir.org/ig/HL7/UTG/en/SNOMEDCT.html
@@ -398,6 +399,11 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       expandedConcepts = expandedConcepts.stream().limit(count).toList();
     }
 
+    // The SQL expand projects only identity/display per member, not the version status or property values
+    // the FHIR expansion shape needs for `inactive`/`abstract`. Bulk-load them for just the windowed members
+    // (paging already applied) and decorate, so the contains builder can flag them without an N+1 lookup.
+    decorateExpansionFlags(expandedConcepts);
+
     // Build response ValueSet with expansion
     com.kodality.zmei.fhir.resource.terminology.ValueSet response = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
     response.setUrl(inlineVs.getUrl());
@@ -405,16 +411,27 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     response.setName(inlineVs.getName());
     response.setTitle(inlineVs.getTitle());
     response.setStatus(inlineVs.getStatus());
+    // Echo `experimental` from the source — the tx-ecosystem expects it on the $expand result (even when
+    // false), and a $expand response is a rendering of the value set, so its descriptive metadata carries over.
+    response.setExperimental(inlineVs.getExperimental());
     response.setCompose(inlineVs.getCompose());
 
     // Build expansion
     com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion expansion =
         new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion();
     expansion.setTimestamp(java.time.OffsetDateTime.now());
+    // FHIR requires expansion.identifier (a globally-unique handle for this expansion); the tx-ecosystem
+    // matches it as any uuid ($uuid$). Without it the expand tests fail "missing property identifier".
+    expansion.setIdentifier("urn:uuid:" + java.util.UUID.randomUUID());
     expansion.setTotal(totalAfterFilter);
     if (offset != null) {
       expansion.setOffset(offset);
     }
+    // expansion.parameter: the echoed control params (excludeNested, activeOnly, …) plus the derived
+    // used-codesystem entries — same shape as the stored-snapshot path (reuses the mapper helper).
+    List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter> expansionParameters =
+        ValueSetFhirMapper.expansionParameters(req, expandedConcepts);
+    expansion.setParameter(expansionParameters.isEmpty() ? null : expansionParameters);
 
     // Map concepts to expansion contains
     List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> contains = 
@@ -425,6 +442,15 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           contain.setCode(concept.getConcept().getCode());
           if (concept.getDisplay() != null) {
             contain.setDisplay(concept.getDisplay().getName());
+          }
+          // FHIR expansion.contains flags, both omitted when false: `inactive` for a retired/deprecated
+          // concept, `abstract` for a not-selectable (grouper) concept. The SQL expand returns members bare,
+          // so these come from decorateExpansionFlags (a bulk load of the windowed members' versions).
+          if (isInactiveMember(concept)) {
+            contain.setInactive(true);
+          }
+          if (isAbstractMember(concept)) {
+            contain.setAbstractField(true);
           }
           if (includeDesignations && concept.getAdditionalDesignations() != null) {
             contain.setDesignation(concept.getAdditionalDesignations().stream()
@@ -442,6 +468,58 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
     response.setExpansion(expansion);
     return response;
+  }
+
+  /**
+   * Decorates the (already paged) inline-expansion members with the version {@code status} and property
+   * values the FHIR {@code inactive}/{@code abstract} flags need, in a single bulk query keyed by the
+   * member's code system entity version id (which the SQL expand DOES populate). The inline SQL path returns
+   * members without these, so without this they'd all look active and selectable.
+   */
+  private void decorateExpansionFlags(List<ValueSetVersionConcept> concepts) {
+    String ids = concepts.stream()
+        .map(c -> c.getConcept() != null ? c.getConcept().getConceptVersionId() : null)
+        .filter(java.util.Objects::nonNull).distinct().map(String::valueOf)
+        .collect(java.util.stream.Collectors.joining(","));
+    if (StringUtils.isEmpty(ids)) {
+      return;
+    }
+    org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams params = new org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams();
+    params.setIds(ids);
+    params.setLimit(-1);
+    java.util.Map<Long, CodeSystemEntityVersion> byId = codeSystemEntityVersionService.query(params).getData().stream()
+        .collect(java.util.stream.Collectors.toMap(CodeSystemEntityVersion::getId, v -> v, (a, b) -> a));
+    concepts.forEach(c -> {
+      Long vid = c.getConcept() != null ? c.getConcept().getConceptVersionId() : null;
+      CodeSystemEntityVersion v = vid != null ? byId.get(vid) : null;
+      if (v != null) {
+        c.setStatus(v.getStatus());
+        c.setPropertyValues(v.getPropertyValues());
+        // The SQL expand carries the code system version *id* but not its number; the loaded entity version
+        // knows the version(s) it belongs to, so surface them — `used-codesystem` reports `system|version`.
+        List<String> existing = c.getConcept() != null ? c.getConcept().getCodeSystemVersions() : List.of();
+        if (existing == null || existing.isEmpty()) {
+          List<String> versions = java.util.Optional.ofNullable(v.getVersions()).orElse(List.of()).stream()
+              .map(org.termx.ts.codesystem.CodeSystemVersionReference::getVersion)
+              .filter(java.util.Objects::nonNull).distinct().toList();
+          if (!versions.isEmpty()) {
+            c.getConcept().setCodeSystemVersions(versions);
+          }
+        }
+      }
+    });
+  }
+
+  /** A member is inactive when its concept version status is retired or deprecated (matching {@code $lookup}). */
+  private static boolean isInactiveMember(ValueSetVersionConcept concept) {
+    return List.of("retired", "deprecated").contains(String.valueOf(concept.getStatus()));
+  }
+
+  /** A member is abstract (a grouper, not for direct use) when its concept carries {@code notSelectable=true}. */
+  private static boolean isAbstractMember(ValueSetVersionConcept concept) {
+    return java.util.Optional.ofNullable(concept.getPropertyValues()).orElse(List.of()).stream()
+        .filter(pv -> "notSelectable".equals(pv.getEntityProperty()))
+        .anyMatch(pv -> Boolean.TRUE.equals(pv.getValue()) || "true".equalsIgnoreCase(String.valueOf(pv.getValue())));
   }
 
 

@@ -435,6 +435,17 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
    * (or bare {@code system} when no version is known). Iteration order is preserved (LinkedHashSet) so the
    * output is stable. This is an output of the expansion — it reports what was used, not what was requested.
    */
+  /**
+   * The full {@code expansion.parameter} list — the echoed "how" control parameters followed by the derived
+   * {@code used-codesystem} entries. Exposed so the inline ($expand of a tx-resource value set) path produces
+   * the same shape as the stored-snapshot path.
+   */
+  public static List<ValueSetExpansionParameter> expansionParameters(Parameters param, List<ValueSetVersionConcept> concepts) {
+    List<ValueSetExpansionParameter> parameters = new ArrayList<>(Optional.ofNullable(toValueSetParameter(param)).orElse(List.of()));
+    parameters.addAll(toUsedCodeSystemParameters(concepts));
+    return parameters;
+  }
+
   private static List<ValueSetExpansionParameter> toUsedCodeSystemParameters(List<ValueSetVersionConcept> concepts) {
     Set<String> uris = new LinkedHashSet<>();
     for (ValueSetVersionConcept c : concepts) {
