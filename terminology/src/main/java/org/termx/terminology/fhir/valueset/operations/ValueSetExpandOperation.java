@@ -379,6 +379,20 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       }).toList();
     }
 
+    // Exclude inactive (retired/deprecated) members when asked — either the `activeOnly` request parameter,
+    // or the value set's own `compose.inactive = false` (FHIR: inactive codes are excluded unless that flag
+    // is absent/true). This changes the set, so it runs before expansion.total. The SQL expand carries no
+    // status, so the filter needs the decorated version status — decorate the whole (already in-memory) set
+    // up front in this case; the common path decorates only the page below, keeping it page-bounded.
+    boolean activeOnlyParam = req != null && req.findParameter("activeOnly")
+        .map(pp -> Boolean.TRUE.equals(pp.getValueBoolean()) || "true".equals(pp.getValueString())).orElse(false);
+    boolean composeExcludesInactive = inlineVs.getCompose() != null && Boolean.FALSE.equals(inlineVs.getCompose().getInactive());
+    boolean excludeInactive = activeOnlyParam || composeExcludesInactive;
+    if (excludeInactive) {
+      decorateExpansionFlags(expandedConcepts);
+      expandedConcepts = expandedConcepts.stream().filter(c -> !isInactiveMember(c)).toList();
+    }
+
     // FHIR R5 ValueSet.expansion.total: "If the number of codes in an expansion
     // is changed by the parameters supplied, then this should be the count of
     // codes corresponding to the parameters." Filters change the set; offset
@@ -399,10 +413,12 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       expandedConcepts = expandedConcepts.stream().limit(count).toList();
     }
 
-    // The SQL expand projects only identity/display per member, not the version status or property values
-    // the FHIR expansion shape needs for `inactive`/`abstract`. Bulk-load them for just the windowed members
-    // (paging already applied) and decorate, so the contains builder can flag them without an N+1 lookup.
-    decorateExpansionFlags(expandedConcepts);
+    // Decorate the windowed members with the version status / property values the FHIR expansion shape needs
+    // for `inactive`/`abstract` (the SQL expand returns them bare). The exclude-inactive path already
+    // decorated the full set above; here we decorate just the page, keeping the common case page-bounded.
+    if (!excludeInactive) {
+      decorateExpansionFlags(expandedConcepts);
+    }
 
     // Build response ValueSet with expansion
     com.kodality.zmei.fhir.resource.terminology.ValueSet response = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
