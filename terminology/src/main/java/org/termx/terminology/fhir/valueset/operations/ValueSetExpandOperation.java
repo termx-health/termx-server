@@ -508,6 +508,8 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
                       new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation();
                   designation.setLanguage(d.getLanguage());
                   designation.setValue(d.getName());
+                  designation.setUse(org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(
+                      d.getDesignationType() == null ? "display" : d.getDesignationType()));
                   return designation;
                 }).toList());
           }
