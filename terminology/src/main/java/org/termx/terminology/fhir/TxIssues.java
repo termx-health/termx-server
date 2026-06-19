@@ -58,4 +58,30 @@ public final class TxIssues {
         .setText(text));
     return new com.kodality.kefhir.core.exception.FhirException(status, issue);
   }
+
+  /**
+   * A {@code check-system-version} violation: an {@code exception}-code OperationOutcome issue with the
+   * {@code tx-issue-type}/{@code version-error} detail coding (tx-ecosystem {@code VALUESET_VERSION_CHECK}).
+   */
+  public static com.kodality.kefhir.core.exception.FhirException versionCheckException(int status, String text) {
+    org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent issue =
+        new org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent();
+    issue.setSeverity(org.hl7.fhir.r5.model.OperationOutcome.IssueSeverity.ERROR);
+    issue.setCode(org.hl7.fhir.r5.model.OperationOutcome.IssueType.EXCEPTION);
+    issue.setDetails(new org.hl7.fhir.r5.model.CodeableConcept()
+        .addCoding(new org.hl7.fhir.r5.model.Coding(TX_ISSUE_TYPE, "version-error", null))
+        .setText(text));
+    return new com.kodality.kefhir.core.exception.FhirException(status, issue);
+  }
+
+  /** Formats a version list as the tx-ecosystem does: comma-separated with " or " before the last ("a, b or c"). */
+  public static String presentVersionList(java.util.List<String> versions) {
+    if (versions == null || versions.isEmpty()) {
+      return "";
+    }
+    if (versions.size() == 1) {
+      return versions.get(0);
+    }
+    return String.join(", ", versions.subList(0, versions.size() - 1)) + " or " + versions.get(versions.size() - 1);
+  }
 }

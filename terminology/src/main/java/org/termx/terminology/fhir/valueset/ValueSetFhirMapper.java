@@ -440,7 +440,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   // $expand parameters that identify WHICH value set to expand rather than HOW. FHIR records the "how"
   // params in expansion.parameter but not the selection identifiers, and the tx-ecosystem suite flags an
   // echoed `url` (etc.) as an unexpected expansion.parameter. Filtered out of the echo below.
-  private static final Set<String> EXPANSION_SELECTION_PARAMETERS = Set.of("url", "valueSet", "valueSetVersion", "context", "contextDirection");
+  // `force-system-version` IS echoed (it materially changed the expansion); `system-version`/`check-system-version`
+  // are advisory and the tx-ecosystem does not echo them.
+  private static final Set<String> EXPANSION_SELECTION_PARAMETERS = Set.of("url", "valueSet", "valueSetVersion", "context", "contextDirection",
+      "system-version", "check-system-version");
 
   private static List<ValueSetExpansionParameter> toValueSetParameter(Parameters param) {
     if (param == null || param.getParameter() == null) {

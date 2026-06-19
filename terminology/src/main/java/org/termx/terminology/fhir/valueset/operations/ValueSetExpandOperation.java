@@ -392,6 +392,89 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .toList();
   }
 
+  /** Versions of the CodeSystem(s) supplied inline via tx-resource params whose canonical url matches {@code system}. */
+  private static List<String> txResourceCodeSystemVersions(Parameters req, String system) {
+    if (req == null || req.getParameter() == null || system == null) {
+      return List.of();
+    }
+    return req.getParameter().stream()
+        .filter(p -> "tx-resource".equals(p.getName()))
+        .map(ParametersParameter::getResource)
+        .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+        .map(r -> ((com.kodality.zmei.fhir.resource.terminology.CodeSystem) r))
+        .filter(cs -> system.equals(cs.getUrl()))
+        .map(com.kodality.zmei.fhir.resource.terminology.CodeSystem::getVersion)
+        .filter(java.util.Objects::nonNull).distinct().toList();
+  }
+
+  /** The {@code <version>} of a {@code system-version}/{@code force-system-version}/{@code check-system-version} param naming {@code system}. */
+  private static String overrideVersion(Parameters req, String name, String system) {
+    if (req == null || req.getParameter() == null || system == null) {
+      return null;
+    }
+    String prefix = system + "|";
+    return req.getParameter().stream()
+        .filter(p -> name.equalsIgnoreCase(p.getName()))
+        .map(p -> p.getValueCanonical() != null ? p.getValueCanonical() : p.getValueString())
+        .filter(v -> v != null && v.startsWith(prefix))
+        .map(v -> v.substring(prefix.length()))
+        .findFirst().orElse(null);
+  }
+
+  /**
+   * Returns a copy of the inline value set with each {@code compose.include.version} resolved to a concrete
+   * available code system version: {@code force-system-version} overrides; else the include version; else
+   * {@code system-version}; else {@code check-system-version}; a wildcard ({@code 1.x.x}) resolves to the
+   * highest matching available version. A pinned version that resolves to nothing, or a resolved version that
+   * fails {@code check-system-version}, is a 4xx — the expansion can't be produced. The original is untouched.
+   */
+  private com.kodality.zmei.fhir.resource.terminology.ValueSet resolveIncludeVersions(
+      com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs, Parameters req) {
+    if (inlineVs.getCompose() == null || inlineVs.getCompose().getInclude() == null) {
+      return inlineVs;
+    }
+    com.kodality.zmei.fhir.resource.terminology.ValueSet copy = FhirMapper.fromJson(
+        FhirMapper.toJson(inlineVs), com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
+    for (var inc : copy.getCompose().getInclude()) {
+      String system = inc.getSystem();
+      if (system == null) {
+        continue;
+      }
+      List<String> available = txResourceCodeSystemVersions(req, system);
+      String force = overrideVersion(req, "force-system-version", system);
+      String check = overrideVersion(req, "check-system-version", system);
+      String resolved = inc.getVersion();
+      if (force != null) {
+        resolved = force;
+      } else if (StringUtils.isEmpty(resolved)) {
+        String def = overrideVersion(req, "system-version", system);
+        resolved = def != null ? def : check;
+      }
+      if (resolved == null) {
+        continue; // versionless — let the SQL expand the latest
+      }
+      String pattern = resolved;
+      String concrete = org.termx.terminology.fhir.FhirVersions.versionHasWildcards(pattern)
+          ? available.stream().filter(a -> org.termx.terminology.fhir.FhirVersions.versionMatches(pattern, a))
+              .max(ValueSetExpandOperation::compareVersions).orElse(null)
+          : available.contains(pattern) ? pattern : null;
+      if (concrete == null) {
+        if (!available.isEmpty()) {
+          throw org.termx.terminology.fhir.TxIssues.notFoundException(404, String.format(
+              "A definition for CodeSystem '%s' version '%s' could not be found, so the value set cannot be expanded. Valid versions: %s",
+              system, resolved, org.termx.terminology.fhir.TxIssues.presentVersionList(available)));
+        }
+        continue;
+      }
+      if (check != null && !org.termx.terminology.fhir.FhirVersions.versionMatches(check, concrete)) {
+        throw org.termx.terminology.fhir.TxIssues.versionCheckException(400, String.format(
+            "The version '%s' is not allowed for system '%s': required to be '%s' by a version-check parameter", concrete, system, check));
+      }
+      inc.setVersion(concrete);
+    }
+    return copy;
+  }
+
   /** Highest-version tx-resource (latest, by numeric-aware dotted-version order), falling back to the first. */
   private static com.kodality.zmei.fhir.resource.terminology.ValueSet latestByVersion(
       List<com.kodality.zmei.fhir.resource.terminology.ValueSet> vss) {
@@ -417,6 +500,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
   private com.kodality.zmei.fhir.resource.terminology.ValueSet expandInline(
       com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs, Parameters req) {
+    // Resolve each compose.include.version against the system-version/force-system-version/check-system-version
+    // params and wildcard semantics (mirrors org.hl7.fhir.core ValueSetValidator.determineVersion), rewriting it
+    // to a concrete available version so the SQL expand picks the right code system version — driving
+    // expansion.total and the used-codesystem parameter. A pinned version that resolves to nothing, or a
+    // check-system-version mismatch, is a 4xx (the expansion can't be produced).
+    inlineVs = resolveIncludeVersions(inlineVs, req);
+
     // Serialize the inline ValueSet to JSON
     String valueSetJson = FhirMapper.toJson(inlineVs);
 
@@ -538,15 +628,25 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           .toList());
     }
 
+    // FHIR adds `version` to a contains member only when the expansion spans more than one code system
+    // version (a mixed/multi-version value set), to disambiguate; a single-version expansion omits it.
+    boolean emitContainsVersion = expandedConcepts.stream()
+        .map(c -> c.getConcept() != null && c.getConcept().getCodeSystemVersions() != null
+            ? c.getConcept().getCodeSystemVersions().stream().findFirst().orElse(null) : null)
+        .filter(java.util.Objects::nonNull).distinct().count() > 1;
+
     // Map concepts to expansion contains
-    List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> contains = 
+    List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> contains =
         expandedConcepts.stream().map(concept -> {
-          com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains contain = 
+          com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains contain =
               new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains();
           contain.setSystem(concept.getConcept().getCodeSystemUri());
           contain.setCode(concept.getConcept().getCode());
           if (concept.getDisplay() != null) {
             contain.setDisplay(concept.getDisplay().getName());
+          }
+          if (emitContainsVersion && concept.getConcept().getCodeSystemVersions() != null) {
+            concept.getConcept().getCodeSystemVersions().stream().findFirst().ifPresent(contain::setVersion);
           }
           // FHIR expansion.contains flags, both omitted when false: `inactive` for a retired/deprecated
           // concept, `abstract` for a not-selectable (grouper) concept. The SQL expand returns members bare,
