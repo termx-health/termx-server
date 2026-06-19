@@ -207,10 +207,16 @@ Accept: application/fhir+json
 ###############################################################################
 # INLINE VALUE SET TESTS  ($expand with the value set passed in the body)
 #
-# NOTE: inline expansion runs the server's JSON expand. It returns the compose's
-# concepts but does NOT re-pick displayLanguage or resolve the valueset-supplement
-# extension the way a STORED value set does — for supplement / language behaviour
-# use a stored ValueSet (tests #8 / #10). Inline is ideal for ad-hoc, unsaved sets.
+# NOTE: inline expansion runs the server's JSON expand over the compose, then
+# layers supplements onto the result — just like a STORED value set. The ONE
+# difference: an inline ValueSet's own `valueset-supplement` EXTENSION is not read
+# (the stored path honours it; see tests #4/#8). For inline, point at the
+# supplement two ways instead:
+#   • `displayLanguage=<lang>` alone — auto-discovers every supplement CS that
+#     supplements a base in the compose and matches the language (test #16), or
+#   • `useSupplement=<supplement-canonical>[|version]` — names the supplement CS
+#     explicitly (test #17), independent of any stored wrapper ValueSet.
+# Both re-pick the localized display and surface the supplement's designations.
 ###############################################################################
 
 ### 13. Inline $expand — include ALL of the base code system
@@ -264,9 +270,10 @@ Content-Type: application/fhir+json
 
 ### 15. Inline $expand of the BASE with includeDesignations — shows the supplement contrast
 # expect: red/green/blue with English displays and NO Estonian/Russian designations.
-#         The et/ru translations live in separate supplement code systems; inline expansion of
-#         the base does not resolve supplements. To surface supplement translations, expand a
-#         STORED value set that references the supplement (tests #8 / #10).
+#         The et/ru translations live in separate supplement code systems; WITHOUT a
+#         displayLanguage or useSupplement, inline expansion does not pull them in.
+#         To surface supplement translations inline, add displayLanguage / useSupplement
+#         (tests #16 / #17) or expand a STORED value set that references the supplement (#8 / #10).
 POST {{fhir}}/ValueSet/$expand
 Authorization: Bearer {{token}}
 Content-Type: application/fhir+json
@@ -280,6 +287,90 @@ Content-Type: application/fhir+json
       "resource": {
         "resourceType": "ValueSet",
         "url": "http://example.org/fhir/ValueSet/inline-colors-designations",
+        "status": "active",
+        "compose": { "include": [ { "system": "{{base}}" } ] }
+      }
+    }
+  ]
+}
+
+### 16. Inline $expand of the BASE with displayLanguage=et — supplement AUTO-DISCOVERY
+#     The inline VS only references the base CS. Passing displayLanguage=et makes the
+#     server auto-load every supplement CS that supplements the base and carries "et"
+#     designations (here: tx-rest-demo-color-et), then re-pick the localized display.
+# expect: red/green/blue with ESTONIAN displays — punane / roheline / sinine;
+#         with includeDesignations=true the et designations appear in contains[].designation.
+POST {{fhir}}/ValueSet/$expand
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    { "name": "displayLanguage", "valueCode": "et" },
+    { "name": "includeDesignations", "valueBoolean": true },
+    {
+      "name": "valueSet",
+      "resource": {
+        "resourceType": "ValueSet",
+        "url": "http://example.org/fhir/ValueSet/inline-colors-supplemented",
+        "status": "active",
+        "compose": { "include": [ { "system": "{{base}}" } ] }
+      }
+    }
+  ]
+}
+
+### 17. Inline $expand of the BASE naming the supplement EXPLICITLY by URL
+#     The inline VS references the base CS; `useSupplement` names the supplement CS
+#     canonical (here the Russian supplement, pinned to |1.0.0) — no stored wrapper
+#     ValueSet and no valueset-supplement extension needed. displayLanguage=ru re-picks
+#     the localized display. This is the inline equivalent of the stored tests #8 / #10.
+# expect: red/green/blue with RUSSIAN displays — красный / зелёный / синий;
+#         the ru values also appear in contains[].designation (includeDesignations=true).
+POST {{fhir}}/ValueSet/$expand
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    { "name": "displayLanguage", "valueCode": "ru" },
+    { "name": "useSupplement", "valueCanonical": "{{ruCs}}|1.0.0" },
+    { "name": "includeDesignations", "valueBoolean": true },
+    {
+      "name": "valueSet",
+      "resource": {
+        "resourceType": "ValueSet",
+        "url": "http://example.org/fhir/ValueSet/inline-colors-use-supplement",
+        "status": "active",
+        "compose": { "include": [ { "system": "{{base}}" } ] }
+      }
+    }
+  ]
+}
+
+### 18. Inline $expand — ALL supplements, ALL languages at once
+#     Name every supplement via repeated `useSupplement` (et + ru) and OMIT displayLanguage.
+#     With no language requested, the display stays English (the base) but the designation
+#     filter is wide open, so EVERY supplement designation surfaces — et and ru together.
+# expect: red/green/blue with English displays; each contains[].designation carries BOTH
+#         the Estonian (punane/roheline/sinine) and Russian (красный/зелёный/синий) values.
+POST {{fhir}}/ValueSet/$expand
+Authorization: Bearer {{token}}
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    { "name": "useSupplement", "valueCanonical": "{{etCs}}|1.0.0" },
+    { "name": "useSupplement", "valueCanonical": "{{ruCs}}|1.0.0" },
+    { "name": "includeDesignations", "valueBoolean": true },
+    {
+      "name": "valueSet",
+      "resource": {
+        "resourceType": "ValueSet",
+        "url": "http://example.org/fhir/ValueSet/inline-colors-all-supplements",
         "status": "active",
         "compose": { "include": [ { "system": "{{base}}" } ] }
       }
