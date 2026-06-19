@@ -29,8 +29,10 @@ re-run safely.
 
 - **Stored vs inline.** A *stored* ValueSet expands through the full pipeline — it honours
   `displayLanguage` and resolves the `valueset-supplement` extension, so supplement translations
-  show up. *Inline* `$expand` (passing the ValueSet in the request body) runs the server's JSON
-  expand: it returns the composed concepts but does **not** re-pick `displayLanguage` or resolve
-  supplements. Use a stored ValueSet to demonstrate supplement/language behaviour.
+  show up. *Inline* `$expand` (passing the ValueSet in the request body) also surfaces supplement
+  translations, but the supplements aren't declared on the inline ValueSet, so you tell the server
+  which to apply: pass `displayLanguage` to auto-discover supplements with that language (suite
+  test #16), or name them explicitly with one or more `useSupplement` parameters (tests #17–18).
+  A bare inline expand with neither returns only the base code system's own designations.
 - **Cleanup.** The suite leaves its `tx-rest-demo-*` resources on the server. Cancel/retire them
   from the UI (or your own DELETE requests) if you don't want them to linger on a shared instance.

@@ -268,11 +268,12 @@ Content-Type: application/fhir+json
   ]
 }
 
-### 15. Inline $expand of the BASE with includeDesignations — shows the supplement contrast
+### 15. Inline $expand of the BASE with includeDesignations only — the no-hint baseline
 # expect: red/green/blue with English displays and NO Estonian/Russian designations.
-#         The et/ru translations live in separate supplement code systems; inline expansion of
-#         the base does not resolve supplements. To surface supplement translations, expand a
-#         STORED value set that references the supplement (tests #8 / #10).
+#         A bare inline expand doesn't know which supplements to apply: the et/ru translations
+#         live in separate supplement code systems and are pulled in only when you ask for them —
+#         pass displayLanguage (test #16) or useSupplement (tests #17-18). Stored value sets that
+#         reference a supplement via the extension surface them automatically (tests #8 / #10).
 POST {{fhir}}/ValueSet/$expand
 Authorization: Bearer {{token}}
 Content-Type: application/fhir+json
