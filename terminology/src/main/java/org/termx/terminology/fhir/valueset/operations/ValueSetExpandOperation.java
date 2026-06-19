@@ -114,7 +114,21 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
             : pp.getValueCanonical() != null ? pp.getValueCanonical()
             : pp.getValueString())
         .orElseThrow(() -> new FhirException(400, IssueType.INVALID, "parameter 'url' or 'valueSet' required"));
-    String versionNr = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
+    // Pipe-form canonical `<url>|<version>` (FHIR & tx-ecosystem) — split as terminology-explorer's
+    // CanonicalUrlParser does (version = everything after the first '|'). Keep the original `url` for the
+    // SNOMED implicit-ValueSet handling below (its own `|edition/version` syntax differs); resolve stored and
+    // tx-resource ValueSets by the bare canonical, with the pipe version as the requested version when
+    // `valueSetVersion` isn't separately supplied.
+    String canonicalUrl = url;
+    String pipeVersion = null;
+    if (!url.startsWith("http://snomed.info/sct")) {
+      int pipe = url.indexOf('|');
+      if (pipe >= 0) {
+        canonicalUrl = url.substring(0, pipe);
+        pipeVersion = url.substring(pipe + 1);
+      }
+    }
+    String versionNr = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(pipeVersion);
 
     // 3. SNOMED CT implicit-ValueSet URLs (`http://snomed.info/sct[/<edition>/version/<date>]?fhir_vs[=...]`)
     //    are recognised before the stored-VS lookup and delegated to the
@@ -126,15 +140,27 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
 
     // 3b. tx-resource: the FHIR validator passes referenced resources inline. When `url` names a ValueSet
-    //     supplied as a tx-resource, expand that inline definition instead of looking it up in storage.
-    com.kodality.zmei.fhir.resource.terminology.ValueSet txResourceVs = findTxResourceValueSet(req, url);
-    if (txResourceVs != null) {
+    //     supplied as a tx-resource, expand that inline definition instead of looking it up in storage. When
+    //     several versions of the same canonical are supplied, a pinned version must resolve to exactly that
+    //     one (unknown version → 404); otherwise the latest is used.
+    List<com.kodality.zmei.fhir.resource.terminology.ValueSet> txVs = txResourceValueSets(req, canonicalUrl);
+    if (!txVs.isEmpty()) {
+      com.kodality.zmei.fhir.resource.terminology.ValueSet txResourceVs;
+      if (versionNr != null) {
+        String canonical = canonicalUrl;
+        String pinned = versionNr;
+        txResourceVs = txVs.stream().filter(vs -> pinned.equals(vs.getVersion())).findFirst()
+            .orElseThrow(() -> org.termx.terminology.fhir.TxIssues.notFoundException(404,
+                String.format("A definition for the value Set '%s|%s' could not be found", canonical, pinned)));
+      } else {
+        txResourceVs = latestByVersion(txVs);
+      }
       return expandInline(txResourceVs, req);
     }
 
     // 4. Stored ValueSet lookup.
     ValueSetQueryParams vsParams = new ValueSetQueryParams();
-    vsParams.setUri(url);
+    vsParams.setUri(canonicalUrl);
     vsParams.setLimit(1);
     vsParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_READ));
     ValueSet valueSet = valueSetService.query(vsParams).findFirst().orElse(null);
@@ -349,8 +375,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
   /** Finds a ValueSet supplied inline via a tx-resource parameter whose url matches the requested url. */
   private static com.kodality.zmei.fhir.resource.terminology.ValueSet findTxResourceValueSet(Parameters req, String url) {
+    return txResourceValueSets(req, url).stream().findFirst().orElse(null);
+  }
+
+  /** All ValueSets supplied inline via tx-resource params whose canonical url matches (any version). */
+  private static List<com.kodality.zmei.fhir.resource.terminology.ValueSet> txResourceValueSets(Parameters req, String url) {
     if (req.getParameter() == null || url == null) {
-      return null;
+      return List.of();
     }
     return req.getParameter().stream()
         .filter(p -> "tx-resource".equals(p.getName()))
@@ -358,7 +389,30 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.ValueSet)
         .map(r -> (com.kodality.zmei.fhir.resource.terminology.ValueSet) r)
         .filter(vs -> url.equals(vs.getUrl()))
-        .findFirst().orElse(null);
+        .toList();
+  }
+
+  /** Highest-version tx-resource (latest, by numeric-aware dotted-version order), falling back to the first. */
+  private static com.kodality.zmei.fhir.resource.terminology.ValueSet latestByVersion(
+      List<com.kodality.zmei.fhir.resource.terminology.ValueSet> vss) {
+    return vss.stream().max(java.util.Comparator.comparing(
+        com.kodality.zmei.fhir.resource.terminology.ValueSet::getVersion,
+        java.util.Comparator.nullsFirst(ValueSetExpandOperation::compareVersions))).orElse(vss.get(0));
+  }
+
+  /** Numeric-aware comparison of dotted version strings ("1.10.0" &gt; "1.2.0"), tolerant of non-numeric parts. */
+  private static int compareVersions(String a, String b) {
+    String[] pa = a.split("\\.");
+    String[] pb = b.split("\\.");
+    for (int i = 0; i < Math.max(pa.length, pb.length); i++) {
+      String sa = i < pa.length ? pa[i] : "0";
+      String sb = i < pb.length ? pb[i] : "0";
+      int c = sa.matches("\\d+") && sb.matches("\\d+") ? Long.compare(Long.parseLong(sa), Long.parseLong(sb)) : sa.compareTo(sb);
+      if (c != 0) {
+        return c;
+      }
+    }
+    return 0;
   }
 
   private com.kodality.zmei.fhir.resource.terminology.ValueSet expandInline(

@@ -73,40 +73,77 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   public Parameters run(Parameters req) {
-    String url = req.findParameter("url")
+    String rawUrl = req.findParameter("url")
         .map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueUri() != null ? pp.getValueUri() : pp.getValueString())
         .orElse(null);
+    // A canonical `url` may carry its version inline as `<url>|<version>` (FHIR & tx-ecosystem). Split it the
+    // same way terminology-explorer's CanonicalUrlParser does — the version is everything after the first '|' —
+    // and treat that pipe version as the requested valueSetVersion when the parameter isn't separately given.
+    String url = rawUrl;
+    String pipeVersion = null;
+    if (rawUrl != null) {
+      int pipe = rawUrl.indexOf('|');
+      if (pipe >= 0) {
+        url = rawUrl.substring(0, pipe);
+        pipeVersion = rawUrl.substring(pipe + 1);
+      }
+    }
+    String version = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(pipeVersion);
 
     // tx-resource / inline: validate against a ValueSet supplied inline (the FHIR validator passes the
     // value set in the request rather than relying on stored content) — either an explicit `valueSet`
     // parameter or a `tx-resource` whose url matches the requested url. This path is unauthenticated-safe
     // (no per-resource read privilege check), which is what the conformance runner exercises as a guest,
     // so it must itself produce the full tx-ecosystem response shape (issues, version).
-    com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs = req.findParameter("valueSet")
+    Optional<com.kodality.zmei.fhir.resource.terminology.ValueSet> explicit = req.findParameter("valueSet")
         .filter(pp -> pp.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.ValueSet)
-        .map(pp -> (com.kodality.zmei.fhir.resource.terminology.ValueSet) pp.getResource())
-        .orElseGet(() -> findTxResourceValueSet(req, url));
+        .map(pp -> (com.kodality.zmei.fhir.resource.terminology.ValueSet) pp.getResource());
+    com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs;
+    if (explicit.isPresent()) {
+      inlineVs = explicit.get();
+    } else {
+      List<com.kodality.zmei.fhir.resource.terminology.ValueSet> txVs = txResourceValueSets(req, url);
+      if (txVs.isEmpty()) {
+        inlineVs = null;
+      } else if (version != null) {
+        // A pinned valueSetVersion must resolve to a tx-resource of exactly that version; an unknown version
+        // is a hard 404 ("Unable_to_resolve_value_Set_"), not a silent fall back to another inline version.
+        String canonical = url;
+        inlineVs = txVs.stream().filter(vs -> version.equals(vs.getVersion())).findFirst()
+            .orElseThrow(() -> valueSetNotResolvable(canonical, version));
+      } else {
+        inlineVs = latestByVersion(txVs);
+      }
+    }
     if (inlineVs != null) {
-      return validateInline(inlineVs, req);
+      Parameters resp = validateInline(inlineVs, req);
+      // FHIR $validate-code echoes the codeableConcept it was given (it isn't reconstructed from the match) —
+      // the stored path does this in run(ValueSetVersion, …); the inline path must too.
+      req.findParameter("codeableConcept")
+          .filter(cc -> resp.findParameter("codeableConcept").isEmpty())
+          .ifPresent(resp::addParameter);
+      return sorted(resp);
     }
 
     if (url == null) {
       throw new FhirException(400, IssueType.INVALID, "url parameter required");
     }
-    String version = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(null);
 
     ValueSetVersion vsVersion = version == null ? valueSetVersionService.loadLastVersionByUri(url) :
         valueSetVersionService.query(new ValueSetVersionQueryParams().setValueSetUri(url).setVersion(version)).findFirst().orElse(null);
     if (vsVersion == null) {
+      if (version != null) {
+        throw valueSetNotResolvable(url, version);
+      }
       return error("valueset version not found");
     }
     return run(vsVersion, req);
   }
 
-  /** Finds a ValueSet supplied inline via a tx-resource parameter whose url matches the requested url. */
-  private static com.kodality.zmei.fhir.resource.terminology.ValueSet findTxResourceValueSet(Parameters req, String url) {
+  /** All ValueSets supplied inline via tx-resource params whose canonical url matches (any version). */
+  private static List<com.kodality.zmei.fhir.resource.terminology.ValueSet> txResourceValueSets(Parameters req, String url) {
     if (req.getParameter() == null || url == null) {
-      return null;
+      return List.of();
     }
     return req.getParameter().stream()
         .filter(p -> "tx-resource".equals(p.getName()))
@@ -114,7 +151,209 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.ValueSet)
         .map(r -> (com.kodality.zmei.fhir.resource.terminology.ValueSet) r)
         .filter(vs -> url.equals(vs.getUrl()))
+        .toList();
+  }
+
+  /** Versions of the CodeSystem(s) supplied inline via tx-resource params whose canonical url matches {@code system}. */
+  private static List<String> txResourceCodeSystemVersions(Parameters req, String system) {
+    if (req.getParameter() == null || system == null) {
+      return List.of();
+    }
+    return req.getParameter().stream()
+        .filter(p -> "tx-resource".equals(p.getName()))
+        .map(ParametersParameter::getResource)
+        .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+        .map(r -> ((com.kodality.zmei.fhir.resource.terminology.CodeSystem) r))
+        .filter(cs -> system.equals(cs.getUrl()))
+        .map(com.kodality.zmei.fhir.resource.terminology.CodeSystem::getVersion)
+        .filter(java.util.Objects::nonNull).distinct().toList();
+  }
+
+  private record VersionResolution(String echoVersion, List<OperationOutcomeIssue> issues, boolean hasError, String message, String xCausedBy) {
+  }
+
+  /** The {@code compose.include.version} that applies to {@code system}+{@code code} — preferring an include that enumerates the code (mixed value sets). */
+  private static String includeVersionFor(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, String system, String code) {
+    if (vs.getCompose() == null || vs.getCompose().getInclude() == null) {
+      return null;
+    }
+    com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude fallback = null;
+    for (var inc : vs.getCompose().getInclude()) {
+      if (system == null || system.equals(inc.getSystem())) {
+        boolean listsCode = inc.getConcept() != null && inc.getConcept().stream().anyMatch(c -> code.equals(c.getCode()));
+        if (listsCode) {
+          return inc.getVersion();
+        }
+        if (fallback == null) {
+          fallback = inc;
+        }
+      }
+    }
+    return fallback == null ? null : fallback.getVersion();
+  }
+
+  /** The {@code <version>} of a {@code system-version}/{@code force-system-version}/{@code check-system-version} param naming {@code system} (its value is {@code system|version}). */
+  private static String overrideVersion(Parameters req, String name, String system) {
+    if (req.getParameter() == null || system == null) {
+      return null;
+    }
+    String prefix = system + "|";
+    return req.getParameter().stream()
+        .filter(p -> name.equalsIgnoreCase(p.getName()))
+        .map(p -> p.getValueCanonical() != null ? p.getValueCanonical() : p.getValueString())
+        .filter(v -> v != null && v.startsWith(prefix))
+        .map(v -> v.substring(prefix.length()))
         .findFirst().orElse(null);
+  }
+
+  /** Resolves a pattern/concrete version to an actual available code system version (latest wildcard match / exact / latest when unpinned); null when no available version satisfies it. */
+  private static String concretize(String resolved, List<String> available) {
+    if (resolved == null) {
+      return available.stream().max(ValueSetValidateCodeOperation::compareVersions).orElse(null);
+    }
+    if (org.termx.terminology.fhir.FhirVersions.versionHasWildcards(resolved)) {
+      return available.stream().filter(a -> org.termx.terminology.fhir.FhirVersions.versionMatches(resolved, a))
+          .max(ValueSetValidateCodeOperation::compareVersions).orElse(null);
+    }
+    return available.contains(resolved) ? resolved : null;
+  }
+
+  private static String versionLocation(Parameters req) {
+    if (req.findParameter("codeableConcept").isPresent()) {
+      return "CodeableConcept.coding[0].version";
+    }
+    return req.findParameter("coding").isPresent() ? "Coding.version" : "version";
+  }
+
+  /**
+   * Reimplements org.hl7.fhir.core {@code ValueSetValidator.determineVersion}: resolve the effective code
+   * system version (force &gt; include &gt; system-version &gt; check-system-version, then a more-detailed coding
+   * version refines a wildcard), enforce {@code check-system-version}, and flag the right
+   * {@code VALUESET_VALUE_MISMATCH} variant plus {@code UNKNOWN_CODESYSTEM_VERSION} when the coding's version
+   * differs/doesn't exist. Operates off the tx-resource CodeSystem versions (the inline expand carries none).
+   */
+  private VersionResolution resolveVersion(Parameters req, String system, String includeVersion, String codingVersion, List<String> available) {
+    List<OperationOutcomeIssue> issues = new ArrayList<>();
+    boolean hasError = false;
+    String loc = versionLocation(req);
+
+    String resolved = includeVersion;
+    String force = overrideVersion(req, "force-system-version", system);
+    String check = overrideVersion(req, "check-system-version", system);
+    if (force != null) {
+      resolved = force;
+    } else if (StringUtils.isEmpty(resolved)) {
+      String def = overrideVersion(req, "system-version", system);
+      resolved = def != null ? def : check;
+    }
+    if (codingVersion != null && resolved != null && org.termx.terminology.fhir.FhirVersions.isMoreDetailed(resolved, codingVersion)) {
+      resolved = codingVersion;
+    }
+
+    String csVersion = concretize(resolved, available);
+    boolean csExists = csVersion != null;
+
+    // check-system-version: the resolved version must match the checked one, else a version-error.
+    if (check != null && csVersion != null && !org.termx.terminology.fhir.FhirVersions.versionMatches(check, csVersion)) {
+      String msg = String.format("The version '%s' is not allowed for system '%s': required to be '%s' by a version-check parameter", csVersion, system, check);
+      issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "exception", "version-error", msg, loc));
+      hasError = true;
+    }
+
+    // Mismatch between the coding's version and the resolved code system version. An unknown coding version
+    // (UNKNOWN_CODESYSTEM_VERSION, an error) is collected first so it sorts ahead of the mismatch and drives
+    // the `message`/`x-caused-by-unknown-system`; the mismatch variant (DEFAULT warning / CHANGED / plain) follows.
+    String xCausedBy = null;
+    if (codingVersion != null && !(csVersion != null && codingVersion.equals(csVersion))) {
+      if (csExists && !available.isEmpty() && !available.contains(codingVersion)) {
+        issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", String.format(
+            "A definition for CodeSystem '%s' version '%s' could not be found, so the code cannot be validated. Valid versions: %s",
+            system, codingVersion, String.join(", ", available)), "system"));
+        hasError = true;
+        xCausedBy = system + "|" + codingVersion;
+      }
+      if (csExists) {
+        if (resolved == null) {
+          issues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "invalid", "vs-invalid", String.format(
+              "The code system '%s' version '%s' for the versionless include in the ValueSet include is different to the one in the value ('%s')",
+              system, csVersion, codingVersion), loc));
+        } else if (!resolved.equals(includeVersion)) {
+          issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "invalid", "vs-invalid", String.format(
+              "The code system '%s' version '%s' resulting from the version '%s' in the ValueSet include is different to the one in the value ('%s')",
+              system, resolved, notNull(includeVersion), codingVersion), loc));
+          hasError = true;
+        } else if (!notNull(includeVersion).equals(codingVersion)) {
+          issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "invalid", "vs-invalid", String.format(
+              "The code system '%s' version '%s' in the ValueSet include is different to the one in the value ('%s')",
+              system, notNull(includeVersion), codingVersion), loc));
+          hasError = true;
+        }
+      } else {
+        issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "invalid", "vs-invalid", String.format(
+            "The code system '%s' version '%s' in the ValueSet include is different to the one in the value ('%s')",
+            system, resolved, codingVersion), loc));
+        hasError = true;
+      }
+    }
+
+    String echo = csVersion != null ? csVersion
+        : codingVersion != null && available.contains(codingVersion) ? codingVersion
+        : available.stream().max(ValueSetValidateCodeOperation::compareVersions).orElse(null);
+    // The `message` echoes the primary (first error) issue text — error before warning.
+    String message = issues.stream().filter(i -> "error".equals(i.getSeverity()))
+        .map(i -> i.getDetails() == null ? null : i.getDetails().getText()).filter(java.util.Objects::nonNull)
+        .findFirst().orElse(null);
+    return new VersionResolution(echo, issues, hasError, message, xCausedBy);
+  }
+
+  private static String notNull(String s) {
+    return s == null ? "" : s;
+  }
+
+  /** Highest-version tx-resource (the latest, by semantic-version order), falling back to the first. */
+  private static com.kodality.zmei.fhir.resource.terminology.ValueSet latestByVersion(
+      List<com.kodality.zmei.fhir.resource.terminology.ValueSet> vss) {
+    return vss.stream().max(java.util.Comparator.comparing(
+        com.kodality.zmei.fhir.resource.terminology.ValueSet::getVersion,
+        java.util.Comparator.nullsFirst(ValueSetValidateCodeOperation::compareVersions))).orElse(vss.get(0));
+  }
+
+  /** Numeric-aware comparison of dotted version strings ("1.10.0" &gt; "1.2.0"), tolerant of non-numeric parts. */
+  private static int compareVersions(String a, String b) {
+    String[] pa = a.split("\\.");
+    String[] pb = b.split("\\.");
+    for (int i = 0; i < Math.max(pa.length, pb.length); i++) {
+      String sa = i < pa.length ? pa[i] : "0";
+      String sb = i < pb.length ? pb[i] : "0";
+      int c;
+      if (sa.matches("\\d+") && sb.matches("\\d+")) {
+        c = Long.compare(Long.parseLong(sa), Long.parseLong(sb));
+      } else {
+        c = sa.compareTo(sb);
+      }
+      if (c != 0) {
+        return c;
+      }
+    }
+    return 0;
+  }
+
+  /**
+   * A pinned ValueSet version that resolves to nothing is a 404 OperationOutcome (tx-ecosystem
+   * "Unable_to_resolve_value_Set_") — carrying the {@code tx-issue-type} {@code not-found} detail coding the
+   * ecosystem matches on, not a bare {@code details.text}.
+   */
+  static FhirException valueSetNotResolvable(String url, String version) {
+    return org.termx.terminology.fhir.TxIssues.notFoundException(404,
+        String.format("A definition for the value Set '%s|%s' could not be found", url, version));
+  }
+
+  /** Sorts response parameters by name — the tx-ecosystem TxTester diffs parameters positionally against an alphabetically-ordered expected list. */
+  private static Parameters sorted(Parameters p) {
+    if (p != null && p.getParameter() != null) {
+      p.getParameter().sort(java.util.Comparator.comparing(ParametersParameter::getName, java.util.Comparator.nullsLast(String::compareTo)));
+    }
+    return p;
   }
 
   /**
@@ -127,17 +366,20 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
     String system = findSystem(req);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
+    String reqCsVersion = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);
     if (req.findParameter("coding").isPresent()) {
       Coding coding = req.findParameter("coding").map(ParametersParameter::getValueCoding).orElse(null);
       code = coding != null && coding.getCode() != null ? coding.getCode() : code;
       system = coding != null && coding.getSystem() != null ? coding.getSystem() : system;
       display = coding != null && coding.getDisplay() != null ? coding.getDisplay() : display;
+      reqCsVersion = coding != null && coding.getVersion() != null ? coding.getVersion() : reqCsVersion;
     }
     if (req.findParameter("codeableConcept").isPresent()) {
       CodeableConcept cc = req.findParameter("codeableConcept").map(ParametersParameter::getValueCodeableConcept).orElse(null);
       Coding coding = cc != null && cc.getCoding() != null ? cc.getCoding().stream().findFirst().orElse(null) : null;
       code = coding != null && coding.getCode() != null ? coding.getCode() : code;
       system = coding != null && coding.getSystem() != null ? coding.getSystem() : system;
+      reqCsVersion = coding != null && coding.getVersion() != null ? coding.getVersion() : reqCsVersion;
     }
     if (code == null) {
       throw new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required");
@@ -156,6 +398,10 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
         .filter(c -> finalCode.equals(c.getCode()) && (finalSystem == null || finalSystem.equals(c.getSystem())))
         .findFirst().orElse(null);
+
+    // The inline SQL expand can't reach external providers, so the resolved code system version isn't on the
+    // expansion members — derive it from the tx-resource CodeSystem(s) the validator passed for `system`.
+    List<String> availableCsVersions = txResourceCodeSystemVersions(req, system);
 
     String vsCanonical = inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "");
     Parameters resp = new Parameters();
@@ -188,17 +434,30 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
               org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, codeLoc))));
       return resp;
     }
+    // Version negotiation — mirrors org.hl7.fhir.core ValueSetValidator.determineVersion (the engine behind the
+    // tx-ecosystem): resolve the code system version from the include version, the
+    // system-version/force-system-version/check-system-version override params and the coding's own version,
+    // then flag VALUESET_VALUE_MISMATCH(_CHANGED/_DEFAULT) / UNKNOWN_CODESYSTEM_VERSION / version-check errors.
+    String includeVersion = includeVersionFor(inlineVs, system, code);
+    VersionResolution vr = resolveVersion(req, system, includeVersion, reqCsVersion, availableCsVersions);
+
     String finalDisplay = display;
     boolean displayValid = finalDisplay == null || finalDisplay.equals(match.getDisplay())
         || Optional.ofNullable(match.getDesignation()).orElse(List.of()).stream().anyMatch(d -> finalDisplay.equals(d.getValue()));
-    resp.addParameter(new ParametersParameter("result").setValueBoolean(displayValid));
+
+    List<OperationOutcomeIssue> issues = new ArrayList<>(vr.issues());
+    resp.addParameter(new ParametersParameter("result").setValueBoolean(displayValid && !vr.hasError()));
     resp.addParameter(new ParametersParameter("code").setValueCode(match.getCode()));
     if (match.getSystem() != null) {
       resp.addParameter(new ParametersParameter("system").setValueUri(match.getSystem()));
     }
     resp.addParameter(new ParametersParameter("display").setValueString(match.getDisplay()));
-    if (match.getVersion() != null) {
-      resp.addParameter(new ParametersParameter("version").setValueString(match.getVersion()));
+    String echoVersion = vr.echoVersion() != null ? vr.echoVersion() : match.getVersion();
+    if (echoVersion != null) {
+      resp.addParameter(new ParametersParameter("version").setValueString(echoVersion));
+    }
+    if (vr.xCausedBy() != null) {
+      resp.addParameter(new ParametersParameter("x-caused-by-unknown-system").setValueCanonical(vr.xCausedBy()));
     }
     if (!displayValid) {
       // Invalid display: 200 with result=false plus a structured `issues` OperationOutcome (invalid-display
@@ -207,9 +466,19 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           display, match.getSystem(), match.getCode(), match.getDisplay(),
           StringUtils.isEmpty(displayLanguage) ? "--" : displayLanguage);
       resp.addParameter(new ParametersParameter("message").setValueString(message));
+      issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "invalid", "invalid-display", message, displayLocation(req)));
+    } else if (vr.message() != null) {
+      resp.addParameter(new ParametersParameter("message").setValueString(vr.message()));
+    }
+    if (!issues.isEmpty()) {
+      // Errors before warnings before information — the tx-ecosystem orders an OperationOutcome's issues by severity.
+      java.util.List<String> sev = List.of("fatal", "error", "warning", "information");
+      issues.sort(java.util.Comparator.comparingInt(i -> {
+        int idx = sev.indexOf(i.getSeverity());
+        return idx < 0 ? sev.size() : idx;
+      }));
       resp.addParameter(new ParametersParameter("issues").setResource(
-          org.termx.terminology.fhir.TxIssues.outcome(
-              org.termx.terminology.fhir.TxIssues.issue("error", "invalid", "invalid-display", message, displayLocation(req)))));
+          org.termx.terminology.fhir.TxIssues.outcome(issues.toArray(OperationOutcomeIssue[]::new))));
     }
     return resp;
   }
@@ -223,7 +492,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           .filter(cc -> response.findParameter("codeableConcept").isEmpty())
           .ifPresent(response::addParameter);
     }
-    return response;
+    return sorted(response);
   }
 
   private Parameters doRun(ValueSetVersion vsVersion, Parameters req) {
@@ -277,7 +546,8 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       if (anyVersion != null) {
         List<String> available = Optional.ofNullable(anyVersion.getConcept().getCodeSystemVersions()).orElse(List.of());
         if (!available.contains(finalVersion)) {
-          return unknownSystemVersion(anyVersion, finalSystem, finalVersion, available, display, displayLanguage);
+          return unknownSystemVersion(anyVersion.getConcept().getCode(), findDisplay(anyVersion, display, displayLanguage),
+              finalSystem, finalVersion, available);
         }
       }
     }
@@ -337,8 +607,8 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
    * UNKNOWN_CODESYSTEM_VERSION error (with the valid versions) plus the versionless-include mismatch warning.
    * Mirrors the FHIR tx ecosystem's "graceful degradation" — a 200, not a 4xx.
    */
-  private Parameters unknownSystemVersion(ValueSetVersionConcept concept, String system, String requestedVersion,
-                                          List<String> availableVersions, String display, String displayLanguage) {
+  private Parameters unknownSystemVersion(String code, String displayName, String system, String requestedVersion,
+                                          List<String> availableVersions) {
     String availableVersion = availableVersions.stream().findFirst().orElse(null);
     String message = String.format(
         "A definition for CodeSystem '%s' version '%s' could not be found, so the code cannot be validated. Valid versions: %s",
@@ -359,10 +629,9 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     outcome.setIssue(List.of(notFound, mismatch));
 
     Parameters parameters = new Parameters();
-    parameters.addParameter(new ParametersParameter("code").setValueCode(concept.getConcept().getCode()));
-    String conceptDisplay = findDisplay(concept, display, displayLanguage);
-    if (conceptDisplay != null) {
-      parameters.addParameter(new ParametersParameter("display").setValueString(conceptDisplay));
+    parameters.addParameter(new ParametersParameter("code").setValueCode(code));
+    if (displayName != null) {
+      parameters.addParameter(new ParametersParameter("display").setValueString(displayName));
     }
     parameters.addParameter(new ParametersParameter("issues").setResource(outcome));
     parameters.addParameter(new ParametersParameter("message").setValueString(message));

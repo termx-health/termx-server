@@ -41,4 +41,21 @@ public final class TxIssues {
     outcome.setIssue(List.of(issues));
     return outcome;
   }
+
+  /**
+   * A {@code not-found} {@link com.kodality.kefhir.core.exception.FhirException} whose OperationOutcome issue
+   * carries the {@code tx-issue-type}/{@code not-found} detail coding plus the message text — the shape the
+   * tx-ecosystem expects for an unresolvable system/version/value-set (e.g. an unknown {@code valueSetVersion}),
+   * rather than the bare {@code details.text} a plain {@code FhirException(status, IssueType, text)} produces.
+   */
+  public static com.kodality.kefhir.core.exception.FhirException notFoundException(int status, String text) {
+    org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent issue =
+        new org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent();
+    issue.setSeverity(org.hl7.fhir.r5.model.OperationOutcome.IssueSeverity.ERROR);
+    issue.setCode(org.hl7.fhir.r5.model.OperationOutcome.IssueType.NOTFOUND);
+    issue.setDetails(new org.hl7.fhir.r5.model.CodeableConcept()
+        .addCoding(new org.hl7.fhir.r5.model.Coding(TX_ISSUE_TYPE, "not-found", null))
+        .setText(text));
+    return new com.kodality.kefhir.core.exception.FhirException(status, issue);
+  }
 }
