@@ -60,8 +60,10 @@ class ValueSetValidateCodeTxResourceIT extends TermxIntegTest {
     when:
     def resp = validate("c3", ["c1", "c2"])
 
-    then:
+    then: "result is false, the message reports the code is not found, and a structured issues OperationOutcome is returned"
     !resp.findParameter("result").orElseThrow().valueBoolean
-    resp.findParameter("message").orElseThrow().valueString.contains("not in the value set")
+    resp.findParameter("message").orElseThrow().valueString.contains("not found in the value set")
+    def issue = resp.findParameter("issues").orElseThrow().resource.getIssue().first()
+    issue.getDetails().getCoding().first().getCode() == "not-in-vs"
   }
 }
