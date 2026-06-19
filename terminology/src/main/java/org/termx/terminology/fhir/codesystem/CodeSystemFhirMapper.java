@@ -58,6 +58,52 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   private static final String DISPLAY = "display";
   private static final String DEFINITION = "definition";
   private static final Set<String> IMPLICIT_PROPERTY_DEFINITIONS = Set.of(DISPLAY, DEFINITION);
+  private static final String SNOMED_URL = "http://snomed.info/sct";
+  // Well-known designation `use` codings (keyed by `system#code`) ↔ the termx defined designation-property
+  // name. Mapping a use to its known name lets a designation link to the shared defined property (by name)
+  // and round-trip its system+code; an unknown use keeps its bare code (a CS-specific type) and is logged.
+  private static final Map<String, String> DESIGNATION_USE_NAME = Map.of(
+      "http://terminology.hl7.org/CodeSystem/designation-usage#display", DISPLAY,
+      "https://termx.org/fhir/CodeSystem/designation-usage#definition", DEFINITION,
+      "https://termx.org/fhir/CodeSystem/designation-usage#alias", "alias",
+      SNOMED_URL + "#900000000000013009", "snomed-synonym",
+      SNOMED_URL + "#900000000000003001", "snomed-fsn",
+      SNOMED_URL + "#900000000000548007", "snomed-preferred");
+  // Reverse: a known designation-property name → its use Coding {system, code}, for export reconstruction.
+  private static final Map<String, String[]> DESIGNATION_NAME_USE = Map.of(
+      "snomed-synonym", new String[]{SNOMED_URL, "900000000000013009"},
+      "snomed-fsn", new String[]{SNOMED_URL, "900000000000003001"},
+      "snomed-preferred", new String[]{SNOMED_URL, "900000000000548007"},
+      "alias", new String[]{"https://termx.org/fhir/CodeSystem/designation-usage", "alias"});
+  // SNOMED concepts carry their label as designations; with no explicit display, derive it in this priority.
+  private static final List<String> SNOMED_DISPLAY_PRIORITY = List.of("snomed-preferred", "snomed-fsn", "snomed-synonym");
+
+  /** Resolves a FHIR designation.use to a termx designation-property name: a known use → its defined name; otherwise the bare code (a CS-specific type), logged. */
+  private static String designationUseName(Coding use) {
+    if (use == null || use.getCode() == null) {
+      return DISPLAY;
+    }
+    String key = (use.getSystem() != null ? use.getSystem() + "#" : "") + use.getCode();
+    String mapped = DESIGNATION_USE_NAME.get(key);
+    if (mapped != null) {
+      return mapped;
+    }
+    if (use.getSystem() != null) {
+      log.warn("Unrecognised designation.use '{}' — kept as code-only type '{}'. Consider adding a defined designation property.", key, use.getCode());
+    }
+    return use.getCode();
+  }
+
+  /** The use Coding for an exported designation: a known designation-property name → its {system, code}; otherwise a bare code. */
+  private static Coding designationUseCoding(String designationType) {
+    String[] sysCode = DESIGNATION_NAME_USE.get(designationType);
+    return sysCode != null ? new Coding(sysCode[0], sysCode[1]) : new Coding(designationType);
+  }
+
+  /** The full {@code system#code} URI for a designation use, or null when it has no system. */
+  private static String designationUseUri(Coding use) {
+    return use != null && use.getSystem() != null && use.getCode() != null ? use.getSystem() + "#" + use.getCode() : null;
+  }
   private static final String PROPERTY_VALUE_SET_EXTENSION_URL = "http://hl7.org/fhir/StructureDefinition/codesystem-property-valueset";
   private static final String PROPERTY_CODE_SYSTEM_EXTENSION_URL = "https://termx.org/fhir/StructureDefinition/codesystem-property-codesystem";
 
@@ -266,7 +312,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return designations.stream().map(d -> new CodeSystemConceptDesignation()
             .setLanguage(d.getLanguage())
             .setValue(d.getName())
-            .setUse(new Coding(d.getDesignationType())))
+            .setUse(designationUseCoding(d.getDesignationType())))
         .sorted(Comparator.comparing(d -> d.getLanguage() == null ? "" : d.getLanguage()))
         .sorted(Comparator.comparing(d -> d.getUse().getCode()))
         .toList();
@@ -601,7 +647,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       properties.addAll(fhirCodeSystem.getConcept().stream()
           .filter(c -> c.getDesignation() != null)
           .flatMap(c -> c.getDesignation().stream())
-          .filter(d -> d.getUse() != null && d.getUse().getCode() != null && properties.stream().noneMatch(ep -> ep.getName().equals(d.getUse().getCode())))
+          .filter(d -> d.getUse() != null && d.getUse().getCode() != null && properties.stream().noneMatch(ep -> ep.getName().equals(designationUseName(d.getUse()))))
           .map(CodeSystemFhirMapper::fromFhirProperty).toList());
     }
     return properties.stream().collect(Collectors.toMap(EntityProperty::getName, p -> p, (p, q) -> p)).values().stream().toList();
@@ -624,7 +670,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   private static EntityProperty fromFhirProperty(CodeSystemConceptDesignation d) {
     EntityProperty ep = new EntityProperty();
-    ep.setName(d.getUse().getCode());
+    ep.setName(designationUseName(d.getUse()));
+    ep.setUri(designationUseUri(d.getUse()));
     ep.setType(EntityPropertyType.string);
     ep.setKind(EntityPropertyKind.designation);
     ep.setStatus(PublicationStatus.active);
@@ -737,7 +784,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     }
     List<Designation> designations = c.getDesignation().stream().map(d -> {
       Designation designation = new Designation();
-      designation.setDesignationType(d.getUse() == null ? DISPLAY : d.getUse().getCode());
+      designation.setDesignationType(designationUseName(d.getUse()));
       designation.setName(d.getValue());
       designation.setLanguage(d.getLanguage() == null ? Language.en : d.getLanguage());
       designation.setCaseSignificance(caseSignificance);
@@ -754,6 +801,17 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     display.setCaseSignificance(caseSignificance);
     display.setDesignationKind("text");
     display.setStatus("active");
+    // SNOMED CT concepts carry their label only as designations (no concept.display). For a SNOMED-URL code
+    // system, derive the display from the SNOMED designations — preferred term, else FSN, else synonym.
+    if (display.getName() == null && SNOMED_URL.equals(codeSystem.getUrl())) {
+      SNOMED_DISPLAY_PRIORITY.stream()
+          .flatMap(type -> designations.stream().filter(d -> type.equals(d.getDesignationType()) && d.getName() != null))
+          .findFirst()
+          .ifPresent(src -> {
+            display.setName(src.getName());
+            display.setLanguage(src.getLanguage());
+          });
+    }
     if (display.getName() != null && designations.stream().noneMatch(d -> isSameDesignation(d, display))) {
       designations.add(display);
     }
