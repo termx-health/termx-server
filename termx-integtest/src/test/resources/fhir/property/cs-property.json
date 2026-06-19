@@ -1,0 +1,17 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "prop-cs",
+  "url": "http://example.org/prop-cs",
+  "version": "1.0.0",
+  "name": "PropCs",
+  "title": "Property demo CS",
+  "status": "active",
+  "content": "complete",
+  "language": "en",
+  "property": [ { "code": "kind", "type": "string" } ],
+  "concept": [
+    { "code": "a", "display": "Apple",  "property": [ { "code": "kind", "valueString": "fruit" } ] },
+    { "code": "b", "display": "Banana", "property": [ { "code": "kind", "valueString": "fruit" } ] },
+    { "code": "c", "display": "Carrot", "property": [ { "code": "kind", "valueString": "veg" } ] }
+  ]
+}

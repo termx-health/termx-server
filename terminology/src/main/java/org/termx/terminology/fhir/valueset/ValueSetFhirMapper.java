@@ -30,6 +30,7 @@ import org.termx.ts.codesystem.Designation;
 import org.termx.ts.codesystem.DesignationType;
 import org.termx.ts.codesystem.EntityProperty;
 import org.termx.ts.codesystem.EntityPropertyType;
+import org.termx.ts.codesystem.EntityPropertyValue;
 import org.termx.ts.mapset.MapSet;
 import org.termx.ts.relatedartifact.RelatedArtifactType;
 import org.termx.ts.valueset.ValueSet;
@@ -381,8 +382,16 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     return fhirValueSet;
   }
 
-  private static ValueSetExpansion toFhirExpansion(ValueSetSnapshot snapshot, List<String> properties, Parameters param) {
+  private static ValueSetExpansion toFhirExpansion(ValueSetSnapshot snapshot, List<String> declaredProperties, Parameters param) {
     List<ValueSetVersionConcept> concepts = snapshot.getExpansion();
+    // A request-level `property` parameter asks for properties to appear in the expansion even when the value
+    // set itself does not declare them (FHIR $expand). Treat the declared properties UNION the requested ones
+    // as the set that may appear in contains.property / expansion.property.
+    List<String> requestedPropertyParams = (param == null || param.getParameter() == null) ? List.of() :
+        param.getParameter().stream().filter(p -> "property".equals(p.getName()))
+            .map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).filter(StringUtils::isNotEmpty).toList();
+    List<String> properties = java.util.stream.Stream.concat(
+        Optional.ofNullable(declaredProperties).orElse(List.of()).stream(), requestedPropertyParams.stream()).distinct().toList();
 
     boolean active = Optional.ofNullable(param).map(p -> p.findParameter("activeOnly")
         .map(pp -> pp.getValueBoolean() != null ? pp.getValueBoolean() : "true".equals(pp.getValueString()))
@@ -412,13 +421,11 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     expansion.setParameter(parameters.isEmpty() ? null : parameters);
     expansion.setTimestamp(snapshot.getCreatedAt());
 
-    // Declare the properties that may appear in contains.property: the value set's declared properties,
-    // narrowed by any request-level `property` parameter. A contains.property must reference a declared
-    // expansion.property to be valid FHIR.
-    List<String> requestedProperties = (param == null || param.getParameter() == null) ? List.of() :
-        param.getParameter().stream().filter(p -> "property".equals(p.getName())).map(ParametersParameter::getValueString).filter(StringUtils::isNotEmpty).toList();
-    expansion.setProperty(Optional.ofNullable(properties).orElse(List.of()).stream().distinct()
-        .filter(code -> requestedProperties.isEmpty() || requestedProperties.contains(code))
+    // Declare the properties that may appear in contains.property: the value set's declared properties plus
+    // any requested via the `property` parameter, narrowed to the request when one is given. A
+    // contains.property must reference a declared expansion.property to be valid FHIR.
+    expansion.setProperty(properties.stream().distinct()
+        .filter(code -> requestedPropertyParams.isEmpty() || requestedPropertyParams.contains(code))
         .map(code -> new ValueSetExpansionProperty().setCode(code))
         .collect(toList()));
 
@@ -512,7 +519,8 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
             .orElse(false)).orElse(false);
     String lang = Optional.ofNullable(param).map(Resource::getLanguage).orElse(null);
     List<String> properties = ((param == null) || (param.getParameter() == null)) ? List.of() :
-        param.getParameter().stream().filter(p -> "property".equals(p.getName())).map(ParametersParameter::getValueString).toList();
+        param.getParameter().stream().filter(p -> "property".equals(p.getName()))
+            .map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).filter(StringUtils::isNotEmpty).toList();
     // FHIR $expand `designation` parameter (0..*): each token names a language or a use. When present, the
     // expansion's contains[].designation is restricted to designations that match one of them (instead of
     // emitting every designation). A bare token is a language; a `system|code` token matches a use coding
@@ -550,17 +558,34 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
           extension.setValueString(d.getName());
           return extension;
         }).toList() : null);
-    Set<String> seenProperties = new HashSet<>();
-    contains.setProperty(c.getPropertyValues() == null ? new ArrayList<>() :
-        c.getPropertyValues().stream()
-            // Only surface properties the value set declares (compose.property); a request-level `property`
-            // parameter narrows it further. Without this, every internal property leaks into the expansion
-            // as an undeclared `contains.property`, which bloats the response and is not valid per FHIR.
-            .filter(p -> allProperties.contains(p.getEntityProperty()))
-            .filter(p -> CollectionUtils.isEmpty(properties) || properties.contains(p.getEntityProperty()))
-            // Guard against duplicate property rows carried by legacy snapshots.
-            .filter(p -> seenProperties.add(p.getEntityProperty() + "|" + p.getValue()))
-            .map(p -> {
+    // Only surface properties the value set declares (compose.property); a request-level `property`
+    // parameter narrows it further. Without this, every internal property leaks into the expansion as an
+    // undeclared `contains.property`, which bloats the response and is not valid per FHIR.
+    contains.setProperty(toFhirContainsProperties(c.getPropertyValues(),
+        code -> allProperties.contains(code) && (CollectionUtils.isEmpty(properties) || properties.contains(code)), lang));
+    if (allProperties.contains("status") && (CollectionUtils.isEmpty(properties) || properties.contains("status"))) {
+      contains.getProperty().add(new ValueSetExpansionContainsProperty().setCode("status").setValueCode(PublicationStatus.getStatus(c.getStatus())));
+    }
+    addAssociations(c, allProperties, properties, contains, "parent");
+    addAssociations(c, allProperties, properties, contains, "groupedBy");
+    return contains;
+  }
+
+  /**
+   * Builds the FHIR {@code contains.property} list from a concept's property values, keeping only those whose
+   * code passes {@code codeAllowed} (deduped). Shared by the stored ($expand of a stored value set) and inline
+   * (tx-resource) expand paths so both render the FHIR $expand {@code property} output the same way.
+   */
+  public static List<ValueSetExpansionContainsProperty> toFhirContainsProperties(List<EntityPropertyValue> propertyValues,
+                                                                                 java.util.function.Predicate<String> codeAllowed, String lang) {
+    if (CollectionUtils.isEmpty(propertyValues)) {
+      return new ArrayList<>();
+    }
+    Set<String> seen = new HashSet<>();
+    return propertyValues.stream()
+        .filter(p -> codeAllowed.test(p.getEntityProperty()))
+        .filter(p -> seen.add(p.getEntityProperty() + "|" + p.getValue()))
+        .map(p -> {
           ValueSetExpansionContainsProperty property = new ValueSetExpansionContainsProperty();
           property.setCode(p.getEntityProperty());
           switch (p.getEntityPropertyType()) {
@@ -577,8 +602,6 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
               var coding = p.asCodingValue();
               if (coding != null && coding.getCodeSystem() != null && coding.getCode() != null) {
                 Coding valueCoding = new Coding(coding.getCodeSystem(), coding.getCode()).setVersion(coding.getVersion());
-                // Surface the localized display the coding-refresh enrichment resolved onto the value
-                // (stored as a list of {name, language, use}); pick the requested language, same as CodeSystemFhirMapper.
                 if (coding.getDisplay() != null) {
                   String displayStr = coding.getDisplay() instanceof String s ? s : JsonUtil.toJson(coding.getDisplay());
                   valueCoding.setDisplay(codingDisplay(displayStr, lang));
@@ -595,13 +618,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
             }
           }
           return property;
-        }).collect(toList()));
-    if (allProperties.contains("status") && (CollectionUtils.isEmpty(properties) || properties.contains("status"))) {
-      contains.getProperty().add(new ValueSetExpansionContainsProperty().setCode("status").setValueCode(PublicationStatus.getStatus(c.getStatus())));
-    }
-    addAssociations(c, allProperties, properties, contains, "parent");
-    addAssociations(c, allProperties, properties, contains, "groupedBy");
-    return contains;
+        }).collect(toList());
   }
 
   private static void addAssociations(ValueSetVersionConcept c, List<String> allProperties, List<String> properties, ValueSetExpansionContains contains, String key) {

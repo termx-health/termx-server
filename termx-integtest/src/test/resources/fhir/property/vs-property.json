@@ -1,0 +1,10 @@
+{
+  "resourceType": "ValueSet",
+  "id": "prop-vs",
+  "url": "http://example.org/prop-vs",
+  "version": "1.0.0",
+  "name": "PropVs",
+  "title": "Property demo VS",
+  "status": "active",
+  "compose": { "include": [ { "system": "http://example.org/prop-cs" } ] }
+}

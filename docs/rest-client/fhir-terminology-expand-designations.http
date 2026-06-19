@@ -1,14 +1,15 @@
-# TermX FHIR terminology — REST Client suite ($expand designations)
+# TermX FHIR terminology — REST Client suite ($expand designations + properties)
 #
 # Open this file in VS Code with the "REST Client" extension (humao.rest-client) and click
 # "Send Request" above each request. Run them top to bottom: the SETUP block creates the
 # resources the test blocks depend on. Every request lists its expected result so the
 # correctness can be verified at a glance.
 #
-# Demonstrates the FHIR $expand designation controls:
+# Demonstrates the FHIR $expand designation + property controls:
 #   • includeDesignations — surface contains[].designation (language + use + value)
 #   • designation (0..*)  — restrict which designations appear, by language or use token
 #   • displayLanguage     — which designation becomes the contains[].display
+#   • property (0..*)     — request concept properties into contains[].property
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # Configure these for your server, then run the requests in order.
@@ -42,10 +43,12 @@ Content-Type: application/fhir+json
   "status": "active",
   "content": "complete",
   "language": "en",
+  "property": [ { "code": "kind", "type": "string" } ],
   "concept": [
     {
       "code": "c1",
       "display": "Color one",
+      "property": [ { "code": "kind", "valueString": "primary" } ],
       "designation": [
         { "language": "et", "value": "Värv üks" },
         { "language": "ru", "value": "Цвет один" },
@@ -118,5 +121,23 @@ Accept: application/fhir+json
 # expect: contains[0].display = "Värv üks" (the displayLanguage selects the display; the `designation`
 #         filter is independent of it).
 GET {{fhir}}/ValueSet/tx-rest-demo-designations/$expand?displayLanguage=et&includeDesignations=true
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+
+###############################################################################
+# $expand — the `property` parameter (request concept properties in the expansion)
+###############################################################################
+
+### 10. property=kind — request the concept property in the expansion
+# expect: expansion.property declares { code: kind }; contains[0].property = { code: kind,
+#         valueString: "primary" }. (Works even though the value set does not declare the property.)
+GET {{fhir}}/ValueSet/tx-rest-demo-designations/$expand?property=kind
+Authorization: Bearer {{token}}
+Accept: application/fhir+json
+
+### 11. no property parameter — no contains[].property is emitted
+# expect: contains[0] has no `property` (the request must ask for it).
+GET {{fhir}}/ValueSet/tx-rest-demo-designations/$expand
 Authorization: Bearer {{token}}
 Accept: application/fhir+json

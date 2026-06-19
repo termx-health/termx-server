@@ -199,6 +199,11 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     if (applySupplements) {
       conceptSupplementService.mergeSupplementsIntoExpansion(expandedConcepts, supplementParams(displayLanguage, req));
     }
+    // The stored snapshot doesn't carry concept property values; load them on demand when the request asks
+    // for properties (FHIR $expand `property`), so contains[].property can be populated. Skipped otherwise.
+    if (!designationOrPropertyRequested(req, "property").isEmpty()) {
+      decoratePropertyValues(expandedConcepts);
+    }
     List<Provenance> provenances = provenanceService.find("ValueSetVersion|" + version.getId());
 
     // FHIR R5 ValueSet/$expand `filter`: free-text typeahead filter applied to the
@@ -375,6 +380,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // FHIR $expand `designation` filter tokens (same semantics as the stored path) — restrict which
     // designations the inline expansion returns. Empty = return all.
     List<String> designationFilter = ValueSetFhirMapper.designationFilterTokens(req);
+    // FHIR $expand `property` tokens — which concept properties to surface in contains[].property. The
+    // decorateExpansionFlags step below loads the members' property values, so they are available here.
+    List<String> requestedProperties = designationOrPropertyRequested(req, "property");
 
     // The SQL expand can't reach external providers (e.g. SNOMED via Snowstorm), so those members arrive
     // bare. Enrich them with display/designations from the providers, then layer supplements onto the
@@ -466,6 +474,12 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter> expansionParameters =
         ValueSetFhirMapper.expansionParameters(req, expandedConcepts);
     expansion.setParameter(expansionParameters.isEmpty() ? null : expansionParameters);
+    // Declare the requested properties so contains[].property references a declared expansion.property (valid FHIR).
+    if (!requestedProperties.isEmpty()) {
+      expansion.setProperty(requestedProperties.stream()
+          .map(code -> new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionProperty().setCode(code))
+          .toList());
+    }
 
     // Map concepts to expansion contains
     List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> contains = 
@@ -497,6 +511,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
                   return designation;
                 }).toList());
           }
+          if (!requestedProperties.isEmpty()) {
+            List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty> props =
+                ValueSetFhirMapper.toFhirContainsProperties(concept.getPropertyValues(), requestedProperties::contains, displayLanguage);
+            if (!props.isEmpty()) {
+              contain.setProperty(props);
+            }
+          }
           return contain;
         }).toList();
     expansion.setContains(contains);
@@ -511,6 +532,37 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
    * member's code system entity version id (which the SQL expand DOES populate). The inline SQL path returns
    * members without these, so without this they'd all look active and selectable.
    */
+  /** The values of a repeated request parameter (e.g. {@code property}, {@code designation}), code or string. */
+  private static List<String> designationOrPropertyRequested(Parameters req, String name) {
+    return req == null || req.getParameter() == null ? List.of() :
+        req.getParameter().stream().filter(p -> name.equals(p.getName()))
+            .map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString())
+            .filter(StringUtils::isNotEmpty).toList();
+  }
+
+  /** Loads concept property values onto the (already expanded) members, by code system entity version id — the stored snapshot omits them. */
+  private void decoratePropertyValues(List<ValueSetVersionConcept> concepts) {
+    String ids = concepts.stream()
+        .map(c -> c.getConcept() != null ? c.getConcept().getConceptVersionId() : null)
+        .filter(java.util.Objects::nonNull).distinct().map(String::valueOf)
+        .collect(java.util.stream.Collectors.joining(","));
+    if (StringUtils.isEmpty(ids)) {
+      return;
+    }
+    org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams params = new org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams();
+    params.setIds(ids);
+    params.setLimit(-1);
+    java.util.Map<Long, CodeSystemEntityVersion> byId = codeSystemEntityVersionService.query(params).getData().stream()
+        .collect(java.util.stream.Collectors.toMap(CodeSystemEntityVersion::getId, v -> v, (a, b) -> a));
+    concepts.forEach(c -> {
+      Long vid = c.getConcept() != null ? c.getConcept().getConceptVersionId() : null;
+      CodeSystemEntityVersion v = vid != null ? byId.get(vid) : null;
+      if (v != null && (c.getPropertyValues() == null || c.getPropertyValues().isEmpty())) {
+        c.setPropertyValues(v.getPropertyValues());
+      }
+    });
+  }
+
   private void decorateExpansionFlags(List<ValueSetVersionConcept> concepts) {
     String ids = concepts.stream()
         .map(c -> c.getConcept() != null ? c.getConcept().getConceptVersionId() : null)
