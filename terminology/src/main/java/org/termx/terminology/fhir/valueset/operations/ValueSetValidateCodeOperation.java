@@ -192,6 +192,36 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     return fallback == null ? null : fallback.getVersion();
   }
 
+  /**
+   * Returns a copy of the inline value set with each {@code compose.include.version} for {@code system} that the
+   * SQL expand can't resolve literally — a wildcard ({@code 1.x.x}) or a version not among the available code
+   * system versions ({@code 1}) — rewritten to the resolved concrete version (when it satisfies the original
+   * pattern) or dropped, so value set membership is found by code. Concrete, existing versions are left intact
+   * (so a mixed/multi-version value set keeps its per-include pinning). The original value set is untouched.
+   */
+  private static com.kodality.zmei.fhir.resource.terminology.ValueSet normalizeIncludeVersions(
+      com.kodality.zmei.fhir.resource.terminology.ValueSet vs, String system, String concreteVersion, List<String> available) {
+    if (vs.getCompose() == null || vs.getCompose().getInclude() == null) {
+      return vs;
+    }
+    boolean needsRewrite = vs.getCompose().getInclude().stream().anyMatch(inc ->
+        (system == null || system.equals(inc.getSystem())) && inc.getVersion() != null
+            && !available.contains(inc.getVersion()));
+    if (!needsRewrite) {
+      return vs;
+    }
+    com.kodality.zmei.fhir.resource.terminology.ValueSet copy = FhirMapper.fromJson(
+        FhirMapper.toJson(vs), com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
+    for (var inc : copy.getCompose().getInclude()) {
+      String v = inc.getVersion();
+      if ((system == null || system.equals(inc.getSystem())) && v != null && !available.contains(v)) {
+        inc.setVersion(concreteVersion != null && org.termx.terminology.fhir.FhirVersions.versionMatches(v, concreteVersion)
+            ? concreteVersion : null);
+      }
+    }
+    return copy;
+  }
+
   /** The {@code <version>} of a {@code system-version}/{@code force-system-version}/{@code check-system-version} param naming {@code system} (its value is {@code system|version}). */
   private static String overrideVersion(Parameters req, String name, String system) {
     if (req.getParameter() == null || system == null) {
@@ -385,8 +415,20 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       throw new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required");
     }
 
+    // The inline SQL expand can't reach external providers, so the resolved code system version isn't on the
+    // expansion members — derive it from the tx-resource CodeSystem(s) the validator passed for `system`.
+    List<String> availableCsVersions = txResourceCodeSystemVersions(req, system);
+    String includeVersion = includeVersionFor(inlineVs, system, code);
+    // Version negotiation up front (mirrors org.hl7.fhir.core ValueSetValidator.determineVersion): the resolved
+    // concrete code system version drives BOTH which version the value set is expanded at — so a wildcard
+    // (1.x.x), overridden, or coding-refined include version still finds the code, since value set membership
+    // is by code, not by the literal version string — and the VALUESET_VALUE_MISMATCH /
+    // UNKNOWN_CODESYSTEM_VERSION / version-check issues below.
+    VersionResolution vr = resolveVersion(req, system, includeVersion, reqCsVersion, availableCsVersions);
+
     Parameters expandReq = new Parameters();
-    expandReq.addParameter(new ParametersParameter("valueSet").setResource(inlineVs));
+    expandReq.addParameter(new ParametersParameter("valueSet").setResource(
+        normalizeIncludeVersions(inlineVs, system, vr.echoVersion(), availableCsVersions)));
     expandReq.addParameter(new ParametersParameter("includeDesignations").setValueBoolean(true));
     if (displayLanguage != null) {
       expandReq.addParameter(new ParametersParameter("displayLanguage").setValueCode(displayLanguage));
@@ -398,10 +440,6 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
         .filter(c -> finalCode.equals(c.getCode()) && (finalSystem == null || finalSystem.equals(c.getSystem())))
         .findFirst().orElse(null);
-
-    // The inline SQL expand can't reach external providers, so the resolved code system version isn't on the
-    // expansion members — derive it from the tx-resource CodeSystem(s) the validator passed for `system`.
-    List<String> availableCsVersions = txResourceCodeSystemVersions(req, system);
 
     String vsCanonical = inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "");
     Parameters resp = new Parameters();
@@ -434,13 +472,6 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
               org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, codeLoc))));
       return resp;
     }
-    // Version negotiation — mirrors org.hl7.fhir.core ValueSetValidator.determineVersion (the engine behind the
-    // tx-ecosystem): resolve the code system version from the include version, the
-    // system-version/force-system-version/check-system-version override params and the coding's own version,
-    // then flag VALUESET_VALUE_MISMATCH(_CHANGED/_DEFAULT) / UNKNOWN_CODESYSTEM_VERSION / version-check errors.
-    String includeVersion = includeVersionFor(inlineVs, system, code);
-    VersionResolution vr = resolveVersion(req, system, includeVersion, reqCsVersion, availableCsVersions);
-
     String finalDisplay = display;
     boolean displayValid = finalDisplay == null || finalDisplay.equals(match.getDisplay())
         || Optional.ofNullable(match.getDesignation()).orElse(List.of()).stream().anyMatch(d -> finalDisplay.equals(d.getValue()));
