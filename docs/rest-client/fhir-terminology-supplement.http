@@ -17,7 +17,7 @@
 #           e.g. https://demo.termx.org/fhir   (some deployments expose it under /api/fhir)
 # @token  — a Bearer token with write access (needed to create the CodeSystems/ValueSets).
 #           Local dev shortcut (auth.dev.allowed=true): use   yupi{"privileges":["*.*.*"]}
-@fhir  = https://demo.termx.org/fhir
+@fhir  = https://dev.termx.org/api/fhir
 @token = yupi{"privileges":["*.*.*"]}
 
 @base   = http://example.org/fhir/CodeSystem/tx-rest-demo-color
