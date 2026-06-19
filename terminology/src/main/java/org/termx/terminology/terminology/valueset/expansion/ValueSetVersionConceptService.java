@@ -164,7 +164,7 @@ public class ValueSetVersionConceptService {
       }
       v.getDesignations().stream()
           .filter(d -> "display".equals(d.getDesignationType()) && !PublicationStatus.retired.equals(d.getStatus()))
-          .filter(d -> d.getLanguage() != null && (d.getLanguage().equals(language) || d.getLanguage().startsWith(language)))
+          .filter(d -> d.getLanguage() != null && language != null && (d.getLanguage().equals(language) || d.getLanguage().startsWith(language)))
           .min(Comparator.comparing(Designation::isPreferred).reversed())
           .ifPresent(d -> result.putIfAbsent(v.getId(), d));
     }

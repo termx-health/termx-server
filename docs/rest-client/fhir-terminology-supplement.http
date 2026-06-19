@@ -102,6 +102,7 @@ Content-Type: application/fhir+json
 
 ### 4. STATIC ValueSet — includes the BASE and references the Estonian supplement
 #    via the standard `valueset-supplement` extension (include.system = base CS).
+#    The resource `language` = et makes $expand default its display to Estonian (see #7).
 # expect: 200/201.
 POST {{fhir}}/ValueSet
 Authorization: Bearer {{token}}
@@ -112,6 +113,7 @@ Content-Type: application/fhir+json
   "id": "tx-rest-demo-color-vs-et",
   "url": "{{vsEt}}",
   "version": "1.0.0",
+  "language": "et",
   "name": "TxRestDemoColorVsEt",
   "title": "TermX REST demo — colors VS (Estonian)",
   "status": "active",
@@ -135,6 +137,7 @@ Content-Type: application/fhir+json
   "id": "tx-rest-demo-color-vs-ru",
   "url": "{{vsRu}}",
   "version": "1.0.0",
+  "language": "ru",
   "name": "TxRestDemoColorVsRu",
   "title": "TermX REST demo — colors VS (Russian)",
   "status": "active",
@@ -158,8 +161,11 @@ GET {{fhir}}/ValueSet/tx-rest-demo-color-vs-et
 Authorization: Bearer {{token}}
 Accept: application/fhir+json
 
-### 7. $expand (by id), default language
-# expect: expansion.contains = red/green/blue with ENGLISH displays (Red/Green/Blue).
+### 7. $expand (by id), NO displayLanguage — defaults to the value set's resource language
+#    The value set declares language=et (#4), so with no displayLanguage the display defaults
+#    to Estonian (its supplement displays) instead of always English. A value set WITHOUT a
+#    resource language defaults to English. An explicit displayLanguage always wins (#8/#9).
+# expect: red/green/blue with ESTONIAN displays — punane / roheline / sinine.
 GET {{fhir}}/ValueSet/tx-rest-demo-color-vs-et/$expand
 Authorization: Bearer {{token}}
 Accept: application/fhir+json

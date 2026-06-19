@@ -87,6 +87,36 @@ class ValueSetSupplementExpandIT extends TermxIntegTest {
     contains.designation.findAll { it.language == "lt" && it.value == "Gliukozė" }.size() == 1
   }
 
+  def "\$expand with NO displayLanguage defaults the display to the value set's resource language"() {
+    given: "suppl-vs-lt declares the supplement binding AND language=lt; request omits displayLanguage"
+    vsImportService.importValueSet(fixture("fhir/supplement/vs-supplement-lt.json"), "suppl-vs-lt")
+    def req = new Parameters().setParameter([
+        new ParametersParameter().setName("url").setValueUri("http://example.org/ValueSet/suppl-vs-lt"),
+        new ParametersParameter().setName("includeDesignations").setValueBoolean(true)])
+
+    when:
+    def contains = vsExpand.run(req).expansion.contains.find { it.code == "code1" }
+
+    then: "the display defaults to the resource language (lt) — the supplement's Lithuanian value — not English"
+    contains != null
+    contains.display == "Gliukozė"
+  }
+
+  def "\$expand with NO displayLanguage and a value set with no resource language defaults the display to English"() {
+    given: "suppl-vs-nolang declares the same supplement binding but no language"
+    vsImportService.importValueSet(fixture("fhir/supplement/vs-supplement-nolang.json"), "suppl-vs-nolang")
+    def req = new Parameters().setParameter([
+        new ParametersParameter().setName("url").setValueUri("http://example.org/ValueSet/suppl-vs-nolang"),
+        new ParametersParameter().setName("includeDesignations").setValueBoolean(true)])
+
+    when:
+    def contains = vsExpand.run(req).expansion.contains.find { it.code == "code1" }
+
+    then: "with no resource language the display falls back to English (the base)"
+    contains != null
+    contains.display == "Glucose"
+  }
+
   def "\$validate-code on a supplement-bound value set validates a code under the BASE system"() {
     given: "a validate-code request naming the BASE code system (the value set rule is bound to the supplement)"
     def req = new Parameters().setParameter([
