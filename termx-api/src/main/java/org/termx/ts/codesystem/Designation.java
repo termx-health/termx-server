@@ -25,4 +25,7 @@ public class Designation {
   private String designationType;
 
   private boolean supplement;
+  // Transient (not persisted): for a supplement-contributed designation, the supplement's canonical
+  // `<url>|<version>` — emitted as the `$lookup` designation `source` part. Set at merge time.
+  private String supplementSource;
 }
