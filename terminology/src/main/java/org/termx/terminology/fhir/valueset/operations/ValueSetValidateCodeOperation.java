@@ -622,8 +622,15 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     // (e.g. a different language) is valid with an information-level invalid-display; one that matches nothing
     // is an error (result=false) unless lenient-display-validation is set, when it is a warning (result=true).
     boolean matchesPrimary = finalDisplay == null || finalDisplay.equals(match.getDisplay());
+    // A provided display only counts as a valid designation when it is in the REQUESTED language: validating a
+    // German display under displayLanguage=en must be an error, not an information-level match against the kept
+    // German designation. With no displayLanguage requested, any-language designations count.
+    String dl = displayLanguage;
     boolean matchesAny = matchesPrimary
-        || Optional.ofNullable(match.getDesignation()).orElse(List.of()).stream().anyMatch(d -> finalDisplay.equals(d.getValue()));
+        || Optional.ofNullable(match.getDesignation()).orElse(List.of()).stream()
+            .filter(d -> StringUtils.isEmpty(dl) || (d.getLanguage() != null
+                && (d.getLanguage().equals(dl) || d.getLanguage().startsWith(dl + "-") || dl.startsWith(d.getLanguage() + "-"))))
+            .anyMatch(d -> finalDisplay.equals(d.getValue()));
     boolean lenientDisplay = req.findParameter("lenient-display-validation")
         .map(p -> Boolean.TRUE.equals(p.getValueBoolean()) || "true".equals(p.getValueString())).orElse(false);
     String displaySeverity = matchesPrimary ? null : matchesAny ? "information" : lenientDisplay ? "warning" : "error";
