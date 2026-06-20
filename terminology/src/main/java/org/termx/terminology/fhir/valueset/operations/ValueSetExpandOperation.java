@@ -785,14 +785,15 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // Derived used-supplement params (resolved url|version) for supplements applied to this inline expansion.
     usedSupplements.forEach(s -> expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
         .setName("used-supplement").setValueUri(s.asCanonical())));
-    // A VS-declared display language — its expansion-parameter extension, else the VS resource `language` — is
-    // applied (see applyDisplayLanguage) and echoed as an expansion.parameter, unless the request already carried
-    // a displayLanguage (already echoed).
+    // The display language the server resolved from the value set's own declaration (expansion-parameter
+    // extension, else VS resource `language`) or — failing that — the request's Accept-Language header is echoed
+    // as a displayLanguage expansion.parameter, unless the request already carried a displayLanguage param.
     String vsExpDisplayLanguage = vsDeclaredDisplayLanguage(inlineVs);
-    if (StringUtils.isNotEmpty(vsExpDisplayLanguage)
+    String echoDisplayLanguage = StringUtils.isNotEmpty(vsExpDisplayLanguage) ? vsExpDisplayLanguage : acceptLanguageHeader();
+    if (StringUtils.isNotEmpty(echoDisplayLanguage)
         && expansionParameters.stream().noneMatch(pp -> "displayLanguage".equals(pp.getName()))) {
       expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
-          .setName("displayLanguage").setValueCode(vsExpDisplayLanguage));
+          .setName("displayLanguage").setValueCode(echoDisplayLanguage));
     }
     // A used-codesystem must reflect the source: when the tx-resource CodeSystem declares no version, the
     // import-defaulted version (e.g. 1.0.0) must be dropped so used-codesystem is the bare system uri.
@@ -847,7 +848,8 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // the member's alternate designations, so contains[].display is the resource/requested-language one and
     // the other-language designations are kept (below).
     String vsDisplayLanguage = vsDeclaredDisplayLanguage(inlineVs);
-    applyDisplayLanguage(expandedConcepts, displayLanguage, vsDisplayLanguage, resourceLanguages(req), primaryDisplays(req));
+    String acceptLanguage = acceptLanguageHeader();
+    applyDisplayLanguage(expandedConcepts, displayLanguage, vsDisplayLanguage, acceptLanguage, resourceLanguages(req), primaryDisplays(req));
 
     // FHIR adds `version` to a contains member only when the expansion spans more than one code system
     // version (a mixed/multi-version value set), to disambiguate; a single-version expansion omits it.
@@ -1071,6 +1073,18 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
   }
 
+  /** The primary language tag of the request's {@code Accept-Language} header (e.g. {@code en} from
+   *  {@code en-US,en;q=0.9}), or null. The LOWEST-priority display-language source — below an explicit
+   *  {@code displayLanguage} param and the value set's own declared language. */
+  private static String acceptLanguageHeader() {
+    return io.micronaut.http.context.ServerRequestContext.currentRequest()
+        .map(r -> r.getHeaders().get("Accept-Language"))
+        .filter(StringUtils::isNotEmpty)
+        .map(h -> h.split(",")[0].split(";")[0].trim())
+        .filter(StringUtils::isNotEmpty)
+        .orElse(null);
+  }
+
   /** The display language a value set itself declares — its {@code compose.extension[valueset-expansion-parameter]}
    *  {@code displayLanguage}, else the VS resource {@code language}. Applied AND echoed as an expansion.parameter.
    *  (Ranks below an explicit request {@code displayLanguage}; an Accept-Language header would rank below this.) */
@@ -1140,7 +1154,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
    * (by value) so it is not also echoed as a designation.
    */
   private static void applyDisplayLanguage(List<ValueSetVersionConcept> concepts, String requestedLanguage,
-                                           String vsDisplayLanguage, java.util.Map<String, String> resourceLanguages,
+                                           String vsDisplayLanguage, String acceptLanguage, java.util.Map<String, String> resourceLanguages,
                                            java.util.Map<String, String> primaryDisplays) {
     for (ValueSetVersionConcept c : concepts) {
       // Only re-pick WHICH designation is the display; never invent a display for a member that has none
@@ -1150,9 +1164,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       }
       String system = c.getConcept() != null ? c.getConcept().getCodeSystemUri() : null;
       String code = c.getConcept() != null ? c.getConcept().getCode() : null;
+      String resourceLanguage = system != null ? resourceLanguages.get(system) : null;
+      // Precedence: explicit displayLanguage param > VS-declared language > CodeSystem resource language >
+      // Accept-Language header (the header ranks BELOW the resource/VS language, per decision 2026-06-20).
       String effective = StringUtils.isNotEmpty(requestedLanguage) ? requestedLanguage
           : StringUtils.isNotEmpty(vsDisplayLanguage) ? vsDisplayLanguage
-          : system != null ? resourceLanguages.get(system) : null;
+          : StringUtils.isNotEmpty(resourceLanguage) ? resourceLanguage
+          : acceptLanguage;
       // De-dupe display + additional designations by (language, value) — the SQL expand can carry the display
       // value as an additional designation too, which would otherwise resurface as a duplicate designation.
       java.util.LinkedHashMap<String, Designation> all = new java.util.LinkedHashMap<>();
