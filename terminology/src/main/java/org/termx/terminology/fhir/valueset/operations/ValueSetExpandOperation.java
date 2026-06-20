@@ -392,6 +392,57 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .toList();
   }
 
+  private static final String STANDARDS_STATUS_URL = "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status";
+
+  /** The tx-resource CodeSystem whose canonical url matches {@code system}. */
+  private static com.kodality.zmei.fhir.resource.terminology.CodeSystem txCodeSystem(Parameters req, String system) {
+    if (req == null || req.getParameter() == null || system == null) {
+      return null;
+    }
+    return req.getParameter().stream().filter(p -> "tx-resource".equals(p.getName()))
+        .map(ParametersParameter::getResource).filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+        .map(r -> (com.kodality.zmei.fhir.resource.terminology.CodeSystem) r)
+        .filter(cs -> system.equals(cs.getUrl())).findFirst().orElse(null);
+  }
+
+  private static String statusWarning(com.kodality.zmei.fhir.resource.terminology.CodeSystem cs) {
+    return cs == null ? null : statusWarning(cs.getExperimental(), cs.getStatus(), standardsStatus(cs.getExtensions(STANDARDS_STATUS_URL)));
+  }
+
+  private static String statusWarning(com.kodality.zmei.fhir.resource.terminology.ValueSet vs) {
+    // A value set contributes only its standards-status (deprecated/withdrawn) — NOT draft/experimental, which
+    // are routine for value sets and not warned (only code systems warn on those).
+    if (vs == null) {
+      return null;
+    }
+    String ss = standardsStatus(vs.getExtensions(STANDARDS_STATUS_URL));
+    return "withdrawn".equals(ss) ? "warning-withdrawn" : "deprecated".equals(ss) ? "warning-deprecated" : null;
+  }
+
+  private static String standardsStatus(java.util.stream.Stream<com.kodality.zmei.fhir.Extension> exts) {
+    return exts == null ? null : exts.map(com.kodality.zmei.fhir.Extension::getValueCode).filter(java.util.Objects::nonNull).findFirst().orElse(null);
+  }
+
+  /** The expansion `warning-<status>` parameter name for a non-active resource (withdrawn/deprecated standards-status, experimental, draft, retired), or null. */
+  private static String statusWarning(Boolean experimental, String status, String standardsStatus) {
+    if ("withdrawn".equals(standardsStatus)) {
+      return "warning-withdrawn";
+    }
+    if ("deprecated".equals(standardsStatus)) {
+      return "warning-deprecated";
+    }
+    if (Boolean.TRUE.equals(experimental)) {
+      return "warning-experimental";
+    }
+    if ("draft".equals(status)) {
+      return "warning-draft";
+    }
+    if ("retired".equals(status)) {
+      return "warning-retired";
+    }
+    return null;
+  }
+
   /** {@code system|code} of concepts the tx-resource CodeSystems mark inactive (property {@code inactive=true} or {@code status} of retired/deprecated/inactive). */
   private static java.util.Set<String> txInactiveCodes(Parameters req) {
     java.util.Set<String> codes = new java.util.HashSet<>();
@@ -681,6 +732,23 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           }
         }
       }
+    }
+    // Status warnings: each used code system / the value set that is experimental, draft, deprecated or
+    // withdrawn contributes a warning-<status> expansion parameter (the reference engine flags non-active
+    // sources). The status comes from the tx-resource `experimental`/`status`/standards-status extension.
+    for (var pp : new java.util.ArrayList<>(expansionParameters)) {
+      if ("used-codesystem".equals(pp.getName()) && pp.getValueUri() != null) {
+        String sys = pp.getValueUri().indexOf('|') > 0 ? pp.getValueUri().substring(0, pp.getValueUri().indexOf('|')) : pp.getValueUri();
+        String w = statusWarning(txCodeSystem(req, sys));
+        if (w != null) {
+          expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter().setName(w).setValueUri(pp.getValueUri()));
+        }
+      }
+    }
+    String vsWarning = statusWarning(inlineVs);
+    if (vsWarning != null) {
+      expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter().setName(vsWarning)
+          .setValueUri(inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "")));
     }
     expansion.setParameter(expansionParameters.isEmpty() ? null : expansionParameters);
     // Declare the requested properties so contains[].property references a declared expansion.property (valid FHIR).
