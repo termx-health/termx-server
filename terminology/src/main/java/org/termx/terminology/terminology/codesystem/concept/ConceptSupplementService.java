@@ -208,7 +208,14 @@ public class ConceptSupplementService {
     Map<String, List<ResolvedSupplement>> result = new LinkedHashMap<>();
     parseRequestedSupplements(params.getUseSupplement()).forEach(requested -> {
       CodeSystem supplement = codeSystemRepository.query(new CodeSystemQueryParams().setUri(requested.uri()).limit(1)).findFirst().orElse(null);
-      if (supplement == null || StringUtils.isBlank(supplement.getBaseCodeSystem()) || !baseCodeSystems.contains(supplement.getBaseCodeSystem())) {
+      // A `useSupplement` that names a supplement the server does not host is a hard error (tx-ecosystem
+      // VALUESET_SUPPLEMENT_MISSING) — a not-found OperationOutcome, NOT a silent no-op. A supplement that
+      // exists but targets a different base code system than any being expanded is simply not applicable
+      // here, so it is skipped (not every requested supplement applies to every system in the request).
+      if (supplement == null) {
+        throw org.termx.terminology.fhir.TxIssues.notFoundException(404, "Required supplement not found: " + requested.uri());
+      }
+      if (StringUtils.isBlank(supplement.getBaseCodeSystem()) || !baseCodeSystems.contains(supplement.getBaseCodeSystem())) {
         return;
       }
       resolveSupplementVersion(supplement.getId(), requested.version())
