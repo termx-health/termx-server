@@ -443,8 +443,10 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
   // `force-system-version` IS echoed (it materially changed the expansion); `system-version`/`check-system-version`
   // are advisory and the tx-ecosystem does not echo them. `property` selects which concept properties to surface
   // on contains[] (declared via expansion.property) — it is not echoed as an expansion.parameter either.
+  // `useSupplement` is a request input, not an echoed "how" parameter — the server reports the supplements it
+  // actually applied as derived `used-supplement` parameters (resolved url|version), appended by the operation.
   private static final Set<String> EXPANSION_SELECTION_PARAMETERS = Set.of("url", "valueSet", "valueSetVersion", "context", "contextDirection",
-      "system-version", "check-system-version", "property");
+      "system-version", "check-system-version", "property", "useSupplement");
 
   private static List<ValueSetExpansionParameter> toValueSetParameter(Parameters param) {
     if (param == null || param.getParameter() == null) {
