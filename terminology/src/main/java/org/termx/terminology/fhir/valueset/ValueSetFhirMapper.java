@@ -540,6 +540,7 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
     contains.setVersion(c.getConcept().getBaseCodeSystemUri() == null && c.getConcept().getCodeSystemVersions() != null ?
         c.getConcept().getCodeSystemVersions().stream().findFirst().orElse(null) : null);
     contains.setInactive(!c.isActive() ? true : null);
+    contains.setAbstractField(c.isNotSelectable() ? true : null);
     contains.setDisplay(c.getDisplay() == null || (lang != null && !c.getDisplay().getLanguage().startsWith(lang)) ? null : c.getDisplay().getName());
     // A supplement can contribute the same designation already present on the base concept, so dedup by
     // (language, value, type) — otherwise the same localized designation is emitted twice in the expansion.

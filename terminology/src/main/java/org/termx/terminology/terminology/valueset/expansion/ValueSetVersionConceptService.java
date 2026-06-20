@@ -53,6 +53,7 @@ public class ValueSetVersionConceptService {
 
   private static final String DEPRECATION_DATE = "deprecationDate";
   private static final String INACTIVE = "inactive";
+  private static final String NOT_SELECTABLE = "notSelectable";
   private static final String STATUS = "status";
   private static final String RETIREMENT_DATE = "retirementDate";
   private static final String SNOMED_URI = "http://snomed.info/sct";
@@ -181,6 +182,7 @@ public class ValueSetVersionConceptService {
         .setOrderNumber(c.getOrderNumber())
         .setEnumerated(c.isEnumerated())
         .setActive(c.isActive())
+        .setNotSelectable(c.isNotSelectable())
         .setStatus(c.getStatus())
         .setAssociations(c.getAssociations())
         .setPropertyValues(c.getPropertyValues());
@@ -299,6 +301,7 @@ public class ValueSetVersionConceptService {
                 .filter(d -> !d.isSupplement() || designations.stream().noneMatch(d1 -> d1.getDesignationType().equals(d.getDesignationType()) && d1 != d)).toList());
           }
           c.setActive(calculatedActive(versions));
+          c.setNotSelectable(calculatedNotSelectable(versions));
           c.setStatus(versions.stream().findFirst().map(CodeSystemEntityVersion::getStatus).orElse(PublicationStatus.active));
           c.setAssociations(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getAssociations()))
               .flatMap(v -> v.getAssociations().stream()).toList());
@@ -381,6 +384,15 @@ public class ValueSetVersionConceptService {
     boolean deprecated = dateIsAfter(versions, DEPRECATION_DATE);
     boolean noActiveVersion = CollectionUtils.isNotEmpty(versions) && versions.stream().noneMatch(v -> PublicationStatus.active.equals(v.getStatus()));
     return !noActiveVersion && !status && !inactive && !retired && !deprecated;
+  }
+
+  /** A concept is abstract (FHIR expansion.contains.abstract) when its {@code notSelectable} boolean
+   *  property is true on any of its entity versions — it groups codes but is not itself a valid member. */
+  private boolean calculatedNotSelectable(List<CodeSystemEntityVersion> versions) {
+    return versions.stream().anyMatch(v -> v.getPropertyValues() != null &&
+        v.getPropertyValues().stream().anyMatch(pv -> pv.getEntityProperty().equals(NOT_SELECTABLE)
+            && EntityPropertyType.bool.equals(pv.getEntityPropertyType())
+            && pv.getValue() != null && Boolean.parseBoolean(String.valueOf(pv.getValue()))));
   }
 
   private boolean dateIsAfter(List<CodeSystemEntityVersion> versions, String prop) {
