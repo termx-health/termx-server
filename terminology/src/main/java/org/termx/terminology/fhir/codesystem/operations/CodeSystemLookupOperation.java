@@ -164,11 +164,28 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
     designations.stream()
         .filter(d -> d != display && d != definition)
         .filter(d -> languageMatches(d.getLanguage(), displayLanguage))
-        .forEach(d -> resp.addParameter(new ParametersParameter("designation")
-            .addPart(new ParametersParameter("use").setValueCoding(
-                org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(d.getDesignationType())))
-            .addPart(new ParametersParameter("value").setValueString(d.getName()))
-            .addPart(new ParametersParameter("language").setValueString(d.getLanguage()))));
+        .forEach(d -> {
+          ParametersParameter designation = new ParametersParameter("designation")
+              .addPart(new ParametersParameter("language").setValueString(d.getLanguage()));
+          // A supplement-contributed designation carries a `source` part (the supplement's canonical
+          // url|version) instead of a `use` coding — it identifies which supplement defined it.
+          if (StringUtils.isNotBlank(d.getSupplementSource())) {
+            designation.addPart(new ParametersParameter("source").setValueCanonical(d.getSupplementSource()));
+          } else {
+            designation.addPart(new ParametersParameter("use").setValueCoding(
+                org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(d.getDesignationType())));
+          }
+          designation.addPart(new ParametersParameter("value").setValueString(d.getName()));
+          resp.addParameter(designation);
+        });
+
+    // Report the supplements that actually contributed designations as `used-supplement` parameters
+    // (resolved canonical url|version), matching the tx-ecosystem $lookup-with-useSupplement shape.
+    designations.stream()
+        .map(Designation::getSupplementSource)
+        .filter(StringUtils::isNotBlank)
+        .distinct()
+        .forEach(src -> resp.addParameter(new ParametersParameter().setName("used-supplement").setValueCanonical(src)));
 
     Map<String, String> propertyDescriptions = cs == null || cs.getProperties() == null ? Map.of() :
         cs.getProperties().stream().filter(p -> p.getName() != null && p.getDescription() != null && !p.getDescription().isEmpty())

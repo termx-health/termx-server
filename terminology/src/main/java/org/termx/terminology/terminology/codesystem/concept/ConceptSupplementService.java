@@ -163,9 +163,10 @@ public class ConceptSupplementService {
     supplements.forEach(supplement -> loadSupplementConcepts(supplement.id(), baseCodeSystem, codes, supplement.version(), params).forEach(concept -> {
       // Include ALL supplement designations regardless of displayLanguage (it only selects the display) —
       // see mergeSupplementsIntoExpansion.
+      String source = new UsedSupplement(supplement.url(), supplement.version()).asCanonical();
       List<Designation> designations = concept.getVersions() == null ? List.of() : concept.getVersions().stream()
           .flatMap(v -> Optional.ofNullable(v.getDesignations()).orElse(List.of()).stream())
-          .map(d -> d.setSupplement(true))
+          .map(d -> d.setSupplement(true).setSupplementSource(source))
           .toList();
       if (CollectionUtils.isNotEmpty(designations)) {
         supplementDesignations.computeIfAbsent(concept.getCode(), key -> new ArrayList<>()).addAll(designations);

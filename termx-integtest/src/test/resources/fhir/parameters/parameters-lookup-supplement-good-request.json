@@ -1,0 +1,13 @@
+{
+  "resourceType" : "Parameters",
+  "parameter" : [{
+    "name" : "system",
+    "valueUri" : "http://hl7.org/fhir/test/CodeSystem/extensions"
+  },{
+    "name" : "code",
+    "valueCode" : "code1"
+  },{
+    "name" : "useSupplement",
+    "valueCanonical" : "http://hl7.org/fhir/test/CodeSystem/supplement"
+  }]
+}
