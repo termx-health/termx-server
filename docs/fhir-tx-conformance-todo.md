@@ -118,15 +118,22 @@ Current per-suite gaps (pass/total): `version 144/206`, `permutations 23/56`, `v
 
 ---
 
-## P6 — CodeSystem **supplements** (`tx-resource`)
+## P6 — CodeSystem **supplements** (`useSupplement`)
 
-**Symptom:** `$expand`/`$lookup`/`$validate-code` `supplement-{good,bad,none}` — wrong params/contains; `supplement-bad` should `4xx`.
+NB the fixtures changed: the supplement is a **stored** CodeSystem (`content:"supplement"`, `supplements:<base>`), referenced by the **`useSupplement`** request param (canonical url). It is NOT sent inline as `tx-resource`, so it needs `loadSetup`. termx already has `ConceptSupplementService` (designation layering via `mergeSupplementsIntoExpansion` / `mergeRuntimeSupplements`) + `extractUseSupplement` in the operations.
+
 **Affected:** `parameters` (~9), `extensions` (~6). ~15 tests.
-**Root cause:** when a request carries a CodeSystem **supplement** (`content:"supplement"`, `supplements:<base>`) as `tx-resource`, its designations/properties must be layered onto the base concepts in the response; an unresolvable supplement reference (`supplement-bad`) must `4xx`. The inline path doesn't apply a request-scoped supplement.
-**Where:** `ValueSetExpandOperation.expandInline` (there is a `conceptSupplementService.mergeSupplementsIntoExpansion` already, but it merges **stored** supplements, not a `tx-resource` one), `CodeSystemLookupOperation`, `ValueSetValidateCodeOperation`.
-**HAPI:** `ValueSetExpander`/`CodeSystemProvider` apply any supplement whose `supplements` points at the system, adding its designations/properties; a `supplement` param naming a missing supplement → error.
-**Proposal:** detect `tx-resource` CodeSystems with `content=supplement` whose `supplements` matches an expanded system, and merge their `concept.designation`/`concept.property` onto the matching members in `expandInline`/`$lookup`. For `supplement-bad`, when a `supplement` request param names a supplement not supplied/stored → `4xx not-found`.
-**❓Question:** scope — apply request-`tx-resource` supplements only in the **inline** path (conformance + ad-hoc), or also persist/honour them in the stored path? And should a supplement supplied as `tx-resource` be merged automatically (HAPI does), or only when a `supplement`/`includeSupplements`-style param requests it?
+
+### P6a — `supplement-bad` → not-found error — **DONE (2026-06-20, PR #288)**
+A `useSupplement` naming a supplement the server does not host was silently ignored (200, as if no supplement). Now `ConceptSupplementService.resolveSupplements` throws a 404 `OperationOutcome` (`TxIssues.notFoundException`, `not-found` tx-issue-type, text `"Required supplement not found: <url>"` — tx-ecosystem `VALUESET_SUPPLEMENT_MISSING`) when the url resolves to no CodeSystem. Shared path → covers expand/lookup/validate-code/coding/codeableconcept bad variants. `SupplementMissingIT` green. (A supplement that exists but targets a different base = no-op, not error.)
+
+### P6b — `supplement-good`/`none` — REMAINING (empirically scoped 2026-06-20, `SupplementMissingIT` setup + diagnostic)
+Three independent gaps, in increasing cost:
+1. **`used-supplement` echo (small).** Today the expand echoes the raw request param `useSupplement=<url>`; expected is **no** `useSupplement` echo + a derived `used-supplement=<url>|<resolvedVersion>` expansion param (e.g. `…/supplement|0.1.1`). Fix: add `useSupplement` to `EXPANSION_SELECTION_PARAMETERS` (suppress echo) and have `mergeSupplementsIntoExpansion` return the resolved `(url, version)` so the operation/mapper emits `used-supplement`. `$lookup` good wants the same `used-supplement` param. **Self-contained; do next.**
+2. **Supplement designation `source` part + display (medium).** `$lookup`/`$validate` good expect the supplement-contributed designation (`nl "ectenoot"`) rendered with a `source` part = `<supplement>|<version>`, alongside base designations. termx layers the designation value already (marks `supplement=true`) but doesn't emit the `source` canonical part in the `$lookup` `parameter[].part` shape. Lives in `CodeSystemLookupOperation` designation assembly.
+3. **Supplement property layering + extensions→property machinery (large, partly OUT of P6).** `parameters-expand-supplement-good` expects `code5.property` = `label`,`order`,`prop1`,`status`. Only `prop1` is the supplement's (`prop1=value1`); **`label`/`order`/`weight` come from FHIR concept *extensions* on the base `extensions` CS** (`codesystem-label`, `codesystem-conceptOrder`, `itemWeight`) — a separate "map standard FHIR extensions to expansion properties" feature that the whole `extensions` suite needs, not supplement-specific. termx currently surfaces **no** properties on `extensions`-CS members (`code5.props=[]`), so the expand-good case is **blocked behind that extensions feature** regardless of supplement work. The supplement-specific slice is: also collect the supplement concepts' `propertyValues` in `mergeSupplementsIntoExpansion` (currently designations only) and merge onto members.
+
+**Order to ship:** P6b.1 (used-supplement echo) → P6b.2 (lookup designation source) → these likely flip the `lookup`/`validate` good cases. The `expand`-good cases need the extensions→property feature first (track separately).
 
 ---
 
