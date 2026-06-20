@@ -623,6 +623,95 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     return copy;
   }
 
+  /**
+   * P8 — resolve {@code compose.include[].valueSet} (imported value sets). The SQL expand only handles
+   * {@code system}/{@code concept}/{@code filter}; an imported value set is expanded here (recursively, from the
+   * bundled tx-resources) and its members rewritten into the include as {@code system}+{@code concept} entries,
+   * so the rest of the pipeline (SQL expand, flags, display) handles them. A referenced value set that cannot be
+   * resolved — e.g. a wrong pinned {@code url|version} — is a 4xx not-found. {@code visited} guards import cycles.
+   */
+  private com.kodality.zmei.fhir.resource.terminology.ValueSet resolveImportedValueSets(
+      com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs, Parameters req, java.util.Set<String> visited,
+      List<String> usedValueSets) {
+    if (inlineVs.getCompose() == null || inlineVs.getCompose().getInclude() == null
+        || inlineVs.getCompose().getInclude().stream().noneMatch(i -> (i.getValueSet() != null && !i.getValueSet().isEmpty()))) {
+      return inlineVs;
+    }
+    com.kodality.zmei.fhir.resource.terminology.ValueSet copy = FhirMapper.fromJson(
+        FhirMapper.toJson(inlineVs), com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
+    List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude> newIncludes = new java.util.ArrayList<>();
+    for (var inc : copy.getCompose().getInclude()) {
+      if ((inc.getValueSet() == null || inc.getValueSet().isEmpty())) {
+        newIncludes.add(inc);
+        continue;
+      }
+      // Members of the imported value set(s), grouped by code system uri (preserving order).
+      java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>> bySystem = new java.util.LinkedHashMap<>();
+      for (String ref : inc.getValueSet()) {
+        int pipe = ref.indexOf('|');
+        String refUrl = pipe >= 0 ? ref.substring(0, pipe) : ref;
+        // The import ref's own pinned version wins; otherwise a `default-valueset-version` request param for this
+        // url pins it (a wrong/absent version then resolves to nothing → 4xx below).
+        String refVersion = pipe >= 0 ? ref.substring(pipe + 1) : defaultValueSetVersion(req, refUrl);
+        com.kodality.zmei.fhir.resource.terminology.ValueSet imported = txResourceValueSets(req, refUrl).stream()
+            .filter(vs -> refVersion == null || refVersion.equals(vs.getVersion()))
+            .max(java.util.Comparator.comparing(com.kodality.zmei.fhir.resource.terminology.ValueSet::getVersion,
+                java.util.Comparator.nullsFirst(ValueSetExpandOperation::compareVersions)))
+            .orElse(null);
+        if (imported == null) {
+          throw org.termx.terminology.fhir.TxIssues.notFoundException(404,
+              "Unable to resolve the value set import " + refUrl + (refVersion != null ? "|" + refVersion : ""));
+        }
+        // Report the resolved imported value set as a `used-valueset` expansion parameter (url|version).
+        usedValueSets.add(refUrl + (imported.getVersion() != null ? "|" + imported.getVersion() : ""));
+        if (!visited.add(refUrl + "|" + (imported.getVersion() == null ? "" : imported.getVersion()))) {
+          continue; // already expanded on this path — guard against import cycles
+        }
+        com.kodality.zmei.fhir.resource.terminology.ValueSet resolved =
+            resolveIncludeVersions(resolveImportedValueSets(imported, req, visited, usedValueSets), req);
+        for (ValueSetVersionConcept m : valueSetVersionConceptRepository.expandFromJson(FhirMapper.toJson(resolved))) {
+          if (m.getConcept() == null || m.getConcept().getCode() == null) {
+            continue;
+          }
+          String sys = m.getConcept().getCodeSystemUri() != null ? m.getConcept().getCodeSystemUri() : m.getConcept().getBaseCodeSystemUri();
+          if (sys != null) {
+            bySystem.computeIfAbsent(sys, k -> new java.util.LinkedHashSet<>()).add(m.getConcept().getCode());
+          }
+        }
+      }
+      // A pure-import include (only valueSet) is replaced by the imported members; a mixed include keeps its own
+      // system/concept/filter (union semantics — both contribute members).
+      boolean pureImport = inc.getSystem() == null && (inc.getConcept() == null || inc.getConcept().isEmpty()) && (inc.getFilter() == null || inc.getFilter().isEmpty());
+      if (!pureImport) {
+        newIncludes.add(inc);
+      }
+      bySystem.forEach((sys, codes) -> {
+        var imp = new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude();
+        imp.setSystem(sys);
+        imp.setConcept(codes.stream()
+            .map(c -> new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConcept().setCode(c)).toList());
+        newIncludes.add(imp);
+      });
+    }
+    copy.getCompose().setInclude(newIncludes);
+    return copy;
+  }
+
+  /** The version pinned for an imported value set by a {@code default-valueset-version} request param
+   *  ({@code <vsUrl>|<version>}), or null. */
+  private static String defaultValueSetVersion(Parameters req, String vsUrl) {
+    if (req == null || req.getParameter() == null) {
+      return null;
+    }
+    return req.getParameter().stream()
+        .filter(p -> "default-valueset-version".equals(p.getName()))
+        .map(p -> p.getValueCanonical() != null ? p.getValueCanonical() : p.getValueUri() != null ? p.getValueUri() : p.getValueString())
+        .filter(java.util.Objects::nonNull)
+        .filter(v -> v.startsWith(vsUrl + "|"))
+        .map(v -> v.substring(vsUrl.length() + 1))
+        .findFirst().orElse(null);
+  }
+
   /** Highest-version tx-resource (latest, by numeric-aware dotted-version order), falling back to the first. */
   private static com.kodality.zmei.fhir.resource.terminology.ValueSet latestByVersion(
       List<com.kodality.zmei.fhir.resource.terminology.ValueSet> vss) {
@@ -653,6 +742,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // to a concrete available version so the SQL expand picks the right code system version — driving
     // expansion.total and the used-codesystem parameter. A pinned version that resolves to nothing, or a
     // check-system-version mismatch, is a 4xx (the expansion can't be produced).
+    // P8: flatten any compose.include[].valueSet (imported value sets) into system+concept includes first.
+    List<String> usedValueSets = new java.util.ArrayList<>();
+    inlineVs = resolveImportedValueSets(inlineVs, req, new java.util.HashSet<>(), usedValueSets);
     inlineVs = resolveIncludeVersions(inlineVs, req);
 
     // Serialize the inline ValueSet to JSON
@@ -785,6 +877,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // Derived used-supplement params (resolved url|version) for supplements applied to this inline expansion.
     usedSupplements.forEach(s -> expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
         .setName("used-supplement").setValueUri(s.asCanonical())));
+    // Derived used-valueset params for each imported value set (compose.include.valueSet) resolved in this expansion.
+    usedValueSets.stream().distinct().forEach(vsRef -> expansionParameters.add(
+        new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter().setName("used-valueset").setValueUri(vsRef)));
     // The display language the server resolved from the value set's own declaration (expansion-parameter
     // extension, else VS resource `language`) or — failing that — the request's Accept-Language header is echoed
     // as a displayLanguage expansion.parameter, unless the request already carried a displayLanguage param.
