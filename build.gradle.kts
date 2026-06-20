@@ -51,17 +51,24 @@ allprojects {
     repositories {
         mavenLocal()
         mavenCentral()
-        // kefhir fork on GitHub Packages (commons and zmei are vendored)
-        maven {
-            url = uri("https://maven.pkg.github.com/termx-health/kefhir")
-            content {
-                includeGroup("com.kodality.kefhir")
+        // kefhir fork on GitHub Packages (commons and zmei are vendored).
+        // exclusiveContent: com.kodality.kefhir is resolved ONLY from this repo and is never
+        // searched in mavenLocal / mavenCentral — so resolution shows a single (GitHub Packages)
+        // URL instead of also probing file:~/.m2 and repo.maven.apache.org for a private artifact.
+        exclusiveContent {
+            forRepository {
+                maven {
+                    url = uri("https://maven.pkg.github.com/termx-health/kefhir")
+                    credentials {
+                        username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+                        password = project.findProperty("gpr.key") as String?
+                            ?: project.findProperty("gpr.token") as String?
+                            ?: System.getenv("GITHUB_TOKEN")
+                    }
+                }
             }
-            credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
-                password = project.findProperty("gpr.key") as String?
-                    ?: project.findProperty("gpr.token") as String?
-                    ?: System.getenv("GITHUB_TOKEN")
+            filter {
+                includeGroup("com.kodality.kefhir")
             }
         }
     }
