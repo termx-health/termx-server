@@ -623,6 +623,95 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     return copy;
   }
 
+  /**
+   * P8 — resolve {@code compose.include[].valueSet} (imported value sets). The SQL expand only handles
+   * {@code system}/{@code concept}/{@code filter}; an imported value set is expanded here (recursively, from the
+   * bundled tx-resources) and its members rewritten into the include as {@code system}+{@code concept} entries,
+   * so the rest of the pipeline (SQL expand, flags, display) handles them. A referenced value set that cannot be
+   * resolved — e.g. a wrong pinned {@code url|version} — is a 4xx not-found. {@code visited} guards import cycles.
+   */
+  private com.kodality.zmei.fhir.resource.terminology.ValueSet resolveImportedValueSets(
+      com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs, Parameters req, java.util.Set<String> visited,
+      List<String> usedValueSets) {
+    if (inlineVs.getCompose() == null || inlineVs.getCompose().getInclude() == null
+        || inlineVs.getCompose().getInclude().stream().noneMatch(i -> (i.getValueSet() != null && !i.getValueSet().isEmpty()))) {
+      return inlineVs;
+    }
+    com.kodality.zmei.fhir.resource.terminology.ValueSet copy = FhirMapper.fromJson(
+        FhirMapper.toJson(inlineVs), com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
+    List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude> newIncludes = new java.util.ArrayList<>();
+    for (var inc : copy.getCompose().getInclude()) {
+      if ((inc.getValueSet() == null || inc.getValueSet().isEmpty())) {
+        newIncludes.add(inc);
+        continue;
+      }
+      // Members of the imported value set(s), grouped by code system uri (preserving order).
+      java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>> bySystem = new java.util.LinkedHashMap<>();
+      for (String ref : inc.getValueSet()) {
+        int pipe = ref.indexOf('|');
+        String refUrl = pipe >= 0 ? ref.substring(0, pipe) : ref;
+        // The import ref's own pinned version wins; otherwise a `default-valueset-version` request param for this
+        // url pins it (a wrong/absent version then resolves to nothing → 4xx below).
+        String refVersion = pipe >= 0 ? ref.substring(pipe + 1) : defaultValueSetVersion(req, refUrl);
+        com.kodality.zmei.fhir.resource.terminology.ValueSet imported = txResourceValueSets(req, refUrl).stream()
+            .filter(vs -> refVersion == null || refVersion.equals(vs.getVersion()))
+            .max(java.util.Comparator.comparing(com.kodality.zmei.fhir.resource.terminology.ValueSet::getVersion,
+                java.util.Comparator.nullsFirst(ValueSetExpandOperation::compareVersions)))
+            .orElse(null);
+        if (imported == null) {
+          throw org.termx.terminology.fhir.TxIssues.notFoundException(404,
+              "Unable to resolve the value set import " + refUrl + (refVersion != null ? "|" + refVersion : ""));
+        }
+        // Report the resolved imported value set as a `used-valueset` expansion parameter (url|version).
+        usedValueSets.add(refUrl + (imported.getVersion() != null ? "|" + imported.getVersion() : ""));
+        if (!visited.add(refUrl + "|" + (imported.getVersion() == null ? "" : imported.getVersion()))) {
+          continue; // already expanded on this path — guard against import cycles
+        }
+        com.kodality.zmei.fhir.resource.terminology.ValueSet resolved =
+            resolveIncludeVersions(resolveImportedValueSets(imported, req, visited, usedValueSets), req);
+        for (ValueSetVersionConcept m : valueSetVersionConceptRepository.expandFromJson(FhirMapper.toJson(resolved))) {
+          if (m.getConcept() == null || m.getConcept().getCode() == null) {
+            continue;
+          }
+          String sys = m.getConcept().getCodeSystemUri() != null ? m.getConcept().getCodeSystemUri() : m.getConcept().getBaseCodeSystemUri();
+          if (sys != null) {
+            bySystem.computeIfAbsent(sys, k -> new java.util.LinkedHashSet<>()).add(m.getConcept().getCode());
+          }
+        }
+      }
+      // A pure-import include (only valueSet) is replaced by the imported members; a mixed include keeps its own
+      // system/concept/filter (union semantics — both contribute members).
+      boolean pureImport = inc.getSystem() == null && (inc.getConcept() == null || inc.getConcept().isEmpty()) && (inc.getFilter() == null || inc.getFilter().isEmpty());
+      if (!pureImport) {
+        newIncludes.add(inc);
+      }
+      bySystem.forEach((sys, codes) -> {
+        var imp = new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude();
+        imp.setSystem(sys);
+        imp.setConcept(codes.stream()
+            .map(c -> new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConcept().setCode(c)).toList());
+        newIncludes.add(imp);
+      });
+    }
+    copy.getCompose().setInclude(newIncludes);
+    return copy;
+  }
+
+  /** The version pinned for an imported value set by a {@code default-valueset-version} request param
+   *  ({@code <vsUrl>|<version>}), or null. */
+  private static String defaultValueSetVersion(Parameters req, String vsUrl) {
+    if (req == null || req.getParameter() == null) {
+      return null;
+    }
+    return req.getParameter().stream()
+        .filter(p -> "default-valueset-version".equals(p.getName()))
+        .map(p -> p.getValueCanonical() != null ? p.getValueCanonical() : p.getValueUri() != null ? p.getValueUri() : p.getValueString())
+        .filter(java.util.Objects::nonNull)
+        .filter(v -> v.startsWith(vsUrl + "|"))
+        .map(v -> v.substring(vsUrl.length() + 1))
+        .findFirst().orElse(null);
+  }
+
   /** Highest-version tx-resource (latest, by numeric-aware dotted-version order), falling back to the first. */
   private static com.kodality.zmei.fhir.resource.terminology.ValueSet latestByVersion(
       List<com.kodality.zmei.fhir.resource.terminology.ValueSet> vss) {
@@ -653,6 +742,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // to a concrete available version so the SQL expand picks the right code system version — driving
     // expansion.total and the used-codesystem parameter. A pinned version that resolves to nothing, or a
     // check-system-version mismatch, is a 4xx (the expansion can't be produced).
+    // P8: flatten any compose.include[].valueSet (imported value sets) into system+concept includes first.
+    List<String> usedValueSets = new java.util.ArrayList<>();
+    inlineVs = resolveImportedValueSets(inlineVs, req, new java.util.HashSet<>(), usedValueSets);
     inlineVs = resolveIncludeVersions(inlineVs, req);
 
     // Serialize the inline ValueSet to JSON
@@ -756,6 +848,12 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // Echo `experimental` from the source — the tx-ecosystem expects it on the $expand result (even when
     // false), and a $expand response is a rendering of the value set, so its descriptive metadata carries over.
     response.setExperimental(inlineVs.getExperimental());
+    // Echo the value set's own resource `language` (when declared) onto the expansion result — the tx-ecosystem
+    // expects the rendered ValueSet to carry the source VS language (distinct from the displayLanguage used to
+    // pick member displays). Only the VS's declared language, not a request/extension displayLanguage.
+    if (StringUtils.isNotEmpty(inlineVs.getLanguage())) {
+      response.setLanguage(inlineVs.getLanguage());
+    }
     // An $expand response is a rendered view, not the value-set definition — the expansion replaces the
     // compose (the tx-ecosystem marks compose optional on the expand result and the reference server omits it;
     // echoing the source compose, including its raw include version, mismatches). The stored path already
@@ -779,13 +877,18 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // Derived used-supplement params (resolved url|version) for supplements applied to this inline expansion.
     usedSupplements.forEach(s -> expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
         .setName("used-supplement").setValueUri(s.asCanonical())));
-    // A `displayLanguage` declared by the VS's expansion-parameter extension is applied (see applyDisplayLanguage)
-    // and echoed as an expansion.parameter — unless the request already carried a displayLanguage (already echoed).
-    String vsExpDisplayLanguage = vsExpansionDisplayLanguage(inlineVs);
-    if (StringUtils.isNotEmpty(vsExpDisplayLanguage)
+    // Derived used-valueset params for each imported value set (compose.include.valueSet) resolved in this expansion.
+    usedValueSets.stream().distinct().forEach(vsRef -> expansionParameters.add(
+        new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter().setName("used-valueset").setValueUri(vsRef)));
+    // The display language the server resolved from the value set's own declaration (expansion-parameter
+    // extension, else VS resource `language`) or — failing that — the request's Accept-Language header is echoed
+    // as a displayLanguage expansion.parameter, unless the request already carried a displayLanguage param.
+    String vsExpDisplayLanguage = vsDeclaredDisplayLanguage(inlineVs);
+    String echoDisplayLanguage = StringUtils.isNotEmpty(vsExpDisplayLanguage) ? vsExpDisplayLanguage : acceptLanguageHeader();
+    if (StringUtils.isNotEmpty(echoDisplayLanguage)
         && expansionParameters.stream().noneMatch(pp -> "displayLanguage".equals(pp.getName()))) {
       expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
-          .setName("displayLanguage").setValueCode(vsExpDisplayLanguage));
+          .setName("displayLanguage").setValueCode(echoDisplayLanguage));
     }
     // A used-codesystem must reflect the source: when the tx-resource CodeSystem declares no version, the
     // import-defaulted version (e.g. 1.0.0) must be dropped so used-codesystem is the bare system uri.
@@ -839,8 +942,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // VS expansion-parameter extension → the CodeSystem's resource language) and drop the chosen value from
     // the member's alternate designations, so contains[].display is the resource/requested-language one and
     // the other-language designations are kept (below).
-    String vsDisplayLanguage = vsExpansionDisplayLanguage(inlineVs);
-    applyDisplayLanguage(expandedConcepts, displayLanguage, vsDisplayLanguage, resourceLanguages(req), primaryDisplays(req));
+    String vsDisplayLanguage = vsDeclaredDisplayLanguage(inlineVs);
+    String acceptLanguage = acceptLanguageHeader();
+    applyDisplayLanguage(expandedConcepts, displayLanguage, vsDisplayLanguage, acceptLanguage, resourceLanguages(req), primaryDisplays(req));
 
     // FHIR adds `version` to a contains member only when the expansion spans more than one code system
     // version (a mixed/multi-version value set), to disambiguate; a single-version expansion omits it.
@@ -1064,6 +1168,26 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
   }
 
+  /** The primary language tag of the request's {@code Accept-Language} header (e.g. {@code en} from
+   *  {@code en-US,en;q=0.9}), or null. The LOWEST-priority display-language source — below an explicit
+   *  {@code displayLanguage} param and the value set's own declared language. */
+  private static String acceptLanguageHeader() {
+    return io.micronaut.http.context.ServerRequestContext.currentRequest()
+        .map(r -> r.getHeaders().get("Accept-Language"))
+        .filter(StringUtils::isNotEmpty)
+        .map(h -> h.split(",")[0].split(";")[0].trim())
+        .filter(StringUtils::isNotEmpty)
+        .orElse(null);
+  }
+
+  /** The display language a value set itself declares — its {@code compose.extension[valueset-expansion-parameter]}
+   *  {@code displayLanguage}, else the VS resource {@code language}. Applied AND echoed as an expansion.parameter.
+   *  (Ranks below an explicit request {@code displayLanguage}; an Accept-Language header would rank below this.) */
+  private static String vsDeclaredDisplayLanguage(com.kodality.zmei.fhir.resource.terminology.ValueSet vs) {
+    String ext = vsExpansionDisplayLanguage(vs);
+    return StringUtils.isNotEmpty(ext) ? ext : (vs != null ? vs.getLanguage() : null);
+  }
+
   /** The {@code displayLanguage} declared by a value set's {@code compose.extension[valueset-expansion-parameter]}
    *  (a VS-embedded expansion control) — applied AND echoed as an {@code expansion.parameter}. */
   private static String vsExpansionDisplayLanguage(com.kodality.zmei.fhir.resource.terminology.ValueSet vs) {
@@ -1125,7 +1249,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
    * (by value) so it is not also echoed as a designation.
    */
   private static void applyDisplayLanguage(List<ValueSetVersionConcept> concepts, String requestedLanguage,
-                                           String vsDisplayLanguage, java.util.Map<String, String> resourceLanguages,
+                                           String vsDisplayLanguage, String acceptLanguage, java.util.Map<String, String> resourceLanguages,
                                            java.util.Map<String, String> primaryDisplays) {
     for (ValueSetVersionConcept c : concepts) {
       // Only re-pick WHICH designation is the display; never invent a display for a member that has none
@@ -1135,9 +1259,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       }
       String system = c.getConcept() != null ? c.getConcept().getCodeSystemUri() : null;
       String code = c.getConcept() != null ? c.getConcept().getCode() : null;
+      String resourceLanguage = system != null ? resourceLanguages.get(system) : null;
+      // Precedence: explicit displayLanguage param > VS-declared language > CodeSystem resource language >
+      // Accept-Language header (the header ranks BELOW the resource/VS language, per decision 2026-06-20).
       String effective = StringUtils.isNotEmpty(requestedLanguage) ? requestedLanguage
           : StringUtils.isNotEmpty(vsDisplayLanguage) ? vsDisplayLanguage
-          : system != null ? resourceLanguages.get(system) : null;
+          : StringUtils.isNotEmpty(resourceLanguage) ? resourceLanguage
+          : acceptLanguage;
       // De-dupe display + additional designations by (language, value) — the SQL expand can carry the display
       // value as an additional designation too, which would otherwise resurface as a duplicate designation.
       java.util.LinkedHashMap<String, Designation> all = new java.util.LinkedHashMap<>();
@@ -1146,13 +1274,16 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         c.getAdditionalDesignations().forEach(d -> all.putIfAbsent(d.getLanguage() + "|" + d.getName(), d));
       }
       String primaryDisplay = system != null && code != null ? primaryDisplays.get(system + "|" + code) : null;
+      final String eff = effective;
       Designation chosen = c.getDisplay();
-      if (StringUtils.isNotEmpty(effective)) {
-        java.util.List<Designation> matches = all.values().stream().filter(d -> languageMatches(d.getLanguage(), effective)).toList();
-        // Among same-language candidates prefer the concept's PRIMARY display value (an alternate same-language
-        // designation must not win over the concept's own display); else the first language match; else keep.
-        chosen = matches.stream().filter(d -> d.getName() != null && d.getName().equals(primaryDisplay)).findFirst()
-            .or(() -> matches.stream().findFirst())
+      if (StringUtils.isNotEmpty(eff)) {
+        // Among language-matching candidates, prefer (in order) an EXACT language match over a region-subtag
+        // match (`de` over `de-CH`), and the concept's PRIMARY display value over an alternate same-language
+        // designation. Scored: exact-language = 2, primary-display value = 1.
+        chosen = all.values().stream().filter(d -> languageMatches(d.getLanguage(), eff))
+            .max(java.util.Comparator.comparingInt(d ->
+                (eff.equalsIgnoreCase(d.getLanguage()) ? 2 : 0)
+                    + (d.getName() != null && d.getName().equals(primaryDisplay) ? 1 : 0)))
             .orElse(c.getDisplay());
       }
       final Designation display = chosen;
