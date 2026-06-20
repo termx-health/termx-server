@@ -126,6 +126,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       if (pipe >= 0) {
         canonicalUrl = url.substring(0, pipe);
         pipeVersion = url.substring(pipe + 1);
+        // A query suffix (e.g. the LOINC/implicit `?fhir_vs`) sits after the pipe-version in
+        // `<canonical>|<version>?fhir_vs` — it is not part of the version. Strip it; the full
+        // `url` (query intact) still drives the implicit-ValueSet handling below.
+        int q = pipeVersion.indexOf('?');
+        if (q >= 0) {
+          pipeVersion = pipeVersion.substring(0, q);
+        }
       }
     }
     String versionNr = req.findParameter("valueSetVersion").map(ParametersParameter::getValueString).orElse(pipeVersion);
