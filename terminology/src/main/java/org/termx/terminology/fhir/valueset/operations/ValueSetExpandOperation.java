@@ -388,16 +388,33 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
     String joined = req.getParameter().stream()
         .filter(p -> "useSupplement".equals(p.getName()))
-        .map(p -> {
-          String v = p.getValueCanonical() != null ? p.getValueCanonical()
-              : p.getValueUri() != null ? p.getValueUri()
-              : p.getValueUrl() != null ? p.getValueUrl() : p.getValueString();
-          return v;
-        })
+        .map(p -> p.getValueCanonical() != null ? p.getValueCanonical()
+            : p.getValueUri() != null ? p.getValueUri()
+            : p.getValueUrl() != null ? p.getValueUrl() : p.getValueString())
         .filter(StringUtils::isNotEmpty)
         .distinct()
         .collect(java.util.stream.Collectors.joining(","));
     return StringUtils.isEmpty(joined) ? null : joined;
+  }
+
+  /** A value set that declares supplements via the {@code valueset-supplement} extension USES them — applied like
+   *  an explicit {@code useSupplement} param. Injected as synthetic {@code useSupplement} params so the supplement
+   *  merge (and `used-supplement` echo) picks them up; a value set that does NOT declare one applies no supplement. */
+  private static void applyDeclaredSupplements(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, Parameters req) {
+    if (vs == null || vs.getExtension() == null || req == null) {
+      return;
+    }
+    for (com.kodality.zmei.fhir.Extension ext : vs.getExtension()) {
+      if (!"http://hl7.org/fhir/StructureDefinition/valueset-supplement".equals(ext.getUrl())) {
+        continue;
+      }
+      String ref = ext.getValueCanonical() != null ? ext.getValueCanonical()
+          : ext.getValueUri() != null ? ext.getValueUri() : ext.getValueUrl();
+      if (StringUtils.isNotEmpty(ref)
+          && req.getParameter().stream().noneMatch(p -> "useSupplement".equals(p.getName()) && ref.equals(p.getValueCanonical()))) {
+        req.addParameter(new ParametersParameter("useSupplement").setValueCanonical(ref));
+      }
+    }
   }
 
   /** Finds a ValueSet supplied inline via a tx-resource parameter whose url matches the requested url. */
@@ -737,6 +754,8 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
   private com.kodality.zmei.fhir.resource.terminology.ValueSet expandInline(
       com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs, Parameters req) {
+    // A value set that declares a supplement via the valueset-supplement extension applies it (like useSupplement).
+    applyDeclaredSupplements(inlineVs, req);
     // Resolve each compose.include.version against the system-version/force-system-version/check-system-version
     // params and wildcard semantics (mirrors org.hl7.fhir.core ValueSetValidator.determineVersion), rewriting it
     // to a concrete available version so the SQL expand picks the right code system version — driving
@@ -924,9 +943,24 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // Declare the requested properties so contains[].property references a declared expansion.property (valid FHIR).
     // Each declared property carries its uri — from the tx-resource CodeSystem's property definition, falling back
     // to the FHIR concept-properties uri for the built-in codes (definition/status/…).
-    if (!requestedProperties.isEmpty()) {
-      java.util.Map<String, String> propertyUris = propertyUris(req);
-      expansion.setProperty(requestedProperties.stream()
+    java.util.Map<String, String> propertyUris = propertyUris(req);
+    java.util.LinkedHashSet<String> declaredProps = new java.util.LinkedHashSet<>(requestedProperties);
+    // Declare the concept-extension-derived properties (weight/label/order) that any member actually carries.
+    java.util.Map<String, List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty>> extProps = conceptExtensionProperties(req);
+    // Declare ONLY the extension properties an actually-expanded member carries — the validator bundles every
+    // suite's CodeSystems (incl. the extensions supplement) on every request, so declaring all of them would
+    // add weight/label/order to expansions over unrelated code systems.
+    java.util.Set<String> memberKeys = expandedConcepts.stream().filter(c -> c.getConcept() != null)
+        .map(c -> c.getConcept().getCodeSystemUri() + "|" + c.getConcept().getCode()).collect(java.util.stream.Collectors.toSet());
+    extProps.entrySet().stream().filter(e -> memberKeys.contains(e.getKey()))
+        .flatMap(e -> e.getValue().stream())
+        .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty::getCode)
+        .filter(StringUtils::isNotEmpty).forEach(declaredProps::add);
+    for (String[] m : EXTENSION_PROPERTIES.values()) {
+      propertyUris.putIfAbsent(m[0], m[1]);
+    }
+    if (!declaredProps.isEmpty()) {
+      expansion.setProperty(declaredProps.stream()
           .map(code -> new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionProperty().setCode(code)
               .setUri(propertyUris.getOrDefault(code, "http://hl7.org/fhir/concept-properties#" + code)))
           .toList());
@@ -936,6 +970,8 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // designation surfaces its real use system (e.g. {.../designations, olde-english}) on contains[].designation.
     java.util.Map<String, com.kodality.zmei.fhir.datatypes.Coding> designationUses = designationUses(req);
     java.util.Set<String> noLanguageDesignations = noLanguageDesignations(req);
+    // Concept FHIR extensions (itemWeight/codesystem-label/conceptOrder) surfaced as expansion properties.
+    java.util.Map<String, List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty>> extensionProps = conceptExtensionProperties(req);
     java.util.Set<String> noUseDesignations = noUseDesignations(req);
 
     // P1 display-language: pick each member's display by the effective language (requested displayLanguage →
@@ -1013,12 +1049,29 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
               contain.setDesignation(designations);
             }
           }
+          List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty> props =
+              new java.util.ArrayList<>();
           if (!requestedProperties.isEmpty()) {
-            List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty> props =
-                ValueSetFhirMapper.toFhirContainsProperties(concept.getPropertyValues(), requestedProperties::contains, displayLanguage);
-            if (!props.isEmpty()) {
-              contain.setProperty(props);
+            props.addAll(ValueSetFhirMapper.toFhirContainsProperties(concept.getPropertyValues(), requestedProperties::contains, displayLanguage));
+          }
+          // Concept-extension-derived properties (weight/label/order/status) are surfaced by default (they are not
+          // stored property values and the tx-ecosystem expects them without a `property` request).
+          String sysCode = concept.getConcept().getCodeSystemUri() + "|" + concept.getConcept().getCode();
+          List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty> extProps2 =
+              extensionProps.getOrDefault(sysCode, List.of());
+          extProps2.forEach(ep -> {
+            if (props.stream().noneMatch(x -> ep.getCode().equals(x.getCode()))) {
+              props.add(ep);
             }
+          });
+          if (!props.isEmpty()) {
+            // Sort only when extension-derived properties were merged (the tx-ecosystem orders the
+            // extensions-CS properties alphabetically); otherwise preserve the natural order.
+            if (!extProps2.isEmpty()) {
+              props.sort(java.util.Comparator.comparing(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty::getCode,
+                  java.util.Comparator.nullsLast(String::compareTo)));
+            }
+            contain.setProperty(props);
           }
           return contain;
         }).toList();
@@ -1059,6 +1112,62 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       }
     }
     return uris;
+  }
+
+  // FHIR concept-level extensions the tx-ecosystem surfaces as expansion properties: extension url → {property
+  // code, property uri}. The values live on the concept's `extension` (in the base CodeSystem and/or its
+  // supplement), NOT as stored property values — so they are read straight from the tx-resource CodeSystems.
+  private static final java.util.Map<String, String[]> EXTENSION_PROPERTIES = java.util.Map.of(
+      "http://hl7.org/fhir/StructureDefinition/itemWeight", new String[]{"weight", "http://hl7.org/fhir/concept-properties#itemWeight"},
+      "http://hl7.org/fhir/StructureDefinition/codesystem-label", new String[]{"label", "http://hl7.org/fhir/concept-properties#label"},
+      "http://hl7.org/fhir/StructureDefinition/codesystem-conceptOrder", new String[]{"order", "http://hl7.org/fhir/concept-properties#order"},
+      "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status", new String[]{"status", "http://hl7.org/fhir/concept-properties#status"});
+
+  /** {@code system|code → expansion contains properties} derived from concept FHIR extensions across the
+   *  tx-resource CodeSystems (a supplement's concepts contribute to its base system). */
+  private static java.util.Map<String, List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty>> conceptExtensionProperties(Parameters req) {
+    java.util.Map<String, List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty>> byCode = new java.util.LinkedHashMap<>();
+    if (req == null || req.getParameter() == null) {
+      return byCode;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs) {
+        String system = "supplement".equals(cs.getContent()) && StringUtils.isNotEmpty(cs.getSupplements()) ? cs.getSupplements() : cs.getUrl();
+        collectExtensionProperties(system, cs.getConcept(), byCode);
+      }
+    }
+    return byCode;
+  }
+
+  private static void collectExtensionProperties(String system, List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts,
+      java.util.Map<String, List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty>> byCode) {
+    if (system == null || concepts == null) {
+      return;
+    }
+    for (var c : concepts) {
+      if (c.getCode() != null && c.getExtension() != null) {
+        for (com.kodality.zmei.fhir.Extension ext : c.getExtension()) {
+          String[] map = EXTENSION_PROPERTIES.get(ext.getUrl());
+          if (map == null) {
+            continue;
+          }
+          var prop = new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty().setCode(map[0]);
+          if (ext.getValueDecimal() != null) {
+            prop.setValueDecimal(ext.getValueDecimal());
+          } else if (ext.getValueInteger() != null) {
+            prop.setValueDecimal(java.math.BigDecimal.valueOf(ext.getValueInteger()));
+          } else if (ext.getValueCode() != null) {
+            prop.setValueCode(ext.getValueCode());
+          } else if (ext.getValueString() != null) {
+            prop.setValueString(ext.getValueString());
+          } else {
+            continue;
+          }
+          byCode.computeIfAbsent(system + "|" + c.getCode(), k -> new java.util.ArrayList<>()).add(prop);
+        }
+      }
+      collectExtensionProperties(system, c.getConcept(), byCode);
+    }
   }
 
   /** Designation use codings stated by the tx-resource CodeSystems, keyed by the use code (so custom designations keep their use system). */
