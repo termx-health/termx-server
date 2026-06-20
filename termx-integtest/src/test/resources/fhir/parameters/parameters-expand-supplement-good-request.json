@@ -1,0 +1,16 @@
+{
+  "resourceType" : "Parameters",
+  "parameter" : [{
+    "name" : "url",
+    "valueUri" : "http://hl7.org/fhir/test/ValueSet/extensions-all-ns"
+  },{
+    "name" : "excludeNested",
+    "valueBoolean" : true
+  },{
+    "name" : "useSupplement",
+    "valueCanonical" : "http://hl7.org/fhir/test/CodeSystem/supplement"
+  },{
+    "name" : "property",
+    "valueString" : "prop1"
+  }]
+}

@@ -69,9 +69,9 @@ public class ConceptSupplementService {
    * merge, so a supplement on e.g. SNOMED never surfaced in an expansion. This closes that gap for both the
    * stored and inline expand paths. Triggered by {@code useSupplement} or {@code includeSupplement}+displayLanguage.
    */
-  public void mergeSupplementsIntoExpansion(List<ValueSetVersionConcept> members, ConceptQueryParams params) {
+  public List<UsedSupplement> mergeSupplementsIntoExpansion(List<ValueSetVersionConcept> members, ConceptQueryParams params) {
     if (CollectionUtils.isEmpty(members) || !shouldLoadSupplements(params)) {
-      return;
+      return List.of();
     }
     List<Concept> conceptView = members.stream()
         .map(ValueSetVersionConcept::getConcept).filter(Objects::nonNull)
@@ -85,7 +85,7 @@ public class ConceptSupplementService {
         .toList();
     Map<String, List<ResolvedSupplement>> supplementsByBaseCodeSystem = resolveSupplements(conceptView, params);
     if (supplementsByBaseCodeSystem.isEmpty()) {
-      return;
+      return List.of();
     }
 
     members.stream()
@@ -114,6 +114,15 @@ public class ConceptSupplementService {
           }));
           csMembers.forEach(member -> applySupplementDesignations(member, byCode.getOrDefault(member.getConcept().getCode(), List.of()), params.getDisplayLanguage()));
         });
+
+    // The supplements actually applied — reported back as `used-supplement` expansion parameters
+    // (canonical url + the resolved version), distinct and order-preserving.
+    return supplementsByBaseCodeSystem.values().stream()
+        .flatMap(List::stream)
+        .map(s -> new UsedSupplement(s.url(), s.version()))
+        .filter(s -> StringUtils.isNotBlank(s.url()))
+        .distinct()
+        .toList();
   }
 
   /** Appends supplement designations to a member (deduped) and, when a displayLanguage is requested, surfaces a matching supplement designation as the member's display. */
@@ -219,7 +228,8 @@ public class ConceptSupplementService {
         return;
       }
       resolveSupplementVersion(supplement.getId(), requested.version())
-          .ifPresent(version -> result.computeIfAbsent(supplement.getBaseCodeSystem(), key -> new ArrayList<>()).add(new ResolvedSupplement(supplement.getId(), version)));
+          .ifPresent(version -> result.computeIfAbsent(supplement.getBaseCodeSystem(), key -> new ArrayList<>())
+              .add(new ResolvedSupplement(supplement.getId(), version, supplement.getUri())));
     });
 
     if (Boolean.TRUE.equals(params.getIncludeSupplement()) && StringUtils.isNotBlank(params.getDisplayLanguage())) {
@@ -229,7 +239,7 @@ public class ConceptSupplementService {
               .all())
           .getData().stream()
           .map(supplement -> resolveSupplementVersion(supplement.getId(), null)
-              .map(version -> new ResolvedSupplement(supplement.getId(), version))
+              .map(version -> new ResolvedSupplement(supplement.getId(), version, supplement.getUri()))
               .orElse(null))
           .filter(Objects::nonNull)
           .forEach(supplement -> result.computeIfAbsent(baseCodeSystem, key -> new ArrayList<>()).add(supplement)));
@@ -299,6 +309,14 @@ public class ConceptSupplementService {
   private record RequestedSupplement(String uri, String version) {
   }
 
-  private record ResolvedSupplement(String id, String version) {
+  private record ResolvedSupplement(String id, String version, String url) {
+  }
+
+  /** A supplement that was applied to an expansion/lookup — its canonical url and the resolved version,
+   *  reported back as a {@code used-supplement} expansion parameter ({@code url|version}). */
+  public record UsedSupplement(String url, String version) {
+    public String asCanonical() {
+      return StringUtils.isBlank(version) ? url : url + "|" + version;
+    }
   }
 }

@@ -229,8 +229,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // keeps its request-agnostic snapshot without paying for supplement auto-discovery.
     boolean applySupplements = StringUtils.isNotEmpty(requestedLanguage) || StringUtils.isNotEmpty(vsLanguage)
         || includeDesignations || StringUtils.isNotEmpty(extractUseSupplement(req));
+    List<org.termx.terminology.terminology.codesystem.concept.ConceptSupplementService.UsedSupplement> usedSupplements = List.of();
     if (applySupplements) {
-      conceptSupplementService.mergeSupplementsIntoExpansion(expandedConcepts, supplementParams(displayLanguage, req));
+      usedSupplements = conceptSupplementService.mergeSupplementsIntoExpansion(expandedConcepts, supplementParams(displayLanguage, req));
     }
     // The stored snapshot doesn't carry concept property values; load them on demand when the request asks
     // for properties (FHIR $expand `property`), so contains[].property can be populated. Skipped otherwise.
@@ -285,7 +286,26 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           .setCreatedBy(snapshot.getCreatedBy());
     }
 
-    return mapper.toFhir(vs, version, provenances, snapshot, req);
+    com.kodality.zmei.fhir.resource.terminology.ValueSet result = mapper.toFhir(vs, version, provenances, snapshot, req);
+    appendUsedSupplements(result, usedSupplements);
+    return result;
+  }
+
+  /**
+   * Appends a {@code used-supplement} expansion parameter (resolved {@code url|version}) for each supplement
+   * that actually contributed to the expansion — the output counterpart of the {@code useSupplement} request
+   * input, which is itself not echoed (see {@code ValueSetFhirMapper.EXPANSION_SELECTION_PARAMETERS}).
+   */
+  private static void appendUsedSupplements(com.kodality.zmei.fhir.resource.terminology.ValueSet result,
+      List<org.termx.terminology.terminology.codesystem.concept.ConceptSupplementService.UsedSupplement> usedSupplements) {
+    if (result == null || result.getExpansion() == null || usedSupplements == null || usedSupplements.isEmpty()) {
+      return;
+    }
+    List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter> params =
+        new java.util.ArrayList<>(result.getExpansion().getParameter() != null ? result.getExpansion().getParameter() : List.of());
+    usedSupplements.forEach(s -> params.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
+        .setName("used-supplement").setValueUri(s.asCanonical())));
+    result.getExpansion().setParameter(params);
   }
 
   /**
@@ -660,7 +680,8 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // bare. Enrich them with display/designations from the providers, then layer supplements onto the
     // whole expansion — so a SNOMED-based supplement surfaces in an inline/tx-resource $expand too.
     enrichExternalMembers(expandedConcepts, displayLanguage);
-    conceptSupplementService.mergeSupplementsIntoExpansion(expandedConcepts, supplementParams(displayLanguage, req));
+    List<org.termx.terminology.terminology.codesystem.concept.ConceptSupplementService.UsedSupplement> usedSupplements =
+        conceptSupplementService.mergeSupplementsIntoExpansion(expandedConcepts, supplementParams(displayLanguage, req));
 
     // Apply FHIR R5 `filter` (free-text typeahead) before pagination, matching
     // the stored-VS path semantics. Filters affect `expansion.total`;
@@ -755,6 +776,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // used-codesystem entries — same shape as the stored-snapshot path (reuses the mapper helper).
     List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter> expansionParameters =
         ValueSetFhirMapper.expansionParameters(req, expandedConcepts);
+    // Derived used-supplement params (resolved url|version) for supplements applied to this inline expansion.
+    usedSupplements.forEach(s -> expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
+        .setName("used-supplement").setValueUri(s.asCanonical())));
     // A used-codesystem must reflect the source: when the tx-resource CodeSystem declares no version, the
     // import-defaulted version (e.g. 1.0.0) must be dropped so used-codesystem is the bare system uri.
     java.util.Set<String> versionlessSystems = versionlessTxCodeSystems(req);
