@@ -533,6 +533,17 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     String vsCanonical = inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "");
     Parameters resp = new Parameters();
     if (match == null) {
+      // Unknown code system: when the code's system has no resolvable definition at all — no member in the
+      // expansion, no tx-resource CodeSystem, not among the tx-resource concepts — the reference server degrades
+      // gracefully (a 200, not a 4xx) to a not-found issue at `system` + an `x-caused-by-unknown-system`, rather
+      // than the not-in-vs/invalid-code shape (which assumes the system is known and just lacks the code).
+      boolean systemHasMembers = system != null && Optional.ofNullable(expanded.getExpansion())
+          .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
+          .anyMatch(c -> finalSystem.equals(c.getSystem()));
+      if (!req.findParameter("codeableConcept").isPresent() && system != null && !systemHasMembers
+          && txResourceCodeSystemVersions(req, system).isEmpty() && !txCsConcept(req, system, code).found()) {
+        return unknownSystem(code, system);
+      }
       // Code not in the value set: the tx-ecosystem expects a 200 with result=false, the code/system/version
       // echoed, and a structured `issues` OperationOutcome (not-in-vs at the value set + invalid-code at the
       // code system), not a flat message alone. Mirror the stored-content path's shape.
@@ -794,6 +805,29 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
    * UNKNOWN_CODESYSTEM_VERSION error (with the valid versions) plus the versionless-include mismatch warning.
    * Mirrors the FHIR tx ecosystem's "graceful degradation" — a 200, not a 4xx.
    */
+  /**
+   * Graceful degradation for an entirely unknown code system (no version qualifier): a 200 with result=false, a
+   * not-found issue at {@code system}, and {@code x-caused-by-unknown-system} carrying the system canonical — the
+   * code cannot be validated because the system has no definition. Mirrors org.hl7.fhir.core's unknown-system path.
+   */
+  private Parameters unknownSystem(String code, String system) {
+    String message = String.format("A definition for CodeSystem '%s' could not be found, so the code cannot be validated", system);
+    OperationOutcomeIssue notFound = new OperationOutcomeIssue()
+        .setSeverity("error").setCode("not-found")
+        .setDetails(new CodeableConcept(new Coding("http://hl7.org/fhir/tools/CodeSystem/tx-issue-type", "not-found")).setText(message))
+        .setLocation(List.of("system")).setExpression(List.of("system"));
+    OperationOutcome outcome = new OperationOutcome();
+    outcome.setIssue(List.of(notFound));
+    Parameters parameters = new Parameters();
+    parameters.addParameter(new ParametersParameter("code").setValueCode(code));
+    parameters.addParameter(new ParametersParameter("issues").setResource(outcome));
+    parameters.addParameter(new ParametersParameter("message").setValueString(message));
+    parameters.addParameter(new ParametersParameter("result").setValueBoolean(false));
+    parameters.addParameter(new ParametersParameter("system").setValueUri(system));
+    parameters.addParameter(new ParametersParameter("x-caused-by-unknown-system").setValueCanonical(system));
+    return parameters;
+  }
+
   private Parameters unknownSystemVersion(String code, String displayName, String system, String requestedVersion,
                                           List<String> availableVersions) {
     String availableVersion = availableVersions.stream().findFirst().orElse(null);
