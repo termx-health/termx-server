@@ -143,6 +143,56 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   private record CsConcept(boolean found, String display, boolean inactive) {
   }
 
+  private static final String STANDARDS_STATUS_URL = "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status";
+
+  /** The tx-resource CodeSystem whose canonical url matches {@code system}. */
+  private static com.kodality.zmei.fhir.resource.terminology.CodeSystem txCodeSystemResource(Parameters req, String system) {
+    if (req.getParameter() == null || system == null) {
+      return null;
+    }
+    return req.getParameter().stream().filter(p -> "tx-resource".equals(p.getName()))
+        .map(ParametersParameter::getResource).filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+        .map(r -> (com.kodality.zmei.fhir.resource.terminology.CodeSystem) r)
+        .filter(cs -> system.equals(cs.getUrl())).findFirst().orElse(null);
+  }
+
+  private static String statusWord(com.kodality.zmei.fhir.resource.terminology.CodeSystem cs) {
+    return cs == null ? null : statusWord(cs.getExperimental(), cs.getStatus(), standardsStatus(cs.getExtensions(STANDARDS_STATUS_URL)));
+  }
+
+  private static String statusWord(com.kodality.zmei.fhir.resource.terminology.ValueSet vs) {
+    // A value set contributes only its standards-status (deprecated/withdrawn), not draft/experimental.
+    if (vs == null) {
+      return null;
+    }
+    String ss = standardsStatus(vs.getExtensions(STANDARDS_STATUS_URL));
+    return "withdrawn".equals(ss) || "deprecated".equals(ss) ? ss : null;
+  }
+
+  private static String standardsStatus(java.util.stream.Stream<com.kodality.zmei.fhir.Extension> exts) {
+    return exts == null ? null : exts.map(com.kodality.zmei.fhir.Extension::getValueCode).filter(java.util.Objects::nonNull).findFirst().orElse(null);
+  }
+
+  /** The non-active status word ("experimental"/"draft"/"deprecated"/"withdrawn"/"retired") of a resource, or null when active. */
+  private static String statusWord(Boolean experimental, String status, String standardsStatus) {
+    if ("withdrawn".equals(standardsStatus)) {
+      return "withdrawn";
+    }
+    if ("deprecated".equals(standardsStatus)) {
+      return "deprecated";
+    }
+    if (Boolean.TRUE.equals(experimental)) {
+      return "experimental";
+    }
+    if ("draft".equals(status)) {
+      return "draft";
+    }
+    if ("retired".equals(status)) {
+      return "retired";
+    }
+    return null;
+  }
+
   /** Looks a code up in the tx-resource CodeSystem(s) for {@code system} (recursing nested concepts) — its display + whether it's inactive/retired. */
   private static CsConcept txCsConcept(Parameters req, String system, String code) {
     if (req.getParameter() == null || system == null || code == null) {
@@ -569,6 +619,20 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     boolean displayValid = !"error".equals(displaySeverity);
 
     List<OperationOutcomeIssue> issues = new ArrayList<>(vr.issues());
+    // Status-check: validating a code from an experimental/draft/deprecated CodeSystem (or a withdrawn/deprecated
+    // value set) adds an information-level status-check issue (result is unaffected).
+    String statusSystem = match.getSystem() != null ? match.getSystem() : system;
+    String csStatus = statusWord(txCodeSystemResource(req, statusSystem));
+    if (csStatus != null) {
+      String csv = vr.echoVersion() != null ? vr.echoVersion() : match.getVersion();
+      issues.add(org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "status-check",
+          String.format("Reference to %s CodeSystem %s%s", csStatus, statusSystem, csv != null ? "|" + csv : "")));
+    }
+    String vsStatus = statusWord(inlineVs);
+    if (vsStatus != null) {
+      issues.add(org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "status-check",
+          String.format("Reference to %s ValueSet %s%s", vsStatus, inlineVs.getUrl(), inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "")));
+    }
     resp.addParameter(new ParametersParameter("result").setValueBoolean(displayValid && !vr.hasError()));
     resp.addParameter(new ParametersParameter("code").setValueCode(match.getCode()));
     if (match.getSystem() != null) {
