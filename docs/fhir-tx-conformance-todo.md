@@ -167,7 +167,9 @@ Three independent gaps, in increasing cost:
 **Where:** `ValueSetExpandOperation.expandInline` / `value_set_expand(text)` — no handling for `include.valueSet`.
 **HAPI:** `ValueSetExpander.includeValueSet` recursively expands the referenced value set and intersects.
 **Proposal:** in `expandInline`, when an include has `valueSet`, resolve each referenced VS from the `tx-resource` set (or stored), expand it, and intersect/union per FHIR compose semantics, before/with the SQL expand.
-**❓Question:** the recursion can mix tx-resource and stored value sets — OK to resolve imported value sets from `tx-resource` first, then stored, and error if neither resolves? Any depth limit you want enforced?
+
+### P8 — DONE (2026-06-20, branch feat/p8-vs-import)
+`ValueSetExpandOperation.resolveImportedValueSets` (called first in `expandInline`): for each `compose.include[].valueSet`, find the referenced VS among the bundled `tx-resources` (parsing `url|version`; a `default-valueset-version=<url>|<ver>` request param pins a versionless import), recursively expand it (cycle-guarded by a visited set), and rewrite the include into `system`+`concept` entries of the imported members (so the SQL expand + flags + display handle them). Emits a `used-valueset` expansion parameter per resolved import; an unresolvable import (e.g. wrong pinned version) is a 404 with the `url|version` in the text. `ValueSetValidateCodeOperation` now forwards the request's `tx-resource` params to its internal expand so imports resolve there too (this was P2's `#1`). **Full-run: net +10 (336→346), 11 newly passing** — the `default-valueset-version` `indirect-expand-*` cases AND **`permutations/good-{cc1,coding,scd}-import` (the P3 codeableConcept-import cases, unblocked as planned)**. ONE regression: `indirect-validation-zero-pinned` (the import now resolves but the response should carry an imported-VS version `issues` param — deeper, deferred; net of the validate-code forwarding is still strongly positive). Remaining: `indirect-validation-zero-pinned[-wrong]` (issues param).
 
 ---
 
