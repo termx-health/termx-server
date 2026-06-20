@@ -779,6 +779,14 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // Derived used-supplement params (resolved url|version) for supplements applied to this inline expansion.
     usedSupplements.forEach(s -> expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
         .setName("used-supplement").setValueUri(s.asCanonical())));
+    // A `displayLanguage` declared by the VS's expansion-parameter extension is applied (see applyDisplayLanguage)
+    // and echoed as an expansion.parameter — unless the request already carried a displayLanguage (already echoed).
+    String vsExpDisplayLanguage = vsExpansionDisplayLanguage(inlineVs);
+    if (StringUtils.isNotEmpty(vsExpDisplayLanguage)
+        && expansionParameters.stream().noneMatch(pp -> "displayLanguage".equals(pp.getName()))) {
+      expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
+          .setName("displayLanguage").setValueCode(vsExpDisplayLanguage));
+    }
     // A used-codesystem must reflect the source: when the tx-resource CodeSystem declares no version, the
     // import-defaulted version (e.g. 1.0.0) must be dropped so used-codesystem is the bare system uri.
     java.util.Set<String> versionlessSystems = versionlessTxCodeSystems(req);
@@ -825,6 +833,14 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // designation surfaces its real use system (e.g. {.../designations, olde-english}) on contains[].designation.
     java.util.Map<String, com.kodality.zmei.fhir.datatypes.Coding> designationUses = designationUses(req);
     java.util.Set<String> noLanguageDesignations = noLanguageDesignations(req);
+    java.util.Set<String> noUseDesignations = noUseDesignations(req);
+
+    // P1 display-language: pick each member's display by the effective language (requested displayLanguage →
+    // VS expansion-parameter extension → the CodeSystem's resource language) and drop the chosen value from
+    // the member's alternate designations, so contains[].display is the resource/requested-language one and
+    // the other-language designations are kept (below).
+    String vsDisplayLanguage = vsExpansionDisplayLanguage(inlineVs);
+    applyDisplayLanguage(expandedConcepts, displayLanguage, vsDisplayLanguage, resourceLanguages(req), primaryDisplays(req));
 
     // FHIR adds `version` to a contains member only when the expansion spans more than one code system
     // version (a mixed/multi-version value set), to disambiguate; a single-version expansion omits it.
@@ -861,12 +877,11 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
             List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation> designations =
                 concept.getAdditionalDesignations().stream()
                 .filter(d -> ValueSetFhirMapper.designationMatchesFilter(d, designationFilter))
-                // With no explicit `designation` filter, the designation that simply repeats the member's display
-                // and the definition are surfaced via contains.display / a definition property — the tx-ecosystem
-                // omits those designation entries. When the caller explicitly filters designations, return exactly
-                // what was asked for (don't second-guess).
-                .filter(d -> !designationFilter.isEmpty()
-                    || (!"display".equals(d.getDesignationType()) && !"definition".equals(d.getDesignationType())))
+                // The designation repeating the member's display is already removed (applyDisplayLanguage drops
+                // it by value); the definition is surfaced as a definition property, not a designation. With no
+                // explicit `designation` filter, drop only the definition — the remaining alternate-language
+                // designations are kept. An explicit filter returns exactly what was asked for.
+                .filter(d -> !designationFilter.isEmpty() || !"definition".equals(d.getDesignationType()))
                 .map(d -> {
                   com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation designation =
                       new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation();
@@ -878,13 +893,16 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
                   if (!noLanguageDesignations.contains(d.getName())) {
                     designation.setLanguage(d.getLanguage());
                   }
-                  // Prefer the designation's own use coding as stated by the (tx-resource) CodeSystem — it carries
-                  // the use system for custom designations (e.g. {.../designations, olde-english}); the static
-                  // name→use map only knows the common ones.
-                  com.kodality.zmei.fhir.datatypes.Coding use = designationUses.get(d.getDesignationType());
-                  designation.setUse(use != null ? use
-                      : org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(
-                          d.getDesignationType() == null ? "display" : d.getDesignationType()));
+                  // A designation the source stated WITHOUT a use is echoed without one (the import defaults a
+                  // missing use to type "display", which must not resurface as a use coding). Otherwise prefer the
+                  // designation's own use coding from the tx-resource CodeSystem (it carries the use system for
+                  // custom designations, e.g. {.../designations, olde-english}); fall back to the type→use mapping.
+                  if (!noUseDesignations.contains(d.getName())) {
+                    com.kodality.zmei.fhir.datatypes.Coding use = designationUses.get(d.getDesignationType());
+                    designation.setUse(use != null ? use
+                        : org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(
+                            d.getDesignationType() == null ? "display" : d.getDesignationType()));
+                  }
                   return designation;
                 }).toList();
             if (!designations.isEmpty()) {
@@ -999,6 +1017,154 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       }
       collectNoLanguageDesignations(c.getConcept(), values);
     }
+  }
+
+  /** {@code CodeSystem.url → resource language} from the tx-resource CodeSystems — used as the default
+   *  displayLanguage when the request states none (a member's display is then its resource-language one). */
+  private static java.util.Map<String, String> resourceLanguages(Parameters req) {
+    java.util.Map<String, String> langs = new java.util.HashMap<>();
+    if (req == null || req.getParameter() == null) {
+      return langs;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs
+          && StringUtils.isNotEmpty(cs.getUrl()) && StringUtils.isNotEmpty(cs.getLanguage())) {
+        langs.putIfAbsent(cs.getUrl(), cs.getLanguage());
+      }
+    }
+    return langs;
+  }
+
+  /** {@code system|code → CodeSystem.concept.display} (the PRIMARY display) from the tx-resource CodeSystems —
+   *  so the display re-pick prefers the concept's own primary display over an alternate same-language designation. */
+  private static java.util.Map<String, String> primaryDisplays(Parameters req) {
+    java.util.Map<String, String> displays = new java.util.HashMap<>();
+    if (req == null || req.getParameter() == null) {
+      return displays;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs
+          && StringUtils.isNotEmpty(cs.getUrl())) {
+        collectPrimaryDisplays(cs.getUrl(), cs.getConcept(), displays);
+      }
+    }
+    return displays;
+  }
+
+  private static void collectPrimaryDisplays(String system, List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts,
+                                             java.util.Map<String, String> displays) {
+    if (concepts == null) {
+      return;
+    }
+    for (var c : concepts) {
+      if (c.getCode() != null && StringUtils.isNotEmpty(c.getDisplay())) {
+        displays.putIfAbsent(system + "|" + c.getCode(), c.getDisplay());
+      }
+      collectPrimaryDisplays(system, c.getConcept(), displays);
+    }
+  }
+
+  /** The {@code displayLanguage} declared by a value set's {@code compose.extension[valueset-expansion-parameter]}
+   *  (a VS-embedded expansion control) — applied AND echoed as an {@code expansion.parameter}. */
+  private static String vsExpansionDisplayLanguage(com.kodality.zmei.fhir.resource.terminology.ValueSet vs) {
+    if (vs == null || vs.getCompose() == null || vs.getCompose().getExtension() == null) {
+      return null;
+    }
+    for (com.kodality.zmei.fhir.Extension ext : vs.getCompose().getExtension()) {
+      if (!"http://hl7.org/fhir/StructureDefinition/valueset-expansion-parameter".equals(ext.getUrl()) || ext.getExtension() == null) {
+        continue;
+      }
+      String name = ext.getExtension().stream().filter(e -> "name".equals(e.getUrl()))
+          .map(e -> e.getValueString() != null ? e.getValueString() : e.getValueCode()).filter(java.util.Objects::nonNull).findFirst().orElse(null);
+      if ("displayLanguage".equals(name)) {
+        return ext.getExtension().stream().filter(e -> "value".equals(e.getUrl()))
+            .map(e -> e.getValueCode() != null ? e.getValueCode() : e.getValueString()).filter(java.util.Objects::nonNull).findFirst().orElse(null);
+      }
+    }
+    return null;
+  }
+
+  /** Designation VALUES the tx-resource CodeSystem stated with NO {@code use} — kept on contains[].designation
+   *  without a `use` coding (the import defaults a missing use to type "display", which must not resurface). */
+  private static java.util.Set<String> noUseDesignations(Parameters req) {
+    java.util.Set<String> values = new java.util.HashSet<>();
+    if (req == null || req.getParameter() == null) {
+      return values;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs) {
+        collectNoUseDesignations(cs.getConcept(), values);
+      }
+    }
+    return values;
+  }
+
+  private static void collectNoUseDesignations(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts,
+                                               java.util.Set<String> values) {
+    if (concepts == null) {
+      return;
+    }
+    for (var c : concepts) {
+      if (c.getDesignation() != null) {
+        for (var d : c.getDesignation()) {
+          if (d.getValue() != null && (d.getUse() == null || d.getUse().getCode() == null)) {
+            values.add(d.getValue());
+          }
+        }
+      }
+      collectNoUseDesignations(c.getConcept(), values);
+    }
+  }
+
+  /**
+   * P1 display-language: choose each member's display by the effective language — the requested
+   * {@code displayLanguage}, else the VS expansion-parameter extension, else the member's CodeSystem resource
+   * language — re-picking from the member's own designations (display + additional). When the effective
+   * language is unknown (no language in play and no tx-resource resource language), the display is left as
+   * the SQL/provider chose it. The chosen display is then dropped from the member's additional designations
+   * (by value) so it is not also echoed as a designation.
+   */
+  private static void applyDisplayLanguage(List<ValueSetVersionConcept> concepts, String requestedLanguage,
+                                           String vsDisplayLanguage, java.util.Map<String, String> resourceLanguages,
+                                           java.util.Map<String, String> primaryDisplays) {
+    for (ValueSetVersionConcept c : concepts) {
+      // Only re-pick WHICH designation is the display; never invent a display for a member that has none
+      // (that would surface an "unexpected" display where the reference omits it).
+      if (c.getDisplay() == null) {
+        continue;
+      }
+      String system = c.getConcept() != null ? c.getConcept().getCodeSystemUri() : null;
+      String code = c.getConcept() != null ? c.getConcept().getCode() : null;
+      String effective = StringUtils.isNotEmpty(requestedLanguage) ? requestedLanguage
+          : StringUtils.isNotEmpty(vsDisplayLanguage) ? vsDisplayLanguage
+          : system != null ? resourceLanguages.get(system) : null;
+      // De-dupe display + additional designations by (language, value) — the SQL expand can carry the display
+      // value as an additional designation too, which would otherwise resurface as a duplicate designation.
+      java.util.LinkedHashMap<String, Designation> all = new java.util.LinkedHashMap<>();
+      all.putIfAbsent(c.getDisplay().getLanguage() + "|" + c.getDisplay().getName(), c.getDisplay());
+      if (c.getAdditionalDesignations() != null) {
+        c.getAdditionalDesignations().forEach(d -> all.putIfAbsent(d.getLanguage() + "|" + d.getName(), d));
+      }
+      String primaryDisplay = system != null && code != null ? primaryDisplays.get(system + "|" + code) : null;
+      Designation chosen = c.getDisplay();
+      if (StringUtils.isNotEmpty(effective)) {
+        java.util.List<Designation> matches = all.values().stream().filter(d -> languageMatches(d.getLanguage(), effective)).toList();
+        // Among same-language candidates prefer the concept's PRIMARY display value (an alternate same-language
+        // designation must not win over the concept's own display); else the first language match; else keep.
+        chosen = matches.stream().filter(d -> d.getName() != null && d.getName().equals(primaryDisplay)).findFirst()
+            .or(() -> matches.stream().findFirst())
+            .orElse(c.getDisplay());
+      }
+      final Designation display = chosen;
+      c.setDisplay(display);
+      c.setAdditionalDesignations(all.values().stream().filter(d -> d != display).toList());
+    }
+  }
+
+  /** BCP-47-ish language match: exact or a region refinement (`de` matches `de-DE`). */
+  private static boolean languageMatches(String language, String target) {
+    return language != null && target != null
+        && (language.equals(target) || language.startsWith(target + "-") || target.startsWith(language + "-"));
   }
 
   /** code-system child→parent map ({@code system|code} → parent code) from the tx-resource CodeSystems' nested concept trees. */
