@@ -74,14 +74,14 @@ public class ProfileTolerantResourceValidator extends ResourceBeforeSaveIntercep
     if (StringUtils.isEmpty(parameters.getValue())) {
       return;
     }
-    validateProfile(parameters);
+    validateProfile(parameters, true);
   }
 
   @Override
   public void handle(ResourceId id, ResourceContent content, String interaction) {
     Resource resource = validateParse(content);
     validateType(id.getResourceType(), resource.getResourceType().name());
-    validateProfile(content);
+    validateProfile(content, false);
   }
 
   private Resource validateParse(ResourceContent content) {
@@ -98,7 +98,16 @@ public class ProfileTolerantResourceValidator extends ResourceBeforeSaveIntercep
     }
   }
 
-  private void validateProfile(ResourceContent content) {
+  /**
+   * @param operationInput when true the content is an operation's {@code Parameters} input. A terminology operation is
+   *     handed supporting resources inside {@code parameter[].resource} (the {@code tx-resource} CodeSystems/ValueSets
+   *     on {@code $expand}/{@code $validate-code}) — these are DATA for the operation to process, not the invocation,
+   *     and the reference tx server tolerates malformed ones (the {@code errors} suite deliberately bundles a
+   *     {@code broken-filter} ValueSet whose {@code compose.include.filter} lacks the 1..1 {@code value}). Errors
+   *     located inside such a contained resource are dropped so they cannot 400 an otherwise-valid call; the operation
+   *     itself decides how to handle a broken supporting resource.
+   */
+  private void validateProfile(ResourceContent content, boolean operationInput) {
     if (hapiContextHolder.getHapiContext() == null) {
       throw new FhirServerException(500, "fhir context initialization error");
     }
@@ -107,6 +116,7 @@ public class ProfileTolerantResourceValidator extends ResourceBeforeSaveIntercep
           .filter(m -> isError(m.getSeverity()))
           .filter(m -> !isUncheckedProfile(m))
           .filter(m -> !TOLERATED_BEST_PRACTICE_MESSAGE_IDS.contains(m.getMessageId()))
+          .filter(m -> !(operationInput && isInsideParameterResource(m.getLocationString())))
           .collect(toList());
       if (!errors.isEmpty()) {
         throw new FhirException(400, errors.stream().map(msg -> {
@@ -129,6 +139,14 @@ public class ProfileTolerantResourceValidator extends ResourceBeforeSaveIntercep
   /** A declared profile TermX cannot resolve yields an "unchecked profile" message — tolerated, not fatal. */
   private static boolean isUncheckedProfile(SingleValidationMessage m) {
     return m.getMessage() != null && m.getMessage().contains(UNCHECKED_PROFILE);
+  }
+
+  // A supporting resource error carries a location like "Parameters.parameter[5].resource/*ValueSet/x*/.compose…".
+  private static final java.util.regex.Pattern PARAMETER_RESOURCE_LOCATION = java.util.regex.Pattern.compile("parameter\\[\\d+\\]\\.resource");
+
+  /** True when the validation message points inside a {@code parameter[].resource} (a supporting resource, not the envelope). */
+  private static boolean isInsideParameterResource(String location) {
+    return location != null && PARAMETER_RESOURCE_LOCATION.matcher(location).find();
   }
 
   private static boolean isError(ResultSeverityEnum level) {
