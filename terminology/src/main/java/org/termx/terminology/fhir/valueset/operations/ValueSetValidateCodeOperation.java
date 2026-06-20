@@ -522,6 +522,11 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     if (displayLanguage != null) {
       expandReq.addParameter(new ParametersParameter("displayLanguage").setValueCode(displayLanguage));
     }
+    // Forward the supporting tx-resource resources so the inline expand can resolve imported value sets
+    // (compose.include.valueSet, P8) and code-system metadata that were bundled with the request.
+    Optional.ofNullable(req.getParameter()).orElse(List.of()).stream()
+        .filter(p -> "tx-resource".equals(p.getName()))
+        .forEach(expandReq::addParameter);
     com.kodality.zmei.fhir.resource.terminology.ValueSet expanded = expandOperation.run(expandReq);
     String finalCode = code;
     String finalSystem = system;
