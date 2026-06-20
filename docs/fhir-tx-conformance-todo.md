@@ -209,15 +209,35 @@ Three independent gaps, in increasing cost:
 
 ---
 
-## Suggested order (by tests-per-effort, once you've answered)
+## Dependency analysis (2026-06-20) — what blocks what
 
-1. **P1+P2** (display-language) — unblocks ~25 + the display half of `version`/`validation`.
-2. **P5a** (activeOnly + inactive flag) — ~12, Java-only.
-3. **P3** (codeableConcept shapes) — ~15.
-4. **P7** (enum nested) + **P8** (VS-import) — ~10, also unblock P3 `import` cases.
-5. **P6** (supplements) + **P10** (lookup) — ~20.
-6. **P9** (HTTP codes) — ~25, in a/b/c order you pick.
-7. **P4** (version tail) — re-measure; likely mostly free after P1–P3.
-8. **P11/P12** — mop-up.
+Done so far: **P5a, P11-partial, P9a, P7 (enum abstract), P6a (bad-supplement 404), P6b.1 (used-supplement echo), P6b.2 (lookup source)**.
 
-Rough ceiling if all land: ~303 → ~470–500/599. The hard cap is the cases that genuinely need a behaviour decision (the ❓ questions) — that's why they're called out per problem.
+**Hard prerequisites (B cannot pass until A lands):**
+- **P1 (display-language) → P2, the `display` half of P7 enum-designations/definitions, the display half of `validation`, and much of P4.** Display resolution is the single biggest upstream dependency: dozens of expand/validate cases assert the echoed `display`/designations. Until display is right, those fail regardless of any other fix. P1 is the **#1 unblock** — and it is gated on your a/b/c strategy pick (still unanswered).
+- **extensions→property machinery → P6b.3 (expand-supplement-good content) AND the whole `extensions` suite.** Mapping FHIR concept extensions (`codesystem-label`, `conceptOrder`, `itemWeight`) to expansion properties is a *separate feature*; expand-good can't match until it exists. NOT supplement work.
+- **stored `used-codesystem` version-strip (versionless CS) → expand content matches across `extensions` + any versionless-CS suite.** Small, broad. The inline path already strips it; the stored path lost the "no source version" signal.
+- **P8 (VS-import inline) + P7 → P3 `import` codeableConcept cases.** Membership of an imported VS must resolve before the import-validate shapes can match.
+- **P6 supplement work → P10 (`$lookup` part shape).** Several lookup `part`-count failures are supplement-driven; **P6b.2 already did the supplement half**. P10's remaining non-supplement `part`/property-value-type shape can follow.
+
+**Cross-cutting (one fix lands rows in several suites):**
+- **P6a (bad-supplement 404) already covers the "bad supplement reference" rows inside P9** (`extensions ~4`, `validation ~3`). So P9's 4xx cluster is partly done.
+- Display (P1) and the validate-issue machinery (P2/P5/P11) share code → high regression surface; change with broad re-runs.
+
+**Independent / parallelizable (no blockers):** P9b (expand size guard), P9c (`$batch`/`$translate`), P11 remainder (deprecated/withdrawn), P5b, P12 one-offs.
+
+**Re-measure checkpoints (avoid wasted effort):**
+- **After P1 lands, re-run before touching P4.** "P4 version tail (~62)" is *mostly display/shape side-effects* — many resolve for free once P1–P3 are in. Hand-fixing P4 first burns effort on tests that fix themselves.
+- A fresh full run is also overdue now (P7/P6a/b.1/b.2 merged but unmeasured).
+
+**Recommended sequence:**
+1. **Re-measure** (confirm the merged delta; baseline is stale at 318).
+2. **P1 (display-language)** — pick a/b/c; biggest unblock, gates P2 + enum/validation/version display.
+3. **P2** (validate display) — falls out of P1's machinery.
+4. **extensions→property** + **stored used-codesystem version-strip** — unblocks the `extensions` suite + P6b.3.
+5. **P8 (VS-import)** → then **P3 import** cases.
+6. **P10** (lookup non-supplement part shape) — supplement half already done.
+7. **P9b/P9c**, **P11 remainder**, **P12** — independent mop-up, parallelizable.
+8. **Re-measure, then P4** version tail — likely mostly free.
+
+Rough ceiling unchanged (~470–500/599). The gating constraint is still the ❓ behaviour decisions (chiefly the **P1 a/b/c pick**).
