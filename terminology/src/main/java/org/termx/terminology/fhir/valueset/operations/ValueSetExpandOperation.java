@@ -756,6 +756,12 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // Echo `experimental` from the source — the tx-ecosystem expects it on the $expand result (even when
     // false), and a $expand response is a rendering of the value set, so its descriptive metadata carries over.
     response.setExperimental(inlineVs.getExperimental());
+    // Echo the value set's own resource `language` (when declared) onto the expansion result — the tx-ecosystem
+    // expects the rendered ValueSet to carry the source VS language (distinct from the displayLanguage used to
+    // pick member displays). Only the VS's declared language, not a request/extension displayLanguage.
+    if (StringUtils.isNotEmpty(inlineVs.getLanguage())) {
+      response.setLanguage(inlineVs.getLanguage());
+    }
     // An $expand response is a rendered view, not the value-set definition — the expansion replaces the
     // compose (the tx-ecosystem marks compose optional on the expand result and the reference server omits it;
     // echoing the source compose, including its raw include version, mismatches). The stored path already
@@ -779,9 +785,10 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // Derived used-supplement params (resolved url|version) for supplements applied to this inline expansion.
     usedSupplements.forEach(s -> expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
         .setName("used-supplement").setValueUri(s.asCanonical())));
-    // A `displayLanguage` declared by the VS's expansion-parameter extension is applied (see applyDisplayLanguage)
-    // and echoed as an expansion.parameter — unless the request already carried a displayLanguage (already echoed).
-    String vsExpDisplayLanguage = vsExpansionDisplayLanguage(inlineVs);
+    // A VS-declared display language — its expansion-parameter extension, else the VS resource `language` — is
+    // applied (see applyDisplayLanguage) and echoed as an expansion.parameter, unless the request already carried
+    // a displayLanguage (already echoed).
+    String vsExpDisplayLanguage = vsDeclaredDisplayLanguage(inlineVs);
     if (StringUtils.isNotEmpty(vsExpDisplayLanguage)
         && expansionParameters.stream().noneMatch(pp -> "displayLanguage".equals(pp.getName()))) {
       expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
@@ -839,7 +846,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // VS expansion-parameter extension → the CodeSystem's resource language) and drop the chosen value from
     // the member's alternate designations, so contains[].display is the resource/requested-language one and
     // the other-language designations are kept (below).
-    String vsDisplayLanguage = vsExpansionDisplayLanguage(inlineVs);
+    String vsDisplayLanguage = vsDeclaredDisplayLanguage(inlineVs);
     applyDisplayLanguage(expandedConcepts, displayLanguage, vsDisplayLanguage, resourceLanguages(req), primaryDisplays(req));
 
     // FHIR adds `version` to a contains member only when the expansion spans more than one code system
@@ -1064,6 +1071,14 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
   }
 
+  /** The display language a value set itself declares — its {@code compose.extension[valueset-expansion-parameter]}
+   *  {@code displayLanguage}, else the VS resource {@code language}. Applied AND echoed as an expansion.parameter.
+   *  (Ranks below an explicit request {@code displayLanguage}; an Accept-Language header would rank below this.) */
+  private static String vsDeclaredDisplayLanguage(com.kodality.zmei.fhir.resource.terminology.ValueSet vs) {
+    String ext = vsExpansionDisplayLanguage(vs);
+    return StringUtils.isNotEmpty(ext) ? ext : (vs != null ? vs.getLanguage() : null);
+  }
+
   /** The {@code displayLanguage} declared by a value set's {@code compose.extension[valueset-expansion-parameter]}
    *  (a VS-embedded expansion control) — applied AND echoed as an {@code expansion.parameter}. */
   private static String vsExpansionDisplayLanguage(com.kodality.zmei.fhir.resource.terminology.ValueSet vs) {
@@ -1146,13 +1161,16 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         c.getAdditionalDesignations().forEach(d -> all.putIfAbsent(d.getLanguage() + "|" + d.getName(), d));
       }
       String primaryDisplay = system != null && code != null ? primaryDisplays.get(system + "|" + code) : null;
+      final String eff = effective;
       Designation chosen = c.getDisplay();
-      if (StringUtils.isNotEmpty(effective)) {
-        java.util.List<Designation> matches = all.values().stream().filter(d -> languageMatches(d.getLanguage(), effective)).toList();
-        // Among same-language candidates prefer the concept's PRIMARY display value (an alternate same-language
-        // designation must not win over the concept's own display); else the first language match; else keep.
-        chosen = matches.stream().filter(d -> d.getName() != null && d.getName().equals(primaryDisplay)).findFirst()
-            .or(() -> matches.stream().findFirst())
+      if (StringUtils.isNotEmpty(eff)) {
+        // Among language-matching candidates, prefer (in order) an EXACT language match over a region-subtag
+        // match (`de` over `de-CH`), and the concept's PRIMARY display value over an alternate same-language
+        // designation. Scored: exact-language = 2, primary-display value = 1.
+        chosen = all.values().stream().filter(d -> languageMatches(d.getLanguage(), eff))
+            .max(java.util.Comparator.comparingInt(d ->
+                (eff.equalsIgnoreCase(d.getLanguage()) ? 2 : 0)
+                    + (d.getName() != null && d.getName().equals(primaryDisplay) ? 1 : 0)))
             .orElse(c.getDisplay());
       }
       final Designation display = chosen;
