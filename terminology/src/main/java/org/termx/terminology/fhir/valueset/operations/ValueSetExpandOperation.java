@@ -392,6 +392,34 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .toList();
   }
 
+  /** {@code system|code} of concepts the tx-resource CodeSystems mark inactive (property {@code inactive=true} or {@code status} of retired/deprecated/inactive). */
+  private static java.util.Set<String> txInactiveCodes(Parameters req) {
+    java.util.Set<String> codes = new java.util.HashSet<>();
+    if (req == null || req.getParameter() == null) {
+      return codes;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs && cs.getUrl() != null) {
+        collectInactive(cs.getConcept(), cs.getUrl(), codes);
+      }
+    }
+    return codes;
+  }
+
+  private static void collectInactive(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts, String system, java.util.Set<String> codes) {
+    if (concepts == null) {
+      return;
+    }
+    for (var c : concepts) {
+      if (c.getCode() != null && c.getProperty() != null && c.getProperty().stream().anyMatch(pr ->
+          ("inactive".equals(pr.getCode()) && Boolean.TRUE.equals(pr.getValueBoolean()))
+              || ("status".equals(pr.getCode()) && List.of("retired", "deprecated", "inactive").contains(String.valueOf(pr.getValueCode()))))) {
+        codes.add(system + "|" + c.getCode());
+      }
+      collectInactive(c.getConcept(), system, codes);
+    }
+  }
+
   /** Canonical urls of tx-resource CodeSystems that declare no version (so a used-codesystem should be the bare system uri). */
   private static java.util.Set<String> versionlessTxCodeSystems(Parameters req) {
     java.util.Set<String> systems = new java.util.HashSet<>();
@@ -573,9 +601,15 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .map(pp -> Boolean.TRUE.equals(pp.getValueBoolean()) || "true".equals(pp.getValueString())).orElse(false);
     boolean composeExcludesInactive = inlineVs.getCompose() != null && Boolean.FALSE.equals(inlineVs.getCompose().getInactive());
     boolean excludeInactive = activeOnlyParam || composeExcludesInactive;
+    // The SQL expand carries no status/properties, and the DB decoration is unreliable for tx-resource-only
+    // code systems — so also derive inactivity straight from the tx-resource CodeSystem's concept properties
+    // (`inactive=true` / `status=retired|deprecated|inactive`).
+    java.util.Set<String> txInactiveCodes = txInactiveCodes(req);
     if (excludeInactive) {
       decorateExpansionFlags(expandedConcepts);
-      expandedConcepts = expandedConcepts.stream().filter(c -> !isInactiveMember(c)).toList();
+      expandedConcepts = expandedConcepts.stream()
+          .filter(c -> !isInactiveMember(c) && !(c.getConcept() != null && txInactiveCodes.contains(c.getConcept().getCodeSystemUri() + "|" + c.getConcept().getCode())))
+          .toList();
     }
 
     // FHIR R5 ValueSet.expansion.total: "If the number of codes in an expansion
@@ -688,7 +722,8 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           // FHIR expansion.contains flags, both omitted when false: `inactive` for a retired/deprecated
           // concept, `abstract` for a not-selectable (grouper) concept. The SQL expand returns members bare,
           // so these come from decorateExpansionFlags (a bulk load of the windowed members' versions).
-          if (isInactiveMember(concept)) {
+          if (isInactiveMember(concept)
+              || (concept.getConcept() != null && txInactiveCodes.contains(concept.getConcept().getCodeSystemUri() + "|" + concept.getConcept().getCode()))) {
             contain.setInactive(true);
           }
           if (isAbstractMember(concept)) {
@@ -959,9 +994,18 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     });
   }
 
-  /** A member is inactive when its concept version status is retired or deprecated (matching {@code $lookup}). */
+  /**
+   * A member is inactive when its concept version status is retired/deprecated, OR it carries the FHIR
+   * concept-property {@code inactive=true}, OR a {@code status} property of retired/deprecated/inactive — the
+   * tx-ecosystem marks such members {@code inactive} in the expansion and excludes them under {@code activeOnly}.
+   */
   private static boolean isInactiveMember(ValueSetVersionConcept concept) {
-    return List.of("retired", "deprecated").contains(String.valueOf(concept.getStatus()));
+    if (List.of("retired", "deprecated", "inactive").contains(String.valueOf(concept.getStatus()))) {
+      return true;
+    }
+    return java.util.Optional.ofNullable(concept.getPropertyValues()).orElse(List.of()).stream().anyMatch(pv ->
+        ("inactive".equals(pv.getEntityProperty()) && (Boolean.TRUE.equals(pv.getValue()) || "true".equalsIgnoreCase(String.valueOf(pv.getValue()))))
+            || ("status".equals(pv.getEntityProperty()) && List.of("retired", "deprecated", "inactive").contains(String.valueOf(pv.getValue()))));
   }
 
   /** A member is abstract (a grouper, not for direct use) when its concept carries {@code notSelectable=true}. */
