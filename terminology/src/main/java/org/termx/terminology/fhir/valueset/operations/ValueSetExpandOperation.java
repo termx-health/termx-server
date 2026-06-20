@@ -457,6 +457,33 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     return codes;
   }
 
+  /** {@code system|code} of concepts the tx-resource CodeSystems mark not-selectable (property {@code notSelectable=true}). */
+  private static java.util.Set<String> txAbstractCodes(Parameters req) {
+    java.util.Set<String> codes = new java.util.HashSet<>();
+    if (req == null || req.getParameter() == null) {
+      return codes;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs && cs.getUrl() != null) {
+        collectAbstract(cs.getConcept(), cs.getUrl(), codes);
+      }
+    }
+    return codes;
+  }
+
+  private static void collectAbstract(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts, String system, java.util.Set<String> codes) {
+    if (concepts == null) {
+      return;
+    }
+    for (var c : concepts) {
+      if (c.getCode() != null && c.getProperty() != null && c.getProperty().stream()
+          .anyMatch(pr -> ("notSelectable".equals(pr.getCode()) || "not-selectable".equals(pr.getCode())) && Boolean.TRUE.equals(pr.getValueBoolean()))) {
+        codes.add(system + "|" + c.getCode());
+      }
+      collectAbstract(c.getConcept(), system, codes);
+    }
+  }
+
   private static void collectInactive(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts, String system, java.util.Set<String> codes) {
     if (concepts == null) {
       return;
@@ -656,6 +683,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // code systems — so also derive inactivity straight from the tx-resource CodeSystem's concept properties
     // (`inactive=true` / `status=retired|deprecated|inactive`).
     java.util.Set<String> txInactiveCodes = txInactiveCodes(req);
+    java.util.Set<String> txAbstractCodes = txAbstractCodes(req);
     if (excludeInactive) {
       decorateExpansionFlags(expandedConcepts);
       expandedConcepts = expandedConcepts.stream()
@@ -794,7 +822,8 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
               || (concept.getConcept() != null && txInactiveCodes.contains(concept.getConcept().getCodeSystemUri() + "|" + concept.getConcept().getCode()))) {
             contain.setInactive(true);
           }
-          if (isAbstractMember(concept)) {
+          if (isAbstractMember(concept)
+              || (concept.getConcept() != null && txAbstractCodes.contains(concept.getConcept().getCodeSystemUri() + "|" + concept.getConcept().getCode()))) {
             contain.setAbstractField(true);
           }
           if (includeDesignations && concept.getAdditionalDesignations() != null) {
