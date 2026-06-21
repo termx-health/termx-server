@@ -769,6 +769,27 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       // Split: a code that IS defined in the code system but not in the value set echoes its display/version and
       // a single `not-in-vs` issue; a code that the code system does not define adds an `invalid-code` issue.
       CsConcept csConcept = txCsConcept(req, system, code);
+      // A code system labeled content=fragment holds only a SUBSET of its codes, so an unknown code is a WARNING
+      // (not an error) and validation still succeeds — the code may be valid in another fragment. A single
+      // invalid-code warning with the fragment note, no not-in-vs.
+      com.kodality.zmei.fhir.resource.terminology.CodeSystem fragCs = system == null ? null : txCodeSystemResource(req, system);
+      if (fragCs != null && "fragment".equals(fragCs.getContent()) && !csConcept.found()) {
+        String fragVer = vr.echoVersion() != null ? vr.echoVersion() : (csVersion != null ? csVersion : fragCs.getVersion());
+        String fragLoc = ccInput ? ccLoc : codingInput ? "Coding.code" : "code";
+        String fragText = String.format(
+            "Unknown Code '%s' in the CodeSystem '%s'%s - note that the code system is labeled as a fragment, so the code may be valid in some other fragment",
+            code, system, fragVer != null ? " version '" + fragVer + "'" : "");
+        Parameters frag = new Parameters();
+        frag.addParameter(new ParametersParameter("code").setValueCode(code));
+        frag.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+            org.termx.terminology.fhir.TxIssues.issue("warning", "code-invalid", "invalid-code", fragText, fragLoc))));
+        frag.addParameter(new ParametersParameter("result").setValueBoolean(true));
+        frag.addParameter(new ParametersParameter("system").setValueUri(system));
+        if (fragVer != null) {
+          frag.addParameter(new ParametersParameter("version").setValueString(fragVer));
+        }
+        return frag;
+      }
       List<OperationOutcomeIssue> nfIssues = new ArrayList<>();
       // Issue locations follow the reference engine: a bare `code` input points at `code`; coding/codeableConcept
       // not-in-vs has no location; an invalid-code on a codeableConcept points at CodeableConcept.coding[0].code.
