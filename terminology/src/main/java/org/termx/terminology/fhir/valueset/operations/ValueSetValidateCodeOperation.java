@@ -483,6 +483,19 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     // (UNKNOWN_CODESYSTEM_VERSION, an error) is collected first so it sorts ahead of the mismatch and drives
     // the `message`/`x-caused-by-unknown-system`; the mismatch variant (DEFAULT warning / CHANGED / plain) follows.
     String xCausedBy = null;
+    // A concrete (non-wildcard) VS-include version that doesn't exist among the code system's available versions is
+    // reported as not-found — with the valid-versions list — plus x-caused-by-unknown-system, even though the value
+    // set still resolves the code by membership. A wildcard include (1.x.x), an available version, or a forced
+    // version is fine. (Ordered before the mismatch issue so the combined message leads with the not-found.)
+    if (includeVersion != null && force == null
+        && !org.termx.terminology.fhir.FhirVersions.versionHasWildcards(includeVersion)
+        && !available.isEmpty() && !available.contains(includeVersion)) {
+      issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", String.format(
+          "A definition for CodeSystem '%s' version '%s' could not be found, so the code cannot be validated. Valid versions: %s",
+          system, includeVersion, org.termx.terminology.fhir.TxIssues.presentVersionList(available)), systemLocation(req)));
+      hasError = true;
+      xCausedBy = system + "|" + includeVersion;
+    }
     if (codingVersion != null && !(csVersion != null && codingVersion.equals(csVersion))) {
       if (csExists && !available.isEmpty() && !available.contains(codingVersion)) {
         issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", String.format(
