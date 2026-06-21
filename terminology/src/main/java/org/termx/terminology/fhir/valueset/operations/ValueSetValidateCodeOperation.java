@@ -344,6 +344,13 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     return req.findParameter("coding").isPresent() ? "Coding.version" : "version";
   }
 
+  private static String systemLocation(Parameters req) {
+    if (req.findParameter("codeableConcept").isPresent()) {
+      return "CodeableConcept.coding[0].system";
+    }
+    return req.findParameter("coding").isPresent() ? "Coding.system" : "system";
+  }
+
   /**
    * Reimplements org.hl7.fhir.core {@code ValueSetValidator.determineVersion}: resolve the effective code
    * system version (force &gt; include &gt; system-version &gt; check-system-version, then a more-detailed coding
@@ -387,7 +394,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       if (csExists && !available.isEmpty() && !available.contains(codingVersion)) {
         issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", String.format(
             "A definition for CodeSystem '%s' version '%s' could not be found, so the code cannot be validated. Valid versions: %s",
-            system, codingVersion, String.join(", ", available)), "system"));
+            system, codingVersion, org.termx.terminology.fhir.TxIssues.presentVersionList(available)), systemLocation(req)));
         hasError = true;
         xCausedBy = system + "|" + codingVersion;
       }
@@ -418,11 +425,12 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     String echo = csVersion != null ? csVersion
         : codingVersion != null && available.contains(codingVersion) ? codingVersion
         : available.stream().max(ValueSetValidateCodeOperation::compareVersions).orElse(null);
-    // The `message` echoes the primary (first error) issue text — error before warning.
+    // The `message` concatenates the ERROR issue texts (warnings/info excluded) in issue order,
+    // joined with "; " — mirrors org.hl7.fhir.core's combined validation message.
     String message = issues.stream().filter(i -> "error".equals(i.getSeverity()))
         .map(i -> i.getDetails() == null ? null : i.getDetails().getText()).filter(java.util.Objects::nonNull)
-        .findFirst().orElse(null);
-    return new VersionResolution(echo, issues, hasError, message, xCausedBy);
+        .collect(java.util.stream.Collectors.joining("; "));
+    return new VersionResolution(echo, issues, hasError, message.isEmpty() ? null : message, xCausedBy);
   }
 
   private static String notNull(String s) {
@@ -756,7 +764,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       if (anyVersion != null) {
         List<String> available = Optional.ofNullable(anyVersion.getConcept().getCodeSystemVersions()).orElse(List.of());
         if (!available.contains(finalVersion)) {
-          return unknownSystemVersion(anyVersion.getConcept().getCode(), findDisplay(anyVersion, display, displayLanguage),
+          return unknownSystemVersion(req, anyVersion.getConcept().getCode(), findDisplay(anyVersion, display, displayLanguage),
               finalSystem, finalVersion, available);
         }
       }
@@ -840,23 +848,25 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     return parameters;
   }
 
-  private Parameters unknownSystemVersion(String code, String displayName, String system, String requestedVersion,
+  private Parameters unknownSystemVersion(Parameters req, String code, String displayName, String system, String requestedVersion,
                                           List<String> availableVersions) {
     String availableVersion = availableVersions.stream().findFirst().orElse(null);
+    String systemLoc = systemLocation(req);
+    String versionLoc = versionLocation(req);
     String message = String.format(
         "A definition for CodeSystem '%s' version '%s' could not be found, so the code cannot be validated. Valid versions: %s",
-        system, requestedVersion, String.join(", ", availableVersions));
+        system, requestedVersion, org.termx.terminology.fhir.TxIssues.presentVersionList(availableVersions));
 
     OperationOutcomeIssue notFound = new OperationOutcomeIssue()
         .setSeverity("error").setCode("not-found")
         .setDetails(new CodeableConcept(new Coding("http://hl7.org/fhir/tools/CodeSystem/tx-issue-type", "not-found")).setText(message))
-        .setLocation(List.of("system")).setExpression(List.of("system"));
+        .setLocation(List.of(systemLoc)).setExpression(List.of(systemLoc));
     OperationOutcomeIssue mismatch = new OperationOutcomeIssue()
         .setSeverity("warning").setCode("invalid")
         .setDetails(new CodeableConcept(new Coding("http://hl7.org/fhir/tools/CodeSystem/tx-issue-type", "vs-invalid")).setText(String.format(
             "The code system '%s' version '%s' for the versionless include in the ValueSet include is different to the one in the value ('%s')",
             system, availableVersion, requestedVersion)))
-        .setLocation(List.of("version")).setExpression(List.of("version"));
+        .setLocation(List.of(versionLoc)).setExpression(List.of(versionLoc));
 
     OperationOutcome outcome = new OperationOutcome();
     outcome.setIssue(List.of(notFound, mismatch));
