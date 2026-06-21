@@ -697,6 +697,39 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     return copy;
   }
 
+  /**
+   * A value set that declares a REQUIRED supplement via the {@code valueset-supplement} extension must have it
+   * resolvable — a bundled tx-resource CodeSystem or a stored one with that canonical url. An unresolvable
+   * required supplement is a 404 not-found (tx-ecosystem {@code extensions} bad-supplement cases).
+   */
+  private void requireDeclaredSupplements(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, Parameters req) {
+    if (vs == null || vs.getExtension() == null) {
+      return;
+    }
+    for (com.kodality.zmei.fhir.Extension ext : vs.getExtension()) {
+      if (!"http://hl7.org/fhir/StructureDefinition/valueset-supplement".equals(ext.getUrl())) {
+        continue;
+      }
+      String ref = ext.getValueCanonical() != null ? ext.getValueCanonical()
+          : ext.getValueUri() != null ? ext.getValueUri() : ext.getValueUrl();
+      if (StringUtils.isEmpty(ref)) {
+        continue;
+      }
+      String url = ref.contains("|") ? ref.substring(0, ref.indexOf('|')) : ref;
+      boolean txPresent = req != null && req.getParameter() != null && req.getParameter().stream()
+          .filter(p -> "tx-resource".equals(p.getName()))
+          .map(ParametersParameter::getResource)
+          .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+          .map(r -> ((com.kodality.zmei.fhir.resource.terminology.CodeSystem) r).getUrl())
+          .anyMatch(url::equals);
+      boolean storedPresent = !txPresent && codeSystemService.query(
+          new org.termx.ts.codesystem.CodeSystemQueryParams().setUri(url).limit(1)).findFirst().isPresent();
+      if (!txPresent && !storedPresent) {
+        throw org.termx.terminology.fhir.TxIssues.notFoundException(404, "Required supplement not found: " + ref);
+      }
+    }
+  }
+
   /** The version pinned for an imported value set by a {@code default-valueset-version} request param
    *  ({@code <vsUrl>|<version>}), or null. */
   private static String defaultValueSetVersion(Parameters req, String vsUrl) {
@@ -742,6 +775,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // to a concrete available version so the SQL expand picks the right code system version — driving
     // expansion.total and the used-codesystem parameter. A pinned version that resolves to nothing, or a
     // check-system-version mismatch, is a 4xx (the expansion can't be produced).
+    // A value set that REQUIRES a supplement (valueset-supplement extension) must have it resolvable, else 4xx.
+    requireDeclaredSupplements(inlineVs, req);
+
     // P8: flatten any compose.include[].valueSet (imported value sets) into system+concept includes first.
     List<String> usedValueSets = new java.util.ArrayList<>();
     inlineVs = resolveImportedValueSets(inlineVs, req, new java.util.HashSet<>(), usedValueSets);
