@@ -951,6 +951,21 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // used-codesystem entries — same shape as the stored-snapshot path (reuses the mapper helper).
     List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter> expansionParameters =
         ValueSetFhirMapper.expansionParameters(req, expandedConcepts);
+    // used-codesystem is normally derived from the expanded members. When a filter excludes every member the
+    // expansion is empty, but the code system(s) the value set drew from were still "used" — so derive
+    // used-codesystem from the resolved compose includes instead (the reference engine reports it on an empty
+    // search result). Only when none was derived from members, so a non-empty expansion is unaffected.
+    if (expansionParameters.stream().noneMatch(pp -> "used-codesystem".equals(pp.getName()))
+        && inlineVs.getCompose() != null && inlineVs.getCompose().getInclude() != null) {
+      java.util.LinkedHashSet<String> includeSystems = new java.util.LinkedHashSet<>();
+      for (var inc : inlineVs.getCompose().getInclude()) {
+        if (inc.getSystem() != null) {
+          includeSystems.add(inc.getSystem() + (inc.getVersion() != null ? "|" + inc.getVersion() : ""));
+        }
+      }
+      includeSystems.forEach(s -> expansionParameters.add(
+          new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter().setName("used-codesystem").setValueUri(s)));
+    }
     // Derived used-supplement params (resolved url|version) for supplements applied to this inline expansion.
     usedSupplements.forEach(s -> expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
         .setName("used-supplement").setValueUri(s.asCanonical())));
