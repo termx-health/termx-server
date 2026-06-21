@@ -135,7 +135,10 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       if (version != null) {
         throw valueSetNotResolvable(url, version);
       }
-      return error("valueset version not found");
+      // An unresolvable value set canonical (not inline, not stored) is a hard 404 not-found per the
+      // tx-ecosystem, not a 200 with result=false.
+      throw org.termx.terminology.fhir.TxIssues.notFoundException(404,
+          String.format("A definition for the value Set '%s' could not be found", url));
     }
     return run(vsVersion, req);
   }
