@@ -455,18 +455,26 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
 
     return param.getParameter().stream()
         .filter(p -> !EXPANSION_SELECTION_PARAMETERS.contains(p.getName()))
-        .map(p -> new ValueSetExpansionParameter().setName(p.getName())
-        .setValueString(p.getValueString())
-        .setValueBoolean(p.getValueBoolean())
-        .setValueInteger(p.getValueInteger())
-        .setValueDecimal(p.getValueDecimal())
-        // expansion.parameter.value is a uri (not url/canonical), so fold those in — otherwise a
-        // request param like `url` carried as valueUrl/valueCanonical produced an expansion.parameter
-        // with a name but no value, which is invalid FHIR and crashes strict clients (e.g. the validator).
-        .setValueUri(p.getValueUri() != null ? p.getValueUri() : p.getValueUrl() != null ? p.getValueUrl() : p.getValueCanonical())
-        .setValueCode(p.getValueCode())
-        .setValueDateTime(p.getValueDateTime())
-    ).filter(ValueSetFhirMapper::hasValue).toList();
+        .map(p -> {
+          // The $expand `filter` parameter is a string (the text to match); a request that supplied it as a
+          // uri/code is echoed back as a string, the way the reference engine does (the `search` cases).
+          if ("filter".equals(p.getName())) {
+            String filterValue = p.getValueString() != null ? p.getValueString()
+                : p.getValueUri() != null ? p.getValueUri() : p.getValueCode() != null ? p.getValueCode() : p.getValueUrl();
+            return new ValueSetExpansionParameter().setName(p.getName()).setValueString(filterValue);
+          }
+          return new ValueSetExpansionParameter().setName(p.getName())
+              .setValueString(p.getValueString())
+              .setValueBoolean(p.getValueBoolean())
+              .setValueInteger(p.getValueInteger())
+              .setValueDecimal(p.getValueDecimal())
+              // expansion.parameter.value is a uri (not url/canonical), so fold those in — otherwise a
+              // request param like `url` carried as valueUrl/valueCanonical produced an expansion.parameter
+              // with a name but no value, which is invalid FHIR and crashes strict clients (e.g. the validator).
+              .setValueUri(p.getValueUri() != null ? p.getValueUri() : p.getValueUrl() != null ? p.getValueUrl() : p.getValueCanonical())
+              .setValueCode(p.getValueCode())
+              .setValueDateTime(p.getValueDateTime());
+        }).filter(ValueSetFhirMapper::hasValue).toList();
   }
 
   /** A FHIR expansion.parameter MUST have a value — drop any that ended up valueless rather than emit invalid output. */
