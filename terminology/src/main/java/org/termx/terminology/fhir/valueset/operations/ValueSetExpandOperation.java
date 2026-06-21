@@ -420,6 +420,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   }
 
   private static final String STANDARDS_STATUS_URL = "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status";
+  private static final String VALUESET_DEPRECATED_URL = "http://hl7.org/fhir/StructureDefinition/valueset-deprecated";
 
   /** The tx-resource CodeSystem whose canonical url matches {@code system}. */
   private static com.kodality.zmei.fhir.resource.terminology.CodeSystem txCodeSystem(Parameters req, String system) {
@@ -1068,6 +1069,31 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
             ? c.getConcept().getCodeSystemVersions().stream().findFirst().orElse(null) : null)
         .filter(java.util.Objects::nonNull).distinct().count() > 1;
 
+    // VS-scoped concept deprecation: the value set's compose can mark an enumerated concept as deprecated via a
+    // valueset-deprecated / standards-status extension on the include.concept (the concept itself may be active in
+    // its code system — this is a value-set-level annotation). The expand SQL drops compose-level extensions, so
+    // rebuild a (system|code → extensions) map from the source compose and echo those extensions onto the matching
+    // expansion.contains entry.
+    java.util.Map<String, List<com.kodality.zmei.fhir.Extension>> composeConceptDeprecation = new java.util.HashMap<>();
+    if (inlineVs.getCompose() != null && inlineVs.getCompose().getInclude() != null) {
+      for (var inc : inlineVs.getCompose().getInclude()) {
+        if (inc.getConcept() == null) {
+          continue;
+        }
+        for (var cc : inc.getConcept()) {
+          if (cc.getCode() == null || cc.getExtension() == null) {
+            continue;
+          }
+          List<com.kodality.zmei.fhir.Extension> deps = cc.getExtension().stream()
+              .filter(e -> VALUESET_DEPRECATED_URL.equals(e.getUrl()) || STANDARDS_STATUS_URL.equals(e.getUrl()))
+              .toList();
+          if (!deps.isEmpty()) {
+            composeConceptDeprecation.put((inc.getSystem() != null ? inc.getSystem() : "") + "|" + cc.getCode(), deps);
+          }
+        }
+      }
+    }
+
     // Map concepts to expansion contains
     List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> contains =
         expandedConcepts.stream().map(concept -> {
@@ -1091,6 +1117,11 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           if (isAbstractMember(concept)
               || (concept.getConcept() != null && txAbstractCodes.contains(concept.getConcept().getCodeSystemUri() + "|" + concept.getConcept().getCode()))) {
             contain.setAbstractField(true);
+          }
+          // Echo any VS-scoped deprecation extensions the source compose stated for this member.
+          List<com.kodality.zmei.fhir.Extension> depExts = composeConceptDeprecation.get(contain.getSystem() + "|" + contain.getCode());
+          if (depExts != null) {
+            depExts.forEach(contain::addExtension);
           }
           if (includeDesignations && concept.getAdditionalDesignations() != null) {
             List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation> designations =
