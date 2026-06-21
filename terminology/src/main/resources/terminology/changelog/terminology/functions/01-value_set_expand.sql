@@ -236,7 +236,10 @@ expressions as (
      and t.rule_id = c.rule_id
      and (t.filter_ -> 'property' ->> 'name')::text = 'code' and (
          (t.filter_ ->> 'operator')::text = '=' and c.csev_code = (t.filter_ ->> 'value')::text or -- code equals the provided value
-         (t.filter_ ->> 'operator')::text = 'regex' and c.csev_code = any(regexp_match(c.csev_code, (t.filter_ ->> 'value')::text||'$')) or -- code matches the regex
+         -- FHIR filter regex matches the ENTIRE code: anchor both ends as `^(value)$`. The previous
+         -- `= any(regexp_match(code, value||'$'))` form only anchored the tail and compared against a
+         -- captured group, so a value with its own group (e.g. `(a+)+`) matched nothing. (#310)
+         (t.filter_ ->> 'operator')::text = 'regex' and c.csev_code ~ ('^(' || (t.filter_ ->> 'value')::text || ')$') or -- code matches the regex (full match)
          (t.filter_ ->> 'operator')::text = 'in' and c.csev_code = any(string_to_array((t.filter_ ->> 'value')::text, ',')) or -- code is in the set
          (t.filter_ ->> 'operator')::text = 'not-in' and c.csev_code != all(string_to_array((t.filter_ ->> 'value')::text, ',')) -- code is not in the set
      )

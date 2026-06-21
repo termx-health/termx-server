@@ -278,7 +278,12 @@ WITH recursive vs AS (
          -- code / concept column with '=', 'in', 'regex', 'not-in'
          ((t.filter_ ->> 'property') in ('code', 'concept') and (t.filter_ ->> 'op') in ('=','in','regex','not-in') and (
               (t.filter_ ->> 'op') = '='      and con.code = (t.filter_ ->> 'value')::text or
-              (t.filter_ ->> 'op') = 'regex'  and con.code = any(regexp_match(con.code, (t.filter_ ->> 'value')::text || '$')) or
+              -- FHIR filter regex matches the ENTIRE code: anchor both ends as `^(value)$`. The previous
+              -- `code = any(regexp_match(code, value||'$'))` form only anchored the tail and compared the
+              -- code against a CAPTURED GROUP, so a value carrying its own group (e.g. `(a+)+`) returned the
+              -- inner capture instead of the whole match and matched nothing. The wrapping parens keep
+              -- top-level alternation (`a|b`) bound to the anchors.
+              (t.filter_ ->> 'op') = 'regex'  and con.code ~ ('^(' || (t.filter_ ->> 'value')::text || ')$') or
               (t.filter_ ->> 'op') = 'in'     and con.code = any(string_to_array((t.filter_ ->> 'value')::text, ',')) or
               (t.filter_ ->> 'op') = 'not-in' and con.code != all(string_to_array((t.filter_ ->> 'value')::text, ','))
          ))
