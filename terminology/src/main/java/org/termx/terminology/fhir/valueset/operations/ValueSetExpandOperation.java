@@ -966,6 +966,29 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       includeSystems.forEach(s -> expansionParameters.add(
           new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter().setName("used-codesystem").setValueUri(s)));
     }
+    // The reference engine reports used-codesystem as `system|version` whenever the code system has a
+    // version. The inline expand SQL does not carry the resolved CS version onto its members, and the
+    // empty-expansion compose fallback above only knows the version the include pinned (often none), so
+    // both can emit a bare `system`. Backfill the version from the request's tx-resource CodeSystems:
+    // a versionless code system (no version on its tx-resource) stays bare, and a system that resolves
+    // to more than one distinct version is left untouched (ambiguous).
+    java.util.Map<String, java.util.Set<String>> txResourceVersions = new java.util.HashMap<>();
+    if (req != null && req.getParameter() != null) {
+      for (ParametersParameter p : req.getParameter()) {
+        if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs
+            && cs.getUrl() != null && StringUtils.isNotEmpty(cs.getVersion())) {
+          txResourceVersions.computeIfAbsent(cs.getUrl(), k -> new java.util.HashSet<>()).add(cs.getVersion());
+        }
+      }
+    }
+    expansionParameters.stream()
+        .filter(pp -> "used-codesystem".equals(pp.getName()) && pp.getValueUri() != null && !pp.getValueUri().contains("|"))
+        .forEach(pp -> {
+          java.util.Set<String> versions = txResourceVersions.get(pp.getValueUri());
+          if (versions != null && versions.size() == 1) {
+            pp.setValueUri(pp.getValueUri() + "|" + versions.iterator().next());
+          }
+        });
     // Derived used-supplement params (resolved url|version) for supplements applied to this inline expansion.
     usedSupplements.forEach(s -> expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
         .setName("used-supplement").setValueUri(s.asCanonical())));
