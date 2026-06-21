@@ -1448,7 +1448,12 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         // Among language-matching candidates, prefer (in order) an EXACT language match over a region-subtag
         // match (`de` over `de-CH`), and the concept's PRIMARY display value over an alternate same-language
         // designation. Scored: exact-language = 2, primary-display value = 1.
-        chosen = all.values().stream().filter(d -> languageMatches(d.getLanguage(), eff))
+        // A `definition`-use designation is NOT a display name (FHIR), so it must never be chosen as the
+        // display — e.g. a `de` definition must not surface as the `de` display, which would otherwise leave a
+        // requested-language definition masquerading as the display (the reference keeps the default display).
+        chosen = all.values().stream()
+            .filter(d -> !"definition".equals(d.getDesignationType()))
+            .filter(d -> languageMatches(d.getLanguage(), eff))
             .max(java.util.Comparator.comparingInt(d ->
                 (eff.equalsIgnoreCase(d.getLanguage()) ? 2 : 0)
                     + (d.getName() != null && d.getName().equals(primaryDisplay) ? 1 : 0)))
