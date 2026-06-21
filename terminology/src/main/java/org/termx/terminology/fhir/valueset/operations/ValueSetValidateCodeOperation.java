@@ -698,7 +698,12 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           .anyMatch(c -> finalSystem.equals(c.getSystem()));
       if (!req.findParameter("codeableConcept").isPresent() && system != null && !systemHasMembers
           && txResourceCodeSystemVersions(req, system).isEmpty() && !txCsConcept(req, system, code).found()) {
-        return unknownSystem(code, system);
+        // Whether the unknown system is the value set's own include system decides the shape: its own include
+        // system → a single not-found (x-caused-by-unknown-system); an unrelated system → also a not-in-vs at
+        // `code` and x-unknown-system (errors/unknown-system1 vs unknown-system2).
+        boolean systemInIncludes = inlineVs.getCompose() != null && inlineVs.getCompose().getInclude() != null
+            && inlineVs.getCompose().getInclude().stream().anyMatch(inc -> finalSystem.equals(inc.getSystem()));
+        return unknownSystem(code, system, systemInIncludes, vsCanonical);
       }
       // Code not in the value set: the tx-ecosystem expects a 200 with result=false, the code/system/version
       // echoed, and a structured `issues` OperationOutcome (not-in-vs at the value set + invalid-code at the
@@ -973,21 +978,33 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
    * not-found issue at {@code system}, and {@code x-caused-by-unknown-system} carrying the system canonical — the
    * code cannot be validated because the system has no definition. Mirrors org.hl7.fhir.core's unknown-system path.
    */
-  private Parameters unknownSystem(String code, String system) {
-    String message = String.format("A definition for CodeSystem '%s' could not be found, so the code cannot be validated", system);
-    OperationOutcomeIssue notFound = new OperationOutcomeIssue()
-        .setSeverity("error").setCode("not-found")
-        .setDetails(new CodeableConcept(new Coding("http://hl7.org/fhir/tools/CodeSystem/tx-issue-type", "not-found")).setText(message))
-        .setLocation(List.of("system")).setExpression(List.of("system"));
-    OperationOutcome outcome = new OperationOutcome();
-    outcome.setIssue(List.of(notFound));
+  private Parameters unknownSystem(String code, String system, boolean systemInIncludes, String vsCanonical) {
     Parameters parameters = new Parameters();
     parameters.addParameter(new ParametersParameter("code").setValueCode(code));
-    parameters.addParameter(new ParametersParameter("issues").setResource(outcome));
-    parameters.addParameter(new ParametersParameter("message").setValueString(message));
-    parameters.addParameter(new ParametersParameter("result").setValueBoolean(false));
-    parameters.addParameter(new ParametersParameter("system").setValueUri(system));
-    parameters.addParameter(new ParametersParameter("x-caused-by-unknown-system").setValueCanonical(system));
+    if (systemInIncludes) {
+      // The unknown system IS the value set's own include system: a single not-found at `system` (system url
+      // quoted), reported via x-caused-by-unknown-system — the value set simply cannot be expanded.
+      String message = String.format("A definition for CodeSystem '%s' could not be found, so the code cannot be validated", system);
+      parameters.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+          org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", message, "system"))));
+      parameters.addParameter(new ParametersParameter("message").setValueString(message));
+      parameters.addParameter(new ParametersParameter("result").setValueBoolean(false));
+      parameters.addParameter(new ParametersParameter("system").setValueUri(system));
+      parameters.addParameter(new ParametersParameter("x-caused-by-unknown-system").setValueCanonical(system));
+    } else {
+      // The unknown system is NOT one the value set includes: the code is additionally not in the value set, so
+      // TWO issues — not-in-vs at `code` plus not-found at `system` (system url UNquoted here) — and the system is
+      // reported via x-unknown-system. The message lists the not-found first, then the not-in-vs.
+      String notInVs = String.format("The provided code '%s#%s' was not found in the value set '%s'", system, code, vsCanonical);
+      String notFound = String.format("A definition for CodeSystem %s could not be found, so the code cannot be validated", system);
+      parameters.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+          org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, "code"),
+          org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", notFound, "system"))));
+      parameters.addParameter(new ParametersParameter("message").setValueString(notFound + "; " + notInVs));
+      parameters.addParameter(new ParametersParameter("result").setValueBoolean(false));
+      parameters.addParameter(new ParametersParameter("system").setValueUri(system));
+      parameters.addParameter(new ParametersParameter("x-unknown-system").setValueCanonical(system));
+    }
     return parameters;
   }
 
