@@ -1106,6 +1106,28 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // An enumerated value set (explicit compose.include.concept list) is a flat selection, not a view of the
     // code system hierarchy — it is never nested, even with excludeNested=false.
     boolean enumerated = !expandedConcepts.isEmpty() && expandedConcepts.stream().allMatch(ValueSetVersionConcept::isEnumerated);
+    // Multi-version "overload": when a code system is included at more than one version, the reference engine
+    // orders the expansion by code ascending then version descending (code1@2.0.0, code1@1.0.0, code2@2.0.0, …),
+    // not by include order. Scope this narrowly — only a NON-enumerated expansion that actually spans more than
+    // one version — so an enumerated value set keeps its definition order and a single-version expansion (the
+    // overwhelming majority) is untouched.
+    long distinctVersions = contains.stream()
+        .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains::getVersion)
+        .filter(java.util.Objects::nonNull).distinct().count();
+    if (!enumerated && distinctVersions > 1) {
+      List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> ordered = new java.util.ArrayList<>(contains);
+      ordered.sort((a, b) -> {
+        int byCode = java.util.Comparator.nullsLast(String::compareTo).compare(a.getCode(), b.getCode());
+        if (byCode != 0) {
+          return byCode;
+        }
+        if (a.getVersion() == null || b.getVersion() == null) {
+          return java.util.Comparator.nullsLast(String::compareTo).compare(b.getVersion(), a.getVersion());
+        }
+        return compareVersions(b.getVersion(), a.getVersion()); // version descending within a code
+      });
+      contains = ordered;
+    }
     boolean nestHierarchy = !enumerated && req != null && req.findParameter("excludeNested").isPresent()
         && req.findParameter("excludeNested")
             .map(p -> !(Boolean.TRUE.equals(p.getValueBoolean()) || "true".equals(p.getValueString()))).orElse(false);
