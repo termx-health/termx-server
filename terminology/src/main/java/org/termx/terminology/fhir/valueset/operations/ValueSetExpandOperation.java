@@ -698,6 +698,41 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
   }
 
   /**
+   * Rejects a value set that cannot be processed because a {@code compose.include}/{@code exclude} filter is
+   * missing its {@code value} (1..1 in R5) — a 4xx {@code vs-invalid} carrying the offending filter's location,
+   * the way org.hl7.fhir.core does (tx-ecosystem {@code errors/broken-filter}). Only the operation target is
+   * checked; a malformed bundled tx-resource is tolerated on the input path.
+   */
+  private void requireValidFilters(com.kodality.zmei.fhir.resource.terminology.ValueSet vs) {
+    if (vs == null || vs.getCompose() == null) {
+      return;
+    }
+    requireValidFilters(vs.getCompose().getInclude(), "include");
+    requireValidFilters(vs.getCompose().getExclude(), "exclude");
+  }
+
+  private void requireValidFilters(
+      List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude> includes, String kind) {
+    if (includes == null) {
+      return;
+    }
+    for (int i = 0; i < includes.size(); i++) {
+      var inc = includes.get(i);
+      if (inc.getFilter() == null) {
+        continue;
+      }
+      for (int j = 0; j < inc.getFilter().size(); j++) {
+        var f = inc.getFilter().get(j);
+        if (StringUtils.isEmpty(f.getValue())) {
+          throw org.termx.terminology.fhir.TxIssues.vsInvalidException(400,
+              String.format("The system %s filter with property = %s, op = %s has no value", inc.getSystem(), f.getProperty(), f.getOp()),
+              String.format("ValueSet.compose.%s[%d].filter[%d]", kind, i, j));
+        }
+      }
+    }
+  }
+
+  /**
    * A value set that declares a REQUIRED supplement via the {@code valueset-supplement} extension must have it
    * resolvable — a bundled tx-resource CodeSystem or a stored one with that canonical url. An unresolvable
    * required supplement is a 404 not-found (tx-ecosystem {@code extensions} bad-supplement cases).
@@ -775,6 +810,11 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // to a concrete available version so the SQL expand picks the right code system version — driving
     // expansion.total and the used-codesystem parameter. A pinned version that resolves to nothing, or a
     // check-system-version mismatch, is a 4xx (the expansion can't be produced).
+    // The value set being operated on must be structurally valid: a compose filter is missing its `value`
+    // (1..1 in R5) cannot be processed — reject with a 4xx vs-invalid, the way the reference engine does
+    // (errors/broken-filter). This is the OPERATION TARGET only; a malformed *supporting* tx-resource is
+    // tolerated on the input path (see ProfileTolerantResourceValidator / #283).
+    requireValidFilters(inlineVs);
     // A value set that REQUIRES a supplement (valueset-supplement extension) must have it resolvable, else 4xx.
     requireDeclaredSupplements(inlineVs, req);
 
