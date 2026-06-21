@@ -855,7 +855,8 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // the stored-VS path semantics. Filters affect `expansion.total`;
     // pagination does not.
     String textFilter = req == null ? null : req.findParameter("filter")
-        .map(pp -> pp.getValueString() != null ? pp.getValueString() : pp.getValueCode()).orElse(null);
+        .map(pp -> pp.getValueString() != null ? pp.getValueString()
+            : pp.getValueCode() != null ? pp.getValueCode() : pp.getValueUri()).orElse(null);
     if (textFilter != null && !textFilter.isBlank()) {
       String needle = textFilter.toLowerCase();
       expandedConcepts = expandedConcepts.stream().filter(c -> {
@@ -1622,7 +1623,8 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     ValueSetVersion stubVersion = new ValueSetVersion();
 
     String textFilter = req == null ? null : req.findParameter("filter")
-        .map(pp -> pp.getValueString() != null ? pp.getValueString() : pp.getValueCode()).orElse(null);
+        .map(pp -> pp.getValueString() != null ? pp.getValueString()
+            : pp.getValueCode() != null ? pp.getValueCode() : pp.getValueUri()).orElse(null);
     Integer offset = req == null ? null : req.findParameter("offset").map(ParametersParameter::getValueInteger)
         .orElse(req.findParameter("offset").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
     Integer count = req == null ? null : req.findParameter("count").map(ParametersParameter::getValueInteger)
@@ -1741,7 +1743,8 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .orElse(req.findParameter("defaultLanguage").map(ParametersParameter::getValueCode)
         .orElse(req.findParameter("defaultLanguage").map(ParametersParameter::getValueString).orElse(null))));
     String textFilter = req == null ? null : req.findParameter("filter")
-        .map(pp -> pp.getValueString() != null ? pp.getValueString() : pp.getValueCode()).orElse(null);
+        .map(pp -> pp.getValueString() != null ? pp.getValueString()
+            : pp.getValueCode() != null ? pp.getValueCode() : pp.getValueUri()).orElse(null);
     Integer offset = req == null ? null : req.findParameter("offset").map(ParametersParameter::getValueInteger)
         .orElse(req.findParameter("offset").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
     Integer count = req == null ? null : req.findParameter("count").map(ParametersParameter::getValueInteger)
