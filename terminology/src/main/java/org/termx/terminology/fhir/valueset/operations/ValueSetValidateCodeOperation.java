@@ -661,6 +661,32 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .findFirst().orElse(null);
 
     String vsCanonical = inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "");
+    // inferSystem with no system supplied: the code's system is inferred from the value set's expansion. If the
+    // code appears under MORE THAN ONE code system, the system is ambiguous — the reference engine returns
+    // result=false with a `cannot-infer` error (plus the standard not-in-vs), naming the candidate systems,
+    // rather than silently picking one. A unique match keeps the normal success path (the `implied` cases).
+    boolean inferSystem = req.findParameter("inferSystem")
+        .map(p -> Boolean.TRUE.equals(p.getValueBoolean()) || "true".equals(p.getValueString())).orElse(false);
+    if (inferSystem && system == null) {
+      java.util.List<String> matchSystems = Optional.ofNullable(expanded.getExpansion())
+          .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
+          .filter(c -> finalCode.equals(c.getCode())).map(c -> c.getSystem())
+          .filter(java.util.Objects::nonNull).distinct().sorted().toList();
+      if (matchSystems.size() > 1) {
+        String notInVs = String.format("The provided code '#%s' was not found in the value set '%s'", code, vsCanonical);
+        String cannotInfer = String.format(
+            "The System URI could not be determined for the code '%s' in the ValueSet '%s': value set expansion has multiple matches: [%s]",
+            code, vsCanonical, String.join(", ", matchSystems));
+        Parameters ambiguous = new Parameters();
+        ambiguous.addParameter(new ParametersParameter("code").setValueCode(code));
+        ambiguous.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+            org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, "code"),
+            org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "cannot-infer", cannotInfer, "code"))));
+        ambiguous.addParameter(new ParametersParameter("message").setValueString(cannotInfer + "; " + notInVs));
+        ambiguous.addParameter(new ParametersParameter("result").setValueBoolean(false));
+        return ambiguous;
+      }
+    }
     Parameters resp = new Parameters();
     if (match == null) {
       // Unknown code system: when the code's system has no resolvable definition at all — no member in the
