@@ -692,6 +692,41 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         return ambiguous;
       }
     }
+    // Case-insensitive code system: a code that fails the exact match but matches a member differing only by case
+    // is valid when the code system declares caseSensitive=false. The response echoes the code AS GIVEN plus the
+    // normalized (correct-case) code and an information/code-rule note; result stays true.
+    if (match == null && finalSystem != null) {
+      com.kodality.zmei.fhir.resource.terminology.CodeSystem csRes = txCodeSystemResource(req, finalSystem);
+      if (csRes != null && Boolean.FALSE.equals(csRes.getCaseSensitive())) {
+        var ciMatch = Optional.ofNullable(expanded.getExpansion())
+            .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
+            .filter(c -> finalCode.equalsIgnoreCase(c.getCode()) && finalSystem.equals(c.getSystem()))
+            .findFirst().orElse(null);
+        if (ciMatch != null && !finalCode.equals(ciMatch.getCode())) {
+          String csVer = ciMatch.getVersion() != null ? ciMatch.getVersion()
+              : vr.echoVersion() != null ? vr.echoVersion() : csRes.getVersion();
+          String ciLoc = req.findParameter("codeableConcept").isPresent() ? "CodeableConcept.coding[0].code"
+              : req.findParameter("coding").isPresent() ? "Coding.code" : "code";
+          String note = String.format(
+              "The code '%s' differs from the correct code '%s' by case. Although the code system '%s%s' is case insensitive, implementers are strongly encouraged to use the correct case anyway",
+              code, ciMatch.getCode(), finalSystem, csVer != null ? "|" + csVer : "");
+          Parameters ci = new Parameters();
+          ci.addParameter(new ParametersParameter("code").setValueCode(code));
+          if (ciMatch.getDisplay() != null) {
+            ci.addParameter(new ParametersParameter("display").setValueString(ciMatch.getDisplay()));
+          }
+          ci.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+              org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "code-rule", note, ciLoc))));
+          ci.addParameter(new ParametersParameter("normalized-code").setValueCode(ciMatch.getCode()));
+          ci.addParameter(new ParametersParameter("result").setValueBoolean(true));
+          ci.addParameter(new ParametersParameter("system").setValueUri(finalSystem));
+          if (csVer != null) {
+            ci.addParameter(new ParametersParameter("version").setValueString(csVer));
+          }
+          return ci;
+        }
+      }
+    }
     Parameters resp = new Parameters();
     if (match == null) {
       // Unknown code system: when the code's system has no resolvable definition at all — no member in the
