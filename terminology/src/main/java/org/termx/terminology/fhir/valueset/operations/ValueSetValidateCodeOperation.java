@@ -519,6 +519,72 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         String.format("A definition for the value Set '%s|%s' could not be found", url, version));
   }
 
+  /**
+   * A {@code compose.include.valueSet} import naming a value set canonical the server cannot resolve — no bundled
+   * tx-resource of that url, and no version was requested — degrades, for {@code $validate-code}, to a 200
+   * {@code result=false} with a {@code not-found} issue rather than a hard 404 (the {@code validation}
+   * {@code *-bad-import} cases). Returns the first such unresolvable import url, or {@code null} if every import
+   * resolves. A ref carrying its own {@code |version} (or pinned by a {@code default-valueset-version} request
+   * param) is left to the expand path — a *wrong pinned version* is a different error, and {@code $expand} of an
+   * unresolvable import is a hard 4xx, not this graceful 200. Contained ({@code #id}) refs are skipped (resolved
+   * elsewhere). Import resolution here matches the expand path's, which is tx-resource-only, so this never
+   * diverges from what the expand would have found.
+   */
+  private static String unresolvableVersionlessImport(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, Parameters req) {
+    if (vs.getCompose() == null || vs.getCompose().getInclude() == null) {
+      return null;
+    }
+    for (var inc : vs.getCompose().getInclude()) {
+      if (inc.getValueSet() == null) {
+        continue;
+      }
+      for (String ref : inc.getValueSet()) {
+        if (ref == null || ref.startsWith("#")) {
+          continue;
+        }
+        int pipe = ref.indexOf('|');
+        String refUrl = pipe >= 0 ? ref.substring(0, pipe) : ref;
+        String refVersion = pipe >= 0 ? ref.substring(pipe + 1) : importDefaultVersion(req, refUrl);
+        if (refVersion != null) {
+          continue; // a specific version was requested → expand-path 404, not this graceful degradation
+        }
+        if (txResourceValueSets(req, refUrl).isEmpty()) {
+          return refUrl;
+        }
+      }
+    }
+    return null;
+  }
+
+  /** The {@code default-valueset-version} request param's version for the given value set url (mirrors the expand path). */
+  private static String importDefaultVersion(Parameters req, String vsUrl) {
+    if (req == null || req.getParameter() == null) {
+      return null;
+    }
+    return req.getParameter().stream()
+        .filter(p -> "default-valueset-version".equals(p.getName()))
+        .map(p -> p.getValueCanonical() != null ? p.getValueCanonical() : p.getValueUri() != null ? p.getValueUri() : p.getValueString())
+        .filter(java.util.Objects::nonNull)
+        .filter(v -> v.startsWith(vsUrl + "|"))
+        .map(v -> v.substring(vsUrl.length() + 1))
+        .findFirst().orElse(null);
+  }
+
+  /**
+   * The graceful {@code $validate-code} response for an unresolvable value set import: 200, result=false, and a
+   * single {@code not-found} issue at the value set (no location) — mirrors org.hl7.fhir.core, whose validator
+   * reports the missing imported value set as a code issue rather than failing the request.
+   */
+  private Parameters valueSetImportNotFound(String importUrl) {
+    String message = String.format("A definition for the value Set '%s' could not be found", importUrl);
+    OperationOutcomeIssue notFound = org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", message);
+    Parameters parameters = new Parameters();
+    parameters.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(notFound)));
+    parameters.addParameter(new ParametersParameter("message").setValueString(message));
+    parameters.addParameter(new ParametersParameter("result").setValueBoolean(false));
+    return parameters;
+  }
+
   /** Sorts response parameters by name — the tx-ecosystem TxTester diffs parameters positionally against an alphabetically-ordered expected list. */
   private static Parameters sorted(Parameters p) {
     if (p != null && p.getParameter() != null) {
@@ -533,6 +599,13 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
    * rather than stored.
    */
   private Parameters validateInline(com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs, Parameters req) {
+    // An import naming a value set the server cannot resolve (no version requested) makes the value set
+    // un-assemblable: report it as a not-found code issue (200, result=false), not a 4xx — the reference engine
+    // degrades $validate-code this way regardless of the code (the `validation` *-bad-import cases).
+    String unresolvableImport = unresolvableVersionlessImport(inlineVs, req);
+    if (unresolvableImport != null) {
+      return valueSetImportNotFound(unresolvableImport);
+    }
     String displayLanguage = req.findParameter("displayLanguage").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
     String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
     String system = findSystem(req);
