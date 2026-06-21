@@ -65,8 +65,8 @@ public class TxConformanceSetupLoader {
       throw new IllegalStateException("tx-ecosystem test package not found at " + packageDir
           + " — run the suite once (the validator downloads it) or set termx.conformance.test-package-dir");
     }
-    List<Path> codeSystems = findSetupFiles(root, "codesystem-");
-    List<Path> valueSets = findSetupFiles(root, "valueset-");
+    List<Path> codeSystems = findSetupFiles(root, "CodeSystem");
+    List<Path> valueSets = findSetupFiles(root, "ValueSet");
     int total = codeSystems.size() + valueSets.size();
     log.info("tx conformance setup: loading {} CodeSystems and {} ValueSets into {}", codeSystems.size(), valueSets.size(), fhirBaseUrl);
 
@@ -74,20 +74,20 @@ public class TxConformanceSetupLoader {
     // CodeSystem, and ValueSets reference CodeSystems and other ValueSets. Rather than topologically
     // sort, load in repeated passes until a pass resolves nothing new (fixpoint). Each remaining resource
     // is retried while progress is still being made, so multi-level chains (A←B←C) resolve over passes.
-    List<Path> remaining = new ArrayList<>();
-    codeSystems.forEach(p -> remaining.add(p));
-    valueSets.forEach(p -> remaining.add(p));
+    java.util.LinkedHashMap<Path, Boolean> remaining = new java.util.LinkedHashMap<>();
+    codeSystems.forEach(p -> remaining.put(p, true));
+    valueSets.forEach(p -> remaining.put(p, false));
     int ok = 0;
     int pass = 0;
     boolean progressed = true;
     while (progressed && !remaining.isEmpty()) {
       progressed = false;
       pass++;
-      for (java.util.Iterator<Path> it = remaining.iterator(); it.hasNext(); ) {
-        Path p = it.next();
-        boolean isCs = p.getFileName().toString().toLowerCase().startsWith("codesystem-");
-        String url = isCs ? fhirBaseUrl + "/CodeSystem/" + idOf(p) : fhirBaseUrl + "/ValueSet";
-        if (send(url, isCs ? "PUT" : "POST", p)) {
+      for (java.util.Iterator<java.util.Map.Entry<Path, Boolean>> it = remaining.entrySet().iterator(); it.hasNext(); ) {
+        java.util.Map.Entry<Path, Boolean> e = it.next();
+        boolean isCs = e.getValue();
+        String url = isCs ? fhirBaseUrl + "/CodeSystem/" + idOf(e.getKey()) : fhirBaseUrl + "/ValueSet";
+        if (send(url, isCs ? "PUT" : "POST", e.getKey())) {
           it.remove();
           ok++;
           progressed = true;
@@ -98,11 +98,18 @@ public class TxConformanceSetupLoader {
     log.info("tx conformance setup: loaded {} of {} resources in {} pass(es) ({} unresolved)", ok, total, pass, remaining.size());
   }
 
-  /** Setup resources: {@code codesystem-*.json} / {@code valueset-*.json}, excluding test request/response artifacts. */
-  static List<Path> findSetupFiles(Path root, String prefix) {
+  /**
+   * Setup resources of the given FHIR {@code resourceType} ("CodeSystem"/"ValueSet"), classified by the
+   * resource's own {@code resourceType} rather than its filename — the tx-ecosystem ships content under
+   * non-{@code codesystem-}/{@code valueset-} names too (e.g. {@code cs1.json} = simple1,
+   * {@code exclude-expand-valueSet.json}), which a filename-prefix filter silently dropped. Test
+   * {@code *-request*}/{@code *-response*} artifacts are excluded.
+   */
+  static List<Path> findSetupFiles(Path root, String resourceType) {
     try (Stream<Path> s = Files.walk(root)) {
       return s.filter(Files::isRegularFile)
-          .filter(p -> isSetupFile(p.getFileName().toString(), prefix))
+          .filter(p -> isSetupFile(p.getFileName().toString()))
+          .filter(p -> resourceType.equals(resourceTypeOf(p)))
           // Canonical resources (FHIR id == url's last segment) FIRST, so they claim their natural id before
           // a resource that reuses that id under a different url. The tx-ecosystem ships
           // codesystem-overload-1.json with id "simple" but url ".../overload"; loaded before the real
@@ -131,10 +138,19 @@ public class TxConformanceSetupLoader {
     }
   }
 
-  /** True for a setup resource file of the given kind (prefix); false for request/response test files. */
-  static boolean isSetupFile(String name, String prefix) {
+  /** A candidate setup file: a {@code .json} that is not a test request/response artifact. */
+  static boolean isSetupFile(String name) {
     String n = name.toLowerCase();
-    return n.startsWith(prefix) && n.endsWith(".json") && !n.contains("-request") && !n.contains("-response");
+    return n.endsWith(".json") && !n.contains("-request") && !n.contains("-response");
+  }
+
+  /** The FHIR {@code resourceType} declared by a JSON fixture, or {@code ""} if unreadable / not a resource. */
+  static String resourceTypeOf(Path p) {
+    try {
+      return JsonUtil.getObjectMapper().readTree(p.toFile()).path("resourceType").asText("");
+    } catch (Exception e) {
+      return "";
+    }
   }
 
   private static String idOf(Path p) {
