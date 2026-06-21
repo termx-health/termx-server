@@ -604,9 +604,9 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       boolean inactiveConcept = csConcept.found() && csConcept.inactive();
       if (inactiveConcept) {
         nfIssues.add(0, org.termx.terminology.fhir.TxIssues.issue("error", "business-rule", "code-rule",
-            String.format("The concept '%s' has a status of inactive and its use should be reviewed", code)));
-        nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment",
             String.format("The concept '%s' is valid but is not active", code)));
+        nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment",
+            String.format("The concept '%s' has a status of inactive and its use should be reviewed", code)));
       }
       if (!ccInput) {
         resp.addParameter(new ParametersParameter("code").setValueCode(code));
