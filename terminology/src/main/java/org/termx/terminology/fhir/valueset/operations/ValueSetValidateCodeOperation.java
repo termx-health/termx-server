@@ -352,6 +352,47 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   /**
+   * The "Valid display is …" clause of the invalid-display message, mirroring org.hl7.fhir.core. The valid
+   * displays are the member's primary display (tagged with the code system's language) plus its designations
+   * (each tagged with its own language). A display with no language matches any requested language. When a
+   * {@code displayLanguage} is requested and none of the valid displays are in it, the clause instead names
+   * the default (primary) display. Each display carries a {@code (lang)} tag only when its language is known.
+   */
+  private String validDisplayClause(Parameters req,
+      com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains match,
+      String displayLanguage) {
+    String csLang = Optional.ofNullable(txCodeSystemResource(req, match.getSystem()))
+        .map(com.kodality.zmei.fhir.resource.terminology.CodeSystem::getLanguage).orElse(null);
+    java.util.LinkedHashMap<String, String> displays = new java.util.LinkedHashMap<>(); // value -> language
+    if (match.getDisplay() != null) {
+      displays.put(match.getDisplay(), csLang);
+    }
+    Optional.ofNullable(match.getDesignation()).orElse(List.of()).forEach(d -> {
+      if (d.getValue() != null) {
+        displays.putIfAbsent(d.getValue(), d.getLanguage());
+      }
+    });
+    List<String> reqLangs = StringUtils.isEmpty(displayLanguage) ? List.of()
+        : Arrays.stream(displayLanguage.split(",")).map(String::trim).filter(StringUtils::isNotEmpty).toList();
+    List<java.util.Map.Entry<String, String>> kept = displays.entrySet().stream()
+        .filter(e -> reqLangs.isEmpty() || e.getValue() == null || reqLangs.stream().anyMatch(rl ->
+            e.getValue().equals(rl) || e.getValue().startsWith(rl + "-") || rl.startsWith(e.getValue() + "-")))
+        .toList();
+    String reqStr = StringUtils.isEmpty(displayLanguage) ? "--" : displayLanguage;
+    if (kept.isEmpty()) {
+      return String.format("There are no valid display names found for language(s) '%s'. Default display is '%s'",
+          reqStr, match.getDisplay());
+    }
+    String choices = kept.stream()
+        .map(e -> "'" + e.getKey() + "'" + (e.getValue() != null ? " (" + e.getValue() + ")" : ""))
+        .collect(java.util.stream.Collectors.joining(" or "));
+    if (kept.size() == 1) {
+      return String.format("Valid display is %s (for the language(s) '%s')", choices, reqStr);
+    }
+    return String.format("Valid display is one of %d choices: %s (for the language(s) '%s')", kept.size(), choices, reqStr);
+  }
+
+  /**
    * Reimplements org.hl7.fhir.core {@code ValueSetValidator.determineVersion}: resolve the effective code
    * system version (force &gt; include &gt; system-version &gt; check-system-version, then a more-detailed coding
    * version refines a wildcard), enforce {@code check-system-version}, and flag the right
@@ -680,9 +721,9 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     if (displaySeverity != null) {
       // Invalid display: a structured `issues` OperationOutcome (invalid-display at the `display`/`Coding.display`
       // element) at the computed severity, mirroring HL7's "Wrong Display Name … Valid display is …" wording.
-      String message = String.format("Wrong Display Name '%s' for %s#%s. Valid display is '%s' (for the language(s) '%s')",
-          display, match.getSystem(), match.getCode(), match.getDisplay(),
-          StringUtils.isEmpty(displayLanguage) ? "--" : displayLanguage);
+      String message = String.format("Wrong Display Name '%s' for %s#%s. %s",
+          display, match.getSystem(), match.getCode(),
+          validDisplayClause(req, match, displayLanguage));
       resp.addParameter(new ParametersParameter("message").setValueString(message));
       issues.add(org.termx.terminology.fhir.TxIssues.issue(displaySeverity, "invalid", "invalid-display", message, displayLocation(req)));
     } else if (vr.message() != null) {
