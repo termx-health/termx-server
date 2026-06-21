@@ -147,6 +147,38 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   private static final String STANDARDS_STATUS_URL = "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status";
+  private static final String VALUESET_DEPRECATED_URL = "http://hl7.org/fhir/StructureDefinition/valueset-deprecated";
+
+  /**
+   * True when the value set's own compose marks the matched concept as deprecated — either a
+   * {@code valueset-deprecated = true} extension or a {@code standards-status = deprecated} extension on the
+   * {@code compose.include.concept} entry. This is a value-set-scoped deprecation (the concept may be perfectly
+   * active in its code system), so it yields a warning, not an inactive flag.
+   */
+  private static boolean vsConceptDeprecated(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, String system, String code) {
+    if (vs == null || vs.getCompose() == null || vs.getCompose().getInclude() == null || code == null) {
+      return false;
+    }
+    for (var inc : vs.getCompose().getInclude()) {
+      if (inc.getConcept() == null || (system != null && inc.getSystem() != null && !system.equals(inc.getSystem()))) {
+        continue;
+      }
+      for (var c : inc.getConcept()) {
+        if (!code.equals(c.getCode())) {
+          continue;
+        }
+        var deprecatedExt = c.getExtensions(VALUESET_DEPRECATED_URL);
+        if (deprecatedExt != null && deprecatedExt.anyMatch(e -> "true".equals(e.getValueCode()) || Boolean.TRUE.equals(e.getValueBoolean()))) {
+          return true;
+        }
+        var standardsExt = c.getExtensions(STANDARDS_STATUS_URL);
+        if (standardsExt != null && standardsExt.anyMatch(e -> "deprecated".equals(e.getValueCode()))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 
   /** The tx-resource CodeSystem whose canonical url matches {@code system}. */
   private static com.kodality.zmei.fhir.resource.terminology.CodeSystem txCodeSystemResource(Parameters req, String system) {
@@ -890,6 +922,17 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     if (vsStatus != null) {
       issues.add(org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "status-check",
           String.format("Reference to %s ValueSet %s%s", vsStatus, inlineVs.getUrl(), inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "")));
+    }
+    // A concept marked deprecated by the value set's own compose (valueset-deprecated / standards-status=deprecated
+    // on the include.concept) is still valid, but its use should be reviewed — emit a code-comment warning.
+    if (inlineVs != null && vsConceptDeprecated(inlineVs, match.getSystem() != null ? match.getSystem() : system, match.getCode())) {
+      String depLoc = req.findParameter("codeableConcept").isPresent() ? "CodeableConcept.coding[0].code"
+          : req.findParameter("coding").isPresent() ? "Coding.code" : "code";
+      issues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment",
+          String.format("The presence of the concept '%s' in the system '%s' in the value set %s%s is marked with a status of deprecated and its use should be reviewed",
+              match.getCode(), match.getSystem() != null ? match.getSystem() : system, inlineVs.getUrl(),
+              inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : ""),
+          depLoc));
     }
     resp.addParameter(new ParametersParameter("result").setValueBoolean(displayValid && !vr.hasError()));
     resp.addParameter(new ParametersParameter("code").setValueCode(match.getCode()));
