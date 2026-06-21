@@ -143,7 +143,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     return run(vsVersion, req);
   }
 
-  private record CsConcept(boolean found, String display, boolean inactive) {
+  private record CsConcept(boolean found, String display, boolean inactive, String status) {
   }
 
   private static final String STANDARDS_STATUS_URL = "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status";
@@ -199,7 +199,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   /** Looks a code up in the tx-resource CodeSystem(s) for {@code system} (recursing nested concepts) — its display + whether it's inactive/retired. */
   private static CsConcept txCsConcept(Parameters req, String system, String code) {
     if (req.getParameter() == null || system == null || code == null) {
-      return new CsConcept(false, null, false);
+      return new CsConcept(false, null, false, null);
     }
     for (ParametersParameter p : req.getParameter()) {
       if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs
@@ -210,26 +210,31 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         }
       }
     }
-    return new CsConcept(false, null, false);
+    return new CsConcept(false, null, false, null);
   }
 
   private static CsConcept findConcept(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts, String code) {
     if (concepts == null) {
-      return new CsConcept(false, null, false);
+      return new CsConcept(false, null, false, null);
     }
     for (var c : concepts) {
       if (code.equals(c.getCode())) {
-        boolean inactive = c.getProperty() != null && c.getProperty().stream().anyMatch(pr ->
-            ("status".equals(pr.getCode()) && ("retired".equals(pr.getValueCode()) || "deprecated".equals(pr.getValueCode())))
-                || ("inactive".equals(pr.getCode()) && Boolean.TRUE.equals(pr.getValueBoolean())));
-        return new CsConcept(true, c.getDisplay(), inactive);
+        // A retired/deprecated `status` property, or an `inactive=true` property, marks the concept inactive.
+        // The `status` word (retired/deprecated) is surfaced for the validate-code inactive envelope.
+        String status = c.getProperty() == null ? null : c.getProperty().stream()
+            .filter(pr -> "status".equals(pr.getCode())).map(com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty::getValueCode)
+            .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+        boolean inactive = ("retired".equals(status) || "deprecated".equals(status))
+            || (c.getProperty() != null && c.getProperty().stream().anyMatch(pr ->
+                "inactive".equals(pr.getCode()) && Boolean.TRUE.equals(pr.getValueBoolean())));
+        return new CsConcept(true, c.getDisplay(), inactive, status);
       }
       CsConcept nested = findConcept(c.getConcept(), code);
       if (nested.found()) {
         return nested;
       }
     }
-    return new CsConcept(false, null, false);
+    return new CsConcept(false, null, false, null);
   }
 
   /** All ValueSets supplied inline via tx-resource params whose canonical url matches (any version). */
@@ -798,6 +803,24 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     boolean displayValid = !"error".equals(displaySeverity);
 
     List<OperationOutcomeIssue> issues = new ArrayList<>(vr.issues());
+    // A valid but inactive code (retired/deprecated `status`, or `inactive=true`): the result stays true, but the
+    // response echoes `inactive=true` (+ a `status` param when a retired/deprecated status is declared) and a
+    // code-comment WARNING per status word — a generic "inactive" plus, for a retired/deprecated concept, the
+    // specific status — mirroring the reference engine's inactive envelope.
+    CsConcept matchConcept = txCsConcept(req, match.getSystem() != null ? match.getSystem() : system, match.getCode());
+    boolean matchInactive = matchConcept.found() ? matchConcept.inactive() : Boolean.TRUE.equals(match.getInactive());
+    String matchStatus = matchConcept.status();
+    List<String> inactiveWarnings = new ArrayList<>();
+    if (matchInactive) {
+      inactiveWarnings.add(String.format("The concept '%s' has a status of inactive and its use should be reviewed", match.getCode()));
+      if (matchStatus != null && !"inactive".equals(matchStatus)) {
+        inactiveWarnings.add(String.format("The concept '%s' has a status of %s and its use should be reviewed", match.getCode(), matchStatus));
+      }
+      String inactiveLoc = req.findParameter("codeableConcept").isPresent() ? "CodeableConcept.coding[0]"
+          : req.findParameter("coding").isPresent() ? "Coding" : "code";
+      inactiveWarnings.forEach(w -> issues.add(
+          org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment", w, inactiveLoc)));
+    }
     // Status-check: validating a code from an experimental/draft/deprecated CodeSystem (or a withdrawn/deprecated
     // value set) adds an information-level status-check issue (result is unaffected).
     String statusSystem = match.getSystem() != null ? match.getSystem() : system;
@@ -825,6 +848,12 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     if (vr.xCausedBy() != null) {
       resp.addParameter(new ParametersParameter("x-caused-by-unknown-system").setValueCanonical(vr.xCausedBy()));
     }
+    if (matchInactive) {
+      resp.addParameter(new ParametersParameter("inactive").setValueBoolean(true));
+      if (matchStatus != null && !"inactive".equals(matchStatus)) {
+        resp.addParameter(new ParametersParameter("status").setValueCode(matchStatus));
+      }
+    }
     if (displaySeverity != null) {
       // Invalid display: a structured `issues` OperationOutcome (invalid-display at the `display`/`Coding.display`
       // element) at the computed severity, mirroring HL7's "Wrong Display Name … Valid display is …" wording.
@@ -833,6 +862,9 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           validDisplayClause(req, match, displayLanguage));
       resp.addParameter(new ParametersParameter("message").setValueString(message));
       issues.add(org.termx.terminology.fhir.TxIssues.issue(displaySeverity, "invalid", "invalid-display", message, displayLocation(req)));
+    } else if (!inactiveWarnings.isEmpty()) {
+      // The inactive code-comment warning(s) become the human message when there is no display issue.
+      resp.addParameter(new ParametersParameter("message").setValueString(String.join("; ", inactiveWarnings)));
     } else if (vr.message() != null) {
       resp.addParameter(new ParametersParameter("message").setValueString(vr.message()));
     }
