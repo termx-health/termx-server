@@ -660,8 +660,45 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
                 java.util.Comparator.nullsFirst(ValueSetExpandOperation::compareVersions)))
             .orElse(null);
         if (imported == null) {
-          throw org.termx.terminology.fhir.TxIssues.notFoundException(404,
-              "Unable to resolve the value set import " + refUrl + (refVersion != null ? "|" + refVersion : ""));
+          // Not bundled inline as a tx-resource — fall back to a value set the server already stores under this
+          // canonical (a compose may import a standard/registered value set, e.g. the FHIR administrative-gender
+          // value set, that the request doesn't re-send). Expand the stored version through the snapshot path and
+          // fold its members in, so a mixed include/exclude that references a stored import resolves instead of 404ing.
+          ValueSetQueryParams storedParams = new ValueSetQueryParams();
+          storedParams.setUri(refUrl);
+          storedParams.setLimit(1);
+          storedParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_READ));
+          ValueSet storedVs = valueSetService.query(storedParams).findFirst().orElse(null);
+          ValueSetVersion storedVersion = null;
+          if (storedVs != null) {
+            if (refVersion != null) {
+              ValueSetVersionQueryParams svParams = new ValueSetVersionQueryParams();
+              svParams.setValueSet(storedVs.getId());
+              svParams.setVersion(refVersion);
+              svParams.setLimit(1);
+              storedVersion = valueSetVersionService.query(svParams).findFirst().orElse(null);
+            } else {
+              storedVersion = valueSetVersionService.loadLastVersion(storedVs.getId());
+            }
+          }
+          if (storedVersion == null) {
+            throw org.termx.terminology.fhir.TxIssues.notFoundException(404,
+                "Unable to resolve the value set import " + refUrl + (refVersion != null ? "|" + refVersion : ""));
+          }
+          usedValueSets.add(refUrl + (storedVersion.getVersion() != null ? "|" + storedVersion.getVersion() : ""));
+          if (!visited.add(refUrl + "|" + (storedVersion.getVersion() == null ? "" : storedVersion.getVersion()))) {
+            continue; // already expanded on this path — guard against import cycles
+          }
+          for (ValueSetVersionConcept m : valueSetVersionConceptService.expand(storedVs.getId(), storedVersion.getVersion(), "en", false).getExpansion()) {
+            if (m.getConcept() == null || m.getConcept().getCode() == null) {
+              continue;
+            }
+            String sys = m.getConcept().getCodeSystemUri() != null ? m.getConcept().getCodeSystemUri() : m.getConcept().getBaseCodeSystemUri();
+            if (sys != null) {
+              bySystem.computeIfAbsent(sys, k -> new java.util.LinkedHashSet<>()).add(m.getConcept().getCode());
+            }
+          }
+          continue;
         }
         // Report the resolved imported value set as a `used-valueset` expansion parameter (url|version).
         usedValueSets.add(refUrl + (imported.getVersion() != null ? "|" + imported.getVersion() : ""));
