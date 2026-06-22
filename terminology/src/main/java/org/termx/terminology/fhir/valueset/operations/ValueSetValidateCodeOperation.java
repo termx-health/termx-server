@@ -364,7 +364,8 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .filter(java.util.Objects::nonNull).distinct().toList();
   }
 
-  private record VersionResolution(String echoVersion, List<OperationOutcomeIssue> issues, boolean hasError, String message, String xCausedBy) {
+  private record VersionResolution(String echoVersion, List<OperationOutcomeIssue> issues, boolean hasError, String message,
+                                   String xCausedBy, boolean includeVersionNotFound) {
   }
 
   /** The {@code compose.include.version} that applies to {@code system}+{@code code} — preferring an include that enumerates the code (mixed value sets). */
@@ -549,6 +550,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     // (UNKNOWN_CODESYSTEM_VERSION, an error) is collected first so it sorts ahead of the mismatch and drives
     // the `message`/`x-caused-by-unknown-system`; the mismatch variant (DEFAULT warning / CHANGED / plain) follows.
     String xCausedBy = null;
+    boolean includeVersionNotFound = false;
     // A concrete (non-wildcard) VS-include version that doesn't exist among the code system's available versions is
     // reported as not-found — with the valid-versions list — plus x-caused-by-unknown-system, even though the value
     // set still resolves the code by membership. A wildcard include (1.x.x), an available version, or a forced
@@ -561,6 +563,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           system, includeVersion, org.termx.terminology.fhir.TxIssues.presentVersionList(available)), systemLocation(req)));
       hasError = true;
       xCausedBy = system + "|" + includeVersion;
+      includeVersionNotFound = true;
     }
     if (codingVersion != null && !(csVersion != null && codingVersion.equals(csVersion))) {
       if (csExists && !available.isEmpty() && !available.contains(codingVersion)) {
@@ -602,7 +605,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     String message = issues.stream().filter(i -> "error".equals(i.getSeverity()))
         .map(i -> i.getDetails() == null ? null : i.getDetails().getText()).filter(java.util.Objects::nonNull)
         .collect(java.util.stream.Collectors.joining("; "));
-    return new VersionResolution(echo, issues, hasError, message.isEmpty() ? null : message, xCausedBy);
+    return new VersionResolution(echo, issues, hasError, message.isEmpty() ? null : message, xCausedBy, includeVersionNotFound);
   }
 
   private static String notNull(String s) {
@@ -1068,13 +1071,19 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           depLoc));
     }
     resp.addParameter(new ParametersParameter("result").setValueBoolean(displayValid && !vr.hasError()));
-    resp.addParameter(new ParametersParameter("code").setValueCode(match.getCode()));
-    if (match.getSystem() != null) {
-      resp.addParameter(new ParametersParameter("system").setValueUri(match.getSystem()));
+    // A codeableConcept whose code could not be validated against a known code-system version (the VS-include
+    // version doesn't exist) echoes only `codeableConcept` (added by the run() wrapper) — NOT a decomposed
+    // code/system/version. The reference omits them because the code was never validated against a real version.
+    boolean ccUnvalidatable = req.findParameter("codeableConcept").isPresent() && vr.includeVersionNotFound();
+    if (!ccUnvalidatable) {
+      resp.addParameter(new ParametersParameter("code").setValueCode(match.getCode()));
+      if (match.getSystem() != null) {
+        resp.addParameter(new ParametersParameter("system").setValueUri(match.getSystem()));
+      }
     }
     resp.addParameter(new ParametersParameter("display").setValueString(match.getDisplay()));
     String echoVersion = vr.echoVersion() != null ? vr.echoVersion() : match.getVersion();
-    if (echoVersion != null) {
+    if (echoVersion != null && !ccUnvalidatable) {
       resp.addParameter(new ParametersParameter("version").setValueString(echoVersion));
     }
     if (vr.xCausedBy() != null) {
