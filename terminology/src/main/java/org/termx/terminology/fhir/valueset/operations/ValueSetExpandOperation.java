@@ -1184,7 +1184,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
                   // missing use to type "display", which must not resurface as a use coding). Otherwise prefer the
                   // designation's own use coding from the tx-resource CodeSystem (it carries the use system for
                   // custom designations, e.g. {.../designations, olde-english}); fall back to the type→use mapping.
-                  if (!noUseDesignations.contains(d.getName())) {
+                  if (PREFERRED_FOR_LANGUAGE_TYPE.equals(d.getDesignationType())) {
+                    // The primary display displaced by displayLanguage — tag it regardless of noUseDesignations
+                    // (it was stated without a use, but as a displaced display it carries the preferredForLanguage use).
+                    designation.setUse(new com.kodality.zmei.fhir.datatypes.Coding(
+                        "http://terminology.hl7.org/CodeSystem/hl7TermMaintInfra", "preferredForLanguage")
+                        .setDisplay("Preferred For Language"));
+                  } else if (!noUseDesignations.contains(d.getName())) {
                     com.kodality.zmei.fhir.datatypes.Coding use = designationUses.get(d.getDesignationType());
                     designation.setUse(use != null ? use
                         : org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(
@@ -1453,6 +1459,40 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
    * the SQL/provider chose it. The chosen display is then dropped from the member's additional designations
    * (by value) so it is not also echoed as a designation.
    */
+  /** Sentinel designation type marking a primary display displaced by displayLanguage; emitted as a preferredForLanguage use. */
+  private static final String PREFERRED_FOR_LANGUAGE_TYPE = "__preferredForLanguage__";
+
+  /** One entry of a parsed displayLanguage / Accept-Language range list: a tag (or `*` wildcard) and its q-weight. */
+  private record LangRange(String tag, boolean wildcard, double weight) {}
+
+  /** Parse a BCP-47 language-range list ("de, en;q=0.8, *;q=0") into ordered {@link LangRange} entries (default q=1). */
+  private static List<LangRange> parseLanguageRanges(String value) {
+    if (StringUtils.isEmpty(value)) {
+      return List.of();
+    }
+    List<LangRange> ranges = new java.util.ArrayList<>();
+    for (String part : value.split(",")) {
+      String[] params = part.trim().split(";");
+      String tag = params[0].trim();
+      if (tag.isEmpty()) {
+        continue;
+      }
+      double weight = 1.0;
+      for (int i = 1; i < params.length; i++) {
+        String pr = params[i].trim();
+        if (pr.startsWith("q=")) {
+          try {
+            weight = Double.parseDouble(pr.substring(2).trim());
+          } catch (NumberFormatException ignore) {
+            // malformed q-value: keep the default weight
+          }
+        }
+      }
+      ranges.add(new LangRange(tag, "*".equals(tag), weight));
+    }
+    return ranges;
+  }
+
   private static void applyDisplayLanguage(List<ValueSetVersionConcept> concepts, String requestedLanguage,
                                            String vsDisplayLanguage, String acceptLanguage, java.util.Map<String, String> resourceLanguages,
                                            java.util.Map<String, String> primaryDisplays) {
@@ -1480,25 +1520,52 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       }
       String primaryDisplay = system != null && code != null ? primaryDisplays.get(system + "|" + code) : null;
       final String eff = effective;
+      // displayLanguage is a BCP-47 language-range LIST ("de,*; q=0"), not a single tag: parse it into the
+      // positive-weight tags to match against and whether a `*; q=0` wildcard explicitly excludes any fallback.
+      final List<LangRange> ranges = parseLanguageRanges(eff);
+      final boolean strictNoFallback = ranges.stream().anyMatch(r -> r.wildcard && r.weight <= 0);
+      final List<String> positiveTags = ranges.stream().filter(r -> !r.wildcard && r.weight > 0).map(r -> r.tag).toList();
       Designation chosen = c.getDisplay();
       if (StringUtils.isNotEmpty(eff)) {
-        // Among language-matching candidates, prefer (in order) an EXACT language match over a region-subtag
-        // match (`de` over `de-CH`), and the concept's PRIMARY display value over an alternate same-language
-        // designation. Scored: exact-language = 2, primary-display value = 1.
-        // A `definition`-use designation is NOT a display name (FHIR), so it must never be chosen as the
-        // display — e.g. a `de` definition must not surface as the `de` display, which would otherwise leave a
-        // requested-language definition masquerading as the display (the reference keeps the default display).
-        chosen = all.values().stream()
+        // Among candidates matching a positive-weight (non-wildcard) range, prefer an EXACT language match over a
+        // region-subtag match (`de` over `de-CH`), then the concept's PRIMARY display value. A `definition`-use
+        // designation is NOT a display name (FHIR), so it must never be chosen as the display.
+        Designation match = positiveTags.isEmpty() ? null : all.values().stream()
             .filter(d -> !"definition".equals(d.getDesignationType()))
-            .filter(d -> languageMatches(d.getLanguage(), eff))
+            .filter(d -> positiveTags.stream().anyMatch(t -> languageMatches(d.getLanguage(), t)))
             .max(java.util.Comparator.comparingInt(d ->
-                (eff.equalsIgnoreCase(d.getLanguage()) ? 2 : 0)
+                (positiveTags.stream().anyMatch(t -> t.equalsIgnoreCase(d.getLanguage())) ? 2 : 0)
                     + (d.getName() != null && d.getName().equals(primaryDisplay) ? 1 : 0)))
-            .orElse(c.getDisplay());
+            .orElse(null);
+        if (match != null) {
+          chosen = match;
+        } else if (strictNoFallback) {
+          // `*; q=0`: no language matched and any fallback is explicitly refused — omit the display entirely.
+          chosen = null;
+        } else {
+          // Lenient fallback: keep the concept's PRIMARY (resource-language) display rather than whatever the
+          // expansion happened to select (which may be an unrelated alternate-language designation).
+          final String resLang = system != null ? resourceLanguages.get(system) : null;
+          chosen = primaryDisplay == null ? c.getDisplay() : all.values().stream()
+              .filter(d -> primaryDisplay.equals(d.getName()))
+              .filter(d -> resLang == null || resLang.equalsIgnoreCase(d.getLanguage()))
+              .findFirst().orElse(c.getDisplay());
+        }
       }
       final Designation display = chosen;
       c.setDisplay(display);
       c.setAdditionalDesignations(all.values().stream().filter(d -> d != display).toList());
+      // The concept's PRIMARY (resource-language) display, when it is NOT the chosen display — because another
+      // language was chosen, or the display was omitted (strict) — is kept as a designation tagged
+      // use=preferredForLanguage (hl7TermMaintInfra), per the tx-ecosystem convention. Matched by primary value AND
+      // resource language so a same-valued region variant (e.g. de-CH echoing the de display) stays bare.
+      if (StringUtils.isNotEmpty(eff) && primaryDisplay != null) {
+        final String resLang = system != null ? resourceLanguages.get(system) : null;
+        all.values().stream()
+            .filter(d -> d != display && primaryDisplay.equals(d.getName()))
+            .filter(d -> resLang == null || resLang.equalsIgnoreCase(d.getLanguage()))
+            .findFirst().ifPresent(d -> d.setDesignationType(PREFERRED_FOR_LANGUAGE_TYPE));
+      }
     }
   }
 
