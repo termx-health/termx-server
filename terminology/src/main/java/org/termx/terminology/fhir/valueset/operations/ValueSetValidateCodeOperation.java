@@ -729,6 +729,81 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
    * and checking membership in the expansion — the path used when the value set is supplied in the request
    * rather than stored.
    */
+  /**
+   * Validates a multi-coding CodeableConcept: each coding is validated independently (as a coding input) and the
+   * results merged the way org.hl7.fhir.core does — the echoed code/system/display/version come from the LAST
+   * VALID coding, result is true only when EVERY coding is valid, and the issues aggregate across codings with
+   * their per-coding locations dropped (the reference reports none on a codeableConcept). The codeableConcept
+   * itself is echoed by the run() wrapper.
+   */
+  private Parameters validateCodeableConceptMulti(com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs,
+      Parameters req, List<Coding> codings) {
+    List<Parameters> subs = new ArrayList<>();
+    for (Coding coding : codings) {
+      Parameters subReq = new Parameters();
+      Optional.ofNullable(req.getParameter()).orElse(List.of()).stream()
+          .filter(p -> !java.util.Set.of("codeableConcept", "coding", "code", "system", "display").contains(p.getName()))
+          .forEach(subReq::addParameter);
+      subReq.addParameter(new ParametersParameter("coding").setValueCoding(coding));
+      subs.add(validateInline(inlineVs, subReq));
+    }
+    java.util.function.Function<Parameters, Boolean> isValid =
+        s -> Boolean.TRUE.equals(s.findParameter("result").map(ParametersParameter::getValueBoolean).orElse(false));
+    Parameters winner = subs.get(subs.size() - 1);
+    for (Parameters s : subs) {
+      if (isValid.apply(s)) {
+        winner = s;
+      }
+    }
+    java.util.function.Function<OperationOutcomeIssue, String> txTypeOf = iss ->
+        iss.getDetails() != null && iss.getDetails().getCoding() != null
+            ? iss.getDetails().getCoding().stream().findFirst().map(com.kodality.zmei.fhir.datatypes.Coding::getCode).orElse(null) : null;
+    List<OperationOutcomeIssue> merged = new ArrayList<>();
+    for (Parameters s : subs) {
+      s.findParameter("issues").map(ParametersParameter::getResource)
+          .filter(r -> r instanceof com.kodality.zmei.fhir.resource.other.OperationOutcome)
+          .map(r -> ((com.kodality.zmei.fhir.resource.other.OperationOutcome) r).getIssue())
+          .ifPresent(list -> Optional.ofNullable(list).orElse(List.of()).forEach(iss -> {
+            // A wrong DISPLAY on one coding does not make the codeableConcept invalid (another coding, or the
+            // same code under a different display, may be fine) — the reference drops per-coding display issues.
+            if ("invalid-display".equals(txTypeOf.apply(iss))) {
+              return;
+            }
+            iss.setLocation(null);
+            iss.setExpression(null);
+            // A coding that is merely not in the value set is INFORMATIONAL in a CC (another coding may satisfy
+            // it) and carries the `this-code-not-in-vs` tx-issue-type; only an unknown/invalid code stays an error.
+            if ("not-in-vs".equals(txTypeOf.apply(iss))) {
+              iss.setSeverity("information");
+              iss.getDetails().getCoding().stream().findFirst().ifPresent(c -> c.setCode("this-code-not-in-vs"));
+            }
+            merged.add(iss);
+          }));
+    }
+    java.util.Map<String, Integer> severityRank = java.util.Map.of("fatal", 0, "error", 1, "warning", 2, "information", 3);
+    merged.sort(java.util.Comparator.comparingInt(i -> severityRank.getOrDefault(i.getSeverity(), 4)));
+    // The codeableConcept is valid unless a code-level error survived (an unknown/invalid code or unresolved
+    // version). Display-only problems were dropped above, so they don't fail the result.
+    boolean valid = merged.stream().noneMatch(i -> "error".equals(i.getSeverity()) || "fatal".equals(i.getSeverity()));
+    Parameters resp = new Parameters();
+    resp.addParameter(new ParametersParameter("result").setValueBoolean(valid));
+    winner.findParameter("code").ifPresent(resp::addParameter);
+    winner.findParameter("system").ifPresent(resp::addParameter);
+    winner.findParameter("display").ifPresent(resp::addParameter);
+    winner.findParameter("version").ifPresent(resp::addParameter);
+    if (!merged.isEmpty()) {
+      resp.addParameter(new ParametersParameter("issues").setResource(
+          org.termx.terminology.fhir.TxIssues.outcome(merged.toArray(OperationOutcomeIssue[]::new))));
+      String msg = merged.stream().filter(i -> "error".equals(i.getSeverity()))
+          .map(i -> i.getDetails() == null ? null : i.getDetails().getText()).filter(java.util.Objects::nonNull)
+          .collect(java.util.stream.Collectors.joining("; "));
+      if (!msg.isEmpty()) {
+        resp.addParameter(new ParametersParameter("message").setValueString(msg));
+      }
+    }
+    return resp;
+  }
+
   private Parameters validateInline(com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs, Parameters req) {
     // An import naming a value set the server cannot resolve (no version requested) makes the value set
     // un-assemblable: report it as a not-found code issue (200, result=false), not a 4xx — the reference engine
@@ -736,6 +811,14 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     String unresolvableImport = unresolvableVersionlessImport(inlineVs, req);
     if (unresolvableImport != null) {
       return valueSetImportNotFound(unresolvableImport);
+    }
+    // A CodeableConcept with MORE THAN ONE coding: validate each coding independently and merge. A single-coding
+    // codeableConcept (the common case) falls through to the normal path below.
+    if (req.findParameter("codeableConcept").isPresent()) {
+      CodeableConcept ccMulti = req.findParameter("codeableConcept").map(ParametersParameter::getValueCodeableConcept).orElse(null);
+      if (ccMulti != null && ccMulti.getCoding() != null && ccMulti.getCoding().size() > 1) {
+        return validateCodeableConceptMulti(inlineVs, req, ccMulti.getCoding());
+      }
     }
     String displayLanguage = req.findParameter("displayLanguage").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
     String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
