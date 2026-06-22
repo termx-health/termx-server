@@ -208,6 +208,11 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     return exts == null ? null : exts.map(com.kodality.zmei.fhir.Extension::getValueCode).filter(java.util.Objects::nonNull).findFirst().orElse(null);
   }
 
+  /** BCP-47-ish language tag match: exact, or one is a region refinement of the other (`de` ~ `de-CH`). */
+  private static boolean langTagMatches(String a, String b) {
+    return a != null && b != null && (a.equals(b) || a.startsWith(b + "-") || b.startsWith(a + "-"));
+  }
+
   /** The non-active status word ("experimental"/"draft"/"deprecated"/"withdrawn"/"retired") of a resource, or null when active. */
   private static String statusWord(Boolean experimental, String status, String standardsStatus) {
     if ("withdrawn".equals(standardsStatus)) {
@@ -267,6 +272,67 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       }
     }
     return new CsConcept(false, null, false, null);
+  }
+
+  /** The tx-resource CodeSystem concept (recursing nested concepts) for {@code system}/{@code code}, or null. */
+  private static com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept txCsConceptNode(Parameters req, String system, String code) {
+    if (req.getParameter() == null || system == null || code == null) {
+      return null;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs
+          && system.equals(cs.getUrl())) {
+        var node = findCsConceptNode(cs.getConcept(), code);
+        if (node != null) {
+          return node;
+        }
+      }
+    }
+    return null;
+  }
+
+  private static com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept findCsConceptNode(
+      List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts, String code) {
+    if (concepts == null) {
+      return null;
+    }
+    for (var c : concepts) {
+      if (code.equals(c.getCode())) {
+        return c;
+      }
+      var nested = findCsConceptNode(c.getConcept(), code);
+      if (nested != null) {
+        return nested;
+      }
+    }
+    return null;
+  }
+
+  /** True when the concept has a valid DISPLAY (primary display in the CS language, or a non-definition designation) in {@code lang}. */
+  private static boolean conceptHasLangDisplay(com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept node,
+      String csLang, String lang) {
+    if (node == null || lang == null) {
+      return false;
+    }
+    if (node.getDisplay() != null && csLang != null && langTagMatches(csLang, lang)) {
+      return true; // the concept's primary display is in the requested language
+    }
+    return node.getDesignation() != null && node.getDesignation().stream()
+        .filter(d -> d.getValue() != null && d.getLanguage() != null && langTagMatches(d.getLanguage(), lang))
+        .anyMatch(d -> d.getUse() == null || !"definition".equals(d.getUse().getCode())); // a definition is not a display
+  }
+
+  /** True when {@code value} is a valid display of the concept (primary display, or any display-use designation, any language). */
+  private static boolean conceptHasDisplayValue(com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept node, String value) {
+    if (node == null || value == null) {
+      return false;
+    }
+    if (value.equals(node.getDisplay())) {
+      return true;
+    }
+    return node.getDesignation() != null && node.getDesignation().stream()
+        .filter(d -> value.equals(d.getValue()))
+        .anyMatch(d -> d.getUse() == null || !"definition".equals(d.getUse().getCode()));
   }
 
   /** All ValueSets supplied inline via tx-resource params whose canonical url matches (any version). */
@@ -890,6 +956,48 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     String displaySeverity = matchesPrimary ? null : matchesAny ? "information" : lenientDisplay ? "warning" : "error";
     boolean displayValid = !"error".equals(displaySeverity);
 
+    // displayLanguage requested, but the concept has NO valid display in that language (only e.g. a definition or
+    // other-language designations): the reference keeps the concept's primary (default-language) display and judges
+    // the provided display against the default language. A provided display that is valid for the default language
+    // is accepted with an information-level "no display for <lang>" notice; one that matches nothing stays an error.
+    // Guarded to a KNOWN default language that differs from the request — when the request language IS satisfied
+    // (the primary or a designation is in it) the branch is skipped, preserving "a foreign-language display is an
+    // error when the requested language has its own display".
+    String langNoneMessage = null;
+    if (StringUtils.isNotEmpty(displayLanguage)) {
+      String matchSystem = match.getSystem() != null ? match.getSystem() : system;
+      String csResourceLang = Optional.ofNullable(txCodeSystemResource(req, matchSystem))
+          .map(com.kodality.zmei.fhir.resource.terminology.CodeSystem::getLanguage).orElse(null);
+      // Read the concept's designations from the tx-resource CodeSystem (reliable regardless of whether the
+      // expansion echoed designations) and split displayLanguage into its requested tags.
+      var csNode = txCsConceptNode(req, matchSystem, match.getCode());
+      List<String> reqLangs = Arrays.stream(displayLanguage.split(",")).map(String::trim).filter(StringUtils::isNotEmpty).toList();
+      boolean hasRequestedLangDisplay = csResourceLang == null // unknown default language → assume satisfied (no override)
+          || csNode == null                                    // concept not in a tx-resource CS → leave existing behavior
+          || reqLangs.isEmpty()
+          || reqLangs.stream().anyMatch(rl -> langTagMatches(csResourceLang, rl) || conceptHasLangDisplay(csNode, csResourceLang, rl));
+      if (!hasRequestedLangDisplay) {
+        CsConcept primaryConcept = txCsConcept(req, matchSystem, match.getCode());
+        String primaryDisplay = primaryConcept.found() && primaryConcept.display() != null ? primaryConcept.display() : match.getDisplay();
+        boolean providedIsValidDisplay = finalDisplay == null
+            || finalDisplay.equals(primaryDisplay)
+            || conceptHasDisplayValue(csNode, finalDisplay);
+        if (providedIsValidDisplay) {
+          displaySeverity = "information";
+          langNoneMessage = String.format(
+              "There are no valid display names found for the code %s#%s for language(s) '%s'. The display is '%s' which is a valid display for the default language",
+              matchSystem, match.getCode(), displayLanguage, finalDisplay);
+        } else {
+          displaySeverity = lenientDisplay ? "warning" : "error";
+          langNoneMessage = String.format(
+              "Wrong Display Name '%s' for %s#%s. There are no valid display names found for language(s) '%s'. Default display is '%s'",
+              finalDisplay, matchSystem, match.getCode(), displayLanguage, primaryDisplay);
+        }
+        displayValid = !"error".equals(displaySeverity);
+        match.setDisplay(primaryDisplay); // the response echoes the primary (default-language) display
+      }
+    }
+
     List<OperationOutcomeIssue> issues = new ArrayList<>(vr.issues());
     // A valid but inactive code (retired/deprecated `status`, or `inactive=true`): the result stays true, but the
     // response echoes `inactive=true` (+ a `status` param when a retired/deprecated status is declared) and a
@@ -956,7 +1064,9 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     if (displaySeverity != null) {
       // Invalid display: a structured `issues` OperationOutcome (invalid-display at the `display`/`Coding.display`
       // element) at the computed severity, mirroring HL7's "Wrong Display Name … Valid display is …" wording.
-      String message = String.format("Wrong Display Name '%s' for %s#%s. %s",
+      // The display-language "no display in the requested language" branch supplies its own message.
+      String message = langNoneMessage != null ? langNoneMessage
+          : String.format("Wrong Display Name '%s' for %s#%s. %s",
           display, match.getSystem(), match.getCode(),
           validDisplayClause(req, match, displayLanguage));
       resp.addParameter(new ParametersParameter("message").setValueString(message));
