@@ -417,6 +417,18 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     return copy;
   }
 
+  /**
+   * The {@code systemVersion} parameter value. The tx-ecosystem sends it as a {@code valueCode} (the FHIR
+   * datatype is {@code code}), so reading only {@code valueString} silently dropped it — leaving version
+   * negotiation with no asserted version and skipping the VALUESET_VALUE_MISMATCH / not-found issues for a
+   * plain {@code code} input. Accept code/string/uri/canonical forms.
+   */
+  private static String systemVersionParam(Parameters req) {
+    return req.findParameter("systemVersion").map(p -> p.getValueString() != null ? p.getValueString()
+        : p.getValueCode() != null ? p.getValueCode()
+        : p.getValueUri() != null ? p.getValueUri() : p.getValueCanonical()).orElse(null);
+  }
+
   /** The {@code <version>} of a {@code system-version}/{@code force-system-version}/{@code check-system-version} param naming {@code system} (its value is {@code system|version}). */
   private static String overrideVersion(Parameters req, String name, String system) {
     if (req.getParameter() == null || system == null) {
@@ -537,6 +549,19 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     // (UNKNOWN_CODESYSTEM_VERSION, an error) is collected first so it sorts ahead of the mismatch and drives
     // the `message`/`x-caused-by-unknown-system`; the mismatch variant (DEFAULT warning / CHANGED / plain) follows.
     String xCausedBy = null;
+    // A concrete (non-wildcard) VS-include version that doesn't exist among the code system's available versions is
+    // reported as not-found — with the valid-versions list — plus x-caused-by-unknown-system, even though the value
+    // set still resolves the code by membership. A wildcard include (1.x.x), an available version, or a forced
+    // version is fine. (Ordered before the mismatch issue so the combined message leads with the not-found.)
+    if (includeVersion != null && force == null
+        && !org.termx.terminology.fhir.FhirVersions.versionHasWildcards(includeVersion)
+        && !available.isEmpty() && !available.contains(includeVersion)) {
+      issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", String.format(
+          "A definition for CodeSystem '%s' version '%s' could not be found, so the code cannot be validated. Valid versions: %s",
+          system, includeVersion, org.termx.terminology.fhir.TxIssues.presentVersionList(available)), systemLocation(req)));
+      hasError = true;
+      xCausedBy = system + "|" + includeVersion;
+    }
     if (codingVersion != null && !(csVersion != null && codingVersion.equals(csVersion))) {
       if (csExists && !available.isEmpty() && !available.contains(codingVersion)) {
         issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", String.format(
@@ -713,7 +738,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
     String system = findSystem(req);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
-    String reqCsVersion = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);
+    String reqCsVersion = systemVersionParam(req);
     if (req.findParameter("coding").isPresent()) {
       Coding coding = req.findParameter("coding").map(ParametersParameter::getValueCoding).orElse(null);
       code = coding != null && coding.getCode() != null ? coding.getCode() : code;
@@ -1106,7 +1131,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     SessionStore.require().checkPermitted(vsVersion.getValueSet(), Privilege.VS_READ);
     String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
     String system = findSystem(req);
-    String version = req.findParameter("systemVersion").map(ParametersParameter::getValueString).orElse(null);
+    String version = systemVersionParam(req);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
     String displayLanguage = req.findParameter("displayLanguage").map(ParametersParameter::getValueCode)
             .orElse(req.findParameter("displayLanguage").map(ParametersParameter::getValueString).orElse(null));
