@@ -920,6 +920,74 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     return 0;
   }
 
+  /** The resolved code system version on an expanded member (the first {@code codeSystemVersions}), or null. */
+  private static String memberVersion(ValueSetVersionConcept c) {
+    return c.getConcept() != null && c.getConcept().getCodeSystemVersions() != null
+        ? c.getConcept().getCodeSystemVersions().stream().findFirst().orElse(null) : null;
+  }
+
+  /** Systems referenced by the compose (include or exclude) at two or more distinct, concrete versions. */
+  private static java.util.Set<String> multiVersionSystems(com.kodality.zmei.fhir.resource.terminology.ValueSet vs) {
+    if (vs == null || vs.getCompose() == null) {
+      return java.util.Set.of();
+    }
+    java.util.Map<String, java.util.Set<String>> sysVersions = new java.util.HashMap<>();
+    java.util.stream.Stream.concat(
+            java.util.Optional.ofNullable(vs.getCompose().getInclude()).orElse(List.of()).stream(),
+            java.util.Optional.ofNullable(vs.getCompose().getExclude()).orElse(List.of()).stream())
+        .filter(inc -> inc.getSystem() != null && StringUtils.isNotEmpty(inc.getVersion()))
+        .forEach(inc -> sysVersions.computeIfAbsent(inc.getSystem(), k -> new java.util.HashSet<>()).add(inc.getVersion()));
+    return sysVersions.entrySet().stream().filter(e -> e.getValue().size() >= 2).map(java.util.Map.Entry::getKey)
+        .collect(java.util.stream.Collectors.toSet());
+  }
+
+  /** A {@code compose.extension[valueset-expansion-parameter]} value by parameter name (e.g. {@code versionsMatch}). */
+  private static String vsExpansionParameterValue(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, String parameter) {
+    if (vs == null || vs.getCompose() == null || vs.getCompose().getExtension() == null) {
+      return null;
+    }
+    for (com.kodality.zmei.fhir.Extension ext : vs.getCompose().getExtension()) {
+      if (!"http://hl7.org/fhir/StructureDefinition/valueset-expansion-parameter".equals(ext.getUrl()) || ext.getExtension() == null) {
+        continue;
+      }
+      String name = ext.getExtension().stream().filter(e -> "name".equals(e.getUrl()))
+          .map(e -> e.getValueString() != null ? e.getValueString() : e.getValueCode()).filter(java.util.Objects::nonNull).findFirst().orElse(null);
+      if (parameter.equals(name)) {
+        return ext.getExtension().stream().filter(e -> "value".equals(e.getUrl()))
+            .map(e -> e.getValueString() != null ? e.getValueString() : e.getValueCode()).filter(java.util.Objects::nonNull).findFirst().orElse(null);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Codes ({@code system|code}) selected by the compose's WHOLE-version EXCLUDE blocks (system+version, no concept
+   * and no filter) for the given systems, resolved version-agnostically. An enumerated/filtered exclude is left to
+   * the SQL path (it is version-specific); only a whole-version exclude removes the shared code across versions.
+   */
+  private java.util.Set<String> resolveExcludeCodes(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, java.util.Set<String> systems) {
+    List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude> wholeVersionExcludes =
+        java.util.Optional.ofNullable(vs.getCompose().getExclude()).orElse(List.of()).stream()
+            .filter(ex -> ex.getSystem() != null && systems.contains(ex.getSystem())
+                && (ex.getConcept() == null || ex.getConcept().isEmpty()) && (ex.getFilter() == null || ex.getFilter().isEmpty()))
+            .toList();
+    if (wholeVersionExcludes.isEmpty()) {
+      return java.util.Set.of();
+    }
+    com.kodality.zmei.fhir.resource.terminology.ValueSet probe = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
+    com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose compose =
+        new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose();
+    compose.setInclude(wholeVersionExcludes);
+    probe.setCompose(compose);
+    java.util.Set<String> codes = new java.util.HashSet<>();
+    for (ValueSetVersionConcept m : valueSetVersionConceptRepository.expandFromJson(FhirMapper.toJson(probe))) {
+      if (m.getConcept() != null && systems.contains(m.getConcept().getCodeSystemUri())) {
+        codes.add(m.getConcept().getCodeSystemUri() + "|" + m.getConcept().getCode());
+      }
+    }
+    return codes;
+  }
+
   private com.kodality.zmei.fhir.resource.terminology.ValueSet expandInline(
       com.kodality.zmei.fhir.resource.terminology.ValueSet inlineVs, Parameters req) {
     // Resolve each compose.include.version against the system-version/force-system-version/check-system-version
@@ -1007,6 +1075,55 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       expandedConcepts = expandedConcepts.stream()
           .filter(c -> !isInactiveMember(c) && !(c.getConcept() != null && txInactiveCodes.contains(c.getConcept().getCodeSystemUri() + "|" + c.getConcept().getCode())))
           .toList();
+    }
+
+    // Cross-version ("overload") handling: a code system referenced at multiple versions in the compose.
+    java.util.Set<String> multiVersionSystems = multiVersionSystems(inlineVs);
+    boolean versionsMatchApplied = false;
+    if (!multiVersionSystems.isEmpty()) {
+      // The cross-version logic needs each member's resolved code system VERSION, which the SQL expand carries as
+      // a version id only — decorate the full set up front so memberVersion() is populated (idempotent: the page
+      // decoration below skips members already carrying a version).
+      decorateExpansionFlags(expandedConcepts);
+      // Whole-version excludes apply BY CODE across versions (the SQL excludes by system+code+VERSION, leaving a
+      // shared code pinned to a different version in). Enumerated/filtered excludes stay version-specific (SQL), and
+      // an explicit versionsMatch=false keeps every version separate (no cross-version exclude).
+      boolean versionsMatchDisabled = "false".equals(vsExpansionParameterValue(inlineVs, "versionsMatch"));
+      java.util.Set<String> excludedCodes = !versionsMatchDisabled && inlineVs.getCompose() != null && inlineVs.getCompose().getExclude() != null
+          ? resolveExcludeCodes(inlineVs, multiVersionSystems) : java.util.Set.of();
+      if (!excludedCodes.isEmpty()) {
+        int before = expandedConcepts.size();
+        expandedConcepts = expandedConcepts.stream()
+            .filter(c -> c.getConcept() == null || !multiVersionSystems.contains(c.getConcept().getCodeSystemUri())
+                || !excludedCodes.contains(c.getConcept().getCodeSystemUri() + "|" + c.getConcept().getCode()))
+            .toList();
+        versionsMatchApplied = expandedConcepts.size() < before;
+      }
+      // versionsMatch=true compose extension: collapse a multi-version system's members to one per code (highest
+      // version), preserving first-occurrence order.
+      if ("true".equals(vsExpansionParameterValue(inlineVs, "versionsMatch"))) {
+        List<ValueSetVersionConcept> collapsed = new java.util.ArrayList<>();
+        java.util.Map<String, Integer> idxByCode = new java.util.HashMap<>();
+        for (ValueSetVersionConcept c : expandedConcepts) {
+          if (c.getConcept() == null || !multiVersionSystems.contains(c.getConcept().getCodeSystemUri())) {
+            collapsed.add(c);
+            continue;
+          }
+          String key = c.getConcept().getCodeSystemUri() + "|" + c.getConcept().getCode();
+          Integer idx = idxByCode.get(key);
+          if (idx == null) {
+            idxByCode.put(key, collapsed.size());
+            collapsed.add(c);
+          } else if (compareVersions(java.util.Optional.ofNullable(memberVersion(c)).orElse("0"),
+              java.util.Optional.ofNullable(memberVersion(collapsed.get(idx))).orElse("0")) > 0) {
+            collapsed.set(idx, c);
+          }
+        }
+        if (collapsed.size() < expandedConcepts.size()) {
+          versionsMatchApplied = true;
+        }
+        expandedConcepts = collapsed;
+      }
     }
 
     // FHIR R5 ValueSet.expansion.total: "If the number of codes in an expansion
@@ -1156,6 +1273,27 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter().setName(vsWarning)
           .setValueUri(inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "")));
     }
+    // For a multi-version system, used-codesystem reports EVERY version the compose referenced (include OR
+    // exclude) — an exclude consumes its version even when no member from it survives — listed in version order.
+    for (String sys : multiVersionSystems) {
+      java.util.TreeSet<String> versions = new java.util.TreeSet<>(ValueSetExpandOperation::compareVersions);
+      java.util.stream.Stream.concat(
+              java.util.Optional.ofNullable(inlineVs.getCompose().getInclude()).orElse(List.of()).stream(),
+              java.util.Optional.ofNullable(inlineVs.getCompose().getExclude()).orElse(List.of()).stream())
+          .filter(inc -> sys.equals(inc.getSystem()) && StringUtils.isNotEmpty(inc.getVersion()))
+          .forEach(inc -> versions.add(inc.getVersion()));
+      if (versions.isEmpty()) {
+        continue;
+      }
+      expansionParameters.removeIf(pp -> "used-codesystem".equals(pp.getName())
+          && pp.getValueUri() != null && pp.getValueUri().startsWith(sys + "|"));
+      versions.forEach(v -> expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
+          .setName("used-codesystem").setValueUri(sys + "|" + v)));
+    }
+    if (versionsMatchApplied) {
+      expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
+          .setName("versionsMatch").setValueBoolean(true));
+    }
     expansion.setParameter(expansionParameters.isEmpty() ? null : expansionParameters);
     // Declare the requested properties so contains[].property references a declared expansion.property (valid FHIR).
     // Each declared property carries its uri — from the tx-resource CodeSystem's property definition, falling back
@@ -1184,7 +1322,7 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
 
     // FHIR adds `version` to a contains member only when the expansion spans more than one code system
     // version (a mixed/multi-version value set), to disambiguate; a single-version expansion omits it.
-    boolean emitContainsVersion = expandedConcepts.stream()
+    boolean emitContainsVersion = !multiVersionSystems.isEmpty() || expandedConcepts.stream()
         .map(c -> c.getConcept() != null && c.getConcept().getCodeSystemVersions() != null
             ? c.getConcept().getCodeSystemVersions().stream().findFirst().orElse(null) : null)
         .filter(java.util.Objects::nonNull).distinct().count() > 1;
