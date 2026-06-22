@@ -45,6 +45,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   private final ValueSetVersionConceptService valueSetVersionConceptService;
   private final ConceptService conceptService;
   private final ValueSetExpandOperation expandOperation;
+  private final org.termx.terminology.terminology.codesystem.CodeSystemService codeSystemService;
 
   public String getResourceType() {
     return ResourceType.ValueSet.name();
@@ -73,6 +74,13 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   public Parameters run(Parameters req) {
+    // A `useSupplement` that names a code system supplement which can't be resolved — neither bundled as a
+    // tx-resource nor stored — is a hard 404, the same way $expand rejects an unresolvable required supplement
+    // (tx-ecosystem parameters/validate-supplement-bad). Checked up front, before resolving the value set.
+    requireResolvableSupplements(req);
+    // A structurally-malformed displayLanguage (e.g. a bare '-') is rejected up front with a 400 processing
+    // error, the way the reference engine does (tx-ecosystem validation-wrong-de-en-bad).
+    requireValidDisplayLanguage(req);
     String rawUrl = req.findParameter("url")
         .map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueUri() != null ? pp.getValueUri() : pp.getValueString())
         .orElse(null);
@@ -144,6 +152,60 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
   }
 
   private record CsConcept(boolean found, String display, boolean inactive, String status) {
+  }
+
+  /**
+   * Every {@code useSupplement} the request names must be resolvable to a CodeSystem supplement — either one
+   * bundled as a {@code tx-resource} on the request or one stored with that canonical url. An unresolvable
+   * supplement is a 404 not-found (mirrors {@code ValueSetExpandOperation.requireDeclaredSupplements}).
+   */
+  private void requireResolvableSupplements(Parameters req) {
+    if (req == null || req.getParameter() == null) {
+      return;
+    }
+    for (ParametersParameter p : req.getParameter()) {
+      if (!"useSupplement".equals(p.getName())) {
+        continue;
+      }
+      String ref = p.getValueCanonical() != null ? p.getValueCanonical()
+          : p.getValueUri() != null ? p.getValueUri() : p.getValueString();
+      if (StringUtils.isEmpty(ref)) {
+        continue;
+      }
+      String url = ref.contains("|") ? ref.substring(0, ref.indexOf('|')) : ref;
+      boolean txPresent = req.getParameter().stream()
+          .filter(pp -> "tx-resource".equals(pp.getName()))
+          .map(ParametersParameter::getResource)
+          .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+          .map(r -> ((com.kodality.zmei.fhir.resource.terminology.CodeSystem) r).getUrl())
+          .anyMatch(url::equals);
+      boolean storedPresent = txPresent || codeSystemService.query(
+          new org.termx.ts.codesystem.CodeSystemQueryParams().setUri(url).limit(1)).findFirst().isPresent();
+      if (!storedPresent) {
+        throw org.termx.terminology.fhir.TxIssues.notFoundException(404, "Required supplement not found: " + ref);
+      }
+    }
+  }
+
+  /** A single well-formed BCP-47 language range: a primary subtag (or `*`) plus optional `-`-joined subtags. */
+  private static final java.util.regex.Pattern LANGUAGE_RANGE = java.util.regex.Pattern.compile("\\*|[A-Za-z]{1,8}(-[A-Za-z0-9]{1,8})*");
+
+  /**
+   * Reject a structurally-malformed {@code displayLanguage} (a comma-separated BCP-47 range list, each range
+   * optionally carrying a {@code ;q=} weight) with a 400 — e.g. a bare {@code '-'} that is not a language tag.
+   */
+  private void requireValidDisplayLanguage(Parameters req) {
+    String dl = req.findParameter("displayLanguage")
+        .map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
+    if (StringUtils.isEmpty(dl)) {
+      return;
+    }
+    for (String part : dl.split(",")) {
+      String tag = part.split(";")[0].trim();
+      if (!tag.isEmpty() && !LANGUAGE_RANGE.matcher(tag).matches()) {
+        throw org.termx.terminology.fhir.TxIssues.invalidDisplayLanguageException(dl);
+      }
+    }
   }
 
   private static final String STANDARDS_STATUS_URL = "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status";

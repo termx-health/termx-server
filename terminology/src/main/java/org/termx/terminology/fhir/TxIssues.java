@@ -95,6 +95,21 @@ public final class TxIssues {
     return new com.kodality.kefhir.core.exception.FhirException(status, issue);
   }
 
+  /**
+   * A malformed {@code displayLanguage} request parameter: a {@code processing}-code OperationOutcome issue with
+   * the {@code tx-issue-type}/{@code invalid-display} detail coding (tx-ecosystem {@code validation-wrong-de-en-bad}).
+   */
+  public static com.kodality.kefhir.core.exception.FhirException invalidDisplayLanguageException(String displayLanguage) {
+    org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent issue =
+        new org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent();
+    issue.setSeverity(org.hl7.fhir.r5.model.OperationOutcome.IssueSeverity.ERROR);
+    issue.setCode(org.hl7.fhir.r5.model.OperationOutcome.IssueType.PROCESSING);
+    issue.setDetails(new org.hl7.fhir.r5.model.CodeableConcept()
+        .addCoding(new org.hl7.fhir.r5.model.Coding(TX_ISSUE_TYPE, "invalid-display", null))
+        .setText("Invalid displayLanguage: '" + displayLanguage + "'"));
+    return new com.kodality.kefhir.core.exception.FhirException(400, issue);
+  }
+
   /** Formats a version list as the tx-ecosystem does: comma-separated with " or " before the last ("a, b or c"). */
   public static String presentVersionList(java.util.List<String> versions) {
     if (versions == null || versions.isEmpty()) {
