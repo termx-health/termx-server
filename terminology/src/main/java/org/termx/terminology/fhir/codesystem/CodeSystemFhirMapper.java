@@ -57,7 +57,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   private final CodeSystemRelatedArtifactService relatedArtifactService;
   private static final String DISPLAY = "display";
   private static final String DEFINITION = "definition";
-  private static final Set<String> IMPLICIT_PROPERTY_DEFINITIONS = Set.of(DISPLAY, DEFINITION);
+  // A use-less FHIR designation that is NOT the concept's display is stored under this designation-property type
+  // (FHIR: designation.use is optional, and its absence does NOT mean "display"). Implicit so it is always defined
+  // (designations of this type would otherwise be dropped, having no matching property) yet not re-emitted as a
+  // property definition on export.
+  private static final String ALTERNATE = "alternate";
+  private static final Set<String> IMPLICIT_PROPERTY_DEFINITIONS = Set.of(DISPLAY, DEFINITION, ALTERNATE);
   private static final String SNOMED_URL = "http://snomed.info/sct";
   // Well-known designation `use` codings (keyed by `system#code`) ↔ the termx defined designation-property
   // name. Mapping a use to its known name lets a designation link to the shared defined property (by name)
@@ -784,9 +789,22 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (c.getDesignation() == null) {
       c.setDesignation(new ArrayList<>());
     }
+    // A FHIR designation with no `use` is NOT a display (FHIR: use is optional, absence ≠ display). It becomes an
+    // `alternate` designation so it does not compete with the concept's real display — EXCEPT when the concept has
+    // no display of its own, where the FIRST use-less designation becomes the display (so the concept still has a
+    // display name). A designation WITH a use keeps its resolved type.
+    boolean[] displayTaken = {StringUtils.isNotEmpty(c.getDisplay())};
     List<Designation> designations = c.getDesignation().stream().map(d -> {
       Designation designation = new Designation();
-      designation.setDesignationType(designationUseName(d.getUse()));
+      if (d.getUse() != null && d.getUse().getCode() != null) {
+        designation.setDesignationType(designationUseName(d.getUse()));
+      } else if (!displayTaken[0]) {
+        designation.setDesignationType(DISPLAY);
+        designation.setPreferred(true);
+        displayTaken[0] = true;
+      } else {
+        designation.setDesignationType(ALTERNATE);
+      }
       designation.setName(d.getValue());
       designation.setLanguage(d.getLanguage() == null ? Language.en : d.getLanguage());
       designation.setCaseSignificance(caseSignificance);
