@@ -942,6 +942,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       Coding coding = cc != null && cc.getCoding() != null ? cc.getCoding().stream().findFirst().orElse(null) : null;
       code = coding != null && coding.getCode() != null ? coding.getCode() : code;
       system = coding != null && coding.getSystem() != null ? coding.getSystem() : system;
+      display = coding != null && coding.getDisplay() != null ? coding.getDisplay() : display;
       reqCsVersion = coding != null && coding.getVersion() != null ? coding.getVersion() : reqCsVersion;
     }
     if (code == null) {
@@ -1105,22 +1106,34 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         return frag;
       }
       List<OperationOutcomeIssue> nfIssues = new ArrayList<>();
+      // A codeableConcept's code-level issues carry the coding location (CodeableConcept.coding[0].code) ONLY when
+      // the coding's system is NOT a fully-known code system: the reference engine points at the offending element
+      // for an unknown/external/fragment system, but omits the location when the system is a known complete code
+      // system (the code is simply not defined in it). Known = a bundled tx-resource CS with content=complete.
+      var ccSystemCs = txCodeSystemResource(req, system);
+      boolean systemComplete = ccSystemCs != null && (ccSystemCs.getContent() == null || "complete".equals(ccSystemCs.getContent()));
+      String ccCodeLoc = systemComplete ? null : ccLoc;
       // Issue locations follow the reference engine: a bare `code` input points at `code`; coding/codeableConcept
       // not-in-vs has no location; an invalid-code on a codeableConcept points at CodeableConcept.coding[0].code.
-      nfIssues.add(bareCode
+      // A bare code accompanied by a `display` is treated as a Coding (no `code` location) — only a code without a
+      // display gets the `code` location.
+      boolean bareCodeLoc = bareCode && display == null;
+      nfIssues.add(bareCodeLoc
           ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVsText, "code")
           : org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVsText));
       String message = notInVsText;
       if (!csConcept.found() && system != null) {
         String unknownCode = String.format("Unknown code '%s' in the CodeSystem '%s'%s", code, system, csv != null ? " version '" + csv + "'" : "");
-        nfIssues.add(bareCode ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, "code")
-            : ccInput ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, ccLoc)
+        nfIssues.add(bareCodeLoc ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, "code")
+            : ccInput && ccCodeLoc != null ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, ccCodeLoc)
             : org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode));
-        message = (ccInput ? providedNotFound : notInVsText) + "; " + unknownCode;
+        message = notInVsText + "; " + unknownCode;
       }
       // A codeableConcept also carries an information-level this-code-not-in-vs issue (the "provided code" text).
       if (ccInput) {
-        nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("information", "code-invalid", "this-code-not-in-vs", providedNotFound, ccLoc));
+        nfIssues.add(ccCodeLoc != null
+            ? org.termx.terminology.fhir.TxIssues.issue("information", "code-invalid", "this-code-not-in-vs", providedNotFound, ccCodeLoc)
+            : org.termx.terminology.fhir.TxIssues.issue("information", "code-invalid", "this-code-not-in-vs", providedNotFound));
       }
       // An inactive (retired/deprecated) but otherwise-valid code carries a code-rule error (status review) and
       // a code-comment warning (valid but not active), and the response echoes `inactive`.
