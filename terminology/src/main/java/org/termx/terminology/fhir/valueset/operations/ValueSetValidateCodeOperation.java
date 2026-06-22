@@ -885,17 +885,44 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
             merged.add(iss);
           }));
     }
+    // The codeableConcept is valid iff at least one coding is actually IN the value set (a member). A coding that
+    // resolves to a known code the VS doesn't select, or an unknown code, does not satisfy it — even though its
+    // per-coding not-in-vs error was demoted to an informational this-code-not-in-vs above. "In VS" = the coding's
+    // own validation raised no not-in-vs / this-code-not-in-vs / invalid-code issue (display-only problems are fine).
+    java.util.function.Function<Parameters, Boolean> codingInVs = s -> {
+      List<OperationOutcomeIssue> li = s.findParameter("issues").map(ParametersParameter::getResource)
+          .filter(r -> r instanceof com.kodality.zmei.fhir.resource.other.OperationOutcome)
+          .map(r -> ((com.kodality.zmei.fhir.resource.other.OperationOutcome) r).getIssue()).orElse(List.of());
+      return li == null || li.stream().noneMatch(i -> java.util.Set.of("not-in-vs", "this-code-not-in-vs", "invalid-code").contains(txTypeOf.apply(i)));
+    };
+    boolean anyInVs = subs.stream().anyMatch(codingInVs::apply);
+    // The codeableConcept validates only when a coding is in the value set AND no code-level error survived (an
+    // unknown/invalid code or unresolved version). Display-only problems were dropped above, so they don't fail it.
+    boolean noError = merged.stream().noneMatch(i -> "error".equals(i.getSeverity()) || "fatal".equals(i.getSeverity()));
+    boolean valid = anyInVs && noError;
+    // When NO coding is in the value set, the codeableConcept fails with a leading not-in-vs error ahead of the
+    // per-coding informational issues (the reference's "No valid coding was found …" wrapper). When at least one
+    // coding IS in the value set the wrapper is omitted even if another coding is an invalid code.
+    if (!anyInVs) {
+      String vsCanonical = inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "");
+      OperationOutcomeIssue wrapper = org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs",
+          "No valid coding was found for the value set '" + vsCanonical + "'");
+      merged.add(0, wrapper); // the codeableConcept-level wrapper has no code → sorts ahead of any per-coding issue
+    }
+    // Stable sort by severity only — the per-coding issues keep the codeableConcept's coding order (the order the
+    // sub-validations were evaluated), with the codeableConcept-level not-in-vs wrapper first among the errors.
     java.util.Map<String, Integer> severityRank = java.util.Map.of("fatal", 0, "error", 1, "warning", 2, "information", 3);
     merged.sort(java.util.Comparator.comparingInt(i -> severityRank.getOrDefault(i.getSeverity(), 4)));
-    // The codeableConcept is valid unless a code-level error survived (an unknown/invalid code or unresolved
-    // version). Display-only problems were dropped above, so they don't fail the result.
-    boolean valid = merged.stream().noneMatch(i -> "error".equals(i.getSeverity()) || "fatal".equals(i.getSeverity()));
     Parameters resp = new Parameters();
     resp.addParameter(new ParametersParameter("result").setValueBoolean(valid));
-    winner.findParameter("code").ifPresent(resp::addParameter);
-    winner.findParameter("system").ifPresent(resp::addParameter);
-    winner.findParameter("display").ifPresent(resp::addParameter);
-    winner.findParameter("version").ifPresent(resp::addParameter);
+    // Echo the matched coding's code/system/display/version whenever a coding is in the value set (even if the
+    // result is false because another coding is invalid); a CC with no in-VS coding echoes only `codeableConcept`.
+    if (anyInVs) {
+      winner.findParameter("code").ifPresent(resp::addParameter);
+      winner.findParameter("system").ifPresent(resp::addParameter);
+      winner.findParameter("display").ifPresent(resp::addParameter);
+      winner.findParameter("version").ifPresent(resp::addParameter);
+    }
     if (!merged.isEmpty()) {
       resp.addParameter(new ParametersParameter("issues").setResource(
           org.termx.terminology.fhir.TxIssues.outcome(merged.toArray(OperationOutcomeIssue[]::new))));
