@@ -433,6 +433,85 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .filter(cs -> system.equals(cs.getUrl())).findFirst().orElse(null);
   }
 
+  /**
+   * Resolve {@code compose.include/exclude} property {@code =} filters against a tx-resource CodeSystem in Java,
+   * for properties the code system does NOT declare in its {@code property} list. The SQL expand can only filter
+   * on declared/stored properties, so an undeclared concept property (e.g. an inline {@code notSelectable}) yields
+   * nothing; here the matching concepts are computed from the tx-resource CodeSystem and the filter is rewritten to
+   * the explicit concept list. Includes whose filters are all declared (or non-{@code =}) are left to the SQL path.
+   */
+  private void resolveTxResourceFilters(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, Parameters req) {
+    if (vs.getCompose() == null) {
+      return;
+    }
+    resolveTxResourceFilters(vs.getCompose().getInclude(), req);
+    resolveTxResourceFilters(vs.getCompose().getExclude(), req);
+  }
+
+  private void resolveTxResourceFilters(
+      List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude> includes, Parameters req) {
+    if (includes == null) {
+      return;
+    }
+    for (var inc : includes) {
+      if (inc.getSystem() == null || inc.getFilter() == null || inc.getFilter().isEmpty()) {
+        continue;
+      }
+      com.kodality.zmei.fhir.resource.terminology.CodeSystem cs = txCodeSystem(req, inc.getSystem());
+      if (cs == null) {
+        continue;
+      }
+      java.util.Set<String> declared = cs.getProperty() == null ? java.util.Set.of()
+          : cs.getProperty().stream().map(com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemProperty::getCode)
+              .collect(java.util.stream.Collectors.toSet());
+      // Only rewrite when EVERY filter is an `=` filter on an UNDECLARED property — a declared property is handled
+      // by SQL, and mixing leaves the include to the SQL path to avoid double-resolving.
+      boolean allUndeclaredEq = inc.getFilter().stream().allMatch(f ->
+          "=".equals(f.getOp()) && f.getProperty() != null && !declared.contains(f.getProperty()));
+      if (!allUndeclaredEq) {
+        continue;
+      }
+      List<String> codes = new java.util.ArrayList<>();
+      collectFilterMatches(cs.getConcept(), inc.getFilter(), codes);
+      if (codes.isEmpty()) {
+        continue; // nothing matched — leave to SQL (which also yields none) rather than emit a system-wide include
+      }
+      inc.setFilter(null);
+      inc.setConcept(codes.stream().distinct()
+          .map(c -> new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConcept().setCode(c))
+          .toList());
+    }
+  }
+
+  /** Codes (recursively) whose concept satisfies ALL the given property {@code =} filters by their concept property values. */
+  private static void collectFilterMatches(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts,
+      List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeFilter> filters, List<String> out) {
+    if (concepts == null) {
+      return;
+    }
+    for (var c : concepts) {
+      if (c.getCode() != null && filters.stream().allMatch(f -> conceptPropertyEquals(c, f.getProperty(), f.getValue()))) {
+        out.add(c.getCode());
+      }
+      collectFilterMatches(c.getConcept(), filters, out);
+    }
+  }
+
+  /** True when the concept carries a property {@code code} whose value (boolean/code/string) equals {@code value}. */
+  private static boolean conceptPropertyEquals(com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept c,
+      String code, String value) {
+    if (c.getProperty() == null || code == null || value == null) {
+      return false;
+    }
+    return c.getProperty().stream().filter(p -> code.equals(p.getCode())).anyMatch(p -> {
+      String v = p.getValueBoolean() != null ? String.valueOf(p.getValueBoolean())
+          : p.getValueCode() != null ? p.getValueCode()
+          : p.getValueString() != null ? p.getValueString()
+          : p.getValueInteger() != null ? String.valueOf(p.getValueInteger()) : null;
+      return value.equals(v);
+    });
+  }
+
   private static String statusWarning(com.kodality.zmei.fhir.resource.terminology.CodeSystem cs) {
     return cs == null ? null : statusWarning(cs.getExperimental(), cs.getStatus(), standardsStatus(cs.getExtensions(STANDARDS_STATUS_URL)));
   }
@@ -860,6 +939,10 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     List<String> usedValueSets = new java.util.ArrayList<>();
     inlineVs = resolveImportedValueSets(inlineVs, req, new java.util.HashSet<>(), usedValueSets);
     inlineVs = resolveIncludeVersions(inlineVs, req);
+    // Resolve property `=` filters against a tx-resource CodeSystem in Java when the property is NOT declared in
+    // the code system (the SQL expand can only filter on declared/stored properties, so an undeclared concept
+    // property like an inline `notSelectable` yields nothing). Converts the filter to the matching concept list.
+    resolveTxResourceFilters(inlineVs, req);
 
     // Serialize the inline ValueSet to JSON
     String valueSetJson = FhirMapper.toJson(inlineVs);
