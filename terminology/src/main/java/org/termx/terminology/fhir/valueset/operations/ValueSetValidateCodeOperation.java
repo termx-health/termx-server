@@ -397,6 +397,12 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .anyMatch(d -> d.getUse() == null || !"definition".equals(d.getUse().getCode()));
   }
 
+  /** True when the tx-resource concept is abstract — carries a {@code notSelectable=true} property. */
+  private static boolean conceptIsAbstract(com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept node) {
+    return node != null && node.getProperty() != null && node.getProperty().stream()
+        .anyMatch(p -> ("notSelectable".equals(p.getCode()) || "not-selectable".equals(p.getCode())) && Boolean.TRUE.equals(p.getValueBoolean()));
+  }
+
   /**
    * Display values a bundled tx-resource SUPPLEMENT CodeSystem (content=supplement, supplements={@code system})
    * adds for {@code system}#{@code code} — its concept display and any designation values. A display matching one
@@ -1303,7 +1309,22 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
               inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : ""),
           depLoc));
     }
-    resp.addParameter(new ParametersParameter("result").setValueBoolean(displayValid && !vr.hasError()));
+    // `abstract=false` disallows abstract (notSelectable) codes: a code that is abstract in its code system is
+    // valid there, but with abstract codes excluded it is treated as not in the value set — a code-rule error plus
+    // a not-in-vs error, and result=false (tx-ecosystem notSelectable *-param-false).
+    boolean abstractNotAllowed = req.findParameter("abstract")
+        .map(p -> Boolean.FALSE.equals(p.getValueBoolean()) || "false".equals(p.getValueString())).orElse(false);
+    String abstractMessage = null;
+    if (abstractNotAllowed && conceptIsAbstract(txCsConceptNode(req, match.getSystem() != null ? match.getSystem() : system, match.getCode()))) {
+      String ref = (match.getSystem() != null ? match.getSystem() : system) + "#" + match.getCode();
+      String vsCanon = inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "");
+      String ruleText = String.format("Code '%s' is abstract, and not allowed in this context", ref);
+      String nivText = String.format("The provided code '%s' was not found in the value set '%s'", ref, vsCanon);
+      issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "business-rule", "code-rule", ruleText));
+      issues.add(org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", nivText));
+      abstractMessage = ruleText + "; " + nivText;
+    }
+    resp.addParameter(new ParametersParameter("result").setValueBoolean(displayValid && !vr.hasError() && abstractMessage == null));
     // A codeableConcept whose code could not be validated against a known code-system version (the VS-include
     // version doesn't exist) echoes only `codeableConcept` (added by the run() wrapper) — NOT a decomposed
     // code/system/version. The reference omits them because the code was never validated against a real version.
@@ -1338,6 +1359,8 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           validDisplayClause(req, match, displayLanguage));
       resp.addParameter(new ParametersParameter("message").setValueString(message));
       issues.add(org.termx.terminology.fhir.TxIssues.issue(displaySeverity, "invalid", "invalid-display", message, displayLocation(req)));
+    } else if (abstractMessage != null) {
+      resp.addParameter(new ParametersParameter("message").setValueString(abstractMessage));
     } else if (!inactiveWarnings.isEmpty()) {
       // The inactive code-comment warning(s) become the human message when there is no display issue.
       resp.addParameter(new ParametersParameter("message").setValueString(String.join("; ", inactiveWarnings)));
