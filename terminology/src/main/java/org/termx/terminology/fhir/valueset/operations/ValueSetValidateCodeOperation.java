@@ -335,6 +335,49 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .anyMatch(d -> d.getUse() == null || !"definition".equals(d.getUse().getCode()));
   }
 
+  /**
+   * Display values a bundled tx-resource SUPPLEMENT CodeSystem (content=supplement, supplements={@code system})
+   * adds for {@code system}#{@code code} — its concept display and any designation values. A display matching one
+   * is a valid display for the code even though it is not in the base code system.
+   */
+  private static java.util.Set<String> supplementDisplayValues(Parameters req, String system, String code) {
+    java.util.Set<String> values = new java.util.HashSet<>();
+    if (req == null || req.getParameter() == null || system == null || code == null) {
+      return values;
+    }
+    String base = system.contains("|") ? system.substring(0, system.indexOf('|')) : system;
+    req.getParameter().stream()
+        .filter(p -> "tx-resource".equals(p.getName()))
+        .map(ParametersParameter::getResource)
+        .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+        .map(r -> (com.kodality.zmei.fhir.resource.terminology.CodeSystem) r)
+        .filter(cs -> "supplement".equals(cs.getContent()) && cs.getSupplements() != null
+            && base.equals(cs.getSupplements().contains("|")
+                ? cs.getSupplements().substring(0, cs.getSupplements().indexOf('|')) : cs.getSupplements()))
+        .forEach(cs -> collectSupplementDisplays(cs.getConcept(), code, values));
+    return values;
+  }
+
+  private static void collectSupplementDisplays(List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept> concepts,
+                                                String code, java.util.Set<String> out) {
+    if (concepts == null) {
+      return;
+    }
+    for (var c : concepts) {
+      if (code.equals(c.getCode())) {
+        if (StringUtils.isNotEmpty(c.getDisplay())) {
+          out.add(c.getDisplay());
+        }
+        Optional.ofNullable(c.getDesignation()).orElse(List.of()).forEach(d -> {
+          if (d.getValue() != null) {
+            out.add(d.getValue());
+          }
+        });
+      }
+      collectSupplementDisplays(c.getConcept(), code, out);
+    }
+  }
+
   /** All ValueSets supplied inline via tx-resource params whose canonical url matches (any version). */
   private static List<com.kodality.zmei.fhir.resource.terminology.ValueSet> txResourceValueSets(Parameters req, String url) {
     if (req.getParameter() == null || url == null) {
@@ -1064,7 +1107,12 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
             .anyMatch(d -> finalDisplay.equals(d.getValue()));
     boolean lenientDisplay = req.findParameter("lenient-display-validation")
         .map(p -> Boolean.TRUE.equals(p.getValueBoolean()) || "true".equals(p.getValueString())).orElse(false);
-    String displaySeverity = matchesPrimary ? null : matchesAny ? "information" : lenientDisplay ? "warning" : "error";
+    // A display contributed by a bundled CodeSystem SUPPLEMENT (content=supplement) is a fully valid display for
+    // the code — accepted with no invalid-display issue, like the primary display (tx-ecosystem extensions
+    // validate-coding-*-supplement). Other-language/alternate designations remain an information-level match.
+    boolean matchesSupplement = finalDisplay != null
+        && supplementDisplayValues(req, match.getSystem() != null ? match.getSystem() : system, match.getCode()).contains(finalDisplay);
+    String displaySeverity = matchesPrimary || matchesSupplement ? null : matchesAny ? "information" : lenientDisplay ? "warning" : "error";
     boolean displayValid = !"error".equals(displaySeverity);
 
     // displayLanguage requested, but the concept has NO valid display in that language (only e.g. a definition or
