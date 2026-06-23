@@ -343,12 +343,17 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
 
   /** The tx-resource CodeSystem concept (recursing nested concepts) for {@code system}/{@code code}, or null. */
   private static com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept txCsConceptNode(Parameters req, String system, String code) {
+    return txCsConceptNode(req, system, code, null);
+  }
+
+  /** As {@link #txCsConceptNode(Parameters, String, String)}, but restricted to the tx-resource CodeSystem of {@code version} (null = any version). */
+  private static com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept txCsConceptNode(Parameters req, String system, String code, String version) {
     if (req.getParameter() == null || system == null || code == null) {
       return null;
     }
     for (ParametersParameter p : req.getParameter()) {
       if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs
-          && system.equals(cs.getUrl())) {
+          && system.equals(cs.getUrl()) && (version == null || version.equals(cs.getVersion()))) {
         var node = findCsConceptNode(cs.getConcept(), code);
         if (node != null) {
           return node;
@@ -356,6 +361,29 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       }
     }
     return null;
+  }
+
+  /** True when the supplied display equals the code's display (or a designation value) in the tx-resource CodeSystem of {@code version}. */
+  private static boolean displayValidAtVersion(Parameters req, String system, String code, String version, String display) {
+    var node = txCsConceptNode(req, system, code, version);
+    if (node == null) {
+      return false;
+    }
+    if (display.equals(node.getDisplay())) {
+      return true;
+    }
+    return Optional.ofNullable(node.getDesignation()).orElse(List.of()).stream()
+        .anyMatch(d -> display.equals(d.getValue()));
+  }
+
+  /** Maps a tx-resource concept's designations to expansion-contains designations (value + language + use). */
+  private static List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation> toContainsDesignations(
+      List<com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptDesignation> designations) {
+    if (designations == null) {
+      return null;
+    }
+    return designations.stream().map(d -> new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation()
+        .setValue(d.getValue()).setLanguage(d.getLanguage()).setUse(d.getUse())).toList();
   }
 
   private static com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept findCsConceptNode(
@@ -495,16 +523,6 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .distinct().count() > 1;
   }
 
-  /** The highest version among the expansion members for {@code system}+{@code code}, or {@code null} if none carry a version. */
-  private static String highestMatchVersion(com.kodality.zmei.fhir.resource.terminology.ValueSet expanded, String system, String code) {
-    return Optional.ofNullable(expanded.getExpansion())
-        .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
-        .filter(c -> code != null && code.equals(c.getCode()) && (system == null || system.equals(c.getSystem())))
-        .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains::getVersion)
-        .filter(java.util.Objects::nonNull)
-        .max(ValueSetValidateCodeOperation::compareVersionStrings).orElse(null);
-  }
-
   /** Numeric dotted-version comparison ({@code 2.0.0 > 1.10.0}); non-numeric segments fall back to lexical order. */
   private static int compareVersionStrings(String a, String b) {
     String[] pa = a.split("\\."), pb = b.split("\\.");
@@ -528,6 +546,21 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       return null;
     }
   }
+
+  /** Version comparison that sorts a null (unversioned) member below any concrete version. */
+  private static int compareNullableVersions(String a, String b) {
+    if (java.util.Objects.equals(a, b)) {
+      return 0;
+    }
+    if (a == null) {
+      return -1;
+    }
+    if (b == null) {
+      return 1;
+    }
+    return compareVersionStrings(a, b);
+  }
+
 
   /** The {@code compose.include.version} that applies to {@code system}+{@code code} — preferring an include that enumerates the code (mixed value sets). */
   private static String includeVersionFor(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, String system, String code) {
@@ -679,7 +712,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
    * {@code VALUESET_VALUE_MISMATCH} variant plus {@code UNKNOWN_CODESYSTEM_VERSION} when the coding's version
    * differs/doesn't exist. Operates off the tx-resource CodeSystem versions (the inline expand carries none).
    */
-  private VersionResolution resolveVersion(Parameters req, String system, String includeVersion, String codingVersion, List<String> available) {
+  private VersionResolution resolveVersion(Parameters req, String system, String includeVersion, String codingVersion, List<String> available, boolean overload) {
     List<OperationOutcomeIssue> issues = new ArrayList<>();
     boolean hasError = false;
     String loc = versionLocation(req);
@@ -694,6 +727,12 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       resolved = def != null ? def : check;
     }
     if (codingVersion != null && resolved != null && org.termx.terminology.fhir.FhirVersions.isMoreDetailed(resolved, codingVersion)) {
+      resolved = codingVersion;
+    }
+    // Overload value set (system included at multiple versions): a coding version that is one of the available
+    // versions selects that version — it is not a conflict with the include's version, so resolve to it and emit
+    // no VALUESET_VALUE_MISMATCH. (A forced version still wins.)
+    if (overload && force == null && codingVersion != null && available.contains(codingVersion)) {
       resolved = codingVersion;
     }
 
@@ -1047,7 +1086,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     // (1.x.x), overridden, or coding-refined include version still finds the code, since value set membership
     // is by code, not by the literal version string — and the VALUESET_VALUE_MISMATCH /
     // UNKNOWN_CODESYSTEM_VERSION / version-check issues below.
-    VersionResolution vr = resolveVersion(req, system, includeVersion, reqCsVersion, availableCsVersions);
+    VersionResolution vr = resolveVersion(req, system, includeVersion, reqCsVersion, availableCsVersions, multiVersionInclude(inlineVs, system));
 
     Parameters expandReq = new Parameters();
     expandReq.addParameter(new ParametersParameter("valueSet").setResource(
@@ -1069,11 +1108,40 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     // overload value set), the match must be at the pinned version — a code valid only in another version is NOT
     // a member at the pinned one. Single-version expansions carry no member version, so the pin is not applied
     // there (membership is by code) and behaviour is unchanged.
-    var match = Optional.ofNullable(expanded.getExpansion())
-        .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
-        .filter(c -> finalCode.equals(c.getCode()) && (finalSystem == null || finalSystem.equals(c.getSystem()))
-            && (StringUtils.isEmpty(finalReqVersion) || c.getVersion() == null || finalReqVersion.equals(c.getVersion())))
-        .findFirst().orElse(null);
+    String finalDisplay0 = display;
+    List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> candidates =
+        Optional.ofNullable(expanded.getExpansion())
+            .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
+            .filter(c -> finalCode.equals(c.getCode()) && (finalSystem == null || finalSystem.equals(c.getSystem()))
+                && (StringUtils.isEmpty(finalReqVersion) || c.getVersion() == null || finalReqVersion.equals(c.getVersion())))
+            .toList();
+    // Overload value set: the code may be a member at several versions, each with its own display. The SQL
+    // expansion carries only one version's display for every member, so use the per-version tx-resource
+    // CodeSystem for the display. Pick the version whose display (or a designation) equals the supplied display
+    // — that is the version the caller meant — else the highest version; then echo/validate against that
+    // version's display. A single-version value set has one candidate, so this keeps the prior findFirst result.
+    java.util.Comparator<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> byVersionDesc =
+        java.util.Comparator.comparing(
+            com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains::getVersion,
+            ValueSetValidateCodeOperation::compareNullableVersions);
+    var match = candidates.stream().findFirst().orElse(null);
+    if (multiVersionInclude(inlineVs, system) && !candidates.isEmpty()) {
+      if (candidates.size() > 1) {
+        match = candidates.stream()
+            .filter(c -> finalDisplay0 == null || displayValidAtVersion(req, finalSystem, finalCode, c.getVersion(), finalDisplay0))
+            .max(byVersionDesc)
+            .orElseGet(() -> candidates.stream().max(byVersionDesc).orElse(null));
+      }
+      // Replace the expansion's wrong-version display/designations with the selected (or pinned) version's
+      // tx-resource ones, so display validation and the echoed `display` reflect that version.
+      if (match != null) {
+        var node = txCsConceptNode(req, finalSystem, finalCode, match.getVersion());
+        if (node != null) {
+          match.setDisplay(node.getDisplay());
+          match.setDesignation(toContainsDesignations(node.getDesignation()));
+        }
+      }
+    }
 
     String vsCanonical = inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "");
     // A Coding/CodeableConcept supplied WITHOUT a system has no defined meaning and cannot be validated: the
@@ -1444,20 +1512,14 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     }
     resp.addParameter(new ParametersParameter("display").setValueString(match.getDisplay()));
     String echoVersion = vr.echoVersion() != null ? vr.echoVersion() : match.getVersion();
-    // Overload (a code system included at more than one version): with no version requested/forced/checked and no
-    // display to pin a specific version, the reference echoes the HIGHEST version in which the code is valid, not
-    // the first include's pinned version. The version negotiation above resolves to that first include, so override
-    // it with the highest matching expansion-member version. A supplied display keeps the negotiated version, since
-    // the display identifies which version the caller meant (e.g. a v1-only display selects v1).
-    boolean versionRequested = StringUtils.isNotEmpty(reqCsVersion)
-        || overrideVersion(req, "force-system-version", system) != null
-        || overrideVersion(req, "check-system-version", system) != null
-        || overrideVersion(req, "system-version", system) != null;
-    if (!versionRequested && display == null && multiVersionInclude(inlineVs, system)) {
-      String highest = highestMatchVersion(expanded, match.getSystem() != null ? match.getSystem() : system, match.getCode());
-      if (highest != null) {
-        echoVersion = highest;
-      }
+    // Overload (a code system included at more than one version): the match was already selected at the resolved
+    // version — by the pinned coding version, then the supplied display, then the highest version. Echo THAT
+    // version rather than the version negotiation's first-include default. A forced/checked version is left to
+    // the negotiation (it dictates the version explicitly).
+    if (multiVersionInclude(inlineVs, system) && match.getVersion() != null
+        && overrideVersion(req, "force-system-version", system) == null
+        && overrideVersion(req, "check-system-version", system) == null) {
+      echoVersion = match.getVersion();
     }
     if (echoVersion != null && !ccUnvalidatable) {
       resp.addParameter(new ParametersParameter("version").setValueString(echoVersion));
