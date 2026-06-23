@@ -479,6 +479,51 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
                                    String xCausedBy, boolean includeVersionNotFound) {
   }
 
+  /** True when {@code system} is included by the value set at more than one distinct version (an "overload" value set). */
+  private static boolean multiVersionInclude(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, String system) {
+    if (system == null || vs.getCompose() == null || vs.getCompose().getInclude() == null) {
+      return false;
+    }
+    return vs.getCompose().getInclude().stream()
+        .filter(inc -> system.equals(inc.getSystem()))
+        .map(inc -> String.valueOf(inc.getVersion())) // null ("latest") counts as a distinct spec from any pinned version
+        .distinct().count() > 1;
+  }
+
+  /** The highest version among the expansion members for {@code system}+{@code code}, or {@code null} if none carry a version. */
+  private static String highestMatchVersion(com.kodality.zmei.fhir.resource.terminology.ValueSet expanded, String system, String code) {
+    return Optional.ofNullable(expanded.getExpansion())
+        .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
+        .filter(c -> code != null && code.equals(c.getCode()) && (system == null || system.equals(c.getSystem())))
+        .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains::getVersion)
+        .filter(java.util.Objects::nonNull)
+        .max(ValueSetValidateCodeOperation::compareVersionStrings).orElse(null);
+  }
+
+  /** Numeric dotted-version comparison ({@code 2.0.0 > 1.10.0}); non-numeric segments fall back to lexical order. */
+  private static int compareVersionStrings(String a, String b) {
+    String[] pa = a.split("\\."), pb = b.split("\\.");
+    for (int i = 0; i < Math.max(pa.length, pb.length); i++) {
+      Integer x = i < pa.length ? tryParse(pa[i]) : 0;
+      Integer y = i < pb.length ? tryParse(pb[i]) : 0;
+      if (x == null || y == null) {
+        return a.compareTo(b);
+      }
+      if (!x.equals(y)) {
+        return Integer.compare(x, y);
+      }
+    }
+    return 0;
+  }
+
+  private static Integer tryParse(String s) {
+    try {
+      return Integer.valueOf(s);
+    } catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
   /** The {@code compose.include.version} that applies to {@code system}+{@code code} — preferring an include that enumerates the code (mixed value sets). */
   private static String includeVersionFor(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, String system, String code) {
     if (vs.getCompose() == null || vs.getCompose().getInclude() == null) {
@@ -1378,6 +1423,21 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     }
     resp.addParameter(new ParametersParameter("display").setValueString(match.getDisplay()));
     String echoVersion = vr.echoVersion() != null ? vr.echoVersion() : match.getVersion();
+    // Overload (a code system included at more than one version): with no version requested/forced/checked and no
+    // display to pin a specific version, the reference echoes the HIGHEST version in which the code is valid, not
+    // the first include's pinned version. The version negotiation above resolves to that first include, so override
+    // it with the highest matching expansion-member version. A supplied display keeps the negotiated version, since
+    // the display identifies which version the caller meant (e.g. a v1-only display selects v1).
+    boolean versionRequested = StringUtils.isNotEmpty(reqCsVersion)
+        || overrideVersion(req, "force-system-version", system) != null
+        || overrideVersion(req, "check-system-version", system) != null
+        || overrideVersion(req, "system-version", system) != null;
+    if (!versionRequested && display == null && multiVersionInclude(inlineVs, system)) {
+      String highest = highestMatchVersion(expanded, match.getSystem() != null ? match.getSystem() : system, match.getCode());
+      if (highest != null) {
+        echoVersion = highest;
+      }
+    }
     if (echoVersion != null && !ccUnvalidatable) {
       resp.addParameter(new ParametersParameter("version").setValueString(echoVersion));
     }
