@@ -875,12 +875,17 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         }
         int pipe = ref.indexOf('|');
         String refUrl = pipe >= 0 ? ref.substring(0, pipe) : ref;
-        String refVersion = pipe >= 0 ? ref.substring(pipe + 1) : importDefaultVersion(req, refUrl);
-        if (refVersion != null) {
-          continue; // a specific version was requested → expand-path 404, not this graceful degradation
+        if (pipe >= 0) {
+          continue; // a version pinned IN the compose ref → expand-path 404, not this graceful degradation
         }
-        if (txResourceValueSets(req, refUrl).isEmpty()) {
-          return refUrl;
+        // A versionless import, optionally pinned by a default-valueset-version request param. When the import
+        // cannot be resolved at the requested version (none bundled at all, or none at the pinned version), the
+        // reference degrades to a 200 not-found rather than a 4xx — name the canonical with the requested version.
+        String refVersion = importDefaultVersion(req, refUrl);
+        boolean resolvable = txResourceValueSets(req, refUrl).stream()
+            .anyMatch(txvs -> refVersion == null || refVersion.equals(txvs.getVersion()));
+        if (!resolvable) {
+          return refUrl + (refVersion != null ? "|" + refVersion : "");
         }
       }
     }
