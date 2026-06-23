@@ -254,7 +254,27 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     String finalCode = code;
     var concept = findInlineConcept(inlineCs.getConcept(), finalCode);
     if (concept == null) {
-      return error("Unknown code '" + code + "' in the CodeSystem '" + inlineCs.getUrl() + "'");
+      // Code not in the inline code system: the full tx-ecosystem shape (200, result=false, code/system/version
+      // echoed, a structured invalid-code issue), mirroring the stored-content invalidCode() builder — not a flat
+      // message, which omits the issues/system/version the reference server returns.
+      String csUri = inlineCs.getUrl();
+      String version = inlineCs.getVersion();
+      String message = "Unknown code '" + code + "' in the CodeSystem '" + csUri + "'"
+          + (StringUtils.isNotEmpty(version) ? " version '" + version + "'" : "");
+      Parameters notFound = new Parameters()
+          .addParameter(new ParametersParameter("result").setValueBoolean(false))
+          .addParameter(new ParametersParameter("code").setValueCode(code));
+      if (StringUtils.isNotEmpty(csUri)) {
+        notFound.addParameter(new ParametersParameter("system").setValueUri(csUri));
+      }
+      if (StringUtils.isNotEmpty(version)) {
+        notFound.addParameter(new ParametersParameter("version").setValueString(version));
+      }
+      notFound.addParameter(new ParametersParameter("message").setValueString(message));
+      notFound.addParameter(new ParametersParameter("issues").setResource(
+          org.termx.terminology.fhir.TxIssues.outcome(
+              org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", message, "code"))));
+      return notFound;
     }
 
     Set<String> validDisplays = inlineDisplays(concept, displayLanguage, inlineCs);
