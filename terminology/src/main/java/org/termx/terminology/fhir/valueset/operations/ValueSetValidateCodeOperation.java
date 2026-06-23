@@ -875,12 +875,17 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         }
         int pipe = ref.indexOf('|');
         String refUrl = pipe >= 0 ? ref.substring(0, pipe) : ref;
-        String refVersion = pipe >= 0 ? ref.substring(pipe + 1) : importDefaultVersion(req, refUrl);
-        if (refVersion != null) {
-          continue; // a specific version was requested → expand-path 404, not this graceful degradation
+        if (pipe >= 0) {
+          continue; // a version pinned IN the compose ref → expand-path 404, not this graceful degradation
         }
-        if (txResourceValueSets(req, refUrl).isEmpty()) {
-          return refUrl;
+        // A versionless import, optionally pinned by a default-valueset-version request param. When the import
+        // cannot be resolved at the requested version (none bundled at all, or none at the pinned version), the
+        // reference degrades to a 200 not-found rather than a 4xx — name the canonical with the requested version.
+        String refVersion = importDefaultVersion(req, refUrl);
+        boolean resolvable = txResourceValueSets(req, refUrl).stream()
+            .anyMatch(txvs -> refVersion == null || refVersion.equals(txvs.getVersion()));
+        if (!resolvable) {
+          return refUrl + (refVersion != null ? "|" + refVersion : "");
         }
       }
     }
@@ -1096,9 +1101,11 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       expandReq.addParameter(new ParametersParameter("displayLanguage").setValueCode(displayLanguage));
     }
     // Forward the supporting tx-resource resources so the inline expand can resolve imported value sets
-    // (compose.include.valueSet, P8) and code-system metadata that were bundled with the request.
+    // (compose.include.valueSet, P8) and code-system metadata that were bundled with the request. Also forward
+    // default-valueset-version, which pins the version of an indirectly-imported value set — without it the
+    // expand resolves the import to its latest version, so a code only in a non-pinned version validates wrongly.
     Optional.ofNullable(req.getParameter()).orElse(List.of()).stream()
-        .filter(p -> "tx-resource".equals(p.getName()))
+        .filter(p -> "tx-resource".equals(p.getName()) || "default-valueset-version".equals(p.getName()))
         .forEach(expandReq::addParameter);
     com.kodality.zmei.fhir.resource.terminology.ValueSet expanded = expandOperation.run(expandReq);
     String finalCode = code;
