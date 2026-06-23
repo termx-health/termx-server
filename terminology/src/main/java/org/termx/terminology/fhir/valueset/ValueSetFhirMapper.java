@@ -342,8 +342,9 @@ public class ValueSetFhirMapper extends BaseFhirMapper {
       if (system != null && !LANGUAGE_SYSTEMS.contains(system)) {
         return code != null && code.equals(d.getDesignationType());
       }
-      boolean languageMatch = d.getLanguage() != null && code != null
-          && (d.getLanguage().equals(code) || d.getLanguage().startsWith(code + "-"));
+      // A designation `language` filter matches the language EXACTLY — `de` selects `de` but NOT `de-CH` (the
+      // reference treats a regional variant as a distinct language for the designation filter).
+      boolean languageMatch = d.getLanguage() != null && code != null && d.getLanguage().equals(code);
       return languageMatch || (code != null && code.equals(d.getDesignationType()));
     });
   }
