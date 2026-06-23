@@ -1459,7 +1459,12 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           display, match.getSystem(), match.getCode(),
           validDisplayClause(req, match, displayLanguage));
       resp.addParameter(new ParametersParameter("message").setValueString(message));
-      issues.add(org.termx.terminology.fhir.TxIssues.issue(displaySeverity, "invalid", "invalid-display", message, displayLocation(req)));
+      // For an overload value set (the system included at multiple versions) the reference omits the element
+      // location on the invalid-display issue — the display problem isn't attributed to one coding element when
+      // the value set spans versions. A single-version value set keeps the typed display location.
+      issues.add(multiVersionInclude(inlineVs, system)
+          ? org.termx.terminology.fhir.TxIssues.issue(displaySeverity, "invalid", "invalid-display", message)
+          : org.termx.terminology.fhir.TxIssues.issue(displaySeverity, "invalid", "invalid-display", message, displayLocation(req)));
     } else if (abstractMessage != null) {
       resp.addParameter(new ParametersParameter("message").setValueString(abstractMessage));
     } else if (!inactiveWarnings.isEmpty()) {
