@@ -1014,6 +1014,29 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         .findFirst().orElse(null);
 
     String vsCanonical = inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "");
+    // A Coding/CodeableConcept supplied WITHOUT a system has no defined meaning and cannot be validated: the
+    // reference server does NOT infer the system from the value set (that would silently validate a bare code),
+    // it fails with a not-in-vs error at the code plus a no-system warning. A bare `code` param (system implied
+    // by a single-system value set) is unaffected — this only fires when a coding/codeableConcept was given.
+    boolean inferSystemReq = req.findParameter("inferSystem")
+        .map(p -> Boolean.TRUE.equals(p.getValueBoolean()) || "true".equals(p.getValueString())).orElse(false);
+    boolean codingWithoutSystem = system == null && !inferSystemReq
+        && (req.findParameter("coding").isPresent() || req.findParameter("codeableConcept").isPresent());
+    if (codingWithoutSystem) {
+      boolean cc = req.findParameter("codeableConcept").isPresent();
+      String codeLoc = cc ? "CodeableConcept.coding[0].code" : "Coding.code";
+      String codingLoc = cc ? "CodeableConcept.coding[0]" : "Coding";
+      String notInVs = String.format("The provided code '#%s' was not found in the value set '%s'", code, vsCanonical);
+      String noSystem = "Coding has no system. A code with no system has no defined meaning, and it cannot be validated. A system should be provided";
+      Parameters ns = new Parameters();
+      ns.addParameter(new ParametersParameter("code").setValueCode(code));
+      ns.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+          org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, codeLoc),
+          org.termx.terminology.fhir.TxIssues.issue("warning", "invalid", "invalid-data", noSystem, codingLoc))));
+      ns.addParameter(new ParametersParameter("message").setValueString(noSystem + "; " + notInVs));
+      ns.addParameter(new ParametersParameter("result").setValueBoolean(false));
+      return ns;
+    }
     // inferSystem with no system supplied: the code's system is inferred from the value set's expansion. If the
     // code appears under MORE THAN ONE code system, the system is ambiguous — the reference engine returns
     // result=false with a `cannot-infer` error (plus the standard not-in-vs), naming the candidate systems,
