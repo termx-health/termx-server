@@ -1425,7 +1425,23 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           }
           if (!requestedProperties.isEmpty()) {
             List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty> props =
-                ValueSetFhirMapper.toFhirContainsProperties(concept.getPropertyValues(), requestedProperties::contains, displayLanguage);
+                new java.util.ArrayList<>(
+                    ValueSetFhirMapper.toFhirContainsProperties(concept.getPropertyValues(), requestedProperties::contains, displayLanguage));
+            // `definition` is stored as an implicit designation (type "definition"), not an EntityPropertyValue, so
+            // toFhirContainsProperties cannot see it. When the request asks for the `definition` property, surface it
+            // from that designation as a definition property (mirroring how the CodeSystem mapper special-cases the
+            // status concept field). The definition designation is already excluded from the designation array above.
+            if (requestedProperties.contains("definition")
+                && props.stream().noneMatch(p -> "definition".equals(p.getCode()))
+                && concept.getAdditionalDesignations() != null) {
+              concept.getAdditionalDesignations().stream()
+                  .filter(d -> "definition".equals(d.getDesignationType()) && StringUtils.isNotEmpty(d.getName()))
+                  .map(d -> d.getName())
+                  .findFirst()
+                  .ifPresent(def -> props.add(
+                      new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty()
+                          .setCode("definition").setValueString(def)));
+            }
             if (!props.isEmpty()) {
               contain.setProperty(props);
             }
