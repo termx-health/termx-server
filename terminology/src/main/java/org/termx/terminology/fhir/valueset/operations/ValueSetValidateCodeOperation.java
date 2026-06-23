@@ -1184,7 +1184,16 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVsText, "code")
           : org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVsText));
       String message = notInVsText;
-      if (!csConcept.found() && system != null) {
+      // The code system itself is unknown (no resolvable definition anywhere) — distinct from a known system that
+      // simply lacks the code. For a codeableConcept this is a not-found at the system plus an x-unknown-system
+      // parameter; coding / bare-code inputs already took the earlier unknownSystem() path (gated to non-cc).
+      boolean ccSystemUnknown = ccInput && system != null && ccSystemCs == null && !systemHasMembers
+          && txResourceCodeSystemVersions(req, system).isEmpty() && !csConcept.found();
+      if (ccSystemUnknown) {
+        String notFound = String.format("A definition for CodeSystem %s could not be found, so the code cannot be validated", system);
+        nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", notFound, systemLocation(req)));
+        message = notInVsText + "; " + notFound;
+      } else if (!csConcept.found() && system != null) {
         String unknownCode = String.format("Unknown code '%s' in the CodeSystem '%s'%s", code, system, csv != null ? " version '" + csv + "'" : "");
         nfIssues.add(bareCodeLoc ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, "code")
             : ccInput && ccCodeLoc != null ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, ccCodeLoc)
@@ -1225,6 +1234,9 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       resp.addParameter(new ParametersParameter("result").setValueBoolean(false));
       resp.addParameter(new ParametersParameter("issues").setResource(
           org.termx.terminology.fhir.TxIssues.outcome(nfIssues.toArray(OperationOutcomeIssue[]::new))));
+      if (ccSystemUnknown) {
+        resp.addParameter(new ParametersParameter("x-unknown-system").setValueCanonical(system));
+      }
       return resp;
     }
     String finalDisplay = display;
