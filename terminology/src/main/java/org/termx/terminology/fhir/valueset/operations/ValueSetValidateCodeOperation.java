@@ -1096,9 +1096,11 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       expandReq.addParameter(new ParametersParameter("displayLanguage").setValueCode(displayLanguage));
     }
     // Forward the supporting tx-resource resources so the inline expand can resolve imported value sets
-    // (compose.include.valueSet, P8) and code-system metadata that were bundled with the request.
+    // (compose.include.valueSet, P8) and code-system metadata that were bundled with the request. Also forward
+    // default-valueset-version, which pins the version of an indirectly-imported value set — without it the
+    // expand resolves the import to its latest version, so a code only in a non-pinned version validates wrongly.
     Optional.ofNullable(req.getParameter()).orElse(List.of()).stream()
-        .filter(p -> "tx-resource".equals(p.getName()))
+        .filter(p -> "tx-resource".equals(p.getName()) || "default-valueset-version".equals(p.getName()))
         .forEach(expandReq::addParameter);
     com.kodality.zmei.fhir.resource.terminology.ValueSet expanded = expandOperation.run(expandReq);
     String finalCode = code;
