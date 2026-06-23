@@ -463,7 +463,10 @@ codes as (
     where type='exclude'
 )
 select t.obj, to_jsonb(ec.display), ec.designation::jsonb, ec.order_nr,
-       case when ec.code is not null and ec.display is not null then true else false end
+       -- A code is "enumerated" when it comes from an explicit compose.include.concept entry, regardless of whether
+       -- that entry carried a display (the display is resolved later) — mirrors 01-value_set_expand. Without this an
+       -- enumerated value set that lists bare codes is mis-flagged non-enumerated and gets wrongly hierarchy-nested.
+       case when ec.code is not null then true else false end
   from codes t left outer join exact_concepts ec on t.code = ec.code
  order by ec.order_nr;
 
