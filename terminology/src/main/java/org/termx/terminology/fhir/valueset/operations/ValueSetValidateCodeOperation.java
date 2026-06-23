@@ -297,12 +297,17 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
 
   /** Looks a code up in the tx-resource CodeSystem(s) for {@code system} (recursing nested concepts) — its display + whether it's inactive/retired. */
   private static CsConcept txCsConcept(Parameters req, String system, String code) {
+    return txCsConcept(req, system, code, null);
+  }
+
+  /** As {@link #txCsConcept(Parameters, String, String)}, but restricted to the tx-resource CodeSystem of {@code version} (null = any version). */
+  private static CsConcept txCsConcept(Parameters req, String system, String code, String version) {
     if (req.getParameter() == null || system == null || code == null) {
       return new CsConcept(false, null, false, null);
     }
     for (ParametersParameter p : req.getParameter()) {
       if ("tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs
-          && system.equals(cs.getUrl())) {
+          && system.equals(cs.getUrl()) && (version == null || version.equals(cs.getVersion()))) {
         CsConcept found = findConcept(cs.getConcept(), code);
         if (found.found()) {
           return found;
@@ -1059,9 +1064,15 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     com.kodality.zmei.fhir.resource.terminology.ValueSet expanded = expandOperation.run(expandReq);
     String finalCode = code;
     String finalSystem = system;
+    String finalReqVersion = reqCsVersion;
+    // When the coding pins a code system version AND the expansion carries member versions (a multi-version /
+    // overload value set), the match must be at the pinned version — a code valid only in another version is NOT
+    // a member at the pinned one. Single-version expansions carry no member version, so the pin is not applied
+    // there (membership is by code) and behaviour is unchanged.
     var match = Optional.ofNullable(expanded.getExpansion())
         .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
-        .filter(c -> finalCode.equals(c.getCode()) && (finalSystem == null || finalSystem.equals(c.getSystem())))
+        .filter(c -> finalCode.equals(c.getCode()) && (finalSystem == null || finalSystem.equals(c.getSystem()))
+            && (StringUtils.isEmpty(finalReqVersion) || c.getVersion() == null || finalReqVersion.equals(c.getVersion())))
         .findFirst().orElse(null);
 
     String vsCanonical = inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "");
@@ -1175,10 +1186,20 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
           .filter(c -> finalSystem == null || finalSystem.equals(c.getSystem()))
           .map(c -> c.getVersion())
           .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+      // The coding pinned a version of an overload code system in which this code does not exist (it is valid only
+      // in another version): the code is then not-in-vs AND invalid in that version — the code/display of the
+      // version that DOES define it must not leak in, the echoed/message version is the pinned one, and the code
+      // reference carries the pinned version (system|version#code), as the reference server does.
+      boolean pinnedVersionAbsent = StringUtils.isNotEmpty(reqCsVersion) && multiVersionInclude(inlineVs, system)
+          && !txCsConcept(req, system, code, reqCsVersion).found();
+      if (pinnedVersionAbsent) {
+        csVersion = reqCsVersion;
+      }
       // The resolved code system version (the message echoes it on the "Unknown code …" issue).
-      String csv = vr.echoVersion() != null ? vr.echoVersion() : csVersion;
+      String csv = vr.echoVersion() != null && !pinnedVersionAbsent ? vr.echoVersion() : csVersion;
       // The code reference in the message carries the provided display in parens, as the reference engine does.
-      String codeRef = (system != null ? system + "#" : "") + code + (display != null ? " ('" + display + "')" : "");
+      String codeRefSystem = system != null ? system + (pinnedVersionAbsent ? "|" + reqCsVersion : "") + "#" : "";
+      String codeRef = codeRefSystem + code + (display != null ? " ('" + display + "')" : "");
       String providedNotFound = String.format("The provided code '%s' was not found in the value set '%s'", codeRef, vsCanonical);
       // FHIR $validate-code echoes the input as given: a codeableConcept input echoes `codeableConcept` (added
       // by the run() wrapper) and NOT a decomposed `code`/`system`/`version`. A codeableConcept's primary
@@ -1238,7 +1259,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         String notFound = String.format("A definition for CodeSystem %s could not be found, so the code cannot be validated", system);
         nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", notFound, systemLocation(req)));
         message = notInVsText + "; " + notFound;
-      } else if (!csConcept.found() && system != null) {
+      } else if ((!csConcept.found() || pinnedVersionAbsent) && system != null) {
         String unknownCode = String.format("Unknown code '%s' in the CodeSystem '%s'%s", code, system, csv != null ? " version '" + csv + "'" : "");
         nfIssues.add(bareCodeLoc ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, "code")
             : ccInput && ccCodeLoc != null ? org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "invalid-code", unknownCode, ccCodeLoc)
@@ -1262,7 +1283,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       }
       if (!ccInput) {
         resp.addParameter(new ParametersParameter("code").setValueCode(code));
-        if (csConcept.found() && csConcept.display() != null) {
+        if (!pinnedVersionAbsent && csConcept.found() && csConcept.display() != null) {
           resp.addParameter(new ParametersParameter("display").setValueString(csConcept.display()));
         }
         if (inactiveConcept) {
