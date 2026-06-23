@@ -32,6 +32,13 @@ public final class TxIssues {
       issue.setLocation(Arrays.asList(location));
       issue.setExpression(Arrays.asList(location));
     }
+    // Tag the issue with the org.hl7.fhir.core message-id the reference server emits for this text, when the text
+    // is one termx maps. The reference renders each text from this key, so the mapping is deterministic; the
+    // extension is required by some tx-ecosystem cases (overload/regex-bad validate) and optional elsewhere.
+    String messageId = TxMessageIds.resolve(txIssueType, text);
+    if (messageId != null) {
+      issue.addExtension(new com.kodality.zmei.fhir.Extension(TxMessageIds.URL).setValueString(messageId));
+    }
     return issue;
   }
 
