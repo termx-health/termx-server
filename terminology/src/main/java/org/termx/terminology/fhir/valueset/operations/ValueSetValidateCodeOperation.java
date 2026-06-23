@@ -1114,7 +1114,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         // `code` and x-unknown-system (errors/unknown-system1 vs unknown-system2).
         boolean systemInIncludes = inlineVs.getCompose() != null && inlineVs.getCompose().getInclude() != null
             && inlineVs.getCompose().getInclude().stream().anyMatch(inc -> finalSystem.equals(inc.getSystem()));
-        return unknownSystem(code, system, systemInIncludes, vsCanonical);
+        return unknownSystem(req, code, system, systemInIncludes, vsCanonical);
       }
       // Code not in the value set: the tx-ecosystem expects a 200 with result=false, the code/system/version
       // echoed, and a structured `issues` OperationOutcome (not-in-vs at the value set + invalid-code at the
@@ -1532,7 +1532,9 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
    * not-found issue at {@code system}, and {@code x-caused-by-unknown-system} carrying the system canonical — the
    * code cannot be validated because the system has no definition. Mirrors org.hl7.fhir.core's unknown-system path.
    */
-  private Parameters unknownSystem(String code, String system, boolean systemInIncludes, String vsCanonical) {
+  private Parameters unknownSystem(Parameters req, String code, String system, boolean systemInIncludes, String vsCanonical) {
+    String codeLoc = codeLocation(req);
+    String systemLoc = systemLocation(req);
     Parameters parameters = new Parameters();
     parameters.addParameter(new ParametersParameter("code").setValueCode(code));
     if (systemInIncludes) {
@@ -1540,7 +1542,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       // quoted), reported via x-caused-by-unknown-system — the value set simply cannot be expanded.
       String message = String.format("A definition for CodeSystem '%s' could not be found, so the code cannot be validated", system);
       parameters.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
-          org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", message, "system"))));
+          org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", message, systemLoc))));
       parameters.addParameter(new ParametersParameter("message").setValueString(message));
       parameters.addParameter(new ParametersParameter("result").setValueBoolean(false));
       parameters.addParameter(new ParametersParameter("system").setValueUri(system));
@@ -1552,8 +1554,8 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       String notInVs = String.format("The provided code '%s#%s' was not found in the value set '%s'", system, code, vsCanonical);
       String notFound = String.format("A definition for CodeSystem %s could not be found, so the code cannot be validated", system);
       parameters.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
-          org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, "code"),
-          org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", notFound, "system"))));
+          org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, codeLoc),
+          org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", notFound, systemLoc))));
       parameters.addParameter(new ParametersParameter("message").setValueString(notFound + "; " + notInVs));
       parameters.addParameter(new ParametersParameter("result").setValueBoolean(false));
       parameters.addParameter(new ParametersParameter("system").setValueUri(system));
