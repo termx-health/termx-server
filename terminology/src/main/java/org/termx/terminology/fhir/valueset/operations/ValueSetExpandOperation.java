@@ -1273,6 +1273,21 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter().setName(vsWarning)
           .setValueUri(inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "")));
     }
+    // A non-active IMPORTED value set (compose.include.valueSet) contributes its own status warning too, the same
+    // way a used code system does — e.g. a withdrawn imported value set yields warning-withdrawn for its canonical.
+    for (var pp : new java.util.ArrayList<>(expansionParameters)) {
+      if ("used-valueset".equals(pp.getName()) && pp.getValueUri() != null) {
+        int pipe = pp.getValueUri().indexOf('|');
+        String vsUrl = pipe > 0 ? pp.getValueUri().substring(0, pipe) : pp.getValueUri();
+        String vsVer = pipe > 0 ? pp.getValueUri().substring(pipe + 1) : null;
+        com.kodality.zmei.fhir.resource.terminology.ValueSet usedVs = txResourceValueSets(req, vsUrl).stream()
+            .filter(v -> vsVer == null || vsVer.equals(v.getVersion())).findFirst().orElse(null);
+        String w = statusWarning(usedVs);
+        if (w != null) {
+          expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter().setName(w).setValueUri(pp.getValueUri()));
+        }
+      }
+    }
     // For a multi-version system, used-codesystem reports EVERY version the compose referenced (include OR
     // exclude) — an exclude consumes its version even when no member from it survives — listed in version order.
     for (String sys : multiVersionSystems) {
