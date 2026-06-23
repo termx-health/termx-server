@@ -959,6 +959,12 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       }
     }
     String displayLanguage = req.findParameter("displayLanguage").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
+    // With no explicit displayLanguage parameter, the value set's own stated language scopes display validation:
+    // a supplied display in another language (e.g. a German designation under an `en` value set) is then an
+    // invalid-display error, not a lenient any-language match. (The `validation-*-bad-language-vslang` case.)
+    if (displayLanguage == null && StringUtils.isNotEmpty(inlineVs.getLanguage())) {
+      displayLanguage = inlineVs.getLanguage();
+    }
     String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
     String system = findSystem(req);
     String display = req.findParameter("display").map(ParametersParameter::getValueString).orElse(null);
