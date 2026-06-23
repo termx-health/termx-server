@@ -161,19 +161,36 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
     }
     resp.addParameter(new ParametersParameter().setName("abstract").setValueBoolean(isAbstract(c)));
 
+    // A CS-specific designation use (e.g. {http://.../designations, olde-english}) keeps its system: the
+    // import stores it on the designation property's uri as `system#code`, so reconstruct the use Coding from
+    // there. The static name→use map (designationUseCoding) only covers the well-known HL7/SNOMED uses.
+    Map<String, Coding> designationUseByType = cs == null || cs.getProperties() == null ? Map.of() :
+        cs.getProperties().stream()
+            .filter(p -> "designation".equals(p.getKind()) && p.getName() != null && p.getUri() != null && p.getUri().contains("#"))
+            .collect(Collectors.toMap(EntityProperty::getName,
+                p -> new Coding(StringUtils.substringBeforeLast(p.getUri(), "#"), StringUtils.substringAfterLast(p.getUri(), "#")),
+                (a, b) -> a));
+    String contentLanguage = csVersion.map(CodeSystemVersionReference::getPreferredLanguage).orElse(null);
+
     designations.stream()
         .filter(d -> d != display && d != definition)
         .filter(d -> languageMatches(d.getLanguage(), displayLanguage))
         .forEach(d -> {
-          ParametersParameter designation = new ParametersParameter("designation")
-              .addPart(new ParametersParameter("language").setValueString(d.getLanguage()));
+          ParametersParameter designation = new ParametersParameter("designation");
+          // Echo the designation language EXCEPT where it merely repeats the code system's content language —
+          // the import defaults a missing designation language to the resource language, and the reference
+          // server omits that default. A designation in a genuinely different language keeps its language part.
+          if (StringUtils.isNotBlank(d.getLanguage()) && !d.getLanguage().equals(contentLanguage)) {
+            designation.addPart(new ParametersParameter("language").setValueString(d.getLanguage()));
+          }
           // A supplement-contributed designation carries a `source` part (the supplement's canonical
           // url|version) instead of a `use` coding — it identifies which supplement defined it.
           if (StringUtils.isNotBlank(d.getSupplementSource())) {
             designation.addPart(new ParametersParameter("source").setValueCanonical(d.getSupplementSource()));
           } else {
+            Coding use = designationUseByType.get(d.getDesignationType());
             designation.addPart(new ParametersParameter("use").setValueCoding(
-                org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(d.getDesignationType())));
+                use != null ? use : org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.designationUseCoding(d.getDesignationType())));
           }
           designation.addPart(new ParametersParameter("value").setValueString(d.getName()));
           resp.addParameter(designation);
@@ -187,10 +204,6 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
         .distinct()
         .forEach(src -> resp.addParameter(new ParametersParameter().setName("used-supplement").setValueCanonical(src)));
 
-    Map<String, String> propertyDescriptions = cs == null || cs.getProperties() == null ? Map.of() :
-        cs.getProperties().stream().filter(p -> p.getName() != null && p.getDescription() != null && !p.getDescription().isEmpty())
-            .collect(Collectors.toMap(EntityProperty::getName, p -> p.getDescription().values().stream().findFirst().orElse(null), (a, b) -> a));
-
     List<String> properties = req.getParameter().stream()
         .filter(p -> "property".equals(p.getName()))
         .map(p -> StringUtils.firstNonBlank(p.getValueCode(), p.getValueString()))
@@ -200,20 +213,28 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
       ParametersParameter property = new ParametersParameter("property")
           .addPart(new ParametersParameter("code").setValueCode(pv.getEntityProperty()))
           .addPart(toParameter(pv.getEntityPropertyType(), pv.getValue(), c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getSnapshot).orElse(null), displayLanguage));
-      String description = propertyDescriptions.get(pv.getEntityProperty());
-      if (StringUtils.isNotEmpty(description)) {
-        property.addPart(new ParametersParameter("description").setValueString(description));
-      }
+      // No `description` part: the reference server does not echo a property's definition here (the
+      // `property.description` part it does emit, on parent/child, is optional and supplementary).
       resp.addParameter(property);
     });
 
     // Standard computed properties FHIR $lookup exposes beyond the code system's own defined properties:
     // inactive (the code's active state) and the parent/child hierarchy (from is-a associations).
-    boolean allProps = properties.isEmpty() && defaultPropertyMode == LookupDefaultPropertyMode.ALL;
+    // A `property=*` request is the FHIR wildcard for "all properties" — treat it like the default ALL mode,
+    // regardless of the configured default-property-mode.
+    boolean allProps = properties.contains("*") || (properties.isEmpty() && defaultPropertyMode == LookupDefaultPropertyMode.ALL);
     if (allProps || properties.contains("inactive")) {
       resp.addParameter(new ParametersParameter("property")
           .addPart(new ParametersParameter("code").setValueCode("inactive"))
           .addPart(new ParametersParameter("value").setValueBoolean(isInactive(c))));
+    }
+    // The `status` concept property (active/retired/deprecated). A retired/deprecated code carries its status
+    // explicitly; an active code leaves it as the implicit default (the reference server omits it there too).
+    String conceptStatus = c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getStatus).orElse(null);
+    if ((allProps || properties.contains("status")) && List.of("retired", "deprecated").contains(conceptStatus)) {
+      resp.addParameter(new ParametersParameter("property")
+          .addPart(new ParametersParameter("code").setValueCode("status"))
+          .addPart(new ParametersParameter("value").setValueCode(conceptStatus)));
     }
     Long versionId = c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getId).orElse(null);
     if (associationService != null && versionId != null) {
@@ -239,9 +260,16 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
     }
   }
 
-  /** A concept is inactive when it carries {@code inactive=true} or a {@code status} of retired/deprecated. */
+  /**
+   * A concept is inactive when its entity-version status is retired/deprecated, or it carries
+   * {@code inactive=true} or a {@code status} property of retired/deprecated.
+   */
   private static boolean isInactive(Concept c) {
-    return c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getPropertyValues).orElse(List.of()).stream()
+    Optional<CodeSystemEntityVersion> version = c.getVersions().stream().findFirst();
+    if (version.map(CodeSystemEntityVersion::getStatus).filter(s -> List.of("retired", "deprecated").contains(s)).isPresent()) {
+      return true;
+    }
+    return version.map(CodeSystemEntityVersion::getPropertyValues).orElse(List.of()).stream()
         .anyMatch(pv -> ("inactive".equals(pv.getEntityProperty())
             && (Boolean.TRUE.equals(pv.getValue()) || "true".equalsIgnoreCase(String.valueOf(pv.getValue()))))
             || ("status".equals(pv.getEntityProperty()) && List.of("retired", "deprecated").contains(String.valueOf(pv.getValue()))));
@@ -256,7 +284,7 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
 
   private boolean shouldReturnProperty(List<String> requestedProperties, EntityPropertyValue propertyValue) {
     if (!requestedProperties.isEmpty()) {
-      return requestedProperties.contains(propertyValue.getEntityProperty());
+      return requestedProperties.contains("*") || requestedProperties.contains(propertyValue.getEntityProperty());
     }
     return defaultPropertyMode == LookupDefaultPropertyMode.ALL;
   }
