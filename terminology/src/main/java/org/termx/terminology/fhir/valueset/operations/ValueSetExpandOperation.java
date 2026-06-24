@@ -1400,11 +1400,11 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
             List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation> designations =
                 concept.getAdditionalDesignations().stream()
                 .filter(d -> ValueSetFhirMapper.designationMatchesFilter(d, designationFilter))
-                // The designation repeating the member's display is already removed (applyDisplayLanguage drops
-                // it by value); the definition is surfaced as a definition property, not a designation. With no
-                // explicit `designation` filter, drop only the definition — the remaining alternate-language
-                // designations are kept. An explicit filter returns exactly what was asked for.
-                .filter(d -> !designationFilter.isEmpty() || !"definition".equals(d.getDesignationType()))
+                // The designation repeating the member's display is already removed (applyDisplayLanguage drops it
+                // by value); the definition is surfaced as a definition property, never a designation, so it is
+                // dropped from the designation array even when a `designation` language filter would otherwise
+                // match it (a definition is not a linguistic designation).
+                .filter(d -> !"definition".equals(d.getDesignationType()))
                 .map(d -> {
                   com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation designation =
                       new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation();
