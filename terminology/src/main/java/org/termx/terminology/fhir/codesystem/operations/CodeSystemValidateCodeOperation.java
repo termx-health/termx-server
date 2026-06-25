@@ -305,8 +305,30 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
       result.addParameter(new ParametersParameter("message").setValueString(note));
       result.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
           org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment", note))));
+    } else if (display != null && conceptDisplay != null && !display.equals(conceptDisplay) && designationInactive(concept, display)) {
+      // The supplied display is a valid designation but a non-active one (its standards-status is withdrawn/
+      // deprecated): result stays true, but a display-comment warning notes it is no longer a correct display and
+      // points at the active display.
+      String note = String.format("'%s' is no longer considered a correct display for code '%s' (status = deprecated). The correct display is one of \"%s\".",
+          display, code, conceptDisplay);
+      // A display-comment carries no separate `message` parameter (unlike the code-comment envelope above).
+      result.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+          org.termx.terminology.fhir.TxIssues.issue("warning", "invalid", "display-comment", note))));
     }
     return result;
+  }
+
+  /** True when the supplied display matches a designation of the inline concept that carries a non-active standards-status. */
+  private static boolean designationInactive(com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept concept, String display) {
+    if (concept == null || concept.getDesignation() == null) {
+      return false;
+    }
+    return concept.getDesignation().stream()
+        .filter(d -> display.equals(d.getValue()) && d.getExtension() != null)
+        .flatMap(d -> d.getExtension().stream())
+        .filter(e -> "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status".equals(e.getUrl()))
+        .map(com.kodality.zmei.fhir.Extension::getValueCode)
+        .anyMatch(v -> List.of("deprecated", "withdrawn", "retired").contains(v));
   }
 
   /**
