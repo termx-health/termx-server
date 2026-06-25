@@ -1328,9 +1328,21 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     for (var pp : new java.util.ArrayList<>(expansionParameters)) {
       if ("used-codesystem".equals(pp.getName()) && pp.getValueUri() != null) {
         String sys = pp.getValueUri().indexOf('|') > 0 ? pp.getValueUri().substring(0, pp.getValueUri().indexOf('|')) : pp.getValueUri();
-        String w = statusWarning(txCodeSystem(req, sys));
+        com.kodality.zmei.fhir.resource.terminology.CodeSystem usedCs = txCodeSystem(req, sys);
+        String w = statusWarning(usedCs);
         if (w != null) {
           expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter().setName(w).setValueUri(pp.getValueUri()));
+        }
+        // A code system whose content is a fragment (only a subset of its codes) is additionally reported via a
+        // used-fragment parameter, and the expansion is marked UNCLOSED (it could not be guaranteed complete).
+        if (usedCs != null && "fragment".equals(usedCs.getContent())) {
+          expansionParameters.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionParameter()
+              .setName("used-fragment").setValueUri(pp.getValueUri()));
+          if (expansion.getExtensions("http://hl7.org/fhir/StructureDefinition/valueset-unclosed").findAny().isEmpty()) {
+            expansion.addExtension(new com.kodality.zmei.fhir.Extension("http://hl7.org/fhir/StructureDefinition/valueset-unclosed").setValueBoolean(true));
+            expansion.addExtension(new com.kodality.zmei.fhir.Extension("http://hl7.org/fhir/StructureDefinition/valueset-unclosed-reason")
+                .setValueString("This extension is based on a fragment of the code system " + sys));
+          }
         }
       }
     }
@@ -1527,8 +1539,35 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
               contain.setProperty(props);
             }
           }
+          // The reference always surfaces a `status` property for a non-active (retired/deprecated) member, even
+          // when no `property` was requested. Add it (deduped) so a retired member carries its status.
+          String memberStatus = concept.getStatus();
+          if (memberStatus != null && List.of("retired", "deprecated").contains(memberStatus)) {
+            List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty> sprops =
+                contain.getProperty() != null
+                    ? new java.util.ArrayList<>(contain.getProperty())
+                    : new java.util.ArrayList<>();
+            if (sprops.stream().noneMatch(p -> "status".equals(p.getCode()))) {
+              sprops.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty()
+                  .setCode("status").setValueCode(memberStatus));
+              contain.setProperty(sprops);
+            }
+          }
           return contain;
         }).toList();
+    // Declare the `status` property in expansion.property when any member carries it (it is auto-emitted above
+    // for non-active members even if `status` wasn't a requested property).
+    boolean statusEmitted = contains.stream().anyMatch(c -> c.getProperty() != null
+        && c.getProperty().stream().anyMatch(p -> "status".equals(p.getCode())));
+    if (statusEmitted) {
+      List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionProperty> declared =
+          expansion.getProperty() != null ? new java.util.ArrayList<>(expansion.getProperty()) : new java.util.ArrayList<>();
+      if (declared.stream().noneMatch(p -> "status".equals(p.getCode()))) {
+        declared.add(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionProperty()
+            .setCode("status").setUri("http://hl7.org/fhir/concept-properties#status"));
+        expansion.setProperty(declared);
+      }
+    }
 
     // FHIR hierarchical expansion: when excludeNested is explicitly false, nest each member under its parent
     // (ValueSet.expansion.contains.contains) instead of returning a flat list. Membership/total stay flat; this
