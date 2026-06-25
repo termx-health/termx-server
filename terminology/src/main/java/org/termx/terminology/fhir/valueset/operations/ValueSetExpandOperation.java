@@ -725,9 +725,41 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         newIncludes.add(inc);
         continue;
       }
-      // Members of the imported value set(s), grouped by code system uri (preserving order).
-      java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>> bySystem = new java.util.LinkedHashMap<>();
+      // Members of each imported value set, grouped by code system uri (preserving order), collected per ref so
+      // that an include referencing MORE THAN ONE value set yields their INTERSECTION (a code must be in all of
+      // them), not their union.
+      List<java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>>> perRefMembers = new java.util.ArrayList<>();
       for (String ref : inc.getValueSet()) {
+        java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>> bySystem = new java.util.LinkedHashMap<>();
+        perRefMembers.add(bySystem);
+        // A contained value set reference (#id) resolves from the operation value set's `contained` resources,
+        // then expands like any imported value set (recursively, members folded into the include by system).
+        if (ref != null && ref.startsWith("#")) {
+          String containedId = ref.substring(1);
+          com.kodality.zmei.fhir.resource.terminology.ValueSet containedVs = java.util.Optional.ofNullable(inlineVs.getContained()).orElse(List.of()).stream()
+              .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.ValueSet)
+              .map(r -> (com.kodality.zmei.fhir.resource.terminology.ValueSet) r)
+              .filter(cvs -> containedId.equals(cvs.getId()))
+              .findFirst().orElse(null);
+          if (containedVs == null) {
+            throw org.termx.terminology.fhir.TxIssues.notFoundException(404, "Unable to resolve the contained value set " + ref);
+          }
+          if (!visited.add(ref)) {
+            continue; // guard against import cycles
+          }
+          com.kodality.zmei.fhir.resource.terminology.ValueSet resolvedContained =
+              resolveIncludeVersions(resolveImportedValueSets(containedVs, req, visited, usedValueSets), req);
+          for (ValueSetVersionConcept m : valueSetVersionConceptRepository.expandFromJson(FhirMapper.toJson(resolvedContained))) {
+            if (m.getConcept() == null || m.getConcept().getCode() == null) {
+              continue;
+            }
+            String sys = m.getConcept().getCodeSystemUri() != null ? m.getConcept().getCodeSystemUri() : m.getConcept().getBaseCodeSystemUri();
+            if (sys != null) {
+              bySystem.computeIfAbsent(sys, k -> new java.util.LinkedHashSet<>()).add(m.getConcept().getCode());
+            }
+          }
+          continue;
+        }
         int pipe = ref.indexOf('|');
         String refUrl = pipe >= 0 ? ref.substring(0, pipe) : ref;
         // The import ref's own pinned version wins; otherwise a `default-valueset-version` request param for this
@@ -796,6 +828,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           }
         }
       }
+      // Combine the per-ref member maps: a single referenced value set contributes its members directly; multiple
+      // referenced value sets contribute their intersection (a code present in EVERY one).
+      java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>> bySystem = intersectImportedMembers(perRefMembers);
       // A pure-import include (only valueSet) is replaced by the imported members; a mixed include keeps its own
       // system/concept/filter (union semantics — both contribute members).
       boolean pureImport = inc.getSystem() == null && (inc.getConcept() == null || inc.getConcept().isEmpty()) && (inc.getFilter() == null || inc.getFilter().isEmpty());
@@ -812,6 +847,37 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
     copy.getCompose().setInclude(newIncludes);
     return copy;
+  }
+
+  /**
+   * Combines the per-referenced-value-set member maps of one include. A single reference contributes its members
+   * directly; multiple references contribute their INTERSECTION — a (system, code) survives only when present in
+   * every referenced value set (FHIR: an include with several {@code valueSet}s requires membership in all).
+   */
+  private static java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>> intersectImportedMembers(
+      List<java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>>> perRefMembers) {
+    if (perRefMembers.isEmpty()) {
+      return new java.util.LinkedHashMap<>();
+    }
+    if (perRefMembers.size() == 1) {
+      return perRefMembers.get(0);
+    }
+    java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>> result = new java.util.LinkedHashMap<>();
+    for (var entry : perRefMembers.get(0).entrySet()) {
+      java.util.LinkedHashSet<String> codes = new java.util.LinkedHashSet<>(entry.getValue());
+      for (int i = 1; i < perRefMembers.size(); i++) {
+        java.util.LinkedHashSet<String> other = perRefMembers.get(i).get(entry.getKey());
+        if (other == null) {
+          codes.clear();
+          break;
+        }
+        codes.retainAll(other);
+      }
+      if (!codes.isEmpty()) {
+        result.put(entry.getKey(), codes);
+      }
+    }
+    return result;
   }
 
   /**
