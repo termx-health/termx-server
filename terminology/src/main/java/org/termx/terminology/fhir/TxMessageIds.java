@@ -61,6 +61,12 @@ public final class TxMessageIds {
         if (!text.startsWith("A definition for CodeSystem")) {
           return null;
         }
+        // An entirely-unknown code system for which a version was nonetheless supplied carries the "No versions …
+        // are known" tail and its own key; a known system whose specific version is missing uses _VERSION; a bare
+        // unknown system uses the plain key.
+        if (text.contains("No versions of this code system are known")) {
+          return "UNKNOWN_CODESYSTEM_VERSION_NONE";
+        }
         return text.contains(" version '") ? "UNKNOWN_CODESYSTEM_VERSION" : "UNKNOWN_CODESYSTEM";
       case "code-comment":
         return text.contains("has a status of") ? "INACTIVE_CONCEPT_FOUND" : null;
