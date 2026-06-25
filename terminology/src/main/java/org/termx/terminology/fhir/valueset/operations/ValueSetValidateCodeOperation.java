@@ -1349,8 +1349,21 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       boolean ccSystemUnknown = ccInput && system != null && ccSystemCs == null && !systemHasMembers
           && txResourceCodeSystemVersions(req, system).isEmpty() && !csConcept.found();
       if (ccSystemUnknown) {
-        String notFound = String.format("A definition for CodeSystem %s could not be found, so the code cannot be validated", system);
+        // When the codeableConcept's coding pinned a version on an entirely-unknown code system, the reference
+        // quotes the system, echoes the (unfindable) version, and appends the "No versions … are known" tail —
+        // the UNKNOWN_CODESYSTEM_VERSION_NONE shape. Without a pinned version it is the plain unquoted form.
+        String ccCodingVersion = req.findParameter("codeableConcept").map(ParametersParameter::getValueCodeableConcept)
+            .map(cc -> cc.getCoding() == null ? null : cc.getCoding().stream().map(com.kodality.zmei.fhir.datatypes.Coding::getVersion)
+                .filter(StringUtils::isNotEmpty).findFirst().orElse(null)).orElse(null);
+        String notFound = StringUtils.isNotEmpty(ccCodingVersion)
+            ? String.format("A definition for CodeSystem '%s' version '%s' could not be found, so the code cannot be validated. No versions of this code system are known", system, ccCodingVersion)
+            : String.format("A definition for CodeSystem %s could not be found, so the code cannot be validated", system);
         nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", notFound, systemLocation(req)));
+        // The this-code-not-in-vs reference carries the pinned version too (system|version#code) for the unknown CS.
+        if (StringUtils.isNotEmpty(ccCodingVersion)) {
+          providedNotFound = String.format("The provided code '%s|%s#%s%s' was not found in the value set '%s'",
+              system, ccCodingVersion, code, display != null ? " ('" + display + "')" : "", vsCanonical);
+        }
         message = notInVsText + "; " + notFound;
       } else if ((!csConcept.found() || pinnedVersionAbsent) && system != null) {
         String unknownCode = String.format("Unknown code '%s' in the CodeSystem '%s'%s", code, system, csv != null ? " version '" + csv + "'" : "");
