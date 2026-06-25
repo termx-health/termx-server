@@ -81,6 +81,14 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     // A structurally-malformed displayLanguage (e.g. a bare '-') is rejected up front with a 400 processing
     // error, the way the reference engine does (tx-ecosystem validation-wrong-de-en-bad).
     requireValidDisplayLanguage(req);
+    // No code to validate at all (no coding / codeableConcept / code+system / code+inferSystem) is an error, not a
+    // normal Parameters result — the reference returns an OperationOutcome (tx-ecosystem batch-validate-bad[1]).
+    boolean inferSystemReq = req.findParameter("inferSystem")
+        .map(p -> Boolean.TRUE.equals(p.getValueBoolean()) || "true".equals(p.getValueString())).orElse(false);
+    if (req.findParameter("coding").isEmpty() && req.findParameter("codeableConcept").isEmpty()
+        && !(req.findParameter("code").isPresent() && (req.findParameter("system").isPresent() || inferSystemReq))) {
+      throw org.termx.terminology.fhir.TxIssues.noCodeToValidateException();
+    }
     String rawUrl = req.findParameter("url")
         .map(pp -> pp.getValueUrl() != null ? pp.getValueUrl() : pp.getValueUri() != null ? pp.getValueUri() : pp.getValueString())
         .orElse(null);
@@ -681,7 +689,9 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       displays.put(match.getDisplay(), csLang);
     }
     Optional.ofNullable(match.getDesignation()).orElse(List.of()).forEach(d -> {
-      if (d.getValue() != null) {
+      // Only language-tagged designations are offered as alternative valid displays — a language-less designation
+      // (e.g. an alternate code with no stated language) is not a display choice the reference enumerates.
+      if (d.getValue() != null && d.getLanguage() != null) {
         displays.putIfAbsent(d.getValue(), d.getLanguage());
       }
     });
@@ -1397,6 +1407,19 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         // The message joins the inactive texts ahead of the not-in-vs text (code-comment(s), then code-rule, then
         // the existing not-in-vs message) — the reference's order for an inactive code excluded by activeOnly.
         message = codeComment + "; " + (statusComment != null ? statusComment + "; " : "") + codeRule + "; " + message;
+      }
+      // A code valid in the code system but excluded from the value set, supplied WITH a wrong display, also gets an
+      // invalid-display warning — the reference validates the display against the code system even when the code is
+      // not a value-set member.
+      if (StringUtils.isNotEmpty(display) && csConcept.found() && csConcept.display() != null
+          && !inactiveConcept && !display.equals(csConcept.display())) {
+        String csLang = Optional.ofNullable(txCodeSystemResource(req, system))
+            .map(com.kodality.zmei.fhir.resource.terminology.CodeSystem::getLanguage).orElse(null);
+        String reqStr = StringUtils.isEmpty(displayLanguage) ? "--" : displayLanguage;
+        String wrongDisplay = String.format("Wrong Display Name '%s' for %s#%s. Valid display is '%s'%s (for the language(s) '%s')",
+            display, system, code, csConcept.display(), csLang != null ? " (" + csLang + ")" : "", reqStr);
+        nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "invalid", "invalid-display", wrongDisplay, displayLocation(req)));
+        message = message + "; " + wrongDisplay;
       }
       if (!ccInput) {
         resp.addParameter(new ParametersParameter("code").setValueCode(code));

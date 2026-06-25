@@ -117,6 +117,18 @@ public final class TxIssues {
     return new com.kodality.kefhir.core.exception.FhirException(400, issue);
   }
 
+  /** No code to validate was supplied (no coding/codeableConcept/code+system/code+inferSystem) — an error
+   * OperationOutcome with the reference's exact wording (note: the reference omits the closing paren). */
+  public static com.kodality.kefhir.core.exception.FhirException noCodeToValidateException() {
+    org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent issue =
+        new org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent();
+    issue.setSeverity(org.hl7.fhir.r5.model.OperationOutcome.IssueSeverity.ERROR);
+    issue.setCode(org.hl7.fhir.r5.model.OperationOutcome.IssueType.INVALID);
+    issue.setDetails(new org.hl7.fhir.r5.model.CodeableConcept()
+        .setText("Unable to find code to validate (looked for coding | codeableConcept | code+system | code+inferSystem in parameters"));
+    return new com.kodality.kefhir.core.exception.FhirException(400, issue);
+  }
+
   /** Formats a version list as the tx-ecosystem does: comma-separated with " or " before the last ("a, b or c"). */
   public static String presentVersionList(java.util.List<String> versions) {
     if (versions == null || versions.isEmpty()) {

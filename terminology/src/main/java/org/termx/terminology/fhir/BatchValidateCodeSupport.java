@@ -34,17 +34,41 @@ public final class BatchValidateCodeSupport {
       // params come first so findParameter resolves them ahead of the shared defaults.
       shared.forEach(in::addParameter);
 
-      Parameters result;
       try {
-        result = validateCode.apply(in);
+        resp.addParameter(new ParametersParameter(VALIDATION).setResource(validateCode.apply(in)));
       } catch (FhirException e) {
-        result = new Parameters()
-            .addParameter(new ParametersParameter("result").setValueBoolean(false))
-            .addParameter(new ParametersParameter("message").setValueString(e.getMessage()));
+        // A hard error (e.g. no code to validate at all) is returned as an OperationOutcome for that entry — the
+        // reference embeds the error outcome, not a Parameters result.
+        resp.addParameter(new ParametersParameter(VALIDATION).setResource(toOperationOutcome(e)));
       }
-      resp.addParameter(new ParametersParameter(VALIDATION).setResource(result));
     }
     return resp;
+  }
+
+  private static com.kodality.zmei.fhir.resource.other.OperationOutcome toOperationOutcome(FhirException e) {
+    java.util.List<org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent> riList =
+        e.getIssues() != null ? e.getIssues() : java.util.List.of();
+    java.util.List<com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue> issues = riList.stream()
+        .map(ri -> {
+          var cc = new com.kodality.zmei.fhir.datatypes.CodeableConcept()
+              .setText(ri.getDetails() != null ? ri.getDetails().getText() : e.getMessage());
+          if (ri.getDetails() != null && !ri.getDetails().getCoding().isEmpty()) {
+            cc.setCoding(ri.getDetails().getCoding().stream()
+                .map(c -> new com.kodality.zmei.fhir.datatypes.Coding(c.getSystem(), c.getCode())).toList());
+          }
+          return new com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue()
+              .setSeverity(ri.getSeverity() != null ? ri.getSeverity().toCode() : "error")
+              .setCode(ri.getCode() != null ? ri.getCode().toCode() : "invalid")
+              .setDetails(cc);
+        }).toList();
+    if (issues.isEmpty()) {
+      issues = java.util.List.of(new com.kodality.zmei.fhir.resource.other.OperationOutcome.OperationOutcomeIssue()
+          .setSeverity("error").setCode("invalid")
+          .setDetails(new com.kodality.zmei.fhir.datatypes.CodeableConcept().setText(e.getMessage())));
+    }
+    com.kodality.zmei.fhir.resource.other.OperationOutcome oo = new com.kodality.zmei.fhir.resource.other.OperationOutcome();
+    oo.setIssue(issues);
+    return oo;
   }
 
   /** Each validation's input is a nested Parameters resource; tolerate the part-based shape as a fallback. */
