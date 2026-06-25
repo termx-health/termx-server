@@ -1268,11 +1268,13 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       // Code not in the value set: the tx-ecosystem expects a 200 with result=false, the code/system/version
       // echoed, and a structured `issues` OperationOutcome (not-in-vs at the value set + invalid-code at the
       // code system), not a flat message alone. Mirror the stored-content path's shape.
+      // For a code system included at multiple versions (overload), a not-found/unknown code reports the LATEST
+      // version (the reference uses the most recent), not the first include version — so pick the max.
       String csVersion = Optional.ofNullable(expanded.getExpansion())
           .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansion::getContains).orElse(List.of()).stream()
           .filter(c -> finalSystem == null || finalSystem.equals(c.getSystem()))
           .map(c -> c.getVersion())
-          .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+          .filter(java.util.Objects::nonNull).max(ValueSetValidateCodeOperation::compareVersions).orElse(null);
       // The coding pinned a version of an overload code system in which this code does not exist (it is valid only
       // in another version): the code is then not-in-vs AND invalid in that version — the code/display of the
       // version that DOES define it must not leak in, the echoed/message version is the pinned one, and the code
@@ -1282,8 +1284,12 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       if (pinnedVersionAbsent) {
         csVersion = reqCsVersion;
       }
-      // The resolved code system version (the message echoes it on the "Unknown code …" issue).
-      String csv = vr.echoVersion() != null && !pinnedVersionAbsent ? vr.echoVersion() : csVersion;
+      // The resolved code system version (the message echoes it on the "Unknown code …" issue). For an overload
+      // (multi-version) not-found, the resolved version is the latest (csVersion = max above), not the include
+      // version that resolveVersion negotiated — so prefer csVersion over echoVersion there.
+      String csv = pinnedVersionAbsent ? csVersion
+          : multiVersionInclude(inlineVs, system) ? csVersion
+          : vr.echoVersion() != null ? vr.echoVersion() : csVersion;
       // The code reference in the message carries the provided display in parens, as the reference engine does.
       String codeRefSystem = system != null ? system + (pinnedVersionAbsent ? "|" + reqCsVersion : "") + "#" : "";
       String codeRef = codeRefSystem + code + (display != null ? " ('" + display + "')" : "");
