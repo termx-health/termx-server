@@ -1367,9 +1367,17 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         String codeComment = String.format("The concept '%s' has a status of inactive and its use should be reviewed", code);
         nfIssues.add(0, org.termx.terminology.fhir.TxIssues.issue("error", "business-rule", "code-rule", codeRule));
         nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment", codeComment));
-        // The message joins the inactive texts ahead of the not-in-vs text (code-comment, then code-rule, then
+        // A concept with a specific non-active status (retired/deprecated) carries a SECOND code-comment naming
+        // that status, in addition to the generic "inactive" one — mirroring the reference's inactive envelope.
+        String specificStatus = csConcept.status();
+        String statusComment = specificStatus != null && !"inactive".equals(specificStatus)
+            ? String.format("The concept '%s' has a status of %s and its use should be reviewed", code, specificStatus) : null;
+        if (statusComment != null) {
+          nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment", statusComment));
+        }
+        // The message joins the inactive texts ahead of the not-in-vs text (code-comment(s), then code-rule, then
         // the existing not-in-vs message) — the reference's order for an inactive code excluded by activeOnly.
-        message = codeComment + "; " + codeRule + "; " + message;
+        message = codeComment + "; " + (statusComment != null ? statusComment + "; " : "") + codeRule + "; " + message;
       }
       if (!ccInput) {
         resp.addParameter(new ParametersParameter("code").setValueCode(code));
