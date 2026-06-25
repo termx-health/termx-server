@@ -191,8 +191,12 @@ public class ConceptSupplementService {
     // The membership query filters permitted code systems on BOTH the entity's code system (the base) and the
     // version's code system (the supplement); a null (unrestricted) list matches NOTHING, so pass both
     // explicitly when unrestricted. A restricted caller's grants are honored as-is.
+    // The base and the supplement being applied are always readable here — they were resolved as the supplements
+    // to apply, so include them in the permitted set (union with the caller's grants) even when the caller's
+    // CS_READ grants do not list the supplement (e.g. a bundled tx-resource supplement the guest can't otherwise read).
     versionParams.setPermittedCodeSystems(params.getPermittedCodeSystems() != null
-        ? params.getPermittedCodeSystems()
+        ? java.util.stream.Stream.concat(params.getPermittedCodeSystems().stream(),
+            java.util.stream.Stream.of(baseCodeSystem, supplementCodeSystem)).distinct().toList()
         : List.of(baseCodeSystem, supplementCodeSystem));
     versionParams.all();
 
