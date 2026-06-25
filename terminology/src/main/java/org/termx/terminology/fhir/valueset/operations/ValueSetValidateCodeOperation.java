@@ -1105,7 +1105,8 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     // default-valueset-version, which pins the version of an indirectly-imported value set — without it the
     // expand resolves the import to its latest version, so a code only in a non-pinned version validates wrongly.
     Optional.ofNullable(req.getParameter()).orElse(List.of()).stream()
-        .filter(p -> "tx-resource".equals(p.getName()) || "default-valueset-version".equals(p.getName()))
+        .filter(p -> "tx-resource".equals(p.getName()) || "default-valueset-version".equals(p.getName())
+            || "activeOnly".equals(p.getName()))
         .forEach(expandReq::addParameter);
     com.kodality.zmei.fhir.resource.terminology.ValueSet expanded = expandOperation.run(expandReq);
     String finalCode = code;
@@ -1351,10 +1352,13 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       // a code-comment warning (valid but not active), and the response echoes `inactive`.
       boolean inactiveConcept = csConcept.found() && csConcept.inactive();
       if (inactiveConcept) {
-        nfIssues.add(0, org.termx.terminology.fhir.TxIssues.issue("error", "business-rule", "code-rule",
-            String.format("The concept '%s' is valid but is not active", code)));
-        nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment",
-            String.format("The concept '%s' has a status of inactive and its use should be reviewed", code)));
+        String codeRule = String.format("The concept '%s' is valid but is not active", code);
+        String codeComment = String.format("The concept '%s' has a status of inactive and its use should be reviewed", code);
+        nfIssues.add(0, org.termx.terminology.fhir.TxIssues.issue("error", "business-rule", "code-rule", codeRule));
+        nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment", codeComment));
+        // The message joins the inactive texts ahead of the not-in-vs text (code-comment, then code-rule, then
+        // the existing not-in-vs message) — the reference's order for an inactive code excluded by activeOnly.
+        message = codeComment + "; " + codeRule + "; " + message;
       }
       if (!ccInput) {
         resp.addParameter(new ParametersParameter("code").setValueCode(code));
