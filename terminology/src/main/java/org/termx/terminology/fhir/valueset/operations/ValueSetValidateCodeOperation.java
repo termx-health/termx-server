@@ -1356,6 +1356,13 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         String codeComment = String.format("The concept '%s' has a status of inactive and its use should be reviewed", code);
         nfIssues.add(0, org.termx.terminology.fhir.TxIssues.issue("error", "business-rule", "code-rule", codeRule));
         nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment", codeComment));
+        // A concept with a SPECIFIC non-active status (retired/deprecated) carries a second code-comment naming
+        // that status, in addition to the generic "inactive" one (mirrors the in-VS inactive envelope).
+        String statusWord = csConcept.status();
+        if (statusWord != null && !"inactive".equals(statusWord)) {
+          nfIssues.add(org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment",
+              String.format("The concept '%s' has a status of %s and its use should be reviewed", code, statusWord)));
+        }
         // The message joins the inactive texts ahead of the not-in-vs text (code-comment, then code-rule, then
         // the existing not-in-vs message) — the reference's order for an inactive code excluded by activeOnly.
         message = codeComment + "; " + codeRule + "; " + message;
