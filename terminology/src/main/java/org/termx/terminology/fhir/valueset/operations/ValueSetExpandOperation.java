@@ -340,7 +340,14 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         if (src == null || src.getVersions() == null || src.getVersions().isEmpty()) {
           return;
         }
-        List<Designation> designations = java.util.Optional.ofNullable(src.getVersions().get(0).getDesignations()).orElse(List.of());
+        // A code can be a member at several code system versions, each with its own display/designations. Pick the
+        // entity version matching THIS member's version id (so each version shows its own display), falling back to
+        // the first when the member carries no version id (the common single-version case).
+        Long memberCsev = m.getConcept().getConceptVersionId();
+        CodeSystemEntityVersion srcVersion = src.getVersions().stream()
+            .filter(v -> memberCsev != null && memberCsev.equals(v.getId()))
+            .findFirst().orElse(src.getVersions().get(0));
+        List<Designation> designations = java.util.Optional.ofNullable(srcVersion.getDesignations()).orElse(List.of());
         Designation display = ConceptUtil.getDisplay(designations, displayLanguage, List.of());
         if (display != null) {
           m.setDisplay(display);
@@ -1546,16 +1553,35 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
         .map(com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains::getVersion)
         .filter(java.util.Objects::nonNull).distinct().count();
     if (!enumerated && distinctVersions > 1) {
+      // The set of system|version the compose pins EXPLICITLY. A member at an explicit version sorts (within a
+      // code) version-descending; a member that only exists via an UNVERSIONED include (the system's latest) sorts
+      // AFTER the explicit ones. So overload-all ([1.0.0,2.0.0] both explicit) → 2.0.0,1.0.0; overload-mixed
+      // ([1.0.0, unversioned]) → 1.0.0 (explicit) then 2.0.0 (latest).
+      java.util.Set<String> explicitSysVer = new java.util.HashSet<>();
+      if (inlineVs.getCompose() != null && inlineVs.getCompose().getInclude() != null) {
+        for (var inc : inlineVs.getCompose().getInclude()) {
+          if (inc.getSystem() != null && StringUtils.isNotEmpty(inc.getVersion())) {
+            explicitSysVer.add(inc.getSystem() + "|" + inc.getVersion());
+          }
+        }
+      }
+      java.util.function.Predicate<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> isExplicit =
+          c -> c.getSystem() != null && c.getVersion() != null && explicitSysVer.contains(c.getSystem() + "|" + c.getVersion());
       List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContains> ordered = new java.util.ArrayList<>(contains);
       ordered.sort((a, b) -> {
         int byCode = java.util.Comparator.nullsLast(String::compareTo).compare(a.getCode(), b.getCode());
         if (byCode != 0) {
           return byCode;
         }
+        boolean ae = isExplicit.test(a);
+        boolean be = isExplicit.test(b);
+        if (ae != be) {
+          return ae ? -1 : 1; // explicit-version members precede latest-from-unversioned members
+        }
         if (a.getVersion() == null || b.getVersion() == null) {
           return java.util.Comparator.nullsLast(String::compareTo).compare(b.getVersion(), a.getVersion());
         }
-        return compareVersions(b.getVersion(), a.getVersion()); // version descending within a code
+        return compareVersions(b.getVersion(), a.getVersion()); // version descending within the same group
       });
       contains = ordered;
     }
