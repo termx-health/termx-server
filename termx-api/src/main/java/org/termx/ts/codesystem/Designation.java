@@ -24,6 +24,9 @@ public class Designation {
 
   private String designationType;
 
+  // Raw FHIR designation.extension passthrough (e.g. coding-sctdescid) — stored as JSONB, round-tripped verbatim.
+  private Object extension;
+
   private boolean supplement;
   // Transient (not persisted): for a supplement-contributed designation, the supplement's canonical
   // `<url>|<version>` — emitted as the `$lookup` designation `source` part. Set at merge time.

@@ -21,7 +21,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 
 @Singleton
 public class DesignationRepository extends BaseRepository {
-  private final PgBeanProcessor bp = new PgBeanProcessor(Designation.class);
+  private final PgBeanProcessor bp = new PgBeanProcessor(Designation.class, p -> p.addColumnProcessor("extension", PgBeanProcessor.fromJson()));
 
   String from = " from terminology.designation d " +
       "inner join terminology.entity_property ep on ep.id = d.designation_type_id ";
@@ -38,6 +38,7 @@ public class DesignationRepository extends BaseRepository {
     ssb.property("designation_kind", designation.getDesignationKind());
     ssb.property("description", designation.getDescription());
     ssb.property("status", designation.getStatus());
+    ssb.jsonProperty("extension", designation.getExtension());
 
     SqlBuilder sb = ssb.buildSave("terminology.designation", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());

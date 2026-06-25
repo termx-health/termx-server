@@ -33,3 +33,7 @@ select core.create_table_metadata('terminology.designation');
 -- used in file import with IN operator to optimize searches
 create index designation_name_hash_idx on terminology.designation using hash(lower(name));
 --
+
+--changeset kefhir:designation_extension
+alter table terminology.designation add column if not exists extension jsonb;
+--rollback alter table terminology.designation drop column if exists extension;

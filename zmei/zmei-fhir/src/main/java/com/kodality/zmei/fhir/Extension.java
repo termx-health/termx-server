@@ -21,6 +21,7 @@ public class Extension extends Element {
 
   private String valueString;
   private String valueCode;
+  private String valueId;
   private Integer valueInteger;
   private BigDecimal valueDecimal;
   private OffsetDateTime valueDateTime;

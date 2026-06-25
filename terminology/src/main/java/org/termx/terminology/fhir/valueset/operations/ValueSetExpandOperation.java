@@ -1544,6 +1544,12 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
                   com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation designation =
                       new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConceptDesignation();
                   designation.setValue(d.getName());
+                  // Round-trip any raw FHIR designation.extension (e.g. coding-sctdescid) preserved at import.
+                  List<com.kodality.zmei.fhir.Extension> desExt =
+                      org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper.toFhirDesignationExtensions(d.getExtension());
+                  if (desExt != null) {
+                    designation.setExtension(desExt);
+                  }
                   // Emit the designation's `language`, EXCEPT where the tx-resource CodeSystem shows this
                   // designation has no stated language (import defaults a missing language to the resource
                   // language, but the tx-ecosystem omits it). For a stored code system the set is empty, so the
