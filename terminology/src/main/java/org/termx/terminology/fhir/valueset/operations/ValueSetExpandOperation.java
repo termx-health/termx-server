@@ -393,14 +393,22 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     if (req == null || req.getParameter() == null) {
       return null;
     }
-    String joined = req.getParameter().stream()
+    java.util.stream.Stream<String> explicit = req.getParameter().stream()
         .filter(p -> "useSupplement".equals(p.getName()))
+        .map(p -> p.getValueCanonical() != null ? p.getValueCanonical()
+            : p.getValueUri() != null ? p.getValueUri()
+                : p.getValueUrl() != null ? p.getValueUrl() : p.getValueString());
+    // Auto-apply a BUNDLED supplement: a tx-resource CodeSystem with content=supplement is applied to the
+    // expansion even without an explicit useSupplement (the reference does this). A supplement for a code system
+    // not in the expansion contributes nothing (no member matches), so this is safe.
+    java.util.stream.Stream<String> bundled = req.getParameter().stream()
+        .filter(p -> "tx-resource".equals(p.getName()) && p.getResource() instanceof com.kodality.zmei.fhir.resource.terminology.CodeSystem cs
+            && "supplement".equals(cs.getContent()) && cs.getUrl() != null)
         .map(p -> {
-          String v = p.getValueCanonical() != null ? p.getValueCanonical()
-              : p.getValueUri() != null ? p.getValueUri()
-              : p.getValueUrl() != null ? p.getValueUrl() : p.getValueString();
-          return v;
-        })
+          com.kodality.zmei.fhir.resource.terminology.CodeSystem cs = (com.kodality.zmei.fhir.resource.terminology.CodeSystem) p.getResource();
+          return cs.getUrl() + (StringUtils.isNotEmpty(cs.getVersion()) ? "|" + cs.getVersion() : "");
+        });
+    String joined = java.util.stream.Stream.concat(explicit, bundled)
         .filter(StringUtils::isNotEmpty)
         .distinct()
         .collect(java.util.stream.Collectors.joining(","));
