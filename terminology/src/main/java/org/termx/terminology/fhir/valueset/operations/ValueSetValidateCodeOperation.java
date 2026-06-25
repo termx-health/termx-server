@@ -1729,6 +1729,18 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       // TWO issues — not-in-vs at `code` plus not-found at `system` (system url UNquoted here) — and the system is
       // reported via x-unknown-system. The message lists the not-found first, then the not-in-vs.
       String notInVs = String.format("The provided code '%s#%s' was not found in the value set '%s'", system, code, vsCanonical);
+      if (!txResourceValueSets(req, system).isEmpty()) {
+        // The "system" is actually a known VALUE SET canonical, not a code system: an invalid-data error at the
+        // system (no not-found, no x-unknown-system), plus the not-in-vs at the code.
+        String vsRef = String.format("The Coding references a value set, not a code system ('%s')", system);
+        parameters.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+            org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, codeLoc),
+            org.termx.terminology.fhir.TxIssues.issue("error", "invalid", "invalid-data", vsRef, systemLoc))));
+        parameters.addParameter(new ParametersParameter("message").setValueString(vsRef + "; " + notInVs));
+        parameters.addParameter(new ParametersParameter("result").setValueBoolean(false));
+        parameters.addParameter(new ParametersParameter("system").setValueUri(system));
+        return parameters;
+      }
       String notFound = String.format("A definition for CodeSystem %s could not be found, so the code cannot be validated", system);
       parameters.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
           org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, codeLoc),
