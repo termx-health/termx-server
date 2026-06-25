@@ -316,13 +316,29 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (CollectionUtils.isEmpty(designations)) {
       return null;
     }
-    return designations.stream().map(d -> new CodeSystemConceptDesignation()
-            .setLanguage(d.getLanguage())
-            .setValue(d.getName())
-            .setUse(designationUseCoding(d.getDesignationType())))
+    return designations.stream().map(d -> {
+          CodeSystemConceptDesignation fd = new CodeSystemConceptDesignation()
+              .setLanguage(d.getLanguage())
+              .setValue(d.getName())
+              .setUse(designationUseCoding(d.getDesignationType()));
+          List<Extension> ext = toFhirDesignationExtensions(d.getExtension());
+          if (ext != null) {
+            fd.setExtension(ext);
+          }
+          return fd;
+        })
         .sorted(Comparator.comparing(d -> d.getLanguage() == null ? "" : d.getLanguage()))
         .sorted(Comparator.comparing(d -> d.getUse().getCode()))
         .toList();
+  }
+
+  /** Deserializes a stored designation extension (a raw FHIR-extension JSONB passthrough) back into FHIR Extensions. */
+  public static List<Extension> toFhirDesignationExtensions(Object extension) {
+    if (extension == null) {
+      return null;
+    }
+    List<Extension> exts = JsonUtil.fromJson(JsonUtil.toJson(extension), new com.fasterxml.jackson.core.type.TypeReference<List<Extension>>() {});
+    return CollectionUtils.isEmpty(exts) ? null : exts;
   }
 
   private List<CodeSystemProperty> toFhirCodeSystemProperty(List<EntityProperty> entityProperties, String lang) {
@@ -810,6 +826,11 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       designation.setCaseSignificance(caseSignificance);
       designation.setDesignationKind("text");
       designation.setStatus("active");
+      // Preserve any FHIR designation.extension (e.g. coding-sctdescid) as a verbatim JSONB passthrough so it
+      // round-trips on $expand/$lookup/CS export — termx assigns no semantics to these.
+      if (CollectionUtils.isNotEmpty(d.getExtension())) {
+        designation.setExtension(d.getExtension());
+      }
       return designation;
     }).collect(Collectors.toCollection(ArrayList::new));
 
