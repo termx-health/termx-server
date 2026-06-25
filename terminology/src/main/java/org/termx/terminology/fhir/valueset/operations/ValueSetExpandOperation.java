@@ -785,7 +785,11 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           ValueSetQueryParams storedParams = new ValueSetQueryParams();
           storedParams.setUri(refUrl);
           storedParams.setLimit(1);
-          storedParams.setPermittedIds(SessionStore.require().getPermittedResourceIds(Privilege.VS_READ));
+          // No VS_READ filter here: this is a TRANSITIVE import resolved inside an expansion the caller already
+          // initiated, not a direct read. A compose routinely imports standard/registered value sets (e.g. the
+          // FHIR core administrative-gender value set) that the caller has no explicit grant for; the reference
+          // tx server resolves them, and the import surfaces only as expansion members. Filtering by the caller's
+          // permitted ids here 404s every such import (the import's content is never exposed as a readable resource).
           ValueSet storedVs = valueSetService.query(storedParams).findFirst().orElse(null);
           ValueSetVersion storedVersion = null;
           if (storedVs != null) {
