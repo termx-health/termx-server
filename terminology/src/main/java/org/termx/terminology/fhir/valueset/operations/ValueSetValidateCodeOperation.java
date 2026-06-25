@@ -800,6 +800,17 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     String echo = csVersion != null ? csVersion
         : codingVersion != null && available.contains(codingVersion) ? codingVersion
         : available.stream().max(ValueSetValidateCodeOperation::compareVersions).orElse(null);
+    // When the ValueSet pins an unknown code system version (e.g. version|1 with only 1.0.0/1.2.0 present),
+    // a default `system-version` (or `check-system-version`) selects which REAL version drives the echoed
+    // `version` + the member display — version|1 unknown with system-version=...|1.0.0 echoes 1.0.0, not the
+    // latest. A forced version is already applied above; with no default/check the echo stays the latest.
+    if (includeVersionNotFound) {
+      String def = overrideVersion(req, "system-version", system);
+      String fallback = def != null ? concretize(def, available) : check != null ? concretize(check, available) : null;
+      if (fallback != null) {
+        echo = fallback;
+      }
+    }
     // The `message` concatenates the ERROR issue texts (warnings/info excluded) in issue order,
     // joined with "; " — mirrors org.hl7.fhir.core's combined validation message.
     String message = issues.stream().filter(i -> "error".equals(i.getSeverity()))
