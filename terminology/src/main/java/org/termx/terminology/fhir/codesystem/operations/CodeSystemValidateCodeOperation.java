@@ -296,7 +296,43 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     if (StringUtils.isNotEmpty(conceptDisplay)) {
       result.addParameter(new ParametersParameter("display").setValueString(conceptDisplay));
     }
+    // A valid but non-active (deprecated/retired/inactive) concept stays result=true, but echoes its `status` and
+    // a code-comment warning advising review — the reference server's inactive-concept envelope.
+    String status = conceptStatus(concept);
+    if (status != null && List.of("deprecated", "retired", "inactive").contains(status)) {
+      String note = String.format("The concept '%s' is %s and its use should be reviewed", code, status);
+      result.addParameter(new ParametersParameter("status").setValueCode(status));
+      result.addParameter(new ParametersParameter("message").setValueString(note));
+      result.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+          org.termx.terminology.fhir.TxIssues.issue("warning", "business-rule", "code-comment", note))));
+    }
     return result;
+  }
+
+  /**
+   * The non-active status (deprecated/retired/inactive) of an inline CodeSystem concept — from a {@code status}
+   * concept property or the {@code structuredefinition-standards-status} extension — or null.
+   */
+  private static String conceptStatus(com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConcept concept) {
+    if (concept == null) {
+      return null;
+    }
+    if (concept.getProperty() != null) {
+      String fromProperty = concept.getProperty().stream()
+          .filter(pr -> "status".equals(pr.getCode()))
+          .map(com.kodality.zmei.fhir.resource.terminology.CodeSystem.CodeSystemConceptProperty::getValueCode)
+          .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+      if (fromProperty != null) {
+        return fromProperty;
+      }
+    }
+    if (concept.getExtension() != null) {
+      return concept.getExtension().stream()
+          .filter(e -> "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status".equals(e.getUrl()))
+          .map(com.kodality.zmei.fhir.Extension::getValueCode)
+          .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+    }
+    return null;
   }
 
   /** Depth-first search of the inline concept hierarchy by code. */
