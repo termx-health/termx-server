@@ -850,19 +850,33 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       // Combine the per-ref member maps: a single referenced value set contributes its members directly; multiple
       // referenced value sets contribute their intersection (a code present in EVERY one).
       java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>> bySystem = intersectImportedMembers(perRefMembers);
-      // A pure-import include (only valueSet) is replaced by the imported members; a mixed include keeps its own
-      // system/concept/filter (union semantics — both contribute members).
-      boolean pureImport = inc.getSystem() == null && (inc.getConcept() == null || inc.getConcept().isEmpty()) && (inc.getFilter() == null || inc.getFilter().isEmpty());
-      if (!pureImport) {
-        newIncludes.add(inc);
+      boolean hasConcepts = inc.getConcept() != null && !inc.getConcept().isEmpty();
+      boolean hasFilter = inc.getFilter() != null && !inc.getFilter().isEmpty();
+      boolean pureImport = inc.getSystem() == null && !hasConcepts && !hasFilter;
+      if (hasConcepts && !hasFilter && inc.getSystem() != null) {
+        // Mixed include: explicit concepts AND value-set import(s). FHIR expansion is the INTERSECTION — only the
+        // listed concepts that are ALSO members of the imported value set(s) survive (not the union of both). So
+        // restrict the concept list to the imported members and DON'T fold the imports in as their own members.
+        java.util.Set<String> importedCodes = bySystem.getOrDefault(inc.getSystem(), new java.util.LinkedHashSet<>());
+        var intersected = new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude();
+        intersected.setSystem(inc.getSystem());
+        intersected.setVersion(inc.getVersion());
+        intersected.setConcept(inc.getConcept().stream().filter(c -> importedCodes.contains(c.getCode())).toList());
+        newIncludes.add(intersected);
+      } else {
+        // A pure-import include (only valueSet) is replaced by the imported members; a system-only or filter-based
+        // mixed include keeps its own selection alongside the imported members.
+        if (!pureImport) {
+          newIncludes.add(inc);
+        }
+        bySystem.forEach((sys, codes) -> {
+          var imp = new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude();
+          imp.setSystem(sys);
+          imp.setConcept(codes.stream()
+              .map(c -> new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConcept().setCode(c)).toList());
+          newIncludes.add(imp);
+        });
       }
-      bySystem.forEach((sys, codes) -> {
-        var imp = new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude();
-        imp.setSystem(sys);
-        imp.setConcept(codes.stream()
-            .map(c -> new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeIncludeConcept().setCode(c)).toList());
-        newIncludes.add(imp);
-      });
     }
     copy.getCompose().setInclude(newIncludes);
     return copy;
