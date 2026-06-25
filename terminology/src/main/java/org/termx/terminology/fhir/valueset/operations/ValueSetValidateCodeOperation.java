@@ -1484,6 +1484,30 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       issues.add(org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "status-check",
           String.format("Reference to %s ValueSet %s%s", vsStatus, inlineVs.getUrl(), inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "")));
     }
+    // An IMPORTED value set (compose.include.valueSet) that is itself withdrawn/deprecated contributes its own
+    // status-check, the same as the value set under validation — e.g. a value set that imports a withdrawn one
+    // yields "Reference to withdrawn ValueSet <canonical>". The import is resolved from the bundled tx-resources.
+    if (inlineVs.getCompose() != null && inlineVs.getCompose().getInclude() != null) {
+      java.util.LinkedHashSet<String> seenImports = new java.util.LinkedHashSet<>();
+      for (var inc : inlineVs.getCompose().getInclude()) {
+        for (String importRef : Optional.ofNullable(inc.getValueSet()).orElse(List.of())) {
+          int pipe = importRef == null ? -1 : importRef.indexOf('|');
+          String importUrl = pipe >= 0 ? importRef.substring(0, pipe) : importRef;
+          String importVersion = pipe >= 0 ? importRef.substring(pipe + 1) : null;
+          if (importUrl == null || !seenImports.add(importRef)) {
+            continue;
+          }
+          com.kodality.zmei.fhir.resource.terminology.ValueSet importedVs = txResourceValueSets(req, importUrl).stream()
+              .filter(v -> importVersion == null || importVersion.equals(v.getVersion())).findFirst().orElse(null);
+          String importStatus = statusWord(importedVs);
+          if (importStatus != null) {
+            issues.add(org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "status-check",
+                String.format("Reference to %s ValueSet %s%s", importStatus, importUrl,
+                    importedVs.getVersion() != null ? "|" + importedVs.getVersion() : "")));
+          }
+        }
+      }
+    }
     // A concept marked deprecated by the value set's own compose (valueset-deprecated / standards-status=deprecated
     // on the include.concept) is still valid, but its use should be reviewed — emit a code-comment warning.
     if (inlineVs != null && vsConceptDeprecated(inlineVs, match.getSystem() != null ? match.getSystem() : system, match.getCode())) {
