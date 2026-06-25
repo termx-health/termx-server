@@ -1105,6 +1105,30 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // P8: flatten any compose.include[].valueSet (imported value sets) into system+concept includes first.
     List<String> usedValueSets = new java.util.ArrayList<>();
     inlineVs = resolveImportedValueSets(inlineVs, req, new java.util.HashSet<>(), usedValueSets);
+    // A value set referenced in an EXCLUDE is also "used" (resolveImportedValueSets only records includes). Its
+    // members are removed by the SQL/exclude path; the reference still reports it as used-valueset. Resolve the
+    // version (pinned ref version, else the bundled tx-resource's, else the stored latest) for the `url|version`.
+    if (inlineVs.getCompose() != null && inlineVs.getCompose().getExclude() != null) {
+      for (var ex : inlineVs.getCompose().getExclude()) {
+        for (String ref : java.util.Optional.ofNullable(ex.getValueSet()).orElse(List.of())) {
+          if (StringUtils.isEmpty(ref)) {
+            continue;
+          }
+          int pipe = ref.indexOf('|');
+          String exUrl = pipe >= 0 ? ref.substring(0, pipe) : ref;
+          String exVer = pipe >= 0 ? ref.substring(pipe + 1) : null;
+          if (exVer == null) {
+            var txVs = txResourceValueSets(req, exUrl).stream().findFirst().orElse(null);
+            exVer = txVs != null ? txVs.getVersion()
+                : java.util.Optional.ofNullable(valueSetVersionService.loadLastVersionByUri(exUrl)).map(ValueSetVersion::getVersion).orElse(null);
+          }
+          String canonical = exUrl + (exVer != null ? "|" + exVer : "");
+          if (!usedValueSets.contains(canonical)) {
+            usedValueSets.add(canonical);
+          }
+        }
+      }
+    }
     inlineVs = resolveIncludeVersions(inlineVs, req);
     // Resolve property `=` filters against a tx-resource CodeSystem in Java when the property is NOT declared in
     // the code system (the SQL expand can only filter on declared/stored properties, so an undeclared concept
