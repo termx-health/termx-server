@@ -58,14 +58,21 @@ public class UcumConceptResolver {
         .filter(u -> matchesTextContains(u, supplementDesignations.get(u.getCode()), params.getTextContains()))
         .toList();
 
+    int total = units.size();
     int offset = Optional.ofNullable(params.getOffset()).orElse(0);
-    int limit = Optional.ofNullable(params.getLimit()).orElse(units.size());
-    if (offset >= units.size() || limit <= 0) {
-      return new QueryResult<>(List.of());
-    }
-    int to = Math.min(units.size(), offset + limit);
-    List<Concept> concepts = units.subList(offset, to).stream().map(mapper::toConcept).toList();
-    return new QueryResult<>(concepts);
+    int limit = Optional.ofNullable(params.getLimit()).orElse(total);
+    List<Concept> concepts = (offset >= total || limit <= 0)
+        ? List.of()
+        : units.subList(offset, Math.min(total, offset + limit)).stream().map(mapper::toConcept).toList();
+    // meta.total must reflect the full filtered result, not just the returned page, so the UI paging
+    // ("load more" when data.length < meta.total) works against virtual UCUM concepts.
+    QueryResult<Concept> result = new QueryResult<>(concepts);
+    result.getMeta().setTotal(total);
+    return result;
+  }
+
+  public int count() {
+    return getUnits().size();
   }
 
   public Optional<Concept> findByCode(String code) {

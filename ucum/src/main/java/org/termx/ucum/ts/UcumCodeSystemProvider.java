@@ -5,6 +5,7 @@ import org.termx.core.ts.CodeSystemExternalProvider;
 import org.termx.ts.codesystem.Concept;
 import org.termx.ts.codesystem.ConceptQueryParams;
 import jakarta.inject.Singleton;
+import java.util.Optional;
 
 @Singleton
 public class UcumCodeSystemProvider extends CodeSystemExternalProvider {
@@ -24,5 +25,13 @@ public class UcumCodeSystemProvider extends CodeSystemExternalProvider {
   @Override
   public String getCodeSystemId() {
     return UCUM;
+  }
+
+  @Override
+  public Optional<Integer> conceptCount(String codeSystem) {
+    if (!UCUM.equals(codeSystem)) {
+      return Optional.empty();
+    }
+    return Optional.of(ucumConceptResolver.count());
   }
 }
