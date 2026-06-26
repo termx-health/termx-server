@@ -46,7 +46,8 @@ public class TerminologyCapabilityInitializer implements TermxGeneratedConforman
     TerminologyCapabilities tc = new TerminologyCapabilities();
     tc.setUrl(this.apiUrl + "/fhir/metadata");
     tc.setVersion("1");
-    tc.setName("TermX Terminology Statement");
+    // name must be a token (computer-friendly, no whitespace) — the tx-ecosystem term-caps test asserts $token$.
+    tc.setName("TermXTerminologyCapabilities");
     tc.setTitle("TermX Terminology Statement");
     tc.setStatus(PublicationStatus.ACTIVE);
     tc.setDate(new Date());
@@ -70,15 +71,19 @@ public class TerminologyCapabilityInitializer implements TermxGeneratedConforman
           );
     });
 
-    tc.setExpansion(new TerminologyCapabilitiesExpansionComponent()
+    // The tx-ecosystem term-caps test asserts the $expand parameters the server supports. List every parameter the
+    // expand operation honours (the names the suite expects, plus url/valueSetVersion which termx also accepts).
+    TerminologyCapabilitiesExpansionComponent expansion = new TerminologyCapabilitiesExpansionComponent()
         .setHierarchical(true)
         .setPaging(false)
-        .setIncomplete(false)
-        .addParameter(new TerminologyCapabilitiesExpansionParameterComponent().setName("url"))
-        .addParameter(new TerminologyCapabilitiesExpansionParameterComponent().setName("valueSetVersion"))
-        .addParameter(new TerminologyCapabilitiesExpansionParameterComponent().setName("excludeNested"))
-        .addParameter(new TerminologyCapabilitiesExpansionParameterComponent().setName("activeOnly"))
-    );
+        .setIncomplete(false);
+    for (String param : List.of(
+        "activeOnly", "check-system-version", "count", "displayLanguage", "excludeNested", "force-system-version",
+        "includeDefinition", "includeDesignations", "offset", "property", "system-version", "tx-resource",
+        "url", "valueSetVersion")) {
+      expansion.addParameter(new TerminologyCapabilitiesExpansionParameterComponent().setName(param));
+    }
+    tc.setExpansion(expansion);
 
     tc.setValidateCode(new TerminologyCapabilitiesValidateCodeComponent()
         .setTranslations(true)
