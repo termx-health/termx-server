@@ -672,6 +672,12 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     return req.findParameter("coding").isPresent() ? "Coding.system" : "system";
   }
 
+  /** A Coding.system is a relative/local reference when it carries no URI scheme (e.g. "Location1" vs
+   *  "http://…" or "urn:…") — FHIR requires an absolute reference, so the reference reports it as invalid-data. */
+  private static boolean isRelativeSystem(String system) {
+    return system != null && !system.matches("[a-zA-Z][a-zA-Z0-9+.\\-]*:.*");
+  }
+
   /**
    * The "Valid display is …" clause of the invalid-display message, mirroring org.hl7.fhir.core. The valid
    * displays are the member's primary display (tagged with the code system's language) plus its designations
@@ -1809,6 +1815,23 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       parameters.addParameter(new ParametersParameter("result").setValueBoolean(false));
       parameters.addParameter(new ParametersParameter("system").setValueUri(system));
       parameters.addParameter(new ParametersParameter("x-caused-by-unknown-system").setValueCanonical(system));
+    } else if (isRelativeSystem(system)) {
+      // A relative/local Coding.system (e.g. "Location1", not an absolute URI). The reference returns 200 with
+      // THREE issues — not-in-vs at the code, an invalid-data "must be an absolute reference" at the system, and
+      // not-found (system QUOTED) at the system — plus x-unknown-system. (The request-layer validator tolerates the
+      // relative system on a $validate-code input so this graceful envelope can be produced; see
+      // ProfileTolerantResourceValidator.) The message lists not-found, then the relative error, then not-in-vs.
+      String notInVs = String.format("The provided code '%s#%s' was not found in the value set '%s'", system, code, vsCanonical);
+      String relative = "Coding.system must be an absolute reference, not a local reference";
+      String notFound = String.format("A definition for CodeSystem '%s' could not be found, so the code cannot be validated", system);
+      parameters.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+          org.termx.terminology.fhir.TxIssues.issue("error", "code-invalid", "not-in-vs", notInVs, codeLoc),
+          org.termx.terminology.fhir.TxIssues.issue("error", "invalid", "invalid-data", relative, systemLoc),
+          org.termx.terminology.fhir.TxIssues.issue("error", "not-found", "not-found", notFound, systemLoc))));
+      parameters.addParameter(new ParametersParameter("message").setValueString(notFound + "; " + relative + "; " + notInVs));
+      parameters.addParameter(new ParametersParameter("result").setValueBoolean(false));
+      parameters.addParameter(new ParametersParameter("system").setValueUri(system));
+      parameters.addParameter(new ParametersParameter("x-unknown-system").setValueCanonical(system));
     } else {
       // The unknown system is NOT one the value set includes: the code is additionally not in the value set, so
       // TWO issues — not-in-vs at `code` plus not-found at `system` (system url UNquoted here) — and the system is
