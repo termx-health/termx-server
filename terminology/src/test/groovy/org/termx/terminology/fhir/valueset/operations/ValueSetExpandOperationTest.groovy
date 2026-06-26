@@ -87,6 +87,9 @@ class ValueSetExpandOperationTest extends Specification {
       capturedSnapshot = args[3] as ValueSetSnapshot
       return new com.kodality.zmei.fhir.resource.terminology.ValueSet()
     }
+    // The inline-VS path always consults the supplement service and then iterates the result; give the mock an
+    // explicit empty result so the suite doesn't depend on the framework's default for a generic List return.
+    conceptSupplementService.mergeSupplementsIntoExpansion(_, _) >> []
   }
 
   def cleanup() {
@@ -359,6 +362,34 @@ class ValueSetExpandOperationTest extends Specification {
     result.expansion.contains.size() == 10
     result.expansion.contains[0].code == "code_0"
     result.expansion.contains[9].code == "code_9"
+  }
+
+  def "inline-VS expand with an empty include does not NPE (compose dropped by NON_EMPTY round-trip)"() {
+    // Regression: resolveIncludeVersions null-checks inlineVs.getCompose()/getInclude(),
+    // then deep-copies the value set via a FhirMapper JSON round-trip and loops over
+    // copy.getCompose().getInclude(). FhirMapper serializes with Include.NON_EMPTY, which
+    // strips an empty compose/include — a non-null-but-empty include list (the shape Jackson
+    // deserializes `"include":[]` into) collapses the whole compose to nothing, so
+    // copy.getCompose() comes back null and the loop threw an NPE, surfaced to the client as
+    // "exception during profile validation: null". The fix returns the untouched original when
+    // the round-trip drops the compose — there is nothing concrete to resolve.
+    given:
+    valueSetVersionConceptRepository.expandFromJson(_) >> []
+
+    def inlineVs = new com.kodality.zmei.fhir.resource.terminology.ValueSet()
+    inlineVs.setUrl("http://example.org/inline")
+    inlineVs.setStatus("active")
+    inlineVs.setCompose(new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose()
+        .setInclude([] as List))
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("valueSet").setResource(inlineVs))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    noExceptionThrown()
+    result.expansion.contains == null || result.expansion.contains.isEmpty()
   }
 
   def "inline-VS expand with offset=2 count=3 returns slice starting at offset"() {
