@@ -117,6 +117,38 @@ public final class TxIssues {
     return new com.kodality.kefhir.core.exception.FhirException(400, issue);
   }
 
+  /**
+   * A circular {@code compose.include}/{@code exclude.valueSet} import chain: an {@code error}/{@code processing}
+   * OperationOutcome issue with the {@code tx-issue-type}/{@code vs-invalid} detail coding (tx-ecosystem
+   * {@code VALUESET_CIRCULAR_REFERENCE}). The value set cannot be expanded because resolving its imports loops.
+   */
+  public static com.kodality.kefhir.core.exception.FhirException circularReferenceException(String diagnostics) {
+    org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent issue =
+        new org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent();
+    issue.setSeverity(org.hl7.fhir.r5.model.OperationOutcome.IssueSeverity.ERROR);
+    issue.setCode(org.hl7.fhir.r5.model.OperationOutcome.IssueType.PROCESSING);
+    issue.setDetails(new org.hl7.fhir.r5.model.CodeableConcept()
+        .addCoding(new org.hl7.fhir.r5.model.Coding(TX_ISSUE_TYPE, "vs-invalid", null))
+        .setText(diagnostics));
+    issue.setDiagnostics(diagnostics);
+    return new com.kodality.kefhir.core.exception.FhirException(422, issue);
+  }
+
+  /**
+   * An expansion too large to return in full (no paging requested and over the server's cost threshold): an
+   * {@code error}/{@code too-costly} OperationOutcome issue (tx-ecosystem {@code VALUESET_TOO_COSTLY}). The
+   * expected fixture carries no {@code tx-issue-type} coding — just the text — so none is attached.
+   */
+  public static com.kodality.kefhir.core.exception.FhirException tooCostlyException(String diagnostics) {
+    org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent issue =
+        new org.hl7.fhir.r5.model.OperationOutcome.OperationOutcomeIssueComponent();
+    issue.setSeverity(org.hl7.fhir.r5.model.OperationOutcome.IssueSeverity.ERROR);
+    issue.setCode(org.hl7.fhir.r5.model.OperationOutcome.IssueType.TOOCOSTLY);
+    issue.setDetails(new org.hl7.fhir.r5.model.CodeableConcept().setText(diagnostics));
+    issue.setDiagnostics(diagnostics);
+    return new com.kodality.kefhir.core.exception.FhirException(422, issue);
+  }
+
   /** No code to validate was supplied (no coding/codeableConcept/code+system/code+inferSystem) — an error
    * OperationOutcome with the reference's exact wording (note: the reference omits the closing paren). */
   public static com.kodality.kefhir.core.exception.FhirException noCodeToValidateException() {

@@ -257,6 +257,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // FHIR R5 expansion.total: post-filter, pre-pagination count. Capture HERE.
     // The mapper reads snapshot.conceptsTotal in preference to expansion.size().
     int totalAfterFilter = expandedConcepts.size();
+    // Defend against an unbounded expansion that is too large to return in full (no count requested + over the
+    // cost threshold) — 4xx too-costly, the way the reference server does. Paged requests are exempt.
+    enforceExpansionLimit(req, totalAfterFilter);
 
     Integer offset = req == null ? null : req.findParameter("offset").map(ParametersParameter::getValueInteger)
         .orElse(req.findParameter("offset").map(ParametersParameter::getValueString).map(Integer::valueOf).orElse(null));
@@ -718,6 +721,123 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     return copy;
   }
 
+  // --- big/* cost & cycle guards (tx-ecosystem 'big' suite) -------------------------------------------------
+
+  /** Max depth of nested value-set imports before the chain is treated as circular (backstop for the path check). */
+  private static final int MAX_IMPORT_DEPTH = 20;
+  /** Default cap on an unbounded expansion's size before it is rejected as too-costly; the
+   *  {@code X-TOO-COSTLY-THRESHOLD} request header (used by the tx-ecosystem 'big' suite) overrides it. */
+  private static final int DEFAULT_EXPANSION_LIMIT = 10_000;
+
+  /**
+   * Rejects a value set whose {@code compose.include}/{@code exclude.valueSet} imports form a cycle, before the
+   * expansion engine silently skips the re-import and returns a wrong 200. Walks the import graph resolving each
+   * ref through the same sources the expand uses (a contained resource, then a bundled tx-resource), tracking the
+   * current ancestor path; a ref already on the path — or a chain deeper than {@link #MAX_IMPORT_DEPTH} — is a
+   * {@code VALUESET_CIRCULAR_REFERENCE} 4xx.
+   */
+  private void checkImportCycle(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, Parameters req) {
+    java.util.LinkedHashSet<String> path = new java.util.LinkedHashSet<>();
+    if (vs != null && vs.getUrl() != null) {
+      path.add(vs.getUrl() + (vs.getVersion() != null ? "|" + vs.getVersion() : ""));
+    }
+    walkImportCycle(vs, req, path, 1);
+  }
+
+  private void walkImportCycle(com.kodality.zmei.fhir.resource.terminology.ValueSet vs, Parameters req,
+      java.util.LinkedHashSet<String> path, int depth) {
+    if (vs == null || vs.getCompose() == null) {
+      return;
+    }
+    if (depth > MAX_IMPORT_DEPTH) {
+      throw org.termx.terminology.fhir.TxIssues.circularReferenceException(
+          "Value set import chain exceeds the maximum depth of " + MAX_IMPORT_DEPTH + " via [" + String.join(", ", path) + "]");
+    }
+    // include AND exclude valueSet refs both participate in a cycle (big-circle-2 excludes big-circle-1).
+    List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude> groups = new java.util.ArrayList<>();
+    if (vs.getCompose().getInclude() != null) {
+      groups.addAll(vs.getCompose().getInclude());
+    }
+    if (vs.getCompose().getExclude() != null) {
+      groups.addAll(vs.getCompose().getExclude());
+    }
+    for (var g : groups) {
+      if (g.getValueSet() == null) {
+        continue;
+      }
+      for (String ref : g.getValueSet()) {
+        if (StringUtils.isEmpty(ref)) {
+          continue;
+        }
+        com.kodality.zmei.fhir.resource.terminology.ValueSet imported = resolveValueSetRef(ref, req, vs);
+        // Key the path by the resolved canonical (url|version) so the same value set reached by url and by
+        // versioned ref collapses to one node; fall back to the raw ref when it resolves to no bundled resource.
+        String key = imported != null && imported.getUrl() != null
+            ? imported.getUrl() + (imported.getVersion() != null ? "|" + imported.getVersion() : "")
+            : ref;
+        if (!path.add(key)) {
+          throw org.termx.terminology.fhir.TxIssues.circularReferenceException(
+              "Cyclic reference detected resolving " + key + " via [" + String.join(", ", path) + "]");
+        }
+        walkImportCycle(imported, req, path, depth + 1);
+        path.remove(key);
+      }
+    }
+  }
+
+  /** Resolves a {@code compose.*.valueSet} ref for cycle-walking: a contained {@code #id}, then a bundled
+   *  tx-resource (pinned version, else latest). Returns null when only a stored snapshot exists (no compose to
+   *  recurse into — the stored expand path owns those), which simply ends that branch of the walk. */
+  private com.kodality.zmei.fhir.resource.terminology.ValueSet resolveValueSetRef(
+      String ref, Parameters req, com.kodality.zmei.fhir.resource.terminology.ValueSet contextVs) {
+    if (ref.startsWith("#")) {
+      String id = ref.substring(1);
+      return java.util.Optional.ofNullable(contextVs.getContained()).orElse(List.of()).stream()
+          .filter(r -> r instanceof com.kodality.zmei.fhir.resource.terminology.ValueSet)
+          .map(r -> (com.kodality.zmei.fhir.resource.terminology.ValueSet) r)
+          .filter(cvs -> id.equals(cvs.getId()))
+          .findFirst().orElse(null);
+    }
+    int pipe = ref.indexOf('|');
+    String refUrl = pipe >= 0 ? ref.substring(0, pipe) : ref;
+    String refVersion = pipe >= 0 ? ref.substring(pipe + 1) : null;
+    return txResourceValueSets(req, refUrl).stream()
+        .filter(vs -> refVersion == null || refVersion.equals(vs.getVersion()))
+        .max(java.util.Comparator.comparing(com.kodality.zmei.fhir.resource.terminology.ValueSet::getVersion,
+            java.util.Comparator.nullsFirst(ValueSetExpandOperation::compareVersions)))
+        .orElse(null);
+  }
+
+  /** Throws a {@code too-costly} 4xx when an unbounded expansion ({@code count} absent) exceeds the threshold. A
+   *  paged request (any {@code count}) is exempt — the client is windowing, not asking for the whole set. */
+  private static void enforceExpansionLimit(Parameters req, int total) {
+    if (req != null && req.findParameter("count").isPresent()) {
+      return;
+    }
+    int limit = tooCostlyThreshold();
+    if (total > limit) {
+      throw org.termx.terminology.fhir.TxIssues.tooCostlyException(
+          "The value set expansion has " + total + " concepts, which exceeds the maximum of " + limit
+              + "; the expansion is too costly to return in full (use the count/offset paging parameters)");
+    }
+  }
+
+  /** The cost threshold for an unbounded expansion: the {@code X-TOO-COSTLY-THRESHOLD} request header when present
+   *  (the tx-ecosystem 'big' suite sets it to make the limit deterministic), else {@link #DEFAULT_EXPANSION_LIMIT}. */
+  private static int tooCostlyThreshold() {
+    String header = io.micronaut.http.context.ServerRequestContext.currentRequest()
+        .map(r -> r.getHeaders().get("X-TOO-COSTLY-THRESHOLD"))
+        .filter(StringUtils::isNotEmpty).orElse(null);
+    if (header != null) {
+      try {
+        return Integer.parseInt(header.trim());
+      } catch (NumberFormatException ignore) {
+        // malformed header — fall through to the default
+      }
+    }
+    return DEFAULT_EXPANSION_LIMIT;
+  }
+
   /**
    * P8 — resolve {@code compose.include[].valueSet} (imported value sets). The SQL expand only handles
    * {@code system}/{@code concept}/{@code filter}; an imported value set is expanded here (recursively, from the
@@ -1101,6 +1221,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     requireValidFilters(inlineVs);
     // A value set that REQUIRES a supplement (valueset-supplement extension) must have it resolvable, else 4xx.
     requireDeclaredSupplements(inlineVs, req);
+    // A circular compose.include/exclude.valueSet import chain can't be expanded — resolveImportedValueSets below
+    // would silently skip the re-import and return a wrong 200, so detect the cycle up front and 4xx instead.
+    checkImportCycle(inlineVs, req);
 
     // P8: flatten any compose.include[].valueSet (imported value sets) into system+concept includes first.
     List<String> usedValueSets = new java.util.ArrayList<>();
@@ -1256,6 +1379,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     // pagination — so the response reflects the full set size and clients can
     // paginate without re-issuing a `count=0` discovery probe.
     int totalAfterFilter = expandedConcepts.size();
+    // Defend against an unbounded expansion too large to return in full (no count + over the cost threshold) —
+    // 4xx too-costly, mirroring the stored path. Paged requests are exempt.
+    enforceExpansionLimit(req, totalAfterFilter);
 
     // Apply paging
     Integer offset = req == null ? null : req.findParameter("offset").map(ParametersParameter::getValueInteger)
