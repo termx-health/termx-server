@@ -861,6 +861,96 @@ class ValueSetExpandOperationTest extends Specification {
 
 
   // ---------------------------------------------------------------------------
+  // big/* cost & cycle guards (tx-ecosystem 'big' suite)
+  //
+  // A value set whose compose.include/exclude.valueSet imports form a cycle, or
+  // an unbounded expansion that exceeds the cost threshold, must abort with a
+  // 4xx OperationOutcome (circular-reference / too-costly) instead of looping or
+  // returning a giant 200.
+  // ---------------------------------------------------------------------------
+
+  def "expand of a value set with a circular import chain is a 4xx circular-reference error"() {
+    given:
+    // big-circle-1 imports big-circle-2; big-circle-2 excludes big-circle-1 -> cycle. Both are bundled as
+    // tx-resources (as the validator does at runtime), so the import refs resolve and the cycle is detectable.
+    def bc1 = composeVs("http://hl7.org/fhir/test/ValueSet/big-circle-1",
+        "http://hl7.org/fhir/test/ValueSet/big-circle-2", null)
+    def bc2 = composeVs("http://hl7.org/fhir/test/ValueSet/big-circle-2",
+        null, "http://hl7.org/fhir/test/ValueSet/big-circle-1")
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("valueSet").setResource(bc1))
+        .addParameter(new Parameters.ParametersParameter("tx-resource").setResource(bc1))
+        .addParameter(new Parameters.ParametersParameter("tx-resource").setResource(bc2))
+
+    when:
+    operation.run(req)
+
+    then:
+    def e = thrown(FhirException)
+    e.statusCode == 422
+    e.issues[0].severity == org.hl7.fhir.r5.model.OperationOutcome.IssueSeverity.ERROR
+    e.issues[0].code == org.hl7.fhir.r5.model.OperationOutcome.IssueType.PROCESSING
+    e.issues[0].details.coding[0].code == "vs-invalid"
+  }
+
+  def "unbounded expand over the cost threshold is a 4xx too-costly error"() {
+    given:
+    conceptSupplementService.mergeSupplementsIntoExpansion(_, _) >> []
+    // 10001 members > the default 10000 limit, and no count param -> unbounded -> too-costly.
+    valueSetVersionConceptRepository.expandFromJson(_) >> (0..10000).collect { concept(it) }
+    def inlineVs = new com.kodality.zmei.fhir.resource.terminology.ValueSet()
+    inlineVs.setUrl("http://example.org/inline")
+    inlineVs.setStatus("active")
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("valueSet").setResource(inlineVs))
+
+    when:
+    operation.run(req)
+
+    then:
+    def e = thrown(FhirException)
+    e.statusCode == 422
+    e.issues[0].code == org.hl7.fhir.r5.model.OperationOutcome.IssueType.TOOCOSTLY
+  }
+
+  def "paged expand over the cost threshold returns the page, not too-costly"() {
+    given:
+    conceptSupplementService.mergeSupplementsIntoExpansion(_, _) >> []
+    valueSetVersionConceptRepository.expandFromJson(_) >> (0..10000).collect { concept(it) }
+    def inlineVs = new com.kodality.zmei.fhir.resource.terminology.ValueSet()
+    inlineVs.setUrl("http://example.org/inline")
+    inlineVs.setStatus("active")
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("valueSet").setResource(inlineVs))
+        .addParameter(new Parameters.ParametersParameter("count").setValueInteger(50))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    result.expansion.contains.size() == 50
+    result.expansion.total == 10001
+  }
+
+  /** A zmei ValueSet whose compose imports/excludes another value set by url (for cycle tests). */
+  private static com.kodality.zmei.fhir.resource.terminology.ValueSet composeVs(String url, String includeRef, String excludeRef) {
+    def vs = new com.kodality.zmei.fhir.resource.terminology.ValueSet()
+    vs.setUrl(url)
+    vs.setVersion("5.0.0")
+    vs.setStatus("active")
+    def compose = new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetCompose()
+    if (includeRef != null) {
+      compose.setInclude([new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude().setValueSet([includeRef])])
+    }
+    if (excludeRef != null) {
+      compose.setExclude([new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetComposeInclude().setValueSet([excludeRef])])
+    }
+    vs.setCompose(compose)
+    return vs
+  }
+
+
+  // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
 
