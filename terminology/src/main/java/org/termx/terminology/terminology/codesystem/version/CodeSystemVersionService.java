@@ -2,6 +2,7 @@ package org.termx.terminology.terminology.codesystem.version;
 
 import com.kodality.commons.model.QueryResult;
 import jakarta.inject.Provider;
+import org.termx.core.ts.CodeSystemExternalProvider;
 import org.termx.core.ts.UcumSearchCacheInvalidator;
 import org.termx.terminology.ApiError;
 import org.termx.terminology.terminology.codesystem.CodeSystemRepository;
@@ -32,6 +33,7 @@ public class CodeSystemVersionService {
   private final Provider<ValueSetCodeSystemImpactService> valueSetCodeSystemImpactServiceProvider;
   private final CodeSystemRepository codeSystemRepository;
   private final UcumSearchCacheInvalidator ucumSearchCacheInvalidator;
+  private final List<CodeSystemExternalProvider> codeSystemProviders;
 
   @Transactional
   public void save(CodeSystemVersion version) {
@@ -57,23 +59,23 @@ public class CodeSystemVersionService {
   }
 
   public Optional<CodeSystemVersion> load(String codeSystem, String versionCode) {
-    return Optional.ofNullable(repository.load(codeSystem, versionCode));
+    return Optional.ofNullable(repository.load(codeSystem, versionCode)).map(this::decorateConceptCount);
   }
 
   public CodeSystemVersion load(Long id) {
-    return repository.load(id);
+    return decorateConceptCount(repository.load(id));
   }
 
   public CodeSystemVersion loadLastVersion(String codeSystem) {
-    return repository.loadLastVersion(codeSystem);
+    return decorateConceptCount(repository.loadLastVersion(codeSystem));
   }
 
   public CodeSystemVersion loadLastVersionByUri(String uri) {
-    return repository.loadLastVersionByUri(uri);
+    return decorateConceptCount(repository.loadLastVersionByUri(uri));
   }
 
   public CodeSystemVersion loadPreviousVersion(String codeSystem, String version) {
-    return repository.loadPreviousVersion(codeSystem, version);
+    return decorateConceptCount(repository.loadPreviousVersion(codeSystem, version));
   }
 
   public Optional<CodeSystemVersion> loadVersionByUri(String uri, String versionCode) {
@@ -81,11 +83,31 @@ public class CodeSystemVersionService {
     p.setCodeSystemUri(uri);
     p.setVersion(versionCode);
     p.setLimit(1);
-    return repository.query(p).findFirst();
+    return repository.query(p).findFirst().map(this::decorateConceptCount);
   }
 
   public QueryResult<CodeSystemVersion> query(CodeSystemVersionQueryParams params) {
-    return repository.query(params);
+    QueryResult<CodeSystemVersion> result = repository.query(params);
+    Optional.ofNullable(result.getData()).orElse(List.of()).forEach(this::decorateConceptCount);
+    return result;
+  }
+
+  /**
+   * The stored {@code conceptsTotal} counts code-system-version memberships, which is always 0 for code systems
+   * whose concepts are resolved virtually by a {@link CodeSystemExternalProvider} (e.g. UCUM). For those, take the
+   * count from the provider so the UI shows the real number of concepts instead of 0.
+   */
+  private CodeSystemVersion decorateConceptCount(CodeSystemVersion version) {
+    if (version == null || version.getCodeSystem() == null) {
+      return version;
+    }
+    codeSystemProviders.stream()
+        .map(provider -> provider.conceptCount(version.getCodeSystem()))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .findFirst()
+        .ifPresent(version::setConceptsTotal);
+    return version;
   }
 
   @Transactional
