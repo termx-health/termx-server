@@ -76,6 +76,10 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
         .map(pp -> StringUtils.firstNonBlank(pp.getValueUrl(), pp.getValueCanonical(), pp.getValueUri(), pp.getValueString()))
         .or(() -> req.findParameter("system")
             .map(pp -> StringUtils.firstNonBlank(pp.getValueUrl(), pp.getValueCanonical(), pp.getValueUri(), pp.getValueString())))
+        // A url-less $validate-code infers the code system from the supplied coding / codeableConcept system, so a
+        // coding naming (say) a supplement code system resolves to that CS and degrades to a 200 invalid-data rather
+        // than a 400 "url parameter required".
+        .or(() -> codingSystem(req))
         .orElse(null);
 
     // tx-resource / inline: validate against a CodeSystem supplied inline (the FHIR validator passes the
@@ -213,6 +217,20 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
   }
 
   /** Finds a CodeSystem supplied inline via a tx-resource parameter whose url matches the requested url. */
+  /** The code system url named by the request's {@code coding} / {@code codeableConcept} system — the fallback
+   *  source of the system for a url-less {@code $validate-code}. */
+  private static java.util.Optional<String> codingSystem(Parameters req) {
+    var coding = req.findParameter("coding").map(ParametersParameter::getValueCoding).orElse(null);
+    if (coding != null && StringUtils.isNotEmpty(coding.getSystem())) {
+      return java.util.Optional.of(coding.getSystem());
+    }
+    var cc = req.findParameter("codeableConcept").map(ParametersParameter::getValueCodeableConcept).orElse(null);
+    if (cc != null && cc.getCoding() != null) {
+      return cc.getCoding().stream().map(c -> c.getSystem()).filter(StringUtils::isNotEmpty).findFirst();
+    }
+    return java.util.Optional.empty();
+  }
+
   private static com.kodality.zmei.fhir.resource.terminology.CodeSystem findTxResourceCodeSystem(Parameters req, String url) {
     if (req.getParameter() == null || url == null) {
       return null;
@@ -249,6 +267,24 @@ public class CodeSystemValidateCodeOperation implements InstanceOperationDefinit
     }
     if (code == null) {
       throw new FhirException(400, IssueType.INVALID, "code, coding or codeableConcept parameter required");
+    }
+
+    // A supplement code system is not a usable Coding.system: the reference degrades to a 200 result=false with an
+    // invalid-data issue, not a 400. (A url-less validate naming a supplement resolves to the bundled supplement CS.)
+    if ("supplement".equals(inlineCs.getContent())) {
+      String csRef = inlineCs.getUrl() + (StringUtils.isNotEmpty(inlineCs.getVersion()) ? "|" + inlineCs.getVersion() : "");
+      String message = "CodeSystem " + csRef + " is a supplement, so can't be used as a value in Coding.system";
+      String systemLoc = req.findParameter("codeableConcept").isPresent() ? "CodeableConcept.coding[0].system" : "Coding.system";
+      Parameters supplement = new Parameters()
+          .addParameter(new ParametersParameter("result").setValueBoolean(false))
+          .addParameter(new ParametersParameter("code").setValueCode(code));
+      if (StringUtils.isNotEmpty(inlineCs.getUrl())) {
+        supplement.addParameter(new ParametersParameter("system").setValueUri(inlineCs.getUrl()));
+      }
+      supplement.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+          org.termx.terminology.fhir.TxIssues.issue("error", "invalid", "invalid-data", message, systemLoc))));
+      supplement.addParameter(new ParametersParameter("message").setValueString(message));
+      return supplement;
     }
 
     String finalCode = code;

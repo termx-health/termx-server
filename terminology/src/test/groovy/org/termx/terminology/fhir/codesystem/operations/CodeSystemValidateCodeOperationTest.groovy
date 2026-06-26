@@ -89,6 +89,34 @@ class CodeSystemValidateCodeOperationTest extends Specification {
     !bool(resp, "result")
   }
 
+  def "a coding naming a supplement code system degrades to a 200 invalid-data, not a 400"() {
+    // A url-less $validate-code whose coding.system is a (bundled) supplement code system must not 400 ('url
+    // parameter required' / supplement rejected) — the reference returns 200 result=false with an invalid-data issue.
+    given:
+    def supplement = new com.kodality.zmei.fhir.resource.terminology.CodeSystem()
+    supplement.setUrl("http://hl7.org/fhir/test/CodeSystem/supplement")
+    supplement.setVersion("0.1.1")
+    supplement.setContent("supplement")
+    def req = new Parameters()
+        .addParameter(new ParametersParameter("coding").setValueCoding(
+            new com.kodality.zmei.fhir.datatypes.Coding("http://hl7.org/fhir/test/CodeSystem/supplement", "code1")))
+        .addParameter(new ParametersParameter("tx-resource").setResource(supplement))
+
+    when:
+    def resp = parse(operation.run(new ResourceContent(FhirMapper.toJson(req), "json")))
+
+    then:
+    !bool(resp, "result")
+    resp.findParameter("code").get().valueCode == "code1"
+    resp.findParameter("system").get().valueUri == "http://hl7.org/fhir/test/CodeSystem/supplement"
+    def oo = resp.findParameter("issues").get().resource as com.kodality.zmei.fhir.resource.other.OperationOutcome
+    oo.issue.size() == 1
+    oo.issue[0].code == "invalid"
+    oo.issue[0].details.coding[0].code == "invalid-data"
+    oo.issue[0].details.text.contains("is a supplement, so can't be used as a value in Coding.system")
+    oo.issue[0].location == ["Coding.system"]
+  }
+
   private ResourceContent invoke(Map<String, String> params) {
     Parameters req = new Parameters()
     params.each { k, v -> req.addParameter(new ParametersParameter(k).setValueString(v)) }

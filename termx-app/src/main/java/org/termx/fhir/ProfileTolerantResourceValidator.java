@@ -60,6 +60,16 @@ public class ProfileTolerantResourceValidator extends ResourceBeforeSaveIntercep
       "CODESYSTEM_CS_NO_VS_SUPPLEMENT1",
       "CODESYSTEM_CS_NO_VS_SUPPLEMENT2");
 
+  // A relative/local Coding.system in a $validate-code (or $expand) operation INPUT is a data issue the operation
+  // reports gracefully (a 200 with an invalid-data issue + x-unknown-system), NOT a request-structure 400 — the
+  // reference tx server returns 200. So tolerate it on operation inputs only; a stored resource SAVE with a local
+  // reference is still rejected. Matched by message-id, with a text fallback in case the validator omits the id.
+  private static final String RELATIVE_SYSTEM_MESSAGE = "Coding.system must be an absolute reference, not a local reference";
+
+  private static boolean isToleratedOperationInputMessage(SingleValidationMessage m) {
+    return "Terminology_TX_System_Relative".equals(m.getMessageId()) || RELATIVE_SYSTEM_MESSAGE.equals(m.getMessage());
+  }
+
   @Inject
   private ResourceFormatService resourceFormatService;
   @Inject
@@ -116,6 +126,7 @@ public class ProfileTolerantResourceValidator extends ResourceBeforeSaveIntercep
           .filter(m -> isError(m.getSeverity()))
           .filter(m -> !isUncheckedProfile(m))
           .filter(m -> !TOLERATED_BEST_PRACTICE_MESSAGE_IDS.contains(m.getMessageId()))
+          .filter(m -> !(operationInput && isToleratedOperationInputMessage(m)))
           .filter(m -> !(operationInput && isInsideParameterResource(m.getLocationString())))
           .collect(toList());
       if (!errors.isEmpty()) {
