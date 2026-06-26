@@ -678,6 +678,12 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     }
     com.kodality.zmei.fhir.resource.terminology.ValueSet copy = FhirMapper.fromJson(
         FhirMapper.toJson(inlineVs), com.kodality.zmei.fhir.resource.terminology.ValueSet.class);
+    // The JSON round-trip serializes with Include.NON_EMPTY, which drops an empty compose/include (e.g. an
+    // include list that is non-null-but-empty, or whose entries are all empty objects) — so copy.getCompose()
+    // can be null here even though inlineVs.getCompose() passed the guard above. Nothing concrete to resolve.
+    if (copy.getCompose() == null || copy.getCompose().getInclude() == null) {
+      return inlineVs;
+    }
     for (var inc : copy.getCompose().getInclude()) {
       String system = inc.getSystem();
       if (system == null) {
