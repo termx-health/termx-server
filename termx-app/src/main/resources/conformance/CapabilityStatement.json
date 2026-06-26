@@ -3,7 +3,8 @@
   "id": "terminology-server",
   "url": "https://demo.termx.org/api/fhir/metadata",
   "version": "5.0.0",
-  "name": "TermX Conformance Statement",
+  "name": "TermXConformanceStatement",
+  "title": "TermX Conformance Statement",
   "status": "active",
   "date": "2022-08-04T06:17:47.723Z",
   "contact": [
@@ -505,10 +506,30 @@
             }
           ]
         }
+      ],
+      "operation": [
+        {
+          "name": "versions",
+          "definition": "http://hl7.org/fhir/OperationDefinition/CapabilityStatement-versions"
+        }
       ]
     }
   ],
   "extension" : [
+    {
+      "url" : "http://hl7.org/fhir/uv/application-feature/StructureDefinition/feature",
+      "extension" : [
+        { "url" : "definition", "valueCanonical" : "http://hl7.org/fhir/uv/tx-tests/FeatureDefinition/test-version" },
+        { "url" : "value", "valueCode" : "1.7.0" }
+      ]
+    },
+    {
+      "url" : "http://hl7.org/fhir/uv/application-feature/StructureDefinition/feature",
+      "extension" : [
+        { "url" : "definition", "valueCanonical" : "http://hl7.org/fhir/uv/tx-ecosystem/FeatureDefinition/CodeSystemAsParameter" },
+        { "url" : "value" }
+      ]
+    },
     {
       "url" : "http://hl7.org/fhir/StructureDefinition/capabilitystatement-supported-system",
       "valueUri" : "http://snomed.info/sct"
