@@ -55,10 +55,9 @@ class ValueSetExpandDesignationIT extends TermxIntegTest {
     syn.use.system == "http://snomed.info/sct"
     syn.use.code == "900000000000013009"
 
-    and: "a plain (display-type) designation uses the standard designation-usage system, not a bare code"
+    and: "a designation imported WITHOUT a use round-trips with no use (FHIR: absence of use is NOT 'display'; #329)"
     def et = contains.designation.find { it.language == "et" }
-    et.use.system == "http://terminology.hl7.org/CodeSystem/designation-usage"
-    et.use.code == "display"
+    et.use == null
   }
 
   def "includeDesignations with no designation filter returns every designation"() {
