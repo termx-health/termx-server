@@ -55,15 +55,7 @@ exact_concepts as (
          left outer join terminology.entity_version_code_system_version_membership evcsvm
                  on evcsvm.sys_status = 'A'
                 and csev.id = evcsvm.code_system_entity_version_id
-                and (evcsvm.code_system_version_id = t.code_system_version_id
-                      or evcsvm.code_system_version_id in (
-                          select csv2.id
-                            from terminology.code_system_version csv2
-                           where csv2.code_system = t.code_system
-                             and csv2.sys_status = 'A'
-                             and csv2.release_date <= (select csv3.release_date
-                                                         from terminology.code_system_version csv3
-                                                        where csv3.id = t.code_system_version_id)))
+                and evcsvm.code_system_version_id = t.code_system_version_id -- strict: pinned version expands to exactly its own members (no cumulative carry-forward; FHIR has no cross-version delta semantics)
    where (evcsvm.id is not null or cs.content = 'not-present')
      and not exists (
          select 1
@@ -100,15 +92,7 @@ expressions as (
            inner join terminology.entity_version_code_system_version_membership evcsvm
                    on evcsvm.sys_status = 'A'
                   and csev.id = evcsvm.code_system_entity_version_id
-                  and (evcsvm.code_system_version_id = t.code_system_version_id
-                        or evcsvm.code_system_version_id in (
-                            select csv2.id
-                              from terminology.code_system_version csv2
-                             where csv2.code_system = t.code_system
-                               and csv2.sys_status = 'A'
-                               and csv2.release_date <= (select csv3.release_date
-                                                           from terminology.code_system_version csv3
-                                                          where csv3.id = t.code_system_version_id)))
+                  and evcsvm.code_system_version_id = t.code_system_version_id -- strict: pinned version expands to exactly its own members (no cumulative carry-forward; FHIR has no cross-version delta semantics)
            inner join terminology.code_system_version csv
                    on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A'
      where (t.filter_ ->> 'operator')::text = any(array['is-a','descendent-of', 'child-of', 'is-not-a', 'descendent-leaf'])
@@ -148,15 +132,7 @@ expressions as (
            inner join terminology.entity_version_code_system_version_membership evcsvm
                    on evcsvm.sys_status = 'A'
                   and csev.id = evcsvm.code_system_entity_version_id
-                  and (evcsvm.code_system_version_id = t.code_system_version_id
-                        or evcsvm.code_system_version_id in (
-                            select csv2.id
-                              from terminology.code_system_version csv2
-                             where csv2.code_system = t.code_system
-                               and csv2.sys_status = 'A'
-                               and csv2.release_date <= (select csv3.release_date
-                                                           from terminology.code_system_version csv3
-                                                          where csv3.id = t.code_system_version_id)))
+                  and evcsvm.code_system_version_id = t.code_system_version_id -- strict: pinned version expands to exactly its own members (no cumulative carry-forward; FHIR has no cross-version delta semantics)
            inner join terminology.code_system_version csv
                    on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A'
      where (t.filter_ ->> 'operator')::text = 'generalizes'
@@ -205,15 +181,7 @@ expressions as (
            inner join terminology.entity_version_code_system_version_membership evcsvm
                    on evcsvm.sys_status = 'A'
                   and csev.id = evcsvm.code_system_entity_version_id
-                  and (evcsvm.code_system_version_id = t.code_system_version_id
-                        or evcsvm.code_system_version_id in (
-                            select csv2.id
-                              from terminology.code_system_version csv2
-                             where csv2.code_system = t.code_system
-                               and csv2.sys_status = 'A'
-                               and csv2.release_date <= (select csv3.release_date
-                                                           from terminology.code_system_version csv3
-                                                          where csv3.id = t.code_system_version_id)))
+                  and evcsvm.code_system_version_id = t.code_system_version_id -- strict: pinned version expands to exactly its own members (no cumulative carry-forward; FHIR has no cross-version delta semantics)
            inner join terminology.code_system_version csv
                    on csv.id = evcsvm.code_system_version_id and csv.sys_status = 'A'
      where t.filters is not null
