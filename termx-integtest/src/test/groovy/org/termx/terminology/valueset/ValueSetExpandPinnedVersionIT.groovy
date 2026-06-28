@@ -22,23 +22,20 @@ import org.termx.ts.valueset.ValueSetTransactionRequest
 import org.termx.ts.valueset.ValueSetVersion
 import org.termx.ts.valueset.ValueSetVersionRuleSet
 import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule
-import spock.lang.PendingFeature
 
 import java.time.LocalDate
 
 /**
- * A ValueSet rule pinned to a specific CodeSystem version must expand to ONLY that
- * version's members. The stored-version path {@code terminology.value_set_expand(bigint)}
- * ({@code 01-value_set_expand.sql}) currently applies a cumulative {@code release_date <=} fallback:
- * a concept that is NOT a member of the pinned version but WAS a member of an earlier version is
- * pulled forward and returned (tagged with the earlier version). For a code system whose versions
- * are full releases this over-includes retired/removed concepts.
+ * A ValueSet rule pinned to a specific CodeSystem version must expand to ONLY that version's members.
+ * The stored-version path {@code terminology.value_set_expand(bigint)} ({@code 01-value_set_expand.sql})
+ * is strict per-version: a concept that is NOT a member of the pinned version is not returned, even if
+ * it was a member of an earlier version.
  *
- * <p>The fallback was introduced in {@code 5af30777} ("TEHIK fixes") to support delta-versioned code
- * systems (each version carries only changed concepts), where pulling earlier concepts forward is
- * required to reconstruct the full set. Any fix therefore must keep delta semantics working while
- * making full-release pins strict — so this regression is captured as a {@link PendingFeature}
- * until that behaviour is decided/implemented.
+ * <p>Historically fn01 carried a cumulative {@code release_date <=} fallback (added in {@code 5af30777}
+ * "TEHIK fixes" for delta-versioned code systems) that pulled earlier-version concepts forward. It was
+ * removed: FHIR has no cross-version delta semantics ({@code include.version = X} means X's content
+ * as-is), so a version that ships only deltas must be normalised to a full release at import time, not
+ * reconstructed at expansion time.
  *
  * <p>Fixture: code system {@code vsexpand-pinned-cs} imported as two full releases —
  * <pre>
@@ -77,7 +74,6 @@ class ValueSetExpandPinnedVersionIT extends TermxIntegTest {
     SessionStore.clearLocal()
   }
 
-  @PendingFeature(reason = "Known gap: stored expansion pinned to a version still pulls concepts forward from earlier versions (cumulative release_date<= fallback added in 5af30777 for delta-versioned code systems)")
   def "expansion pinned to a CodeSystem version returns only that version's members"() {
     expect:
     expandPinnedTo("2.0.0") == ["keep"] as Set
