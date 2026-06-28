@@ -101,8 +101,16 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return use.getCode();
   }
 
-  /** The use Coding for an exported designation: a known designation-property name → its {system, code}; otherwise a bare code. Shared with $expand/$lookup. */
+  /**
+   * The use Coding for an exported designation: a known designation-property name → its {system, code};
+   * otherwise a bare code. Shared with $expand/$lookup. Returns {@code null} for the {@link #ALTERNATE}
+   * marker — that internal type records a designation imported WITHOUT a use (FHIR: absence of use ≠
+   * "display"), so it must round-trip with no use rather than leaking the marker as a bare code.
+   */
   public static Coding designationUseCoding(String designationType) {
+    if (ALTERNATE.equals(designationType)) {
+      return null;
+    }
     String[] sysCode = DESIGNATION_NAME_USE.get(designationType);
     return sysCode != null ? new Coding(sysCode[0], sysCode[1]) : new Coding(designationType);
   }

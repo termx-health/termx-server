@@ -131,7 +131,8 @@ WITH recursive vs AS (
          inner join terminology.code_system cs on cs.uri = t."system" and cs.sys_status = 'A'
          left outer join terminology.code_system bcs on bcs.id = cs.base_code_system and bcs.sys_status = 'A'
          inner join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A'
-                and ((t.version is not null and csv."version" = t.version ) or
+                -- match the business version OR the version's canonical URI — see note below.
+                and ((t.version is not null and (csv."version" = t.version or csv.uri = t.version)) or
                      (t.version is null and csv.id = (select t2.id
                                                         from terminology.code_system_version t2
                                                        where t2.code_system = cs.id
@@ -174,7 +175,10 @@ WITH recursive vs AS (
          inner join terminology.code_system cs on cs.uri = r."system" and cs.sys_status = 'A'
          left outer join terminology.code_system bcs on bcs.id = cs.base_code_system and bcs.sys_status = 'A'
          inner join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A'
-                and ((r.version is not null and csv."version" = r.version ) or
+                -- compose.include.version may carry the business version OR the version's canonical
+                -- URI (ValueSetFhirMapper emits the URI when code_system_version.uri is set), so match
+                -- either — otherwise URI-versioned inline expansions resolve no code system version.
+                and ((r.version is not null and (csv."version" = r.version or csv.uri = r.version)) or
                      (r.version is null and csv.id = (select t2.id
                                                         from terminology.code_system_version t2
                                                        where t2.code_system = cs.id
@@ -420,7 +424,10 @@ WITH recursive vs AS (
          inner join terminology.code_system cs on cs.uri = r."system" and cs.sys_status = 'A'
          left outer join terminology.code_system bcs on bcs.id = cs.base_code_system and bcs.sys_status = 'A'
          inner join terminology.code_system_version csv on csv.code_system = cs.id and csv.sys_status = 'A'
-                and ((r.version is not null and csv."version" = r.version ) or
+                -- compose.include.version may carry the business version OR the version's canonical
+                -- URI (ValueSetFhirMapper emits the URI when code_system_version.uri is set), so match
+                -- either — otherwise URI-versioned inline expansions resolve no code system version.
+                and ((r.version is not null and (csv."version" = r.version or csv.uri = r.version)) or
                      (r.version is null and csv.id = (select t2.id
                                                         from terminology.code_system_version t2
                                                        where t2.code_system = cs.id

@@ -9,6 +9,8 @@ import org.termx.core.auth.SessionInfo
 import org.termx.core.auth.SessionStore
 import org.termx.terminology.fhir.codesystem.CodeSystemFhirMapper
 import org.termx.terminology.terminology.codesystem.CodeSystemImportService
+import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionRepository
+import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptRepository
 import org.termx.ts.codesystem.CodeSystemImportAction
 
@@ -34,6 +36,8 @@ class ValueSetExpandInlineFilterOperatorIT extends TermxIntegTest {
   @Inject CodeSystemImportService importService
   @Inject CodeSystemFhirMapper fhirMapper
   @Inject ValueSetVersionConceptRepository conceptRepository
+  @Inject CodeSystemVersionService codeSystemVersionService
+  @Inject CodeSystemVersionRepository codeSystemVersionRepository
 
   static final String CS_ID = "vsexpand-filter-cs"
   static final String CS_URI = "http://termx-test.local/CodeSystem/vsexpand-filter-cs"
@@ -140,16 +144,30 @@ class ValueSetExpandInlineFilterOperatorIT extends TermxIntegTest {
     expandInline("parent", "=", "A") == ["B", "C"] as Set
   }
 
+  def "include.version is resolved by the version's canonical URI, not only the business version"() {
+    given: "the code system version carries a canonical URI, as FHIR-defined nomenclatures do"
+    def versionUri = CS_URI + "|" + CS_VERSION
+    def version = codeSystemVersionService.load(CS_ID, CS_VERSION).orElseThrow()
+    version.setUri(versionUri)
+    codeSystemVersionRepository.save(version)
+
+    expect: "expanding with include.version = the canonical URI resolves the same concepts as the business version"
+    // ValueSetFhirMapper emits the version URI (not '1.0.0') in compose.include.version when the
+    // version has a uri; the rule-preview/$expand path must still resolve it. Before this fix, it
+    // returned an empty set because value_set_expand(text) only matched csv.version.
+    expandInline("method", "=", "CHROM", versionUri) == ["A", "B"] as Set
+  }
+
   // --- helpers ---------------------------------------------------------------
 
-  private Set<String> expandInline(String property, String op, Object value) {
+  private Set<String> expandInline(String property, String op, Object value, String version = CS_VERSION) {
     def valueSet = [
         resourceType: "ValueSet",
         compose      : [
             inactive: false,
             include : [[
                            system : CS_URI,
-                           version: CS_VERSION,
+                           version: version,
                            filter : [[property: property, op: op, value: value]]
                        ]]
         ]
