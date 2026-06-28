@@ -26,12 +26,16 @@ public class ResultSetUtil {
 
   public static <T> List<T> getArray(ResultSet rs, int columnIndex) throws SQLException {
     Array arr = rs.getArray(columnIndex);
-    return arr == null ? null : Arrays.asList((T[]) arr.getArray());
+    // Return a mutable list: Arrays.asList yields a fixed-size view whose add/remove throw
+    // UnsupportedOperationException, so callers that mutate a loaded array column would crash.
+    return arr == null ? null : new ArrayList<>(Arrays.asList((T[]) arr.getArray()));
   }
 
   public static <T> List<T> getArray(ResultSet rs, String columnLabel) throws SQLException {
     Array arr = rs.getArray(columnLabel);
-    return arr == null ? null : Arrays.asList((T[]) arr.getArray());
+    // Return a mutable list: Arrays.asList yields a fixed-size view whose add/remove throw
+    // UnsupportedOperationException, so callers that mutate a loaded array column would crash.
+    return arr == null ? null : new ArrayList<>(Arrays.asList((T[]) arr.getArray()));
   }
 
   public static Long getLong(ResultSet rs, String columnLabel) throws SQLException {

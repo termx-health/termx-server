@@ -2,9 +2,51 @@ package com.kodality.commons.db.resultset
 
 import spock.lang.Specification
 
+import java.sql.Array
 import java.sql.ResultSet
 
 class ResultSetUtilSpec extends Specification {
+
+  def "getArray(int) returns a mutable list"() {
+    given:
+    ResultSet rs = Mock()
+    Array arr = Mock()
+    rs.getArray(1) >> arr
+    arr.getArray() >> (["a", "b"] as String[])
+
+    when:
+    def list = new ResultSetUtil().getArray(rs, 1)
+    list.add("c")
+
+    then:
+    notThrown(UnsupportedOperationException)
+    list == ["a", "b", "c"]
+  }
+
+  def "getArray(label) returns a mutable list"() {
+    given:
+    ResultSet rs = Mock()
+    Array arr = Mock()
+    rs.getArray("details") >> arr
+    arr.getArray() >> (["a", "b"] as String[])
+
+    when:
+    def list = new ResultSetUtil().getArray(rs, "details")
+    list.add("c")
+
+    then:
+    notThrown(UnsupportedOperationException)
+    list == ["a", "b", "c"]
+  }
+
+  def "getArray returns null for a null SQL array"() {
+    given:
+    ResultSet rs = Mock()
+    rs.getArray("details") >> null
+
+    expect:
+    new ResultSetUtil().getArray(rs, "details") == null
+  }
 
   def result = makeResultSet(
       ["id", "name"],
