@@ -3,11 +3,10 @@ package com.asseco.termx.wiki.pdf.controller;
 
 import com.asseco.termx.wiki.pdf.Privilege;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.itextpdf.html2pdf.ConverterProperties;
-import com.itextpdf.html2pdf.HtmlConverter;
-import com.itextpdf.layout.font.FontProvider;
-import com.itextpdf.styledxmlparser.resolver.font.BasicFontProvider;
 import com.jayway.jsonpath.JsonPath;
+import com.lowagie.text.pdf.BaseFont;
+import org.w3c.tidy.Tidy;
+import org.xhtmlrenderer.pdf.ITextRenderer;
 import org.termx.core.auth.Authorized;
 import org.termx.core.github.ResourceContentProvider;
 import org.termx.core.sys.space.SpaceService;
@@ -41,6 +40,8 @@ import org.commonmark.renderer.html.HtmlRenderer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -367,12 +368,12 @@ public class WikiExportController {
 
     /**
      * Wiki export stylesheet (HTML + PDF). Czech-blue accents matching the cs-gov skin.
-     * Body font-family is intentionally left to the iText font provider's default so non-ASCII
-     * (Czech) glyphs keep rendering; only colours, sizes, spacing and table/code styling are set.
+     * Body uses the embedded Noto Sans (registered in createPdfContent) so non-ASCII
+     * (Czech) glyphs render; only colours, sizes, spacing and table/code styling are set.
      */
     private static final String STYLE = """
             @page { margin: 2cm; @bottom-right { content: counter(page); color: #888; font-size: 9pt; } }
-            body { font-size: 11pt; line-height: 1.5; color: #222; }
+            body { font-family: 'Noto Sans', sans-serif; font-size: 11pt; line-height: 1.5; color: #222; }
             h1 { color: #183C62; font-size: 20pt; margin: 1.2em 0 0.4em; border-bottom: 3px solid #F7B935; padding-bottom: 0.15em; }
             h2 { color: #183C62; font-size: 16pt; margin: 1.1em 0 0.3em; }
             h3 { color: #2A5183; font-size: 13pt; margin: 0.9em 0 0.3em; }
@@ -394,13 +395,38 @@ public class WikiExportController {
             """;
 
     private byte[] createPdfContent(String htmlContent) {
+        // Flying Saucer (OpenPDF backend) requires well-formed XHTML; JTidy cleans
+        // the rendered markdown/HTML first (mirrors the emr reportoria pipeline).
+        String xhtml = htmlToXhtml(htmlContent);
         ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream();
-        // Convert HTML to PDF
-        ConverterProperties converterProperties = new ConverterProperties();
-        FontProvider fontProvider = new BasicFontProvider(false, true, false);
-        converterProperties.setFontProvider(fontProvider);
-        HtmlConverter.convertToPdf(htmlContent, pdfOutputStream, converterProperties);
+        try {
+            ITextRenderer renderer = new ITextRenderer();
+            // Embed a Unicode font so non-ASCII (e.g. Czech) glyphs render; Flying Saucer's
+            // built-in base-14 fonts only cover Latin-1. Referenced as font-family in STYLE.
+            renderer.getFontResolver().addFont("/fonts/NotoSans-Regular.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            renderer.setDocumentFromString(xhtml);
+            renderer.layout();
+            renderer.createPDF(pdfOutputStream);
+        } catch (Exception e) {
+            throw new RuntimeException("Wiki PDF rendering failed", e);
+        }
         return pdfOutputStream.toByteArray();
+    }
+
+    /** Normalises arbitrary wiki HTML into the well-formed XHTML Flying Saucer requires. */
+    private static String htmlToXhtml(String html) {
+        Tidy tidy = new Tidy();
+        tidy.setXHTML(true);
+        tidy.setShowErrors(0);
+        tidy.setShowWarnings(false);
+        tidy.setDocType("omit");
+        tidy.setQuoteNbsp(false);
+        tidy.setForceOutput(true);
+        tidy.setInputEncoding("utf-8");
+        tidy.setOutputEncoding("utf-8");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        tidy.parse(new StringReader(html), new PrintStream(out, false, StandardCharsets.UTF_8));
+        return out.toString(StandardCharsets.UTF_8);
     }
 
 
