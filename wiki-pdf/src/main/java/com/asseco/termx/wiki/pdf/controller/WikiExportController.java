@@ -63,7 +63,7 @@ public class WikiExportController {
     private final SpaceService spaceService;
     private final PageService pageService;
 
-    @Authorized(Privilege.WIKI_EXPORT_VIEW)
+    @Authorized(Privilege.WIKI_EXPORT_READ)
     @Get("/export-html")
     public HttpResponse<?> exportToHtml(@NotNull @QueryValue Long spaceId, @Nullable @QueryValue Long pageId) {
         // Step 1: Convert markdown to HTML
@@ -74,7 +74,7 @@ public class WikiExportController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename(spaceId, pageId, "html"));
     }
 
-    @Authorized(Privilege.WIKI_EXPORT_VIEW)
+    @Authorized(Privilege.WIKI_EXPORT_READ)
     @Get("/export-pdf")
     public HttpResponse<?> exportToPdf(@NotNull @QueryValue Long spaceId, @Nullable @QueryValue Long pageId) {
         return createPdfResponse(getMdData(spaceId, pageId), filename(spaceId, pageId, "pdf"));
