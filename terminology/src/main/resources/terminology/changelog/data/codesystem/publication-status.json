@@ -70,6 +70,18 @@
       {
         "language" : "nl",
         "value" : "ontwerp"
+      },
+      {
+        "language" : "et",
+        "value" : "mustand"
+      },
+      {
+        "language" : "lt",
+        "value" : "juodraštis"
+      },
+      {
+        "language" : "cs",
+        "value" : "koncept"
       }]
   },
     {
@@ -83,6 +95,18 @@
         {
           "language" : "nl",
           "value" : "actief"
+        },
+        {
+          "language" : "et",
+          "value" : "aktiivne"
+        },
+        {
+          "language" : "lt",
+          "value" : "aktyvus"
+        },
+        {
+          "language" : "cs",
+          "value" : "aktivní"
         }]
     },
     {
@@ -96,11 +120,35 @@
         {
           "language" : "nl",
           "value" : "verouderd"
+        },
+        {
+          "language" : "et",
+          "value" : "aegunud"
+        },
+        {
+          "language" : "lt",
+          "value" : "pašalinta"
+        },
+        {
+          "language" : "cs",
+          "value" : "vyřazený"
         }]
     },
     {
       "code" : "unknown",
       "display" : "Unknown",
-      "definition" : "The authoring system does not know which of the status values currently applies for this resource.  Note: This concept is not to be used for \"other\" - one of the listed statuses is presumed to apply, it's just not known which one."
+      "definition" : "The authoring system does not know which of the status values currently applies for this resource.  Note: This concept is not to be used for \"other\" - one of the listed statuses is presumed to apply, it's just not known which one.",
+      "designation" : [{
+        "language" : "et",
+        "value" : "teadmata"
+      },
+        {
+          "language" : "lt",
+          "value" : "nežinoma"
+        },
+        {
+          "language" : "cs",
+          "value" : "neznámý"
+        }]
     }]
 }
