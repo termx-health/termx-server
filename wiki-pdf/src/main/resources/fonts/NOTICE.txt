@@ -1,0 +1,7 @@
+NotoSans-Regular.ttf
+  Noto Sans — Copyright The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
+  Licensed under the SIL Open Font License, Version 1.1 (https://openfontlicense.org).
+
+Bundled so wiki PDF export renders the full Latin Extended range (e.g. Czech
+diacritics: ě š č ř ž ů ď ť ň) — Flying Saucer's built-in base-14 fonts cover
+Latin-1 only.

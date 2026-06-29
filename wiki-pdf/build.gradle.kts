@@ -33,10 +33,11 @@ dependencies {
     implementation("org.commonmark:commonmark:0.24.0")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.24.0")
 
-    // pdf export
-    implementation("com.itextpdf:html2pdf:6.1.0")
-    implementation("com.itextpdf:kernel:9.1.0")
-    implementation("com.itextpdf:layout:9.1.0")
+    // pdf export — Flying Saucer + OpenPDF for HTML->PDF (LGPL/MPL), JTidy to
+    // normalise the rendered HTML into the well-formed XHTML Flying Saucer needs.
+    // Matches the emr commons-reportoria-service pipeline; replaces iText (AGPL).
+    implementation("org.xhtmlrenderer:flying-saucer-pdf:9.4.1")
+    implementation("net.sf.jtidy:jtidy:r938")
 
     testAnnotationProcessor("io.micronaut:micronaut-inject-java")
     testImplementation("org.junit.jupiter:junit-jupiter-api")
