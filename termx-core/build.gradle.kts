@@ -18,6 +18,7 @@ dependencies {
     implementation("io.micronaut.validation:micronaut-validation")
     implementation("io.micronaut.beanvalidation:micronaut-hibernate-validator")
     implementation("io.micronaut:micronaut-management")
+    implementation("io.micronaut:micronaut-http-client")
     implementation("io.micronaut:micronaut-http-server")
     implementation("io.micronaut.email:micronaut-email-javamail")
     implementation("org.eclipse.angus:angus-mail:2.0.3")

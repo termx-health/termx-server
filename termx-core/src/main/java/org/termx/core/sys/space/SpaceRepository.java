@@ -27,6 +27,7 @@ public class SpaceRepository extends BaseRepository {
     ssb.jsonProperty("names", space.getNames());
     ssb.property("active", space.isActive());
     ssb.property("shared", space.isShared());
+    ssb.property("global_search", space.isGlobalSearch());
     ssb.jsonProperty("acl", space.getAcl());
     ssb.jsonProperty("integration", space.getIntegration());
     ssb.jsonProperty("terminology_servers", space.getTerminologyServers());
@@ -68,6 +69,7 @@ public class SpaceRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getCodes())) {
       sb.and().in("code", params.getCodes());
     }
+    sb.appendIfTrue(Boolean.TRUE.equals(params.getGlobalSearch()), "and s.global_search = true");
     if (StringUtils.isNotEmpty(params.getResource())) {
       sb.append("and exists (select 1 from sys.package_version_resource pvr where pvr.sys_status = 'A' and")
           .pipe("pvr.resource_type", "pvr.resource_id", params.getResource())

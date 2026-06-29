@@ -1,0 +1,52 @@
+package org.termx.terminology.terminology.codesystem.providers;
+
+
+import org.termx.core.github.ResourceContentProvider.ResourceContent;
+import org.termx.core.msdevops.SpaceMsDevopsDataHandler;
+import org.termx.core.sys.space.SpaceGithubDataHandler;
+import org.termx.terminology.terminology.codesystem.CodeSystemService;
+import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
+import org.termx.ts.codesystem.CodeSystem;
+import org.termx.ts.codesystem.CodeSystemQueryParams;
+import org.termx.ts.codesystem.CodeSystemVersionQueryParams;
+import jakarta.inject.Singleton;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
+@Singleton
+@RequiredArgsConstructor
+public class SpaceMsDevopsDataCodeSystemFshHandler implements SpaceMsDevopsDataHandler {
+  private final ResourceContentCodeSystemVersionFshProvider resourceContentProvider;
+  private final CodeSystemService codeSystemService;
+  private final CodeSystemVersionService codeSystemVersionService;
+
+  @Override
+  public String getName() {
+    return "codesystem-fhir-fsh";
+  }
+
+  @Override
+  public String getDefaultDir() {
+    return "input/fsh/code-systems";
+  }
+
+  @Override
+  public List<ResourceContent> getContent(Long spaceId) {
+    List<CodeSystem> codeSystems = codeSystemService.query(new CodeSystemQueryParams().setSpaceId(spaceId).all()).getData();
+    return codeSystems.stream().flatMap(cs -> {
+      return codeSystemVersionService.query(new CodeSystemVersionQueryParams().setCodeSystem(cs.getId())).getData().stream().flatMap(csv -> {
+        return resourceContentProvider.getContent(cs, csv).stream();
+      });
+    }).toList();
+  }
+
+  @Override
+  public void saveContent(Long spaceId, Map<String, String> content) {
+    // do nothing. save using fhir json
+  }
+
+}

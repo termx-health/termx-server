@@ -19,6 +19,7 @@ public class Space {
   private LocalizedName names;
   private boolean active;
   private boolean shared;
+  private boolean globalSearch;
   private Object acl;
   private List<String> terminologyServers;
   private SpaceIntegration integration;
@@ -30,12 +31,21 @@ public class Space {
   @Accessors(chain = true)
   public static class SpaceIntegration {
     private SpaceIntegrationGithub github;
+    private SpaceIntegrationMsDevops msDevops;
   }
 
   @Getter
   @Setter
   @Accessors(chain = true)
   public static class SpaceIntegrationGithub {
+    private String repo;
+    private Map<String, String> dirs;
+  }
+
+  @Getter
+  @Setter
+  @Accessors(chain = true)
+  public static class SpaceIntegrationMsDevops {
     private String repo;
     private Map<String, String> dirs;
   }

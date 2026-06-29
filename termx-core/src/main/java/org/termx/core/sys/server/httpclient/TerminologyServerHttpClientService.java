@@ -2,14 +2,15 @@ package org.termx.core.sys.server.httpclient;
 
 import com.kodality.commons.client.HttpClient;
 import org.termx.sys.server.TerminologyServerKind;
+import org.termx.core.sys.server.SecretEncryptor;
 import org.termx.core.sys.server.TerminologyServerRepository;
 import java.net.http.HttpRequest.Builder;
 import jakarta.inject.Singleton;
 
 @Singleton
 public class TerminologyServerHttpClientService extends ServerHttpClientService {
-  public TerminologyServerHttpClientService(TerminologyServerRepository serverService) {
-    super(serverService);
+  public TerminologyServerHttpClientService(TerminologyServerRepository serverService, SecretEncryptor secretEncryptor) {
+    super(serverService, secretEncryptor);
   }
 
   @Override
@@ -38,8 +39,8 @@ public class TerminologyServerHttpClientService extends ServerHttpClientService 
     @Override
     public Builder builder(String path) {
       Builder b = super.builder(path);
-      if (config.accessToken() != null) {
-        b.setHeader("Authorization", "Bearer " + config.accessToken().get());
+      if (config.authorizationHeader() != null) {
+        b.setHeader("Authorization", config.authorizationHeader().get());
       }
       if (config.headers() != null) {
         config.headers().forEach(h -> b.header(h.getKey(), h.getValue()));

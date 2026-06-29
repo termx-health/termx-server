@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":ucum"))
     implementation(project(":observation-definition"))
     implementation(project(":wiki"))
+    implementation(project(":wiki-pdf"))
     implementation(project(":task-taskforge"))
     implementation(project(":modeler"))
     implementation(project(":implementation-guide"))

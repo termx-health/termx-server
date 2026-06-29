@@ -1,6 +1,7 @@
 package org.termx.terminology.terminology;
 
 import org.termx.sys.server.TerminologyServerKind;
+import org.termx.core.sys.server.SecretEncryptor;
 import org.termx.core.sys.server.TerminologyServerRepository;
 import org.termx.core.sys.server.httpclient.ServerHttpClientService;
 import java.net.http.HttpRequest.Builder;
@@ -8,8 +9,8 @@ import jakarta.inject.Singleton;
 
 @Singleton
 public class FhirServerHttpClientService extends ServerHttpClientService {
-  public FhirServerHttpClientService(TerminologyServerRepository serverService) {
-    super(serverService);
+  public FhirServerHttpClientService(TerminologyServerRepository serverService, SecretEncryptor secretEncryptor) {
+    super(serverService, secretEncryptor);
   }
 
   @Override
@@ -38,8 +39,8 @@ public class FhirServerHttpClientService extends ServerHttpClientService {
     @Override
     public Builder builder(String path) {
       Builder b = super.builder(path);
-      if (config.accessToken() != null) {
-        b.setHeader("Authorization", "Bearer " + config.accessToken().get());
+      if (config.authorizationHeader() != null) {
+        b.setHeader("Authorization", config.authorizationHeader().get());
       }
       if (config.headers() != null) {
         config.headers().forEach(h -> b.header(h.getKey(), h.getValue()));
