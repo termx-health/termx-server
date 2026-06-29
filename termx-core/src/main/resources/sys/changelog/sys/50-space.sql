@@ -30,3 +30,7 @@ select core.create_table_metadata('sys.space');
 --changeset kodality:space-integration
 alter table sys.space add column integration jsonb;
 --
+
+--changeset termx:space-global-search
+alter table sys.space add column global_search boolean not null default false;
+--

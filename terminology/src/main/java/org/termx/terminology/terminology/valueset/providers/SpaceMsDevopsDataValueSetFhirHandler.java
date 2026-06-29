@@ -1,0 +1,70 @@
+package org.termx.terminology.terminology.valueset.providers;
+
+
+import org.termx.core.github.ResourceContentProvider.ResourceContent;
+import org.termx.core.msdevops.SpaceMsDevopsDataHandler;
+import org.termx.core.sys.space.SpaceGithubDataHandler;
+import org.termx.terminology.fhir.valueset.ValueSetFhirImportService;
+import org.termx.terminology.fhir.valueset.ValueSetFhirMapper;
+import org.termx.terminology.terminology.valueset.ValueSetService;
+import org.termx.terminology.terminology.valueset.version.ValueSetVersionService;
+import org.termx.ts.valueset.ValueSet;
+import org.termx.ts.valueset.ValueSetQueryParams;
+import org.termx.ts.valueset.ValueSetVersionQueryParams;
+import jakarta.inject.Singleton;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
+@Singleton
+@RequiredArgsConstructor
+public class SpaceMsDevopsDataValueSetFhirHandler implements SpaceMsDevopsDataHandler {
+  private final ResourceContentValueSetVersionFhirProvider resourceContentProvider;
+  private final ValueSetService valueSetService;
+  private final ValueSetVersionService valueSetVersionService;
+  private final ValueSetFhirImportService valueSetFhirImportService;
+
+  @Override
+  public String getName() {
+    return "valueset-fhir-json";
+  }
+
+  @Override
+  public String getDefaultDir() {
+    return "input/vocabulary/value-sets";
+  }
+
+  @Override
+  public List<ResourceContent> getContent(Long spaceId) {
+    List<ValueSet> valueSets = valueSetService.query(new ValueSetQueryParams().setSpaceId(spaceId).all()).getData();
+    return valueSets.stream().flatMap(vs -> {
+      return valueSetVersionService.query(new ValueSetVersionQueryParams().setValueSet(vs.getId())).getData().stream().flatMap(vsv -> {
+        return resourceContentProvider.getContent(vs, vsv).stream();
+      });
+    }).toList();
+  }
+
+  @Override
+  public void saveContent(Long spaceId, Map<String, String> content) {
+    content.forEach((f, c) -> {
+      if (!f.endsWith(".json")) {
+        return;
+      }
+      String[] ids = ValueSetFhirMapper.parseCompositeId(StringUtils.removeEnd(f, ".json"));
+      String vsId = ids[0];
+      String version = ids[1];
+      if (c == null) {
+        valueSetVersionService.load(vsId, version).ifPresent(vsv -> {
+          valueSetVersionService.cancel(vsv.getId());
+        });
+        return;
+      }
+      valueSetFhirImportService.importValueSet(c, vsId);
+    });
+  }
+
+}

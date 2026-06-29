@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TerminologyServerService {
   private final TerminologyServerRepository repository;
   private final List<ServerHttpClientProvider> httpClientServices;
+  private final SecretEncryptor secretEncryptor;
 
   public List<String> getKinds() {
     return httpClientServices.stream().map(ServerHttpClientProvider::getKind).distinct().toList();
@@ -37,6 +38,7 @@ public class TerminologyServerService {
   public TerminologyServer save(TerminologyServer server) {
     prepare(server);
     validate(server);
+    encryptSecrets(server);
 
     repository.save(server);
     httpClientServices.forEach(hc -> hc.afterServerSave(server.getId()));
@@ -83,6 +85,13 @@ public class TerminologyServerService {
           unmodifiedAuthHeader.get().setValue(persistedAuthHeader.get().getValue());
         }
       }
+    }
+  }
+
+  /** Encrypts the OAuth2/basic/apikey client secret at rest (no-op when encryption is disabled or value already encrypted). */
+  private void encryptSecrets(TerminologyServer server) {
+    if (server.getAuthConfig() != null && StringUtils.isNotBlank(server.getAuthConfig().getClientSecret())) {
+      server.getAuthConfig().setClientSecret(secretEncryptor.encrypt(server.getAuthConfig().getClientSecret()));
     }
   }
 

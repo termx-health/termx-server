@@ -14,6 +14,7 @@ public class SpaceQueryParams extends QueryParams {
   private String codes;
   private String textContains;
   private String resource;
+  private Boolean globalSearch;
 
   private List<Long> permittedIds;
 }

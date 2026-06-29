@@ -51,9 +51,20 @@ public class TerminologyServer {
   @Getter
   @Setter
   public static class TerminologyServerAuthConfig {
+    /** none | basic | oauth2 | apikey. When null, falls back to oauth2 if client credentials are present (legacy behaviour). */
+    private String authType;
     private String accessTokenUrl;
     private String clientId;
     private String clientSecret;
+    /** OAuth2 client-credentials scope (optional). */
+    private String scope;
+  }
+
+  public interface AuthType {
+    String NONE = "none";
+    String BASIC = "basic";
+    String OAUTH2 = "oauth2";
+    String APIKEY = "apikey";
   }
 
   @Getter

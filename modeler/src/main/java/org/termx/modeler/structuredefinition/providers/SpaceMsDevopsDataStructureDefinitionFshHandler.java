@@ -1,0 +1,104 @@
+package org.termx.modeler.structuredefinition.providers;
+
+import org.termx.core.github.ResourceContentProvider;
+import org.termx.core.msdevops.SpaceMsDevopsDataHandler;
+import org.termx.core.sys.space.SpaceGithubDataHandler;
+import org.termx.modeler.github.CompositeIdUtils.CompositeId;
+import org.termx.modeler.structuredefinition.StructureDefinition;
+import org.termx.modeler.structuredefinition.StructureDefinitionQueryParams;
+import org.termx.modeler.structuredefinition.StructureDefinitionService;
+import org.termx.terminology.fhir.FhirFshConverter;
+import jakarta.inject.Singleton;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.termx.modeler.github.CompositeIdUtils.parseCompositeId;
+import static org.termx.modeler.structuredefinition.StructureDefinitionUtils.*;
+
+@Singleton
+@RequiredArgsConstructor
+public class SpaceMsDevopsDataStructureDefinitionFshHandler implements SpaceMsDevopsDataHandler {
+
+  private final StructureDefinitionService structureDefinitionService;
+  private final ResourceContentStructureDefinitionFshProvider resourceContentProvider;
+  private final Optional<FhirFshConverter> fhirFshConverter;
+
+  @Override
+  public String getName() {
+    return "structuredefinition-fhir-fsh";
+  }
+
+  @Override
+  public String getDefaultDir() {
+    return "input/fsh/structure-definitions";
+  }
+
+  @Override
+  public List<ResourceContentProvider.ResourceContent> getContent(Long spaceId) {
+    List<StructureDefinition> structureDefinitions = structureDefinitionService.query(new StructureDefinitionQueryParams()
+            .setSpaceId(spaceId)
+            .setContentFormat("fsh")
+            .all())
+        .getData();
+    return structureDefinitions.stream().flatMap(cs -> resourceContentProvider.getContent(cs).stream()).toList();
+  }
+
+  @Override
+  public void saveContent(Long spaceId, Map<String, String> fileContent) {
+    fileContent.forEach((file, fshContent) -> {
+      if (!file.endsWith(".fsh")) {
+        return;
+      }
+
+      final CompositeId compositeId = parseCompositeId(StringUtils.removeEnd(file, ".fsh"));
+      final Optional<StructureDefinition> existingDefinition = structureDefinitionService.query(new StructureDefinitionQueryParams()
+          .setSpaceId(spaceId)
+          .setCode(compositeId.code())
+          .setVersion(compositeId.version())
+          .all()
+      ).getData().stream().findFirst();
+
+      if (fshContent == null) {
+        existingDefinition
+            .filter(sd -> "fsh".equals(sd.getContentFormat()))
+            .flatMap(sd -> structureDefinitionService.load(sd.getId()))
+            .ifPresent(sd -> structureDefinitionService.cancel(sd.getId()));
+      }
+
+      existingDefinition.ifPresentOrElse(
+          sd -> {
+            if ("fsh".equals(sd.getContentFormat())) {
+              enrichFromDefinition(sd, createFshStructureDefinition(fshContent));
+            } else {
+              enrichFromJson(sd, toFhir(fshContent));
+            }
+            structureDefinitionService.save(sd);
+          },
+          () -> {
+            final StructureDefinition newDefinition = createFshStructureDefinition(fshContent);
+            structureDefinitionService.save(newDefinition);
+          }
+      );
+    });
+  }
+
+  private StructureDefinition createFshStructureDefinition(String fshContent) {
+    final StructureDefinition structureDefinition = createFhirStructureDefinitionFromFsh(fshContent);
+    structureDefinition.setContent(fshContent);
+    structureDefinition.setContentFormat("fsh");
+    return structureDefinition;
+  }
+
+  private StructureDefinition createFhirStructureDefinitionFromFsh(String fshContent) {
+    final String json = toFhir(fshContent);
+    return createStructureDefinitionFromJson(json);
+  }
+
+  private String toFhir(String fshContent) {
+    return fhirFshConverter.orElseThrow(() -> new RuntimeException("FhirFshConverter is not initialized")).toFhir(fshContent).join();
+  }
+}
