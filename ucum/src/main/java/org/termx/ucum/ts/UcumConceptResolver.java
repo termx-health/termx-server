@@ -28,6 +28,8 @@ import org.termx.ucum.service.UcumService;
 @Singleton
 @RequiredArgsConstructor
 public class UcumConceptResolver {
+  private static final String UCUM = "ucum";
+  private static final String UCUM_URI = "http://unitsofmeasure.org";
   private final UcumMapper mapper;
   private final UcumService ucumService;
   private final UcumSupplementDesignationService ucumSupplementDesignationService;
@@ -120,12 +122,17 @@ public class UcumConceptResolver {
     if (c == null || c.getConcept() == null || StringUtils.isEmpty(c.getConcept().getCode())) {
       return;
     }
+    // Stamp the UCUM system identity on every concept this provider emits — not only essence atoms matched by
+    // findByCode, but also grammar-derived composites (e.g. mmol/L) that findByCode never resolves. Without the
+    // uri, $expand emits a `contains` entry with no `system` (invalid FHIR) and system-qualified $validate-code
+    // can't match the code against the value set.
+    c.getConcept().setCodeSystem(UCUM);
+    c.getConcept().setCodeSystemUri(UCUM_URI);
     findByCode(c.getConcept().getCode()).ifPresent(concept -> {
       if (c.getAdditionalDesignations() == null || c.getAdditionalDesignations().isEmpty()) {
         c.setAdditionalDesignations(concept.getVersions().stream().findFirst().map(v -> v.getDesignations()).orElse(List.of()));
       }
       c.setActive(true);
-      c.getConcept().setCodeSystem("ucum");
     });
     if (!isValidCode(c.getConcept().getCode())) {
       c.setActive(false);
