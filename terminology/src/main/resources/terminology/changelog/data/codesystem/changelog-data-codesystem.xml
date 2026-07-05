@@ -24,11 +24,12 @@
   <!-- Consolidate to a single UCUM CodeSystem. Some databases carry a redundant content=not-present CS with
        id 'unitsofmeasure.org' — created by importing ucum.json when a legacy essence-based `ucum` CodeSystem
        (holding the stale https://units-of-measurement.org canonical) already occupied id=ucum, so the import
-       fell back to a url-derived id. Self-heal the `ucum` canonical to http://unitsofmeasure.org and drop the
-       redundant CS (cancel_code_system also detaches the value_set_version_rule that referenced it), so the
-       ucum-ee supplement + value set that follow re-resolve (by canonical uri) to the single `ucum`
-       CodeSystem. No-op on databases that only ever had the single `ucum` CS. -->
-  <changeSet id="ucum-drop-redundant-cs" author="termx">
+       fell back to a url-derived id. Self-heal the `ucum` canonical to http://unitsofmeasure.org and hard-delete
+       the redundant CS (delete_code_system removes its concepts/designations/versions and the
+       value_set_version_rule that referenced it), so the ucum-ee supplement + value set that follow re-resolve
+       (by canonical uri) to the single `ucum` CodeSystem. No-op on databases that only ever had the single
+       `ucum` CS. -->
+  <changeSet id="ucum-drop-redundant-cs-2" author="termx">
     <sql splitStatements="false"><![CDATA[
       update terminology.code_system
          set uri = 'http://unitsofmeasure.org'
@@ -37,7 +38,7 @@
       do $$
       begin
         if exists (select 1 from terminology.code_system where id = 'unitsofmeasure.org') then
-          perform terminology.cancel_code_system('unitsofmeasure.org');
+          perform terminology.delete_code_system('unitsofmeasure.org', true);
         end if;
       end $$;
     ]]></sql>
@@ -53,6 +54,23 @@
     <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/ucum-supplement-ee.json"/>
     </customChange>
+  </changeSet>
+
+  <!-- The ucum-ee CodeSystem/ValueSet canonicals were renamed (-> https://fhir.ee/{CodeSystem,ValueSet}/ucum)
+       in the JSON, but CodeSystemFhirImport/ValueSetFhirImport match an existing resource by id and preserve
+       its stored uri, so the rename does not propagate to already-migrated databases on re-import. Apply it
+       explicitly. Idempotent: guarded on the old uri, so it is a no-op on fresh installs (whose import already
+       creates the resources at the new uri) and on any re-run. -->
+  <changeSet id="ucum-rename-ee-canonicals" author="termx">
+    <sql splitStatements="false"><![CDATA[
+      update terminology.code_system
+         set uri = 'https://fhir.ee/CodeSystem/ucum'
+       where id = 'ucum-ee' and uri = 'https://fhir.ee/CodeSystem/ucum-supplement-ee';
+
+      update terminology.value_set
+         set uri = 'https://fhir.ee/ValueSet/ucum'
+       where id = 'ucum-ee' and uri = 'https://fhir.ee/ValueSet/ucum-ee';
+    ]]></sql>
   </changeSet>
 
   <changeSet id="publication-status" author="termx">
