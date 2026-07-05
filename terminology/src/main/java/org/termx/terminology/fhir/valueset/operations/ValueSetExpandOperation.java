@@ -2125,7 +2125,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       }
       final Designation display = chosen;
       c.setDisplay(display);
-      c.setAdditionalDesignations(all.values().stream().filter(d -> d != display).toList());
+      // Drop the chosen display from the designation array so it is not echoed twice — EXCEPT when it came from
+      // a supplement: a supplement's localized designation surfaces as BOTH the display and a designation (the
+      // tx-ecosystem http examples #16/#17), the same way the stored-VS mapper keeps it. A base/primary display
+      // that also happens to sit in the designation set is still de-duped away.
+      c.setAdditionalDesignations(all.values().stream()
+          .filter(d -> d != display || (display != null && display.isSupplement()))
+          .toList());
       // The concept's PRIMARY (resource-language) display, when it is NOT the chosen display — because another
       // language was chosen, or the display was omitted (strict) — is kept as a designation tagged
       // use=preferredForLanguage (hl7TermMaintInfra), per the tx-ecosystem convention. Matched by primary value AND

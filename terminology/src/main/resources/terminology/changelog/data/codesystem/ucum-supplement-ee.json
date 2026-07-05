@@ -1,0 +1,1291 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "ucum-ee",
+  "url": "https://fhir.ee/CodeSystem/ucum-supplement-ee",
+  "version": "1.0.0",
+  "name": "UCUMee",
+  "title": "Estonian UCUM localisation",
+  "status": "active",
+  "experimental": false,
+  "publisher": "TEHIK / Helex",
+  "description": "Estonian (et) and Russian (ru) localisation of the UCUM unit codes used by Estonian laboratory (ELHR) observations. Supplements http://unitsofmeasure.org with display designations; does not define new codes.",
+  "caseSensitive": true,
+  "content": "supplement",
+  "supplements": "http://unitsofmeasure.org",
+  "concept": [
+    {
+      "code": "%",
+      "display": "Percent",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Protsent"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Процент"
+        }
+      ]
+    },
+    {
+      "code": "/100{WBC}",
+      "display": "Per 100 white blood cells",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "100 leukotsüüdi kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "На 100 лейкоцитов"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "/100WBC"
+        }
+      ]
+    },
+    {
+      "code": "/[HPF]",
+      "display": "Per high power field",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Suure suurenduse vaatevälja kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "В поле зрения при большом увеличении"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "/hpf"
+        }
+      ]
+    },
+    {
+      "code": "10*6/L",
+      "display": "Million per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Miljon liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллион на литр"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "E6/L"
+        }
+      ]
+    },
+    {
+      "code": "10*9/L",
+      "display": "Billion per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Miljard liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллиард на литр"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "E9/L"
+        }
+      ]
+    },
+    {
+      "code": "10*12/L",
+      "display": "Trillion per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Triljon liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Триллион на литр"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "E12/L"
+        }
+      ]
+    },
+    {
+      "code": "Cel",
+      "display": "Degrees Celsius",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Kraadi Celsiuse järgi"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Градус Цельсия"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "C"
+        }
+      ]
+    },
+    {
+      "code": "U/L",
+      "display": "Units per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Ühikut liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Единиц на литр"
+        }
+      ]
+    },
+    {
+      "code": "U/g",
+      "display": "Units per gram",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Ühikut grammi kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Единиц на грамм"
+        }
+      ]
+    },
+    {
+      "code": "[beth'U]",
+      "display": "Bethesda unit",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Bethesda ühik"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Единица Бетесда"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "BU"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "[BU]"
+        }
+      ]
+    },
+    {
+      "code": "[arb'U]",
+      "display": "Arbitrary unit",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Suvaline ühik"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Условная (произвольная) единица"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "U"
+        }
+      ]
+    },
+    {
+      "code": "fL",
+      "display": "Femtoliter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Femtoliiter"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Фемтолитр"
+        }
+      ]
+    },
+    {
+      "code": "g/(5.h)",
+      "display": "Gram per 5 hours",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Grammi 5 tunni kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Грамм за 5 часов"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "g/5h"
+        }
+      ]
+    },
+    {
+      "code": "g/L",
+      "display": "Grams per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Grammi liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Грамм на литр"
+        }
+      ]
+    },
+    {
+      "code": "g/d",
+      "display": "Gram per day",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Grammi ööpäevas"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Грамм в сутки"
+        }
+      ]
+    },
+    {
+      "code": "g/mol",
+      "display": "Gram per mole",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Grammi mooli kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Грамм на моль"
+        }
+      ]
+    },
+    {
+      "code": "k[IU]/L",
+      "display": "Kilo international units per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Kilorahvusvahelist ühikut liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Килоединиц (МЕ) на литр"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "kU/L"
+        }
+      ]
+    },
+    {
+      "code": "k[IU]/mol",
+      "display": "Kilo international units per mole",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Kilorahvusvahelist ühikut mooli kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Килоединиц (МЕ) на моль"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "kU/mol"
+        }
+      ]
+    },
+    {
+      "code": "mL",
+      "display": "Milliliter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Milliliiter"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллилитр"
+        }
+      ]
+    },
+    {
+      "code": "mL/dL",
+      "display": "Milliliter per deciliter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Milliliiter detsiliitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллилитр на децилитр"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "Vol%"
+        }
+      ]
+    },
+    {
+      "code": "mL/min",
+      "display": "Milliliter per minute",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Milliliiter minutis"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллилитр в минуту"
+        }
+      ]
+    },
+    {
+      "code": "mL/min/{1.73_m2}",
+      "display": "Milliliter per minute per 1.73 square metre",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Milliliiter minutis 1,73 m² kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллилитр в минуту на 1,73 м²"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "mL/min/1.73m2"
+        }
+      ]
+    },
+    {
+      "code": "mS/cm",
+      "display": "Millisiemens per centimetre",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Millisiimensit sentimeetri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллисименс на сантиметр"
+        }
+      ]
+    },
+    {
+      "code": "m[IU]/L",
+      "display": "Milli international units per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Millirahvusvahelist ühikut liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллиединиц (МЕ) на литр"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "mU/L"
+        }
+      ]
+    },
+    {
+      "code": "mg/L",
+      "display": "Milligrams per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Milligrammi liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллиграмм на литр"
+        }
+      ]
+    },
+    {
+      "code": "mg/d",
+      "display": "Milligram per day",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Milligrammi ööpäevas"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллиграмм в сутки"
+        }
+      ]
+    },
+    {
+      "code": "mg/h",
+      "display": "Milligram per hour",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Milligrammi tunnis"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллиграмм в час"
+        }
+      ]
+    },
+    {
+      "code": "mg/mol",
+      "display": "Milligram per mole",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Milligrammi mooli kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллиграмм на моль"
+        }
+      ]
+    },
+    {
+      "code": "min",
+      "display": "Minute",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Minut"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Минута"
+        }
+      ]
+    },
+    {
+      "code": "mm/h",
+      "display": "Millimetre per hour",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Millimeetrit tunnis"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллиметр в час"
+        }
+      ]
+    },
+    {
+      "code": "mm[Hg]",
+      "display": "Millimetre of mercury",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Millimeetrit elavhõbedasammast"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллиметр ртутного столба"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "mmHg"
+        }
+      ]
+    },
+    {
+      "code": "mm[Hg]/%",
+      "display": "Millimetre of mercury per percent",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Millimeetrit elavhõbedasammast protsendi kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллиметр ртутного столба на процент"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "mmHg/%"
+        }
+      ]
+    },
+    {
+      "code": "mmol/L",
+      "display": "Millimoles per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Millimooli liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллимоль на литр"
+        }
+      ]
+    },
+    {
+      "code": "mmol/d",
+      "display": "Millimole per day",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Millimooli ööpäevas"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллимоль в сутки"
+        }
+      ]
+    },
+    {
+      "code": "mmol/mol",
+      "display": "Millimoles per mole",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Millimooli mooli kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллимоль на моль"
+        }
+      ]
+    },
+    {
+      "code": "mol/mol",
+      "display": "Mole per mole",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Mooli mooli kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Моль на моль"
+        }
+      ]
+    },
+    {
+      "code": "mosm/kg{H2O}",
+      "display": "Milliosmoles per kilogram of water",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Milliosmooli vee kilogrammi kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Миллиосмоль на килограмм воды"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "mosm/kgH2O"
+        }
+      ]
+    },
+    {
+      "code": "ng/L",
+      "display": "Nanograms per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Nanogrammi liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Нанограмм на литр"
+        }
+      ]
+    },
+    {
+      "code": "ng/dL",
+      "display": "Nanograms per deciliter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Nanogrammi detsiliitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Нанограмм на децилитр"
+        }
+      ]
+    },
+    {
+      "code": "ng/mL{RBC}/h",
+      "display": "Nanogram per millilitre of red cells per hour",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Nanogrammi erütrotsüütide milliliitri kohta tunnis"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Нанограмм на миллилитр эритроцитов в час"
+        },
+        {
+          "language": "et",
+          "use": {
+            "system": "https://termx.org/fhir/CodeSystem/designation-usage",
+            "code": "alias"
+          },
+          "value": "ng/mL(RBC)/h"
+        }
+      ]
+    },
+    {
+      "code": "nmol/L",
+      "display": "Nanomoles per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Nanomooli liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Наномоль на литр"
+        }
+      ]
+    },
+    {
+      "code": "nmol/d",
+      "display": "Nanomole per day",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Nanomooli ööpäevas"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Наномоль в сутки"
+        }
+      ]
+    },
+    {
+      "code": "pg",
+      "display": "Picogram",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Pikogramm"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Пикограмм"
+        }
+      ]
+    },
+    {
+      "code": "pmol/L",
+      "display": "Picomoles per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Pikomooli liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Пикомоль на литр"
+        }
+      ]
+    },
+    {
+      "code": "s",
+      "display": "Second",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Sekund"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Секунда"
+        }
+      ]
+    },
+    {
+      "code": "ug/L",
+      "display": "Micrograms per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Mikrogrammi liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Микрограмм на литр"
+        }
+      ]
+    },
+    {
+      "code": "ug/d",
+      "display": "Microgram per day",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Mikrogrammi ööpäevas"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Микрограмм в сутки"
+        }
+      ]
+    },
+    {
+      "code": "ug/g",
+      "display": "Micrograms per gram",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Mikrogrammi grammi kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Микрограмм на грамм"
+        }
+      ]
+    },
+    {
+      "code": "ug/min",
+      "display": "Microgram per minute",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Mikrogrammi minutis"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Микрограмм в минуту"
+        }
+      ]
+    },
+    {
+      "code": "umol/L",
+      "display": "Micromoles per liter",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Mikromooli liitri kohta"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Микромоль на литр"
+        }
+      ]
+    },
+    {
+      "code": "umol/d",
+      "display": "Micromole per day",
+      "designation": [
+        {
+          "language": "et",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Mikromooli ööpäevas"
+        },
+        {
+          "language": "ru",
+          "use": {
+            "system": "http://terminology.hl7.org/CodeSystem/designation-usage",
+            "code": "display"
+          },
+          "value": "Микромоль в сутки"
+        }
+      ]
+    }
+  ]
+}

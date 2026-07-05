@@ -36,6 +36,7 @@ public class UcumConceptResolver {
 
   private volatile List<UcumUnitDefinition> unitsCache;
   private volatile Map<String, UcumUnitDefinition> unitByCodeCache;
+  private volatile Map<String, String> aliasIndexCache;
   private volatile long cacheExpiresAtMillis;
 
   public QueryResult<Concept> search(ConceptQueryParams params) {
@@ -80,6 +81,13 @@ public class UcumConceptResolver {
       return Optional.empty();
     }
     if (!isValidCode(code)) {
+      // The code is not valid UCUM grammar. It may still be a known secondary-code alias (e.g. the ELHR
+      // form "mmHg" for "mm[Hg]"); resolve it to its canonical code so $validate-code / $lookup succeed and
+      // echo the main code. Guard against a self-referential or non-resolving alias.
+      String canonical = getAliasIndex().get(code);
+      if (StringUtils.isNotEmpty(canonical) && !canonical.equals(code) && isValidCode(canonical)) {
+        return findByCode(canonical);
+      }
       return Optional.empty();
     }
     UcumUnitDefinition knownUnit = getUnitByCode().get(code);
@@ -127,7 +135,16 @@ public class UcumConceptResolver {
   public synchronized void invalidateCache() {
     unitsCache = null;
     unitByCodeCache = null;
+    aliasIndexCache = null;
     cacheExpiresAtMillis = 0L;
+  }
+
+  private Map<String, String> getAliasIndex() {
+    if (aliasIndexCache == null || isCacheExpired()) {
+      getUnits();
+    }
+    Map<String, String> local = aliasIndexCache;
+    return local != null ? local : Map.of();
   }
 
   private List<UcumUnitDefinition> getUnits() {
@@ -140,6 +157,7 @@ public class UcumConceptResolver {
         unitsCache = loadUnits();
         unitByCodeCache = unitsCache.stream()
             .collect(Collectors.toMap(UcumUnitDefinition::getCode, u -> u, (a, b) -> a, LinkedHashMap::new));
+        aliasIndexCache = ucumSupplementDesignationService.loadAliasIndex();
         cacheExpiresAtMillis = System.currentTimeMillis() + Math.max(cacheTtlMillis, 0L);
       }
       return unitsCache;
@@ -167,8 +185,26 @@ public class UcumConceptResolver {
 
     return all.stream()
         .filter(u -> StringUtils.isNotEmpty(u.getCode()))
-        .collect(Collectors.collectingAndThen(Collectors.toMap(UcumUnitDefinition::getCode, u -> u, (a, b) -> a, LinkedHashMap::new),
+        .collect(Collectors.collectingAndThen(
+            Collectors.toMap(UcumUnitDefinition::getCode, u -> u, UcumConceptResolver::mergeDefinitions, LinkedHashMap::new),
             m -> new ArrayList<>(m.values())));
+  }
+
+  /** Merge two definitions for the same code: keep the first's English names, union the supplement designations. */
+  private static UcumUnitDefinition mergeDefinitions(UcumUnitDefinition left, UcumUnitDefinition right) {
+    List<Designation> designations = new ArrayList<>(Optional.ofNullable(left.getSupplementDesignations()).orElse(List.of()));
+    designations.addAll(Optional.ofNullable(right.getSupplementDesignations()).orElse(List.of()));
+    left.setSupplementDesignations(designations);
+    if (left.getNames() == null || left.getNames().isEmpty()) {
+      left.setNames(right.getNames());
+    }
+    if (left.getKind() == null) {
+      left.setKind(right.getKind());
+    }
+    if (left.getProperty() == null) {
+      left.setProperty(right.getProperty());
+    }
+    return left;
   }
 
   private boolean isCacheExpired() {
@@ -188,13 +224,7 @@ public class UcumConceptResolver {
           List<String> names = new ArrayList<>(Optional.ofNullable(left.getNames()).orElse(List.of()));
           names.addAll(Optional.ofNullable(right.getNames()).orElse(List.of()));
           left.setNames(names.stream().filter(StringUtils::isNotEmpty).distinct().toList());
-          if (left.getKind() == null) {
-            left.setKind(right.getKind());
-          }
-          if (left.getProperty() == null) {
-            left.setProperty(right.getProperty());
-          }
-          return left;
+          return mergeDefinitions(left, right);
         }));
     return new ArrayList<>(merged.values());
   }
@@ -239,8 +269,15 @@ public class UcumConceptResolver {
     }
     return unit.getCode().equalsIgnoreCase(designationCiEq)
         || Optional.ofNullable(unit.getNames()).orElse(List.of()).stream().anyMatch(name -> name.equalsIgnoreCase(designationCiEq))
-        || Optional.ofNullable(supplementDesignations).orElse(List.of()).stream().map(Designation::getName)
-        .anyMatch(name -> name != null && name.equalsIgnoreCase(designationCiEq));
+        || designationNames(unit, supplementDesignations).anyMatch(name -> name.equalsIgnoreCase(designationCiEq));
+  }
+
+  /** All supplement designation names for a unit: its own cached ones plus any loaded for this search. */
+  private static java.util.stream.Stream<String> designationNames(UcumUnitDefinition unit, List<Designation> supplementDesignations) {
+    return java.util.stream.Stream.concat(
+            Optional.ofNullable(unit.getSupplementDesignations()).orElse(List.of()).stream(),
+            Optional.ofNullable(supplementDesignations).orElse(List.of()).stream())
+        .map(Designation::getName).filter(Objects::nonNull);
   }
 
   private static boolean matchesTextContains(UcumUnitDefinition unit, List<Designation> supplementDesignations, String textContains) {
@@ -251,8 +288,7 @@ public class UcumConceptResolver {
         || containsIgnoreCase(unit.getKind(), textContains)
         || containsIgnoreCase(unit.getProperty(), textContains)
         || Optional.ofNullable(unit.getNames()).orElse(List.of()).stream().anyMatch(n -> containsIgnoreCase(n, textContains))
-        || Optional.ofNullable(supplementDesignations).orElse(List.of()).stream().map(Designation::getName)
-        .anyMatch(n -> containsIgnoreCase(n, textContains));
+        || designationNames(unit, supplementDesignations).anyMatch(n -> containsIgnoreCase(n, textContains));
   }
 
   private static boolean matchesKindOrProperty(UcumUnitDefinition unit, Set<String> requested) {

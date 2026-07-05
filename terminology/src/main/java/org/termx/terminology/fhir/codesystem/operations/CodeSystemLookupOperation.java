@@ -231,7 +231,9 @@ public class CodeSystemLookupOperation implements InstanceOperationDefinition, T
     // The `status` concept property (active/retired/deprecated). A retired/deprecated code carries its status
     // explicitly; an active code leaves it as the implicit default (the reference server omits it there too).
     String conceptStatus = c.getVersions().stream().findFirst().map(CodeSystemEntityVersion::getStatus).orElse(null);
-    if ((allProps || properties.contains("status")) && List.of("retired", "deprecated").contains(conceptStatus)) {
+    // conceptStatus is null for concepts with no explicit status (e.g. virtual UCUM concepts); guard the
+    // membership test — List.of(...).contains(null) throws NPE rather than returning false.
+    if ((allProps || properties.contains("status")) && conceptStatus != null && List.of("retired", "deprecated").contains(conceptStatus)) {
       resp.addParameter(new ParametersParameter("property")
           .addPart(new ParametersParameter("code").setValueCode("status"))
           .addPart(new ParametersParameter("value").setValueCode(conceptStatus)));

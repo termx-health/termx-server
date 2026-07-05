@@ -18,6 +18,14 @@
     </customChange>
   </changeSet>
 
+  <!-- runOnChange: re-imports the Estonian/Russian UCUM supplement whenever it changes,
+       so added units/designations propagate to already-migrated databases. -->
+  <changeSet id="ucum-supplement-ee" author="termx" runOnChange="true">
+    <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">
+      <param name="files" value="terminology/changelog/data/codesystem/ucum-supplement-ee.json"/>
+    </customChange>
+  </changeSet>
+
   <changeSet id="publication-status" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">

@@ -81,12 +81,13 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     // A structurally-malformed displayLanguage (e.g. a bare '-') is rejected up front with a 400 processing
     // error, the way the reference engine does (tx-ecosystem validation-wrong-de-en-bad).
     requireValidDisplayLanguage(req);
-    // No code to validate at all (no coding / codeableConcept / code+system / code+inferSystem) is an error, not a
-    // normal Parameters result — the reference returns an OperationOutcome (tx-ecosystem batch-validate-bad[1]).
-    boolean inferSystemReq = req.findParameter("inferSystem")
-        .map(p -> Boolean.TRUE.equals(p.getValueBoolean()) || "true".equals(p.getValueString())).orElse(false);
+    // Nothing to validate at all (no coding / codeableConcept / code) is an error, not a normal Parameters
+    // result — the reference returns an OperationOutcome (tx-ecosystem batch-validate-bad[1]). A bare `code`
+    // WITHOUT a system IS accepted here: this is value-set validation, so the system is implied by the value
+    // set (a single-system value set) or inferred from its expansion downstream. A coding/codeableConcept that
+    // lacks a system is handled later with a proper not-in-vs + no-system outcome, not this hard error.
     if (req.findParameter("coding").isEmpty() && req.findParameter("codeableConcept").isEmpty()
-        && !(req.findParameter("code").isPresent() && (req.findParameter("system").isPresent() || inferSystemReq))) {
+        && req.findParameter("code").isEmpty()) {
       throw org.termx.terminology.fhir.TxIssues.noCodeToValidateException();
     }
     String rawUrl = req.findParameter("url")

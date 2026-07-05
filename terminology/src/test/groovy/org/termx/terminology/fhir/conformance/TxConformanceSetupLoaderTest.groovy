@@ -60,22 +60,21 @@ class TxConformanceSetupLoaderTest extends Specification {
     null                                                                                  || false
   }
 
-  def "isSetupFile accepts setup resources of the kind and rejects test artifacts"() {
+  def "isSetupFile accepts setup resources and rejects test request/response artifacts"() {
     expect:
-    TxConformanceSetupLoader.isSetupFile(name, prefix) == expected
+    TxConformanceSetupLoader.isSetupFile(name) == expected
 
     where:
-    name                                          | prefix         || expected
-    "codesystem-simple.json"                      | "codesystem-"  || true
-    "codesystem-noversion.json"                   | "codesystem-"  || true
-    "valueset-all.json"                           | "valueset-"    || true
-    "valueset-filter-isa.json"                    | "valueset-"    || true
+    name                                          || expected
+    "codesystem-simple.json"                      || true
+    "codesystem-noversion.json"                   || true
+    "valueset-all.json"                           || true
+    "valueset-filter-isa.json"                    || true
     // test request/response artifacts are NOT content
-    "simple-expand-all-request-parameters.json"   | "valueset-"    || false
-    "simple-expand-all-response-valueSet.json"    | "valueset-"    || false
-    "valueset-all-response.json"                  | "valueset-"    || false
-    // wrong kind / wrong extension
-    "valueset-all.json"                           | "codesystem-"  || false
-    "codesystem-simple.xml"                       | "codesystem-"  || false
+    "simple-expand-all-request-parameters.json"   || false
+    "simple-expand-all-response-valueSet.json"    || false
+    "valueset-all-response.json"                  || false
+    // non-.json is not a setup file
+    "codesystem-simple.xml"                       || false
   }
 }

@@ -11,6 +11,14 @@
     </customChange>
   </changeSet>
 
+  <!-- runOnChange: re-imports the Estonian/ELHR UCUM value set whenever its enumerated
+       code list changes, so added units propagate to already-migrated databases. -->
+  <changeSet id="ucum-ee" author="termx" runOnChange="true">
+    <customChange class="org.termx.terminology.liquibase.ValueSetFhirImport">
+      <param name="files" value="terminology/changelog/data/valueset/ucum-ee.json"/>
+    </customChange>
+  </changeSet>
+
   <changeSet id="codesystem-content-mode" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="org.termx.terminology.liquibase.ValueSetFhirImport">
