@@ -18,8 +18,11 @@
        'unitsofmeasure.org' CodeSystem: that delete cascades to the value_set_version_rule which — on databases
        where the VS was first imported against the redundant CS — was bound to it, leaving the VS ruleless
        (getRules() NPE on $expand/$validate-code). Dropping the VS here lets the next changeset re-create it from
-       scratch, with its include rule bound to the single surviving `ucum` CodeSystem. No-op on fresh installs. -->
-  <changeSet id="ucum-ee-drop-before-reimport" author="termx">
+       scratch, with its include rule bound to the single surviving `ucum` CodeSystem. No-op on fresh installs.
+       id re-bumped (-> -2) alongside ucum-ee-5 to regenerate the stored expansion snapshot under the
+       codeSystemUri backfill (ValueSetVersionConceptService): the active version's snapshot is served verbatim,
+       so the backfilled contains.system only reaches $expand/$validate-code after a fresh re-import. -->
+  <changeSet id="ucum-ee-drop-before-reimport-2" author="termx">
     <sql splitStatements="false"><![CDATA[
       do $$
       begin
@@ -30,10 +33,12 @@
     ]]></sql>
   </changeSet>
 
-  <!-- Re-imports the Estonian/ELHR UCUM value set. Runs after ucum-ee-drop-before-reimport so it always creates
-       a fresh version (no TE104), rebuilding the include rule against `ucum`. Bump this id (not runOnChange) to
-       force a re-import when ucum-ee.json changes; the drop changeset above must be re-bumped alongside it. -->
-  <changeSet id="ucum-ee-4" author="termx">
+  <!-- Re-imports the Estonian/ELHR UCUM value set. Runs after ucum-ee-drop-before-reimport-2 so it always creates
+       a fresh version (no TE104), rebuilding the include rule against `ucum` and regenerating the expansion
+       snapshot (now with contains.system backfilled for the concept-less UCUM CS). Bump this id (not
+       runOnChange) to force a re-import when ucum-ee.json or the expansion logic changes; re-bump the drop
+       changeset above alongside it. -->
+  <changeSet id="ucum-ee-5" author="termx">
     <customChange class="org.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/ucum-ee.json"/>
     </customChange>
