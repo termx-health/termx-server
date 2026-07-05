@@ -22,7 +22,7 @@
        id re-bumped (-> -2) alongside ucum-ee-5 to regenerate the stored expansion snapshot under the
        codeSystemUri backfill (ValueSetVersionConceptService): the active version's snapshot is served verbatim,
        so the backfilled contains.system only reaches $expand/$validate-code after a fresh re-import. -->
-  <changeSet id="ucum-ee-drop-before-reimport-2" author="termx">
+  <changeSet id="ucum-ee-drop-before-reimport-3" author="termx">
     <sql splitStatements="false"><![CDATA[
       do $$
       begin
@@ -38,7 +38,7 @@
        snapshot (now with contains.system backfilled for the concept-less UCUM CS). Bump this id (not
        runOnChange) to force a re-import when ucum-ee.json or the expansion logic changes; re-bump the drop
        changeset above alongside it. -->
-  <changeSet id="ucum-ee-5" author="termx">
+  <changeSet id="ucum-ee-6" author="termx">
     <customChange class="org.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/ucum-ee.json"/>
     </customChange>

@@ -12,7 +12,6 @@ import org.termx.terminology.terminology.valueset.snapshot.ValueSetSnapshotServi
 import org.termx.ts.PublicationStatus;
 import org.termx.core.ts.ValueSetExternalExpandProvider;
 import org.termx.ts.codesystem.CodeSystem;
-import org.termx.ts.codesystem.CodeSystemQueryParams;
 import org.termx.ts.codesystem.CodeSystemEntityVersion;
 import org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import org.termx.ts.codesystem.CodeSystemVersionReference;
@@ -369,14 +368,17 @@ public class ValueSetVersionConceptService {
     if (ids.isEmpty()) {
       return;
     }
-    Map<String, String> uriById = codeSystemService.query(new CodeSystemQueryParams()
-            .setIds(String.join(",", ids)).limit(ids.size())).getData().stream()
-        .filter(cs -> cs.getUri() != null)
-        .collect(Collectors.toMap(CodeSystem::getId, CodeSystem::getUri, (a, b) -> a));
+    // load() (a direct by-id fetch), not query(): query() applies the session's permitted-id filter, which in
+    // the Liquibase import context (no session) matches nothing, so the uri never resolved.
+    Map<String, String> uriById = new HashMap<>();
+    ids.forEach(id -> codeSystemService.load(id).map(CodeSystem::getUri).ifPresent(uri -> uriById.put(id, uri)));
     concepts.forEach(c -> {
       var cc = c.getConcept();
       if (cc != null && cc.getCodeSystemUri() == null && cc.getBaseCodeSystemUri() == null && cc.getCodeSystem() != null) {
-        cc.setCodeSystemUri(uriById.get(cc.getCodeSystem()));
+        String uri = uriById.get(cc.getCodeSystem());
+        if (uri != null) {
+          cc.setCodeSystemUri(uri);
+        }
       }
     });
   }
