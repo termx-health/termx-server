@@ -62,7 +62,11 @@ public class UcumAdministrationService {
         .setUri(UCUM_URI)
         .setName("UCUM")
         .setTitle(new LocalizedName(Map.of("en", "Unified Code for Units of Measure (UCUM)")))
-        .setContent(CodeSystemContent.notPresent)
+        // fragment, not not-present: termx materialises a subset of UCUM (the essence atoms, served virtually by
+        // UcumCodeSystemProvider) rather than none — and the terminology-explorer router keys off this to
+        // validate fragment code systems locally-first, then forward on miss (a not-present CS is always
+        // forwarded, a complete one never is). See ucum.json / the ucum-content-fragment changeset.
+        .setContent(CodeSystemContent.fragment)
         .setCaseSensitive("true"));
   }
 

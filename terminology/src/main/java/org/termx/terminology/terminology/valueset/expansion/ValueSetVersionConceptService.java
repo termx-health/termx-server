@@ -3,6 +3,7 @@ package org.termx.terminology.terminology.valueset.expansion;
 import com.kodality.commons.util.DateUtil;
 import org.termx.core.auth.SessionStore;
 import org.termx.terminology.Privilege;
+import org.termx.terminology.terminology.codesystem.CodeSystemService;
 import org.termx.terminology.terminology.codesystem.concept.ConceptUtil;
 import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService;
 import org.termx.terminology.terminology.codesystem.entityproperty.EntityPropertyService;
@@ -10,6 +11,8 @@ import org.termx.terminology.terminology.valueset.version.ValueSetVersionReposit
 import org.termx.terminology.terminology.valueset.snapshot.ValueSetSnapshotService;
 import org.termx.ts.PublicationStatus;
 import org.termx.core.ts.ValueSetExternalExpandProvider;
+import org.termx.ts.codesystem.CodeSystem;
+import org.termx.ts.codesystem.CodeSystemQueryParams;
 import org.termx.ts.codesystem.CodeSystemEntityVersion;
 import org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams;
 import org.termx.ts.codesystem.CodeSystemVersionReference;
@@ -50,6 +53,7 @@ public class ValueSetVersionConceptService {
   private final CodeSystemEntityVersionService codeSystemEntityVersionService;
   private final EntityPropertyService entityPropertyService;
   private final ValueSetCodeSystemVersionResolver codeSystemVersionResolver;
+  private final CodeSystemService codeSystemService;
 
   private static final String DEPRECATION_DATE = "deprecationDate";
   private static final String INACTIVE = "inactive";
@@ -345,7 +349,36 @@ public class ValueSetVersionConceptService {
                 .setEntityPropertyType(properties.get("modifiedBy").getType()));
           }
         }).toList();
+    backfillCodeSystemUri(res);
     return res;
+  }
+
+  /**
+   * Backfill the code system uri on concepts that the expand returned with only a code system id. This happens
+   * when a value set enumerates codes from a code system that has no stored concept rows — e.g. a `fragment` /
+   * `not-present` grammar system like UCUM, whose codes are materialised virtually rather than stored, so the
+   * expand SQL (which derives the uri from a code system entity) leaves it null. Without the uri,
+   * ValueSetFhirMapper emits an $expand `contains` entry with no `system` (invalid FHIR) and system-qualified
+   * $validate-code can't match the code against the value set. Resolve the uri from the code system id. No-op
+   * for the common case where every concept already carries a uri.
+   */
+  private void backfillCodeSystemUri(List<ValueSetVersionConcept> concepts) {
+    List<String> ids = concepts.stream().map(ValueSetVersionConcept::getConcept).filter(Objects::nonNull)
+        .filter(c -> c.getCodeSystemUri() == null && c.getBaseCodeSystemUri() == null && c.getCodeSystem() != null)
+        .map(c -> c.getCodeSystem()).distinct().toList();
+    if (ids.isEmpty()) {
+      return;
+    }
+    Map<String, String> uriById = codeSystemService.query(new CodeSystemQueryParams()
+            .setIds(String.join(",", ids)).limit(ids.size())).getData().stream()
+        .filter(cs -> cs.getUri() != null)
+        .collect(Collectors.toMap(CodeSystem::getId, CodeSystem::getUri, (a, b) -> a));
+    concepts.forEach(c -> {
+      var cc = c.getConcept();
+      if (cc != null && cc.getCodeSystemUri() == null && cc.getBaseCodeSystemUri() == null && cc.getCodeSystem() != null) {
+        cc.setCodeSystemUri(uriById.get(cc.getCodeSystem()));
+      }
+    });
   }
 
   /**

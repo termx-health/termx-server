@@ -85,6 +85,20 @@
     ]]></sql>
   </changeSet>
 
+  <!-- The base UCUM CodeSystem is `fragment`, not `not-present`/`complete`: termx materialises only a subset of
+       UCUM (the essence atoms, served virtually by UcumCodeSystemProvider) — so `complete` (which some databases
+       stored via an early bootstrap) falsely tells the terminology-explorer router it can validate every UCUM
+       code locally, and `not-present` understates what is resolvable. Reconcile the stored content; a
+       CodeSystemFhirImport re-import can't change it (metadata frozen, TE104 swallowed). Idempotent / no-op once
+       already `fragment`. -->
+  <changeSet id="ucum-content-fragment" author="termx">
+    <sql splitStatements="false"><![CDATA[
+      update terminology.code_system
+         set content = 'fragment'
+       where id = 'ucum' and content is distinct from 'fragment';
+    ]]></sql>
+  </changeSet>
+
   <changeSet id="publication-status" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">
