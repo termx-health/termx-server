@@ -21,6 +21,28 @@
     </customChange>
   </changeSet>
 
+  <!-- Consolidate to a single UCUM CodeSystem. Some databases carry a redundant content=not-present CS with
+       id 'unitsofmeasure.org' — created by importing ucum.json when a legacy essence-based `ucum` CodeSystem
+       (holding the stale https://units-of-measurement.org canonical) already occupied id=ucum, so the import
+       fell back to a url-derived id. Self-heal the `ucum` canonical to http://unitsofmeasure.org and drop the
+       redundant CS (cancel_code_system also detaches the value_set_version_rule that referenced it), so the
+       ucum-ee supplement + value set that follow re-resolve (by canonical uri) to the single `ucum`
+       CodeSystem. No-op on databases that only ever had the single `ucum` CS. -->
+  <changeSet id="ucum-drop-redundant-cs" author="termx">
+    <sql splitStatements="false"><![CDATA[
+      update terminology.code_system
+         set uri = 'http://unitsofmeasure.org'
+       where id = 'ucum' and uri is distinct from 'http://unitsofmeasure.org';
+
+      do $$
+      begin
+        if exists (select 1 from terminology.code_system where id = 'unitsofmeasure.org') then
+          perform terminology.cancel_code_system('unitsofmeasure.org');
+        end if;
+      end $$;
+    ]]></sql>
+  </changeSet>
+
   <!-- runOnChange: re-imports the Estonian/Russian UCUM supplement whenever it changes, so added
        units/designations propagate to already-migrated databases.
        id bumped ucum-supplement-ee -> ucum-supplement-ee-2 to force a re-import after ucum-3 above:
