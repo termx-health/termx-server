@@ -36,6 +36,9 @@ import org.termx.ts.valueset.ValueSetVersionConcept;
 public class UcumSupplementDesignationService {
   private static final String UCUM = "ucum";
   private static final String UCUM_URI = "http://unitsofmeasure.org";
+  // Designation-property name under which a secondary-code alias is stored (FHIR designation.use
+  // https://termx.org/fhir/CodeSystem/designation-usage#alias — see CodeSystemFhirMapper).
+  private static final String ALIAS_TYPE = "alias";
 
   private final CodeSystemRepository codeSystemRepository;
   private final CodeSystemVersionRepository codeSystemVersionRepository;
@@ -82,6 +85,65 @@ public class UcumSupplementDesignationService {
         .toList());
   }
 
+  /**
+   * Reverse index of secondary-code aliases → canonical UCUM code, built from every UCUM supplement's
+   * {@code alias}-type designations (e.g. the ELHR display form {@code "mmHg"} → {@code "mm[Hg]"}). Used to
+   * validate and resolve non-canonical code forms that ucum-java's grammar rejects. Global rather than
+   * language-scoped: an alias is a code synonym, not a translation.
+   */
+  public Map<String, String> loadAliasIndex() {
+    Map<String, String> aliasToCode = new LinkedHashMap<>();
+    List<ResolvedSupplement> supplements = loadUcumSupplements().stream()
+        .map(codeSystem -> resolveSupplementVersion(codeSystem.getId(), null)
+            .map(version -> new ResolvedSupplement(codeSystem.getId(), version))
+            .orElse(null))
+        .filter(Objects::nonNull)
+        .toList();
+
+    for (ResolvedSupplement supplement : supplements) {
+      List<Concept> concepts = conceptRepository.query(new ConceptQueryParams()
+          .setCodeSystem(supplement.id())
+          .all()).getData();
+      if (CollectionUtils.isEmpty(concepts)) {
+        continue;
+      }
+
+      List<String> conceptIds = concepts.stream().map(Concept::getId).filter(Objects::nonNull).map(String::valueOf).toList();
+      if (conceptIds.isEmpty()) {
+        continue;
+      }
+
+      List<CodeSystemEntityVersion> versions = codeSystemEntityVersionRepository.query(new CodeSystemEntityVersionQueryParams()
+          .setCodeSystem(supplement.id())
+          .setCodeSystemVersion(supplement.version())
+          .setCodeSystemEntityIds(String.join(",", conceptIds))
+          .limit(conceptIds.size())).getData();
+      if (CollectionUtils.isEmpty(versions)) {
+        continue;
+      }
+
+      Map<Long, String> versionIdToCode = versions.stream()
+          .filter(v -> v.getId() != null && StringUtils.isNotEmpty(v.getCode()))
+          .collect(Collectors.toMap(CodeSystemEntityVersion::getId, CodeSystemEntityVersion::getCode, (left, right) -> left, LinkedHashMap::new));
+      if (versionIdToCode.isEmpty()) {
+        continue;
+      }
+
+      designationService.query(new DesignationQueryParams()
+          .setCodeSystemEntityVersionId(String.join(",", versionIdToCode.keySet().stream().map(String::valueOf).toList()))
+          .limit(-1)).getData().stream()
+          .filter(d -> ALIAS_TYPE.equals(d.getDesignationType()))
+          .filter(d -> StringUtils.isNotEmpty(d.getName()))
+          .forEach(d -> {
+            String code = versionIdToCode.get(d.getCodeSystemEntityVersionId());
+            if (StringUtils.isNotEmpty(code)) {
+              aliasToCode.putIfAbsent(d.getName(), code);
+            }
+          });
+    }
+    return aliasToCode;
+  }
+
   public List<UcumUnitDefinition> loadSupplementUnitDefinitions(ConceptQueryParams params) {
     if (params == null || StringUtils.isEmpty(params.getUseSupplement())) {
       return List.of();
@@ -122,18 +184,20 @@ public class UcumSupplementDesignationService {
           .filter(v -> StringUtils.isNotEmpty(v.getCode()))
           .forEach(version -> units.add(new UcumUnitDefinition()
               .setCode(version.getCode())
-              .setNames(distinctDesignations(designationsByVersionId.getOrDefault(version.getId(), List.of())).stream()
-                  .map(Designation::getName)
-                  .filter(StringUtils::isNotEmpty)
+              // Carry the supplement's designations WITH their language + type (do NOT flatten to `names`,
+              // which the UCUM mapper emits as English — that mislabels et/ru values as `en`).
+              .setSupplementDesignations(distinctDesignations(designationsByVersionId.getOrDefault(version.getId(), List.of())).stream()
+                  .filter(d -> StringUtils.isNotEmpty(d.getName()))
+                  .map(UcumSupplementDesignationService::copyDesignation)
                   .toList())));
     }
     return units.stream()
         .filter(unit -> StringUtils.isNotEmpty(unit.getCode()))
         .collect(Collectors.collectingAndThen(
             Collectors.toMap(UcumUnitDefinition::getCode, unit -> unit, (left, right) -> {
-              List<String> names = new ArrayList<>(Optional.ofNullable(left.getNames()).orElse(List.of()));
-              names.addAll(Optional.ofNullable(right.getNames()).orElse(List.of()));
-              left.setNames(names.stream().filter(StringUtils::isNotEmpty).distinct().toList());
+              List<Designation> merged = new ArrayList<>(Optional.ofNullable(left.getSupplementDesignations()).orElse(List.of()));
+              merged.addAll(Optional.ofNullable(right.getSupplementDesignations()).orElse(List.of()));
+              left.setSupplementDesignations(distinctDesignations(merged));
               return left;
             }, LinkedHashMap::new),
             map -> new ArrayList<>(map.values())));

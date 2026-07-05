@@ -1,0 +1,225 @@
+{
+  "resourceType": "ValueSet",
+  "id": "ucum-ee",
+  "url": "https://fhir.ee/ValueSet/ucum-ee",
+  "version": "1.0.0",
+  "name": "UcumEe",
+  "title": "UCUM Units (Estonia / ELHR)",
+  "status": "active",
+  "experimental": false,
+  "publisher": "TEHIK / Helex",
+  "description": "Enumerated UCUM unit codes used by Estonian laboratory (ELHR) observations (the Estonian 'common units' analogue of the FHIR ucum-common value set). Localised displays are provided by the ucum-ee CodeSystem supplement.",
+  "compose": {
+    "include": [
+      {
+        "system": "http://unitsofmeasure.org",
+        "concept": [
+          {
+            "code": "%",
+            "display": "Percent"
+          },
+          {
+            "code": "/100{WBC}",
+            "display": "Per 100 white blood cells"
+          },
+          {
+            "code": "/[HPF]",
+            "display": "Per high power field"
+          },
+          {
+            "code": "10*6/L",
+            "display": "Million per liter"
+          },
+          {
+            "code": "10*9/L",
+            "display": "Billion per liter"
+          },
+          {
+            "code": "10*12/L",
+            "display": "Trillion per liter"
+          },
+          {
+            "code": "Cel",
+            "display": "Degrees Celsius"
+          },
+          {
+            "code": "U/L",
+            "display": "Units per liter"
+          },
+          {
+            "code": "U/g",
+            "display": "Units per gram"
+          },
+          {
+            "code": "[beth'U]",
+            "display": "Bethesda unit"
+          },
+          {
+            "code": "[arb'U]",
+            "display": "Arbitrary unit"
+          },
+          {
+            "code": "fL",
+            "display": "Femtoliter"
+          },
+          {
+            "code": "g/(5.h)",
+            "display": "Gram per 5 hours"
+          },
+          {
+            "code": "g/L",
+            "display": "Grams per liter"
+          },
+          {
+            "code": "g/d",
+            "display": "Gram per day"
+          },
+          {
+            "code": "g/mol",
+            "display": "Gram per mole"
+          },
+          {
+            "code": "k[IU]/L",
+            "display": "Kilo international units per liter"
+          },
+          {
+            "code": "k[IU]/mol",
+            "display": "Kilo international units per mole"
+          },
+          {
+            "code": "mL",
+            "display": "Milliliter"
+          },
+          {
+            "code": "mL/dL",
+            "display": "Milliliter per deciliter"
+          },
+          {
+            "code": "mL/min",
+            "display": "Milliliter per minute"
+          },
+          {
+            "code": "mL/min/{1.73_m2}",
+            "display": "Milliliter per minute per 1.73 square metre"
+          },
+          {
+            "code": "mS/cm",
+            "display": "Millisiemens per centimetre"
+          },
+          {
+            "code": "m[IU]/L",
+            "display": "Milli international units per liter"
+          },
+          {
+            "code": "mg/L",
+            "display": "Milligrams per liter"
+          },
+          {
+            "code": "mg/d",
+            "display": "Milligram per day"
+          },
+          {
+            "code": "mg/h",
+            "display": "Milligram per hour"
+          },
+          {
+            "code": "mg/mol",
+            "display": "Milligram per mole"
+          },
+          {
+            "code": "min",
+            "display": "Minute"
+          },
+          {
+            "code": "mm/h",
+            "display": "Millimetre per hour"
+          },
+          {
+            "code": "mm[Hg]",
+            "display": "Millimetre of mercury"
+          },
+          {
+            "code": "mm[Hg]/%",
+            "display": "Millimetre of mercury per percent"
+          },
+          {
+            "code": "mmol/L",
+            "display": "Millimoles per liter"
+          },
+          {
+            "code": "mmol/d",
+            "display": "Millimole per day"
+          },
+          {
+            "code": "mmol/mol",
+            "display": "Millimoles per mole"
+          },
+          {
+            "code": "mol/mol",
+            "display": "Mole per mole"
+          },
+          {
+            "code": "mosm/kg{H2O}",
+            "display": "Milliosmoles per kilogram of water"
+          },
+          {
+            "code": "ng/L",
+            "display": "Nanograms per liter"
+          },
+          {
+            "code": "ng/dL",
+            "display": "Nanograms per deciliter"
+          },
+          {
+            "code": "ng/mL{RBC}/h",
+            "display": "Nanogram per millilitre of red cells per hour"
+          },
+          {
+            "code": "nmol/L",
+            "display": "Nanomoles per liter"
+          },
+          {
+            "code": "nmol/d",
+            "display": "Nanomole per day"
+          },
+          {
+            "code": "pg",
+            "display": "Picogram"
+          },
+          {
+            "code": "pmol/L",
+            "display": "Picomoles per liter"
+          },
+          {
+            "code": "s",
+            "display": "Second"
+          },
+          {
+            "code": "ug/L",
+            "display": "Micrograms per liter"
+          },
+          {
+            "code": "ug/d",
+            "display": "Microgram per day"
+          },
+          {
+            "code": "ug/g",
+            "display": "Micrograms per gram"
+          },
+          {
+            "code": "ug/min",
+            "display": "Microgram per minute"
+          },
+          {
+            "code": "umol/L",
+            "display": "Micromoles per liter"
+          },
+          {
+            "code": "umol/d",
+            "display": "Micromole per day"
+          }
+        ]
+      }
+    ]
+  }
+}

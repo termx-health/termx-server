@@ -1,6 +1,7 @@
 package org.termx.terminology.terminology.codesystem.version
 
 import jakarta.inject.Provider
+import org.termx.core.ts.CodeSystemExternalProvider
 import org.termx.core.ts.UcumSearchCacheInvalidator
 import org.termx.terminology.terminology.codesystem.CodeSystemRepository
 import org.termx.terminology.terminology.codesystem.entity.CodeSystemEntityVersionService
@@ -17,8 +18,9 @@ class CodeSystemVersionServiceTest extends Specification {
   def impactService = Mock(ValueSetCodeSystemImpactService)
   def codeSystemRepository = Mock(CodeSystemRepository)
   def ucumSearchCacheInvalidator = Mock(UcumSearchCacheInvalidator)
+  List<CodeSystemExternalProvider> codeSystemProviders = []
 
-  def service = new CodeSystemVersionService(repository, entityVersionService, impactServiceProvider, codeSystemRepository, ucumSearchCacheInvalidator)
+  def service = new CodeSystemVersionService(repository, entityVersionService, impactServiceProvider, codeSystemRepository, ucumSearchCacheInvalidator, codeSystemProviders)
 
   def "activate refreshes dynamic value sets for any activation caller"() {
     given:

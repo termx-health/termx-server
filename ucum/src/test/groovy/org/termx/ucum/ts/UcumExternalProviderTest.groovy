@@ -57,6 +57,40 @@ class UcumExternalProviderTest extends Specification {
     result.data.isEmpty()
   }
 
+  def "codesystem provider resolves a secondary-code alias to its canonical UCUM code"() {
+    given:
+    ucumService.getBaseUnits() >> []
+    ucumService.getDefinedUnits() >> []
+    ucumService.validate("mmHg") >> valid(false)   // ELHR form is not valid UCUM grammar
+    ucumService.validate("mm[Hg]") >> valid(true)  // its canonical form is
+    def provider = provider([
+        "mm[Hg]": [designation("alias", "et", "mmHg", false, true)]
+    ])
+
+    when:
+    def result = provider.searchConcepts(new ConceptQueryParams().setCodeSystem("ucum").setCodeEq("mmHg"))
+
+    then:
+    result.data*.code == ["mm[Hg]"]
+  }
+
+  def "codesystem provider does not resolve a display designation as a code"() {
+    given:
+    ucumService.getBaseUnits() >> []
+    ucumService.getDefinedUnits() >> []
+    ucumService.validate("Millimeetrit elavhõbedasammast") >> valid(false)
+    ucumService.validate("mm[Hg]") >> valid(true)
+    def provider = provider([
+        "mm[Hg]": [designation("display", "et", "Millimeetrit elavhõbedasammast", false, true)]
+    ])
+
+    when: "a localized display name is submitted as a code — only alias-typed designations resolve"
+    def result = provider.searchConcepts(new ConceptQueryParams().setCodeSystem("ucum").setCodeEq("Millimeetrit elavhõbedasammast"))
+
+    then:
+    result.data.isEmpty()
+  }
+
   def "codesystem provider text search matches supplement designations"() {
     given:
     ucumService.getBaseUnits() >> []
@@ -74,6 +108,46 @@ class UcumExternalProviderTest extends Specification {
 
     then:
     result.data*.code == ["mL"]
+  }
+
+  def "codesystem provider surfaces ucum-ee Estonian and Russian supplement designations"() {
+    given: "the ucum-ee supplement adds et + ru display designations to a UCUM unit (as ucum-supplement-ee.json does)"
+    ucumService.getBaseUnits() >> []
+    ucumService.getDefinedUnits() >> [definedUnit("mL", "volume", ["milliliter"])]
+    def provider = provider([
+        "mL": [designation("display", "et", "Milliliiter", false, true),
+               designation("display", "ru", "Миллилитр", false, true)]
+    ])
+
+    expect: "the code is found by either localized designation"
+    provider.searchConcepts(new ConceptQueryParams().setCodeSystem("ucum")
+        .setTextContains(needle).setIncludeSupplement(true).setDisplayLanguage(lang)).data*.code == ["mL"]
+
+    where:
+    lang | needle
+    "et" | "Milliliiter"
+    "ru" | "Миллилитр"
+  }
+
+  def "codesystem provider emits supplement designations with their real language and type, not en"() {
+    given: "a supplement-only UCUM expression carrying et + ru display designations and an et alias"
+    ucumService.getBaseUnits() >> []
+    ucumService.getDefinedUnits() >> []
+    ucumService.validate("mm[Hg]") >> valid(true)
+    def provider = provider([
+        "mm[Hg]": [designation("display", "et", "Millimeetrit elavhõbedasammast", false, true),
+                   designation("display", "ru", "Миллиметр ртутного столба", false, true),
+                   designation("alias", "et", "mmHg", false, true)]
+    ])
+
+    when:
+    def concept = provider.searchConcepts(new ConceptQueryParams().setCodeSystem("ucum").setCodeEq("mm[Hg]")).data.first()
+    def byName = concept.versions.first().designations.collectEntries { [(it.name): [it.language, it.designationType]] }
+
+    then: "each designation keeps its real language + type — none is defaulted to en"
+    byName["Millimeetrit elavhõbedasammast"] == ["et", "display"]
+    byName["Миллиметр ртутного столба"] == ["ru", "display"]
+    byName["mmHg"] == ["et", "alias"]
   }
 
   def "codesystem provider text search finds supplement-only ucum expressions"() {

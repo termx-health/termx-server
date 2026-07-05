@@ -57,7 +57,7 @@ class UcumAdministrationServiceTest extends Specification {
       @Override
       void invalidate() {
       }
-    }) {
+    }, []) {
       @Override
       Optional<CodeSystemVersion> load(String codeSystem, String versionCode) {
         return Optional.empty()
