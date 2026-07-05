@@ -213,10 +213,16 @@ Accept: application/fhir+json
 ###############################################################################
 # INLINE VALUE SET TESTS  ($expand with the value set passed in the body)
 #
-# NOTE: inline expansion runs the server's JSON expand. It returns the compose's
-# concepts but does NOT re-pick displayLanguage or resolve the valueset-supplement
-# extension the way a STORED value set does — for supplement / language behaviour
-# use a stored ValueSet (tests #8 / #10). Inline is ideal for ad-hoc, unsaved sets.
+# NOTE: inline expansion runs the server's JSON expand over the compose, then
+# layers supplements onto the result — just like a STORED value set. The ONE
+# difference: an inline ValueSet's own `valueset-supplement` EXTENSION is not read
+# (the stored path honours it; see tests #4/#8). For inline, point at the
+# supplement two ways instead:
+#   • `displayLanguage=<lang>` alone — auto-discovers every supplement CS that
+#     supplements a base in the compose and matches the language (test #16), or
+#   • `useSupplement=<supplement-canonical>[|version]` — names the supplement CS
+#     explicitly (test #17), independent of any stored wrapper ValueSet.
+# Both re-pick the localized display and surface the supplement's designations.
 ###############################################################################
 
 ### 13. Inline $expand — include ALL of the base code system
