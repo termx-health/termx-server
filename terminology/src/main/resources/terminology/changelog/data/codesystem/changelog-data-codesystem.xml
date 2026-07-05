@@ -73,6 +73,18 @@
     ]]></sql>
   </changeSet>
 
+  <!-- The ucum-ee supplement publisher was changed to HELEX in the JSON, but a CodeSystemFhirImport re-import
+       cannot update the existing active version's metadata (TE104, swallowed), so the stored publisher stayed at
+       the old value on already-migrated databases. Apply it explicitly. Idempotent: guarded, and a no-op on
+       fresh installs (whose import already stores HELEX). -->
+  <changeSet id="ucum-ee-publisher-helex" author="termx">
+    <sql splitStatements="false"><![CDATA[
+      update terminology.code_system
+         set publisher = 'HELEX'
+       where id = 'ucum-ee' and publisher is distinct from 'HELEX';
+    ]]></sql>
+  </changeSet>
+
   <changeSet id="publication-status" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">
