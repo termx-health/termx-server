@@ -11,7 +11,10 @@
     </customChange>
   </changeSet>
 
-  <changeSet id="ucum-2" author="termx">
+  <!-- id bumped ucum-2 -> ucum-3 to force a re-import: ucum-2 carried validCheckSum=ANY, so a canonical-url
+       correction in ucum.json (to http://unitsofmeasure.org) never re-ran on databases that already executed
+       it (e.g. dev.termx.org held the stale https://units-of-measurement.org). A new id runs it once more. -->
+  <changeSet id="ucum-3" author="termx">
     <validCheckSum>ANY</validCheckSum>
     <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/ucum.json"/>

@@ -13,7 +13,11 @@
 
   <!-- runOnChange: re-imports the Estonian/ELHR UCUM value set whenever its enumerated
        code list changes, so added units propagate to already-migrated databases. -->
-  <changeSet id="ucum-ee" author="termx" runOnChange="true">
+  <!-- id bumped ucum-ee -> ucum-ee-2 to force a re-import: the first run failed on databases whose UCUM
+       CodeSystem still had the wrong canonical url (TE110 "code system http://unitsofmeasure.org does not
+       exist"); ValueSetFhirImport swallowed the error so runOnChange saw no change to retry. Re-runs after
+       the ucum-3 CodeSystem re-import above has corrected the url. -->
+  <changeSet id="ucum-ee-2" author="termx" runOnChange="true">
     <customChange class="org.termx.terminology.liquibase.ValueSetFhirImport">
       <param name="files" value="terminology/changelog/data/valueset/ucum-ee.json"/>
     </customChange>
