@@ -154,6 +154,65 @@ class ValueSetValidateCodeOperationTest extends Specification {
     oo.getIssue().find { it.code == "invalid" && it.severity == "warning" } != null
   }
 
+  def "resolves a secondary-code alias to its canonical value set member (with system)"() {
+    given: "the member [beth'U] carries 'alias'-type designations [BU] and BU"
+    valueSetVersionConceptService.expand(vsVersion, _) >> [bethWithAlias()]
+
+    when: "validating the alias code [BU] with the UCUM system"
+    def resp = operation.run(vsVersion, codeReq("[BU]", "http://unitsofmeasure.org"))
+
+    then: "it validates as the canonical member and echoes the canonical code + normalized-code"
+    bool(resp, "result")
+    resp.findParameter("code").get().getValueCode() == "[beth'U]"
+    resp.findParameter("normalized-code").get().getValueCode() == "[beth'U]"
+  }
+
+  def "resolves a secondary-code alias without a supplied system (single-system value set)"() {
+    given:
+    valueSetVersionConceptService.expand(vsVersion, _) >> [bethWithAlias()]
+
+    when: "validating the alias code [BU] with no system"
+    def resp = operation.run(vsVersion, codeReq("[BU]", null))
+
+    then:
+    bool(resp, "result")
+    resp.findParameter("code").get().getValueCode() == "[beth'U]"
+  }
+
+  def "a code that is neither a member nor a known alias is not in the value set"() {
+    given:
+    valueSetVersionConceptService.expand(vsVersion, _) >> [bethWithAlias()]
+
+    when:
+    def resp = operation.run(vsVersion, codeReq("xyzzy", "http://unitsofmeasure.org"))
+
+    then:
+    !bool(resp, "result")
+  }
+
+  private static ValueSetVersionConcept bethWithAlias() {
+    return new ValueSetVersionConcept()
+        .setActive(true)
+        .setConcept(new ValueSetVersionConceptValue()
+            .setCode("[beth'U]")
+            .setCodeSystem("ucum")
+            .setCodeSystemUri("http://unitsofmeasure.org"))
+        .setDisplay(new Designation().setName("Bethesda unit").setLanguage("en").setDesignationType("display"))
+        .setAdditionalDesignations([
+            new Designation().setName("[BU]").setLanguage("et").setDesignationType("alias"),
+            new Designation().setName("BU").setLanguage("et").setDesignationType("alias")
+        ])
+  }
+
+  private static Parameters codeReq(String code, String system) {
+    Parameters p = new Parameters()
+    p.addParameter(new ParametersParameter("code").setValueCode(code))
+    if (system != null) {
+      p.addParameter(new ParametersParameter("system").setValueUri(system))
+    }
+    return p
+  }
+
   private static ValueSetVersionConcept concept() {
     return new ValueSetVersionConcept()
         .setActive(true)

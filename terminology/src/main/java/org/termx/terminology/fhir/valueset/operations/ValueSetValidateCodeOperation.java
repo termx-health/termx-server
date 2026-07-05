@@ -1741,6 +1741,19 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       }
     }
 
+    // Secondary-code alias: a code that is not a member itself but is recorded as an `alias`-type designation on
+    // a member (UCUM secondary codes, e.g. [BU] -> [beth'U], mmHg -> mm[Hg]) validates as that member. Resolve to
+    // the canonical member; result=true, echoing the canonical code + a normalized-code / information note.
+    boolean viaAlias = false;
+    if (concept == null) {
+      concept = vsConcepts.stream()
+          .filter(c -> systemMatches(c, finalSystem))
+          .filter(c -> Optional.ofNullable(c.getAdditionalDesignations()).orElse(List.of()).stream()
+              .anyMatch(d -> "alias".equals(d.getDesignationType()) && finalCode.equals(d.getName())))
+          .findFirst().orElse(null);
+      viaAlias = concept != null;
+    }
+
     if (concept == null) {
       return notInValueSet(finalCode, finalSystem, vsConcepts, codeLocation(req));
     }
@@ -1752,6 +1765,13 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     parameters.addParameter(new ParametersParameter("code").setValueCode(concept.getConcept().getCode()));
     parameters.addParameter(new ParametersParameter("system").setValueUri(concept.getConcept().getCodeSystemUri()));
     parameters.addParameter(new ParametersParameter("display").setValueString(conceptDisplay));
+    if (viaAlias && displayValid) {
+      parameters.addParameter(new ParametersParameter("normalized-code").setValueCode(concept.getConcept().getCode()));
+      String aliasNote = String.format("The code '%s' is a recognised secondary code (alias) for '%s' in code system '%s'",
+          finalCode, concept.getConcept().getCode(), concept.getConcept().getCodeSystemUri());
+      parameters.addParameter(new ParametersParameter("issues").setResource(org.termx.terminology.fhir.TxIssues.outcome(
+          org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "code-rule", aliasNote, codeLocation(req)))));
+    }
     String conceptVersion = Optional.ofNullable(concept.getConcept().getCodeSystemVersions()).orElse(List.of()).stream().findFirst().orElse(null);
     if (conceptVersion != null) {
       parameters.addParameter(new ParametersParameter("version").setValueString(conceptVersion));
