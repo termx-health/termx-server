@@ -21,9 +21,13 @@
     </customChange>
   </changeSet>
 
-  <!-- runOnChange: re-imports the Estonian/Russian UCUM supplement whenever it changes,
-       so added units/designations propagate to already-migrated databases. -->
-  <changeSet id="ucum-supplement-ee" author="termx" runOnChange="true">
+  <!-- runOnChange: re-imports the Estonian/Russian UCUM supplement whenever it changes, so added
+       units/designations propagate to already-migrated databases.
+       id bumped ucum-supplement-ee -> ucum-supplement-ee-2 to force a re-import after ucum-3 above:
+       on databases whose UCUM CodeSystem url was corrected by ucum-3, the supplement must re-run so its
+       baseCodeSystem link resolves (an initial import against the stale url left base_code_system null, so
+       supplement designations + aliases were not discovered by UcumSupplementDesignationService). -->
+  <changeSet id="ucum-supplement-ee-2" author="termx" runOnChange="true">
     <customChange class="org.termx.terminology.liquibase.CodeSystemFhirImport">
       <param name="files" value="terminology/changelog/data/codesystem/ucum-supplement-ee.json"/>
     </customChange>
