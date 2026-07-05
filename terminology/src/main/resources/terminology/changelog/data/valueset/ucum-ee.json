@@ -1,13 +1,13 @@
 {
   "resourceType": "ValueSet",
   "id": "ucum-ee",
-  "url": "https://fhir.ee/ValueSet/ucum-ee",
+  "url": "https://fhir.ee/ValueSet/ucum",
   "version": "1.0.0",
   "name": "UcumEe",
   "title": "UCUM Units (Estonia / ELHR)",
   "status": "active",
   "experimental": false,
-  "publisher": "TEHIK / Helex",
+  "publisher": "HELEX",
   "description": "Enumerated UCUM unit codes used by Estonian laboratory (ELHR) observations (the Estonian 'common units' analogue of the FHIR ucum-common value set). Localised displays are provided by the ucum-ee CodeSystem supplement.",
   "compose": {
     "include": [
