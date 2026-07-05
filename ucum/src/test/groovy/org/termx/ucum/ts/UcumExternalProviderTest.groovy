@@ -259,6 +259,10 @@ class UcumExternalProviderTest extends Specification {
     result.size() == 1
     result.first().active
     result.first().additionalDesignations*.name == ["mg/(24.h)"]
+    // The system identity is stamped even for a grammar-derived composite that is not a stored essence atom,
+    // so $expand emits contains.system and system-qualified $validate-code can match it. (Issue A.)
+    result.first().concept.codeSystem == "ucum"
+    result.first().concept.codeSystemUri == "http://unitsofmeasure.org"
   }
 
   private UcumCodeSystemProvider provider(Map<String, List<Designation>> supplementDesignations = [:]) {
