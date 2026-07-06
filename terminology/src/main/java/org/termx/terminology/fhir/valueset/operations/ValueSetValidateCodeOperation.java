@@ -1084,7 +1084,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
     // With no explicit displayLanguage parameter, the value set's own stated language scopes display validation:
     // a supplied display in another language (e.g. a German designation under an `en` value set) is then an
     // invalid-display error, not a lenient any-language match. (The `validation-*-bad-language-vslang` case.)
-    if (displayLanguage == null && StringUtils.isNotEmpty(inlineVs.getLanguage())) {
+    if (displayLanguage == null && inlineVs != null && StringUtils.isNotEmpty(inlineVs.getLanguage())) {
       displayLanguage = inlineVs.getLanguage();
     }
     String code = req.findParameter("code").map(p -> p.getValueCode() != null ? p.getValueCode() : p.getValueString()).orElse(null);
@@ -1179,7 +1179,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       }
     }
 
-    String vsCanonical = inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "");
+    String vsCanonical = inlineVs != null ? inlineVs.getUrl() + (inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "") : "";
     // A Coding/CodeableConcept supplied WITHOUT a system has no defined meaning and cannot be validated: the
     // reference server does NOT infer the system from the value set (that would silently validate a bare code),
     // it fails with a not-in-vs error at the code plus a no-system warning. A bare `code` param (system implied
@@ -1278,7 +1278,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
         // Whether the unknown system is the value set's own include system decides the shape: its own include
         // system → a single not-found (x-caused-by-unknown-system); an unrelated system → also a not-in-vs at
         // `code` and x-unknown-system (errors/unknown-system1 vs unknown-system2).
-        boolean systemInIncludes = inlineVs.getCompose() != null && inlineVs.getCompose().getInclude() != null
+        boolean systemInIncludes = inlineVs != null && inlineVs.getCompose() != null && inlineVs.getCompose().getInclude() != null
             && inlineVs.getCompose().getInclude().stream().anyMatch(inc -> finalSystem.equals(inc.getSystem()));
         return unknownSystem(req, code, system, systemInIncludes, vsCanonical);
       }
@@ -1296,7 +1296,7 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       // in another version): the code is then not-in-vs AND invalid in that version — the code/display of the
       // version that DOES define it must not leak in, the echoed/message version is the pinned one, and the code
       // reference carries the pinned version (system|version#code), as the reference server does.
-      boolean pinnedVersionAbsent = StringUtils.isNotEmpty(reqCsVersion) && multiVersionInclude(inlineVs, system)
+      boolean pinnedVersionAbsent = inlineVs != null && StringUtils.isNotEmpty(reqCsVersion) && multiVersionInclude(inlineVs, system)
           && !txCsConcept(req, system, code, reqCsVersion).found();
       if (pinnedVersionAbsent) {
         csVersion = reqCsVersion;
@@ -1547,31 +1547,33 @@ public class ValueSetValidateCodeOperation implements InstanceOperationDefinitio
       issues.add(org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "status-check",
           String.format("Reference to %s CodeSystem %s%s", csStatus, statusSystem, csv != null ? "|" + csv : "")));
     }
-    String vsStatus = statusWord(inlineVs);
-    if (vsStatus != null) {
-      issues.add(org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "status-check",
-          String.format("Reference to %s ValueSet %s%s", vsStatus, inlineVs.getUrl(), inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "")));
-    }
-    // An IMPORTED value set (compose.include.valueSet) that is itself withdrawn/deprecated contributes its own
-    // status-check, the same as the value set under validation — e.g. a value set that imports a withdrawn one
-    // yields "Reference to withdrawn ValueSet <canonical>". The import is resolved from the bundled tx-resources.
-    if (inlineVs.getCompose() != null && inlineVs.getCompose().getInclude() != null) {
-      java.util.LinkedHashSet<String> seenImports = new java.util.LinkedHashSet<>();
-      for (var inc : inlineVs.getCompose().getInclude()) {
-        for (String importRef : Optional.ofNullable(inc.getValueSet()).orElse(List.of())) {
-          int pipe = importRef == null ? -1 : importRef.indexOf('|');
-          String importUrl = pipe >= 0 ? importRef.substring(0, pipe) : importRef;
-          String importVersion = pipe >= 0 ? importRef.substring(pipe + 1) : null;
-          if (importUrl == null || !seenImports.add(importRef)) {
-            continue;
-          }
-          com.kodality.zmei.fhir.resource.terminology.ValueSet importedVs = txResourceValueSets(req, importUrl).stream()
-              .filter(v -> importVersion == null || importVersion.equals(v.getVersion())).findFirst().orElse(null);
-          String importStatus = statusWord(importedVs);
-          if (importStatus != null) {
-            issues.add(org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "status-check",
-                String.format("Reference to %s ValueSet %s%s", importStatus, importUrl,
-                    importedVs.getVersion() != null ? "|" + importedVs.getVersion() : "")));
+    if (inlineVs != null) {
+      String vsStatus = statusWord(inlineVs);
+      if (vsStatus != null) {
+        issues.add(org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "status-check",
+            String.format("Reference to %s ValueSet %s%s", vsStatus, inlineVs.getUrl(), inlineVs.getVersion() != null ? "|" + inlineVs.getVersion() : "")));
+      }
+      // An IMPORTED value set (compose.include.valueSet) that is itself withdrawn/deprecated contributes its own
+      // status-check, the same as the value set under validation — e.g. a value set that imports a withdrawn one
+      // yields "Reference to withdrawn ValueSet <canonical>". The import is resolved from the bundled tx-resources.
+      if (inlineVs.getCompose() != null && inlineVs.getCompose().getInclude() != null) {
+        java.util.LinkedHashSet<String> seenImports = new java.util.LinkedHashSet<>();
+        for (var inc : inlineVs.getCompose().getInclude()) {
+          for (String importRef : Optional.ofNullable(inc.getValueSet()).orElse(List.of())) {
+            int pipe = importRef == null ? -1 : importRef.indexOf('|');
+            String importUrl = pipe >= 0 ? importRef.substring(0, pipe) : importRef;
+            String importVersion = pipe >= 0 ? importRef.substring(pipe + 1) : null;
+            if (importUrl == null || !seenImports.add(importRef)) {
+              continue;
+            }
+            com.kodality.zmei.fhir.resource.terminology.ValueSet importedVs = txResourceValueSets(req, importUrl).stream()
+                .filter(v -> importVersion == null || importVersion.equals(v.getVersion())).findFirst().orElse(null);
+            String importStatus = statusWord(importedVs);
+            if (importStatus != null) {
+              issues.add(org.termx.terminology.fhir.TxIssues.issue("information", "business-rule", "status-check",
+                  String.format("Reference to %s ValueSet %s%s", importStatus, importUrl,
+                      importedVs.getVersion() != null ? "|" + importedVs.getVersion() : "")));
+            }
           }
         }
       }

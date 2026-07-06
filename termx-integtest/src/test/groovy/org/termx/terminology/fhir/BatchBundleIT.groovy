@@ -99,7 +99,7 @@ class BatchBundleIT extends TermxIntegTest {
     and: "the \$validate-code entry returns result=true for code1"
     def validateResource = resourceOfType(body, "Parameters")
     validateResource != null
-    parameterBoolean(validateResource, "result") == Boolean.TRUE
+    parameterBoolean(validateResource, "result") == true
   }
 
   def "a batch entry failing with a non-FhirException yields a per-entry OperationOutcome, not a whole-batch 500 (kefhir#7)"() {
@@ -179,9 +179,9 @@ class BatchBundleIT extends TermxIntegTest {
   private static Boolean parameterBoolean(JsonNode parameters, String name) {
     for (def p : parameters.path("parameter")) {
       if (p.get("name")?.asText() == name) {
-        return p.get("valueBoolean")?.asBoolean()
+        return p.get("valueBoolean")?.asBoolean() ?: false
       }
     }
-    return null
+    return false
   }
 }

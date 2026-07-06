@@ -114,7 +114,7 @@
     </Match>
 
     <!-- Suppress expose rep warnings in test code (tests often need to manipulate data structures) -->
-    <!-- Covers JUnit (*Test), Spock specs (*Spec and their generated $_closure inner classes) and test-support fixtures -->
+    <!-- Covers JUnit (*Test), Spock specs (*Spec and their generated $_closure inner classes), integration tests (*IT), and test-support fixtures -->
     <Match>
         <Or>
             <Bug pattern="EI_EXPOSE_REP"/>
@@ -123,6 +123,7 @@
         <Or>
             <Class name="~.*Test.*"/>
             <Class name="~.*Spec(\$.*)?"/>
+            <Class name="~.*IT.*"/>
             <Class name="~.*SchemaAssertingTerminologyCapabilityInitializer.*"/>
         </Or>
     </Match>
@@ -133,6 +134,7 @@
         <Or>
             <Class name="~.*Test.*"/>
             <Class name="~.*Spec(\$.*)?"/>
+            <Class name="~.*IT.*"/>
         </Or>
     </Match>
 
