@@ -901,6 +901,9 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
           }
           continue;
         }
+        if (ref == null) {
+          continue;
+        }
         int pipe = ref.indexOf('|');
         String refUrl = pipe >= 0 ? ref.substring(0, pipe) : ref;
         // The import ref's own pinned version wins; otherwise a `default-valueset-version` request param for this

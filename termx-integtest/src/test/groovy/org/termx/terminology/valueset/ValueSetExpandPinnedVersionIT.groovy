@@ -1,5 +1,6 @@
 package org.termx.terminology.valueset
 
+import java.util.Collections
 import com.kodality.commons.model.LocalizedName
 import com.kodality.zmei.fhir.FhirMapper
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
@@ -95,8 +96,8 @@ class ValueSetExpandPinnedVersionIT extends TermxIntegTest {
         .setType("include")
         .setCodeSystem(CS_ID)
         .setCodeSystemVersion(new CodeSystemVersionReference().setId(versionId).setVersion(codeSystemVersion))
-        .setFilters([new ValueSetVersionRule.ValueSetRuleFilter()
-            .setProperty(new PropertyReference().setName("grp")).setOperator("=").setValue("x")])
+        .setFilters(Collections.unmodifiableList([new ValueSetVersionRule.ValueSetRuleFilter()
+            .setProperty(new PropertyReference().setName("grp")).setOperator("=").setValue("x")]))
 
     def version = new ValueSetVersion()
         .setStatus(PublicationStatus.draft)
@@ -114,6 +115,7 @@ class ValueSetExpandPinnedVersionIT extends TermxIntegTest {
     return conceptRepository.expand(vsVersionId).collect { it.concept?.code }.findAll { it != null } as Set
   }
 
+  @SuppressWarnings("EI_EXPOSE_REP2")
   private void importCs(String version, List<String> codes, LocalDate releaseDate) {
     def concepts = codes.collect {
       "{\"code\": \"${it}\", \"display\": \"${it}\", \"property\": [{\"code\": \"grp\", \"valueString\": \"x\"}]}"

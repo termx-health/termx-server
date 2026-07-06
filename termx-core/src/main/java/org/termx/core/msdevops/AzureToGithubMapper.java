@@ -38,7 +38,7 @@ public class AzureToGithubMapper {
                 .setEncoding(mapEncoding(azureDetail.getContentMetadata()));
         github.setDownloadUrl(null);
         if ("base64".equalsIgnoreCase(github.getEncoding())) {
-            github.setContent(new String(Base64.getDecoder().decode(github.getContent().replaceAll("\n", ""))));
+            github.setContent(new String(Base64.getDecoder().decode(github.getContent().replaceAll("\n", "")), java.nio.charset.StandardCharsets.UTF_8));
         }
         return github;
     }

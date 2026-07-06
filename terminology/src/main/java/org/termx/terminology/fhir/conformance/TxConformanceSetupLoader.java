@@ -207,10 +207,10 @@ public class TxConformanceSetupLoader {
         obj.remove("versionAlgorithmCoding");
       }
       return JsonUtil.getObjectMapper().writeValueAsString(root);
-    } catch (Exception e) {
+    } catch (java.io.IOException e) {
       try {
         return Files.readString(body);
-      } catch (Exception ignored) {
+      } catch (java.io.IOException ignored) {
         return "";
       }
     }

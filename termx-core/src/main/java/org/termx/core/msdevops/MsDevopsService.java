@@ -159,7 +159,7 @@ public class MsDevopsService {
     private String calculateSha(byte[] bytes) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA1");
-            md.update(String.format("%s %d\u0000", "blob", bytes.length).getBytes());
+            md.update(String.format("%s %d\u0000", "blob", bytes.length).getBytes(StandardCharsets.UTF_8));
             md.update(bytes);
             return Hex.encodeHexString((md.digest()));
         } catch (NoSuchAlgorithmException e) {

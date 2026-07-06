@@ -10,6 +10,7 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.*;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,7 +64,16 @@ public class SpaceMsDevopsController {
 
   public record SpaceGithubAuthRequest(String returnUrl) {}
 
-  public record SpaceGithubCommitRequest(String message, List<String> files) {}
+  public record SpaceGithubCommitRequest(String message, List<String> files) {
+    public SpaceGithubCommitRequest(String message, List<String> files) {
+      this.message = message;
+      this.files = Collections.unmodifiableList(files);
+    }
+  }
 
-  public record SpaceGithubPullRequest(List<String> files) {}
+  public record SpaceGithubPullRequest(List<String> files) {
+    public SpaceGithubPullRequest(List<String> files) {
+      this.files = Collections.unmodifiableList(files);
+    }
+  }
 }

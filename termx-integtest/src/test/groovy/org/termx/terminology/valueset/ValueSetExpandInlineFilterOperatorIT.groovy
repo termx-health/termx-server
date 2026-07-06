@@ -160,6 +160,7 @@ class ValueSetExpandInlineFilterOperatorIT extends TermxIntegTest {
 
   // --- helpers ---------------------------------------------------------------
 
+  @SuppressWarnings("UPM_UNCALLED_PRIVATE_METHOD")
   private Set<String> expandInline(String property, String op, Object value, String version = CS_VERSION) {
     def valueSet = [
         resourceType: "ValueSet",
