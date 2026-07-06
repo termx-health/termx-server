@@ -91,9 +91,9 @@ public class CodeSystemFileImportService {
   public CodeSystemFileImportResponse process(CodeSystemFileImportRequest request, byte[] file) {
     String versionNumber = request.getVersion() != null ? request.getVersion().getNumber() : null;
     log.debug("=== IMPORT SERVICE DEBUG: process START ===");
-    log.debug("IMPORT SERVICE DEBUG: CodeSystem ID: {}, Version: {}, Type: {}, File size: {} bytes", 
+    log.debug("IMPORT SERVICE DEBUG: CodeSystem ID: {}, Version: {}, Type: {}, File size: {} bytes",
         request.getCodeSystem().getId(), versionNumber, request.getType(), file != null ? file.length : 0);
-    
+
     if ("json".equals(request.getType())) {
       log.debug("IMPORT SERVICE DEBUG: Processing JSON import");
       codeSystemFhirImportService.importCodeSystem(new String(file, StandardCharsets.UTF_8), request.getCodeSystem().getId());
@@ -105,21 +105,25 @@ public class CodeSystemFileImportService {
       codeSystemFhirImportService.importCodeSystem(json, request.getCodeSystem().getId());
       return new CodeSystemFileImportResponse();
     }
-    
+
     log.debug("IMPORT SERVICE DEBUG: Processing file import (CSV/TSV/XLSX)");
     CodeSystemFileImportResult result = CodeSystemFileImportProcessor.process(request, file);
-    log.debug("IMPORT SERVICE DEBUG: File processing complete - Entities: {}, Properties: {}", 
+    log.debug("IMPORT SERVICE DEBUG: File processing complete - Entities: {}, Properties: {}",
         result.getEntities().size(), result.getProperties().size());
-    
+
     log.debug("IMPORT SERVICE DEBUG: Saving import result...");
-    CodeSystemFileImportResponse response = save(request, result);
+    CodeSystemFileImportResponse response = saveInTransaction(request, result);
     log.debug("IMPORT SERVICE DEBUG: Import complete - Errors: {}", response.getErrors().size());
     log.debug("=== IMPORT SERVICE DEBUG: process END ===");
     return response;
   }
 
-
   @Transactional
+  private CodeSystemFileImportResponse saveInTransaction(CodeSystemFileImportRequest request, CodeSystemFileImportResult result) {
+    return save(request, result);
+  }
+
+
   public CodeSystemFileImportResponse save(CodeSystemFileImportRequest request, CodeSystemFileImportResult result) {
     String versionNumber = request.getVersion() != null ? request.getVersion().getNumber() : null;
     log.debug("=== IMPORT SERVICE DEBUG: save START ===");
