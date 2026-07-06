@@ -119,7 +119,7 @@ public class CodeSystemFileImportService {
   }
 
   @Transactional
-  private CodeSystemFileImportResponse saveInTransaction(CodeSystemFileImportRequest request, CodeSystemFileImportResult result) {
+  protected CodeSystemFileImportResponse saveInTransaction(CodeSystemFileImportRequest request, CodeSystemFileImportResult result) {
     return save(request, result);
   }
 
