@@ -2534,6 +2534,13 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
     Integer total = result.getMeta() != null ? result.getMeta().getTotal() : null;
     List<Concept> concepts = result.getData() != null ? result.getData() : Collections.emptyList();
 
+    // Concept property values are not carried on the query result (like the stored-snapshot path, the
+    // concept query omits them); load them by entity-version id when the client asks for properties,
+    // so this implicit expansion surfaces contains[].property just like the main $expand path.
+    List<String> requestedProperties = designationOrPropertyRequested(req, "property");
+    java.util.Map<Long, List<org.termx.ts.codesystem.EntityPropertyValue>> propertyValuesByVersionId =
+        requestedProperties.isEmpty() ? java.util.Map.of() : loadConceptPropertyValues(concepts);
+
     com.kodality.zmei.fhir.resource.terminology.ValueSet response = new com.kodality.zmei.fhir.resource.terminology.ValueSet();
     response.setUrl(stripped);
     response.setStatus("active");
@@ -2561,9 +2568,60 @@ public class ValueSetExpandOperation implements InstanceOperationDefinition, Typ
       if (display != null) {
         contain.setDisplay(display.getName());
       }
+      if (!requestedProperties.isEmpty()) {
+        Long versionId = firstVersionId(c);
+        List<org.termx.ts.codesystem.EntityPropertyValue> propertyValues =
+            versionId != null ? propertyValuesByVersionId.get(versionId) : null;
+        if (propertyValues != null) {
+          List<com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionContainsProperty> props =
+              ValueSetFhirMapper.toFhirContainsProperties(propertyValues, requestedProperties::contains, displayLang);
+          if (!props.isEmpty()) {
+            contain.setProperty(props);
+          }
+        }
+      }
       return contain;
     }).toList());
+
+    // Declare the requested properties so contains[].property references a declared expansion.property (valid
+    // FHIR). Each declared property carries its uri — from a tx-resource CodeSystem definition when supplied,
+    // falling back to the FHIR concept-properties uri for the built-in codes.
+    if (!requestedProperties.isEmpty()) {
+      java.util.Map<String, String> propertyUris = propertyUris(req);
+      expansion.setProperty(requestedProperties.stream()
+          .map(code -> new com.kodality.zmei.fhir.resource.terminology.ValueSet.ValueSetExpansionProperty().setCode(code)
+              .setUri(propertyUris.getOrDefault(code, "http://hl7.org/fhir/concept-properties#" + code)))
+          .toList());
+    }
+
     response.setExpansion(expansion);
     return response;
+  }
+
+  /** First (primary) entity-version id for a queried concept, used to key its loaded property values. */
+  private static Long firstVersionId(Concept concept) {
+    return concept.getVersions() != null && !concept.getVersions().isEmpty()
+        ? concept.getVersions().get(0).getId() : null;
+  }
+
+  /**
+   * Load concept property values by entity-version id for the given queried concepts — the concept query
+   * result omits them, so mirror {@link #decoratePropertyValues} and fetch them from the entity-version service.
+   */
+  private java.util.Map<Long, List<org.termx.ts.codesystem.EntityPropertyValue>> loadConceptPropertyValues(List<Concept> concepts) {
+    String ids = concepts.stream()
+        .map(ValueSetExpandOperation::firstVersionId)
+        .filter(java.util.Objects::nonNull).distinct().map(String::valueOf)
+        .collect(java.util.stream.Collectors.joining(","));
+    if (StringUtils.isEmpty(ids)) {
+      return java.util.Map.of();
+    }
+    org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams params = new org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams();
+    params.setIds(ids);
+    params.setLimit(-1);
+    return codeSystemEntityVersionService.query(params).getData().stream()
+        .filter(v -> v.getPropertyValues() != null)
+        .collect(java.util.stream.Collectors.toMap(CodeSystemEntityVersion::getId,
+            CodeSystemEntityVersion::getPropertyValues, (a, b) -> a));
   }
 }

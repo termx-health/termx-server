@@ -598,6 +598,80 @@ class ValueSetExpandOperationTest extends Specification {
     result.expansion.contains[0].display == "Decreased"
   }
 
+  def "implicit-CS expand with property= surfaces contains[].property (incl. a Coding) and declares it"() {
+    // The concept-query result omits property values, so the operation loads them by entity-version id
+    // and, when the client requests properties, attaches contains[].property via the shared FHIR mapper —
+    // Coding-typed properties surface as valueCoding, matching the main $expand path.
+    given:
+    valueSetService.query(_) >> QueryResult.empty()
+    codeSystemService.query(_) >> { args ->
+      CodeSystemQueryParams p = args[0]
+      return p.uri == "http://example.org/CodeSystem/service-events"
+          ? new QueryResult<>([new CodeSystem().setUri("http://example.org/CodeSystem/service-events").tap { setId("service-events") }])
+          : QueryResult.empty()
+    }
+    conceptService.query(_) >> {
+      def qr = new QueryResult<Concept>([cncptWithVersionId("AAD001", "Male doctor visit", 100L)])
+      qr.meta.total = 1
+      return qr
+    }
+    // Property values loaded by entity-version id: a Coding property plus a code property.
+    codeSystemEntityVersionService.query(_) >> new QueryResult<CodeSystemEntityVersion>([
+        new CodeSystemEntityVersion().setId(100L).setPropertyValues([
+            codingPropertyValue("teenuseValdkond", "AD", "http://example.org/CodeSystem/teenuste-valdkonnad"),
+            codePropertyValue("status", "active")])])
+
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://example.org/CodeSystem/service-events?fhir_vs"))
+        .addParameter(new Parameters.ParametersParameter("property").setValueCode("teenuseValdkond"))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    result.expansion.contains.size() == 1
+    def contain = result.expansion.contains[0]
+    contain.code == "AAD001"
+    def prop = contain.property.find { it.code == "teenuseValdkond" }
+    prop != null
+    prop.valueCoding != null
+    prop.valueCoding.code == "AD"
+    prop.valueCoding.system == "http://example.org/CodeSystem/teenuste-valdkonnad"
+    // `status` was not requested, so it is filtered out.
+    contain.property.every { it.code != "status" }
+    // The requested property is declared on the expansion (valid FHIR — contains.property references it).
+    result.expansion.property.find { it.code == "teenuseValdkond" } != null
+  }
+
+  def "implicit-CS expand without property= attaches no properties and skips the property-value load"() {
+    given:
+    valueSetService.query(_) >> QueryResult.empty()
+    codeSystemService.query(_) >> { args ->
+      CodeSystemQueryParams p = args[0]
+      return p.uri == "http://example.org/CodeSystem/service-events"
+          ? new QueryResult<>([new CodeSystem().setUri("http://example.org/CodeSystem/service-events").tap { setId("service-events") }])
+          : QueryResult.empty()
+    }
+    conceptService.query(_) >> {
+      def qr = new QueryResult<Concept>([cncptWithVersionId("AAD001", "Male doctor visit", 100L)])
+      qr.meta.total = 1
+      return qr
+    }
+
+    def req = new Parameters()
+        .addParameter(new Parameters.ParametersParameter("url").setValueUrl("http://example.org/CodeSystem/service-events?fhir_vs"))
+
+    when:
+    def result = operation.run(req)
+
+    then:
+    result.expansion.contains.size() == 1
+    result.expansion.contains[0].property == null || result.expansion.contains[0].property.isEmpty()
+    result.expansion.property == null || result.expansion.property.isEmpty()
+    // No property requested → no extra entity-version query.
+    0 * codeSystemEntityVersionService.query(_)
+  }
+
 
   // ---------------------------------------------------------------------------
   // SNOMED CT implicit-ValueSet URLs
@@ -976,6 +1050,30 @@ class ValueSetExpandOperationTest extends Specification {
           new Designation().setName(displayName).setLanguage("en").setDesignationType("display")
       ])])
     }
+  }
+
+  /** Like {@link #cncpt} but stamps the entity-version id the property-value lookup keys on. */
+  private static Concept cncptWithVersionId(String code, String displayName, Long versionId) {
+    return new Concept().tap { c ->
+      c.setCode(code)
+      c.setVersions([new CodeSystemEntityVersion().setId(versionId).setDesignations([
+          new Designation().setName(displayName).setLanguage("en").setDesignationType("display")
+      ])])
+    }
+  }
+
+  private static org.termx.ts.codesystem.EntityPropertyValue codingPropertyValue(String propertyCode, String code, String codeSystem) {
+    return new org.termx.ts.codesystem.EntityPropertyValue()
+        .setEntityProperty(propertyCode)
+        .setEntityPropertyType(org.termx.ts.codesystem.EntityPropertyType.coding)
+        .setValue(new org.termx.ts.codesystem.EntityPropertyValue.EntityPropertyValueCodingValue(code, codeSystem))
+  }
+
+  private static org.termx.ts.codesystem.EntityPropertyValue codePropertyValue(String propertyCode, String value) {
+    return new org.termx.ts.codesystem.EntityPropertyValue()
+        .setEntityProperty(propertyCode)
+        .setEntityPropertyType(org.termx.ts.codesystem.EntityPropertyType.code)
+        .setValue(value)
   }
 
   /**
