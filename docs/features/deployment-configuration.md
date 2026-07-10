@@ -78,14 +78,18 @@ Development-only auth (do **not** use in production):
 > deployments and the feature docs use the `BOB_MINIO_*` names. Both bind to the same `bob.minio.*`
 > properties — prefer `BOB_MINIO_*`.
 
-### 1.6 Large terminology import (SNOMED + LOINC archives) — see [`large-terminology-import.md`](large-terminology-import.md)
+### 1.6 Large terminology import (SNOMED + LOINC archives) — see [`snomed-import-management.md`](snomed-import-management.md), [`loinc-import-management.md`](loinc-import-management.md)
 | Env var / property | Default | Purpose |
 |---|---|---|
-| `SNOMED_DELTA_GENERATOR_JAR` | `/opt/delta-generator-tool.jar` | Path to the delta-generator jar in the container |
 | `termx.terminology-archive.bucket` | `terminology-archives` | MinIO bucket for stored archives (auto-created) |
 | `termx.terminology-archive.retention-per-edition` | `3` | Archives kept per edition before cleanup |
 | `termx.snomed.delta-generator.timeout-seconds` | `1800` | Hard cap on the delta-generator subprocess |
 | `micronaut.server.max-request-size` | `1610612736` (1.5 GB) | Max multipart upload (SNOMED Intl ≈ 1 GB) |
+
+> **Delta-generator jar is bundled — no env var.** The IHTSDO `DeltaGeneratorTool-3.0.0.jar` is
+> vendored in the image (`snomed/src/main/resources/snomed/delta-generator-tool/`) and auto-extracted
+> to the JVM temp dir at startup. There is no `SNOMED_DELTA_GENERATOR_JAR` setting (the earlier
+> `/opt/delta-generator-tool.jar` variable was removed).
 
 ### 1.7 Mail / SMTP (optional) — see [`smtp-email-support.md`](smtp-email-support.md)
 | Env var | Default | Purpose |
@@ -139,6 +143,49 @@ Development-only auth (do **not** use in production):
 | `JVM_OOM_OPTS` | `-XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/app/logs/` | OOM fail-fast (set in Dockerfile) |
 | `LOGBACK_LOG_LEVEL` | `INFO` | Root log level |
 | `LIQUIBASE_LOG_LEVEL` / `MICRONAUT_LIQUIBASE_LOG_LEVEL` | `INFO` | Liquibase log level |
+
+### 1.13 Azure DevOps git sync (optional; 3.3+)
+
+PAT-based Azure DevOps integration mirroring the GitHub content workflow. The bean is **opt-in** and
+requires `ms-devops.client.id` — when unset, the MS DevOps endpoints return "not configured" and the
+rest of the app is unaffected.
+
+| Env var | Property | Default | Purpose |
+|---|---|---|---|
+| `MS_DEVOPS_CLIENT_ID` | `ms-devops.client.id` | (none) | Arbitrary username paired with the PAT; presence of this key enables the feature |
+| `MS_DEVOPS_CLIENT_SECRET` | `ms-devops.client.secret` | (none) | Azure DevOps **Personal Access Token** |
+
+### 1.14 Terminology-server secret encryption (optional; 3.3+)
+
+Encrypts stored external-terminology-server secrets (OAuth2 client secrets, API keys, basic-auth
+passwords) at rest with AES/GCM. **Opt-in**: when unset, secrets are stored as plaintext
+(passthrough), so it can be adopted later without a data migration.
+
+| Env var | Property | Default | Purpose |
+|---|---|---|---|
+| `TERMX_SERVER_SECRET_ENCRYPTION_KEY` | `termx.server.secret-encryption-key` | (none) | Base64-encoded AES key; enables encryption of terminology-server secrets |
+
+> The per-server auth type (`none` / `basic` / `oauth2` / `apikey`) and OAuth2 `scope` are stored
+> **per terminology server** (DB config via the Servers UI), not as env vars.
+
+### 1.15 FHIR terminology conformance testing (optional; 3.3+) — see [`../fhir-tx-conformance-todo.md`](../fhir-tx-conformance-todo.md)
+
+Runs the official HL7 `tx-ecosystem` suite against this server via the FHIR validator's `txTests`.
+In the shipped image `validator_cli.jar` is downloaded in the Dockerfile and
+`TERMX_CONFORMANCE_VALIDATOR_JAR` is pre-set.
+
+| Env var | Property | Default | Purpose |
+|---|---|---|---|
+| `TERMX_CONFORMANCE_VALIDATOR_JAR` | `conformance.validator-jar` | (baked into image) | Absolute path to `validator_cli.jar` |
+| `TERMX_CONFORMANCE_TX_URL` | `conformance.tx-url` | `http://localhost:8200/fhir` | This server's externally-reachable FHIR base, used as the `-tx` target |
+| `TERMX_CONFORMANCE_TEST_PACKAGE_DIR` | `conformance.test-package-dir` | (validator package cache) | Dir holding the tx-ecosystem test fixtures for `loadSetup=true` runs |
+| `TERMX_CONFORMANCE_SETUP_AUTH_TOKEN` | `conformance.setup-auth-token` | (none) | Bearer token the setup loader uses to write fixtures (needs CS/VS create+update privileges) |
+
+### 1.16 Global search (3.3+)
+
+The global-search dashboard's quick-filter spaces are driven by a per-space **`global_search`** flag
+(column on `sys.space`, toggled in the Space editor), not by configuration. No env var; listed here so
+operators know the dashboard is data-driven rather than env-driven.
 
 ---
 
@@ -308,7 +355,7 @@ for local/dev only. Set real secrets and disable mock/dev auth in production.
 ---
 
 ## 8. Related docs
-- [`large-terminology-import.md`](large-terminology-import.md) — SNOMED/LOINC archive import, storage, retention.
+- [`snomed-import-management.md`](snomed-import-management.md), [`loinc-import-management.md`](loinc-import-management.md) — SNOMED/LOINC archive import, storage, retention.
 - [`smtp-email-support.md`](smtp-email-support.md) — email setup.
 - [`mock-auth.md`](mock-auth.md) — mock auth provider.
 - [`codesystem-import.md`](codesystem-import.md) — code system import logic.

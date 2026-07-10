@@ -24,9 +24,7 @@ Discover and resolve terminology servers across distributed healthcare systems.
 - API: https://dev.termx.org/tx-reg
 
 **Documentation:**
-- [Feature Description](docs/features/fhir-terminology-ecosystem-feature-description.md) - Overview and use cases
-- [Technical Guide](docs/features/fhir-terminology-ecosystem-api.md) - API reference and configuration
-- [UI Guide](docs/features/fhir-terminology-ecosystem-ui.md) - Web interface documentation
+- [FHIR Terminology Ecosystem Registry Proxy](docs/features/fhir-terminology-ecosystem-registry-proxy.md) - Overview, deployment, API reference, and web UI
 
 ### Other Features
 
