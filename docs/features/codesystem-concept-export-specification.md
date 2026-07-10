@@ -64,12 +64,14 @@ Format: `{propertyName}#code::{order}` and `{propertyName}#system::{order}` (whe
 
 ### Special Columns
 - `status` - Concept status (active, draft, retired, etc.)
-- `is-a` - Parent concepts (comma-separated)
-- `parent` - Parent concepts (comma-separated)
-- `child` - Child concepts (comma-separated)
-- `partOf` - Part-of relationships (comma-separated)
-- `groupedBy` - Grouped-by relationships (comma-separated)
-- `classifiedWith` - Classified-with relationships (comma-separated)
+- `is-a` - Parent concepts (`#`-separated)
+- `parent` - Parent concepts (`#`-separated)
+- `child` - Child concepts (`#`-separated)
+- `partOf` - Part-of relationships (`#`-separated)
+- `groupedBy` - Grouped-by relationships (`#`-separated)
+- `classifiedWith` - Classified-with relationships (`#`-separated)
+
+> **Note on association columns**: The parent/child code sets are built from **all active associations with no association-type filter** (`ConceptExportService.java:75-80,365-368`). Every parent-direction column (`is-a`, `parent`, `partOf`, `groupedBy`, `classifiedWith`) emits the **same** unfiltered set of parent target codes, and `child` emits the unfiltered set of child codes. The column names do **not** select associations by type.
 
 ## Column Ordering
 
@@ -129,7 +131,7 @@ Columns appear in the following order:
 - **Empty**: Empty string if no version exists
 
 #### Association Columns (is-a, parent, child, partOf, groupedBy, classifiedWith)
-- **Value**: Comma-separated list of target concept codes
+- **Value**: `#`-separated list of target concept codes
 - **Format**: `String.join("#", codes)`
 - **Filtering**: Only active associations are included
 - **Empty**: Empty string if no associations exist

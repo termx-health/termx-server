@@ -13,7 +13,7 @@ Task access control provides privilege-based visibility and filtering of tasks i
 
 **Key capabilities:**
 
-- Automatic virtual privilege derivation at login (resource edit/publish privileges grant Task privileges)
+- Automatic virtual privilege derivation at login (resource `triage`/`write`/`maintain` privileges grant Task privileges)
 - Privilege-based task filtering at the database level with OR logic (own tasks OR publisher access)
 - Resource-level access control using context items
 - Unseen changes tracking per user
@@ -28,16 +28,18 @@ Task access control is automatically enabled and requires no configuration. It i
 
 Task access is controlled through **virtual privilege derivation**. When a user logs in, their resource privileges are automatically translated into Task privileges:
 
-**Privilege derivation at login:**
+**Privilege derivation at login** (mirrors the GitHub-based action hierarchy — a higher action implies the lower Task actions):
+- Any `*.*.triage` privilege (e.g., `icd-10.CodeSystem.triage`) → automatically derives `code-system#icd-10.Task.read` (task visibility only)
 - Any `*.*.write` privilege (e.g., `icd-10.CodeSystem.write`) → automatically derives `code-system#icd-10.Task.read` and `code-system#icd-10.Task.write`
 - Any `*.*.maintain` privilege (e.g., `*.ValueSet.maintain`) → automatically derives `value-set#*.Task.read`, `value-set#*.Task.write`, and `value-set#*.Task.maintain`
-- View-only privileges (e.g., `*.CodeSystem.read`) → no Task privileges, task list is hidden
+- Read-only privileges (e.g., `*.CodeSystem.read`) → no Task privileges, task list is hidden
 
 **Task visibility rules:**
 
 | User Privilege | Task List Accessible? | Derived Task Privileges | Tasks Visible |
 |----------------|----------------------|------------------------|---------------|
 | `*.CodeSystem.read` only | ❌ No | None | None (no Task privileges derived) |
+| `icd-10.CodeSystem.triage` | ✅ Yes | `code-system#icd-10.Task.read` | Tasks created by OR assigned to user (read-only) |
 | `icd-10.CodeSystem.write` | ✅ Yes | `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write` | Tasks created by OR assigned to user |
 | `icd-10.CodeSystem.maintain` | ✅ Yes | `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write`, `code-system#icd-10.Task.maintain` | Tasks created by OR assigned to user, PLUS all tasks with context `code-system\|icd-10` |
 | `*.CodeSystem.maintain` | ✅ Yes | `code-system#*.Task.read`, `code-system#*.Task.write`, `code-system#*.Task.maintain` | Tasks created by OR assigned to user, PLUS all CodeSystem tasks |
@@ -48,9 +50,9 @@ Task access is controlled through **virtual privilege derivation**. When a user 
 Default roles in TermX:
 
 - **admin**: `*.*.*` (all privileges)
-- **publisher**: `*.*.maintain` (publish on all resources)
-- **editor**: `*.*.write` (edit on all resources)
-- **viewer**: `*.*.read` (view-only on all resources)
+- **publisher**: `*.*.maintain` (maintain — publish-level access — on all resources)
+- **editor**: `*.*.write` (write on all resources)
+- **viewer**: `*.*.read` (read-only on all resources)
 
 See [Mock Authentication](mock-auth.md) for testing with mock user profiles.
 
@@ -116,12 +118,12 @@ Example: A user with privilege `icd-10.CodeSystem.write` can see tasks with cont
 **Context:** Read-only user (reports/auditing role) should not see task management interface.
 
 **Steps:**
-1. Viewer logs in with only `*.*.read` privileges (no edit or publish on any resource)
+1. Viewer logs in with only `*.*.read` privileges (no triage, write, or maintain on any resource)
 2. System does NOT derive any Task privileges (no resource-specific Task privileges)
 3. Query task list - receives 403 Forbidden (gate check fails - no Task.read privilege)
 4. Task menu items hidden in UI (no Task privileges)
 
-**Outcome:** Viewer cannot access task system, maintaining separation of concerns. The resource-specific privilege derivation ensures task access is automatically tied to edit/publish privileges on actual resources.
+**Outcome:** Viewer cannot access task system, maintaining separation of concerns. The resource-specific privilege derivation ensures task access is automatically tied to `triage`/`write`/`maintain` privileges on actual resources.
 
 ### Scenario 5: Resource-Specific Task Filtering
 
@@ -290,7 +292,14 @@ Privilege strings follow: `<resourceId>.<ResourceType>.<action>`
 |-----------|----------|----------|
 | resourceId | `icd-10`, `disorders`, `snomed-ct` | `*` = all resources |
 | ResourceType | `CodeSystem`, `ValueSet`, `MapSet`, `Task` | `*` = all types |
-| action | `view`, `edit`, `publish` | `*` = all actions |
+| action | `read`, `triage`, `write`, `maintain` | `*` = all actions |
+
+> **GitHub-based action model.** The action vocabulary mirrors GitHub's repository
+> permission levels — `read` → `triage` → `write` → `maintain` (and `admin`, expressed as
+> the `*.*.*` wildcard / the `Admin` resource type). Each higher level implies the lower ones.
+> The legacy `view` / `edit` / `publish` actions were renamed to `read` / `write` / `maintain`
+> in the Phase B migration (`02-privilege-actions-rename.sql`); `triage` was added as a new
+> intermediate action.
 
 **Resource-specific Task privilege derivation:**
 
@@ -298,6 +307,7 @@ Resource privileges are automatically translated to resource-specific Task privi
 
 | Resource Privilege | Derived Task Privileges | Effect |
 |--------------------|------------------------|--------|
+| `icd-10.CodeSystem.triage` | `code-system#icd-10.Task.read` | Can access task list (read-only), see own ICD-10 tasks |
 | `icd-10.CodeSystem.write` | `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write` | Can access task list, see own ICD-10 tasks |
 | `icd-10.CodeSystem.maintain` | `code-system#icd-10.Task.read`, `code-system#icd-10.Task.write`, `code-system#icd-10.Task.maintain` | Can access task list, see own tasks + all ICD-10 CodeSystem tasks |
 | `*.CodeSystem.write` | `code-system#*.Task.read`, `code-system#*.Task.write` | Can access task list, see own tasks for any CodeSystem |
@@ -336,7 +346,7 @@ These parameters are mapped from `TaskQueryParams` by the controller after apply
 flowchart TD
     Login[User Login] --> SessionProvider[SessionProvider]
     SessionProvider --> DerivePrivs[deriveTaskPrivileges]
-    DerivePrivs -->|*.*.write or *.*.maintain| AddTaskPrivs[Add *.Task.read/edit/publish]
+    DerivePrivs -->|*.*.triage / write / maintain| AddTaskPrivs[Add *.Task.read/write/maintain]
     AddTaskPrivs --> SessionInfo[SessionInfo with derived privileges]
     
     Request[API Request] --> Auth[@Authorized Task.read]
@@ -348,7 +358,7 @@ flowchart TD
     CheckAdmin -->|No| BuildFilter[Build TaskVisibilityFilter]
     
     BuildFilter --> SetUsername[username = session.username]
-    BuildFilter --> GetPublisher[publisherContexts = getPermittedContexts publish]
+    BuildFilter --> GetPublisher[publisherContexts = getPermittedContexts maintain]
     
     SetUsername --> ApplyFilter[Apply Visibility Filter]
     GetPublisher --> ApplyFilter
@@ -364,7 +374,7 @@ flowchart TD
 **Privilege resolution flow:**
 
 1. **Login**: SessionFilter calls `deriveTaskPrivileges()` - resource privileges derive resource-specific Task privileges
-2. **Request arrives**: `@Authorized(privilege = Privilege.T_VIEW)` checks for any Task.read privilege (gate check)
+2. **Request arrives**: `@Authorized(privilege = Privilege.T_READ)` checks for any Task.read privilege (gate check)
 3. **Controller logic**:
    - If admin (`*.*.*`): no filter
    - Otherwise: build `TaskVisibilityFilter` with username + publisher contexts extracted from hash-format privileges
@@ -429,10 +439,12 @@ private void deriveTaskPrivileges(SessionInfo session) {
         String contextType = resourceTypeToContextType.get(resourceType);
         if (contextType == null) continue;
         
-        if ("edit".equals(action)) {
+        if ("triage".equals(action)) {
+            derived.add(contextType + "#" + resourceId + ".Task.read");
+        } else if ("write".equals(action)) {
             derived.add(contextType + "#" + resourceId + ".Task.read");
             derived.add(contextType + "#" + resourceId + ".Task.write");
-        } else if ("publish".equals(action)) {
+        } else if ("maintain".equals(action)) {
             derived.add(contextType + "#" + resourceId + ".Task.read");
             derived.add(contextType + "#" + resourceId + ".Task.write");
             derived.add(contextType + "#" + resourceId + ".Task.maintain");
@@ -446,7 +458,7 @@ private void deriveTaskPrivileges(SessionInfo session) {
 **TaskController filtering logic:**
 
 ```java
-@Authorized(privilege = Privilege.T_VIEW)  // Gate check
+@Authorized(privilege = Privilege.T_READ)  // Gate check
 @Get(uri = "/tasks{?params*}")
 public QueryResult<Task> queryTasks(TaskQueryParams params) {
     SessionInfo session = SessionStore.require();
@@ -455,7 +467,7 @@ public QueryResult<Task> queryTasks(TaskQueryParams params) {
         // Build visibility filter with OR semantics
         TaskVisibilityFilter filter = new TaskVisibilityFilter();
         filter.setUsername(session.getUsername());
-        filter.setPublisherContexts(getPermittedContexts(session, "publish"));
+        filter.setPublisherContexts(getPermittedContexts(session, "maintain"));
         params.setVisibilityFilter(filter);
     }
     return taskService.queryTasks(params);
@@ -510,10 +522,10 @@ Task context items link tasks to resources:
 
 | Context Type | Resource | Privilege Pattern |
 |--------------|----------|-------------------|
-| `code-system` | CodeSystem | `<resourceId>.CodeSystem.write/publish` |
-| `value-set` | ValueSet | `<resourceId>.ValueSet.write/publish` |
-| `map-set` | MapSet | `<resourceId>.MapSet.write/publish` |
-| `wiki` | Wiki space | `<resourceId>.Wiki.write/publish` |
+| `code-system` | CodeSystem | `<resourceId>.CodeSystem.write/maintain` |
+| `value-set` | ValueSet | `<resourceId>.ValueSet.write/maintain` |
+| `map-set` | MapSet | `<resourceId>.MapSet.write/maintain` |
+| `wiki` | Wiki space | `<resourceId>.Wiki.write/maintain` |
 
 The system extracts resource IDs from task context and checks user privileges against those specific resources.
 

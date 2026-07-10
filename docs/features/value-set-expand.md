@@ -8,16 +8,17 @@
 
 ## 1. Description
 
-`POST /fhir/ValueSet/$expand` (and the instance-level `POST /fhir/ValueSet/{id}/$expand`) returns a `ValueSet` resource whose `expansion.contains` lists the codes selected by the value set. TermX accepts four forms of input, resolved in this priority order:
+`POST /fhir/ValueSet/$expand` (and the instance-level `POST /fhir/ValueSet/{id}/$expand`) returns a `ValueSet` resource whose `expansion.contains` lists the codes selected by the value set. TermX accepts five forms of input, resolved in this priority order:
 
 | # | Path | How the client identifies the VS | Where the concepts come from |
 |---|---|---|---|
-| 1 | **Inline-VS** | `valueSet` parameter carries a `ValueSet` resource constructed by the client | `ValueSetVersionConceptRepository.expandFromJson(...)` — Postgres function `value_set_expand_jsonb` resolves `compose.include[].system + filter + concept` directly |
-| 2 | **SNOMED implicit-VS** | `url` is `http://snomed.info/sct[/<edition>/version/<date>]?fhir_vs[=…]` | `SnomedValueSetExpandProvider.ruleExpand(...)` — calls Snowstorm via `SnomedService.searchConcepts(ecl=…, branch=…)` |
-| 3 | **Stored-VS** | `url` matches a `ValueSet.uri` already stored in TermX, or the operation runs at instance level (`/ValueSet/{id}/$expand`) | `ValueSetVersionConceptService.expand(...)` — snapshot persisted by TermX (re-uses cache when current) |
-| 4 | **Implicit VS over a stored CodeSystem** | `url` matches a `CodeSystem.uri`; no matching stored VS exists | Delegates to `ConceptService.query(codeSystem=…, codeSystemVersion=…, textContains=filter, limit=count, offset=offset, displayLanguage=…)` — same path the UI's concept-list endpoint uses |
+| 1 | **Inline-VS** | `valueSet` parameter carries a `ValueSet` resource constructed by the client | `ValueSetVersionConceptRepository.expandFromJson(...)` — Postgres function `value_set_expand(text)` resolves `compose.include[].system + filter + concept` directly |
+| 2 | **SNOMED implicit-VS** | `url` is `http://snomed.info/sct[/<edition>/version/<date>]?fhir_vs[=…]` | `SnomedValueSetExpandProvider.ruleExpandPaged(...)` — calls Snowstorm via `SnomedService.searchConceptsPage(ecl=…, branch=…)` |
+| 3 | **tx-resource inline VS** | `url` names a `ValueSet` supplied inline as a validator tx-resource (`ValueSetExpandOperation.java:153-166`); resolved after SNOMED but before the stored-VS lookup. A pinned `valueSetVersion` must match exactly (else 404); otherwise the latest supplied version is used | `expandInline(...)` — same inline `$expand` path as row 1 |
+| 4 | **Stored-VS** | `url` matches a `ValueSet.uri` already stored in TermX, or the operation runs at instance level (`/ValueSet/{id}/$expand`) | `ValueSetVersionConceptService.expand(...)` — snapshot persisted by TermX (re-uses cache when current) |
+| 5 | **Implicit VS over a stored CodeSystem** | `url` matches a `CodeSystem.uri`; no matching stored VS exists | Delegates to `ConceptService.query(codeSystem=…, codeSystemVersion=…, textContains=filter, limit=count, offset=offset, displayLanguage=…)` — same path the UI's concept-list endpoint uses |
 
-A request that resolves none of the four returns `404 NOTFOUND`.
+A request that resolves none of these five returns `404 NOTFOUND`.
 
 All paths apply the same downstream parameter set: `offset`, `count`, `filter`, `displayLanguage`, `defaultLanguage`, `includeDesignations`, `activeOnly`, `excludeNested`. Paging is applied **after** filtering, per the FHIR spec.
 
@@ -43,8 +44,8 @@ The `snomed-module` CodeSystem must contain entries with `moduleId` and `branchP
 | `url` | `uri` | Required unless `valueSet` is sent. Resolved in order: stored `ValueSet.uri` → SNOMED canonical (see [§5](#5-snomed-fhir_vs-url-family)) → stored `CodeSystem.uri` (see [§6](#6-implicit-valueset-over-a-stored-codesystem)). |
 | `valueSetVersion` | `string` | Selects a specific version. On stored-VS: picks `ValueSet.version`. On implicit-CS: forwarded as `codeSystemVersion`. Pipe-version syntax in `url` (`<canonical>\|<version>`) is also accepted on implicit-CS; `valueSetVersion` wins when both are supplied. |
 | `valueSet` | `ValueSet` resource | Inline path. Mutually exclusive with `url` (inline takes precedence when both are present). |
-| `offset` | `integer` | Skip the first N concepts. `offset >= expansion.total` → empty `contains`. Honoured on all four paths. Pushed down to the DB on the implicit-CS path (`LIMIT/OFFSET` on the concept query). |
-| `count` | `integer` | Keep at most N concepts. Honoured on all four paths. Pushed down to the DB on the implicit-CS path. |
+| `offset` | `integer` | Skip the first N concepts. `offset >= expansion.total` → empty `contains`. Honoured on all five paths. Pushed down to the DB on the implicit-CS path (`LIMIT/OFFSET` on the concept query). |
+| `count` | `integer` | Keep at most N concepts. Honoured on all five paths. Pushed down to the DB on the implicit-CS path. |
 | `filter` | `string` | Case-insensitive substring match against `concept.code` and `concept.display`. Applied **before** paging. On the implicit-CS path it maps to `ConceptQueryParams.textContains` (DB-side); on stored-VS, inline-VS, and SNOMED it's applied client-side after the source returns. |
 | `displayLanguage` | `code` / `string` | Preferred designation language for `expansion.contains[].display`. On the implicit-CS path it's threaded into the concept query so the right designation comes back; on other paths the request-time language wins over the version-time language. |
 | `defaultLanguage` | `code` / `string` | Fallback when `displayLanguage` is unset. |
@@ -56,7 +57,7 @@ The `snomed-module` CodeSystem must contain entries with `moduleId` and `branchP
 
 ### Expansion envelope: what clients can rely on
 
-A response from any of the four paths has these guarantees (pinned by `ValueSetExpandOperationTest`):
+A response from any of the five paths has these guarantees (pinned by `ValueSetExpandOperationTest`):
 
 | Field | Value |
 |---|---|
@@ -131,15 +132,15 @@ GET /fhir/ValueSet/$expand?url=http://loinc.org/answer-list&valueSetVersion=2.82
 
 ## 5. SNOMED `?fhir_vs` URL family
 
-Per the [HL7 UTG SNOMED CT page](https://build.fhir.org/ig/HL7/UTG/en/SNOMEDCT.html), the SNOMED canonical URL supports five implicit-ValueSet patterns. TermX recognises all five and translates the URL into a `ValueSetVersionRule` filter that `SnomedValueSetExpandProvider.composeEcl()` further translates into ECL:
+Per the [HL7 UTG SNOMED CT page](https://build.fhir.org/ig/HL7/UTG/en/SNOMEDCT.html), the SNOMED canonical URL supports five implicit-ValueSet patterns. TermX maps each URL to a `ValueSetVersionRule` filter, but only **three** of the synthesised operators are actually implemented in `SnomedValueSetExpandProvider.composeEcl()` (`is-a`, `in`). The other two synthesise `operator=ecl` — an operator that is **not** in `ValueSetRuleFilterOperator.ALL` and that `composeEcl` has no `switch` case for, so its `default` branch throws `ApiError.SN301` at runtime. Those two paths (`?fhir_vs` all-concepts and `?fhir_vs=ecl/…`) are therefore currently **unimplemented**:
 
 | Input URL fragment | Synthesised filter | ECL emitted by `composeEcl` | Meaning |
 |---|---|---|---|
-| `?fhir_vs` | `operator=ecl, value="*"` | `*` | All concepts in the edition/version. |
+| `?fhir_vs` | `operator=ecl, value="*"` | **Unimplemented** — `composeEcl` has no `ecl` case, so its `default` branch throws `ApiError.SN301`. | Intended: all concepts in the edition/version. Currently unsupported (throws at runtime). |
 | `?fhir_vs=isa/<sctid>` | `operator=is-a, value=<sctid>` | `<<<sctid>` | Descendants of `<sctid>` **plus the concept itself** (per IG). |
 | `?fhir_vs=refset` | `operator=is-a, value=900000000000455006` | `<<900000000000455006` | All concepts under `Reference set foundation` — i.e. the catalog of refsets. |
 | `?fhir_vs=refset/<sctid>` | `operator=in, value=<sctid>` | `^<sctid>` | Active members of refset `<sctid>`. |
-| `?fhir_vs=ecl/<URL-encoded>` | `operator=ecl, value=<URL-decoded>` | `<expr>` | Concepts matching the ECL expression. URI-decoded before being forwarded. |
+| `?fhir_vs=ecl/<URL-encoded>` | `operator=ecl, value=<URL-decoded>` | **Unimplemented** — `composeEcl` has no `ecl` case, so its `default` branch throws `ApiError.SN301`. | Intended: concepts matching the ECL expression (URI-decoded first). Currently unsupported (throws at runtime). |
 
 Both base canonicals are accepted:
 
@@ -167,7 +168,7 @@ The response is built from the `QueryResult<Concept>`:
 - `expansion.contains[].code` ← `concept.code`
 - `expansion.contains[].display` ← `ConceptUtil.getDisplay(concept.versions[0].designations, displayLanguage, [])` — same helper `CodeSystemLookupOperation` uses
 
-**Why this route and not the SQL function?** The `value_set_expand_jsonb` SQL function is built for arbitrary compose rules (filters, exclusions, recursion). For the implicit-CS case the synthesised compose has only `{system, version}` — no filter complexity — and the SQL function's `cs` CTE doesn't fetch designations for system-only includes (LOINC bug observed on dev.termx.org). `ConceptService.query` fetches designations by default, pushes `limit`/`offset` into the DB, and reports the pre-paging total — three properties this path needs and the SQL function doesn't provide for system-only includes.
+**Why this route and not the SQL function?** The `value_set_expand(text)` SQL function is built for arbitrary compose rules (filters, exclusions, recursion). For the implicit-CS case the synthesised compose has only `{system, version}` — no filter complexity — and the SQL function's `cs` CTE doesn't fetch designations for system-only includes (LOINC bug observed on dev.termx.org). `ConceptService.query` fetches designations by default, pushes `limit`/`offset` into the DB, and reports the pre-paging total — three properties this path needs and the SQL function doesn't provide for system-only includes.
 
 ### URL syntax tolerated
 
@@ -183,7 +184,7 @@ Non-SNOMED canonicals with a **valued** `?fhir_vs=<pattern>` (e.g. `http://loinc
 
 ## 7. Test coverage
 
-Locked in by `terminology/src/test/groovy/org/termx/terminology/fhir/valueset/operations/ValueSetExpandOperationTest.groovy` — 25 specs.
+Locked in by `terminology/src/test/groovy/org/termx/terminology/fhir/valueset/operations/ValueSetExpandOperationTest.groovy` — 32 specs.
 
 **Stored-VS** (5 specs)
 
@@ -284,8 +285,8 @@ could be extended to draft once authoring semantics are confirmed.
 
 ## 9. Limitations & known gaps
 
-- **SNOMED "all concepts" materialises the full result** before client-side paging. `SnomedValueSetExpandProvider.filterConcepts()` uses `SnomedConceptSearchParams.setAll(true)`, which is fine for hundreds of concepts but expensive for the international edition (~350k). The fix is to push `offset`/`count` down into `SnomedService.searchConcepts`; left as a separate optimisation.
+- **SNOMED expansion materialises the full result on the fallback path only.** The SNOMED implicit-VS single-filter path (the `?fhir_vs[=…]` shape) now pages at the source via `SnomedValueSetExpandProvider.ruleExpandPaged(...)` (`ValueSetExpandOperation.java:2397`), pushing `offset`/`count`/`term` down to Snowstorm. `setAll(true)` survives only on the richer fallback `filterConcepts()` (reached through `ruleExpand(...)` for rules that aren't the single-filter shape), which loops Snowstorm at limit=9999 until the whole ECL result is in heap — fine for hundreds of concepts, expensive for the international edition (~350k). Pushing paging into that fallback too is left as a separate optimisation.
 - **`filter` on the SNOMED path is client-side**. Snowstorm's ECL doesn't carry a free-text filter parameter, so TermX applies the substring match after the provider returns. Functionally correct, less efficient than letting Snowstorm filter.
 - **Non-SNOMED `?fhir_vs=<pattern>` URLs are not interpreted.** The full `?fhir_vs=isa/…`, `?fhir_vs=refset[/…]`, `?fhir_vs=ecl/…` family is SNOMED-only; the bare `?fhir_vs` suffix is leniently stripped on any canonical, but non-SNOMED canonicals with a valued `?fhir_vs=…` 404. Equivalent semantics on LOINC etc. would need a per-CodeSystem ECL-like evaluator that TermX doesn't currently embed.
 - **`activeOnly` is honoured only on the stored-VS / inline-VS paths.** For SNOMED, "active" semantics depend on Snowstorm and the ECL expression — most patterns (`isa/`, `refset/`) already return active concepts by default.
-- **Latent: SQL function `value_set_expand_jsonb` drops `display` on system-only includes.** A client posting an inline ValueSet whose `compose.include[]` has only `{system, version}` (no `concept[]`) and going through the inline-VS path will get codes back without displays. The implicit-CS path no longer goes through this function (it routes through `ConceptService.query` instead) so the user-visible bug is fixed for that case. Clients hitting the inline-VS path with system-only includes should either include explicit `concept[]` entries or fetch displays out-of-band; a SQL-level fix is tracked separately.
+- **Latent: SQL function `value_set_expand(text)` drops `display` on system-only includes.** A client posting an inline ValueSet whose `compose.include[]` has only `{system, version}` (no `concept[]`) and going through the inline-VS path will get codes back without displays. The implicit-CS path no longer goes through this function (it routes through `ConceptService.query` instead) so the user-visible bug is fixed for that case. Clients hitting the inline-VS path with system-only includes should either include explicit `concept[]` entries or fetch displays out-of-band; a SQL-level fix is tracked separately.

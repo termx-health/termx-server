@@ -17,7 +17,7 @@ ValueSet Excel export has been optimized to handle large datasets efficiently. T
 
 - **Before optimization**: 10k concept export took 5-10 minutes with thousands of DB queries
 - **After optimization**: Same export takes 10-30 seconds with < 10 DB queries
-- **Memory**: Constant O(1) usage regardless of valueset size
+- **Memory**: Bounded only at the POI write stage (`SXSSFWorkbook(100)` keeps ~100 rows in memory); the full row list is still materialized in heap beforehand
 
 ## Configuration
 
@@ -120,17 +120,17 @@ Export endpoints are unchanged. Optimizations are transparent to API consumers.
 
 | Method | Path | Privilege | Description |
 |--------|------|-----------|-------------|
-| GET | `/value-sets/{id}/versions/{version}/expansion-export{?params*}` | `ValueSet.read` | Initiate export, returns process ID |
-| GET | `/expansion-export-csv/result/{processId}` | `ValueSet.read` | Download CSV |
-| GET | `/expansion-export-xlsx/result/{processId}` | `ValueSet.read` | Download Excel |
+| GET | `/value-sets/{id}/versions/{version}/expansion-export{?params*}` | `ValueSet.triage` | Initiate export, returns process ID |
+| GET | `/expansion-export-csv/result/{processId}` | `ValueSet.triage` | Download CSV |
+| GET | `/expansion-export-xlsx/result/{processId}` | `ValueSet.triage` | Download Excel |
 
 ### CodeSystem Export
 
 | Method | Path | Privilege | Description |
 |--------|------|-----------|-------------|
-| GET | `/code-systems/{id}/versions/{version}/concepts-export{?params*}` | `CodeSystem.read` | Initiate export |
-| GET | `/concepts-export-csv/result/{processId}` | `CodeSystem.read` | Download CSV |
-| GET | `/concepts-export-xlsx/result/{processId}` | `CodeSystem.read` | Download Excel |
+| GET | `/code-systems/{id}/versions/{version}/concepts/export{?params*}` | `CodeSystem.triage` | Initiate export |
+| GET | `/concepts/export-csv/result/{processId}` | `CodeSystem.triage` | Download CSV |
+| GET | `/concepts/export-xlsx/result/{processId}` | `CodeSystem.triage` | Download Excel |
 
 ## Testing
 
@@ -183,61 +183,57 @@ Download exported file and verify:
 
 ### Optimization Data Structures
 
-**CodingReference:**
+**Coding-property pairs:**
 
-Unique identifier for concepts referenced in property values.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| codeSystem | String | Code system identifier |
-| code | String | Concept code |
-
-Used as key in display name cache map.
+Coding property values referenced by the expansion concepts are collected as a
+de-duplicated `List<Pair<String, String>>` of `(codeSystem, code)` pairs
+(`ValueSetExportService.collectCodingPropertyPairs`).
 
 **Example:**
 
 ```java
-CodingReference {
-  codeSystem: "snomed-ct",
-  code: "73211009"
-}
+List<Pair<String, String>> codingPairs = List.of(
+  Pair.of("snomed-ct", "73211009"),
+  Pair.of("icd-10", "E10")
+);
 ```
 
-**Display Map:**
+**Concept map:**
 
-Pre-loaded cache mapping coding references to display names.
+Pre-loaded cache returned by `ConceptService.batchLoad`, keyed by
+`codeSystem + "|" + code` and holding the fully decorated `Concept`.
 
 ```java
-Map<CodingReference, String> displayMap = {
-  CodingReference("snomed-ct", "73211009") -> "Diabetes mellitus",
-  CodingReference("icd-10", "E10") -> "Type 1 diabetes mellitus"
-}
+Map<String, Concept> conceptMap = conceptService.batchLoad(codingPairs);
+// conceptMap.get("snomed-ct|73211009") -> Concept("Diabetes mellitus")
+// conceptMap.get("icd-10|E10")         -> Concept("Type 1 diabetes mellitus")
 ```
 
-Eliminates N+1 queries by loading all displays upfront in 1-2 batch queries instead of thousands of individual queries.
+Eliminates N+1 queries by loading all referenced concepts upfront (one batch query
+per code system) instead of thousands of individual queries.
 
 ### Export Data Flow
 
 **Input:** List of ValueSet expansion concepts
 
 **Phase 1 - Pre-processing:**
-1. Extract all coding references from property values
-2. Batch load display names for all references (Map<CodingReference, String>)
-3. Scan first 1000 concepts to determine headers
+1. Extract all coding-property `(codeSystem, code)` pairs from property values
+2. Batch load referenced concepts (`ConceptService.batchLoad` → `Map<String, Concept>` keyed by `codeSystem|code`)
+3. Compose headers from the expansion concepts
 
-**Phase 2 - Streaming:**
-1. For each concept (streamed one at a time):
-   - Compose row using pre-loaded display map
-   - Write row to streaming Excel workbook
-   - Row data immediately flushed to disk (not kept in memory)
-2. Finalize workbook and return binary data
+**Phase 2 - Row composition + write:**
+1. Compose all rows into an in-heap `List<Object[]>` (using the pre-loaded display map)
+2. Hand the row list to `XlsxUtil.composeXlsx`, which writes through Apache POI's `SXSSFWorkbook(100)` — only ~100 rows are held in the POI write window at a time, older rows flush to a temp file
+3. Finalize workbook and return binary data
 
 **Memory profile:**
 
 - Display map: ~1-5 MB (depends on referenced concepts)
-- Streaming buffer: ~10 MB (100 rows)
+- Materialized row list: grows with valueset size (held fully in heap)
+- POI write window: ~100 rows bounded at the write stage only
 - Header set: < 1 MB
-- **Total: ~15-20 MB constant** regardless of valueset size
+
+The POI write window bounds memory only during Excel serialization; end-to-end memory is not constant because the full row list is materialized first.
 
 ### Performance Metrics
 
@@ -335,14 +331,11 @@ conceptService.load(codeSystem, code)  // Individual query
 
 ```java
 // Before processing any rows
-Set<CodingReference> codingRefs = concepts.stream()
-    .flatMap(c -> extractCodingReferences(c))
-    .collect(Collectors.toSet());
-
-Map<CodingReference, String> displayMap = conceptService.batchLoadDisplays(codingRefs);
+List<Pair<String, String>> codingPairs = collectCodingPropertyPairs(concepts);
+Map<String, Concept> conceptMap = conceptService.batchLoad(codingPairs);
 
 // During row composition
-String display = displayMap.get(new CodingReference(codeSystem, code));
+Concept concept = conceptMap.get(codeSystem + "|" + code);
 ```
 
 **2. Streaming Excel Generation**
@@ -385,36 +378,35 @@ concepts.stream().limit(1000).forEach(concept -> {
 
 | File | Description |
 |------|-------------|
-| `terminology/src/main/java/com/kodality/termx/terminology/terminology/valueset/expansion/ValueSetExportService.java` | ValueSet export with optimizations |
-| `terminology/src/main/java/com/kodality/termx/terminology/terminology/codesystem/concept/ConceptExportService.java` | CodeSystem export with same optimizations |
-| `terminology/src/main/java/com/kodality/termx/terminology/terminology/codesystem/concept/ConceptService.java` | Batch concept loading method |
-| `termx-core/src/main/java/com/kodality/termx/core/utils/XlsxUtil.java` | Streaming Excel generation utility |
+| `terminology/src/main/java/org/termx/terminology/terminology/valueset/expansion/ValueSetExportService.java` | ValueSet export with optimizations |
+| `terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptExportService.java` | CodeSystem export with same optimizations |
+| `terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptService.java` | Batch concept loading method |
+| `termx-core/src/main/java/org/termx/core/utils/XlsxUtil.java` | Streaming Excel generation utility |
 
 ### Batch Concept Loading
 
-**New method in ConceptService:**
+**Method in ConceptService:**
 
 ```java
-public Map<CodingReference, String> batchLoadDisplays(Set<CodingReference> references) {
-  // Group by code system
-  Map<String, List<String>> byCodeSystem = references.stream()
-    .collect(Collectors.groupingBy(
-      CodingReference::getCodeSystem,
-      Collectors.mapping(CodingReference::getCode, Collectors.toList())
-    ));
-  
-  Map<CodingReference, String> result = new HashMap<>();
-  
-  // Load all concepts for each code system in single query
-  byCodeSystem.forEach((codeSystem, codes) -> {
-    List<Concept> concepts = conceptRepository.loadBatch(codeSystem, codes);
-    concepts.forEach(c -> {
-      String display = ConceptUtil.getDisplay(c.getLastVersion(), language);
-      result.put(new CodingReference(codeSystem, c.getCode()), display);
-    });
-  });
-  
-  return result;
+public Map<String, Concept> batchLoad(List<Pair<String, String>> codeSystemCodePairs) {
+  if (CollectionUtils.isEmpty(codeSystemCodePairs)) {
+    return Map.of();
+  }
+
+  // Group codes by code system
+  Map<String, List<String>> codeSystemToCodes = codeSystemCodePairs.stream()
+      .collect(Collectors.groupingBy(
+          Pair::getLeft,
+          Collectors.mapping(Pair::getRight, Collectors.toList())
+      ));
+
+  // Load all concepts for every code system in a single batch, then decorate
+  List<Concept> concepts = repository.batchLoad(codeSystemToCodes);
+  List<Concept> decorated = decorate(concepts, null, new ConceptQueryParams());
+
+  // Keyed by "codeSystem|code"
+  return decorated.stream()
+      .collect(Collectors.toMap(c -> c.getCodeSystem() + "|" + c.getCode(), c -> c));
 }
 ```
 

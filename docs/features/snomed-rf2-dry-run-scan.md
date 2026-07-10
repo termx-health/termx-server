@@ -88,11 +88,11 @@ All endpoints are under `/snomed`.
 
 | Method | Path | Privilege | Description |
 |--------|------|-----------|-------------|
-| `POST` | `/snomed/imports/scan` | `SNOMED_VIEW` | multipart upload (`file` + `request` JSON), kicks off async dry-run scan, returns a `LorqueProcess` |
-| `GET`  | `/snomed/imports/scan/result/{lorqueProcessId}` | `SNOMED_VIEW` | parsed `SnomedRF2ScanEnvelope` (`{json, markdown}`) once the scan completes |
-| `POST` | `/snomed/imports/scan/{cacheId}/proceed` | `SNOMED_EDIT` | submits the cached zip to Snowstorm without re-upload; returns `{jobId}` |
-| `POST` | `/snomed/concept-usage` | `SNOMED_VIEW` | body `{codes: List<String>}` → returns `List<SnomedConceptUsage>` |
-| `POST` | `/snomed/imports` | `SNOMED_EDIT` | (existing) direct Snowstorm import — bypasses the scan |
+| `POST` | `/snomed/imports/scan` | `SNOMED_READ` | multipart upload (`file` + `request` JSON), kicks off async dry-run scan, returns a `LorqueProcess` |
+| `GET`  | `/snomed/imports/scan/result/{lorqueProcessId}` | `SNOMED_READ` | parsed `SnomedRF2ScanEnvelope` (`{json, markdown}`) once the scan completes |
+| `POST` | `/snomed/imports/scan/{cacheId}/proceed` | `SNOMED_WRITE` | submits the cached zip to Snowstorm without re-upload; returns `{jobId}` |
+| `POST` | `/snomed/concept-usage` | `SNOMED_READ` | body `{codes: List<String>}` → returns `List<SnomedConceptUsage>` |
+| `POST` | `/snomed/imports` | `SNOMED_WRITE` | (existing) direct Snowstorm import — bypasses the scan |
 
 ### `SnomedImportRequest` (request part of `/imports/scan`)
 
@@ -388,4 +388,3 @@ Genuine async failures that aren't `HttpClientError` (network timeout, NPE in th
 
 - [Email Import Notifications](email-import-notifications.md) — SNOMED imports trigger email summaries when SMTP is configured.
 - [SNOMED Server Architecture](architecture.md) — overall server module layout.
-- Convention: feature documentation template — [`docs/conventions/feature-documentation.md`](../../../docs/conventions/feature-documentation.md).

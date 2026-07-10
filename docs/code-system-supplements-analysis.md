@@ -27,29 +27,29 @@ Supplements are stored as separate code systems with:
 
 Relevant file:
 
-- [`CodeSystemSupplementService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemSupplementService.java)
+- [`CodeSystemSupplementService.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemSupplementService.java)
 
 When supplement entity versions are created from base entity versions, the supplement entity version keeps a pointer to the base entity version through `baseEntityVersionId`.
 
 Relevant file:
 
-- [`CodeSystemSupplementService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemSupplementService.java)
+- [`CodeSystemSupplementService.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemSupplementService.java)
 
 At entity-version decoration time, base and supplement data can be merged, with base-derived items marked using `supplement=true`.
 
 Relevant file:
 
-- [`CodeSystemEntityVersionService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemEntityVersionService.java)
+- [`CodeSystemEntityVersionService.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemEntityVersionService.java)
 
 ## Generic Runtime Supplement Enrichment
 
 Runtime supplement enrichment for concept responses is centralized in:
 
-- [`ConceptSupplementService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptSupplementService.java)
+- [`ConceptSupplementService.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptSupplementService.java)
 
 The request model is carried through:
 
-- [`ConceptQueryParams.java`](/job/helex/htx/termx-server/termx-api/src/main/java/org/termx/ts/codesystem/ConceptQueryParams.java)
+- [`ConceptQueryParams.java`](../termx-api/src/main/java/org/termx/ts/codesystem/ConceptQueryParams.java)
 
 Current semantics:
 
@@ -71,7 +71,7 @@ The merge is currently designation-focused:
 
 Relevant file:
 
-- [`CodeSystemLookupOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemLookupOperation.java)
+- [`CodeSystemLookupOperation.java`](../terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemLookupOperation.java)
 
 Current behavior:
 
@@ -86,7 +86,7 @@ Current behavior:
 
 Relevant file:
 
-- [`CodeSystemValidateCodeOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemValidateCodeOperation.java)
+- [`CodeSystemValidateCodeOperation.java`](../terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemValidateCodeOperation.java)
 
 Current behavior:
 
@@ -101,9 +101,9 @@ TS concept query/load endpoints are also supplement-aware through the same share
 
 Relevant files:
 
-- [`ConceptService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptService.java)
-- [`ConceptController.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptController.java)
-- [`CodeSystemController.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/CodeSystemController.java)
+- [`ConceptService.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptService.java)
+- [`ConceptController.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptController.java)
+- [`CodeSystemController.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/CodeSystemController.java)
 
 This is the main change from the earlier supplement state: supplement-aware runtime concept loading is no longer limited to FHIR operations.
 
@@ -113,8 +113,8 @@ Value set expansion still does not implement the same generic runtime supplement
 
 Relevant files:
 
-- [`ValueSetExpandOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/valueset/operations/ValueSetExpandOperation.java)
-- [`ValueSetVersionConceptService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/valueset/expansion/ValueSetVersionConceptService.java)
+- [`ValueSetExpandOperation.java`](../terminology/src/main/java/org/termx/terminology/fhir/valueset/operations/ValueSetExpandOperation.java)
+- [`ValueSetVersionConceptService.java`](../terminology/src/main/java/org/termx/terminology/terminology/valueset/expansion/ValueSetVersionConceptService.java)
 
 Current behavior:
 
@@ -134,7 +134,7 @@ The FHIR mapper can represent supplement semantics in exported ValueSets by:
 
 Relevant file:
 
-- [`ValueSetFhirMapper.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/valueset/ValueSetFhirMapper.java)
+- [`ValueSetFhirMapper.java`](../terminology/src/main/java/org/termx/terminology/fhir/valueset/ValueSetFhirMapper.java)
 
 That affects representation and export. It does not mean `$expand` consumes the same extension into generic runtime supplement loading.
 

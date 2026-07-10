@@ -560,7 +560,7 @@ modules:
 
 | Module | Path | Description |
 |--------|------|-------------|
-| task | `task/src/main/java/com/kodality/termx/task/` | Public API: controller, service, models, privileges |
+| task | `task/src/main/java/org/termx/task/` | Public API: controller, service, models, privileges |
 | task-taskforge | `task-taskforge/src/main/java/org/termx/taskforge/` | Implementation: services, repositories, mapper |
 | task-taskforge | `task-taskforge/src/main/resources/taskforge/changelog/` | Liquibase migrations |
 

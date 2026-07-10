@@ -9,6 +9,7 @@ examples you can share with integrators to verify a server behaves correctly.
 | File | What it covers |
 |------|----------------|
 | [`fhir-terminology-supplement.http`](fhir-terminology-supplement.http) | A base CodeSystem + Estonian/Russian **supplements**, **stored ("static") ValueSets** referencing them via the `valueset-supplement` extension, expanded with `displayLanguage`; `$validate-code`; and **inline** `$expand`. |
+| [`fhir-terminology-expand-designations.http`](fhir-terminology-expand-designations.http) | `$expand` **designation + property** controls — `includeDesignations`, `designation` filtering by language/use, `displayLanguage` display selection, and requesting concept `property` values into `contains[]`. |
 
 ## Using a suite
 

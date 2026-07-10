@@ -15,7 +15,7 @@ Designation columns encode the value's language with a `type:language` header (e
   - Column separator: semicolon (`;`) or comma (`,`)
 - **TSV**: Tab-separated values with UTF-8 encoding
   - Column separator: Tab character
-- **XLSX**: Excel format with worksheet named "concepts" (or first worksheet)
+- **XLSX**: Excel format with a worksheet named "concepts" (required — import fails with `ApiError.TE740` if absent)
 
 ## Column Naming Conventions
 
@@ -146,7 +146,7 @@ This order ensures that `type#code::1` is correctly identified as a coding prope
 #### String
 - **Value**: Cell value is used as-is
 - **Delimiter support**: If property delimiter is configured, values are split and multiple property values are created
-  - **Maximum delimiter length**: 3 characters
+  - **Maximum delimiter length**: 3 characters (a UI/config guideline only — the backend parser splits on the delimiter as-is and does not enforce any length limit)
   - **Applies to**: Coding and string datatypes only
   - **Processing**: Split string into parts, trim each part, validate each part separately, create property value for every part
 - **Empty cells**: Skipped
@@ -215,7 +215,7 @@ Each property in the import request includes:
   - Shown only for date type properties
 - `propertyCodeSystem`: Code system URI for coding properties (legacy format)
 - `propertyDelimiter`: Delimiter for splitting multiple values (e.g., "|")
-  - Maximum 3 characters
+  - Maximum 3 characters (UI/config guideline only; not enforced by the backend parser)
   - Shown for Coding and string datatypes only
   - When specified: split string into parts, trim parts, validate each separately, create property for every part
 - `language`: Language code for designation properties
@@ -299,7 +299,7 @@ The `import` flag (whether to import a column) is automatically set based on col
   - **When**: A property in the import configuration has no `propertyType`
 
 - **TE707**: Multiple preferred identifiers
-  - **Message**: "Multiple preferred identifier properties found"
+  - **Message**: "The 'concept-code' and 'hierarchical-concept' can not be used simultaneously. Please specify only one of them"
   - **When**: More than one identifier property is marked as preferred
 
 - **TE721**: No designation property

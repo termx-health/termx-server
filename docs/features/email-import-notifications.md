@@ -90,7 +90,7 @@ micronaut:
 4. Import completes with 50,000 concepts imported
 5. Email automatically sent to all recipients
 
-**Outcome:** Team receives email with "Import Completed: LOINC 2.76" containing duration (15 min), success count (50,000), and zero errors.
+**Outcome:** Team receives email with subject "[TermX] loinc-import (loinc-2.76) - Completed" containing duration (15 min), success count (50,000), and zero errors.
 
 ### Scenario 2: Failed Import Alert
 
@@ -194,7 +194,7 @@ curl -X POST -H "Content-Type: multipart/form-data" \
 # 2. Wait for import to complete (check UI or poll job status)
 
 # 3. Check email inbox
-# Expected: Email with subject "Import Completed: LOINC 2.76"
+# Expected: Email with subject "[TermX] loinc-import (loinc-2.76) - Completed"
 ```
 
 ### Test with CodeSystem import
@@ -361,9 +361,9 @@ sequenceDiagram
     participant Email as EmailService
     participant SMTP as SMTP Server
     
-    Import->>JobLog: finish(jobLog)
+    Import->>JobLog: finish(id, successes, warnings, errors)
     JobLog->>Database: Save job record
-    JobLog->>Notification: sendImportCompletionEmail(jobLog)
+    JobLog->>Notification: sendImportCompletionNotification(jobLog)
     Notification->>Notification: Format HTML email
     Notification->>Notification: Calculate duration
     Notification->>Email: sendToMultiple(recipients, subject, body)
@@ -379,12 +379,12 @@ sequenceDiagram
 
 | File | Description |
 |------|-------------|
-| `termx-core/src/main/java/com/kodality/termx/core/sys/email/EmailService.java` | SMTP service with multi-recipient support |
-| `termx-core/src/main/java/com/kodality/termx/core/sys/job/logger/ImportNotificationService.java` | Formats and sends import completion emails |
-| `termx-core/src/main/java/com/kodality/termx/core/sys/job/JobLogService.java` | Hooks email notifications into finish() method |
-| `snomed/src/main/java/com/kodality/termx/snomed/snomed/SnomedImportPollingService.java` | Background polling for SNOMED imports |
-| `snomed/src/main/java/com/kodality/termx/snomed/snomed/SnomedImportTracking.java` | Tracks SNOMED import jobs |
-| `snomed/src/main/java/com/kodality/termx/snomed/snomed/SnomedService.java` | Creates tracking record on import start |
+| `termx-core/src/main/java/org/termx/core/sys/email/EmailService.java` | SMTP service with multi-recipient support |
+| `termx-core/src/main/java/org/termx/core/sys/job/logger/ImportNotificationService.java` | Formats and sends import completion emails |
+| `termx-core/src/main/java/org/termx/core/sys/job/JobLogService.java` | Hooks email notifications into finish() method |
+| `snomed/src/main/java/org/termx/snomed/integration/SnomedImportPollingService.java` | Background polling for SNOMED imports |
+| `termx-api/src/main/java/org/termx/snomed/rf2/SnomedImportTracking.java` | Tracks SNOMED import jobs |
+| `snomed/src/main/java/org/termx/snomed/integration/SnomedService.java` | Creates tracking record on import start |
 
 ### ImportNotificationService
 
@@ -410,16 +410,17 @@ sequenceDiagram
 Hook point in `JobLogService.finish()`:
 
 ```java
-public void finish(Long jobId, Status status, ImportLog importLog) {
+public void finish(Long id, List<String> successes, List<String> warnings, List<String> errors) {
   // ... save to database ...
-  
-  try {
-    if (isImportJob(jobLog.getType())) {
-      importNotificationService.sendImportCompletionEmail(jobLog);
+
+  JobLog finishedJob = get(id);
+  if (finishedJob != null && isImportJob(finishedJob.getDefinition().getType())) {
+    try {
+      importNotificationService.sendImportCompletionNotification(finishedJob);
+    } catch (Exception e) {
+      log.error("Failed to send import notification for job " + id, e);
+      // Don't throw - email failure should not break import tracking
     }
-  } catch (Exception e) {
-    log.error("Failed to send import notification email", e);
-    // Don't throw - email failure should not break import tracking
   }
 }
 ```
@@ -431,21 +432,27 @@ public void finish(Long jobId, Status status, ImportLog importLog) {
 ```java
 @Singleton
 public class SnomedImportPollingService {
-  @Scheduled(fixedDelay = "30s")
+  @Scheduled(fixedDelay = "30s", initialDelay = "1m")
+  @Transactional
   public void pollPendingImports() {
-    List<SnomedImportTracking> pending = repository.findPending();
-    
-    for (SnomedImportTracking tracking : pending) {
-      SnomedImportJob job = snowstormClient.loadImportJob(tracking.getSnowstormJobId());
-      
-      if (job.getStatus().equals("COMPLETED") || job.getStatus().equals("FAILED")) {
-        tracking.setFinished(Instant.now());
-        tracking.setStatus(job.getStatus());
-        repository.save(tracking);
-        
-        // Send email notification
-        importNotificationService.sendSnomedImportNotification(tracking, job);
-      }
+    List<SnomedImportTracking> pendingJobs = trackingRepository.loadPending();
+
+    for (SnomedImportTracking tracking : pendingJobs) {
+      checkAndNotify(tracking);
+    }
+  }
+
+  private void checkAndNotify(SnomedImportTracking tracking) {
+    SnomedImportJob snowstormJob = snowstormClient.loadImportJob(tracking.getSnowstormJobId()).join();
+
+    if (TERMINAL_STATUSES.contains(snowstormJob.getStatus()) && !tracking.isNotified()) {
+      tracking.setStatus(snowstormJob.getStatus());
+      tracking.setFinished(OffsetDateTime.now());
+      tracking.setNotified(true);
+      trackingRepository.save(tracking);
+
+      // Send email notification
+      sendNotification(tracking, snowstormJob);
     }
   }
 }
@@ -454,13 +461,17 @@ public class SnomedImportPollingService {
 **Tracking table:**
 
 ```sql
-CREATE TABLE snomed.import_tracking (
-  id                    bigint PRIMARY KEY,
-  snowstorm_job_id      text NOT NULL,
-  status                text NOT NULL,
-  started               timestamptz NOT NULL,
-  finished              timestamptz,
-  notified              boolean DEFAULT false
+CREATE TABLE sys.snomed_import_tracking (
+  id                 bigserial PRIMARY KEY,
+  snowstorm_job_id   text NOT NULL UNIQUE,
+  branch_path        text,
+  type               text,
+  status             text NOT NULL,
+  started            timestamptz NOT NULL DEFAULT current_timestamp,
+  finished           timestamptz,
+  error_message      text,
+  notified           boolean DEFAULT false
+  -- + details text[] (added by a later changeset) and sys_created_at/sys_created_by audit columns
 );
 ```
 
