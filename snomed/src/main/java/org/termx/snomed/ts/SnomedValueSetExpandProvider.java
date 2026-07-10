@@ -42,6 +42,10 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
   private static final String SNOMED_CHILD_OF = "child-of";
   private static final String SNOMED_GENERALIZES = "generalizes";
   private static final String SNOMED_IN = "in";
+  // Synthetic operator produced by the SNOMED implicit-VS routing in ValueSetExpandOperation
+  // for `?fhir_vs` (value="*", all concepts) and `?fhir_vs=ecl/<expr>` (value=the raw ECL).
+  // It is not a real FHIR filter operator; the value is already a complete ECL expression.
+  private static final String SNOMED_ECL = "ecl";
 
   // Snowstorm caps single-page `limit` at 10_000 (Elasticsearch from+size).
   // A null `count` from the caller means "no client-side cap"; honour Snowstorm's
@@ -223,6 +227,11 @@ public class SnomedValueSetExpandProvider extends ValueSetExternalExpandProvider
 
   private String composeEcl(ValueSetRuleFilter f) {
     String operator = f.getOperator() == null ? "" : f.getOperator();
+    // The `ecl` operator carries a complete ECL expression already (`*` or a raw ECL); pass it
+    // through verbatim — no constraint prefix.
+    if (SNOMED_ECL.equals(operator)) {
+      return String.valueOf(f.getValue());
+    }
     // Map the FHIR filter operator to its ECL constraint operator. Operators with no ECL
     // equivalent (is-not-a, descendent-leaf, regex, =, in-on-property, not-in, exists) are rejected
     // rather than silently emitting a bare, unconstrained value.

@@ -132,15 +132,15 @@ GET /fhir/ValueSet/$expand?url=http://loinc.org/answer-list&valueSetVersion=2.82
 
 ## 5. SNOMED `?fhir_vs` URL family
 
-Per the [HL7 UTG SNOMED CT page](https://build.fhir.org/ig/HL7/UTG/en/SNOMEDCT.html), the SNOMED canonical URL supports five implicit-ValueSet patterns. TermX maps each URL to a `ValueSetVersionRule` filter, but only **three** of the synthesised operators are actually implemented in `SnomedValueSetExpandProvider.composeEcl()` (`is-a`, `in`). The other two synthesise `operator=ecl` — an operator that is **not** in `ValueSetRuleFilterOperator.ALL` and that `composeEcl` has no `switch` case for, so its `default` branch throws `ApiError.SN301` at runtime. Those two paths (`?fhir_vs` all-concepts and `?fhir_vs=ecl/…`) are therefore currently **unimplemented**:
+Per the [HL7 UTG SNOMED CT page](https://build.fhir.org/ig/HL7/UTG/en/SNOMEDCT.html), the SNOMED canonical URL supports five implicit-ValueSet patterns. TermX maps each URL to a `ValueSetVersionRule` filter, which `SnomedValueSetExpandProvider.composeEcl()` compiles to ECL. The `?fhir_vs` (all concepts) and `?fhir_vs=ecl/…` patterns synthesise a `operator=ecl` filter whose value is already a complete ECL expression (`*` or the raw ECL); `composeEcl` passes it through verbatim.
 
 | Input URL fragment | Synthesised filter | ECL emitted by `composeEcl` | Meaning |
 |---|---|---|---|
-| `?fhir_vs` | `operator=ecl, value="*"` | **Unimplemented** — `composeEcl` has no `ecl` case, so its `default` branch throws `ApiError.SN301`. | Intended: all concepts in the edition/version. Currently unsupported (throws at runtime). |
+| `?fhir_vs` | `operator=ecl, value="*"` | `*` | All concepts in the edition/version. |
 | `?fhir_vs=isa/<sctid>` | `operator=is-a, value=<sctid>` | `<<<sctid>` | Descendants of `<sctid>` **plus the concept itself** (per IG). |
 | `?fhir_vs=refset` | `operator=is-a, value=900000000000455006` | `<<900000000000455006` | All concepts under `Reference set foundation` — i.e. the catalog of refsets. |
 | `?fhir_vs=refset/<sctid>` | `operator=in, value=<sctid>` | `^<sctid>` | Active members of refset `<sctid>`. |
-| `?fhir_vs=ecl/<URL-encoded>` | `operator=ecl, value=<URL-decoded>` | **Unimplemented** — `composeEcl` has no `ecl` case, so its `default` branch throws `ApiError.SN301`. | Intended: concepts matching the ECL expression (URI-decoded first). Currently unsupported (throws at runtime). |
+| `?fhir_vs=ecl/<URL-encoded>` | `operator=ecl, value=<URL-decoded>` | `<expr>` | Concepts matching the ECL expression (URI-decoded first). |
 
 Both base canonicals are accepted:
 
