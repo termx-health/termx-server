@@ -63,8 +63,9 @@ auth:
 | Profile key | Username     | Privileges                                                                                    |
 |-------------|--------------|-----------------------------------------------------------------------------------------------|
 | `admin`     | `admin`      | `*.*.*` (full access)                                                                         |
-| `publisher` | `publisher1` | `*.*.read`, `*.Task.maintain`, `icd-10.CodeSystem.maintain`, `disorders.ValueSet.maintain`, `icd-snomed.MapSet.maintain` |
-| `editor`    | `editor1`    | `*.*.read`, `*.Task.write`, `icd-10.CodeSystem.write`, `disorders.ValueSet.write`                 |
+| `publisher` | `publisher1` | `*.*.read`, `*.*.triage`, `*.Task.maintain`, `*.CodeSystem.maintain`, `*.ValueSet.maintain`, `*.MapSet.maintain` |
+| `editor`    | `editor1`    | `*.*.read`, `*.*.triage`, `*.Task.write`, `*.CodeSystem.write`, `*.ValueSet.write`, `*.MapSet.write` |
+| `editor2`   | `editor2`    | `*.*.read`, `*.*.triage`, `*.Task.write`, `icd-10.CodeSystem.write`, `disorders.ValueSet.write`   |
 | `viewer`    | `viewer1`    | `*.*.read`                                                                                    |
 
 #### mock/users-demo.json (demo/showcase)
@@ -102,7 +103,7 @@ Privileges follow the TermX convention: `<resourceId>.<ResourceType>.<action>`.
 |----------------|--------------------------------------------|----------|
 | `resourceId`   | Specific resource ID (e.g., `icd-10`)      | `*`      |
 | `ResourceType` | `CodeSystem`, `ValueSet`, `MapSet`, `Task` | `*`      |
-| `action`       | `view`, `edit`, `publish`                  | `*`      |
+| `action`       | `read`, `triage`, `write`, `maintain`      | `*`      |
 
 Examples:
 - `*.*.*` -- full admin access
@@ -270,7 +271,7 @@ Privileges follow the pattern: `<resourceId>.<ResourceType>.<action>`
 |---------|-------------|----------|----------|
 | resourceId | Specific resource ID or wildcard | `icd-10`, `disorders`, `*` | `*` = all resources |
 | ResourceType | Resource type class name | `CodeSystem`, `ValueSet`, `MapSet`, `Task` | `*` = all types |
-| action | Operation being performed | `view`, `edit`, `publish` | `*` = all actions |
+| action | Operation being performed | `read`, `triage`, `write`, `maintain` | `*` = all actions |
 
 **Privilege examples:**
 

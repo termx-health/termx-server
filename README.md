@@ -100,7 +100,7 @@ By default the `yupi` session is granted the full set of action wildcards (`*.*.
 ./gradlew :termx-app:run -Pdev -PyupiPrivileges='icd-10.CodeSystem.read'
 ```
 
-The value is a comma-separated list of dotted privilege strings (`{resource}.{type}.{action}`); whitespace and empty tokens are ignored. Common preset values and their expected UI effect are documented in [docs/specification/terminology-server/privileges-migration-guide.md](../docs/specification/terminology-server/privileges-migration-guide.md#qa-testing-with-the-yupi-privilege-override) and inline in [`YupiSessionProvider`](termx-app/src/main/java/org/termx/auth/YupiSessionProvider.java).
+The value is a comma-separated list of dotted privilege strings (`{resource}.{type}.{action}`); whitespace and empty tokens are ignored. The privilege/action model (GitHub-based `read`/`triage`/`write`/`maintain`) and how privilege sets map to visibility is documented in [docs/features/task-access-control.md](docs/features/task-access-control.md), with preset values inline in [`YupiSessionProvider`](termx-app/src/main/java/org/termx/auth/YupiSessionProvider.java).
 
 For ad-hoc per-request overrides without restarting the server, send a JSON-encoded `SessionInfo` directly in the header:
 

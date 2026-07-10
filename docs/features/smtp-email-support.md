@@ -27,13 +27,13 @@ TermX includes SMTP email sending functionality for notifications and alerts. Th
 | Property | Env variable | Default | Description |
 |----------|--------------|---------|-------------|
 | `micronaut.email.enabled` | `SMTP_ENABLED` | `false` | Enables SMTP email sending |
-| `micronaut.email.from.email` | `SMTP_FROM` | `noreply@termx.org` | Default sender email address |
-| `micronaut.email.smtp.host` | `SMTP_HOST` | (required) | SMTP server hostname |
-| `micronaut.email.smtp.port` | `SMTP_PORT` | `587` | SMTP server port |
-| `micronaut.email.smtp.username` | `SMTP_USERNAME` | (required) | SMTP authentication username |
-| `micronaut.email.smtp.password` | `SMTP_PASSWORD` | (required) | SMTP authentication password |
-| `micronaut.email.smtp.auth` | `SMTP_AUTH` | `true` | Enable SMTP authentication |
-| `micronaut.email.smtp.starttls.enable` | `SMTP_STARTTLS` | `true` | Enable STARTTLS for secure connection |
+| `micronaut.email.from.email` | `SMTP_FROM` | `noreply@termx.dev` | Default sender email address |
+| `javamail.properties.mail.smtp.host` | `SMTP_HOST` | (required) | SMTP server hostname |
+| `javamail.properties.mail.smtp.port` | `SMTP_PORT` | `587` | SMTP server port |
+| `javamail.authentication.username` | `SMTP_USERNAME` | (required) | SMTP authentication username |
+| `javamail.authentication.password` | `SMTP_PASSWORD` | (required) | SMTP authentication password |
+| `javamail.properties.mail.smtp.auth` | `SMTP_AUTH` | `true` | Enable SMTP authentication |
+| `javamail.properties.mail.smtp.starttls.enable` | `SMTP_STARTTLS` | `true` | Enable STARTTLS for secure connection |
 
 ### Enabling SMTP
 
@@ -197,7 +197,7 @@ All endpoints are under `/management/email`. These endpoints require authenticat
 ```json
 {
   "configured": true,
-  "from": "noreply@termx.org",
+  "from": "noreply@termx.dev",
   "smtpHost": "smtp.gmail.com"
 }
 ```
@@ -208,7 +208,7 @@ When not configured:
 {
   "configured": false,
   "missingParameters": ["SMTP_HOST", "SMTP_USERNAME", "SMTP_PASSWORD"],
-  "from": "noreply@termx.org"
+  "from": "noreply@termx.dev"
 }
 ```
 
@@ -272,7 +272,7 @@ export SMTP_PASSWORD=your-app-password
 # Check status (should show configured)
 curl http://localhost:8200/management/email/status
 
-# Expected: {"configured": true, "from": "noreply@termx.org", "smtpHost": "smtp.gmail.com"}
+# Expected: {"configured": true, "from": "noreply@termx.dev", "smtpHost": "smtp.gmail.com"}
 ```
 
 ### Send test email (development mode)
@@ -315,16 +315,18 @@ Response model for configuration status endpoint.
 | Field | Type | Description |
 |-------|------|-------------|
 | configured | boolean | Whether SMTP is fully configured and ready |
+| enabled | boolean | Whether email sending is enabled (`micronaut.email.enabled`) |
 | missingParameters | String[] | List of required parameters that are not set (empty if configured) |
 | from | String | Configured sender email address |
 | smtpHost | String | SMTP server hostname (only included if configured) |
+| smtpPort | Integer | SMTP server port |
 
 **Example (configured):**
 
 ```json
 {
   "configured": true,
-  "from": "noreply@termx.org",
+  "from": "noreply@termx.dev",
   "smtpHost": "smtp.gmail.com"
 }
 ```
@@ -335,7 +337,7 @@ Response model for configuration status endpoint.
 {
   "configured": false,
   "missingParameters": ["SMTP_HOST", "SMTP_USERNAME", "SMTP_PASSWORD"],
-  "from": "noreply@termx.org"
+  "from": "noreply@termx.dev"
 }
 ```
 
@@ -348,6 +350,7 @@ Request model for test endpoint.
 | recipient | String | Email address to send test email to |
 | subject | String | Email subject line |
 | body | String | Email body (plain text or HTML) |
+| html | boolean | Whether `body` should be sent as HTML (default `false`) |
 
 **Example:**
 
@@ -434,11 +437,11 @@ flowchart TD
 
 | File | Description |
 |------|-------------|
-| `termx-core/src/main/java/com/kodality/termx/core/sys/email/EmailService.java` | Main email service with send methods |
-| `termx-core/src/main/java/com/kodality/termx/core/sys/email/EmailManagementController.java` | Status and test endpoints |
-| `termx-core/src/main/java/com/kodality/termx/core/sys/email/EmailConfigStatus.java` | Status response DTO |
-| `termx-core/src/main/java/com/kodality/termx/core/sys/email/EmailTestRequest.java` | Test request DTO |
-| `termx-core/src/main/java/com/kodality/termx/core/sys/email/EmailTestResult.java` | Test result DTO |
+| `termx-core/src/main/java/org/termx/core/sys/email/EmailService.java` | Main email service with send methods |
+| `termx-core/src/main/java/org/termx/core/sys/email/EmailManagementController.java` | Status and test endpoints |
+| `termx-core/src/main/java/org/termx/core/sys/email/EmailConfigStatus.java` | Status response DTO |
+| `termx-core/src/main/java/org/termx/core/sys/email/EmailTestRequest.java` | Test request DTO |
+| `termx-core/src/main/java/org/termx/core/sys/email/EmailTestResult.java` | Test result DTO |
 | `termx-app/src/main/resources/application.yml` | SMTP configuration properties |
 | `deployment/docker-compose/server.env` | Docker environment variables |
 

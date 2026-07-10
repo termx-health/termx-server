@@ -200,7 +200,7 @@ Content-Type: application/json
 
 ## 5. Implementation notes (TermX codebase)
 
-- **Lookup + supplements:** `CodeSystemLookupOperation` loads the concept from the base system, then calls `loadSupplementDesignations(...)` which:
+- **Lookup + supplements:** `CodeSystemLookupOperation` resolves the concept through the shared concept-query path — it builds a `ConceptQueryParams` with `setIncludeSupplement(true)`, `setDisplayLanguage(...)`, and `setUseSupplement(extractUseSupplement(req))` and calls `conceptService.query(...)` (`CodeSystemLookupOperation.java:125-133`). There is no dedicated `loadSupplementDesignations` method; supplement enrichment happens inside that query path (`ConceptSupplementService`), which:
   - collects supplement references from `useSupplement` parameters (valueCanonical/valueUri/valueUrl/valueString),
   - if `displayLanguage` is set, discovers supplements by `baseCodeSystem` + `content = supplement`,
   - for each supplement, loads the concept by the same `code` in the supplement and merges designations, filtered by `displayLanguage`.

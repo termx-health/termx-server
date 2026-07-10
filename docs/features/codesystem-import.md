@@ -41,14 +41,18 @@ FHIR resource) to persisted concepts and **entity versions**, the merge vs. repl
 3. `saveCodeSystem` — upsert code-system metadata.
 4. `saveCodeSystemVersion` — the target version (honours `cleanRun`).
 5. `saveProperties` — entity properties, including designation-type properties.
-6. `saveConcepts(prepareConcepts(...), version, properties, cleanConceptRun)`.
+6. `saveConcepts(prepareConcepts(...), version, entityProperties, replaceConceptVersions, retireRedundant)` — the two
+   booleans are derived from the action: `retireRedundant = cleanRun || cleanConceptRun` and
+   `replaceConceptVersions = cleanConceptRun && !cleanRun` (`CodeSystemImportService.java:109-112`).
 7. `activate` / `retire` the version as requested (re-checks `CS_MAINTAIN`).
 8. Optionally add to a space and/or generate a value set.
 
 ## 4. `saveConcepts` — concepts and their versions
 
 1. `batchSave` the concept **entities** (code/description rows).
-2. **Replace only** — `cancelOrRetireRedundantConcepts`: concepts absent from the file are retired.
+2. **Replace *or* clean-version** — `cancelOrRetireRedundantConcepts`: concepts absent from the file are retired.
+   This runs whenever `retireRedundant = cleanRun || cleanConceptRun` (`CodeSystemImportService.java:274`), i.e. for
+   both "replace concepts" and "clean version" (see the §4 blockquote), not for a plain merge.
 3. For each concept, build a prepared `CodeSystemEntityVersion` (status `draft`), resolving property
    value ids/types and designation-type ids (`prepareEntityVersion`).
 4. **Per-concept version decision** — `holdUnchangedAndMerge` (both modes):
@@ -110,12 +114,18 @@ retired) or updated (draft) version.
 
 _Merged from the former `codesystem-import-export-implementation-validation.md`._
 
+> **Audit snapshot (2026-03-20).** This section is a point-in-time compliance audit, not a live cross-reference.
+> The `line NNN` citations reflect the source as of the validation date and have since drifted (e.g. the decimal
+> formatting is now at `ConceptExportService.java:424-426`, TE808 further down the file); rely on the referenced
+> **method names** rather than the exact line numbers. The spec versions and the association/decimal-formatting
+> notes above have been corrected in place.
+
 
 ### Overview
 
 This document validates that the current implementation matches the specifications defined in:
-- `codesystem-concept-export-specification.md` (Version 1.0.2)
-- `codesystem-concept-import-specification.md` (Version 1.0.2)
+- `codesystem-concept-export-specification.md` (Version 1.1.0)
+- `codesystem-concept-import-specification.md` (Version 1.1.0)
 - the "Test coverage" section below
 
 ### Validation Date
@@ -167,7 +177,7 @@ This document validates that the current implementation matches the specificatio
 
 **Simple Property Types:**
 - ✅ String: value as-is (line 420)
-- ✅ Decimal: Uses `BigDecimal.toPlainString()` (line 421-422)
+- ✅ Decimal: Uses `BigDecimal.stripTrailingZeros().toPlainString()` (`ConceptExportService.java:424-426`)
 - ✅ DateTime: Local date portion only (line 424)
 - ✅ Other types: JSON representation (line 426)
 
@@ -179,7 +189,7 @@ This document validates that the current implementation matches the specificatio
 
 **Special Columns:**
 - ✅ Status: from first concept version (line 363)
-- ✅ Association columns: comma-separated list of target codes (lines 365-376)
+- ✅ Association columns: `#`-separated list of target codes (`composeRow`, `String.join("#", codes)`)
 - ✅ Only active associations included (line 77)
 
 ##### ✅ Header Generation Logic
@@ -239,9 +249,9 @@ This document validates that the current implementation matches the specificatio
 
 ##### ⚠️ Minor Observations
 
-1. **Decimal Formatting**: Implementation uses `BigDecimal.toPlainString()` which is correct, but specification mentions trailing zeros removal. The implementation may include trailing zeros (e.g., `10.00`). This is acceptable as `toPlainString()` preserves precision.
+1. **Decimal Formatting**: Implementation uses `BigDecimal.stripTrailingZeros().toPlainString()` (`ConceptExportService.java:424-426`), so trailing zeros **are** removed (e.g., `10.00` → `10`), matching the specification.
 
-2. **Association Format**: Specification says `String.join("#", codes)` but implementation uses comma-separated format. Need to verify this matches specification requirement.
+2. **Association Format**: Implementation uses `String.join("#", codes)` (`ConceptExportService.java:366-368`), matching the specification — association target codes are `#`-separated, not comma-separated.
 
 ---
 
@@ -463,7 +473,7 @@ All major specification requirements are implemented correctly:
 - Header and row generation logic with proper column processing order
 
 **Minor Notes:**
-- Association format may need verification (specification says `String.join("#", codes)` but implementation may use comma-separated)
+- Association format confirmed: implementation uses `String.join("#", codes)` (`ConceptExportService.java:366-368`) — target codes are `#`-separated, matching the specification
 
 #### ✅ Import Implementation
 **Status**: **FULLY COMPLIANT**
@@ -494,7 +504,7 @@ All 25 tests (10 processor + 15 mapper) are implemented and cover:
 
 ### Recommendations
 
-1. **Verify Association Format**: Check if association columns use `#` separator as specified or comma-separated format. Update specification or implementation to match.
+1. **Association Format** (resolved): Association columns use the `#` separator (`ConceptExportService.java:366-368`), matching the specification. No action needed.
 
 2. **Date Format Verification**: Verify that `transformDate()` method in `CodeSystemFileImportProcessor` correctly handles all four date formats (YYYY-MM-DD, DD.MM.YY, DD.MM.YYYY, MM/DD/YYYY).
 

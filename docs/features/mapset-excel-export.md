@@ -30,7 +30,7 @@ No configuration is required. MapSet export is automatically available for all M
 Export uses the Lorque async processing system with default settings:
 
 - **Async processing**: Prevents blocking for large exports
-- **Streaming mode**: Constant memory usage regardless of MapSet size
+- **Streaming write**: Apache POI's `SXSSFWorkbook(100)` bounds memory to ~100 rows during Excel serialization (the full row list is still materialized in heap beforehand)
 - **Single-pass processing**: Headers collected from first 1000 associations
 
 ## Use-Cases
@@ -107,9 +107,9 @@ All endpoints are under `/api/ts/map-sets`.
 
 | Method | Path | Privilege | Description |
 |--------|------|-----------|-------------|
-| GET | `/{mapSet}/versions/{version}/associations-export{?params*}` | `MapSet.read` | Initiate async export, returns process ID |
-| GET | `/associations-export-csv/result/{lorqueProcessId}` | `MapSet.read` | Download CSV result |
-| GET | `/associations-export-xlsx/result/{lorqueProcessId}` | `MapSet.read` | Download Excel result |
+| GET | `/{mapSet}/versions/{version}/associations-export{?params*}` | `MapSet.triage` | Initiate async export, returns process ID |
+| GET | `/associations-export-csv/result/{lorqueProcessId}` | `MapSet.triage` | Download CSV result |
+| GET | `/associations-export-xlsx/result/{lorqueProcessId}` | `MapSet.triage` | Download Excel result |
 
 ### Initiate Export
 
@@ -447,7 +447,7 @@ Location: After associations section (around line 270)
 ```java
 private final MapSetExportService mapSetExportService;
 
-@Authorized(Privilege.MS_VIEW)
+@Authorized(Privilege.MS_TRIAGE)
 @Get(uri = "/{mapSet}/versions/{version}/associations-export{?params*}")
 public LorqueProcess exportAssociations(
     @PathVariable String mapSet, 
@@ -457,7 +457,7 @@ public LorqueProcess exportAssociations(
     return mapSetExportService.export(mapSet, version, params.getOrDefault("format", "csv"));
 }
 
-@Authorized(Privilege.MS_VIEW)
+@Authorized(Privilege.MS_TRIAGE)
 @Get(value = "/associations-export-csv/result/{lorqueProcessId}", produces = "application/csv")
 public HttpResponse<?> getAssociationExportCSV(Long lorqueProcessId) {
     byte[] result = lorqueProcessService.load(lorqueProcessId).getResult();
@@ -466,7 +466,7 @@ public HttpResponse<?> getAssociationExportCSV(Long lorqueProcessId) {
         .contentType(MediaType.of("application/csv"));
 }
 
-@Authorized(Privilege.MS_VIEW)
+@Authorized(Privilege.MS_TRIAGE)
 @Get(value = "/associations-export-xlsx/result/{lorqueProcessId}", produces = "application/vnd.ms-excel")
 public HttpResponse<?> getAssociationExportXLSX(Long lorqueProcessId) {
     byte[] result = lorqueProcessService.load(lorqueProcessId).getResult();
@@ -481,5 +481,5 @@ public HttpResponse<?> getAssociationExportXLSX(Long lorqueProcessId) {
 - **Small (10 associations)**: < 1 second
 - **Medium (1000 associations)**: 2-5 seconds
 - **Large (10000 associations)**: 5-10 seconds
-- **Memory usage**: Constant O(1) due to streaming (100 rows in memory)
+- **Memory usage**: Bounded at the POI write stage only (`SXSSFWorkbook(100)` keeps ~100 rows in memory); `composeResult` first materializes the full association and row lists in heap
 - **Database queries**: Single query to load all associations

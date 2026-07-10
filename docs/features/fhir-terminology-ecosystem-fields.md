@@ -41,17 +41,18 @@ List of CodeSystem/ValueSet canonical URL patterns the server explicitly does no
 
 ## Export
 
-`GET /api/terminology-servers/export/ecosystem?download=true`
+`GET /servers/export/ecosystem?download=true`
 
 Generates a FHIR ecosystem registry JSON file. The enriched authoritative entries are flattened to spec-compliant URL strings:
 - `{url: "http://loinc.org", version: "2.77"}` becomes `"http://loinc.org|2.77"`
-- Status and name metadata are TermX-internal and not included in the export
+- `status`, when set, is appended as a `?status=<status>` suffix (e.g. `"http://loinc.org|2.77?status=active"`)
+- Only `name` is TermX-internal and excluded from the export
 
 When `fhirVersions` is not specified, a default R5 entry is generated using `rootUrl`.
 
 ## Import
 
-`POST /api/terminology-servers/import/ecosystem`
+`POST /servers/import/ecosystem`
 
 Accepts a FHIR ecosystem registry JSON body. For each server in the file:
 - Creates a new server if no server with that code exists

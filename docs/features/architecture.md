@@ -26,7 +26,7 @@ TermX Server uses two Java package root namespaces:
 |-----------|---------|
 | `org.termx.*` | All modules (API contracts, core infrastructure, and feature implementations) |
 
-All code uses `org.termx.*` namespace. The migration from `com.kodality.termx.*` to `org.termx.*` has been completed for all modules including `termx-api` and `termx-core`.
+All code uses `org.termx.*` namespace. The migration from `org.termx.*` to `org.termx.*` has been completed for all modules including `termx-api` and `termx-core`.
 
 ---
 
@@ -61,6 +61,7 @@ All business logic lives here. Each Gradle subproject maps to a single top-level
 | `terminology` | `org.termx.terminology` | Core terminology services: code systems, value sets, map sets, FHIR adapters, file importers |
 | `ucum` | `org.termx.ucum` | UCUM unit-of-measure service: measurement units, FHIR integration, essence store |
 | `wiki` | `org.termx.wiki` | Wiki module: pages, content, comments, tags, templates, links, attachments |
+| `wiki-pdf` | `com.asseco.termx.wiki.pdf` | Wiki PDF export (controller + rendering) |
 | `bob` | `org.termx.bob` | Binary Object Store (BOB) — general-purpose file/attachment storage |
 | `modeler` | `org.termx.modeler` | Structure Definition and Transformation Definition modelling |
 | `snomed` | `org.termx.snomed` | SNOMED CT integration (Snowstorm client, RF2 import/export, translations) |
@@ -71,6 +72,7 @@ All business logic lives here. Each Gradle subproject maps to a single top-level
 | `edition-uzb` | `org.termx.editionuzb` | Uzbek national edition extensions (IchiUz) |
 | `uam` | `org.termx.uam` | User and Access Management |
 | `termx-app` | `org.termx` | Application entry point, Micronaut bootstrap, OpenAPI aggregation |
+| `termx-integtest` | `org.termx` | Integration-test harness (test application + FHIR/Groovy integration tests) |
 
 ---
 
@@ -144,8 +146,8 @@ All build files use Gradle Kotlin DSL for type-safe configuration:
 | `publish` | Publishes Maven artifacts to GitHub Packages | Yes |
 | `run` | Runs the application (from `termx-app`; use `:termx-app:run`) | No |
 | `shadowJar` | Builds the fat JAR for `termx-app` | No (Docker build uses context) |
-| `spotbugsCheck` | Runs SpotBugs on all projects; **manual only**, not part of `check` | No |
-| `pmdCheck` | Runs PMD on all projects; **manual only**, not part of `check` | No |
+| `spotbugsCheck` | Runs SpotBugs on all projects; not part of `check` | Yes (release + weekly) |
+| `pmdCheck` | Runs PMD on all projects; not part of `check` | Yes (release + weekly) |
 
 **Verification:** `check` runs only tests. SpotBugs and PMD are excluded from `check` to keep CI fast; run `./gradlew spotbugsCheck` or `./gradlew pmdCheck` when you want static analysis.
 
@@ -171,9 +173,9 @@ All build files use Gradle Kotlin DSL for type-safe configuration:
 - Multi-platform: `linux/amd64`, `linux/arm64`
 
 **CI/CD:** GitHub Actions
-- Builds on push to `main` or version tags
-- Single Gradle step: `clean assemble check publish` (then Docker build and push)
-- Publishes Maven artifacts and Docker images automatically
+- **Push build** (`.github/workflows/build.yml`) — on push to `main` or version tags: `./gradlew clean assemble --no-daemon` (no tests, no static analysis, no publish), then Docker build and multi-platform push.
+- **Release build** (`.github/workflows/build-release.yml`) — on version tags: `./gradlew clean assemble check pmdCheck spotbugsCheck dependencyCheckAggregate publish` (full verification + Maven publish to GitHub Packages).
+- **Weekly checks** (`.github/workflows/weekly-checks.yml`) — Monday 05:00 UTC: `check pmdCheck spotbugsCheck` plus an advisory OWASP `dependencyCheckAggregate`.
 
 ---
 

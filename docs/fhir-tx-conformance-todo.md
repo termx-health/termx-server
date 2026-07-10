@@ -80,7 +80,7 @@ Each problem `Pn` below is independent and self-contained: **Symptom** (the tx d
 
 The tx-ecosystem compares the *whole* response exactly (after scrubbing volatile ids/timestamps and `$external:N$`-tagged free text). So a test only flips green when params + every issue's `severity` / FHIR `code` / `tx-issue-type` coding / `location` + counts all match. That is why the remaining work is per-case rather than structural.
 
-Current per-suite gaps (pass/total): `version 144/206`, `permutations 23/56`, `validation 23/54`, `language 4/26`, `overload 10/29`, `parameters 17/35`, `language2 12/25`, `extensions 0/11`, `deprecated 0/11`, `notSelectable 40/50`, `inactive 3/12`, `default-valueset-version 4/12`, `simple-cases 11/18`, `errors 0/7`, `search 0/6`, `exclude 3/8`, `fragment 3/7`, `regex-bad 0/4`, `big 2/5`, `other 0/3`, `case 4/6`, `metadata 0/2`, `translate 0/2`, `tho 0/2`, `batch 0/2`.
+Current per-suite gaps (pass/total) — **stale snapshot (~303 total), superseded by the `400/402` headline at the top of this file; kept only for the per-suite shape, not the counts:** `version 144/206`, `permutations 23/56`, `validation 23/54`, `language 4/26`, `overload 10/29`, `parameters 17/35`, `language2 12/25`, `extensions 0/11`, `deprecated 0/11`, `notSelectable 40/50`, `inactive 3/12`, `default-valueset-version 4/12`, `simple-cases 11/18`, `errors 0/7`, `search 0/6`, `exclude 3/8`, `fragment 3/7`, `regex-bad 0/4`, `big 2/5`, `other 0/3`, `case 4/6`, `metadata 2/2 (DONE — CapabilityStatement/TerminologyCapabilities, PR #367)`, `translate 0/2`, `tho 0/2`, `batch 0/2`.
 
 ---
 

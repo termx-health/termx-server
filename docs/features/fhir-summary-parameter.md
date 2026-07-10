@@ -25,21 +25,31 @@ The accompanying termx-server fix also stops mappers throwing `Search by '<key>'
 
 ## 2. Configuration
 
-No configuration — the feature is always on. The summary path index is built once at startup from `ConformanceHolder.getDefinitions()` (the bundled FHIR R5 `StructureDefinition` snapshots under `*/src/main/resources/conformance/StructureDefinition-*.json`).
+The `_summary` shaping machinery itself is always on: the summary path index is built once at startup from `ConformanceHolder.getDefinitions()` (the bundled FHIR R5 `StructureDefinition` snapshots under `*/src/main/resources/conformance/StructureDefinition-*.json`).
 
-To remove a resource type from `_summary` semantics, drop or replace its `StructureDefinition-*.json` (the processor falls back to "return unchanged" when no index entry exists for the requested resource type).
+What **is** configurable is the *default* `_summary` value applied to search (`GET /fhir/<Resource>`) when the client does not pass `_summary` explicitly. Three keys exist, one per resource type, each defaulting to `true`:
+
+| Config key | Env var | Default | Applies to |
+|------------|---------|---------|------------|
+| `termx.fhir.codesystem.search.default-summary` | `TERMX_FHIR_CS_SEARCH_DEFAULT_SUMMARY` | `true` | `GET /fhir/CodeSystem` |
+| `termx.fhir.valueset.search.default-summary` | `TERMX_FHIR_VS_SEARCH_DEFAULT_SUMMARY` | `true` | `GET /fhir/ValueSet` |
+| `termx.fhir.conceptmap.search.default-summary` | `TERMX_FHIR_CM_SEARCH_DEFAULT_SUMMARY` | `true` | `GET /fhir/ConceptMap` |
+
+Each accepts `true | text | data | count | false`. With the `true` default, search suppresses the heavy `concept` / `compose` / `group.element` collections unless the client overrides with an explicit `?_summary=...`. Consumed at `CodeSystemResourceStorage.java:65`, `ValueSetResourceStorage.java:44`, `ConceptMapResourceStorage.java:41`.
+
+To remove a resource type from `_summary` semantics entirely, drop or replace its `StructureDefinition-*.json` (the processor falls back to "return unchanged" when no index entry exists for the requested resource type).
 
 ## 3. Use-Cases
 
 ### Scenario 1 — UI list of CodeSystems
 
-A web UI renders 50 CodeSystems per page with publisher / status / counts. Without `_summary` it pays for the full `concept` array of every CodeSystem. With `?_summary=true` it gets:
+A web UI renders 50 CodeSystems per page with publisher / status / counts. Because search defaults to `_summary=true` (see [Configuration](#2-configuration)), even a request that omits `_summary` already avoids paying for the full `concept` array of every CodeSystem. That default (or an explicit `?_summary=true`) yields:
 
 - Metadata only: `url`, `name`, `title`, `status`, `publisher`, `count`, `content`, `caseSensitive`, `date`, `version`, `identifier`, `contact`, `useContext`, `jurisdiction`.
 - `concept`, `filter`, `property`, `text` are **stripped**.
 - `meta.tag` carries `SUBSETTED`.
 
-A second request without `_summary` (or with `?_summary=false`) gets the full body when the user opens an item.
+A second request with an explicit `?_summary=false` gets the full body when the user opens an item (since the server default is `true`, omitting `_summary` would still return the slim form).
 
 ### Scenario 2 — Terminology router upstream discovery
 

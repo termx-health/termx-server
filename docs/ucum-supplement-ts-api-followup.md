@@ -4,7 +4,7 @@
 
 This note records the supplement-related work that has already been implemented around UCUM TS concept APIs and the remaining constraints that still matter.
 
-It continues the broader supplement overview in [`docs/code-system-supplements-analysis.md`](/job/helex/htx/termx-server/docs/code-system-supplements-analysis.md).
+It continues the broader supplement overview in [`docs/code-system-supplements-analysis.md`](../docs/code-system-supplements-analysis.md).
 
 ## Implemented Outcome
 
@@ -29,11 +29,11 @@ Instead:
 
 Relevant file:
 
-- [`ConceptQueryParams.java`](/job/helex/htx/termx-server/termx-api/src/main/java/org/termx/ts/codesystem/ConceptQueryParams.java)
+- [`ConceptQueryParams.java`](../termx-api/src/main/java/org/termx/ts/codesystem/ConceptQueryParams.java)
 
 Runtime supplement enrichment is centralized in:
 
-- [`ConceptSupplementService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptSupplementService.java)
+- [`ConceptSupplementService.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptSupplementService.java)
 
 Current behavior:
 
@@ -45,16 +45,16 @@ Current behavior:
 
 The enrichment is used by:
 
-- [`ConceptService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptService.java)
-- [`ConceptController.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptController.java)
-- [`CodeSystemController.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/CodeSystemController.java)
+- [`ConceptService.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptService.java)
+- [`ConceptController.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/concept/ConceptController.java)
+- [`CodeSystemController.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/CodeSystemController.java)
 
 ### FHIR alignment
 
 FHIR operations now rely on the same concept enrichment model instead of duplicating supplement-loading logic:
 
-- [`CodeSystemLookupOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemLookupOperation.java)
-- [`CodeSystemValidateCodeOperation.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemValidateCodeOperation.java)
+- [`CodeSystemLookupOperation.java`](../terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemLookupOperation.java)
+- [`CodeSystemValidateCodeOperation.java`](../terminology/src/main/java/org/termx/terminology/fhir/codesystem/operations/CodeSystemValidateCodeOperation.java)
 
 This means:
 
@@ -66,8 +66,8 @@ This means:
 
 UCUM-specific supplement-aware concept search is implemented in:
 
-- [`UcumConceptResolver.java`](/job/helex/htx/termx-server/ucum/src/main/java/org/termx/ucum/ts/UcumConceptResolver.java)
-- [`UcumSupplementDesignationService.java`](/job/helex/htx/termx-server/ucum/src/main/java/org/termx/ucum/ts/UcumSupplementDesignationService.java)
+- [`UcumConceptResolver.java`](../ucum/src/main/java/org/termx/ucum/ts/UcumConceptResolver.java)
+- [`UcumSupplementDesignationService.java`](../ucum/src/main/java/org/termx/ucum/ts/UcumSupplementDesignationService.java)
 
 Current behavior:
 
@@ -81,8 +81,8 @@ Current behavior:
 
 UCUM supplement-related search caches are invalidated through:
 
-- [`UcumSearchCacheInvalidator.java`](/job/helex/htx/termx-server/termx-core/src/main/java/org/termx/core/ts/UcumSearchCacheInvalidator.java)
-- [`UcumSearchCacheInvalidatorImpl.java`](/job/helex/htx/termx-server/ucum/src/main/java/org/termx/ucum/ts/UcumSearchCacheInvalidatorImpl.java)
+- [`UcumSearchCacheInvalidator.java`](../termx-core/src/main/java/org/termx/core/ts/UcumSearchCacheInvalidator.java)
+- [`UcumSearchCacheInvalidatorImpl.java`](../ucum/src/main/java/org/termx/ucum/ts/UcumSearchCacheInvalidatorImpl.java)
 
 The resolver cache:
 
@@ -92,20 +92,20 @@ The resolver cache:
 
 Relevant files:
 
-- [`CodeSystemSupplementService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemSupplementService.java)
-- [`CodeSystemEntityVersionService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemEntityVersionService.java)
-- [`CodeSystemVersionService.java`](/job/helex/htx/termx-server/terminology/src/main/java/org/termx/terminology/terminology/codesystem/version/CodeSystemVersionService.java)
-- [`UcumServiceImpl.java`](/job/helex/htx/termx-server/ucum/src/main/java/org/termx/ucum/service/UcumServiceImpl.java)
+- [`CodeSystemSupplementService.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemSupplementService.java)
+- [`CodeSystemEntityVersionService.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/entity/CodeSystemEntityVersionService.java)
+- [`CodeSystemVersionService.java`](../terminology/src/main/java/org/termx/terminology/terminology/codesystem/version/CodeSystemVersionService.java)
+- [`UcumServiceImpl.java`](../ucum/src/main/java/org/termx/ucum/service/UcumServiceImpl.java)
 
 ## Web Changes
 
 UCUM supplement-aware concept loading is now used in the main display/search paths:
 
-- [`concept-supplement-util.ts`](/job/helex/htx/termx-web/app/src/app/resources/_lib/code-system/util/concept-supplement-util.ts)
-- [`localized-concept-name-pipe.ts`](/job/helex/htx/termx-web/app/src/app/resources/_lib/code-system/pipe/localized-concept-name-pipe.ts)
-- [`code-system-coding-reference.service.ts`](/job/helex/htx/termx-web/app/src/app/resources/code-system/services/code-system-coding-reference.service.ts)
-- [`concept-search.component.ts`](/job/helex/htx/termx-web/app/src/app/resources/_lib/code-system/containers/concept-search.component.ts)
-- [`concept-drawer-search.component.ts`](/job/helex/htx/termx-web/app/src/app/resources/_lib/code-system/containers/concept-drawer-search.component.ts)
+- `termx-web/app/src/app/resources/_lib/code-system/util/concept-supplement-util.ts`
+- `termx-web/app/src/app/resources/_lib/code-system/pipe/localized-concept-name-pipe.ts`
+- `termx-web/app/src/app/resources/code-system/services/code-system-coding-reference.service.ts`
+- `termx-web/app/src/app/resources/_lib/code-system/containers/concept-search.component.ts`
+- `termx-web/app/src/app/resources/_lib/code-system/containers/concept-drawer-search.component.ts`
 
 Current policy:
 

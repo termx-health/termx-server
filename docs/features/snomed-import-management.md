@@ -35,7 +35,6 @@ A complementary **concept-usage lookup** answers "which TermX-managed CodeSystem
 | `snowstorm.user` / `snowstorm.password` | — | (deployment) | Basic Auth. Empty values send no `Authorization` header. |
 | `micronaut.server.max-request-size` | — | `629145600` (600 MB) | Multipart upload cap — SNOMED International is ~549 MB. |
 | `micronaut.server.multipart.max-file-size` | — | `629145600` (600 MB) | Same. |
-| `termx.snomed.delta-generator.timeout-seconds` | — | `1800` (30 min) | Hard cap on the `DeltaGeneratorTool` subprocess. |
 
 ### Cache retention
 
@@ -60,7 +59,7 @@ From the archive detail page of the newly uploaded zip the manager opens the *Di
 
 ### Scenario 3: Audit existing TermX resources for inactivated codes
 
-After scanning a new release the manager copies the JSON of `SnomedRF2ScanResult` (or just the `invalidatedConcepts[].code` array) and pastes it into the *Concept usage* page. The page extracts the codes, posts to `POST /snomed/concept-usage`, and renders a table of every CodeSystem supplement, ValueSet rule, and stored expansion that still references one of those codes, with links straight to the affected edit page. The manager can then fix each one before pushing the release to Snowstorm.
+After scanning a new release the manager copies the JSON of `SnomedRF2ScanResult` (or just the `invalidatedConcepts[].conceptId` array) and pastes it into the *Concept usage* page. The page extracts the codes, posts to `POST /snomed/concept-usage`, and renders a table of every CodeSystem supplement, ValueSet rule, and stored expansion that still references one of those codes, with links straight to the affected edit page. The manager can then fix each one before pushing the release to Snowstorm.
 
 ### Scenario 4: Bulk-store national extensions for offline reference
 

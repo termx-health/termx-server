@@ -81,10 +81,8 @@ Development-only auth (do **not** use in production):
 ### 1.6 Large terminology import (SNOMED + LOINC archives) — see [`snomed-import-management.md`](snomed-import-management.md), [`loinc-import-management.md`](loinc-import-management.md)
 | Env var / property | Default | Purpose |
 |---|---|---|
-| `termx.terminology-archive.bucket` | `terminology-archives` | MinIO bucket for stored archives (auto-created) |
-| `termx.terminology-archive.retention-per-edition` | `3` | Archives kept per edition before cleanup |
-| `termx.snomed.delta-generator.timeout-seconds` | `1800` | Hard cap on the delta-generator subprocess |
-| `micronaut.server.max-request-size` | `1610612736` (1.5 GB) | Max multipart upload (SNOMED Intl ≈ 1 GB) |
+| `micronaut.server.max-request-size` | `629145600` (600 MB) | Max multipart upload (SNOMED International RF2 ≈ 549 MB) |
+| `micronaut.server.multipart.max-file-size` | `629145600` (600 MB) | Per-file multipart cap (same value) |
 
 > **Delta-generator jar is bundled — no env var.** The IHTSDO `DeltaGeneratorTool-3.0.0.jar` is
 > vendored in the image (`snomed/src/main/resources/snomed/delta-generator-tool/`) and auto-extracted
@@ -176,10 +174,10 @@ In the shipped image `validator_cli.jar` is downloaded in the Dockerfile and
 
 | Env var | Property | Default | Purpose |
 |---|---|---|---|
-| `TERMX_CONFORMANCE_VALIDATOR_JAR` | `conformance.validator-jar` | (baked into image) | Absolute path to `validator_cli.jar` |
-| `TERMX_CONFORMANCE_TX_URL` | `conformance.tx-url` | `http://localhost:8200/fhir` | This server's externally-reachable FHIR base, used as the `-tx` target |
-| `TERMX_CONFORMANCE_TEST_PACKAGE_DIR` | `conformance.test-package-dir` | (validator package cache) | Dir holding the tx-ecosystem test fixtures for `loadSetup=true` runs |
-| `TERMX_CONFORMANCE_SETUP_AUTH_TOKEN` | `conformance.setup-auth-token` | (none) | Bearer token the setup loader uses to write fixtures (needs CS/VS create+update privileges) |
+| `TERMX_CONFORMANCE_VALIDATOR_JAR` | `termx.conformance.validator-jar` | (baked into image) | Absolute path to `validator_cli.jar` |
+| `TERMX_CONFORMANCE_TX_URL` | `termx.conformance.tx-url` | `http://localhost:8200/fhir` | This server's externally-reachable FHIR base, used as the `-tx` target |
+| `TERMX_CONFORMANCE_TEST_PACKAGE_DIR` | `termx.conformance.test-package-dir` | (validator package cache) | Dir holding the tx-ecosystem test fixtures for `loadSetup=true` runs |
+| `TERMX_CONFORMANCE_SETUP_AUTH_TOKEN` | `termx.conformance.setup-auth-token` | (none) | Bearer token the setup loader uses to write fixtures (needs CS/VS create+update privileges) |
 
 ### 1.16 Global search (3.3+)
 
@@ -285,7 +283,7 @@ credentials (`minio`/`minio123`).
 | Path | Upstream | Notes |
 |---|---|---|
 | `/` | termx-web | SPA |
-| `/api/` | termx-server `:8200` | raise client max body size (≈1.5 GB for SNOMED import) |
+| `/api/` | termx-server `:8200` | raise client max body size (≈600 MB for SNOMED import) |
 | `/swagger` | swagger-ui `:8000` | |
 | `/chef/` | fsh-chef `:8500` | |
 | `/plantuml` | plantuml `:8501` | |
@@ -327,8 +325,9 @@ credentials (`minio`/`minio123`).
   `BOB_MINIO_*` user must match what the init container created.
 - **No object storage ⇒ import endpoints fail (503).** SNOMED/LOINC archive import and wiki file
   storage require MinIO; without `BOB_MINIO_*` those features are unavailable.
-- **Request-size limits.** SNOMED International archives are ≈1 GB; raise both
-  `micronaut.server.max-request-size` (default 1.5 GB) and the reverse-proxy body limit or uploads fail.
+- **Request-size limits.** SNOMED International RF2 archives are ≈549 MB; the default
+  `micronaut.server.max-request-size` / `multipart.max-file-size` is **600 MB** (`629145600`). Raise
+  both these and the reverse-proxy body limit if you import larger archives, or uploads fail.
 - **OOM ⇒ container restart by design.** The image runs with `-XX:+ExitOnOutOfMemoryError` and dumps
   to `/app/logs`, so Docker's restart policy recovers it — size `JAVA_OPTS -Xmx` for your workload.
   **Set a container memory limit** (`mem_limit` / `--memory`) at least as large as `-Xmx` plus

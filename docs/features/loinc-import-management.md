@@ -33,8 +33,14 @@ LOINC piggy-backs on the existing Bob + multipart limits; no LOINC-specific knob
 
 | Privilege | Used for |
 |---|---|
-| `loinc.CodeSystem.read` | View the LOINC import page, list stored archives, fetch slot mappings. |
-| `loinc.CodeSystem.write` | Upload a new archive, delete one, trigger an import, open a code system after a successful run. |
+| `loinc.CodeSystem.read` | View the LOINC import page, list stored archives (Bob container read). |
+| `loinc.CodeSystem.write` | Upload a new archive, delete one (Bob container write). |
+| `*.CodeSystem.write` (`CS_WRITE`) | Fetch slot mappings (`GET /loinc/archives/{uuid}/files`), trigger an import (`POST /loinc/import`, `/loinc/import/from-archive`). |
+
+> The archive upload/list/delete operations authorize through the Bob container mapping
+> (`LoincBobContainerAuthorizer` → `loinc.CodeSystem.*`), while the import and slot-mapping
+> endpoints on `LoincController` are annotated `@Authorized(Privilege.CS_WRITE)` where
+> `CS_WRITE = "*.CodeSystem.write"` (the wildcard, not `loinc`-scoped).
 
 ## Use-Cases
 
