@@ -87,9 +87,13 @@ The export follows the FHIR Ecosystem server registry specification:
   - `token: true` - If token authentication configured (Authorization header)
   - `oauth: true` - If OAuth authentication configured
 - `access_info` - Human-readable authentication information (when applicable)
-- `fhirVersions` - Array of FHIR versions supported (currently defaults to R4)
-- `authoritative` - Code systems where server is authoritative (currently empty, for future enhancement)
-- `authoritative-valuesets` - Value sets where server is authoritative (currently empty, for future enhancement)
+- `fhirVersions` - Array of FHIR versions supported (per-server; e.g. R3/R4/R4B/R5/R6)
+- `authoritative` - Code systems where the server is authoritative (resolved from the server's authoritative-resource patterns)
+- `authoritative-valuesets` - Value sets where the server is authoritative (resolved from the server's authoritative-resource patterns)
+
+> These fields are populated from the server's configured authoritative-resource patterns and
+> supported FHIR versions. See [`fhir-terminology-ecosystem-fields.md`](fhir-terminology-ecosystem-fields.md)
+> for the authoritative field-level reference.
 
 ### Filter Behavior
 
@@ -182,20 +186,17 @@ In the admin interface at `http://localhost:4200/terminology-servers`, you can a
 
 ## Limitations
 
-### Current Version
+The following are **implemented** and no longer limitations:
 
-1. **FHIR Version:** Currently defaults to R4 only
-   - Future: Allow configuration of supported FHIR versions per server
+- **FHIR versions** are configurable per server (R3/R4/R4B/R5/R6), not fixed to R4.
+- **Authoritative code systems / value sets** are populated from each server's configured
+  authoritative-resource patterns, resolved against TermX's own resources.
 
-2. **Authoritative Systems:** Empty arrays for now
-   - Future: Populate from CodeSystem/ValueSet metadata
-   - Will need to track which systems each server is authoritative for
+Still open / possible future work:
 
-3. **Usage Tags:** Not implemented
-   - Future: Add usage categorization (publication, validation, code-generation)
-
-4. **Content Level:** Not specified for candidate servers
-   - Future: Add content level indicators (complete, fragment, etc.)
+1. **Usage Tags** — usage categorization (publication, validation, code-generation) is not yet emitted.
+2. **Content Level** — content-level indicators (complete, fragment, etc.) for candidate servers are
+   not yet specified.
 
 ## Future Enhancements
 
@@ -267,7 +268,7 @@ auth:
 ## Related Documentation
 
 - [FHIR Terminology Ecosystem IG](https://build.fhir.org/ig/HL7/fhir-tx-ecosystem-ig/ecosystem.html)
-- [FHIR Terminology Ecosystem Integration](fhir-terminology-ecosystem-api.md) - Discovery and Resolution API
+- [FHIR Terminology Ecosystem Integration](fhir-terminology-ecosystem-registry-proxy.md) - Discovery and Resolution API
 - [Terminology Server Management](../README.md) - Managing internal servers
 
 ## Example Output
