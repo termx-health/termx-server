@@ -12,7 +12,6 @@ import com.kodality.commons.util.MapUtil;
 import org.termx.core.auth.SessionStore;
 import org.termx.core.github.GithubService.GithubContent.GithubContentEncoding;
 import org.termx.core.github.GithubService.GithubTreeItem.GithubTreeType;
-import com.sun.jdi.request.InvalidRequestStateException;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpHeaders;
@@ -94,7 +93,7 @@ public class GithubService {
   public String authorizeUser(String state, String code) {
     Map<String, String> stateObj = (Map<String, String>) this.cacheManager.getCache("state").get(state);
     if (stateObj == null) {
-      throw new InvalidRequestStateException("invalid 'state'");
+      throw new IllegalStateException("invalid 'state'");
     }
     String user = stateObj.get("user");
     String repo = stateObj.get("repo");
