@@ -26,6 +26,7 @@ import spock.lang.Specification
  *   <li>{@code child-of}      → {@code <!value}  (direct children)</li>
  *   <li>{@code generalizes}   → {@code >>value}  (ancestor-or-self)</li>
  *   <li>{@code in}            → {@code ^value}    (members of the reference set)</li>
+ *   <li>{@code ecl}           → {@code value}     (synthetic operator; value is already ECL, e.g. {@code *})</li>
  * </ul>
  * Operators with no ECL equivalent are rejected with {@code SN301} rather than silently emitting a
  * bare value (issue #197).
@@ -57,6 +58,44 @@ class SnomedValueSetExpandProviderSpec extends Specification {
     "child-of"      || "<!73211009"
     "generalizes"   || ">>73211009"
     "in"            || "^73211009"
+  }
+
+  def "the synthetic `ecl` operator passes its value through as the ECL verbatim"() {
+    given: "the two shapes ValueSetExpandOperation synthesises for `?fhir_vs` and `?fhir_vs=ecl/<expr>`"
+    def rule = ruleWith(filter("ecl", value))
+
+    when:
+    provider.ruleExpandPaged(rule, new ValueSetVersion(), "en", null, 0, 10)
+
+    then: "composeEcl emits the value unchanged — no SN301, no constraint prefix"
+    1 * snomedService.searchConceptsPage({ SnomedConceptSearchParams p -> p.ecl == value }) >>
+        new SnomedSearchResult<SnomedConcept>().setItems([]).setTotal(0)
+
+    where:
+    value          | _
+    "*"            | _   // ?fhir_vs — all concepts
+    "<< 363787002" | _   // ?fhir_vs=ecl/<expr> — raw ECL
+  }
+
+  def "the `ecl` operator is also honoured on the non-paged (ruleExpand) path and maps concepts"() {
+    // composeEcl is reached from two call sites — ruleExpandPaged (above) and
+    // filterConcepts via ruleExpand. Exercise the second one too, and assert the
+    // whole compile→search→map flow, so `?fhir_vs` can't regress on either path.
+    given: "the all-concepts shape `?fhir_vs` → operator ecl, value *"
+    def rule = ruleWith(filter("ecl", "*"))
+
+    when:
+    def result = provider.ruleExpand(rule, new ValueSetVersion(), "en")
+
+    then: "filterConcepts compiles the verbatim ECL `*` (no SN301) and the concept surfaces"
+    1 * snomedService.searchConcepts({ SnomedConceptSearchParams p -> p.ecl == "*" && p.all }) >>
+        [new SnomedConcept().setConceptId("404684003").setActive(true)]
+    1 * snomedService.loadDescriptions(_, ["404684003"]) >> [
+        new SnomedDescription().setConceptId("404684003").setDescriptionId("d1").setLang("en")
+            .setTerm("Clinical finding").setTypeId("900000000000013009").setActive(true).setAcceptabilityMap([:])
+    ]
+    result*.concept*.code == ["404684003"]
+    result.first().display.name == "Clinical finding"
   }
 
   def "the free-text filter and paging are pushed down to Snowstorm"() {
