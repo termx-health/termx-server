@@ -300,7 +300,11 @@ public class CodeSystemFileImportProcessor {
       ep.setPropertyType(DESIGNATION_PROPERTY_TYPE.equals(prop.getPropertyType()) ? EntityPropertyType.string : prop.getPropertyType());
       ep.setPropertyTypeFormat(prop.getPropertyTypeFormat());
       ep.setPropertyCodeSystem(prop.getPropertyCodeSystem());
-      ep.setLang(prop.getLanguage());
+      // Language belongs to a designation. Only designation-typed columns carry it; a non-designation
+      // property (e.g. a dateTime column that happens to have a language configured) must NOT get a
+      // language, otherwise the mapper misclassifies it as a designation and casts its value (a Date,
+      // Integer, ...) to String — ClassCastException.
+      ep.setLang(DESIGNATION_PROPERTY_TYPE.equals(prop.getPropertyType()) ? prop.getLanguage() : null);
       ep.setValue(transformedValue);
       return ep;
     }).toList();
