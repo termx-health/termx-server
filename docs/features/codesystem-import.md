@@ -21,6 +21,26 @@ FHIR resource) to persisted concepts and **entity versions**, the merge vs. repl
 4. **Dry run** — "validate data only" routes to `CodeSystemFileImportDryRunService`: it computes the
    diff against the current content and persists nothing.
 
+### 1.1 Transaction boundaries
+
+The import deliberately keeps its long, non-DB and read-only work **outside** the write transaction, so a
+database connection is never held idle across it (PostgreSQL `idle_in_transaction_session_timeout` would
+otherwise terminate large imports — 7k+ rows — mid-commit):
+
+- **Parse** (`CodeSystemFileImportProcessor.process`, CPU-bound) — no transaction. `process()` is **not**
+  `@Transactional`.
+- **Read / validate / resolve links** (`save()`: load existing CS + version, map, resolve coding links via
+  `ValueSetVersionConceptService.expand` / `ConceptService.query`, `validateConcepts`) — no ambient
+  transaction. These are the same read services the GET endpoints call without a transaction; the reads
+  self-manage (`expand` is `@Transactional`) or run in autocommit.
+- **Write** — a single short transaction owned by `CodeSystemImportService.importCodeSystem`
+  (`@Transactional`); the dry-run compare runs in its own `REQUIRES_NEW` transaction
+  (`CodeSystemFileImportDryRunService`).
+
+So validation reads and the write no longer share one snapshot — acceptable because imports are not run
+concurrently against the same code system, and the write itself is still fully atomic within
+`importCodeSystem`.
+
 ## 2. Modes — `CodeSystemImportAction`
 
 | Flag | UI | Effect |
