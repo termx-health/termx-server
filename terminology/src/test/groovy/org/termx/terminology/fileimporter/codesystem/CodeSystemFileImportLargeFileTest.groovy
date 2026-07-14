@@ -81,14 +81,14 @@ class CodeSystemFileImportLargeFileTest extends Specification {
     result.properties.size() > 0
     parsingTime > 0 // File parsing took some time
 
-    when: "saving the import (which starts the transaction)"
+    when: "saving the import (validation runs outside any write transaction; the write is confined to importCodeSystem)"
     startTime = System.currentTimeMillis()
     codeSystemService.load("large-cs", true) >> Optional.empty()
     codeSystemVersionService.query(_) >> QueryResult.empty()
     codeSystemValidationService.validateConcepts(_, _) >> []
     codeSystemImportService.importCodeSystem(_, _, _) >> null
 
-    def response = service.saveInTransaction(request, result)
+    def response = service.save(request, result)
     long saveTime = System.currentTimeMillis() - startTime
 
     then: "save completes without timeout (should finish in < 30 seconds, default idle-in-transaction timeout)"
@@ -123,8 +123,8 @@ class CodeSystemFileImportLargeFileTest extends Specification {
     codeSystemImportService.importCodeSystem(_, _, _) >> null
 
     // process() method should:
-    // 1. Call CodeSystemFileImportProcessor.process() WITHOUT a transaction
-    // 2. Then call saveInTransaction() which STARTS a new transaction
+    // 1. Call CodeSystemFileImportProcessor.process() WITHOUT a transaction (parse phase)
+    // 2. Run read/validation with no ambient transaction, then persist via importCodeSystem's own short transaction
     def response = service.process(request, csv.getBytes("UTF-8"))
 
     then: "the import completes successfully"

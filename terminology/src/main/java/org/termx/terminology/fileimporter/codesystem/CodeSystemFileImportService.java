@@ -56,7 +56,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportMapper.CONCEPT_CODE;
 import static org.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportMapper.toAssociationTypes;
@@ -87,7 +86,6 @@ public class CodeSystemFileImportService {
     return process(request, file);
   }
 
-  @Transactional
   public CodeSystemFileImportResponse process(CodeSystemFileImportRequest request, byte[] file) {
     String versionNumber = request.getVersion() != null ? request.getVersion().getNumber() : null;
     log.debug("=== IMPORT SERVICE DEBUG: process START ===");
@@ -112,18 +110,23 @@ public class CodeSystemFileImportService {
         result.getEntities().size(), result.getProperties().size());
 
     log.debug("IMPORT SERVICE DEBUG: Saving import result...");
-    CodeSystemFileImportResponse response = saveInTransaction(request, result);
+    CodeSystemFileImportResponse response = save(request, result);
     log.debug("IMPORT SERVICE DEBUG: Import complete - Errors: {}", response.getErrors().size());
     log.debug("=== IMPORT SERVICE DEBUG: process END ===");
     return response;
   }
 
-  @Transactional
-  protected CodeSystemFileImportResponse saveInTransaction(CodeSystemFileImportRequest request, CodeSystemFileImportResult result) {
-    return save(request, result);
-  }
-
-
+  /**
+   * Runs the read/validation phase (load existing CS + version, map, resolve coding links, validate) with
+   * <b>no ambient transaction</b>, then persists.
+   * <p>
+   * Validation is read-only (queries + in-memory mutation); its reads self-manage their own transactions
+   * ({@code ValueSetVersionConceptService.expand} is {@code @Transactional}) or run in autocommit. The actual
+   * write is confined to a short transaction owned by {@code CodeSystemImportService.importCodeSystem}
+   * ({@code @Transactional}); the dry-run path runs in {@code REQUIRES_NEW}. Keeping the read/validation work
+   * outside the write transaction avoids holding a connection idle through it (idle-in-transaction timeout on
+   * large files) and minimises the write-lock window.
+   */
   public CodeSystemFileImportResponse save(CodeSystemFileImportRequest request, CodeSystemFileImportResult result) {
     String versionNumber = request.getVersion() != null ? request.getVersion().getNumber() : null;
     log.debug("=== IMPORT SERVICE DEBUG: save START ===");
