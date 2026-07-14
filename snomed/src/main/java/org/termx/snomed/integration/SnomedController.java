@@ -482,8 +482,15 @@ public class SnomedController {
     SnomedDescriptionItemResponse response = snowstormClient.findConceptDescriptions(params).join();
 
     AsyncHelper futures = new AsyncHelper();
-    response.getItems().forEach(item -> futures.add(
-        snowstormClient.loadConcept(item.getConcept().getConceptId()).thenApply(c -> item.getConcept().setDescriptions(c.getDescriptions()))));
+    response.getItems().forEach(item -> {
+      if (StringUtils.isNotEmpty(params.getBranch())) {
+        futures.add(snowstormClient.loadConcept(params.getBranch() + "/", item.getConcept().getConceptId())
+            .thenApply(c -> item.getConcept().setDescriptions(c.getDescriptions())));
+      } else {
+        futures.add(snowstormClient.loadConcept(item.getConcept().getConceptId())
+            .thenApply(c -> item.getConcept().setDescriptions(c.getDescriptions())));
+      }
+    });
     futures.joinAll();
 
     return response;

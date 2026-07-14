@@ -41,6 +41,8 @@ import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Delete;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
@@ -111,6 +113,7 @@ public class ValueSetController {
   @Authorized(Privilege.VS_MAINTAIN)
   @Delete(uri = "/{valueSet}")
   public HttpResponse<?> deleteValueSet(@PathVariable String valueSet) {
+    valueSet = parseCode(valueSet);
     valueSetService.cancel(valueSet);
     provenanceService.create(new Provenance("delete", "ValueSet", valueSet));
     return HttpResponse.ok();
@@ -316,6 +319,10 @@ public class ValueSetController {
   @Get(uri = "/{valueSet}/provenances")
   public List<Provenance> queryProvenances(@PathVariable String valueSet, @Nullable @QueryValue String version) {
     return provenanceService.find(valueSet, version);
+  }
+
+  private String parseCode(String code) {
+    return URLDecoder.decode(code, StandardCharsets.UTF_8);
   }
 
   @Getter

@@ -7,6 +7,7 @@ import org.termx.implementationguide.ig.version.ImplementationGuideVersion;
 import org.termx.implementationguide.ig.version.ImplementationGuideVersionQueryParams;
 import org.termx.implementationguide.ig.version.ImplementationGuideVersionService;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.Optional;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class ImplementationGuideService {
+  private static final Pattern ID_REGEX = Pattern.compile("[A-Za-z0-9\\-.]{1,64}");
+
   private final ImplementationGuideRepository repository;
   private final ImplementationGuideVersionService versionService;
 
@@ -61,6 +64,9 @@ public class ImplementationGuideService {
   private void validateId(String id) {
     if (id.contains(BaseFhirMapper.SEPARATOR)) {
       throw ApiError.IG103.toApiException(Map.of("symbols", BaseFhirMapper.SEPARATOR));
+    }
+    if (!ID_REGEX.matcher(id).matches()) {
+      throw ApiError.IG105.toApiException();
     }
   }
 

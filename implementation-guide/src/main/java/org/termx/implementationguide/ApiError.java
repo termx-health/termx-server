@@ -10,7 +10,8 @@ public enum ApiError {
   IG101("IG101", "Could not create not draft version."),
   IG102("IG102", "Version '{{version}}' already exists."),
   IG103("IG103", "Id is not allowed to contain '{{symbols}}'"),
-  IG104("IG104", "Version '{{version}}' of implementation guide '{{ig}}' doesn't exist.");
+  IG104("IG104", "Version '{{version}}' of implementation guide '{{ig}}' doesn't exist."),
+  IG105("IG105", "Resource ID does not match regex: [A-Za-z0-9\\-\\.]{1,64}");
 
 
 

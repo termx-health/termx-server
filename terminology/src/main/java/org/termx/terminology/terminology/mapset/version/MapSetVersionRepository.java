@@ -70,9 +70,9 @@ public class MapSetVersionRepository extends BaseRepository {
 
   public MapSetVersion loadPreviousVersion(String mapSet, String version) {
     String sql = "with current_version as (select release_date from terminology.map_set_version where map_set = ? and version = ? and sys_status = 'A') " +
-        select + "from terminology.map_set_version msv where msv.map_set = ? and msv.release_date < (select release_date from current_version) and msv.sys_status = 'A' " +
-        "order by msv.release_date desc";
-    return getBean(sql, bp, mapSet, version, mapSet);
+        select + "from terminology.map_set_version msv where msv.map_set = ? and msv.release_date <= (select release_date from current_version) and msv.version <> ? and msv.sys_status = 'A' " +
+        "order by msv.version desc, msv.release_date desc";
+    return getBean(sql, bp, mapSet, version, mapSet, version);
   }
 
   public QueryResult<MapSetVersion> query(MapSetVersionQueryParams params) {
