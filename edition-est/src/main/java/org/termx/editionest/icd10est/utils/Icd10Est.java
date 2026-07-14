@@ -41,6 +41,11 @@ public class Icd10Est {
     public List<Sub> getSub() {
       return null;
     }
+
+    @Override
+    public List<Sub> getPostfix() {
+      return null;
+    }
   }
 
   @Getter
@@ -65,6 +70,11 @@ public class Icd10Est {
 
     @JacksonXmlElementWrapper(useWrapping = false)
     private List<Sub> sub;
+
+    @Override
+    public List<Sub> getPostfix() {
+      return null;
+    }
   }
 
   @Getter
@@ -89,6 +99,11 @@ public class Icd10Est {
 
     @JacksonXmlElementWrapper(useWrapping = false)
     private List<Sub> sub;
+
+    @Override
+    public List<Sub> getPostfix() {
+      return sub;
+    }
   }
 
   @Getter
@@ -113,6 +128,11 @@ public class Icd10Est {
     public List<Sub> getChildren() {
       return sub == null ? null : List.copyOf(sub);
     }
+
+    @Override
+    public List<Sub> getPostfix() {
+      return null;
+    }
   }
 
   @Getter
@@ -135,6 +155,11 @@ public class Icd10Est {
 
     @Override
     public List<Node> getChildren() {
+      return null;
+    }
+
+    @Override
+    public List<Sub> getPostfix() {
       return null;
     }
 
@@ -183,6 +208,8 @@ public class Icd10Est {
     List<String> getNotice();
 
     List<? extends Node> getChildren();
+
+    List<Sub> getPostfix();
 
     List<Sub> getSub();
   }

@@ -15,6 +15,7 @@ import org.termx.ts.codesystem.EntityPropertyKind;
 import org.termx.ts.codesystem.EntityPropertyType;
 import org.termx.ts.codesystem.EntityPropertyValue;
 import org.termx.editionest.icd10est.utils.Icd10Est.Node;
+import org.termx.editionest.icd10est.utils.Icd10Est.Sub;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import java.util.ArrayList;
@@ -59,18 +60,17 @@ public class Icd10EstMapper {
 
   private static List<CodeSystemImportRequestConcept> toConcepts(List<Icd10Est> diagnoses) {
     List<CodeSystemImportRequestConcept> concepts = new ArrayList<>();
-    diagnoses.forEach(d -> concepts.addAll(parseNodeChild(d.getChapter(), null)));
+    diagnoses.forEach(d -> concepts.addAll(parseNodeChild(d.getChapter(), null, null)));
     return concepts;
   }
 
-  private static List<CodeSystemImportRequestConcept> parseNodeChild(Node element, Node parent) {
+  private static List<CodeSystemImportRequestConcept> parseNodeChild(Node element, Node parent, List<Sub> postfixes) {
     List<CodeSystemImportRequestConcept> concepts = new ArrayList<>();
     concepts.add(Icd10EstMapper.toConcept(element, parent));
     if (element.getChildren() != null) {
-      element.getChildren().forEach(child -> concepts.addAll(parseNodeChild(child, element)));
-    }
-    if (element.getSub() != null) {
-      element.getSub().forEach(sub -> parseNodeChild(sub, element));
+      element.getChildren().forEach(child -> concepts.addAll(parseNodeChild(child, element, element.getPostfix())));
+    } else if (postfixes != null) {
+      postfixes.forEach(postfix -> concepts.add(Icd10EstMapper.toPostfixConcept(postfix, element)));
     }
     return concepts;
   }
@@ -81,6 +81,16 @@ public class Icd10EstMapper {
     concept.setCode(element.getCode());
     concept.setDesignations(mapDesignations(element));
     concept.setPropertyValues(mapPropertyValues(element));
+    concept.setAssociations(mapAssociations(parent));
+    return concept;
+  }
+
+  private static CodeSystemImportRequestConcept toPostfixConcept(Node element, Node parent) {
+    String[] prefix = element.getCode().split("\\*");
+
+    CodeSystemImportRequestConcept concept = new CodeSystemImportRequestConcept();
+    concept.setCode(parent.getCode() + prefix[prefix.length - 1]);
+    concept.setDesignations(mapDesignations(element));
     concept.setAssociations(mapAssociations(parent));
     return concept;
   }
