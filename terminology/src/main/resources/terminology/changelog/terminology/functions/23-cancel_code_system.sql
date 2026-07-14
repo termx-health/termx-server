@@ -21,7 +21,7 @@ update terminology.code_system_association
        or target_code_system_entity_version_id in (
            select id from terminology.code_system_entity_version where code_system_entity_id in (
                 select id from terminology.code_system_entity where code_system = p_code_system))
-       );
+       ) or code_system = p_code_system;
 
 update terminology.entity_version_code_system_version_membership
    set sys_status = 'D'
@@ -39,17 +39,17 @@ update terminology.entity_property_value
  where sys_status <> 'D'
    and code_system_entity_version_id in (
         select id from terminology.code_system_entity_version where code_system_entity_id in (
-            select id from terminology.code_system_entity where code_system = p_code_system));
+            select id from terminology.code_system_entity where code_system = p_code_system) or code_system = p_code_system);
 
 update terminology.designation
    set sys_status = 'D'
  where sys_status <> 'D'
-   and code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system));
+   and code_system_entity_version_id in (select id from terminology.code_system_entity_version where code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system) or code_system = p_code_system);
 
 update terminology.code_system_entity_version
    set sys_status = 'D'
  where sys_status <> 'D'
-   and code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system);
+   and code_system_entity_id in (select id from terminology.code_system_entity where code_system = p_code_system) or code_system = p_code_system;
 
 update terminology.code_system_association
    set sys_status = 'D'
