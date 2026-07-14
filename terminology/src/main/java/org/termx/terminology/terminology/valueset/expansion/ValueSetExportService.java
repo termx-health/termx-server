@@ -80,7 +80,8 @@ public class ValueSetExportService {
   }
 
   private String getLangHeader(String name, String lang) {
-    return Stream.of(name, lang).filter(Objects::nonNull).collect(Collectors.joining("#"));
+    // ':' separator matches CodeSystem concept export (ConceptExportService), e.g. "definition:et".
+    return Stream.of(name, lang).filter(Objects::nonNull).collect(Collectors.joining(":"));
   }
 
   List<String> composeHeaders(List<ValueSetVersionConcept> concepts, ValueSetVersion vsv) {

@@ -31,9 +31,9 @@ class ValueSetExportHeaderSpec extends Specification {
     def headers = service.composeHeaders([concept], vsv)
 
     then:
-    headers.contains("synonym#en")
-    headers.contains("display#en")
-    !headers.contains("additionalDesignation#en")
+    headers.contains("synonym:en")
+    headers.contains("display:en")
+    !headers.contains("additionalDesignation:en")
   }
 
   def "composeRow emits each designation type into its own column, display-typed merged into display"() {
@@ -52,8 +52,8 @@ class ValueSetExportHeaderSpec extends Specification {
     def row = service.composeRow(concept, headers, [:])
 
     then:
-    def synonymValue = row[headers.indexOf("synonym#en")]
-    def displayValue = row[headers.indexOf("display#en")]
+    def synonymValue = row[headers.indexOf("synonym:en")]
+    def displayValue = row[headers.indexOf("display:en")]
     synonymValue == "Synonym EN"
     displayValue.contains("Display EN")
     displayValue.contains("Extra display EN")
