@@ -38,6 +38,8 @@ import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Delete;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
@@ -110,6 +112,7 @@ public class MapSetController {
   @Authorized(Privilege.MS_MAINTAIN)
   @Delete(uri = "/{mapSet}")
   public HttpResponse<?> deleteMapSet(@PathVariable String mapSet) {
+    mapSet = parseCode(mapSet);
     mapSetService.cancel(mapSet);
     provenanceService.create(new Provenance("delete", "MapSet", mapSet));
     return HttpResponse.ok();
@@ -346,6 +349,10 @@ public class MapSetController {
       }
     }), VirtualThreadExecutor.get());
     return jobLogResponse;
+  }
+
+  private String parseCode(String code) {
+    return URLDecoder.decode(code, StandardCharsets.UTF_8);
   }
 
   @Getter

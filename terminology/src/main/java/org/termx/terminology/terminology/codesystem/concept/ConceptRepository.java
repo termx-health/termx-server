@@ -242,8 +242,8 @@ public class ConceptRepository extends BaseRepository {
     if (StringUtils.isNotEmpty(params.getAssociationSourceRecursive()) || StringUtils.isNotEmpty(params.getAssociationTargetRecursive())) {
       String from = "from terminology.concept as cc " +
           "left join terminology.code_system_entity_version csev on csev.code_system_entity_id = cc.id and csev.sys_status = 'A' " +
-          "left join terminology.code_system_association csa_s on csa_s.source_code_system_entity_version_id = csev.id and csa_s.sys_status = 'A' " +
-          "left join terminology.code_system_association csa_t on csa_t.target_code_system_entity_version_id = csev.id and csa_t.sys_status = 'A' " +
+          "left join terminology.code_system_association csa_s on (csa_s.source_code_system_entity_version_id = csev.id or csa_s.source_code_system_entity_version_id = csev.base_entity_version_id) and csa_s.sys_status = 'A' " +
+          "left join terminology.code_system_association csa_t on (csa_t.target_code_system_entity_version_id = csev.id or csa_t.target_code_system_entity_version_id = csev.base_entity_version_id) and csa_t.sys_status = 'A' " +
           "left join terminology.code_system_entity_version c_s on c_s.id = csa_t.source_code_system_entity_version_id and c_s.sys_status = 'A' " +
           "left join terminology.code_system_entity_version c_t on c_t.id = csa_s.target_code_system_entity_version_id and c_t.sys_status = 'A'";
       String from1 =
@@ -444,11 +444,11 @@ public class ConceptRepository extends BaseRepository {
 
     if (CollectionUtils.isNotEmpty(
         Stream.of(params.getAssociationRoot(), params.getAssociationSource(), params.getAssociationType()).filter(Objects::nonNull).toList())) {
-      join += "left join terminology.code_system_association csa_s on csa_s.source_code_system_entity_version_id = csev.id and csa_s.sys_status = 'A' ";
+      join += "left join terminology.code_system_association csa_s on (csa_s.source_code_system_entity_version_id = csev.id or csa_s.source_code_system_entity_version_id = csev.base_entity_version_id) and csa_s.sys_status = 'A' ";
     }
 
     if (CollectionUtils.isNotEmpty(Stream.of(params.getAssociationLeaf(), params.getAssociationTarget()).filter(Objects::nonNull).toList())) {
-      join += "left join terminology.code_system_association csa_t on csa_t.target_code_system_entity_version_id = csev.id and csa_t.sys_status = 'A' ";
+      join += "left join terminology.code_system_association csa_t on (csa_t.target_code_system_entity_version_id = csev.id or csa_t.target_code_system_entity_version_id = csev.base_entity_version_id) and csa_t.sys_status = 'A' ";
     }
 
     if (CollectionUtils.isNotEmpty(Stream.of(params.getAssociationSource()).filter(Objects::nonNull).toList())) {

@@ -187,10 +187,10 @@ public abstract class BaseFhirMapper {
   }
 
   protected static LocalizedName fromFhirName(String name, String lang, Element extension) {
-    if (name == null) {
-      return null;
+    LocalizedName localizedName = new LocalizedName();
+    if (name != null) {
+      localizedName.add(Optional.ofNullable(lang).orElse(Language.en), name);
     }
-    LocalizedName localizedName =  new LocalizedName(Map.of(Optional.ofNullable(lang).orElse(Language.en), name));
     if (extension == null) {
       return localizedName;
     }

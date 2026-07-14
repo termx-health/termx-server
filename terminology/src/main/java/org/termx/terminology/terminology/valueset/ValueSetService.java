@@ -1,6 +1,7 @@
 package org.termx.terminology.terminology.valueset;
 
 import com.kodality.commons.model.QueryResult;
+import java.util.regex.Pattern;
 import org.termx.terminology.ApiError;
 import org.termx.core.fhir.BaseFhirMapper;
 import org.termx.core.utils.VersionSortUtil;
@@ -24,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Singleton
 @RequiredArgsConstructor
 public class ValueSetService {
+  private static final Pattern ID_REGEX = Pattern.compile("[A-Za-z0-9\\-.]{1,64}");
+
   private final ValueSetRepository repository;
   private final ValueSetVersionService valueSetVersionService;
   private final ValueSetVersionRuleService valueSetVersionRuleService;
@@ -97,6 +100,9 @@ public class ValueSetService {
   private void validateId(String id) {
     if (id.contains(BaseFhirMapper.SEPARATOR)) {
       throw ApiError.TE113.toApiException(Map.of("symbols", BaseFhirMapper.SEPARATOR));
+    }
+    if (!ID_REGEX.matcher(id).matches()) {
+      throw ApiError.TE119.toApiException();
     }
   }
 

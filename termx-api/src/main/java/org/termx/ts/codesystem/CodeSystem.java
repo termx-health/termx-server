@@ -67,13 +67,16 @@ public class CodeSystem extends UniqueResource<CodeSystem> {
 
   @JsonIgnore
   public Optional<CodeSystemVersion> getFirstVersion() {
-    return this.getVersions().stream().min(Comparator.comparing(CodeSystemVersion::getReleaseDate));
+    return this.getVersions().stream()
+        .sorted(Comparator.comparing(CodeSystemVersion::getVersion))
+        .min(Comparator.comparing(CodeSystemVersion::getReleaseDate));
   }
 
   @JsonIgnore
   public Optional<CodeSystemVersion> getLastVersion() {
     return this.getVersions().stream()
         .filter(v -> !PublicationStatus.retired.equals(v.getStatus()))
+        .sorted(Comparator.comparing(CodeSystemVersion::getVersion).reversed())
         .max(Comparator.comparing(CodeSystemVersion::getReleaseDate));
   }
 
