@@ -756,4 +756,47 @@ class ConceptExportServiceTest extends Specification {
     def itemWeightIndex = headers.indexOf("itemWeight")
     itemWeightIndex > definitionIndex
   }
+
+  def "decimal property values export with trailing zeros stripped and no scientific notation"() {
+    // Locks the canonical concept-export decimal format (issue #400): stripTrailingZeros().toPlainString().
+    // Guards against re-introducing the tehik fork's KL-63 revert on a future sync.
+    given: "a concept with a single decimal property value"
+    Concept concept = new Concept()
+    concept.setCode("d1")
+
+    CodeSystemEntityVersion version = new CodeSystemEntityVersion()
+    version.setCode("d1")
+    version.setStatus(PublicationStatus.active)
+
+    EntityPropertyValue weight = new EntityPropertyValue()
+    weight.setEntityProperty("itemWeight")
+    weight.setEntityPropertyType(decimal)
+    weight.setValue(new java.math.BigDecimal(input))
+    version.setPropertyValues([weight])
+    concept.setVersions([version])
+
+    CodeSystem codeSystem = new CodeSystem()
+    codeSystem.setProperties([])
+
+    when: "composing headers and the row via the export logic"
+    Method composeHeadersMethod = ConceptExportService.class.getDeclaredMethod("composeHeaders", CodeSystem.class, List.class)
+    composeHeadersMethod.setAccessible(true)
+    def headers = composeHeadersMethod.invoke(service, codeSystem, java.util.Arrays.asList(concept))
+
+    Method composeRowMethod = ConceptExportService.class.getDeclaredMethod("composeRow", Concept.class, List.class, Map.class, Map.class)
+    composeRowMethod.setAccessible(true)
+    def row = composeRowMethod.invoke(service, concept, headers, new java.util.HashMap(), new java.util.HashMap())
+
+    then: "the decimal cell is normalized"
+    def idx = headers.indexOf("itemWeight")
+    idx >= 0
+    row[idx] == expected
+
+    where:
+    input   || expected
+    "1.50"  || "1.5"
+    "10.00" || "10"
+    "0.500" || "0.5"
+    "1E+1"  || "10"
+  }
 }
