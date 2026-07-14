@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
@@ -90,7 +91,7 @@ public class CodeSystemFileImportProcessor {
     log.debug("IMPORT DEBUG: Headers: {}", headers);
 
     log.debug("IMPORT DEBUG: Processing {} rows...", rows.size());
-    var entities = rows.stream().map(r -> {
+    var parsedEntities = rows.stream().map(r -> {
       int rowIndex = rows.indexOf(r);
       log.debug("IMPORT DEBUG: Processing row {} of {}", rowIndex + 1, rows.size());
       
@@ -233,12 +234,27 @@ public class CodeSystemFileImportProcessor {
       String conceptCode = conceptCodeOf(entity, null);
       log.debug("IMPORT DEBUG: Row {} - Entity created with concept code: '{}'", rowIndex + 1, conceptCode);
       return entity;
-    }).filter(CollectionUtils::isNotEmpty)
+    }).toList();
+
+    // Rows that carry data but no identifier value (concept-code / hierarchical-concept). This happens
+    // when the identifier is mapped to a column that is empty on some rows. Report the offending rows
+    // clearly (TE741) instead of the generic config-level TE722.
+    List<Integer> missingIdentifierRows = IntStream.range(0, parsedEntities.size())
+        .filter(i -> CollectionUtils.isNotEmpty(parsedEntities.get(i)) && conceptCodeOf(parsedEntities.get(i), null) == null)
+        .mapToObj(i -> i + 2) // file row number: header is row 1, first data row is row 2
+        .toList();
+    if (!missingIdentifierRows.isEmpty()) {
+      log.error("IMPORT DEBUG: {} row(s) without a concept identifier", missingIdentifierRows.size());
+      throw ApiError.TE741.toApiException(Map.of("ranges", formatRanges(missingIdentifierRows)));
+    }
+
+    var entities = parsedEntities.stream().filter(CollectionUtils::isNotEmpty)
         .collect(Collectors.groupingBy(r -> conceptCodeOf(r, RANDOM_UUID)));
 
     log.debug("IMPORT DEBUG: Grouped entities by concept code, total groups: {}", entities.size());
-    
+
     if (entities.containsKey(RANDOM_UUID)) {
+      // Defensive: missing identifiers are already reported as TE741 above.
       log.error("IMPORT DEBUG: Found entities without concept code identifier");
       throw ApiError.TE722.toApiException();
     }
@@ -368,6 +384,24 @@ public class CodeSystemFileImportProcessor {
       return missingValue;
     }
     return values.stream().findFirst().map(v -> (String) v.getValue()).orElse(missingValue);
+  }
+
+  /** Collapse row numbers into a compact, human-readable list of ranges, e.g. "3, 5-9, 42" (capped). */
+  private static String formatRanges(List<Integer> rowNumbers) {
+    List<Integer> sorted = rowNumbers.stream().sorted().distinct().toList();
+    List<String> parts = new ArrayList<>();
+    int start = 0;
+    for (int i = 0; i < sorted.size(); i++) {
+      if (i == sorted.size() - 1 || sorted.get(i + 1) != sorted.get(i) + 1) {
+        int from = sorted.get(start);
+        int to = sorted.get(i);
+        parts.add(from == to ? String.valueOf(from) : from + "-" + to);
+        start = i + 1;
+      }
+    }
+    int cap = 30;
+    String joined = parts.stream().limit(cap).collect(Collectors.joining(", "));
+    return parts.size() > cap ? joined + ", … (" + sorted.size() + " rows total)" : joined;
   }
 
   public static Date transformDate(String date, String format) {

@@ -97,6 +97,7 @@ public enum ApiError {
   TE738("TE738", "File contains duplicate concept code rows."),
   TE739("TE739", "The file is not a valid Excel (.xlsx) workbook. If the file is CSV or TSV, choose that import type. If it is a spreadsheet, save or export it as .xlsx (Office Open XML), not .xls."),
   TE740("TE740", "The Excel workbook must contain a worksheet named \"concepts\"."),
+  TE741("TE741", "The concept identifier (\"concept-code\"/\"hierarchical-concept\") is empty on row(s): {{ranges}}. Map the identifier to a column that has a value in every imported row."),
   TE801("TE801", "Association type is required, can't be deleted."),
   TE802("TE802", "Association type is used in code system '{{codeSystem}}' association, can't be deleted."),
   TE803("TE803", "Association type is used in map set '{{mapSet}}' association, can't be deleted."),
