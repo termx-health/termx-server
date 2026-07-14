@@ -94,6 +94,45 @@ b1,B1"""
   }
 
   /**
+   * BUSINESS: A non-designation property that has a language configured (e.g. a dateTime column with a
+   * language, like "Modifikavimo data" in the LT nomenclature) must be imported as a PROPERTY value,
+   * not misclassified as a designation.
+   *
+   * Regression for:
+   *   java.lang.ClassCastException: class java.util.Date cannot be cast to class java.lang.String
+   *   at CodeSystemFileImportMapper.toConceptVersionDesignations
+   * The processor set a language on every property, so a dateTime value (java.util.Date) that carried
+   * a language was routed into the designation path and cast to String.
+   */
+  def "should import a dateTime property with a language as a property value, not a designation"() {
+    given: "a CSV with a concept code, a display designation, and a dateTime column carrying a language"
+    String csvContent = """code,Nimetus,modified
+a1,A1,2024-07-19"""
+
+    byte[] file = csvContent.getBytes("UTF-8")
+
+    CodeSystemFileImportRequest request = new CodeSystemFileImportRequest(
+      type: "csv",
+      codeSystem: new FileProcessingCodeSystem(id: "test-cs", name: "Test CS"),
+      version: new FileProcessingCodeSystemVersion(number: "1.0.0", language: "lt"),
+      properties: [
+        new FileProcessingProperty(columnName: "code", propertyName: "concept-code", propertyType: "string", preferred: true),
+        new FileProcessingProperty(columnName: "Nimetus", propertyName: "display", propertyType: "designation", language: "lt"),
+        new FileProcessingProperty(columnName: "modified", propertyName: "modified", propertyType: "dateTime", propertyTypeFormat: "yyyy-MM-dd", language: "lt")
+      ]
+    )
+
+    when: "processing and mapping the import"
+    CodeSystemFileImportResult result = CodeSystemFileImportProcessor.process(request, file)
+    CodeSystem codeSystem = CodeSystemFileImportMapper.toCodeSystem(request.codeSystem, request.version, result, null, null)
+
+    then: "the date is imported as a property value and only the display remains a designation (no ClassCastException)"
+    def version = codeSystem.concepts.find { it.code == "a1" }.versions[0]
+    version.designations*.designationType == ["display"]
+    version.propertyValues.find { it.entityProperty == "modified" } != null
+  }
+
+  /**
    * BUSINESS: Test concept mapping with parent hierarchy association
    * 
    * Inspired by: immuniseerimise-korvalnahud (Vanem_kood=parent)
