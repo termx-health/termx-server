@@ -79,27 +79,35 @@ public class ValueSetExportService {
         .toList();
   }
 
-  private List<String> composeHeaders(List<ValueSetVersionConcept> concepts, ValueSetVersion vsv) {
+  private String getLangHeader(String name, String lang) {
+    return Stream.of(name, lang).filter(Objects::nonNull).collect(Collectors.joining("#"));
+  }
+
+  List<String> composeHeaders(List<ValueSetVersionConcept> concepts, ValueSetVersion vsv) {
     List<String> fields = new ArrayList<>();
     fields.add("code");
 
     java.util.Set<String> displayLangs = new java.util.LinkedHashSet<>();
-    java.util.Set<String> additionalDesignations = new java.util.LinkedHashSet<>();
+    java.util.Set<String> additionalDesignations = new java.util.TreeSet<>();
     java.util.Set<String> properties = new java.util.TreeSet<>();
-    
+
     int conceptLimit = Math.min(concepts.size(), 1000);
     for (int i = 0; i < conceptLimit; i++) {
       ValueSetVersionConcept c = concepts.get(i);
-      
+
       if (c.getDisplay() != null) {
         String lang = c.getDisplay().getLanguage();
-        displayLangs.add(Stream.of("display", lang).filter(Objects::nonNull).collect(Collectors.joining("#")));
+        displayLangs.add(getLangHeader("display", lang));
       }
-      
-      Optional.ofNullable(c.getAdditionalDesignations()).orElse(List.of()).forEach(d -> 
-          additionalDesignations.add("additionalDesignation#" + d.getLanguage())
-      );
-      
+
+      Optional.ofNullable(c.getAdditionalDesignations()).orElse(List.of()).forEach(d -> {
+        if ("display".equals(d.getDesignationType())) {
+          displayLangs.add(getLangHeader("display", d.getLanguage()));
+        } else {
+          additionalDesignations.add(getLangHeader(Optional.ofNullable(d.getDesignationType()).orElse("definition"), d.getLanguage()));
+        }
+      });
+
       Optional.ofNullable(c.getPropertyValues()).orElse(List.of()).forEach(pv -> {
         if (pv.getEntityPropertyType().equals(EntityPropertyType.coding)) {
           properties.add(pv.getEntityProperty());
@@ -125,10 +133,17 @@ public class ValueSetExportService {
     return fields;
   }
 
-  private Object[] composeRow(ValueSetVersionConcept c, List<String> headers, Map<String, Concept> conceptMap) {
+  Object[] composeRow(ValueSetVersionConcept c, List<String> headers, Map<String, Concept> conceptMap) {
     List<Object> row = new ArrayList<>();
-    Map<String, List<Designation>> designations = Optional.ofNullable(c.getAdditionalDesignations()).orElse(List.of()).stream()
-        .collect(Collectors.groupingBy(d -> "additionalDesignation#" + d.getLanguage()));
+    Map<String, List<Designation>> designations = new java.util.LinkedHashMap<>();
+    if (c.getDisplay() != null) {
+      String key = getLangHeader(Optional.ofNullable(c.getDisplay().getDesignationType()).orElse("display"), c.getDisplay().getLanguage());
+      designations.computeIfAbsent(key, k -> new ArrayList<>()).add(c.getDisplay());
+    }
+    Optional.ofNullable(c.getAdditionalDesignations()).orElse(List.of()).forEach(d -> {
+      String key = getLangHeader(Optional.ofNullable(d.getDesignationType()).orElse("definition"), d.getLanguage());
+      designations.computeIfAbsent(key, k -> new ArrayList<>()).add(d);
+    });
     Map<String, List<EntityPropertyValue>> properties = Optional.ofNullable(c.getPropertyValues()).orElse(List.of()).stream()
         .flatMap(pv -> pv.getEntityPropertyType().equals(EntityPropertyType.coding) ?
             Stream.of(Pair.of(pv.getEntityProperty(), pv), Pair.of(pv.getEntityProperty() + "#system", pv), Pair.of(pv.getEntityProperty() + "#display", pv)) :
@@ -137,9 +152,6 @@ public class ValueSetExportService {
     headers.forEach(h -> {
       if ("code".equals(h)) {
         row.add(c.getConcept().getCode());
-      } else if (c.getDisplay() != null &&
-          (Stream.of("display", c.getDisplay().getLanguage()).filter(Objects::nonNull).collect(Collectors.joining("#"))).equals(h)) {
-        row.add(c.getDisplay().getName());
       } else if (designations.containsKey(h)) {
         row.add(designations.get(h).stream().map(Designation::getName).collect(Collectors.joining("#")));
       } else if (properties.containsKey(h)) {
