@@ -181,15 +181,15 @@ Download exported file and verify:
 
 ## Column Naming
 
-Designation columns are keyed by **designation type and language** as `<type>#<lang>` (`ValueSetExportService.getLangHeader`):
+Designation columns are keyed by **designation type and language** as `<type>:<lang>` (`ValueSetExportService.getLangHeader`), using the FHIR-aligned `:` separator (e.g. `definition:et`):
 
-- The primary display and any additional designation of type `display` share the `display#<lang>` column(s) (a concept whose primary display is empty but which has a `display`-typed designation still populates it).
-- Every other additional designation gets its own column by its `designationType` (e.g. `definition#en`, `synonym#en`), sorted; a designation with no type defaults to `definition`.
+- The primary display and any additional designation of type `display` share the `display:<lang>` column(s) (a concept whose primary display is empty but which has a `display`-typed designation still populates it).
+- Every other additional designation gets its own column by its `designationType` (e.g. `definition:en`, `synonym:en`), sorted; a designation with no type defaults to `definition`.
 - Coding property values expand to `<property>`, `<property>#system`, and `<property>#display` columns; other property values use the plain `<property>` column. Trailing columns are `codeSystem` and `codeSystemVersion`.
 
-This replaces the earlier behaviour where all additional designations were lumped into a single `additionalDesignation#<lang>` column regardless of type.
+This replaces the earlier behaviour where all additional designations were lumped into a single `additionalDesignation:<lang>` column regardless of type.
 
-> **Note — separator convention.** ValueSet export uses the `#` separator and joins multiple same-type/language designations into one cell with `#`. This differs from **CodeSystem concept export** (`ConceptExportService`), which uses the FHIR-aligned `:` separator (e.g. `definition:et`) with `::<order>` columns for multiplicity (`#` there is import-only, per its v1.1.0 spec). The two export paths are not yet unified; KL-66 makes ValueSet export type-aware but intentionally keeps its existing `#` convention.
+> **Separator convention.** ValueSet export uses the `:` separator for designation `type:lang` columns, aligned with **CodeSystem concept export** (`ConceptExportService`, e.g. `definition:et`). The `#` separator is retained only for coding-property sub-columns (`<property>#system` / `<property>#display`), mirroring the CodeSystem export's `#code`/`#system`. Note ValueSet export still joins multiple same-`type:lang` designations into one cell with `#`, whereas CodeSystem export spreads them across `::<order>` columns; that multiplicity difference is out of scope here.
 
 ## Data Model
 
