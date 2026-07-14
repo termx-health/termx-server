@@ -284,9 +284,14 @@ public class ValueSetVersionConceptService {
           // version's designations. The expand never returns code system versions newer than the bound
           // one, so the most recent entity version present here is the bound (or the newest still valid
           // as of the bound) version. Collecting designations from every returned version leaked the
-          // other versions' designations. Issue #49.
-          List<CodeSystemEntityVersion> designationVersions = latestCodeSystemVersion(versions);
-          List<Designation> designations = designationVersions.stream()
+          // other versions' designations. Issue #49. A code may also carry several entity versions that
+          // all belong to that one bound version — a supplement re-imported (CSV) several times keeps
+          // every prior entity version as an active member of the same code system version — so scope
+          // down to the single current entity version, otherwise every designation and property value
+          // was emitted once per entity version (shown N times, joined by '#', in the XLSX export and
+          // FHIR expansion). Issue TLA-4.
+          List<CodeSystemEntityVersion> currentVersions = currentEntityVersion(versions);
+          List<Designation> designations = currentVersions.stream()
               .filter(v -> CollectionUtils.isNotEmpty(v.getDesignations()))
               .flatMap(v -> v.getDesignations().stream())
               .filter(d -> !PublicationStatus.retired.equals(d.getStatus())).toList();
@@ -303,10 +308,10 @@ public class ValueSetVersionConceptService {
           c.setActive(calculatedActive(versions));
           c.setNotSelectable(calculatedNotSelectable(versions));
           c.setStatus(versions.stream().findFirst().map(CodeSystemEntityVersion::getStatus).orElse(PublicationStatus.active));
-          c.setAssociations(versions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getAssociations()))
+          c.setAssociations(currentVersions.stream().filter(v -> CollectionUtils.isNotEmpty(v.getAssociations()))
               .flatMap(v -> v.getAssociations().stream()).toList());
           // Optimization of simple EntityPropertyValue (versions excluded)
-          c.setPropertyValues(versions.stream()
+          c.setPropertyValues(currentVersions.stream()
                     .filter(v -> CollectionUtils.isNotEmpty(v.getPropertyValues()))
                     .flatMap(v -> v.getPropertyValues().stream())
                     .filter(p -> properties.containsKey(p.getEntityProperty()))
@@ -363,6 +368,25 @@ public class ValueSetVersionConceptService {
         .map(ValueSetVersionConceptService::maxReleaseDate)
         .map(top -> versions.stream().filter(v -> top.equals(maxReleaseDate(v))).toList())
         .orElse(versions);
+  }
+
+  /**
+   * The single current entity version for a code, once scoped to its latest bound code system version
+   * (see {@link #latestCodeSystemVersion}). When several entity versions of the same code all belong to
+   * that one version — e.g. a supplement re-imported several times keeps every prior entity version as an
+   * active member of the same code system version — pick the newest (by created timestamp, then id) so a
+   * code's designations, properties and associations are not multiplied across those versions. See TLA-4.
+   */
+  static List<CodeSystemEntityVersion> currentEntityVersion(List<CodeSystemEntityVersion> versions) {
+    List<CodeSystemEntityVersion> latest = latestCodeSystemVersion(versions);
+    if (latest.size() <= 1) {
+      return latest;
+    }
+    return latest.stream()
+        .max(Comparator
+            .comparing((CodeSystemEntityVersion v) -> v.getCreated() == null ? OffsetDateTime.MIN : v.getCreated())
+            .thenComparing(v -> v.getId() == null ? Long.MIN_VALUE : v.getId()))
+        .map(List::of).orElse(latest);
   }
 
   private static java.time.LocalDate maxReleaseDate(CodeSystemEntityVersion version) {
