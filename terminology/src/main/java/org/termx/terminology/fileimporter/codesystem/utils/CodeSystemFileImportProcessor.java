@@ -230,13 +230,11 @@ public class CodeSystemFileImportProcessor {
         entity.put("conceptOrder", List.of(new FileProcessingEntityPropertyValue().setValue(order).setPropertyName("conceptOrder")));
       }
       
-      String conceptCode = entity.getOrDefault(IDENTIFIER_PROPERTY, entity.get(HIERARCHICAL_CONCEPT)).stream()
-          .findFirst().map(v -> (String) v.getValue()).orElse(null);
+      String conceptCode = conceptCodeOf(entity, null);
       log.debug("IMPORT DEBUG: Row {} - Entity created with concept code: '{}'", rowIndex + 1, conceptCode);
       return entity;
     }).filter(CollectionUtils::isNotEmpty)
-        .collect(Collectors.groupingBy(r -> r.getOrDefault(IDENTIFIER_PROPERTY, r.get(HIERARCHICAL_CONCEPT)).stream()
-            .findFirst().map(v -> (String) v.getValue()).orElse(RANDOM_UUID)));
+        .collect(Collectors.groupingBy(r -> conceptCodeOf(r, RANDOM_UUID)));
 
     log.debug("IMPORT DEBUG: Grouped entities by concept code, total groups: {}", entities.size());
     
@@ -356,6 +354,20 @@ public class CodeSystemFileImportProcessor {
       }
     };
     return result;
+  }
+
+  /**
+   * The concept code of a parsed row: the first {@code concept-code} value, else the first
+   * {@code hierarchical-concept} value. A row that carries neither (e.g. an empty identifier cell)
+   * yields {@code missingValue} — for grouping that is {@link #RANDOM_UUID}, which the caller turns
+   * into a clear TE722 "missing identifier" error instead of a NullPointerException.
+   */
+  private static String conceptCodeOf(Map<String, List<FileProcessingEntityPropertyValue>> entity, String missingValue) {
+    List<FileProcessingEntityPropertyValue> values = entity.getOrDefault(IDENTIFIER_PROPERTY, entity.get(HIERARCHICAL_CONCEPT));
+    if (values == null) {
+      return missingValue;
+    }
+    return values.stream().findFirst().map(v -> (String) v.getValue()).orElse(missingValue);
   }
 
   public static Date transformDate(String date, String format) {

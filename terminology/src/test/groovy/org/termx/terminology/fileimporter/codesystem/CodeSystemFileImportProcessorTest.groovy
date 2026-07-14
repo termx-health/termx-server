@@ -566,6 +566,43 @@ a1,A1"""
   }
 
   /**
+   * BUSINESS: A row that has data but no mapped identifier value must fail with a clear
+   * "missing identifier" error (TE722), NOT a NullPointerException.
+   *
+   * Reproduces the crash at CodeSystemFileImportProcessor (getOrDefault(IDENTIFIER_PROPERTY,
+   * get(HIERARCHICAL_CONCEPT)).stream()): when a row has neither a concept-code nor a
+   * hierarchical-concept value, getOrDefault returns null and .stream() throws NPE before the
+   * intended TE722 (RANDOM_UUID grouping) validation is reached.
+   *
+   * nomenclature-1.0.10.csv triggers this whenever concept-code is mapped to a column that is
+   * empty on some rows (e.g. the LOINC code column, empty for ~1858 rows).
+   */
+  def "should raise a clear missing-identifier error (not NPE) when a row has no identifier value"() {
+    given: "a CSV where one row has an empty concept-code cell but other data"
+    String csvContent = """code,display#en
+a1,A1
+,B2"""
+
+    byte[] file = csvContent.getBytes("UTF-8")
+
+    CodeSystemFileImportRequest request = new CodeSystemFileImportRequest(
+      type: "csv",
+      properties: [
+        new FileProcessingProperty(columnName: "code", propertyName: "concept-code", propertyType: "string", preferred: true),
+        new FileProcessingProperty(columnName: "display#en", propertyName: "display", propertyType: "designation", language: "en")
+      ]
+    )
+
+    when: "processing the import"
+    CodeSystemFileImportProcessor.process(request, file)
+
+    then: "it fails gracefully with the missing-identifier error (TE722), not a NullPointerException"
+    def exception = thrown(Exception)
+    !(exception instanceof NullPointerException)
+    exception.message.contains("TE722")
+  }
+
+  /**
    * BUSINESS: Test auto concept order feature
    * 
    * Validates that:
