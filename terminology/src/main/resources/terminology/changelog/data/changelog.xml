@@ -14,6 +14,7 @@
   <include file="11-migration.sql" relativeToChangelogFile="true"/>
   <include file="12-version-algorithm-backfill.sql" relativeToChangelogFile="true"/>
   <!--include file="12-migration.sql" relativeToChangelogFile="true"/-->
+  <include file="13-ucum-supplement-alias-property-value-codes.sql" relativeToChangelogFile="true"/>
 
 
 </databaseChangeLog>
