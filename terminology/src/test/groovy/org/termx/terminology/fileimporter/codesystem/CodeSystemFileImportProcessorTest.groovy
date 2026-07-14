@@ -566,6 +566,45 @@ a1,A1"""
   }
 
   /**
+   * BUSINESS: A row that has data but no mapped identifier value must fail with a clear,
+   * user-friendly error that names the offending row(s) — NOT a NullPointerException, and not the
+   * generic config-level TE722 ("At least 'concept-code' or 'hierarchical-concept' should be
+   * specified"), which is misleading when the identifier IS mapped but empty on some rows.
+   *
+   * Reproduces the crash at CodeSystemFileImportProcessor (getOrDefault(IDENTIFIER_PROPERTY,
+   * get(HIERARCHICAL_CONCEPT)).stream()): a row with neither a concept-code nor a
+   * hierarchical-concept value made getOrDefault return null and .stream() threw NPE.
+   *
+   * nomenclature-1.0.10.csv triggers this: concept-code is mapped to the LOINC column, empty on
+   * ~1858 rows (univocity parses empty cells as null).
+   */
+  def "should report offending rows (TE741, not NPE) when a row has no identifier value"() {
+    given: "a CSV where the second data row (file row 3) has an empty concept-code cell but other data"
+    String csvContent = """code,display#en
+a1,A1
+,B2"""
+
+    byte[] file = csvContent.getBytes("UTF-8")
+
+    CodeSystemFileImportRequest request = new CodeSystemFileImportRequest(
+      type: "csv",
+      properties: [
+        new FileProcessingProperty(columnName: "code", propertyName: "concept-code", propertyType: "string", preferred: true),
+        new FileProcessingProperty(columnName: "display#en", propertyName: "display", propertyType: "designation", language: "en")
+      ]
+    )
+
+    when: "processing the import"
+    CodeSystemFileImportProcessor.process(request, file)
+
+    then: "it fails gracefully naming the offending row(s), not a NullPointerException"
+    def exception = thrown(Exception)
+    !(exception instanceof NullPointerException)
+    exception.message.contains("TE741")
+    exception.message.contains("3") // the file row number of the identifier-less row
+  }
+
+  /**
    * BUSINESS: Test auto concept order feature
    * 
    * Validates that:
