@@ -189,6 +189,8 @@ Designation columns are keyed by **designation type and language** as `<type>#<l
 
 This replaces the earlier behaviour where all additional designations were lumped into a single `additionalDesignation#<lang>` column regardless of type.
 
+> **Note — separator convention.** ValueSet export uses the `#` separator and joins multiple same-type/language designations into one cell with `#`. This differs from **CodeSystem concept export** (`ConceptExportService`), which uses the FHIR-aligned `:` separator (e.g. `definition:et`) with `::<order>` columns for multiplicity (`#` there is import-only, per its v1.1.0 spec). The two export paths are not yet unified; KL-66 makes ValueSet export type-aware but intentionally keeps its existing `#` convention.
+
 ## Data Model
 
 ### Optimization Data Structures
