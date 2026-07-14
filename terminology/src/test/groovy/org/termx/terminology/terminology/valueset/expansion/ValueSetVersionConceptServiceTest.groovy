@@ -12,9 +12,13 @@ import org.termx.ts.codesystem.CodeSystemEntityVersion
 import org.termx.ts.codesystem.CodeSystemEntityVersionQueryParams
 import org.termx.ts.codesystem.CodeSystemVersionReference
 import org.termx.ts.codesystem.Designation
+import org.termx.ts.codesystem.EntityProperty
+import org.termx.ts.codesystem.EntityPropertyType
+import org.termx.ts.codesystem.EntityPropertyValue
 import org.termx.ts.valueset.ValueSetSnapshot
 
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import org.termx.ts.valueset.ValueSetVersion
 import org.termx.ts.valueset.ValueSetVersionConcept
 import org.termx.ts.valueset.ValueSetVersionRuleSet
@@ -199,6 +203,47 @@ class ValueSetVersionConceptServiceTest extends Specification {
     c.concept.codeSystemVersions as Set == ["2.80", "2.81"] as Set
   }
 
+  def "(TLA-4) decorate collapses designations and properties when a code has several entity versions in one bound version"() {
+    given: "a supplement code carrying two entity versions, both active members of the same (latest) code system version"
+    entityPropertyService.query(_) >> new QueryResult([new EntityProperty().setName("effectiveDate")])
+    def csVer = csVersionRef("20.0.0", LocalDate.of(2025, 5, 30))
+    def older = new CodeSystemEntityVersion().setId(10L).setCodeSystem("supp").setCode("4221000146107").setStatus("active")
+        .setCreated(OffsetDateTime.parse("2025-05-30T00:00:00Z"))
+        .setVersions([csVer])
+        .setDesignations([designation("description", "en", "Cryptococcus magnus (organism)")])
+        .setPropertyValues([propertyValue("effectiveDate", "2017-11-23", 10L)])
+    def newer = new CodeSystemEntityVersion().setId(11L).setCodeSystem("supp").setCode("4221000146107").setStatus("active")
+        .setCreated(OffsetDateTime.parse("2026-05-29T00:00:00Z"))
+        .setVersions([csVer])
+        .setDesignations([designation("description", "en", "Cryptococcus magnus (organism)")])
+        .setPropertyValues([propertyValue("effectiveDate", "2017-11-23", 11L)])
+    codeSystemEntityVersionService.query(_) >> new QueryResult([older, newer])
+
+    and: "the expand returned both entity versions for the same code"
+    def concepts = [suppConcept("4221000146107", 10L), suppConcept("4221000146107", 11L)]
+
+    when:
+    def result = newService().decorate(concepts, suppVersion(), "en")
+
+    then: "the code appears once and neither its designation nor its property value is multiplied"
+    result.size() == 1
+    def c = result.first()
+    c.additionalDesignations.findAll { it.designationType == "description" && it.language == "en" }.size() == 1
+    c.propertyValues.findAll { it.entityProperty == "effectiveDate" }.size() == 1
+  }
+
+  def "(TLA-4) currentEntityVersion keeps the newest entity version sharing the latest code system version"() {
+    given: "two entity versions of the same code, both bound to the same code system version"
+    def csVer = csVersionRef("20.0.0", LocalDate.of(2025, 5, 30))
+    def older = new CodeSystemEntityVersion().setId(10L).setCreated(OffsetDateTime.parse("2025-05-30T00:00:00Z")).setVersions([csVer])
+    def newer = new CodeSystemEntityVersion().setId(11L).setCreated(OffsetDateTime.parse("2026-05-29T00:00:00Z")).setVersions([csVer])
+
+    expect: "only the newest survives (by created, then id), and empty/single inputs pass through"
+    ValueSetVersionConceptService.currentEntityVersion([older, newer])*.id == [11L]
+    ValueSetVersionConceptService.currentEntityVersion([newer]) == [newer]
+    ValueSetVersionConceptService.currentEntityVersion([]) == []
+  }
+
   def "(#49) latestCodeSystemVersion keeps a single version and treats an unreleased version as newest"() {
     expect:
     ValueSetVersionConceptService.latestCodeSystemVersion([]) == []
@@ -235,6 +280,33 @@ class ValueSetVersionConceptServiceTest extends Specification {
             .setCodeSystem("loinc")
             .setCodeSystemUri("http://loinc.org"))
         .setActive(true)
+  }
+
+  private static ValueSetVersionConcept suppConcept(String code, Long conceptVersionId) {
+    return new ValueSetVersionConcept()
+        .setConcept(new ValueSetVersionConcept.ValueSetVersionConceptValue()
+            .setCode(code)
+            .setConceptVersionId(conceptVersionId)
+            .setCodeSystem("supp")
+            .setCodeSystemUri("http://example.org/CodeSystem/supp"))
+        .setActive(true)
+  }
+
+  private static ValueSetVersion suppVersion() {
+    return new ValueSetVersion()
+        .setId(1L)
+        .setStatus("draft")
+        .setRuleSet(new ValueSetVersionRuleSet()
+            .setInactive(false)
+            .setRules([new ValueSetVersionRule().setType("include").setCodeSystem("supp")]))
+  }
+
+  private static EntityPropertyValue propertyValue(String name, Object value, Long codeSystemEntityVersionId) {
+    return new EntityPropertyValue()
+        .setEntityProperty(name)
+        .setValue(value)
+        .setEntityPropertyType(EntityPropertyType.string)
+        .setCodeSystemEntityVersionId(codeSystemEntityVersionId)
   }
 
   private static ValueSetVersion loincVersion() {
