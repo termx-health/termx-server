@@ -87,7 +87,6 @@ public class CodeSystemFileImportService {
     return process(request, file);
   }
 
-  @Transactional
   public CodeSystemFileImportResponse process(CodeSystemFileImportRequest request, byte[] file) {
     String versionNumber = request.getVersion() != null ? request.getVersion().getNumber() : null;
     log.debug("=== IMPORT SERVICE DEBUG: process START ===");
