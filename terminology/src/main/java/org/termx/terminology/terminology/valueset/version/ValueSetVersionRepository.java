@@ -29,17 +29,23 @@ public class ValueSetVersionRepository extends BaseRepository {
     bp.addColumnProcessor("identifiers", PgBeanProcessor.fromJson(JsonUtil.getListType(Identifier.class)));
   });
 
-  private final static String select = "select distinct on (vsv.id) vsv.*, " +
-      "(select json_build_object(" +
-      "   'id', vss.id, " +
-      "   'valueSet', vss.value_set, " +
-      "   'valueSetVersion', (select json_build_object('id', vsv2.id, 'version', vsv2.version) from terminology.value_set_version vsv2 where vsv2.id = vss.value_set_version_id and vsv2.sys_status = 'A'), " +
-      "   'expansion', vss.expansion, " +
-      "   'dependencies', vss.dependencies, " +
-      "   'createdAt', vss.created_at, " +
-      "   'createdBy', vss.created_by, " +
-      "   'conceptsTotal', vss.concepts_total " +
-      ") from terminology.value_set_snapshot vss where vsv.id = vss.value_set_version_id and vss.sys_status = 'A') as snapshot ," +
+  // Snapshot sub-select. The metadata-only variant omits the (potentially huge) 'expansion' concept
+  // list — callers that only need snapshot metadata (dependencies, createdAt, conceptsTotal), such as
+  // code system impact analysis, must not pay to inline and later decompress every concept.
+  private static String snapshotSelect(boolean includeExpansion) {
+    return "(select json_build_object(" +
+        "   'id', vss.id, " +
+        "   'valueSet', vss.value_set, " +
+        "   'valueSetVersion', (select json_build_object('id', vsv2.id, 'version', vsv2.version) from terminology.value_set_version vsv2 where vsv2.id = vss.value_set_version_id and vsv2.sys_status = 'A'), " +
+        (includeExpansion ? "   'expansion', vss.expansion, " : "") +
+        "   'dependencies', vss.dependencies, " +
+        "   'createdAt', vss.created_at, " +
+        "   'createdBy', vss.created_by, " +
+        "   'conceptsTotal', vss.concepts_total " +
+        ") from terminology.value_set_snapshot vss where vsv.id = vss.value_set_version_id and vss.sys_status = 'A') as snapshot ,";
+  }
+
+  private final static String ruleSetSelect =
       "(select json_build_object(" +
       "   'id', vsvrs.id, " +
       "   'lockedDate', vsvrs.locked_date, " +
@@ -61,6 +67,10 @@ public class ValueSetVersionRepository extends BaseRepository {
       "      'valueSetVersion', (select json_build_object('id', vsv.id, 'version', vsv.version) from terminology.value_set_version vsv where vsv.id = vsvr.value_set_version_id and vsv.sys_status = 'A') " +
       "   )) from terminology.value_set_version_rule vsvr where vsvrs.id = vsvr.rule_set_id and vsvr.sys_status = 'A') " +
       ") from terminology.value_set_version_rule_set vsvrs where vsv.id = vsvrs.value_set_version_id and vsvrs.sys_status = 'A') as rule_set ";
+
+  private final static String select = "select distinct on (vsv.id) vsv.*, " + snapshotSelect(true) + ruleSetSelect;
+  // Same projection as {@link #select} but without the snapshot expansion concept list. See {@link #snapshotSelect}.
+  private final static String selectMeta = "select distinct on (vsv.id) vsv.*, " + snapshotSelect(false) + ruleSetSelect;
 
   public void save(ValueSetVersion version) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
@@ -98,6 +108,20 @@ public class ValueSetVersionRepository extends BaseRepository {
   }
 
   public QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params) {
+    return query(params, true);
+  }
+
+  /**
+   * Metadata-only query: returns versions with their rule sets and snapshot metadata but without the
+   * snapshot expansion concept list. Use this when the expansion is not needed (e.g. impact analysis) —
+   * it avoids inlining and gzip-decompressing every snapshot's concepts, which is orders of magnitude
+   * cheaper for code systems referenced by many/large value sets.
+   */
+  public QueryResult<ValueSetVersion> queryMeta(ValueSetVersionQueryParams params) {
+    return query(params, false);
+  }
+
+  private QueryResult<ValueSetVersion> query(ValueSetVersionQueryParams params, boolean includeExpansion) {
     return query(params, p -> {
       SqlBuilder sb = new SqlBuilder("select count(distinct(vsv.id)) from terminology.value_set_version vsv " +
           "inner join terminology.value_set vs on vs.id = vsv.value_set and vs.sys_status = 'A' " +
@@ -109,7 +133,7 @@ public class ValueSetVersionRepository extends BaseRepository {
       sb.append(filter(params));
       return queryForObject(sb.getSql(), Integer.class, sb.getParams());
     }, p -> {
-      SqlBuilder sb = new SqlBuilder(select + "from terminology.value_set_version vsv " +
+      SqlBuilder sb = new SqlBuilder((includeExpansion ? select : selectMeta) + "from terminology.value_set_version vsv " +
           "inner join terminology.value_set vs on vs.id = vsv.value_set and vs.sys_status = 'A' " +
           "left join terminology.value_set_version_rule_set vsvrs on vsvrs.value_set_version_id = vsv.id and vsvrs.sys_status = 'A' " +
           "left join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' " +
@@ -119,7 +143,9 @@ public class ValueSetVersionRepository extends BaseRepository {
       sb.append(filter(params));
       sb.append(limit(params));
       List<ValueSetVersion> beans = getBeans(sb.getSql(), bp, sb.getParams());
-      fillCompressedExpansions(beans);
+      if (includeExpansion) {
+        fillCompressedExpansions(beans);
+      }
       return beans;
     });
   }

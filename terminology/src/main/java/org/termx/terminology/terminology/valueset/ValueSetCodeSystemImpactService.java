@@ -27,7 +27,7 @@ public class ValueSetCodeSystemImpactService {
   private final ValueSetCodeSystemVersionResolver codeSystemVersionResolver;
 
   public List<CodeSystemArtifactImpact> findValueSetImpacts(String codeSystem) {
-    List<ValueSetVersion> versions = valueSetVersionService.query(new ValueSetVersionQueryParams().setCodeSystem(codeSystem).all()).getData();
+    List<ValueSetVersion> versions = valueSetVersionService.queryMeta(new ValueSetVersionQueryParams().setCodeSystem(codeSystem).all()).getData();
     List<CodeSystemArtifactImpact> impacts = new ArrayList<>();
     for (ValueSetVersion version : versions) {
       List<ValueSetVersionRule> rules = Optional.ofNullable(version.getRuleSet()).map(rs -> rs.getRules()).orElse(List.of()).stream()
@@ -42,7 +42,7 @@ public class ValueSetCodeSystemImpactService {
   }
 
   public void refreshDynamicValueSets(String codeSystem) {
-    List<ValueSetVersion> versions = valueSetVersionService.query(new ValueSetVersionQueryParams().setCodeSystem(codeSystem).all()).getData();
+    List<ValueSetVersion> versions = valueSetVersionService.queryMeta(new ValueSetVersionQueryParams().setCodeSystem(codeSystem).all()).getData();
     versions.stream()
         .filter(v -> List.of(PublicationStatus.active, PublicationStatus.draft).contains(v.getStatus()))
         .filter(v -> Optional.ofNullable(v.getRuleSet()).map(rs -> rs.getRules()).orElse(List.of()).stream()

@@ -42,7 +42,7 @@ class ValueSetCodeSystemImpactServiceTest extends Specification {
     def impacts = service.findValueSetImpacts("administrative-gender")
 
     then:
-    1 * valueSetVersionService.query(_ as ValueSetVersionQueryParams) >> new QueryResult([version])
+    1 * valueSetVersionService.queryMeta(_ as ValueSetVersionQueryParams) >> new QueryResult([version])
     2 * codeSystemVersionResolver.resolve("administrative-gender", null) >> currentVersion
     1 * codeSystemVersionResolver.isDynamic(firstRule) >> false
     1 * codeSystemVersionResolver.isDynamic(secondRule) >> false

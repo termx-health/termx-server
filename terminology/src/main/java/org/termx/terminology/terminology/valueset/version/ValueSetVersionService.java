@@ -69,6 +69,10 @@ public class ValueSetVersionService {
     return repository.query(params);
   }
 
+  public QueryResult<ValueSetVersion> queryMeta(ValueSetVersionQueryParams params) {
+    return repository.queryMeta(params);
+  }
+
   @Transactional
   public void activate(String valueSet, String version) {
     ValueSetVersion currentVersion = repository.load(valueSet, version);
