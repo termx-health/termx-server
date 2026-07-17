@@ -43,7 +43,7 @@ class ValueSetCodeSystemImpactServiceTest extends Specification {
 
     then:
     1 * valueSetVersionService.queryMeta(_ as ValueSetVersionQueryParams) >> new QueryResult([version])
-    2 * codeSystemVersionResolver.resolve("administrative-gender", null) >> currentVersion
+    1 * codeSystemVersionResolver.resolve("administrative-gender", null) >> currentVersion
     1 * codeSystemVersionResolver.isDynamic(firstRule) >> false
     1 * codeSystemVersionResolver.isDynamic(secondRule) >> false
     1 * codeSystemVersionResolver.resolve("administrative-gender", firstRule.codeSystemVersion) >> oldVersion
@@ -58,5 +58,39 @@ class ValueSetCodeSystemImpactServiceTest extends Specification {
     impacts.first().affected
     impacts.first().resolvedCodeSystemVersion.version == "6.0.0"
     impacts.first().currentCodeSystemVersion.version == "6.0.1"
+  }
+
+  def "findValueSetImpacts memoizes resolver lookups across value set versions"() {
+    given:
+    def currentVersion = new CodeSystemVersion().setId(200L).setVersion("6.0.1")
+    def referencedVersion = new CodeSystemVersion().setId(100L).setVersion("6.0.0")
+    def rule = { -> new ValueSetVersionRule()
+        .setId(1L)
+        .setType("include")
+        .setCodeSystem("administrative-gender")
+        .setCodeSystemVersion(new CodeSystemVersionReference().setId(100L).setVersion("6.0.0")) }
+    def firstVs = new ValueSetVersion()
+        .setValueSet("vs-a").setVersion("1.0.0")
+        .setRuleSet(new ValueSetVersionRuleSet().setRules([rule()]))
+    def secondVs = new ValueSetVersion()
+        .setValueSet("vs-b").setVersion("1.0.0")
+        .setRuleSet(new ValueSetVersionRuleSet().setRules([rule()]))
+
+    when:
+    def impacts = service.findValueSetImpacts("administrative-gender")
+
+    then:
+    1 * valueSetVersionService.queryMeta(_ as ValueSetVersionQueryParams) >> new QueryResult([firstVs, secondVs])
+    // Two value set versions, but each distinct (codeSystem, version) is resolved only once.
+    1 * codeSystemVersionResolver.resolve("administrative-gender", null) >> currentVersion
+    1 * codeSystemVersionResolver.resolve("administrative-gender", { it.version == "6.0.0" }) >> referencedVersion
+    _ * codeSystemVersionResolver.isDynamic(_) >> false
+    _ * codeSystemVersionResolver.copyReference(_ as CodeSystemVersion) >> { CodeSystemVersion source ->
+      new CodeSystemVersionReference().setId(source.id).setVersion(source.version)
+    }
+
+    impacts.size() == 2
+    impacts*.artifactId.sort() == ["vs-a", "vs-b"]
+    impacts.every { it.affected }
   }
 }
