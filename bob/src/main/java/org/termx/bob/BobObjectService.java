@@ -130,11 +130,11 @@ public class BobObjectService {
   private MinioService getMinio() {
     // ApiClientException so the framework's DefaultExceptionHandler returns a structured 400
     // with our code instead of a generic XX100 System error. The message tells operators what
-    // to do — local dev forgets scripts/run-minio.sh frequently, prod deploys forget MINIO_URL.
+    // to do — local dev forgets scripts/run-minio.sh frequently, prod deploys forget BOB_MINIO_URL.
     return minioService.orElseThrow(() -> new ApiClientException(Issue.error(
         "BOB101",
         "Object storage (Minio) is not configured. " +
             "Local dev: run scripts/run-minio.sh. " +
-            "Production: set MINIO_URL / MINIO_ACCESS_KEY / MINIO_SECRET_KEY env vars.")));
+            "Production: set BOB_MINIO_URL / BOB_MINIO_ACCESS_KEY / BOB_MINIO_SECRET_KEY env vars.")));
   }
 }
