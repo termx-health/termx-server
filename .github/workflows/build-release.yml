@@ -32,7 +32,7 @@ jobs:
 
       - name: Build, run all checks, and publish
         working-directory: .
-        run: ./gradlew clean assemble check pmdCheck spotbugsCheck dependencyCheckAggregate publish
+        run: ./gradlew clean assemble check pmdCheck spotbugsCheck :dependencyCheckAggregate publish
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
