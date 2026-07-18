@@ -69,7 +69,6 @@ All business logic lives here. Each Gradle subproject maps to a single top-level
 | `implementation-guide` | `org.termx.implementationguide` | FHIR Implementation Guide authoring and publishing |
 | `edition-int` | `org.termx.editionint` | International terminology edition extensions |
 | `edition-est` | `org.termx.editionest` | Estonian national edition extensions |
-| `edition-uzb` | `org.termx.editionuzb` | Uzbek national edition extensions (IchiUz) |
 | `uam` | `org.termx.uam` | User and Access Management |
 | `termx-app` | `org.termx` | Application entry point, Micronaut bootstrap, OpenAPI aggregation |
 | `termx-integtest` | `org.termx` | Integration-test harness (test application + FHIR/Groovy integration tests) |
@@ -197,7 +196,6 @@ All modules have completed migration to the `org.termx.*` namespace.
 | `implementation-guide` | ✅ `org.termx.implementationguide` |
 | `edition-int` | ✅ `org.termx.editionint` |
 | `edition-est` | ✅ `org.termx.editionest` |
-| `edition-uzb` | ✅ `org.termx.editionuzb` |
 | `uam` | ✅ `org.termx.uam` |
 | `termx-api` | ✅ `org.termx.*` (public contract DTOs) |
 | `termx-core` | ✅ `org.termx.core.*` (infrastructure) |

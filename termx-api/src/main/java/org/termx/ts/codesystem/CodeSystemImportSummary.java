@@ -22,7 +22,7 @@ import lombok.experimental.Accessors;
  *   loinc@2.82:            109 325 concepts (109 325 added, 0 updated)
  * </pre>
  *
- * <p>Callers that don't care about the return (icd10, atc, orphanet, ichi-uz) can ignore it
+ * <p>Callers that don't care about the return (icd10, atc, orphanet) can ignore it
  * — Java is happy with a discarded non-void result; no source change needed at those sites.
  */
 @Getter
