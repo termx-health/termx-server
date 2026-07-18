@@ -174,9 +174,9 @@ That starts MinIO on `:9000` (S3 API) and `:9001` (web console) with `minio` / `
 For production, override via env vars on the JVM:
 
 ```
-MINIO_URL=https://minio.example.com
-MINIO_ACCESS_KEY=...
-MINIO_SECRET_KEY=...
+BOB_MINIO_URL=https://minio.example.com
+BOB_MINIO_ACCESS_KEY=...
+BOB_MINIO_SECRET_KEY=...
 ```
 
-If `MINIO_URL` is unset and there's no `bob.minio.url` override, the application starts but every `/bob/*` write returns a structured `BOB101 Object storage (Minio) is not configured` error — see [`BobObjectService.getMinio`](bob/src/main/java/org/termx/bob/BobObjectService.java).
+If `BOB_MINIO_URL` is unset and there's no `bob.minio.url` override, the application starts but every `/bob/*` write returns a structured `BOB101 Object storage (Minio) is not configured` error — see [`BobObjectService.getMinio`](bob/src/main/java/org/termx/bob/BobObjectService.java).

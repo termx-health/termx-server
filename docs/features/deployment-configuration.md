@@ -18,7 +18,7 @@ compose stack, the public installation guide, and the feature docs in this folde
 | **PostgreSQL** | Standard `postgres` image env. | `pg.env` |
 
 > **Gotcha — colons in URL defaults.** In `application.yml`, URL defaults are wrapped in backticks
-> (`` ${MINIO_URL:`http://localhost:9000`} ``) because Micronaut treats `:` as the value/default
+> (`` ${BOB_MINIO_URL:`http://localhost:9000`} ``) because Micronaut treats `:` as the value/default
 > delimiter. When you *set* the env var you do **not** add backticks — just the plain URL.
 
 > **Selecting a profile.** `MICRONAUT_ENVIRONMENTS=<name>` loads `application-<name>.yml`
@@ -74,9 +74,10 @@ Development-only auth (do **not** use in production):
 | `BOB_MINIO_ACCESS_KEY` | `minio` | Access key (`bob.minio.access-key`) |
 | `BOB_MINIO_SECRET_KEY` | `minio123` | Secret key (`bob.minio.secret-key`) |
 
-> The base `application.yml` placeholders are `MINIO_URL` / `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY`;
-> deployments and the feature docs use the `BOB_MINIO_*` names. Both bind to the same `bob.minio.*`
-> properties — prefer `BOB_MINIO_*`.
+> The `application.yml` placeholders are `BOB_MINIO_URL` / `BOB_MINIO_ACCESS_KEY` / `BOB_MINIO_SECRET_KEY`.
+> The `BOB_` prefix keeps the app's access credentials distinct from the MinIO server's own root
+> account (`MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`). The older unprefixed `MINIO_URL` /
+> `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` names are **no longer read** — use `BOB_MINIO_*`.
 
 ### 1.6 Large terminology import (SNOMED + LOINC archives) — see [`snomed-import-management.md`](snomed-import-management.md), [`loinc-import-management.md`](loinc-import-management.md)
 | Env var / property | Default | Purpose |
@@ -294,12 +295,12 @@ credentials (`minio`/`minio123`).
 
 ## 7. Caveats, gotchas & known divergences
 
-### Variable-name divergences
-- **MinIO: `MINIO_*` vs `BOB_MINIO_*`.** The base `application.yml` declares `MINIO_URL` /
-  `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY`, while quick-start, the public install guide, and the
-  large-import feature doc use `BOB_MINIO_*`. Both resolve to the same `bob.minio.*` properties (the
-  `BOB_MINIO_*` form via Micronaut relaxed binding). **Use `BOB_MINIO_*`** and don't set the two
-  spellings to different values.
+### Variable names
+- **MinIO: use `BOB_MINIO_*`.** `application.yml` declares `BOB_MINIO_URL` / `BOB_MINIO_ACCESS_KEY` /
+  `BOB_MINIO_SECRET_KEY`, consistent with quick-start, the public install guide, and the large-import
+  feature doc. The `BOB_` prefix keeps the app's access credentials distinct from the MinIO server's
+  own root account (`MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`). The older unprefixed `MINIO_*` names
+  are **no longer read**.
 - **Snowstorm & Keycloak have no `${ENV}` placeholders.** `snowstorm.*` is hard-coded in
   `application.yml` (with sensible defaults); `keycloak.*` only appears in profile files
   (`application-demo.yml` / `application-dev.yml`). You still override them with `SNOWSTORM_*` /
@@ -308,7 +309,7 @@ credentials (`minio`/`minio123`).
 
 ### Config-parsing gotchas
 - **Colons in URL defaults are backticked in YAML, not in env.** A default like
-  `` ${MINIO_URL:`http://localhost:9000`} `` is backticked so Micronaut doesn't treat `:` as the
+  `` ${BOB_MINIO_URL:`http://localhost:9000`} `` is backticked so Micronaut doesn't treat `:` as the
   value/default delimiter. When you *set* the env var, give the plain URL — no backticks.
 - **Web JSON-typed vars must be valid JSON.** `UI_LANGUAGES`, `CONTENT_LANGUAGES`, `EXTRA_LANGUAGES`,
   `EMBEDDED`, `GUEST_DISABLED` are parsed as JSON; an empty value is dropped and the built-in default

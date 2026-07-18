@@ -89,19 +89,23 @@ auth:
 # Local dev: defaults match scripts/run-minio.sh (which starts a `tx-minio` container with
 # `minio/minio123` credentials on :9000). Run that script once and bob just works.
 #
-# Production: override via env. If MINIO_URL is not set at runtime, the MinioClient bean is
+# Production: override via env. If BOB_MINIO_URL is not set at runtime, the MinioClient bean is
 # not created and any Bob upload returns a clear 503 "object storage not configured" error
 # (handled in BobObjectService.getMinio).
+#
+# The BOB_ prefix disambiguates the app's access credentials from the MinIO server's own
+# root account (MINIO_ROOT_USER / MINIO_ROOT_PASSWORD). The older MINIO_URL / MINIO_ACCESS_KEY /
+# MINIO_SECRET_KEY names are no longer read — use BOB_MINIO_*.
 bob:
   minio:
     # Backticks around the default — Micronaut treats `:` as the var/default delimiter,
-    # so `${MINIO_URL:http://…}` parses the default as just `http`, the URL is then
+    # so `${BOB_MINIO_URL:http://…}` parses the default as just `http`, the URL is then
     # malformed and the okhttp client inside the Minio SDK fails with
     # NoRouteToHostException. Same backtick pattern as the `datasources.default.url`
     # line at the top of this file.
-    url: ${MINIO_URL:`http://localhost:9000`}
-    access-key: ${MINIO_ACCESS_KEY:minio}
-    secret-key: ${MINIO_SECRET_KEY:minio123}
+    url: ${BOB_MINIO_URL:`http://localhost:9000`}
+    access-key: ${BOB_MINIO_ACCESS_KEY:minio}
+    secret-key: ${BOB_MINIO_SECRET_KEY:minio123}
 
 snowstorm:
   url: https://snowstorm.termx.org/
