@@ -6,6 +6,9 @@ on:
       - '*.*.*'
 
 jobs:
+  # The release deliverable: build, run the fast checks (tests, PMD, SpotBugs) and publish
+  # the Maven libraries. Kept independent of the slow OWASP scan so a flaky/slow security
+  # scan never blocks or forces a re-run of the publish.
   build-and-publish:
     runs-on: ubuntu-latest
     name: Build, check, publish
@@ -30,9 +33,52 @@ jobs:
           mkdir -p "$HOME/.gradle"
           echo "org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g" >> "$HOME/.gradle/gradle.properties"
 
-      - name: Build, run all checks, and publish
+      - name: Build, run checks, and publish
         working-directory: .
-        run: ./gradlew clean assemble check pmdCheck spotbugsCheck :dependencyCheckAggregate publish
+        run: ./gradlew clean assemble check pmdCheck spotbugsCheck publish
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # OWASP dependency-check runs in parallel and does NOT gate the publish above — with
+  # failBuildOnCVSS unset (defaults to 11.0) it never fails on a discovered CVE, so it is a
+  # report, not a release gate. Re-run just this job in isolation if it flakes.
+  security-scan:
+    runs-on: ubuntu-latest
+    name: OWASP dependency-check
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "25"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Configure Gradle JVM memory
+        run: |
+          mkdir -p "$HOME/.gradle"
+          echo "org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g" >> "$HOME/.gradle/gradle.properties"
+
+      # Root-only aggregate: it already scans the whole multi-module dependency graph into one
+      # report. Running per-subproject is redundant and re-enables analyzers (OSS Index) that the
+      # root project disables. NVD_API_KEY lifts the strict anonymous rate limit (much faster).
+      - name: OWASP dependency-check (aggregate)
+        working-directory: .
+        run: ./gradlew :dependencyCheckAggregate
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+
+      - name: Upload dependency-check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: build/reports/dependency-check-report.*
+          if-no-files-found: warn
