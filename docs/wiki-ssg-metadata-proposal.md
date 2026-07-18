@@ -103,6 +103,34 @@ Handled on the generator side — mdbook now emits `sitemap.xml` + `<link rel="c
 optional `space.siteUrl` from **C**, needed when the site is served from a custom domain
 that CI can't infer.
 
+### F. Stable page identifiers (already implemented in the generator)
+
+The page `code` in `pages.json` (`SpaceGithubPage.code`, a stable UUID) is already exported.
+mdbook now surfaces it — and the space `code` — as page metadata:
+
+```html
+<meta name="termx:space" content="<space code>">
+<meta name="termx:page"  content="<page code>">
+```
+
+Because the `code` is stable across slug/title/rename changes (unlike the URL or slug), it is
+the right anchor for anything that must map a rendered static page back to its wiki page:
+
+- **Comment threading** — the Giscus (GitHub Discussions) integration threads by this code
+  (`mapping: termx`), so renaming a page never orphans its comment thread.
+- **"Edit in TermX" links** — a static page can deep-link back to its wiki editor.
+- **A future public comment API** — if comments should be stored *in* TermX rather than a
+  third-party like Giscus, note that the existing `@Authorized(Privilege.W_TRIAGE)`
+  `/page-comments` API (`wiki/.../pagecomment/PageCommentController.java`) is an authenticated
+  editorial tool and **cannot be driven anonymously** from a static page. That would require a
+  **new, purpose-built public endpoint** — CORS-open, rate-limited/moderated, and separate from
+  the editorial comment system — against which the static page would post using this
+  `termx:page` code as the anchor.
+
+No backend change is required for the identifier itself (the `code` is already in the export;
+only the generator was updated to surface it). Optionally, the wiki could also export a
+per-page **edit URL** so the generator need not reconstruct one.
+
 ## Compatibility & rollout
 
 - All new fields are **additive and nullable**. Old exports keep working; mdbook already
