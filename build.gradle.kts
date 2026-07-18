@@ -15,6 +15,13 @@ version = file("VERSION").readText().trim()
 // so this runs against the NVD API 2.0. An NVD API key (the NVD_API_KEY secret, optional locally)
 // lifts the strict anonymous rate limit; CI also caches the downloaded CVE database between runs.
 dependencyCheck {
+    // The Sonatype OSS Index analyzer calls ossindex.sonatype.org, which rate-limits anonymous
+    // callers (HTTP 429). On a project this size every artifact errors out and dependency-check
+    // aborts with "Analysis failed". It's a supplementary source; NVD (below) is the primary CVE
+    // feed, so disable OSS Index rather than gate the whole release on an unauthenticated 3rd-party API.
+    analyzers {
+        ossIndexEnabled = false
+    }
     nvd {
         apiKey = System.getenv("NVD_API_KEY")
         // The NVD API intermittently returns empty/error responses on the bulk download, which
