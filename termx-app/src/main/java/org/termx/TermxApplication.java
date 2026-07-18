@@ -85,9 +85,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         org.termx.editionint.icd10.Icd10Controller.class,
         org.termx.editionint.loinc.LoincController.class,
         org.termx.editionint.orphanet.OrphanetController.class,
-        org.termx.editionest.atcest.AtcEstController.class,
-        org.termx.editionest.icd10est.Icd10EstController.class,
-        org.termx.editionuzb.ichiuz.IchiUzController.class
+        org.termx.editionest.atcest.AtcEstController.class
     }
 )
 @OpenAPIInclude(

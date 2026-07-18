@@ -8,7 +8,6 @@ rootProject.name = "termx-server"
 
 include("edition-int")
 include("edition-est")
-include("edition-uzb")
 
 include("termx-api")
 include("termx-client")
