@@ -20,7 +20,6 @@
         </Or>
         <Or>
             <Class name="~.*\.utils\.Icd10.*"/>
-            <Class name="~.*\.utils\.Icd10Est.*"/>
             <Class name="~.*OperationDefinitionResourceStorage"/>
             <Class name="~.*XlsxFileParser"/>
             <Class name="~.*MockSessionProvider.*"/>

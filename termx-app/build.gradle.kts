@@ -24,7 +24,6 @@ dependencies {
 
     implementation(project(":edition-int"))
     implementation(project(":edition-est"))
-    implementation(project(":edition-uzb"))
 
     implementation("com.kodality.commons:commons-micronaut:${rootProject.extra["commonsMicronautVersion"]}")
     implementation("com.kodality.commons:commons-db:${rootProject.extra["commonsVersion"]}")
