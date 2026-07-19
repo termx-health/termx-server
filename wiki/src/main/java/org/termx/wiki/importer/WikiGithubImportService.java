@@ -314,7 +314,7 @@ public class WikiGithubImportService {
     return sb.toString();
   }
 
-  private boolean importableAsset(String url, boolean image, Long thisPageId) {
+  static boolean importableAsset(String url, boolean image, Long thisPageId) {
     if (url == null || url.isEmpty() || url.matches("(?i)^(https?:|mailto:|tel:|data:|#).*")
         || url.startsWith("files/" + thisPageId + "/")) {
       return false;
@@ -324,17 +324,17 @@ public class WikiGithubImportService {
   }
 
   /** A file name safe for a wiki attachment reference (no spaces or special characters). */
-  private static String safeFileName(String name) {
+  static String safeFileName(String name) {
     String s = name.replaceAll("[^A-Za-z0-9._-]+", "-").replaceAll("-+\\.", ".").replaceAll("-{2,}", "-").replaceAll("^-|-$", "");
     return s.isEmpty() ? "file" : s;
   }
 
-  private String attachmentName(String ref) {
+  static String attachmentName(String ref) {
     String name = ref.contains("/") ? StringUtils.substringAfterLast(ref, "/") : ref;
     return StringUtils.substringBefore(StringUtils.substringBefore(name, "?"), "#");
   }
 
-  private String resolveRepoPath(String ref, String prefix, boolean gitbook, String hrefDir) {
+  static String resolveRepoPath(String ref, String prefix, boolean gitbook, String hrefDir) {
     Matcher fm = FILES_REF.matcher(ref);
     if (fm.matches()) {
       return prefix + "attachments/" + fm.group(1) + "/" + fm.group(2); // TermX export layout
@@ -347,7 +347,7 @@ public class WikiGithubImportService {
   }
 
   /** Resolves {@code ./} and {@code ../} segments in a repo path. */
-  private static String normalizePath(String path) {
+  static String normalizePath(String path) {
     Deque<String> stack = new ArrayDeque<>();
     for (String seg : path.split("/")) {
       if (seg.isEmpty() || seg.equals(".")) {
@@ -366,7 +366,7 @@ public class WikiGithubImportService {
 
   /** Stores bytes as a page attachment, skipping the upload when an identical file (same name and
    * content hash) is already attached; replaces it when the name matches but the content differs. */
-  private void storeAttachment(Long pageId, String fileName, byte[] bytes) {
+  void storeAttachment(Long pageId, String fileName, byte[] bytes) {
     String hash = sha256(bytes);
     boolean present = pageAttachmentService.getAttachments(pageId).stream()
         .anyMatch(a -> fileName.equals(a.getFileName()));
@@ -409,7 +409,7 @@ public class WikiGithubImportService {
     }
   }
 
-  private static String sha256(byte[] bytes) {
+  static String sha256(byte[] bytes) {
     try {
       return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     } catch (Exception e) {
