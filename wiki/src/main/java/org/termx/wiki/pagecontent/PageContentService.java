@@ -1,6 +1,7 @@
 package org.termx.wiki.pagecontent;
 
 import com.github.slugify.Slugify;
+import org.apache.commons.lang3.StringUtils;
 import com.kodality.commons.model.QueryResult;
 import org.termx.core.sys.provenance.Provenance;
 import org.termx.core.sys.provenance.ProvenanceService;
@@ -95,16 +96,21 @@ public class PageContentService {
 
   private PageContent prepare(PageContent c, Long pageId) {
     Page page = pageRepository.load(pageId);
+    Slugify slugify = Slugify.builder().build();
 
-    c.setSlug(Slugify.builder().build().slugify(c.getName()));
     c.setContent(c.getContent() == null ? "" : c.getContent());
     c.setSpaceId(page.getSpaceId());
 
     if (c.getId() == null) {
+      // Create: use the provided slug, else derive a stable one from the name.
+      c.setSlug(slugify.slugify(StringUtils.isNotBlank(c.getSlug()) ? c.getSlug() : c.getName()));
       Long templateId = page.getSettings() != null ? page.getSettings().getTemplateId() : null;
       c.setContent(templateContentService.findContent(templateId, c.getLang()).orElse(c.getContent()));
     } else {
+      // Update: keep the stored slug (a rename must not change the URL); only an explicitly
+      // provided slug changes it.
       PageContent currentContent = load(c.getId());
+      c.setSlug(StringUtils.isNotBlank(c.getSlug()) ? slugify.slugify(c.getSlug()) : currentContent.getSlug());
       if (!currentContent.getContentType().equals(c.getContentType())) {
         c.setContent(TextUtil.convertText(c.getContent(), currentContent.getContentType(), c.getContentType()));
       }

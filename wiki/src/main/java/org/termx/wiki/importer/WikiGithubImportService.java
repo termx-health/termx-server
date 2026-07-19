@@ -122,21 +122,18 @@ public class WikiGithubImportService {
     normalizeNodes(tree, slugToName);
     content.put("pages.json", JsonUtil.toJson(tree));
 
-    // The parser re-slugifies each content from its name on save (PageContentService.prepare) and
-    // then keys the .md files it applies by that slug — so key the markdown the same way, not by
-    // the file name (a repo's stored slug can differ from slugify(name)). Only .md referenced by
-    // pages.json is fetched (orphans are skipped so the parser can't NPE); attachments/resources
-    // are not imported.
-    Slugify slugify = Slugify.builder().build();
+    // The .md is keyed by its own slug — the same slug pages.json declares, which the parser now
+    // stores verbatim (slugs are stable, PageContentService.prepare no longer re-derives them from
+    // the name). Only .md referenced by pages.json is fetched (orphans are skipped so the parser
+    // can't NPE); attachments/resources are not imported.
     Map<String, String> keyToPath = new LinkedHashMap<>();
     for (String path : blobs) {
       if (!path.endsWith(".md") || !path.startsWith(prefix)) {
         continue;
       }
       String fileSlug = StringUtils.removeEnd(StringUtils.substringAfterLast("/" + path, "/"), ".md");
-      String name = slugToName.get(fileSlug);
-      if (name != null) {
-        keyToPath.put(slugify.slugify(name) + ".md", path);
+      if (slugToName.containsKey(fileSlug)) {
+        keyToPath.put(fileSlug + ".md", path);
       }
     }
     Map<String, String> fetched = fetchAll(keyToPath, coords, branch, req.getToken(), false);
@@ -322,7 +319,7 @@ public class WikiGithubImportService {
     return sb.toString();
   }
 
-  private boolean importableAsset(String url, boolean image, Long thisPageId) {
+  static boolean importableAsset(String url, boolean image, Long thisPageId) {
     if (url == null || url.isEmpty() || url.matches("(?i)^(https?:|mailto:|tel:|data:|#).*")
         || url.startsWith("files/" + thisPageId + "/")) {
       return false;
@@ -332,12 +329,12 @@ public class WikiGithubImportService {
   }
 
   /** A file name safe for a wiki attachment reference (no spaces or special characters). */
-  private static String safeFileName(String name) {
+  static String safeFileName(String name) {
     String s = name.replaceAll("[^A-Za-z0-9._-]+", "-").replaceAll("-+\\.", ".").replaceAll("-{2,}", "-").replaceAll("^-|-$", "");
     return s.isEmpty() ? "file" : s;
   }
 
-  private String attachmentName(String ref) {
+  static String attachmentName(String ref) {
     String name = ref.contains("/") ? StringUtils.substringAfterLast(ref, "/") : ref;
     return StringUtils.substringBefore(StringUtils.substringBefore(name, "?"), "#");
   }
@@ -355,7 +352,7 @@ public class WikiGithubImportService {
     }
   }
 
-  private String resolveRepoPath(String ref, String prefix, boolean gitbook, String hrefDir) {
+  static String resolveRepoPath(String ref, String prefix, boolean gitbook, String hrefDir) {
     Matcher fm = FILES_REF.matcher(ref);
     if (fm.matches()) {
       return prefix + "attachments/" + fm.group(1) + "/" + fm.group(2); // TermX export layout
@@ -368,7 +365,7 @@ public class WikiGithubImportService {
   }
 
   /** Resolves {@code ./} and {@code ../} segments in a repo path. */
-  private static String normalizePath(String path) {
+  static String normalizePath(String path) {
     Deque<String> stack = new ArrayDeque<>();
     for (String seg : path.split("/")) {
       if (seg.isEmpty() || seg.equals(".")) {
@@ -387,7 +384,7 @@ public class WikiGithubImportService {
 
   /** Stores bytes as a page attachment, skipping the upload when an identical file (same name and
    * content hash) is already attached; replaces it when the name matches but the content differs. */
-  private void storeAttachment(Long pageId, String fileName, byte[] bytes) {
+  void storeAttachment(Long pageId, String fileName, byte[] bytes) {
     String hash = sha256(bytes);
     boolean present = pageAttachmentService.getAttachments(pageId).stream()
         .anyMatch(a -> fileName.equals(a.getFileName()));
@@ -430,7 +427,7 @@ public class WikiGithubImportService {
     }
   }
 
-  private static String sha256(byte[] bytes) {
+  static String sha256(byte[] bytes) {
     try {
       return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
     } catch (Exception e) {
