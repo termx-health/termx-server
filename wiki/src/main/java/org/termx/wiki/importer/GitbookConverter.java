@@ -30,6 +30,13 @@ public final class GitbookConverter {
   private static final Pattern CARD_TABLE = Pattern.compile("(?is)<table\\b[^>]*\\bdata-view=\"cards\"[^>]*>.*?</table>");
   private static final Pattern FILE_EMBED = Pattern.compile("\\{%\\s*file\\s+src=\"([^\"]+)\"[^%]*%\\}");
   private static final Pattern HINT = Pattern.compile("(?is)\\{%\\s*hint\\s+style=\"([^\"]+)\"\\s*%\\}(.*?)\\{%\\s*endhint\\s*%\\}");
+  private static final Pattern IMG_TAG = Pattern.compile("(?is)<img\\b[^>]*?/?>");
+  private static final Pattern IMG_SRC = Pattern.compile("(?i)\\bsrc=[\"']([^\"']*)[\"']");
+  private static final Pattern IMG_ALT = Pattern.compile("(?i)\\balt=[\"']([^\"']*)[\"']");
+  // GitBook wraps images as <div align><figure><img><figcaption></figure></div>; markdown inside
+  // an HTML block isn't processed, so unwrap the whole block to a standalone markdown image.
+  private static final Pattern FIGURE_BLOCK =
+      Pattern.compile("(?is)(?:<div\\b[^>]*>\\s*)?<figure\\b[^>]*>\\s*(<img\\b[^>]*>).*?</figure>(?:\\s*</div>)?");
 
   // GitBook hint styles -> TermX callout classes.
   private static final Map<String, String> HINT_CLASS = Map.of(
@@ -41,9 +48,44 @@ public final class GitbookConverter {
     }
     String out = FRONTMATTER.matcher(body).replaceFirst("");
     out = convertCardTables(out);
+    out = convertFigures(out);
+    out = convertImages(out);
     out = convertFileEmbeds(out);
     out = convertHints(out);
     return out;
+  }
+
+  private static String convertFigures(String body) {
+    Matcher m = FIGURE_BLOCK.matcher(body);
+    StringBuilder sb = new StringBuilder();
+    while (m.find()) {
+      m.appendReplacement(sb, Matcher.quoteReplacement(imgToMarkdown(m.group(1), m.group())));
+    }
+    m.appendTail(sb);
+    return sb.toString();
+  }
+
+  /** Raw {@code <img>} tags aren't rewritten by the wiki's attachment renderer (only markdown
+   * images are), so turn them into markdown so imported images resolve. */
+  private static String convertImages(String body) {
+    Matcher m = IMG_TAG.matcher(body);
+    StringBuilder sb = new StringBuilder();
+    while (m.find()) {
+      m.appendReplacement(sb, Matcher.quoteReplacement(imgToMarkdown(m.group(), m.group())));
+    }
+    m.appendTail(sb);
+    return sb.toString();
+  }
+
+  /** A single {@code <img>} tag as a markdown image (URL angle-bracketed so spaces stay valid), or
+   * {@code fallback} when it has no src. */
+  private static String imgToMarkdown(String imgTag, String fallback) {
+    Matcher src = IMG_SRC.matcher(imgTag);
+    if (!src.find()) {
+      return fallback;
+    }
+    Matcher alt = IMG_ALT.matcher(imgTag);
+    return "![" + (alt.find() ? alt.group(1) : "") + "](<" + src.group(1) + ">)";
   }
 
   private static String convertCardTables(String body) {
@@ -98,7 +140,7 @@ public final class GitbookConverter {
       if (name.isEmpty()) {
         name = src;
       }
-      m.appendReplacement(sb, Matcher.quoteReplacement("[" + name + "](" + src + ")"));
+      m.appendReplacement(sb, Matcher.quoteReplacement("[" + name + "](<" + src + ">)"));
     }
     m.appendTail(sb);
     return sb.toString();

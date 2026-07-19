@@ -1,18 +1,29 @@
 package org.termx.wiki.importer;
 
 import com.github.slugify.Slugify;
+import com.kodality.commons.micronaut.rest.MultipartBodyReader.Attachment;
 import com.kodality.commons.util.JsonUtil;
 import org.termx.core.sys.space.SpaceService;
 import org.termx.sys.space.Space;
 import org.termx.wiki.SpaceGithubDataWikiHandler;
+import org.termx.wiki.page.Page;
+import org.termx.wiki.page.PageContent;
+import org.termx.wiki.page.PageQueryParams;
+import org.termx.wiki.page.PageService;
+import org.termx.wiki.pageattachment.PageAttachmentService;
+import org.termx.wiki.pagecontent.PageContentService;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.io.IOUtils;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +63,9 @@ public class WikiGithubImportService {
 
   private final SpaceGithubDataWikiHandler wikiHandler;
   private final SpaceService spaceService;
+  private final PageService pageService;
+  private final PageContentService pageContentService;
+  private final PageAttachmentService pageAttachmentService;
 
   private final HttpClient http = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
 
@@ -76,8 +91,9 @@ public class WikiGithubImportService {
 
     // saveContent mutates the map, so it must be mutable.
     Map<String, String> content = new LinkedHashMap<>();
+    Map<String, String> hrefDirByCode = new HashMap<>(); // GitBook: page code -> its .md directory
     int pages = gitbook
-        ? buildFromGitbook(content, coords, branch, prefix, req)
+        ? buildFromGitbook(content, coords, branch, prefix, req, hrefDirByCode)
         : buildFromTermx(content, coords, branch, dir, prefix, blobs, req);
 
     log.info("importing {} page(s) into space {} from {}/{}@{} ({}, {})",
@@ -85,7 +101,9 @@ public class WikiGithubImportService {
         gitbook ? "gitbook" : "termx");
     wikiHandler.saveContent(req.getSpaceId(), content);
 
-    return new WikiGithubImportResult(coords.owner() + "/" + coords.repo(), branch, dir, pages);
+    int attachments = importAttachments(req.getSpaceId(), coords, branch, prefix, req.getToken(), gitbook, hrefDirByCode);
+
+    return new WikiGithubImportResult(coords.owner() + "/" + coords.repo(), branch, dir, pages, attachments);
   }
 
   // ── TermX (pages.json + <slug>.md / pages/<slug>.md) ───────────────────────
@@ -128,7 +146,7 @@ public class WikiGithubImportService {
   // ── GitBook (SUMMARY.md tree + linked .md) ─────────────────────────────────
 
   private int buildFromGitbook(Map<String, String> content, GithubCoords coords, String branch,
-                               String prefix, WikiGithubImportRequest req) {
+                               String prefix, WikiGithubImportRequest req, Map<String, String> hrefDirByCode) {
     String summary = fetchRaw(coords, branch, prefix + "SUMMARY.md", req.getToken());
     if (summary == null) {
       throw new RuntimeException("SUMMARY.md not found at '" + prefix + "SUMMARY.md'");
@@ -149,7 +167,7 @@ public class WikiGithubImportService {
     Map<String, String> bodies = fetchAll(keyToPath, coords, branch, req.getToken(), true);
 
     List<Map<String, Object>> pagesJson = new ArrayList<>();
-    buildGbStructure(roots, pagesJson, content, bodies, lang, slugify);
+    buildGbStructure(roots, pagesJson, content, bodies, lang, slugify, hrefDirByCode);
     content.put("pages.json", JsonUtil.toJson(pagesJson));
     return all.size();
   }
@@ -165,11 +183,14 @@ public class WikiGithubImportService {
    * deterministic hash of the href/section, so re-importing updates rather than recreating; `##`
    * sections (and pages whose file is missing) get a title-only body. */
   private void buildGbStructure(List<GbNode> nodes, List<Map<String, Object>> out, Map<String, String> content,
-                                Map<String, String> bodies, String lang, Slugify slugify) {
+                                Map<String, String> bodies, String lang, Slugify slugify, Map<String, String> hrefDirByCode) {
     for (GbNode n : nodes) {
       String slug = slugify.slugify(n.title);
       String key = n.href != null ? "gitbook:" + n.href : "gitbook-section:" + n.title;
       String code = UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8)).toString();
+      if (n.href != null && n.href.contains("/")) {
+        hrefDirByCode.put(code, StringUtils.substringBeforeLast(n.href, "/")); // for resolving relative assets
+      }
 
       Map<String, Object> contentObj = new LinkedHashMap<>();
       contentObj.put("name", n.title);
@@ -178,7 +199,7 @@ public class WikiGithubImportService {
       contentObj.put("ct", "markdown");
 
       List<Map<String, Object>> children = new ArrayList<>();
-      buildGbStructure(n.children, children, content, bodies, lang, slugify);
+      buildGbStructure(n.children, children, content, bodies, lang, slugify, hrefDirByCode);
 
       Map<String, Object> node = new LinkedHashMap<>();
       node.put("code", code);
@@ -223,6 +244,185 @@ public class WikiGithubImportService {
       pool.shutdown();
     }
     return out;
+  }
+
+  // ── attachments ────────────────────────────────────────────────────────────
+
+  // Markdown image / link, with an optional <bracketed> URL (so asset names with spaces parse).
+  private static final Pattern MD_IMAGE = Pattern.compile("!\\[([^\\]]*)]\\(\\s*(?:<([^>]*)>|([^)\\s]+))\\s*(?:\"[^\"]*\")?\\)");
+  private static final Pattern MD_LINK = Pattern.compile("(?<!!)\\[([^\\]]*)]\\(\\s*(?:<([^>]*)>|([^)\\s]+))\\s*(?:\"[^\"]*\")?\\)");
+  private static final Pattern FILES_REF = Pattern.compile("files/(\\d+)/(.+)");
+  private static final Map<String, String> CONTENT_TYPES = Map.of(
+      "png", "image/png", "jpg", "image/jpeg", "jpeg", "image/jpeg", "gif", "image/gif",
+      "svg", "image/svg+xml", "webp", "image/webp", "pdf", "application/pdf");
+
+  /** After the pages exist, fetch each page's referenced images/files, store them as page
+   * attachments and rewrite the references to {@code ![alt](files/<pageId>/<name>)}. A content hash
+   * lets a re-import skip files that are already attached unchanged. */
+  private int importAttachments(Long spaceId, GithubCoords coords, String branch, String prefix, String token,
+                                boolean gitbook, Map<String, String> hrefDirByCode) {
+    int[] stored = {0};
+    List<Page> pages = pageService.query(new PageQueryParams().setSpaceIds(spaceId.toString()).all()).getData();
+    for (Page page : pages) {
+      String hrefDir = gitbook ? hrefDirByCode.getOrDefault(page.getCode(), "") : "";
+      for (PageContent pc : pageContentService.loadAll(page.getId())) {
+        String body = pc.getContent();
+        if (body == null || body.isEmpty()) {
+          continue;
+        }
+        Map<String, String> cache = new HashMap<>(); // repoPath -> stored (sanitized) name, fetched once
+        String updated = rewriteAssets(body, MD_IMAGE, true, page.getId(), prefix, gitbook, hrefDir, coords, branch, token, cache, stored);
+        updated = rewriteAssets(updated, MD_LINK, false, page.getId(), prefix, gitbook, hrefDir, coords, branch, token, cache, stored);
+        if (!updated.equals(body)) {
+          pc.setContent(updated);
+          pageContentService.save(pc, page.getId());
+        }
+      }
+    }
+    return stored[0];
+  }
+
+  private String rewriteAssets(String body, Pattern pattern, boolean image, Long pageId, String prefix,
+                               boolean gitbook, String hrefDir, GithubCoords coords, String branch, String token,
+                               Map<String, String> cache, int[] stored) {
+    Matcher m = pattern.matcher(body);
+    StringBuilder sb = new StringBuilder();
+    while (m.find()) {
+      String label = m.group(1);
+      String url = m.group(2) != null ? m.group(2).trim() : m.group(3);
+      String replacement = m.group(); // keep the original unless we import the asset
+      if (importableAsset(url, image, pageId)) {
+        try {
+          String repoPath = resolveRepoPath(url, prefix, gitbook, hrefDir);
+          String name = cache.get(repoPath);
+          if (name == null && !cache.containsKey(repoPath)) {
+            byte[] bytes = fetchBytes(coords, branch, repoPath, token);
+            name = bytes == null ? null : safeFileName(attachmentName(url));
+            if (bytes != null) {
+              storeAttachment(pageId, name, bytes);
+            }
+            cache.put(repoPath, name);
+          }
+          if (name != null) {
+            replacement = (image ? "!" : "") + "[" + label + "](files/" + pageId + "/" + name + ")";
+            stored[0]++;
+          }
+        } catch (Exception e) {
+          log.warn("skipping attachment '{}' on page {}: {}", url, pageId, e.getMessage());
+        }
+      }
+      m.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+    }
+    m.appendTail(sb);
+    return sb.toString();
+  }
+
+  private boolean importableAsset(String url, boolean image, Long thisPageId) {
+    if (url == null || url.isEmpty() || url.matches("(?i)^(https?:|mailto:|tel:|data:|#).*")
+        || url.startsWith("files/" + thisPageId + "/")) {
+      return false;
+    }
+    return image // all local images are assets; links only when they clearly point at one
+        || url.contains(".gitbook/assets/") || url.startsWith("attachments/") || FILES_REF.matcher(url).matches();
+  }
+
+  /** A file name safe for a wiki attachment reference (no spaces or special characters). */
+  private static String safeFileName(String name) {
+    String s = name.replaceAll("[^A-Za-z0-9._-]+", "-").replaceAll("-+\\.", ".").replaceAll("-{2,}", "-").replaceAll("^-|-$", "");
+    return s.isEmpty() ? "file" : s;
+  }
+
+  private String attachmentName(String ref) {
+    String name = ref.contains("/") ? StringUtils.substringAfterLast(ref, "/") : ref;
+    return StringUtils.substringBefore(StringUtils.substringBefore(name, "?"), "#");
+  }
+
+  private String resolveRepoPath(String ref, String prefix, boolean gitbook, String hrefDir) {
+    Matcher fm = FILES_REF.matcher(ref);
+    if (fm.matches()) {
+      return prefix + "attachments/" + fm.group(1) + "/" + fm.group(2); // TermX export layout
+    }
+    if (ref.contains(".gitbook/assets/")) {
+      return prefix + ".gitbook/assets/" + attachmentName(ref); // GitBook assets live at the book root
+    }
+    String base = gitbook && StringUtils.isNotBlank(hrefDir) ? hrefDir + "/" : "";
+    return normalizePath(prefix + base + ref);
+  }
+
+  /** Resolves {@code ./} and {@code ../} segments in a repo path. */
+  private static String normalizePath(String path) {
+    Deque<String> stack = new ArrayDeque<>();
+    for (String seg : path.split("/")) {
+      if (seg.isEmpty() || seg.equals(".")) {
+        continue;
+      }
+      if (seg.equals("..")) {
+        if (!stack.isEmpty()) {
+          stack.removeLast();
+        }
+      } else {
+        stack.addLast(seg);
+      }
+    }
+    return String.join("/", stack);
+  }
+
+  /** Stores bytes as a page attachment, skipping the upload when an identical file (same name and
+   * content hash) is already attached; replaces it when the name matches but the content differs. */
+  private void storeAttachment(Long pageId, String fileName, byte[] bytes) {
+    String hash = sha256(bytes);
+    boolean present = pageAttachmentService.getAttachments(pageId).stream()
+        .anyMatch(a -> fileName.equals(a.getFileName()));
+    if (present) {
+      try {
+        byte[] cur = IOUtils.toByteArray(pageAttachmentService.getAttachmentContent(pageId, fileName).getInputStream());
+        if (sha256(cur).equals(hash)) {
+          return; // identical — reuse the existing attachment
+        }
+      } catch (Exception ignore) {
+        // couldn't read the existing one; fall through and replace
+      }
+      pageAttachmentService.deleteAttachmentContent(pageId, fileName);
+    }
+    Attachment a = new Attachment()
+        .setFileName(fileName)
+        .setContentType(contentTypeOf(fileName))
+        .setContent(bytes)
+        .setContentLength((long) bytes.length);
+    pageAttachmentService.saveAttachments(pageId, Map.of(fileName, a));
+  }
+
+  private byte[] fetchBytes(GithubCoords c, String branch, String path, String token) {
+    HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(rawUrl(c, branch, path))).GET()
+        .header("User-Agent", "termx-wiki-import");
+    if (StringUtils.isNotBlank(token)) {
+      b.header("Authorization", "Bearer " + token);
+    }
+    try {
+      HttpResponse<byte[]> resp = http.send(b.build(), HttpResponse.BodyHandlers.ofByteArray());
+      if (resp.statusCode() == 404) {
+        return null;
+      }
+      if (resp.statusCode() >= 400) {
+        throw new RuntimeException("HTTP " + resp.statusCode());
+      }
+      return resp.body();
+    } catch (Exception e) {
+      throw new RuntimeException("failed to fetch " + path, e);
+    }
+  }
+
+  private static String sha256(byte[] bytes) {
+    try {
+      return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static String contentTypeOf(String fileName) {
+    String ext = fileName.contains(".") ? StringUtils.substringAfterLast(fileName, ".").toLowerCase() : "";
+    return CONTENT_TYPES.getOrDefault(ext, "application/octet-stream");
   }
 
   private static final Pattern GB_SECTION = Pattern.compile("^#{2,}\\s+(.+?)\\s*$");
@@ -303,8 +503,18 @@ public class WikiGithubImportService {
         .orElseThrow(() -> new RuntimeException("no pages.json (TermX) or SUMMARY.md (GitBook) found in the repository"));
   }
 
+  // Percent-encodes the path so asset names with spaces/special characters resolve on the CDN.
+  private static String rawUrl(GithubCoords c, String branch, String path) {
+    try {
+      return new URI("https", "raw.githubusercontent.com",
+          "/" + c.owner() + "/" + c.repo() + "/" + branch + "/" + path, null).toASCIIString();
+    } catch (java.net.URISyntaxException e) {
+      throw new RuntimeException("bad path: " + path, e);
+    }
+  }
+
   private String fetchRaw(GithubCoords c, String branch, String path, String token) {
-    String url = GITHUB_RAW + "/" + c.owner() + "/" + c.repo() + "/" + branch + "/" + path;
+    String url = rawUrl(c, branch, path);
     HttpResponse<String> resp = send(url, token, "text/plain");
     if (resp.statusCode() == 404) {
       return null;

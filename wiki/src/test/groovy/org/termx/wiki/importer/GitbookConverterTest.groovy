@@ -35,9 +35,23 @@ class GitbookConverterTest extends Specification {
     out.contains('<td>a</td>')
   }
 
+  def 'figure/div-wrapped image is unwrapped to a standalone markdown image'() {
+    when:
+    def out = GitbookConverter.convert('<div align="left"><figure><img src=".gitbook/assets/a b.png" alt="" width="375"><figcaption></figcaption></figure></div>')
+
+    then: 'no HTML block wrapper remains (markdown inside HTML is not rendered)'
+    out == '![](<.gitbook/assets/a b.png>)'
+  }
+
+  def 'raw <img> becomes a markdown image (angle-bracketed so spaces stay valid)'() {
+    expect:
+    GitbookConverter.convert('<img src=".gitbook/assets/a b.png" alt="Me">') == '![Me](<.gitbook/assets/a b.png>)'
+    GitbookConverter.convert('<img src="x.png">') == '![](<x.png>)'
+  }
+
   def 'file embed becomes a link to the source'() {
     expect:
-    GitbookConverter.convert('{% file src=".gitbook/assets/CV.pdf" %}') == '[CV.pdf](.gitbook/assets/CV.pdf)'
+    GitbookConverter.convert('{% file src=".gitbook/assets/CV.pdf" %}') == '[CV.pdf](<.gitbook/assets/CV.pdf>)'
   }
 
   def 'hint becomes a TermX callout blockquote'() {
