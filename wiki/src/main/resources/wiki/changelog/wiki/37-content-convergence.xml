@@ -1,0 +1,14 @@
+<databaseChangeLog
+                xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+
+    <!-- One-time convergence of existing page content to mdbook-compatible syntax.
+         Originals are preserved in wiki.page_content.bak_content. See
+         docs/wiki-mdbook-syntax.md and org.termx.wiki.WikiContentNormalizer. -->
+    <changeSet id="content-convergence" author="wiki">
+        <customChange class="org.termx.wiki.migration.WikiContentConvergenceChange"/>
+    </changeSet>
+
+</databaseChangeLog>

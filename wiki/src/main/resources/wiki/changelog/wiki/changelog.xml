@@ -14,4 +14,6 @@
     <include file="33-page-relation.sql" relativeToChangelogFile="true"/>
     <include file="34-page-tag.sql" relativeToChangelogFile="true"/>
     <include file="35-page-comment.sql" relativeToChangelogFile="true"/>
+    <include file="36-space-language-backfill.sql" relativeToChangelogFile="true"/>
+    <include file="37-content-convergence.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

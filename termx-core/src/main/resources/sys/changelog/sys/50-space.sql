@@ -34,3 +34,10 @@ alter table sys.space add column integration jsonb;
 --changeset termx:space-global-search
 alter table sys.space add column global_search boolean not null default false;
 --
+
+--changeset termx:space-ssg-metadata
+alter table sys.space add column description       jsonb;
+alter table sys.space add column default_language  text;
+alter table sys.space add column languages         jsonb;
+alter table sys.space add column site_url          text;
+--

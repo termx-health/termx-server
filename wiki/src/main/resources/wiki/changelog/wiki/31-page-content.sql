@@ -68,3 +68,12 @@ create table wiki.page_content_history (
     constraint page_content_page_content_fk foreign key (page_content_id) references wiki.page_content(id)
 );
 --
+
+--changeset wiki:page_content-seo
+alter table wiki.page_content add column description text;
+alter table wiki.page_content_history add column description text;
+--
+
+--changeset wiki:page_content-bak
+alter table wiki.page_content add column bak_content text;
+--
