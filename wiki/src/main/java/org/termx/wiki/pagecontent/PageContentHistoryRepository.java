@@ -65,6 +65,7 @@ public class PageContentHistoryRepository extends BaseRepository {
     ssb.property("lang", content.getLang());
     ssb.property("content_type", content.getContentType());
     ssb.property("content", content.getContent());
+    ssb.property("description", content.getDescription());
     ssb.property("created_at", content.getCreatedAt());
     ssb.property("created_by", content.getCreatedBy());
     ssb.property("modified_at", content.getModifiedAt());

@@ -17,6 +17,7 @@ public class PageContent {
   private String lang;
   private String content;
   private String contentType;
+  private String description;
 
   private OffsetDateTime createdAt;
   private String createdBy;

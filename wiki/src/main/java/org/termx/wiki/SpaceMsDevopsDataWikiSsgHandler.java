@@ -88,12 +88,15 @@ public class SpaceMsDevopsDataWikiSsgHandler implements SpaceMsDevopsDataHandler
         .toList();
 
     List<ResourceContent> result = new ArrayList<>();
-    result.add(new ResourceContent("space.json", toPrettyJson(new SpaceGithubDataWikiSsgHandler.SsgSpaceIndex(termxWebUrl.orElse(null), space.getCode(), space.getNames()))));
+    result.add(new ResourceContent("space.json", toPrettyJson(new SpaceGithubDataWikiSsgHandler.SsgSpaceIndex(
+        termxWebUrl.orElse(null), space.getCode(), space.getNames(),
+        space.getDescription(), space.getDefaultLanguage(), space.getLanguages(), space.getSiteUrl()))));
     result.add(new ResourceContent("pages.json", toPrettyJson(composePagesIndex(pages, links))));
-    result.addAll(contents.stream().map(p -> new ResourceContent(
-        "pages/" + p.getSlug() + (p.getContentType().equals("html") ? ".html" : ".md"),
-        p.getContent()
-    )).toList());
+    result.addAll(contents.stream().map(p -> {
+      boolean html = "html".equals(p.getContentType());
+      String body = html ? p.getContent() : SpaceGithubDataWikiSsgHandler.ensureH1(p.getContent(), p.getName());
+      return new ResourceContent("pages/" + p.getSlug() + (html ? ".html" : ".md"), body);
+    }).toList());
     result.addAll(attachments.stream().map(a -> new ResourceContent(
         "attachments/" + a.pageId() + "/" + a.name(),
         a.base64(),
@@ -125,9 +128,11 @@ public class SpaceMsDevopsDataWikiSsgHandler implements SpaceMsDevopsDataHandler
           p.getCode(),
           p.getContents().stream()
               .sorted(Comparator.comparing(PageContent::getSlug))
-              .map(c -> new SpaceGithubPageContent(c.getName(), c.getSlug(), c.getLang(), c.getContentType(), c.getModifiedAt()))
+              .map(c -> new SpaceGithubPageContent(c.getName(), c.getSlug(), c.getLang(), c.getContentType(),
+                  c.getDescription(), c.getModifiedAt()))
               .toList(),
-          buildPages(p.getId(), allPages)
+          buildPages(p.getId(), allPages),
+          SpaceGithubDataWikiSsgHandler.pageTags(p)
       );
     }).toList();
   }

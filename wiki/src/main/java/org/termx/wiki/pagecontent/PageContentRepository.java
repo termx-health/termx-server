@@ -87,6 +87,7 @@ public class PageContentRepository extends BaseRepository {
     ssb.property("lang", content.getLang());
     ssb.property("content", content.getContent());
     ssb.property("content_type", content.getContentType());
+    ssb.property("description", content.getDescription());
     SqlBuilder sb = ssb.buildSave("wiki.page_content", "id");
     return jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
   }

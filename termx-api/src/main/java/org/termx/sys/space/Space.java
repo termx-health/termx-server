@@ -24,6 +24,11 @@ public class Space {
   private List<String> terminologyServers;
   private SpaceIntegration integration;
 
+  private LocalizedName description;
+  private String defaultLanguage;
+  private List<String> languages;
+  private String siteUrl;
+
   private List<Package> packages;
 
   @Getter

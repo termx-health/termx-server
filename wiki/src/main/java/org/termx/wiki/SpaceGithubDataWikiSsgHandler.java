@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
@@ -100,12 +101,18 @@ public class SpaceGithubDataWikiSsgHandler implements SpaceGithubDataHandler {
         .toList();
 
     List<ResourceContent> result = new ArrayList<>();
-    result.add(new ResourceContent("space.json", toPrettyJson(new SsgSpaceIndex(termxWebUrl.orElse(null), space.getCode(), space.getNames()))));
+    result.add(new ResourceContent("space.json", toPrettyJson(new SsgSpaceIndex(
+        termxWebUrl.orElse(null), space.getCode(), space.getNames(),
+        space.getDescription(), space.getDefaultLanguage(), space.getLanguages(), space.getSiteUrl()))));
     result.add(new ResourceContent("pages.json", toPrettyJson(composePagesIndex(pages, links))));
-    result.addAll(contents.stream().map(p -> new ResourceContent(
-        "pages/" + p.getSlug() + (p.getContentType().equals("html") ? ".html" : ".md"),
-        p.getContent()
-    )).toList());
+    result.addAll(contents.stream().map(p -> {
+      boolean html = "html".equals(p.getContentType());
+      // §A: materialize the page name as the file's H1 so the exported markdown is
+      // self-describing (the title otherwise lives only in pages.json). Skip HTML content
+      // and pages whose body already opens with an H1.
+      String body = html ? p.getContent() : ensureH1(p.getContent(), p.getName());
+      return new ResourceContent("pages/" + p.getSlug() + (html ? ".html" : ".md"), body);
+    }).toList());
     result.addAll(attachments.stream().map(a -> new ResourceContent(
         "attachments/" + a.pageId() + "/" + a.name(),
         a.base64(),
@@ -137,11 +144,21 @@ public class SpaceGithubDataWikiSsgHandler implements SpaceGithubDataHandler {
           p.getCode(),
           p.getContents().stream()
               .sorted(Comparator.comparing(PageContent::getSlug))
-              .map(c -> new SpaceGithubPageContent(c.getName(), c.getSlug(), c.getLang(), c.getContentType(), c.getModifiedAt()))
+              .map(c -> new SpaceGithubPageContent(c.getName(), c.getSlug(), c.getLang(), c.getContentType(),
+                  c.getDescription(), c.getModifiedAt()))
               .toList(),
-          buildPages(p.getId(), allPages)
+          buildPages(p.getId(), allPages),
+          pageTags(p)
       );
     }).toList();
+  }
+
+  // Page-level tags, exported so the generator can surface them (e.g. as <meta keywords>).
+  static List<String> pageTags(Page p) {
+    return CollectionUtils.isEmpty(p.getTags()) ? null : p.getTags().stream()
+        .map(t -> t.getTag() == null ? null : t.getTag().getText())
+        .filter(java.util.Objects::nonNull)
+        .toList();
   }
 
   @Override
@@ -149,15 +166,29 @@ public class SpaceGithubDataWikiSsgHandler implements SpaceGithubDataHandler {
     // intentionally left blank
   }
 
-  protected record SpaceGithubPage(String code, List<SpaceGithubPageContent> contents, List<SpaceGithubPage> children) {
-    protected record SpaceGithubPageContent(String name, String slug, String lang, String contentType, OffsetDateTime modifiedAt) {}
+  protected record SpaceGithubPage(String code, List<SpaceGithubPageContent> contents, List<SpaceGithubPage> children,
+                                   List<String> tags) {
+    protected record SpaceGithubPageContent(String name, String slug, String lang, String contentType,
+                                            String description, OffsetDateTime modifiedAt) {}
 
     protected record SpaceGithubPageAttachment(Long pageId, String name, String base64) {}
 
     protected record SpaceGithubPageRelatedResource(String resourceType, String name, String content, String contentType) {}
   }
 
-  protected record SsgSpaceIndex(String web, String code, LocalizedName names) {}
+  protected record SsgSpaceIndex(String web, String code, LocalizedName names,
+                                 LocalizedName description, String defaultLang, List<String> langs, String siteUrl) {}
+
+  // Prepend "# {name}" as the body's H1 unless it already opens with one (a single leading '#').
+  private static final Pattern LEADING_H1 = Pattern.compile("^\\s*#(?!#)\\s");
+
+  static String ensureH1(String content, String name) {
+    String body = content == null ? "" : content;
+    if (name == null || name.isBlank() || LEADING_H1.matcher(body).find()) {
+      return body;
+    }
+    return "# " + name + "\n\n" + body;
+  }
 
   public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
     Set<Object> seen = ConcurrentHashMap.newKeySet();

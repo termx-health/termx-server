@@ -35,7 +35,8 @@ The export currently emits:
 |---|---|
 | Page markdown body | exported verbatim |
 | Page title | only in `pages.json` as `name` — **never an H1 in the `.md`** |
-| Per-page description / keywords | **missing** — no model field (runtime `<meta>` uses `content.slice(0,1000)`) |
+| Per-page description | **missing** — no model field (runtime `<meta>` uses `content.slice(0,1000)`) |
+| Keywords (`<meta keywords>`) | page `tags` already exist but were **not exported** |
 | Space localized names → `space.json` | exists (`names`) |
 | Space description / site title / theme / URL | **missing** — only hand-authored in `.mdbook/config.yml` |
 | Space default language / languages list | **missing** — global `environment.contentLanguages`/`defaultLanguage` only, not per-space, not exported |
@@ -60,18 +61,18 @@ page a visible H1 — an on-page SEO signal the body lacks today.
   Cheaper, but the exported `.md` stays title-less. Prefer the source-side change so the
   export is self-contained; mdbook keeps its injection as a fallback for un-re-exported repos.
 
-### B. Per-page metadata: `description`, `keywords`
+### B. Per-page description (+ keywords from tags)
 
-Add per-language content metadata:
-
-- Model: `PageContent.description: String`, `PageContent.keywords: List<String>` (nullable),
-  plus the TS mirror and an editor field (page setup / header).
-- Export: extend `SpaceGithubPageContent` →
-  `(name, slug, lang, contentType, description, keywords, modifiedAt)`.
-- mdbook: read `description`/`keywords` from `pages.json` into per-page frontmatter,
-  falling back to the first-paragraph heuristic when absent.
-
-Replaces the runtime `content.slice(0,1000)` `<meta>` hack with authored, stored values.
+- **Description** — a new per-language content field:
+  - Model: `PageContent.description: String` (nullable) + the TS mirror and an editor field.
+  - Export: extend `SpaceGithubPageContent` → `(name, slug, lang, contentType, description, modifiedAt)`.
+  - mdbook reads `description` into per-page frontmatter, falling back to the first-paragraph
+    heuristic when absent. Replaces the runtime `content.slice(0,1000)` `<meta>` hack.
+- **Keywords** — *not* a new field. Page **tags** (`Page.tags`, already authored/curated in the
+  editor) are the single source of topical terms, so they are exported (page-level `tags` on
+  `SpaceGithubPage`) and mdbook renders them as `<meta name="keywords">`. A dedicated per-content
+  `keywords` field would duplicate tags for a meta tag that modern search engines largely ignore,
+  so it was intentionally dropped in favour of reusing tags.
 
 ### C. Project metadata → generator config
 

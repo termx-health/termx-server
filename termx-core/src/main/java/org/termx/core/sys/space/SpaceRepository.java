@@ -18,6 +18,8 @@ public class SpaceRepository extends BaseRepository {
     bp.addColumnProcessor("acl", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("integration", PgBeanProcessor.fromJson());
     bp.addColumnProcessor("terminology_servers", PgBeanProcessor.fromJson(JsonUtil.getListType(String.class)));
+    bp.addColumnProcessor("description", PgBeanProcessor.fromJson());
+    bp.addColumnProcessor("languages", PgBeanProcessor.fromJson(JsonUtil.getListType(String.class)));
   });
 
   public void save(Space space) {
@@ -31,6 +33,10 @@ public class SpaceRepository extends BaseRepository {
     ssb.jsonProperty("acl", space.getAcl());
     ssb.jsonProperty("integration", space.getIntegration());
     ssb.jsonProperty("terminology_servers", space.getTerminologyServers());
+    ssb.jsonProperty("description", space.getDescription());
+    ssb.property("default_language", space.getDefaultLanguage());
+    ssb.jsonProperty("languages", space.getLanguages());
+    ssb.property("site_url", space.getSiteUrl());
 
     SqlBuilder sb = ssb.buildSave("sys.space", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());
