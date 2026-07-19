@@ -37,6 +37,14 @@ public class SpaceRepository extends BaseRepository {
     ssb.property("default_language", space.getDefaultLanguage());
     ssb.jsonProperty("languages", space.getLanguages());
     ssb.property("site_url", space.getSiteUrl());
+    ssb.property("ssg_skin", space.getSsgSkin());
+    ssb.property("ssg_theme_accent", space.getSsgThemeAccent());
+    ssb.property("ssg_theme_switcher", space.getSsgThemeSwitcher());
+    ssb.property("ssg_footer_message", space.getSsgFooterMessage());
+    ssb.property("ssg_footer_copyright", space.getSsgFooterCopyright());
+    ssb.property("ssg_tx_server", space.getSsgTxServer());
+    ssb.property("ssg_search", space.getSsgSearch());
+    ssb.property("ssg_logo", space.getSsgLogo());
 
     SqlBuilder sb = ssb.buildSave("sys.space", "id");
     Long id = jdbcTemplate.queryForObject(sb.getSql(), Long.class, sb.getParams());

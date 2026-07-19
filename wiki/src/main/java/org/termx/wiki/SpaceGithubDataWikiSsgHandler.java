@@ -103,7 +103,8 @@ public class SpaceGithubDataWikiSsgHandler implements SpaceGithubDataHandler {
     List<ResourceContent> result = new ArrayList<>();
     result.add(new ResourceContent("space.json", toPrettyJson(new SsgSpaceIndex(
         termxWebUrl.orElse(null), space.getCode(), space.getNames(),
-        space.getDescription(), space.getDefaultLanguage(), space.getLanguages(), space.getSiteUrl()))));
+        space.getDescription(), space.getDefaultLanguage(), space.getLanguages(), space.getSiteUrl(),
+        ssgConfig(space)))));
     result.add(new ResourceContent("pages.json", toPrettyJson(composePagesIndex(pages, links))));
     result.addAll(contents.stream().map(p -> {
       boolean html = "html".equals(p.getContentType());
@@ -177,7 +178,34 @@ public class SpaceGithubDataWikiSsgHandler implements SpaceGithubDataHandler {
   }
 
   protected record SsgSpaceIndex(String web, String code, LocalizedName names,
-                                 LocalizedName description, String defaultLang, List<String> langs, String siteUrl) {}
+                                 LocalizedName description, String defaultLang, List<String> langs, String siteUrl,
+                                 SsgConfig ssg) {}
+
+  // Static-site generator config, shaped to mirror mdbook's config.yml so the generator can merge it
+  // directly (a repo's own .mdbook/config.yml still overrides). Any all-null group is omitted.
+  protected record SsgConfig(SsgTheme theme, SsgFooter footer, String txServer, Boolean search, String logo) {}
+  protected record SsgTheme(String skin, String accent, Boolean switcher) {}
+  protected record SsgFooter(String message, String copyright) {}
+
+  static SsgConfig ssgConfig(Space space) {
+    SsgTheme theme = anyNonNull(space.getSsgSkin(), space.getSsgThemeAccent(), space.getSsgThemeSwitcher())
+        ? new SsgTheme(space.getSsgSkin(), space.getSsgThemeAccent(), space.getSsgThemeSwitcher()) : null;
+    SsgFooter footer = anyNonNull(space.getSsgFooterMessage(), space.getSsgFooterCopyright())
+        ? new SsgFooter(space.getSsgFooterMessage(), space.getSsgFooterCopyright()) : null;
+    if (!anyNonNull(theme, footer, space.getSsgTxServer(), space.getSsgSearch(), space.getSsgLogo())) {
+      return null;
+    }
+    return new SsgConfig(theme, footer, space.getSsgTxServer(), space.getSsgSearch(), space.getSsgLogo());
+  }
+
+  private static boolean anyNonNull(Object... values) {
+    for (Object v : values) {
+      if (v != null) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   // Prepend "# {name}" as the body's H1 unless it already opens with one (a single leading '#').
   private static final Pattern LEADING_H1 = Pattern.compile("^\\s*#(?!#)\\s");

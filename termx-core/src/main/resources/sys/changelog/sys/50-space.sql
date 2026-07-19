@@ -41,3 +41,14 @@ alter table sys.space add column default_language  text;
 alter table sys.space add column languages         jsonb;
 alter table sys.space add column site_url          text;
 --
+
+--changeset termx:space-ssg-config
+alter table sys.space add column ssg_skin            text;
+alter table sys.space add column ssg_theme_accent    text;
+alter table sys.space add column ssg_theme_switcher  boolean;
+alter table sys.space add column ssg_footer_message  text;
+alter table sys.space add column ssg_footer_copyright text;
+alter table sys.space add column ssg_tx_server       text;
+alter table sys.space add column ssg_search          boolean;
+alter table sys.space add column ssg_logo            text;
+--

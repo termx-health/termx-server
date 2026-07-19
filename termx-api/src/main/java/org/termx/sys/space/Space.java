@@ -29,6 +29,17 @@ public class Space {
   private List<String> languages;
   private String siteUrl;
 
+  // Static-site (mdbook) generator config, exported into space.json so the wiki is the single place
+  // to configure the published site. A repo's .mdbook/config.yml, if present, still overrides these.
+  private String ssgSkin;
+  private String ssgThemeAccent;
+  private Boolean ssgThemeSwitcher;
+  private String ssgFooterMessage;
+  private String ssgFooterCopyright;
+  private String ssgTxServer;
+  private Boolean ssgSearch;
+  private String ssgLogo;
+
   private List<Package> packages;
 
   @Getter
