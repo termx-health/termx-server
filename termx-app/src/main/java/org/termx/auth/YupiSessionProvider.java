@@ -43,7 +43,6 @@ import org.termx.core.auth.SessionInfo;
 @Slf4j
 @Singleton
 public class YupiSessionProvider extends SessionProvider {
-  private static final String BEARER_YUPI = "Bearer yupi";
   static final Set<String> DEFAULT_PRIVILEGES =
       Set.of("*.*.read", "*.*.triage", "*.*.write", "*.*.maintain");
 
@@ -69,14 +68,13 @@ public class YupiSessionProvider extends SessionProvider {
 
   @Override
   public SessionInfo authenticate(HttpRequest<?> request) {
-    if (request.getHeaders().getFirst("Authorization").map(auth -> auth.startsWith(BEARER_YUPI)).orElse(false)) {
-      String sessionInfo = request.getHeaders().getFirst("Authorization").get().substring(BEARER_YUPI.length());
-      if (!sessionInfo.isEmpty()) {
-        return JsonUtil.fromJson(sessionInfo, SessionInfo.class);
-      }
-      return yupiDroopy();
+    // bearerToken() returns the value after "Bearer " (or, for GET, a ?token= query param).
+    String token = bearerToken(request).filter(t -> t.startsWith("yupi")).orElse(null);
+    if (token == null) {
+      return null;
     }
-    return null;
+    String sessionInfo = token.substring("yupi".length());
+    return sessionInfo.isEmpty() ? yupiDroopy() : JsonUtil.fromJson(sessionInfo, SessionInfo.class);
   }
 
   private SessionInfo yupiDroopy() {

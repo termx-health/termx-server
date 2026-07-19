@@ -54,10 +54,8 @@ public class OAuthSessionProvider extends SessionProvider {
 
   @Override
   public SessionInfo authenticate(HttpRequest<?> request) {
-    return request.getHeaders()
-        .getFirst(AUTHORIZATION)
-        .filter(auth -> auth.startsWith(BEARER))
-        .map(auth -> StringUtils.trim(StringUtils.substringAfter(auth, BEARER)))
+    // Authorization header or (GET only) ?token= query param, then the oauth-token cookie.
+    return bearerToken(request)
         .or(() -> request.getCookies().findCookie(OAUTH_TOKEN_COOKIE).map(Cookie::getValue))
         .map(this::getSessionInfo)
         .orElse(null);
