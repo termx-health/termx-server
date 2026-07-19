@@ -28,4 +28,6 @@ dependencies {
     testImplementation("org.spockframework:spock-core") {
         exclude(group = "org.codehaus.groovy", module = "groovy-all")
     }
+    testImplementation("net.bytebuddy:byte-buddy:1.17.8") // lets Spock mock concrete classes
+    testImplementation("org.objenesis:objenesis:3.4")
 }
