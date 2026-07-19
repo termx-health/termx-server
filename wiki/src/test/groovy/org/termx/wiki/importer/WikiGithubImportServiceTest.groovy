@@ -19,6 +19,20 @@ class WikiGithubImportServiceTest extends Specification {
     WikiGithubImportService.resolveRepoPath('files/64/pm.png', 'source/', false, '') == 'source/attachments/64/pm.png'
   }
 
+  def 'resolveRepoPath: a named attachment folder (legacy files/<name>/) also maps to attachments/'() {
+    expect:
+    WikiGithubImportService.resolveRepoPath('files/wiki/value-set-main.png', 'source/', false, '') == 'source/attachments/wiki/value-set-main.png'
+    WikiGithubImportService.resolveRepoPath('files/tutorial/ucum.png', 'source/', false, '') == 'source/attachments/tutorial/ucum.png'
+  }
+
+  def 'decodeRef: decodes %XX escapes, keeps a literal + and leaves plain refs unchanged'() {
+    expect:
+    WikiGithubImportService.decodeRef('files/207/Screenshot%202024-06-11%20at%2014.50.15.png') == 'files/207/Screenshot 2024-06-11 at 14.50.15.png'
+    WikiGithubImportService.decodeRef('files/1/a+b.png') == 'files/1/a+b.png'
+    WikiGithubImportService.decodeRef('files/1/plain.png') == 'files/1/plain.png'
+    WikiGithubImportService.decodeRef('files/1/100%done.png') == 'files/1/100%done.png' // malformed escape -> unchanged
+  }
+
   def 'resolveRepoPath: GitBook .gitbook/assets always resolves to the book root, regardless of ../'() {
     expect:
     WikiGithubImportService.resolveRepoPath('../.gitbook/assets/CV.pdf', 'source/', true, 'general') == 'source/.gitbook/assets/CV.pdf'

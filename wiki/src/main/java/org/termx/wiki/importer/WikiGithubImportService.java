@@ -13,6 +13,7 @@ import org.termx.wiki.page.PageService;
 import org.termx.wiki.pageattachment.PageAttachmentService;
 import org.termx.wiki.pagecontent.PageContentService;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -248,7 +249,9 @@ public class WikiGithubImportService {
   // Markdown image / link, with an optional <bracketed> URL (so asset names with spaces parse).
   private static final Pattern MD_IMAGE = Pattern.compile("!\\[([^\\]]*)]\\(\\s*(?:<([^>]*)>|([^)\\s]+))\\s*(?:\"[^\"]*\")?\\)");
   private static final Pattern MD_LINK = Pattern.compile("(?<!!)\\[([^\\]]*)]\\(\\s*(?:<([^>]*)>|([^)\\s]+))\\s*(?:\"[^\"]*\")?\\)");
-  private static final Pattern FILES_REF = Pattern.compile("files/(\\d+)/(.+)");
+  // A TermX attachment reference: files/<folder>/<name>. The folder is usually the numeric page id,
+  // but legacy content also uses a named folder (e.g. files/wiki/x.png stored under attachments/wiki/).
+  private static final Pattern FILES_REF = Pattern.compile("files/([^/]+)/(.+)");
   private static final Map<String, String> CONTENT_TYPES = Map.of(
       "png", "image/png", "jpg", "image/jpeg", "jpeg", "image/jpeg", "gif", "image/gif",
       "svg", "image/svg+xml", "webp", "image/webp", "pdf", "application/pdf");
@@ -286,7 +289,9 @@ public class WikiGithubImportService {
     StringBuilder sb = new StringBuilder();
     while (m.find()) {
       String label = m.group(1);
-      String url = m.group(2) != null ? m.group(2).trim() : m.group(3);
+      // Decode %XX so a percent-encoded name (files/207/Screenshot%202024...png) resolves to the
+      // real repo path and gets a clean stored name; the original text is kept if we don't import it.
+      String url = decodeRef(m.group(2) != null ? m.group(2).trim() : m.group(3));
       String replacement = m.group(); // keep the original unless we import the asset
       if (importableAsset(url, image, pageId)) {
         try {
@@ -332,6 +337,19 @@ public class WikiGithubImportService {
   static String attachmentName(String ref) {
     String name = ref.contains("/") ? StringUtils.substringAfterLast(ref, "/") : ref;
     return StringUtils.substringBefore(StringUtils.substringBefore(name, "?"), "#");
+  }
+
+  /** Decodes %XX escapes in a reference (keeping a literal {@code +}); returns it unchanged if it
+   * holds no escapes or is malformed. */
+  static String decodeRef(String ref) {
+    if (ref == null || ref.indexOf('%') < 0) {
+      return ref;
+    }
+    try {
+      return URLDecoder.decode(ref.replace("+", "%2B"), StandardCharsets.UTF_8);
+    } catch (RuntimeException e) {
+      return ref;
+    }
   }
 
   static String resolveRepoPath(String ref, String prefix, boolean gitbook, String hrefDir) {
