@@ -90,7 +90,8 @@ public class SpaceMsDevopsDataWikiSsgHandler implements SpaceMsDevopsDataHandler
     List<ResourceContent> result = new ArrayList<>();
     result.add(new ResourceContent("space.json", toPrettyJson(new SpaceGithubDataWikiSsgHandler.SsgSpaceIndex(
         termxWebUrl.orElse(null), space.getCode(), space.getNames(),
-        space.getDescription(), space.getDefaultLanguage(), space.getLanguages(), space.getSiteUrl()))));
+        space.getDescription(), space.getDefaultLanguage(), space.getLanguages(), space.getSiteUrl(),
+        SpaceGithubDataWikiSsgHandler.ssgConfig(space)))));
     result.add(new ResourceContent("pages.json", toPrettyJson(composePagesIndex(pages, links))));
     result.addAll(contents.stream().map(p -> {
       boolean html = "html".equals(p.getContentType());
