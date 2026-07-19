@@ -121,21 +121,18 @@ public class WikiGithubImportService {
     normalizeNodes(tree, slugToName);
     content.put("pages.json", JsonUtil.toJson(tree));
 
-    // The parser re-slugifies each content from its name on save (PageContentService.prepare) and
-    // then keys the .md files it applies by that slug — so key the markdown the same way, not by
-    // the file name (a repo's stored slug can differ from slugify(name)). Only .md referenced by
-    // pages.json is fetched (orphans are skipped so the parser can't NPE); attachments/resources
-    // are not imported.
-    Slugify slugify = Slugify.builder().build();
+    // The .md is keyed by its own slug — the same slug pages.json declares, which the parser now
+    // stores verbatim (slugs are stable, PageContentService.prepare no longer re-derives them from
+    // the name). Only .md referenced by pages.json is fetched (orphans are skipped so the parser
+    // can't NPE); attachments/resources are not imported.
     Map<String, String> keyToPath = new LinkedHashMap<>();
     for (String path : blobs) {
       if (!path.endsWith(".md") || !path.startsWith(prefix)) {
         continue;
       }
       String fileSlug = StringUtils.removeEnd(StringUtils.substringAfterLast("/" + path, "/"), ".md");
-      String name = slugToName.get(fileSlug);
-      if (name != null) {
-        keyToPath.put(slugify.slugify(name) + ".md", path);
+      if (slugToName.containsKey(fileSlug)) {
+        keyToPath.put(fileSlug + ".md", path);
       }
     }
     Map<String, String> fetched = fetchAll(keyToPath, coords, branch, req.getToken(), false);
