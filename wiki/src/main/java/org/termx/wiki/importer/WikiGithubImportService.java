@@ -192,9 +192,10 @@ public class WikiGithubImportService {
   }
 
   /** Fetches many raw files concurrently (bounded pool), returning key -> body for those that
-   * exist (404s are skipped). `stripFm` drops a leading YAML frontmatter block (GitBook). */
+   * exist (404s are skipped). When `gitbook` is set, each body is normalized for the TermX wiki
+   * renderer (frontmatter, card tables, file/hint blocks) via {@link GitbookConverter}. */
   private Map<String, String> fetchAll(Map<String, String> keyToPath, GithubCoords coords, String branch,
-                                       String token, boolean stripFm) {
+                                       String token, boolean gitbook) {
     Map<String, String> out = new ConcurrentHashMap<>();
     if (keyToPath.isEmpty()) {
       return out;
@@ -204,8 +205,8 @@ public class WikiGithubImportService {
       List<Future<?>> futures = new ArrayList<>();
       keyToPath.forEach((key, path) -> futures.add(pool.submit(() -> {
         String body = fetchRaw(coords, branch, path, token);
-        if (stripFm) {
-          body = stripFrontmatter(body);
+        if (gitbook) {
+          body = GitbookConverter.convert(body);
         }
         if (body != null) {
           out.put(key, body);
@@ -222,14 +223,6 @@ public class WikiGithubImportService {
       pool.shutdown();
     }
     return out;
-  }
-
-  // GitBook pages carry a leading YAML frontmatter block (e.g. `--- icon: … ---`) that TermX
-  // doesn't model and would otherwise render as literal text. Drop it.
-  private static final Pattern GB_FRONTMATTER = Pattern.compile("^\\uFEFF?---\\r?\\n.*?\\r?\\n---\\r?\\n", Pattern.DOTALL);
-
-  private static String stripFrontmatter(String body) {
-    return body == null ? null : GB_FRONTMATTER.matcher(body).replaceFirst("");
   }
 
   private static final Pattern GB_SECTION = Pattern.compile("^#{2,}\\s+(.+?)\\s*$");

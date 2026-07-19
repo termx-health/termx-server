@@ -16,6 +16,7 @@ dependencies {
     implementation("com.kodality.commons:commons-micronaut-pg:${rootProject.extra["commonsMicronautVersion"]}")
     implementation("commons-io:commons-io:2.16.1")
     implementation("com.github.slugify:slugify:3.0.7")
+    implementation("org.jsoup:jsoup:1.18.3")
 
     implementation("io.micronaut.spring:micronaut-spring")
     implementation("io.micronaut.validation:micronaut-validation")
