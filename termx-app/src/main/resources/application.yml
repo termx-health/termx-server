@@ -134,7 +134,17 @@ kefhir:
     # passed-in tx-resource's CodeSystem.versionAlgorithm), which 400s otherwise-valid operation calls.
     no-terminology-checks: ${KEFHIR_NO_TERMINOLOGY_CHECKS:true}
 
-chef.url: https://demo.termx.org/chef
+# chef.url — the FSH (FHIR Shorthand) conversion service. Real deployments point CHEF_URL at
+# an internal service (e.g. http://fsh-chef:3000); the default is the same service on
+# localhost. It must NOT default to a public host: unlike the URLs below this one is called,
+# not advertised, so a forgotten override would ship the deployment's own FHIR content to a
+# third party's converter. Failing against localhost is the safe way to be misconfigured.
+#
+# The property is left always-present (rather than dropped so that
+# FhirFshConverter's @Requires(property = "chef.url") disables FSH support) because
+# WikiPageRelatedStructureDefinitionProvider injects that bean unguarded — see the note in
+# the PR description.
+chef.url: ${CHEF_URL:`http://localhost:3000`}
 #github:
 #  client:
 #    id: 'client-id'
@@ -142,8 +152,21 @@ chef.url: https://demo.termx.org/chef
 #  app-name: ${GITHUB_APP_NAME}
 
 termx:
-  web-url: https://demo.termx.org
-  api-url: https://demo.termx.org/api
+  # web-url / api-url are THIS deployment's own externally-reachable addresses. api-url is
+  # not merely cosmetic: it becomes CapabilityStatement.implementation.url, which kefhir
+  # copies into the /fhir-swagger `servers` block — so a wrong value tells clients to send
+  # requests to a different deployment, silently. That is exactly how this went wrong when
+  # the default was a real hostname: environments that never set the override advertised it.
+  #
+  # The defaults are therefore localhost on purpose — obviously-local when a deployment
+  # forgets to override, never some other environment's real address. Set TERMX_WEB_URL and
+  # TERMX_API_URL in every real deployment.
+  #
+  # Backticks around the defaults for the same reason as bob.minio.url below: Micronaut
+  # treats `:` as the var/default delimiter, so ${TERMX_API_URL:http://…} would parse the
+  # default as just `http` and yield a malformed URL.
+  web-url: ${TERMX_WEB_URL:`http://localhost:4200`}
+  api-url: ${TERMX_API_URL:`http://localhost:8200/api`}
   # FHIR terminology conformance testing (tx-ecosystem suite via the FHIR validator's txTests).
   # validator-jar: absolute path to validator_cli.jar (NOT bundled — provided by the deployment, e.g.
   # downloaded in the Dockerfile). tx-url: this server's externally-reachable FHIR base for -tx.
