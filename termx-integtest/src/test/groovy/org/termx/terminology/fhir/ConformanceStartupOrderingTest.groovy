@@ -26,4 +26,19 @@ class ConformanceStartupOrderingTest extends TermxIntegTest {
     JsonNode body = JsonUtil.fromJson(response.body(), JsonNode.class)
     body.get("resourceType").asText() == "CapabilityStatement"
   }
+
+  def "should advertise the configured deployment url, not the one baked into CapabilityStatement.json"() {
+    when:
+    def request = client.builder("/fhir/metadata").GET().build()
+    def response = client.execute(request, BodyHandlers.ofString())
+    JsonNode body = JsonUtil.fromJson(response.body(), JsonNode.class)
+
+    then: "url is derived from termx.api-url (application-test.yml), not the static resource file"
+    body.get("implementation").get("url").asText() == "http://localhost:8200/api/fhir"
+    body.get("url").asText() == "http://localhost:8200/api/fhir/metadata"
+
+    and: "kefhir copies implementation.url into the OpenAPI servers block, so /fhir-swagger follows it"
+    def swagger = client.execute(client.builder("/fhir-swagger").GET().build(), BodyHandlers.ofString())
+    swagger.body().contains("url: http://localhost:8200/api/fhir")
+  }
 }
