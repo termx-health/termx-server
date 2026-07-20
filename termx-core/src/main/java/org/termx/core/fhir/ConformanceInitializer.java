@@ -15,7 +15,9 @@ package org.termx.core.fhir;
 import com.kodality.kefhir.core.service.conformance.loader.ConformanceLoader;
 import com.kodality.kefhir.core.service.conformance.loader.ConformanceStaticLoader;
 import io.micronaut.context.annotation.Replaces;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.core.io.ResourceLoader;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -27,6 +29,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hl7.fhir.r5.model.CapabilityStatement;
 import org.hl7.fhir.r5.model.Resource;
 
 @Slf4j
@@ -37,6 +40,36 @@ public class ConformanceInitializer extends ConformanceStaticLoader {
   private final List<TermxGeneratedConformanceProvider> generators;
   private final ResourceLoader resourceLoader;
   private final ConformanceInitializerDependency conformanceInitializerDependency;
+
+  @Value("${termx.api-url}")
+  String apiUrl;
+
+  /**
+   * The static CapabilityStatement.json ships a fixed FHIR base URL, but every deployment serves FHIR from its own host.
+   * Rewrite it from {@code termx.api-url} (the same property {@code TerminologyCapabilityInitializer} already uses for
+   * TerminologyCapabilities) so the two metadata modes agree.
+   * <p>
+   * This URL is not cosmetic: kefhir's {@code OpenapiComposer} copies {@code implementation.url} into the OpenAPI
+   * {@code servers} block, so a stale value points /fhir-swagger's "Try it out" at a different deployment entirely.
+   * <p>
+   * {@code @PostConstruct} must be repeated here: Micronaut does not inherit it onto an override, and without it the
+   * generated bean definition silently drops {@code InitializingBeanDefinition} — no conformance resource loads at all.
+   */
+  @Override
+  @PostConstruct
+  public void init() {
+    super.init();
+    resources.getOrDefault("CapabilityStatement", List.of()).stream()
+        .filter(CapabilityStatement.class::isInstance)
+        .map(CapabilityStatement.class::cast)
+        .forEach(cs -> {
+          String fhirUrl = apiUrl + "/fhir";
+          cs.setUrl(fhirUrl + "/metadata");
+          cs.getImplementation().setUrl(fhirUrl);
+          cs.getImplementation().setDescription("FHIR TS server running at " + fhirUrl);
+          log.info("CapabilityStatement FHIR base URL set to {}", fhirUrl);
+        });
+  }
 
   @Override
   public List<String> getResources() {
