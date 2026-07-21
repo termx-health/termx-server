@@ -9,6 +9,7 @@ import org.termx.bob.BobObjectService;
 import org.termx.bob.BobStorage;
 import org.termx.core.sys.release.ReleaseAttachmentStorageHandler;
 import org.termx.sys.release.ReleaseAttachment;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.server.types.files.StreamedFile;
 import jakarta.inject.Singleton;
 import java.util.List;
@@ -20,7 +21,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ReleaseAttachmentBobHandler implements ReleaseAttachmentStorageHandler {
   private final BobObjectService objectService;
-  private final static String CONTAINER = "release";
+
+  /**
+   * Object-store container for release attachments. Configurable so a deployment sharing one
+   * object store across installations can isolate its own bucket without forking this handler.
+   * Package-private: Micronaut injects non-private fields without reflection.
+   */
+  @Value("${termx.release.attachment-container:release}")
+  String container;
 
   @Override
   public List<ReleaseAttachment> queryAttachments(ReleaseAttachmentQueryParams params) {
@@ -38,7 +46,7 @@ public class ReleaseAttachmentBobHandler implements ReleaseAttachmentStorageHand
     o.setContentType(a.getContentType());
     o.setMeta(meta);
     o.setStorage(new BobStorage()
-        .setContainer(CONTAINER)
+        .setContainer(container)
         .setPath(path)
         .setFilename(a.getFileName())
     );
