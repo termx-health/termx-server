@@ -73,6 +73,12 @@ auth:
   oauth:
     jwks-url: ${OAUTH_JWKS_URL:fixme}
     jwks-cache-ttl-seconds: ${OAUTH_JWKS_CACHE_TTL_SECONDS:3600}
+  privilege:
+    mapper:
+      # Where role names live in the OAuth token, as dot-separated claim paths (comma-separated,
+      # tried in order and unioned). The default is a flat `roles` claim. Keycloak needs
+      # `realm_access.roles` for realm roles, or `resource_access.<client>.roles` for client roles.
+      role-claims: ${AUTH_ROLE_CLAIMS:roles}
   public:
     endpoints:
       - '/fhir-swagger'
@@ -167,6 +173,10 @@ termx:
   # default as just `http` and yield a malformed URL.
   web-url: ${TERMX_WEB_URL:`http://localhost:4200`}
   api-url: ${TERMX_API_URL:`http://localhost:8200/api`}
+  release:
+    # Object-store container for release attachments. Override when several installations share one
+    # object store and need their buckets kept apart.
+    attachment-container: ${TERMX_RELEASE_ATTACHMENT_CONTAINER:release}
   # FHIR terminology conformance testing (tx-ecosystem suite via the FHIR validator's txTests).
   # validator-jar: absolute path to validator_cli.jar (NOT bundled — provided by the deployment, e.g.
   # downloaded in the Dockerfile). tx-url: this server's externally-reachable FHIR base for -tx.
