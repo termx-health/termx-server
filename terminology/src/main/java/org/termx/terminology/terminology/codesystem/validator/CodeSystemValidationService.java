@@ -4,6 +4,7 @@ import com.kodality.commons.model.Issue;
 import com.kodality.commons.util.JsonUtil;
 import com.kodality.commons.util.MapUtil;
 import org.termx.terminology.ApiError;
+import org.termx.terminology.terminology.codesystem.UcumCodingSupport;
 import org.termx.terminology.terminology.codesystem.concept.ConceptService;
 import org.termx.terminology.terminology.valueset.expansion.ValueSetVersionConceptService;
 import org.termx.ts.PublicationStatus;
@@ -52,6 +53,7 @@ public class CodeSystemValidationService {
 
   private final ConceptService conceptService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final UcumCodingSupport ucumCodingSupport;
 
 
   public List<Issue> validateConcepts(List<Concept> csConcepts, List<EntityProperty> csProperties) {
@@ -161,7 +163,13 @@ public class CodeSystemValidationService {
 
 
       List<ValueSetVersionConceptValue> concepts = epExternalConcepts.get(ep.getName()).stream().filter(c -> c.getCode().equals(external.getCode())).toList();
-      if (concepts.size() != 1 || !concepts.get(0).getCodeSystem().equals(external.getCodeSystem())) {
+      boolean resolved = concepts.size() == 1 && concepts.get(0).getCodeSystem().equals(external.getCodeSystem());
+      // UCUM concepts are grammar-defined, not enumerated: accept a valid UCUM expression referencing UCUM (or a
+      // UCUM supplement) even when it is not materialised as a concept. Mirrors the file importer's fallback.
+      if (!resolved && ucumCodingSupport.isUcumOrSupplement(external.getCodeSystem()) && ucumCodingSupport.isValidUcumCode(external.getCode())) {
+        resolved = true;
+      }
+      if (!resolved) {
         errs.add(ApiError.TE217.toIssue(MapUtil.toMap("codeSystem", external.getCodeSystem(), "code", external.getCode())));
       }
     }
