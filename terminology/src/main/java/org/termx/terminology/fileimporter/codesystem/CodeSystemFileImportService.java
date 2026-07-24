@@ -389,13 +389,16 @@ public class CodeSystemFileImportService {
     }).toList();
   }
 
+  // Case-sensitive: UCUM (and its supplements) are case-sensitive, so an external coding must match a concept
+  // code or one of its (alias/display) designations exactly — e.g. the alias "10^3/l" resolves to 10*3/L, but
+  // "10^3/L" must not. Matching case-insensitively silently accepted wrong-case unit strings on import.
   private List<MiniConcept> findConceptByCode(List<MiniConcept> concepts, String codingCode) {
-    return concepts.stream().filter(c -> c.getCode().equalsIgnoreCase(codingCode)).toList();
+    return concepts.stream().filter(c -> c.getCode().equals(codingCode)).toList();
   }
 
   private List<MiniConcept> findConceptByDesignation(List<MiniConcept> designationConcepts, String codingText) {
     return designationConcepts.stream().filter(c -> {
-      return c.getDesignations().stream().anyMatch(d -> d.getName().equalsIgnoreCase(codingText));
+      return c.getDesignations().stream().anyMatch(d -> codingText.equals(d.getName()));
     }).toList();
   }
 
