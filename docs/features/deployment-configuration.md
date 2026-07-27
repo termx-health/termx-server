@@ -57,6 +57,7 @@ Development-only auth (do **not** use in production):
 | `KEYCLOAK_SSO_URL` | `keycloak.sso-url` | Token/OIDC endpoint (`…/realms/<realm>/protocol/openid-connect`) |
 | `KEYCLOAK_CLIENT_ID` | `keycloak.client-id` | Service client id used to query users |
 | `KEYCLOAK_CLIENT_SECRET` | `keycloak.client-secret` | Service client secret |
+| `KEYCLOAK_USERS_GROUP_SEARCH` | `keycloak.users.group-search` | Optional. When set, user enumeration is **scoped to Keycloak groups** matching this term (groups resolved, members unioned) instead of a realm-wide `GET /users` — which is unbounded and page-truncates on a large realm. Unset keeps the realm-wide default. |
 
 ### 1.4 SNOMED CT / Snowstorm (optional; required for SNOMED features)
 | Env var | Default | Purpose |

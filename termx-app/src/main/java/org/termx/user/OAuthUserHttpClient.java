@@ -7,10 +7,12 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.StringUtils;
 import jakarta.inject.Singleton;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -18,16 +20,45 @@ import lombok.Setter;
 @Requires(property = "keycloak.url")
 @Requires(property = "auth.mock.enabled", notEquals = StringUtils.TRUE)
 @Singleton
-@RequiredArgsConstructor
 public class OAuthUserHttpClient {
   private final OAuthenticatedHttpClient httpClient;
 
-  public OAuthUserHttpClient(@Value("${keycloak.url}") String url, TermxOAuthTokenClient tokenClient) {
-    httpClient = new OAuthenticatedHttpClient(url, tokenClient);
+  /**
+   * When set, enumerate users by Keycloak group rather than realm-wide. Groups whose name matches
+   * this search term are resolved (`GET /groups?search=`), then their members unioned
+   * (`GET /groups/{id}/members`). Unset (default) keeps the realm-wide `GET /users` — which is
+   * unbounded and page-truncates on a large realm, so a deployment scoping its users to one group
+   * sets this instead of forking the client.
+   */
+  private final String groupSearch;
+
+  public OAuthUserHttpClient(@Value("${keycloak.url}") String url,
+                             @Value("${keycloak.users.group-search:}") String groupSearch,
+                             TermxOAuthTokenClient tokenClient) {
+    this.httpClient = new OAuthenticatedHttpClient(url, tokenClient);
+    this.groupSearch = groupSearch;
   }
 
   public CompletableFuture<List<OAuthUser>> getUsers() {
-    return httpClient.GET("/users", JsonUtil.getListType(OAuthUser.class));
+    if (StringUtils.isEmpty(groupSearch)) {
+      return httpClient.GET("/users", JsonUtil.getListType(OAuthUser.class));
+    }
+    return getGroups().thenCompose(groups ->
+        forkJoin(groups.stream().map(g -> getGroupMembers(g.id)).toList())
+            .thenApply(members -> members.stream()
+                .flatMap(Collection::stream)
+                // A user in several matched groups is returned once (OAuthUser has no value equality,
+                // so dedup on the Keycloak id, keeping first occurrence).
+                .collect(Collectors.toMap(OAuthUser::getId, u -> u, (first, dup) -> first, LinkedHashMap::new))
+                .values().stream().toList()));
+  }
+
+  private CompletableFuture<List<GroupRepresentation>> getGroups() {
+    return httpClient.GET("/groups?search=" + groupSearch, JsonUtil.getListType(GroupRepresentation.class));
+  }
+
+  private CompletableFuture<List<OAuthUser>> getGroupMembers(String groupId) {
+    return httpClient.GET("/groups/" + groupId + "/members", JsonUtil.getListType(OAuthUser.class));
   }
 
   public List<String> getUserRoles(String kcUserId) {
