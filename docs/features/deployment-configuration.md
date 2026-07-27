@@ -42,6 +42,7 @@ compose stack, the public installation guide, and the feature docs in this folde
 | `OAUTH_JWKS_URL` | `fixme` | OIDC JWKS endpoint used to validate incoming JWTs. **Set this** (or enable mock auth). |
 | `OAUTH_JWKS_CACHE_TTL_SECONDS` | `3600` | JWKS cache TTL |
 | `GUEST_DISABLED` | `false` | `true` blocks unauthenticated/guest access |
+| `AUTH_GUEST_NAME` | `guest` | Identity of the anonymous session — both the username and the privilege role it's granted. Defaults to the `guest` role seeded by the UAM changelog; set to match a deployment whose seed names its anonymous role differently (e.g. `KKL-GUEST`). Only relevant when `GUEST_DISABLED=false`. |
 
 Development-only auth (do **not** use in production):
 | Env var | Default | Purpose |
