@@ -1,6 +1,5 @@
 package org.termx.core.auth;
 
-import io.micronaut.context.annotation.Value;
 import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.http.HttpAttributes;
 import io.micronaut.http.HttpMethod;
@@ -15,10 +14,8 @@ import io.micronaut.web.router.MethodBasedRouteMatch;
 import io.micronaut.web.router.RouteMatch;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
@@ -27,12 +24,12 @@ import org.reactivestreams.Publisher;
 @Filter("/**")
 @RequiredArgsConstructor
 public class AuthorizationFilter implements HttpServerFilter {
-  @Value("${auth.public.endpoints:[]}")
-  private List<String> publicEndpoints;
-  private static final List<String> DEFAULT_PUBLIC = Arrays.asList("/health", "/info", "/public", "/metrics", "/prometheus");
+  private final PublicEndpointMatcher publicEndpointMatcher;
 
+  /** @deprecated register on {@link PublicEndpointMatcher} directly; kept for existing callers. */
+  @Deprecated
   public void addPublicEndpoint(String path) {
-    this.publicEndpoints.add(path);
+    publicEndpointMatcher.addPublicEndpoint(path);
   }
 
   @Override
@@ -56,7 +53,7 @@ public class AuthorizationFilter implements HttpServerFilter {
       return true;
     }
 
-    if (Stream.concat(DEFAULT_PUBLIC.stream(), publicEndpoints.stream()).anyMatch(prefix -> startsWith(request.getPath(), prefix))) {
+    if (publicEndpointMatcher.isPublic(request.getPath())) {
       return true;
     }
 
@@ -92,9 +89,5 @@ public class AuthorizationFilter implements HttpServerFilter {
       return List.of(aa.get("resource", String.class).orElseThrow() + "." + aa.getValues().get("privilege"));
     }
     return List.of(aa.get("value", String[].class).orElse(new String[]{}));
-  }
-
-  private boolean startsWith(String path, String prefix) {
-    return path.equals(prefix) || path.startsWith(prefix + "/");
   }
 }
