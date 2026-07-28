@@ -15,6 +15,7 @@ import org.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportR
 import org.termx.core.http.BinaryHttpClient;
 import org.termx.terminology.terminology.codesystem.CodeSystemImportService;
 import org.termx.terminology.terminology.codesystem.CodeSystemService;
+import org.termx.terminology.terminology.codesystem.UcumCodingSupport;
 import org.termx.terminology.terminology.codesystem.validator.CodeSystemValidationService;
 import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionService;
 import org.termx.terminology.terminology.codesystem.concept.ConceptService;
@@ -76,6 +77,7 @@ public class CodeSystemFileImportService {
   private final CodeSystemVersionService codeSystemVersionService;
   private final ConceptService conceptService;
   private final ValueSetVersionConceptService valueSetVersionConceptService;
+  private final UcumCodingSupport ucumCodingSupport;
   private final Optional<FhirFshConverter> fhirFshConverter;
 
   private final BinaryHttpClient client = new BinaryHttpClient();
@@ -303,12 +305,32 @@ public class CodeSystemFileImportService {
     } else if (matchedDesignations > 1) {
       log.debug("\ttoo many designation candidates.");
       errs.add(ApiError.TE714.toIssue(Map.of("value", codingCode)));
+    } else if (resolveUcumByGrammar(propertyValue, ep, codingCode)) {
+      log.debug("\tresolved \"{}\" via UCUM grammar validation", codingCode);
     } else {
       log.debug("\tdesignation search failed");
       errs.add(ApiError.TE715.toIssue(Map.of("code", codingCode, "codeSystem", ruleString(ep.getRule()))));
     }
 
     return errs;
+  }
+
+  /**
+   * UCUM is a fragment code system: its concepts are defined by grammar, not enumerated. The concept query in
+   * {@link #decorateExternalCodingProperties} only matches materialised units (UCUM essence atoms + any codes a
+   * UCUM supplement enumerates), so a valid-but-non-materialised expression (e.g. {@code %{vol}}, {@code [CFU]/g},
+   * {@code mg/mmol{creat}}) is otherwise reported as an unknown reference. When the property rule targets UCUM
+   * (the base {@code ucum} or a supplement of it), fall back to UCUM grammar validation and, if the code is a valid
+   * UCUM expression, accept the value keeping the code system the rule declared.
+   */
+  private boolean resolveUcumByGrammar(EntityPropertyValue propertyValue, EntityProperty ep, String codingCode) {
+    Optional<String> ucumSystem = ucumCodingSupport.ucumSystemOfRule(ep.getRule());
+    if (ucumSystem.isEmpty() || !ucumCodingSupport.isValidUcumCode(codingCode)) {
+      return false;
+    }
+    // Accept the value keeping the code system the rule declared (base "ucum" or the referenced supplement).
+    propertyValue.setValue(new EntityPropertyValueCodingValue(codingCode, ucumSystem.get()));
+    return true;
   }
 
   // validation helpers
