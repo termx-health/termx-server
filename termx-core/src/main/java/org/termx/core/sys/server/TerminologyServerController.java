@@ -3,8 +3,10 @@ package org.termx.core.sys.server;
 import com.kodality.commons.model.QueryResult;
 import org.termx.core.auth.Authorized;
 import org.termx.core.auth.SessionStore;
+import org.termx.sys.server.ServerConnectionCheckResult;
 import org.termx.sys.server.TerminologyServer;
 import org.termx.sys.server.TerminologyServerQueryParams;
+import org.termx.sys.server.resource.TerminologyServerResourceListProvider;
 import org.termx.sys.server.resource.TerminologyServerResourceRequest;
 import org.termx.sys.server.resource.TerminologyServerResourceResponse;
 import io.micronaut.http.HttpHeaders;
@@ -30,6 +32,7 @@ public class TerminologyServerController {
   private final TerminologyServerService serverService;
   private final TerminologyServerResourceService serverResourceService;
   private final TerminologyServerAuthoritativeService authoritativeService;
+  private final List<TerminologyServerResourceListProvider> resourceListProviders;
 
   @Authorized("Server.read")
   @Get("/kinds")
@@ -96,6 +99,25 @@ public class TerminologyServerController {
   }
 
   @Authorized("Server.read")
+  @Get("/{id}/check-connection")
+  public ServerConnectionCheckResult checkConnection(@PathVariable Long id) {
+    return serverService.checkConnection(id);
+  }
+
+  @Authorized("Server.read")
+  @Get("/{id}/resource/{type}/{resourceId}")
+  public TerminologyServerResourceResponse getServerResource(@PathVariable Long id, @PathVariable String type, @PathVariable String resourceId) {
+    TerminologyServer server = serverService.load(id);
+    if (server == null) {
+      return new TerminologyServerResourceResponse();
+    }
+    return serverResourceService.getResource(new TerminologyServerResourceRequest()
+        .setServerCode(server.getCode())
+        .setResourceType(type)
+        .setResourceId(resourceId));
+  }
+
+  @Authorized("Server.read")
   @Get("/{id}/resources/{type}")
   public List<AuthoritativeResource> getMatchingResources(@PathVariable Long id, @PathVariable String type) {
     TerminologyServer server = serverService.load(id);
@@ -113,7 +135,15 @@ public class TerminologyServerController {
     if (patterns == null || patterns.isEmpty()) {
       return List.of();
     }
-    return authoritativeService.findMatchingResources(type, patterns);
+    // The current installation is the local database; any other server is queried remotely.
+    if (server.isCurrentInstallation()) {
+      return authoritativeService.findMatchingResources(type, patterns);
+    }
+    return resourceListProviders.stream()
+        .filter(p -> p.checkType(type))
+        .findFirst()
+        .map(p -> p.list(server, type, patterns))
+        .orElseGet(List::of);
   }
 
   @Authorized("Server.write")
