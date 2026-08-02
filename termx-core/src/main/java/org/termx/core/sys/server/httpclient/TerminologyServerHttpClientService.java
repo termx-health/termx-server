@@ -7,10 +7,12 @@ import org.termx.sys.server.TerminologyServer;
 import org.termx.sys.server.TerminologyServerKind;
 import org.termx.core.sys.server.SecretEncryptor;
 import org.termx.core.sys.server.TerminologyServerRepository;
+import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletionException;
 import jakarta.inject.Singleton;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 public class TerminologyServerHttpClientService extends ServerHttpClientService {
@@ -30,10 +32,14 @@ public class TerminologyServerHttpClientService extends ServerHttpClientService 
     if (server == null) {
       return result.setSuccess(false).setError("Server not found");
     }
-    result.setUrl(server.getRootUrl());
+    // Terminology-kind servers are FHIR endpoints too, so probe the CapabilityStatement rather than the
+    // base URL (a GET on the base returns 400 "this is the base URL of the FHIR server").
+    result.setUrl(StringUtils.stripEnd(server.getRootUrl(), "/") + "/metadata");
+    TerminologyServerHttpClient client = getHttpClient(serverId);
     long start = System.currentTimeMillis();
     try {
-      HttpResponse<String> response = getHttpClient(serverId).GET("").join();
+      HttpRequest request = client.builder("metadata").header("Accept", "application/fhir+json").GET().build();
+      HttpResponse<String> response = client.executeAsync(request).join();
       result.setStatusCode(response.statusCode());
       result.setSuccess(response.statusCode() >= 200 && response.statusCode() < 300);
       CapabilityStatementSummary.apply(response.body(), result);
