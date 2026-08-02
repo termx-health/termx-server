@@ -69,6 +69,7 @@ public class TerminologyServer {
 
   @Getter
   @Setter
+  @Accessors(chain = true)
   @Introspected
   public static class AuthoritativeResource {
     private String url;

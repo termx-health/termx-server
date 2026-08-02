@@ -6,6 +6,7 @@ import com.kodality.commons.model.QueryResult;
 import com.kodality.commons.util.JsonUtil;
 import org.termx.core.ApiError;
 import org.termx.core.sys.server.httpclient.ServerHttpClientProvider;
+import org.termx.sys.server.ServerConnectionCheckResult;
 import org.termx.sys.server.TerminologyServer;
 import org.termx.sys.server.TerminologyServer.AuthoritativeResource;
 import org.termx.sys.server.TerminologyServer.TerminologyServerFhirVersion;
@@ -32,6 +33,28 @@ public class TerminologyServerService {
 
   public List<String> getKinds() {
     return httpClientServices.stream().map(ServerHttpClientProvider::getKind).distinct().toList();
+  }
+
+  /**
+   * Live connectivity check against a saved server: dispatches to the {@link ServerHttpClientProvider} that
+   * matches the server's kind, which probes the remote endpoint with the configured URL/headers/auth. Never
+   * throws — failures are reported inside the returned {@link ServerConnectionCheckResult}.
+   */
+  public ServerConnectionCheckResult checkConnection(Long id) {
+    ServerConnectionCheckResult result = new ServerConnectionCheckResult();
+    TerminologyServer server = repository.load(id);
+    if (server == null) {
+      return result.setSuccess(false).setError("Server not found");
+    }
+    ServerHttpClientProvider provider = httpClientServices.stream()
+        .filter(p -> server.getKind() != null && server.getKind().contains(p.getKind()))
+        .findFirst()
+        .orElse(null);
+    if (provider == null) {
+      return result.setSuccess(false).setUrl(server.getRootUrl())
+          .setError("No HTTP client provider for server kind " + server.getKind());
+    }
+    return provider.checkConnection(id);
   }
 
   @Transactional
