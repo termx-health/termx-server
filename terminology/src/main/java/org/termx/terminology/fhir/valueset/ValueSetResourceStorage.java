@@ -80,6 +80,11 @@ public class ValueSetResourceStorage extends BaseFhirResourceHandler {
     }
     ValueSetVersion version = versionNumber == null ? valueSetVersionService.loadLastVersion(vsId) :
         valueSetVersionService.load(vsId, versionNumber).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "resource not found"));
+    if (version == null) {
+      // loadLastVersion only considers active/draft versions — an all-retired value set resolves to
+      // none. 404 like the explicit-version branch instead of NPEing below. Mirrors CodeSystem.
+      throw new FhirException(404, IssueType.NOTFOUND, "resource not found");
+    }
     // Mirror CodeSystemResourceStorage: when the caller asked for a lightweight summary
     // (?_summary=true / text / count), null out the per-rule explicit concept lists so
     // we never serialise a potentially-huge compose.include.concept array that kefhir's

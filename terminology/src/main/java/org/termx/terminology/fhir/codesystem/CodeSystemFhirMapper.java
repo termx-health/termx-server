@@ -336,7 +336,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
           return fd;
         })
         .sorted(Comparator.comparing(d -> d.getLanguage() == null ? "" : d.getLanguage()))
-        .sorted(Comparator.comparing(d -> d.getUse().getCode()))
+        // A use-less designation (the internal `alternate` marker) exports with no use at all — see
+        // designationUseCoding. Sort it first rather than dereferencing the absent Coding.
+        .sorted(Comparator.comparing(d -> d.getUse() == null || d.getUse().getCode() == null ? "" : d.getUse().getCode()))
         .toList();
   }
 

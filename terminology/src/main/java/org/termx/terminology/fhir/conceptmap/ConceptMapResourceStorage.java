@@ -74,6 +74,11 @@ public class ConceptMapResourceStorage extends BaseFhirResourceHandler {
     }
     MapSetVersion version = versionNumber == null ? mapSetVersionService.loadLastVersion(id) :
         mapSetVersionService.load(id, versionNumber).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "resource not found"));
+    if (version == null) {
+      // loadLastVersion only considers active/draft versions — an all-retired map set resolves to
+      // none. 404 like the explicit-version branch instead of NPEing below. Mirrors CodeSystem.
+      throw new FhirException(404, IssueType.NOTFOUND, "resource not found");
+    }
     // Skip the (potentially-large) per-association query when the caller asked for a
     // lightweight summary. Same pattern as the search path at line 86, and the matching
     // CodeSystem and ValueSet read-side fixes. Without entities the resulting FHIR

@@ -103,6 +103,12 @@ public class CodeSystemResourceStorage extends BaseFhirResourceHandler {
     long start = System.currentTimeMillis();
     CodeSystemVersion version = versionNumber == null ? codeSystemVersionService.loadLastVersion(codeSystemId) :
         codeSystemVersionService.load(codeSystemId, versionNumber).orElseThrow(() -> new FhirException(404, IssueType.NOTFOUND, "resource not found"));
+    if (version == null) {
+      // loadLastVersion only considers active/draft versions, so a code system whose versions are all
+      // retired/inactive resolves to none. There is nothing to read — 404 like the explicit-version
+      // branch above, rather than NPEing on setEntities below and surfacing as a 500.
+      throw new FhirException(404, IssueType.NOTFOUND, "resource not found");
+    }
     log.info("Code System load took " + (System.currentTimeMillis() - start) / 1000 + " seconds");
     start = System.currentTimeMillis();
 
