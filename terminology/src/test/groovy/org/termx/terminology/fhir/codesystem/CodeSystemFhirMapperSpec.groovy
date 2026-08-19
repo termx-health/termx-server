@@ -279,6 +279,33 @@ class CodeSystemFhirMapperSpec extends Specification {
     designationTypeOf(cs, "a", "A syn") == "snomed-synonym"
   }
 
+  def "a designation imported without a use round-trips to FHIR without throwing"() {
+    given: "FHIR-valid content whose designation omits the optional `use`"
+    def fhir = com.kodality.zmei.fhir.FhirMapper.fromJson('''
+      {"resourceType":"CodeSystem","url":"http://example.org/x","status":"active","content":"complete","language":"en","concept":[
+        {"code":"a","display":"A","designation":[
+          {"language":"en","value":"A alt"},
+          {"use":{"system":"http://snomed.info/sct","code":"900000000000013009"},"language":"en","value":"A syn"}]}]}''',
+        com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+
+    and: "it is stored under the internal `alternate` marker, which exports with no use"
+    def cs = mapper.fromFhirCodeSystem(fhir)
+    designationTypeOf(cs, "a", "A alt") == "alternate"
+
+    when: "the stored code system is read back out as FHIR"
+    def version = cs.versions.first().setEntities(cs.concepts.collect { it.versions.first().setCode(it.code) })
+    def exported = mapper.toFhir(cs, version, null)
+
+    then: "the use-less designation sorts and exports with no use, rather than NPEing"
+    noExceptionThrown()
+    def designations = exported.concept.find { it.code == "a" }.designation
+    designations*.value == ["A alt", "A syn"]
+    designations.find { it.value == "A alt" }.use == null
+    designations.find { it.value == "A syn" }.use.code == "900000000000013009"
+  }
+
   private static String displayOf(cs, String code) {
     def concept = cs.concepts.find { it.code == code }
     concept?.versions?.first()?.designations?.find { it.designationType == "display" }?.name
