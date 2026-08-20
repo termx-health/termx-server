@@ -15,7 +15,10 @@ import java.time.LocalDateTime
 class CodeSystemValidationServiceTest extends Specification {
   def conceptService = Mock(ConceptService)
   def valueSetVersionConceptService = Mock(ValueSetVersionConceptService)
-  def service = new CodeSystemValidationService(conceptService, valueSetVersionConceptService)
+  // #440 added a UCUM grammar fallback for coding values the concept query can't resolve. Left
+  // unstubbed it answers false, so these specs keep asserting the plain unknown-reference behaviour.
+  def ucumCodingSupport = Mock(UcumCodingSupport)
+  def service = new CodeSystemValidationService(conceptService, valueSetVersionConceptService, ucumCodingSupport)
 
 
   def 'should validate CS version entity properties'() {
@@ -124,6 +127,45 @@ class CodeSystemValidationServiceTest extends Specification {
 
     issues.collect { it.formattedMessage() }.containsAll(expectedIssues)
     issues.size() == expectedIssues.size()
+  }
+
+
+  def 'a grammar-valid UCUM code is accepted even though it is not materialised as a concept'() {
+    given: """
+    #440: UCUM concepts are defined by grammar, not enumerated, so a valid expression such as
+    "10*6/mL" resolves to no concept. It must not be reported as an unknown reference, while a
+    genuinely invalid UCUM expression still must be.
+    """
+
+    def ep = entityProperty('unit', 'Coding').setRule(new EntityPropertyRule(codeSystems: ['ucum']))
+
+    def code = 'test'
+    def concept = new Concept(
+        code: code,
+        versions: [
+            new CodeSystemEntityVersion(
+                codeSystem: 'overlord',
+                code: code,
+                propertyValues: [
+                    entityPropertyValue('unit', [codeSystem: 'ucum', code: '10*6/mL']),
+                    entityPropertyValue('unit', [codeSystem: 'ucum', code: "Ohm*min"]),
+                ]
+            )
+        ])
+
+    and: "neither code is materialised, so the concept query resolves nothing"
+    conceptService.query(_) >> QueryResult.empty()
+
+    and: "only the grammar-valid one passes the UCUM fallback"
+    ucumCodingSupport.isUcumOrSupplement('ucum') >> true
+    ucumCodingSupport.isValidUcumCode('10*6/mL') >> true
+    ucumCodingSupport.isValidUcumCode("Ohm*min") >> false
+
+    when:
+    def issues = service.validateConcepts([concept], [ep])
+
+    then: "the grammar-valid code is accepted; the invalid one is still an unknown reference"
+    issues.collect { it.formattedMessage() } == ['Unknown reference "Ohm*min" to "ucum"']
   }
 
 

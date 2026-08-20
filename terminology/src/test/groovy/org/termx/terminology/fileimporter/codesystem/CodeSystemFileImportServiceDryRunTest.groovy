@@ -1,6 +1,7 @@
 package org.termx.terminology.fileimporter.codesystem
 
 import com.kodality.commons.model.QueryResult
+import org.termx.terminology.terminology.codesystem.UcumCodingSupport
 import org.termx.terminology.ApiError
 import org.termx.terminology.fhir.codesystem.CodeSystemFhirImportService
 import org.termx.terminology.fileimporter.codesystem.utils.CodeSystemFileImportProcessor
@@ -34,6 +35,17 @@ class CodeSystemFileImportServiceDryRunTest extends Specification {
   def conceptService = Mock(ConceptService)
   def valueSetVersionConceptService = Mock(ValueSetVersionConceptService)
 
+  // #440 gave the importer a UCUM grammar fallback. Stub the rule lookup as empty so these
+
+  // specs keep exercising the ordinary (non-UCUM) resolution path they were written for.
+
+  def ucumCodingSupport = Mock(UcumCodingSupport) {
+
+    ucumSystemOfRule(_) >> Optional.empty()
+
+  }
+
+
   CodeSystemFileImportService service = new CodeSystemFileImportService(
       dryRunService,
       codeSystemFhirImportService,
@@ -43,6 +55,7 @@ class CodeSystemFileImportServiceDryRunTest extends Specification {
       codeSystemVersionService,
       conceptService,
       valueSetVersionConceptService,
+      ucumCodingSupport,
       Optional.empty()
   )
 
