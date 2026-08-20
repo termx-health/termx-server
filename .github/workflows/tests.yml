@@ -1,0 +1,59 @@
+# Runs the test suite on every pull request.
+#
+# Until this workflow existed, nothing ran tests before a merge: "Build ARM + AMD"
+# only calls `assemble` on push to main, and the suites that DO run `check`
+# (build-release.yml, weekly-checks.yml) fire on release tags and a weekly cron —
+# both far too late. The result was 39 tests broken on main for weeks, discovered
+# only by running them by hand, and primed to fail the next release tag.
+#
+# Deliberately test-only: no image build, no publish, nothing that needs write
+# permissions or touches the registry.
+name: Tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Tests
+
+    permissions:
+      packages: read
+      contents: read
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "25"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      # `test` rather than `check`: PMD/SpotBugs stay on the weekly + release runs so a
+      # style finding never blocks a PR, while a genuine test regression always does.
+      # GITHUB_ACTOR/GITHUB_TOKEN authenticate the com.kodality.* GitHub Packages deps.
+      - name: Run tests
+        run: ./gradlew test
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # The Gradle console only summarises failures; publish the reports so a red PR can
+      # be diagnosed without re-running the suite locally.
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+          retention-days: 14
+          if-no-files-found: ignore
