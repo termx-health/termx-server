@@ -85,6 +85,27 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
   // SNOMED concepts carry their label as designations; with no explicit display, derive it in this priority.
   private static final List<String> SNOMED_DISPLAY_PRIORITY = List.of("snomed-preferred", "snomed-fsn", "snomed-synonym");
 
+  // ---- hierarchy / association export ----
+  // FHIR concept-property codes that carry a "parent" edge. Recognised on import too (see getParentMap).
+  private static final String PARENT_PROPERTY = "parent";
+  private static final String CHILD_PROPERTY = "child";
+  private static final List<String> PARENT_PROPERTY_CODES = List.of("is-a", PARENT_PROPERTY, "partOf", "groupedBy", "classifiedWith");
+  // termx association types are FHIR-spelled (see data/association/01-association.sql: is-a, part-of,
+  // grouped-by, classified-with) while the concept-property codes above are camelCase, so the two
+  // vocabularies never match by string equality. Map explicitly instead of guessing.
+  private static final Map<String, String> ASSOCIATION_TYPE_PROPERTY = Map.of(
+      "is-a", "is-a",
+      "part-of", "partOf",
+      "partOf", "partOf",
+      "grouped-by", "groupedBy",
+      "groupedBy", "groupedBy",
+      "classified-with", "classifiedWith",
+      "classifiedWith", "classifiedWith");
+  private static final String PARENT_PROPERTY_URI = "http://hl7.org/fhir/concept-properties#parent";
+  // Parent codes plus `child` (the reverse edge) — the set recognised when reading a hierarchy back in.
+  private static final Set<String> PARENT_OR_CHILD_PROPERTY_CODES =
+      Stream.concat(PARENT_PROPERTY_CODES.stream(), Stream.of(CHILD_PROPERTY)).collect(Collectors.toUnmodifiableSet());
+
   /** Resolves a FHIR designation.use to a termx designation-property name: a known use → its defined name; otherwise the bare code (a CS-specific type), logged. */
   private static String designationUseName(Coding use) {
     if (use == null || use.getCode() == null) {
@@ -255,31 +276,23 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         codeSystemService.query(new CodeSystemQueryParams().setIds(String.join(",", propertySystems)).limit(propertySystems.size())).getData().stream()
             .collect(Collectors.toMap(CodeSystem::getId, CodeSystem::getUri));
 
-//    fhirCodeSystem.setConcept(version.getEntities() == null ? null : version.getEntities().stream()
-//        .filter(e -> codeSystem.getHierarchyMeaning() == null || e.getAssociations() == null ||
-//            e.getAssociations().stream().noneMatch(a -> a.getAssociationType().equals(codeSystem.getHierarchyMeaning())))
-//        .map(e -> toFhir(e, codeSystem, version, childMap, parentMap, propertySystemUri))
-//        .sorted(Comparator.comparing(CodeSystemConcept::getCode))
-//        .toList());
-
-    List<CodeSystemConcept> rootConcepts = version.getEntities() == null ? null : version.getEntities().stream()
-        .filter(e -> isRoot(e, codeSystem.getHierarchyMeaning()))
+    // Concepts are emitted as a FLAT list, each code exactly once, with hierarchy carried by the
+    // parent concept-properties (partOf / is-a / ...) rather than by nesting.
+    //
+    // FHIR's nested CodeSystem.concept[] can only express a TREE, but a termx hierarchy is a DAG: a
+    // concept may have several parents (a lab analyte belongs to many panels). Nesting it under every
+    // parent emitted the same code N times, breaking invariant CSD-1 ("all the codes SHALL be unique")
+    // — which current HAPI rejects — and contradicting `count`, which has always been the distinct
+    // total. The nesting was pure redundancy: each copy already carried the complete parent property
+    // list, so flattening is lossless. It also removes an unbounded recursion that a cyclic hierarchy
+    // would have blown the stack on.
+    fhirCodeSystem.setConcept(version.getEntities() == null ? null : version.getEntities().stream()
         .map(e -> toFhir(e, codeSystem, version, childMap, parentMap, propertySystemUri))
         .sorted(Comparator.comparing(CodeSystemConcept::getCode))
-        .toList();
-
-    fhirCodeSystem.setConcept(rootConcepts);
+        .toList());
+    declareAssociationProperties(fhirCodeSystem);
 
     return fhirCodeSystem;
-  }
-
-  private boolean isRoot(CodeSystemEntityVersion version, String hierarchyMeaning) {
-    if (hierarchyMeaning == null || version.getAssociations() == null) {
-      return true;
-    }
-    // If no association matches the hierarchy meaning, it's a root
-    return version.getAssociations().stream()
-        .noneMatch(a -> a.getAssociationType().equals(hierarchyMeaning));
   }
 
   private static String toFhirSupplement(CodeSystem codeSystem, CodeSystemVersion version) {
@@ -299,9 +312,6 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     concept.setCode(e.getCode());
     setDesignations(concept, e.getDesignations(), version.getPreferredLanguage());
     concept.setProperty(toFhirConceptProperties(e, codeSystem, childMap, parentMap, propertySystemUri, version.getPreferredLanguage()));
-    if (codeSystem.getHierarchyMeaning() != null) {
-      concept.setConcept(toFhirConcepts(childMap, parentMap, e.getId(), codeSystem, version, propertySystemUri));
-    }
     return concept;
   }
 
@@ -409,31 +419,81 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         .or(() -> Optional.of(value));
   }
 
+  /**
+   * The FHIR concept-property code that carries this code system's hierarchy (parent) edges, derived
+   * from the hierarchy meaning rather than from whichever parent-ish property happened to be declared
+   * first — a part-of hierarchy must not be exported under an `is-a` label just because `is-a` was
+   * defined. Falls back to the standard `parent` when there is no hierarchy meaning to map.
+   */
+  private static String hierarchyPropertyCode(CodeSystem codeSystem) {
+    String meaning = codeSystem.getHierarchyMeaning();
+    if (meaning != null) {
+      return associationPropertyCode(meaning);
+    }
+    List<EntityProperty> properties = codeSystem.getProperties() == null ? List.of() : codeSystem.getProperties();
+    return properties.stream().map(EntityProperty::getName).filter(PARENT_PROPERTY_CODES::contains).findFirst().orElse(PARENT_PROPERTY);
+  }
+
+  /** termx association type (FHIR-spelled, e.g. `part-of`) → its FHIR concept-property code (`partOf`). */
+  private static String associationPropertyCode(String associationType) {
+    return ASSOCIATION_TYPE_PROPERTY.getOrDefault(associationType, associationType);
+  }
+
+  /**
+   * Declares a CodeSystem.property for every concept-property code the concepts actually use that the
+   * code system itself never defined — in practice the hierarchy/association codes. Without this, a
+   * code system that declared no parent property (its hierarchy lived only in the old nesting) would
+   * emit parent edges nothing in the resource describes.
+   */
+  private static void declareAssociationProperties(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
+    if (CollectionUtils.isEmpty(fhirCodeSystem.getConcept())) {
+      return;
+    }
+    List<CodeSystemProperty> declared =
+        fhirCodeSystem.getProperty() == null ? new ArrayList<>() : new ArrayList<>(fhirCodeSystem.getProperty());
+    Set<String> declaredCodes = declared.stream().map(CodeSystemProperty::getCode).collect(Collectors.toCollection(HashSet::new));
+    fhirCodeSystem.getConcept().stream()
+        .filter(c -> c.getProperty() != null)
+        .flatMap(c -> c.getProperty().stream())
+        .map(CodeSystemConceptProperty::getCode)
+        .distinct()
+        .filter(code -> code != null && !declaredCodes.contains(code))
+        .forEach(code -> {
+          declared.add(new CodeSystemProperty()
+              .setCode(code)
+              .setType(EntityPropertyType.code)
+              .setUri(PARENT_PROPERTY.equals(code) ? PARENT_PROPERTY_URI : null));
+          declaredCodes.add(code);
+        });
+    fhirCodeSystem.setProperty(declared);
+  }
+
   private List<CodeSystemConceptProperty> toFhirConceptProperties(CodeSystemEntityVersion entityVersion,
                                                                   CodeSystem codeSystem,
                                                                   Map<Long, List<CodeSystemEntityVersion>> childMap,
                                                                   Map<Long, List<String>> parentMap,
                                                                   Map<String, String> propertySystemUri,
                                                                   String language) {
-    List<EntityProperty> properties = codeSystem.getProperties();
+    List<EntityProperty> properties = codeSystem.getProperties() == null ? List.of() : codeSystem.getProperties();
 
     List<CodeSystemConceptProperty> conceptProperties = new ArrayList<>();
-    if (properties == null) {
-      return conceptProperties;
-    }
 
-    if (properties.stream().anyMatch(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName()))) {
-      String code =
-          properties.stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith").contains(p.getName())).findFirst().get().getName();
-      conceptProperties.addAll(parentMap.getOrDefault(entityVersion.getId(), List.of()).stream()
-          .map(c -> new CodeSystemConceptProperty().setCode(code).setValueCode(c)).toList());
-      conceptProperties.addAll(Optional.ofNullable(entityVersion.getAssociations()).orElse(List.of()).stream()
-          .filter(a -> !a.getAssociationType().equals(codeSystem.getHierarchyMeaning()))
-          .map(a -> new CodeSystemConceptProperty().setCode(code).setValueCode(a.getTargetCode())).toList());
-    }
-    if (properties.stream().anyMatch(p -> "child".equals(p.getName()))) {
+    // Parent edges are ALWAYS emitted: with a flat concept list they are the only carrier of the
+    // hierarchy, so gating them on the code system happening to declare a parent property would
+    // silently drop it. declareAssociationProperties() then defines whatever code we used here.
+    String hierarchyCode = hierarchyPropertyCode(codeSystem);
+    conceptProperties.addAll(parentMap.getOrDefault(entityVersion.getId(), List.of()).stream()
+        .map(c -> new CodeSystemConceptProperty().setCode(hierarchyCode).setValueCode(c)).toList());
+    // Every other association keeps its OWN property code. These used to be relabelled with the
+    // hierarchy code, so e.g. a classified-with edge was exported as partOf.
+    conceptProperties.addAll(Optional.ofNullable(entityVersion.getAssociations()).orElse(List.of()).stream()
+        .filter(a -> !a.getAssociationType().equals(codeSystem.getHierarchyMeaning()))
+        .map(a -> new CodeSystemConceptProperty().setCode(associationPropertyCode(a.getAssociationType())).setValueCode(a.getTargetCode()))
+        .toList());
+
+    if (properties.stream().anyMatch(p -> CHILD_PROPERTY.equals(p.getName()))) {
       conceptProperties.addAll(childMap.getOrDefault(entityVersion.getId(), List.of()).stream()
-          .map(ev -> new CodeSystemConceptProperty().setCode("child").setValueCode(ev.getCode())).toList());
+          .map(ev -> new CodeSystemConceptProperty().setCode(CHILD_PROPERTY).setValueCode(ev.getCode())).toList());
     }
     if (properties.stream().anyMatch(p -> "status".equals(p.getName()))) {
       conceptProperties.add(new CodeSystemConceptProperty().setCode("status").setValueCode(entityVersion.getStatus()));
@@ -564,14 +624,6 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     }
   }
 
-  private List<CodeSystemConcept> toFhirConcepts(Map<Long, List<CodeSystemEntityVersion>> childMap, Map<Long, List<String>> parentMap,
-                                                 Long targetId, CodeSystem codeSystem, CodeSystemVersion version,
-                                                 Map<String, String> propertySystemUri) {
-    List<CodeSystemConcept> result = childMap.getOrDefault(targetId, List.of()).stream()
-        .map(e -> toFhir(e, codeSystem, version, childMap, parentMap, propertySystemUri)).toList();
-    return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
-  }
-
   // -------------- FROM FHIR --------------
 
   public CodeSystem fromFhirCodeSystem(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCS) {
@@ -617,19 +669,54 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return codeSystem;
   }
 
+  /**
+   * code → its parent codes, read from the parent/child concept-properties anywhere in the resource.
+   * Walks nested concepts too: scanning only the top level dropped every parent edge a nested child
+   * declared beyond its nesting parent, so a DAG exported before the flattening change lost its extra
+   * edges on re-import.
+   */
   private static Map<String, List<String>> getParentMap(List<CodeSystemConcept> fhirConcepts) {
     if (io.micronaut.core.util.CollectionUtils.isEmpty(fhirConcepts)) {
       return Map.of();
     }
-    return fhirConcepts.stream().filter(c -> c.getProperty() != null && c.getProperty().stream()
-            .anyMatch(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(p.getCode())))
-        .flatMap(c -> c.getProperty().stream().filter(p -> List.of("is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(p.getCode()))
-            .map(p -> {
-              if (p.getCode().equals("child")) {
-                return Pair.of(p.getValueCode(), c.getCode());
-              }
-              return Pair.of(c.getCode(), p.getValueCode());
-            })).collect(Collectors.groupingBy(Pair::getKey, mapping(Pair::getValue, toList())));
+    List<CodeSystemConcept> all = flattenConcepts(fhirConcepts);
+
+    Stream<Pair<String, String>> fromProperties = all.stream()
+        .filter(c -> c.getProperty() != null)
+        .flatMap(c -> c.getProperty().stream().filter(p -> PARENT_OR_CHILD_PROPERTY_CODES.contains(p.getCode()))
+            .map(p -> p.getCode().equals(CHILD_PROPERTY)
+                ? Pair.of(p.getValueCode(), c.getCode())
+                : Pair.of(c.getCode(), p.getValueCode())));
+
+    // Nesting is a parent edge too, and it is the ONLY one in a resource whose hierarchy lives purely
+    // in concept[] nesting. Collecting it here is what lets the same code appear under several parents
+    // and still keep all of them once the duplicates are collapsed.
+    Stream<Pair<String, String>> fromNesting = all.stream()
+        .filter(c -> c.getConcept() != null)
+        .flatMap(c -> c.getConcept().stream().map(child -> Pair.of(child.getCode(), c.getCode())));
+
+    return Stream.concat(fromProperties, fromNesting)
+        .filter(pair -> pair.getKey() != null && pair.getValue() != null)
+        .distinct()
+        .collect(Collectors.groupingBy(Pair::getKey, mapping(Pair::getValue, toList())));
+  }
+
+  /** Every concept in the resource, nesting included, as one list. */
+  private static List<CodeSystemConcept> flattenConcepts(List<CodeSystemConcept> fhirConcepts) {
+    List<CodeSystemConcept> flat = new ArrayList<>();
+    Deque<CodeSystemConcept> stack = new ArrayDeque<>(fhirConcepts);
+    Set<CodeSystemConcept> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+    while (!stack.isEmpty()) {
+      CodeSystemConcept c = stack.pop();
+      if (c == null || !seen.add(c)) {
+        continue;
+      }
+      flat.add(c);
+      if (c.getConcept() != null) {
+        c.getConcept().forEach(stack::push);
+      }
+    }
+    return flat;
   }
 
   private static List<CodeSystemVersion> fromFhirVersion(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
@@ -765,6 +852,13 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         .orElse(codeSystemCanonical);
   }
 
+  /**
+   * Every concept in the resource, each code ONCE. A nested resource repeats a multi-parent concept
+   * under each parent; emitting one Concept per occurrence left the persistence layer to dedupe by
+   * code (CodeSystemImportService.prepareConcepts), which kept the first occurrence and silently
+   * dropped the parents recorded on the others. Collapse here instead, where {@code parentMap} holds
+   * every parent edge — property-declared and nesting alike — so the surviving concept keeps them all.
+   */
   private static List<Concept> fromFhirConcepts(List<CodeSystemConcept> fhirConcepts,
                                                 com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem,
                                                 CodeSystemConcept parent, Map<String, List<String>> parentMap) {
@@ -772,16 +866,18 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (io.micronaut.core.util.CollectionUtils.isEmpty(fhirConcepts)) {
       return concepts;
     }
-    fhirConcepts.forEach(c -> {
+    Set<String> seen = new HashSet<>();
+    for (CodeSystemConcept c : flattenConcepts(fhirConcepts)) {
+      if (!seen.add(c.getCode())) {
+        continue;
+      }
       Concept concept = new Concept();
       concept.setCode(c.getCode());
       concept.setCodeSystem(fhirIdOrFromUrl(fhirCodeSystem.getId(), fhirCodeSystem.getUrl()));
+      // parent is left to parentMap: it already carries the nesting edges, for every occurrence.
       concept.setVersions(fromFhirConcepts(c, fhirCodeSystem, parent, parentMap));
       concepts.add(concept);
-      if (c.getConcept() != null) {
-        concepts.addAll(fromFhirConcepts(c.getConcept(), fhirCodeSystem, c, parentMap));
-      }
-    });
+    }
     return concepts;
   }
 
@@ -890,7 +986,8 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     if (propertyValues == null) {
       return new ArrayList<>();
     }
-    return propertyValues.stream().filter(v -> !List.of("status", "is-a", "parent", "partOf", "groupedBy", "classifiedWith", "child").contains(v.getCode()))
+    // Hierarchy edges become associations (see fromFhirAssociations), not property values.
+    return propertyValues.stream().filter(v -> !"status".equals(v.getCode()) && !PARENT_OR_CHILD_PROPERTY_CODES.contains(v.getCode()))
         .map(v -> {
           EntityPropertyValue value = new EntityPropertyValue();
           // Normalise FHIR Coding to TermX's canonical EntityPropertyValueCodingValue

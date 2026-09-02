@@ -1,0 +1,42 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "lab-panels-valid",
+  "url": "http://example.org/CodeSystem/lab-panels",
+  "version": "1.0.0",
+  "name": "LabPanels",
+  "title": "Lab panels (VALID — flat list, hierarchy in properties)",
+  "description": "The same content as polyhierarchy-INVALID-nested.json, serialised correctly: every concept appears exactly once and the hierarchy is carried by the `partOf` property.\n\nThis is lossless — Glucose (2345-7) now states BOTH memberships explicitly, which the nested form could only imply by repeating itself. It is also how SNOMED CT and LOINC publish: large or multi-parent code systems use a flat `concept[]` with parent references, never deep nesting.\n\n`count` (5) now equals the number of concepts, and CSD-1 is satisfied — every code appears once. A client rebuilds the tree by grouping on `partOf`, and can place Glucose under both panels, which the nested form could not express without duplicating it.",
+  "status": "active",
+  "content": "complete",
+  "hierarchyMeaning": "part-of",
+  "count": 5,
+  "property": [
+    {
+      "code": "partOf",
+      "description": "The panel this analyte is part of",
+      "type": "code"
+    }
+  ],
+  "concept": [
+    {
+      "code": "2093-3",
+      "display": "Cholesterol",
+      "property": [{"code": "partOf", "valueCode": "PANEL-LIPID"}]
+    },
+    {
+      "code": "2160-0",
+      "display": "Creatinine",
+      "property": [{"code": "partOf", "valueCode": "PANEL-METAB"}]
+    },
+    {
+      "code": "2345-7",
+      "display": "Glucose",
+      "property": [
+        {"code": "partOf", "valueCode": "PANEL-LIPID"},
+        {"code": "partOf", "valueCode": "PANEL-METAB"}
+      ]
+    },
+    {"code": "PANEL-LIPID", "display": "Lipid panel"},
+    {"code": "PANEL-METAB", "display": "Metabolic panel"}
+  ]
+}
