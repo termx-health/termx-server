@@ -10,6 +10,8 @@ import org.termx.terminology.terminology.relatedartifacts.CodeSystemRelatedArtif
 import org.termx.terminology.terminology.valueset.ValueSetService
 import org.termx.ts.PublicationStatus
 import org.termx.ts.codesystem.CodeSystem
+import org.termx.ts.codesystem.CodeSystemAssociation
+import org.termx.ts.codesystem.CodeSystemEntityVersion
 import org.termx.ts.codesystem.CodeSystemVersion
 import org.termx.ts.codesystem.EntityProperty
 import org.termx.ts.codesystem.EntityPropertyKind
@@ -304,6 +306,188 @@ class CodeSystemFhirMapperSpec extends Specification {
     designations*.value == ["A alt", "A syn"]
     designations.find { it.value == "A alt" }.use == null
     designations.find { it.value == "A syn" }.use.code == "900000000000013009"
+  }
+
+  // ---- flat concept export (CSD-1: "all the codes SHALL be unique") ----
+
+  /** A concept with two parents — the shape that used to be emitted once per parent. */
+  private static hierarchicalCodeSystem(String hierarchyMeaning, List<EntityProperty> properties) {
+    def cs = new CodeSystem().setId("panels").setUri("http://example.org/panels").setName("panels")
+        .setTitle(new LocalizedName([en: "panels"])).setContent("complete")
+        .setHierarchyMeaning(hierarchyMeaning).setProperties(properties)
+    def panelA = new CodeSystemEntityVersion().setId(1L).setCode("panel-a")
+    def panelB = new CodeSystemEntityVersion().setId(2L).setCode("panel-b")
+    def analyte = new CodeSystemEntityVersion().setId(3L).setCode("analyte").setAssociations([
+        new CodeSystemAssociation().setAssociationType(hierarchyMeaning).setSourceId(3L).setTargetId(1L).setTargetCode("panel-a"),
+        new CodeSystemAssociation().setAssociationType(hierarchyMeaning).setSourceId(3L).setTargetId(2L).setTargetCode("panel-b")])
+    def version = new CodeSystemVersion().setVersion("1.0.0").setPreferredLanguage("en")
+        .setReleaseDate(LocalDate.parse("2026-03-18")).setStatus(PublicationStatus.draft)
+        .setConceptsTotal(3).setEntities([panelA, panelB, analyte])
+    [cs, version]
+  }
+
+  def "toFhir emits each code exactly once even when a concept has several parents"() {
+    given: "an analyte that is part of two panels"
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+    def (cs, version) = hierarchicalCodeSystem("part-of", [new EntityProperty().setName("partOf").setType(EntityPropertyType.code)])
+
+    when:
+    def exported = mapper.toFhir(cs, version, null)
+
+    then: "a flat list, no nesting, and count agrees with it"
+    exported.concept*.code == ["analyte", "panel-a", "panel-b"]
+    exported.concept.every { it.concept == null }
+    exported.count == exported.concept.size()
+
+    and: "both parents survive as properties — flattening loses nothing"
+    def parents = exported.concept.find { it.code == "analyte" }.property.findAll { it.code == "partOf" }
+    parents*.valueCode.toSorted() == ["panel-a", "panel-b"]
+  }
+
+  def "toFhir keeps the hierarchy when the code system declares no parent property"() {
+    given: "hierarchyMeaning set but no is-a/partOf property defined — the hierarchy used to live only in the nesting"
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+    def (cs, version) = hierarchicalCodeSystem("is-a", [])
+
+    when:
+    def exported = mapper.toFhir(cs, version, null)
+
+    then: "the parent edges are still emitted..."
+    exported.concept.find { it.code == "analyte" }.property.findAll { it.code == "is-a" }*.valueCode.toSorted() == ["panel-a", "panel-b"]
+
+    and: "...and the property they use is declared, so the resource stays self-describing"
+    exported.property.find { it.code == "is-a" }?.type == EntityPropertyType.code
+  }
+
+  def "toFhir labels each association with its own property code"() {
+    given: "a part-of hierarchy plus an unrelated classified-with association"
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+    def (cs, version) = hierarchicalCodeSystem("part-of", [new EntityProperty().setName("partOf").setType(EntityPropertyType.code)])
+    version.entities.find { it.code == "analyte" }.associations
+        .add(new CodeSystemAssociation().setAssociationType("classified-with").setSourceId(3L).setTargetId(1L).setTargetCode("panel-a"))
+
+    when:
+    def exported = mapper.toFhir(cs, version, null)
+    def properties = exported.concept.find { it.code == "analyte" }.property
+
+    then: "the classified-with edge is NOT relabelled partOf"
+    properties.findAll { it.code == "partOf" }*.valueCode.toSorted() == ["panel-a", "panel-b"]
+    properties.findAll { it.code == "classifiedWith" }*.valueCode == ["panel-a"]
+  }
+
+  def "fromFhir reads parent properties from nested concepts too"() {
+    given: "a legacy nested export whose nested child declares a second parent as a property"
+    def fhir = com.kodality.zmei.fhir.FhirMapper.fromJson('''
+      {"resourceType":"CodeSystem","url":"http://example.org/panels","status":"active","content":"complete","language":"en",
+       "hierarchyMeaning":"part-of","property":[{"code":"partOf","type":"code"}],
+       "concept":[{"code":"panel-a","concept":[{"code":"analyte","property":[
+         {"code":"partOf","valueCode":"panel-a"},{"code":"partOf","valueCode":"panel-b"}]}]},{"code":"panel-b"}]}''',
+        com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+
+    when:
+    def imported = mapper.fromFhirCodeSystem(fhir)
+    def associations = imported.concepts.find { it.code == "analyte" }.versions.first().associations
+
+    then: "both edges survive, not just the nesting parent"
+    associations*.targetCode.toSorted() == ["panel-a", "panel-b"]
+    associations.every { it.associationType == "part-of" }
+  }
+
+  // ---- fixture pair: the same polyhierarchy, serialised wrongly and rightly ----
+  //
+  // Two panels, three analytes, one analyte (Glucose) in BOTH panels. The nested fixture is what
+  // termx used to emit: Glucose appears once per parent, so the resource carries 6 concept nodes for
+  // 5 codes and contradicts its own `count`. The flat fixture is the fix, and is also how SNOMED CT
+  // and LOINC publish. Both are readable on their own — they double as the explanation of the defect.
+
+  private static loadFixture(String name) {
+    def json = new String(CodeSystemFhirMapperSpec.classLoader.getResourceAsStream("fhir/codesystem/${name}").readAllBytes(), "UTF-8")
+    com.kodality.zmei.fhir.FhirMapper.fromJson(json, com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+  }
+
+  /**
+   * Stands in for persistence: dedupe by code the way CodeSystemImportService.prepareConcepts does
+   * (a nested input yields one Concept per nesting occurrence), then assign the entity ids the export
+   * keys its hierarchy on. The surviving occurrence keeps every parent only because getParentMap now
+   * walks nested concepts — reading just the top level would leave it with its nesting parent alone.
+   */
+  private static versionOf(cs) {
+    def byCode = new LinkedHashMap<String, Object>()
+    cs.concepts.each { byCode.putIfAbsent(it.code, it) }
+    def entities = byCode.values().collect { it.versions.first().setCode(it.code) }
+    entities.eachWithIndex { e, i -> e.setId((i + 1) as Long) }
+    def idByCode = entities.collectEntries { [(it.code): it.id] }
+    entities.each { e ->
+      e.associations?.each { it.setSourceId(e.id).setTargetId(idByCode[it.targetCode] as Long) }
+    }
+    cs.versions.first().setEntities(entities).setConceptsTotal(entities.size())
+  }
+
+  private static countNodes(List concepts) {
+    concepts.sum { 1 + (it.concept ? countNodes(it.concept) : 0) } ?: 0
+  }
+
+  def "the nested fixture documents the defect: a code emitted once per parent"() {
+    when:
+    def fhir = loadFixture("polyhierarchy-INVALID-nested.json")
+
+    then: "6 nodes for 5 codes — Glucose twice — and `count` disagrees with the tree shipped beside it"
+    countNodes(fhir.concept) == 6
+    fhir.count == 5
+    def codes = []
+    fhir.concept.each { p -> codes << p.code; p.concept?.each { codes << it.code } }
+    codes.count { it == "2345-7" } == 2
+  }
+
+  def "re-exporting the nested fixture yields a CSD-1 valid flat list"() {
+    given:
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+    def cs = mapper.fromFhirCodeSystem(loadFixture("polyhierarchy-INVALID-nested.json"))
+
+    when:
+    def exported = mapper.toFhir(cs, versionOf(cs), null)
+
+    then: "every code exactly once, no nesting, count in agreement"
+    exported.concept*.code.sort() == ["2093-3", "2160-0", "2345-7", "PANEL-LIPID", "PANEL-METAB"]
+    exported.concept.every { it.concept == null }
+    exported.count == exported.concept.size()
+
+    and: "both panel memberships survive — what the nesting could only say by repeating itself"
+    exported.concept.find { it.code == "2345-7" }.property.findAll { it.code == "partOf" }*.valueCode.sort() ==
+        ["PANEL-LIPID", "PANEL-METAB"]
+
+    and: "the property carrying them is declared, so the resource stays self-describing"
+    exported.property.find { it.code == "partOf" } != null
+  }
+
+  def "the flat fixture round-trips unchanged"() {
+    given:
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+    def original = loadFixture("polyhierarchy-VALID-flat.json")
+    def cs = mapper.fromFhirCodeSystem(original)
+
+    when:
+    def exported = mapper.toFhir(cs, versionOf(cs), null)
+
+    then: "already valid going in, still valid coming out"
+    original.concept*.code.sort() == exported.concept*.code.sort()
+    exported.concept.every { it.concept == null }
+    exported.count == exported.concept.size()
+
+    and: "the partOf edges are preserved exactly, Glucose included"
+    def parentsOf = { resource, code ->
+      (resource.concept.find { it.code == code }.property ?: []).findAll { it.code == "partOf" }*.valueCode.sort()
+    }
+    parentsOf(exported, "2345-7") == parentsOf(original, "2345-7")
+    parentsOf(exported, "2093-3") == ["PANEL-LIPID"]
+    parentsOf(exported, "PANEL-LIPID") == []
   }
 
   private static String displayOf(cs, String code) {

@@ -1,0 +1,31 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "lab-panels-invalid",
+  "url": "http://example.org/CodeSystem/lab-panels",
+  "version": "1.0.0",
+  "name": "LabPanels",
+  "title": "Lab panels (INVALID — violates CSD-1)",
+  "description": "Glucose (2345-7) is part of BOTH panels. FHIR's nested `concept[]` can only express a TREE, so serialising this DAG as nesting emits the code once per parent.\n\nThat breaks invariant CSD-1 — *\"Within a code system definition, all the codes SHALL be unique\"*. Older HAPI silently kept one copy; current HAPI rejects the resource.\n\nNote the give-away: `count` says 5, but `concept[]` holds 6 nodes — the resource contradicts itself. The duplicate copies are byte-identical, so the nesting adds nothing; it only repeats.\n\nSee polyhierarchy-VALID-flat.json for the same content serialised correctly.",
+  "status": "active",
+  "content": "complete",
+  "hierarchyMeaning": "part-of",
+  "count": 5,
+  "concept": [
+    {
+      "code": "PANEL-LIPID",
+      "display": "Lipid panel",
+      "concept": [
+        {"code": "2093-3", "display": "Cholesterol"},
+        {"code": "2345-7", "display": "Glucose"}
+      ]
+    },
+    {
+      "code": "PANEL-METAB",
+      "display": "Metabolic panel",
+      "concept": [
+        {"code": "2160-0", "display": "Creatinine"},
+        {"code": "2345-7", "display": "Glucose"}
+      ]
+    }
+  ]
+}
