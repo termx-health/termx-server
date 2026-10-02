@@ -417,7 +417,12 @@ public class CodeSystemImportService {
                                      Map<Long, List<CodeSystemEntityVersion>> entityVersionMap,
                                      Map<Long, EntityProperty> propertiesById, List<Long> retiredEntityIds, boolean cleanRun) {
     Long csVersionId = getCurrentCodeSystemVersion(version).getId();
-    Map<Long, CodeSystemEntityVersion> existing = loadExistingVersions(csVersionId, entityVersionMap.keySet());
+    // Other versions of the same concept that the code system version ALSO links. A version is meant to
+    // hold one version of each concept; one that holds two shows every line twice. Whatever this import
+    // decides for the concept, the extra links go — so a version damaged by an earlier import is
+    // repaired by the next one.
+    List<Long> unlink = new ArrayList<>();
+    Map<Long, CodeSystemEntityVersion> existing = loadExistingVersions(csVersionId, entityVersionMap.keySet(), unlink);
     java.util.Set<Long> changedEntityIds = new java.util.HashSet<>();   // Set, not List: O(1) contains for the replace filter below
 
     for (Long entityId : new ArrayList<>(entityVersionMap.keySet())) {
@@ -442,11 +447,19 @@ public class CodeSystemImportService {
       changedEntityIds.add(entityId);
       if (!cleanRun && existingVersion != null) {
         if (PublicationStatus.draft.equals(existingVersion.getStatus())) {
-          entityVersionMap.put(entityId, mergeWithDraftVersion(entityVersionMap.get(entityId), existingVersion));
+          entityVersionMap.put(entityId, mergeWithDraftVersion(entityVersionMap.get(entityId), existingVersion, propertiesById));
         } else if (PublicationStatus.active.equals(existingVersion.getStatus())) {
-          entityVersionMap.put(entityId, mergeWithActiveVersion(entityVersionMap.get(entityId), existingVersion, csVersionId));
+          entityVersionMap.put(entityId, mergeWithActiveVersion(entityVersionMap.get(entityId), existingVersion, csVersionId, propertiesById));
         }
+      } else if (cleanRun && existingVersion != null && !PublicationStatus.draft.equals(existingVersion.getStatus())) {
+        // Replace writes a new version of a changed concept. Its drafts are cancelled below; an active
+        // or retired version stays as history but must leave THIS code system version, or the new one
+        // is linked beside it and the concept is listed twice.
+        unlink.add(existingVersion.getId());
       }
+    }
+    if (!unlink.isEmpty()) {
+      codeSystemVersionService.unlinkEntityVersions(csVersionId, unlink);
     }
 
     if (cleanRun) {
@@ -458,8 +471,12 @@ public class CodeSystemImportService {
     }
   }
 
-  /** Existing version of each concept on the current code system version, preferring the draft, else the active one. */
-  private Map<Long, CodeSystemEntityVersion> loadExistingVersions(Long csVersionId, java.util.Set<Long> entityIds) {
+  /**
+   * Existing version of each concept on the current code system version, preferring the draft, else the active one.
+   * Any OTHER version of the concept that the code system version links is added to {@code extraLinked}.
+   */
+  private Map<Long, CodeSystemEntityVersion> loadExistingVersions(Long csVersionId, java.util.Set<Long> entityIds,
+                                                                  List<Long> extraLinked) {
     Map<Long, CodeSystemEntityVersion> result = new HashMap<>();
     List<Long> ids = new ArrayList<>(entityIds);
     IntStream.range(0, (ids.size() + 10000 - 1) / 10000)
@@ -478,39 +495,58 @@ public class CodeSystemImportService {
                 .max(Comparator.comparing(CodeSystemEntityVersion::getCreated));
             Optional<CodeSystemEntityVersion> retired = versions.stream().filter(v -> PublicationStatus.retired.equals(v.getStatus()))
                 .max(Comparator.comparing(CodeSystemEntityVersion::getCreated));
-            draft.or(() -> active).or(() -> retired).ifPresent(v -> result.put(entityId, v));
+            draft.or(() -> active).or(() -> retired).ifPresent(v -> {
+              result.put(entityId, v);
+              versions.stream().filter(o -> !o.getId().equals(v.getId())).forEach(o -> extraLinked.add(o.getId()));
+            });
           });
         });
     return result;
   }
 
   private List<CodeSystemEntityVersion> mergeWithActiveVersion(List<CodeSystemEntityVersion> newVersions, CodeSystemEntityVersion activeVersion,
-                                                               Long csVersionId) {
+                                                               Long csVersionId, Map<Long, EntityProperty> propertiesById) {
     codeSystemVersionService.unlinkEntityVersions(csVersionId, List.of(activeVersion.getId()));
-    return mergeVersions(newVersions, activeVersion);
+    // The active version stays as history: its rows are COPIED to the new version (no ids), not moved off it.
+    return mergeVersions(newVersions, activeVersion, propertiesById, false);
   }
 
-  private List<CodeSystemEntityVersion> mergeWithDraftVersion(List<CodeSystemEntityVersion> newVersions, CodeSystemEntityVersion draftVersion) {
+  private List<CodeSystemEntityVersion> mergeWithDraftVersion(List<CodeSystemEntityVersion> newVersions, CodeSystemEntityVersion draftVersion,
+                                                              Map<Long, EntityProperty> propertiesById) {
     newVersions.forEach(v -> v.setId(draftVersion.getId()));
-    return mergeVersions(newVersions, draftVersion);
+    return mergeVersions(newVersions, draftVersion, propertiesById, true);
   }
 
-  private List<CodeSystemEntityVersion> mergeVersions(List<CodeSystemEntityVersion> targetVersions, CodeSystemEntityVersion sourceVersion) {
+  /**
+   * The key that makes two property values the same value: the property plus its type-aware normalised value — a
+   * Coding is its {@code code|codeSystem}, whatever display/version the enrichment job has added to a stored copy.
+   * Comparing raw JSON, a stored enriched Coding never matched the file's bare one, so each Merge added a copy.
+   */
+  private static String valueKey(EntityPropertyValue pv, Map<Long, EntityProperty> propertiesById) {
+    EntityProperty property = pv.getEntityPropertyId() == null ? null : propertiesById.get(pv.getEntityPropertyId());
+    String type = property == null ? pv.getEntityPropertyType() : property.getType();
+    return pv.getEntityPropertyId() + "|" + ConceptContentSignature.normalize(pv.getValue(), type);
+  }
+
+  private List<CodeSystemEntityVersion> mergeVersions(List<CodeSystemEntityVersion> targetVersions, CodeSystemEntityVersion sourceVersion,
+                                                      Map<Long, EntityProperty> propertiesById, boolean keepSourceIds) {
     targetVersions.forEach(v -> {
-      // Wrap in a mutable ArrayList: prepareEntityVersion* produce immutable Stream.toList() lists,
-      // so addAll(...) below would otherwise throw UnsupportedOperationException.
-      v.setPropertyValues(new ArrayList<>(Optional.ofNullable(v.getPropertyValues()).orElse(List.of())));
-      v.getPropertyValues().addAll(Optional.ofNullable(sourceVersion.getPropertyValues()).orElse(new ArrayList<>()).stream()
-          .filter(pv -> v.getPropertyValues().stream().noneMatch(
-              pv1 -> Objects.equals(pv.getEntityPropertyId(), pv1.getEntityPropertyId()) &&
-                  Objects.equals(JsonUtil.toJson(pv.getValue()), JsonUtil.toJson(pv1.getValue()))))
-          .toList());
+      // One row per value: the stored row first (it keeps its id and whatever the enrichment job added),
+      // then the file's values that are not already there. Repeats among the stored rows collapse too, so a
+      // concept multiplied by earlier imports is repaired by the next one.
+      java.util.LinkedHashMap<String, EntityPropertyValue> values = new java.util.LinkedHashMap<>();
+      Optional.ofNullable(sourceVersion.getPropertyValues()).orElse(List.of())
+          .forEach(pv -> values.putIfAbsent(valueKey(pv, propertiesById), keepSourceIds ? pv : copyWithoutId(pv)));
+      Optional.ofNullable(v.getPropertyValues()).orElse(List.of())
+          .forEach(pv -> values.putIfAbsent(valueKey(pv, propertiesById), pv));
+      v.setPropertyValues(new ArrayList<>(values.values()));
       v.setDesignations(new ArrayList<>(Optional.ofNullable(v.getDesignations()).orElse(List.of())));
       v.getDesignations().addAll(Optional.ofNullable(sourceVersion.getDesignations()).orElse(new ArrayList<>()).stream()
           .filter(d -> v.getDesignations().stream().noneMatch(
               d1 -> Objects.equals(d.getName(), d1.getName()) &&
                   Objects.equals(d.getLanguage(), d1.getLanguage()) &&
                   Objects.equals(d.getDesignationTypeId(), d1.getDesignationTypeId())))
+          .map(d -> keepSourceIds ? d : copyWithoutId(d))
           .toList());
       v.setAssociations(new ArrayList<>(Optional.ofNullable(v.getAssociations()).orElse(List.of())));
       v.getAssociations().addAll(Optional.ofNullable(sourceVersion.getAssociations()).orElse(new ArrayList<>()).stream()
@@ -518,6 +554,14 @@ public class CodeSystemImportService {
               .noneMatch(a1 -> a.getAssociationType().equals(a1.getAssociationType()) && a.getTargetCode().equals(a1.getTargetCode()))).toList());
     });
     return targetVersions;
+  }
+
+  private static EntityPropertyValue copyWithoutId(EntityPropertyValue pv) {
+    return JsonUtil.fromJson(JsonUtil.toJson(pv), EntityPropertyValue.class).setId(null);
+  }
+
+  private static Designation copyWithoutId(Designation d) {
+    return JsonUtil.fromJson(JsonUtil.toJson(d), Designation.class).setId(null);
   }
 
   // VS

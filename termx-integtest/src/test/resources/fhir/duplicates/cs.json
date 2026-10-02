@@ -1,0 +1,30 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "dup-cs",
+  "url": "http://termx-test.local/CodeSystem/dup-cs",
+  "version": "1.0.0",
+  "name": "DupCs",
+  "title": "Import duplicate test",
+  "status": "active",
+  "experimental": false,
+  "content": "complete",
+  "caseSensitive": true,
+  "property": [
+    {"code": "p-decimal", "type": "decimal"},
+    {"code": "specimen", "type": "Coding"}
+  ],
+  "concept": [
+    {
+      "code": "a",
+      "display": "Alpha",
+      "property": [
+        {"code": "p-decimal", "valueDecimal": 1.5},
+        {"code": "specimen", "valueCoding": {"system": "http://termx-test.local/CodeSystem/specimens", "code": "S"}}
+      ]
+    },
+    {
+      "code": "b",
+      "display": "Beta"
+    }
+  ]
+}
