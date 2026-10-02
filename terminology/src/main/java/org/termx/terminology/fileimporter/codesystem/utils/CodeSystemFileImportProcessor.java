@@ -298,7 +298,9 @@ public class CodeSystemFileImportProcessor {
     
     List<String> rowValues = List.of(rawValue);
     if (StringUtils.isNotEmpty(prop.getPropertyDelimiter())) {
-      rowValues = Arrays.stream(rawValue.split(Pattern.quote(prop.getPropertyDelimiter()))).map(String::trim).toList();
+      // Each part once, and no empty part: "S, P, S," is S and P.
+      rowValues = Arrays.stream(rawValue.split(Pattern.quote(prop.getPropertyDelimiter()))).map(String::trim)
+          .filter(StringUtils::isNotEmpty).distinct().toList();
       log.debug("IMPORT DEBUG: mapPropValue - Split by delimiter '{}' into {} values: {}", 
           prop.getPropertyDelimiter(), rowValues.size(), rowValues);
     }
