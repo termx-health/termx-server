@@ -10,6 +10,7 @@ import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import jakarta.inject.Singleton;
@@ -32,10 +33,13 @@ public class ValueSetVersionRuleService {
 
   @Transactional
   public void save(List<ValueSetVersionRule> rules, String valueSet, String valueSetVersion) {
+    ruleSetService.requireDraft(valueSet, valueSetVersion);
     ValueSetVersionRuleSet ruleSet = ruleSetService.load(valueSet, valueSetVersion).orElse(null);
     if (ruleSet == null) {
       ruleSet = ruleSetService.save(new ValueSetVersionRuleSet(), valueSet, valueSetVersion);
     }
+    requireOwn(rules == null ? List.of() : rules.stream().map(ValueSetVersionRule::getId).filter(Objects::nonNull).toList(), ruleSet.getId(),
+        valueSet, valueSetVersion);
 
     repository.retain(rules, ruleSet.getId());
     if (rules != null) {
@@ -50,18 +54,33 @@ public class ValueSetVersionRuleService {
   @Transactional
   public void save(ValueSetVersionRule rule, String valueSet, String valueSetVersion) {
     validate(rule);
+    ruleSetService.requireDraft(valueSet, valueSetVersion);
 
     Long ruleSetId = ruleSetService.load(valueSet, valueSetVersion).map(ValueSetVersionRuleSet::getId).orElse(null);
     if (ruleSetId == null) {
       ruleSetId = ruleSetService.save(new ValueSetVersionRuleSet(), valueSet, valueSetVersion).getId();
+    }
+    if (rule.getId() != null) {
+      requireOwn(List.of(rule.getId()), ruleSetId, valueSet, valueSetVersion);
     }
 
     repository.save(rule, ruleSetId);
   }
 
   @Transactional
-  public void delete(Long id) {
+  public void delete(Long id, String valueSet, String valueSetVersion) {
+    ruleSetService.requireDraft(valueSet, valueSetVersion);
+    Long ruleSetId = ruleSetService.load(valueSet, valueSetVersion).map(ValueSetVersionRuleSet::getId).orElse(null);
+    requireOwn(List.of(id), ruleSetId, valueSet, valueSetVersion);
     repository.delete(id);
+  }
+
+  // a rule id from the request body or path must belong to the version named in the path
+  private void requireOwn(List<Long> ids, Long ruleSetId, String valueSet, String valueSetVersion) {
+    if (!ids.isEmpty() && (ruleSetId == null || !repository.belongTo(ids, ruleSetId))) {
+      throw ApiError.TE123.toApiException(Map.of("id", ids.stream().map(String::valueOf).collect(Collectors.joining(", ")),
+          "valueSet", valueSet, "version", valueSetVersion));
+    }
   }
 
   public QueryResult<ValueSetVersionRule> query(ValueSetVersionRuleQueryParams params) {

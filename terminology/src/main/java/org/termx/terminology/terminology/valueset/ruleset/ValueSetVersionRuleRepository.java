@@ -11,6 +11,7 @@ import org.termx.ts.valueset.ValueSetVersionRuleQueryParams;
 import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule;
 import org.termx.ts.valueset.ValueSetVersionRuleSet.ValueSetVersionRule.ValueSetRuleFilter;
 import io.micronaut.core.util.StringUtils;
+import java.util.Collection;
 import java.util.List;
 import jakarta.inject.Singleton;
 
@@ -60,6 +61,15 @@ public class ValueSetVersionRuleRepository extends BaseRepository {
     sb.append(" where rule_set_id = ? and sys_status = 'A'", ruleSetId);
     sb.andNotIn("id", rules, ValueSetVersionRule::getId);
     jdbcTemplate.update(sb.getSql(), sb.getParams());
+  }
+
+  public boolean belongTo(Collection<Long> ids, Long ruleSetId) {
+    if (ids.isEmpty()) {
+      return true;
+    }
+    SqlBuilder sb = new SqlBuilder("select count(1) from terminology.value_set_version_rule where sys_status = 'A' and rule_set_id = ?", ruleSetId);
+    sb.and().in("id", ids);
+    return queryForObject(sb.getSql(), Integer.class, sb.getParams()) == ids.stream().distinct().count();
   }
 
   public void delete(Long id) {

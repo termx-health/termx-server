@@ -31,6 +31,11 @@ public class ValueSetVersionService {
     if (!PublicationStatus.draft.equals(version.getStatus()) && version.getId() == null) {
       throw ApiError.TE101.toApiException();
     }
+    ValueSetVersion stored = version.getId() == null ? null : repository.load(version.getId());
+    if (stored != null) {
+      // status is changed only through activate/retire/draft, never as a side effect of a save
+      version.setStatus(stored.getStatus());
+    }
     if (!PublicationStatus.draft.equals(version.getStatus())) {
       repository.saveExpirationDate(version);
       return;

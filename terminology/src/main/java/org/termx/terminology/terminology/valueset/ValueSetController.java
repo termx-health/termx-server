@@ -308,7 +308,7 @@ public class ValueSetController {
       throw new NotFoundException("ValueSetVersion", version);
     }
     provenanceService.provenanceValueSetVersion("delete-rules", valueSet, version, () -> {
-      valueSetVersionRuleService.delete(id);
+      valueSetVersionRuleService.delete(id, valueSet, version);
     });
     return HttpResponse.ok();
   }
