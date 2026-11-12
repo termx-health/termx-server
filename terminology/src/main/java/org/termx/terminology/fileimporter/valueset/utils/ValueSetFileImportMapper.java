@@ -67,6 +67,8 @@ public class ValueSetFileImportMapper {
     version.setAlgorithm(fpVersion.getAlgorithm());
     version.setPreferredLanguage(fpVersion.getLanguage() != null ? fpVersion.getLanguage() : SessionStore.require().getLang());
     version.setRuleSet(version.getRuleSet() == null ? new ValueSetVersionRuleSet() : version.getRuleSet());
+    // the import cancels the existing version with its rule set and saves a new one, so the copy must not keep the old id
+    version.getRuleSet().setId(null);
     version.getRuleSet().setInactive(fpVersion.getInactive()).setRules(existingRule != null ? List.of(existingRule) : List.of(new ValueSetVersionRule()
         .setType(ValueSetVersionRuleType.include)
         .setProperties(fpVersion.getRule().getProperties())
