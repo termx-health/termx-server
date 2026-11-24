@@ -40,6 +40,16 @@ public class CodeSystemVersionRepository extends BaseRepository {
                                        "        inner join terminology.value_set_version_rule vsvr on vsvr.rule_set_id = vsvrs.id and vsvr.sys_status = 'A' and vsvr.type = 'include'" +
                                        "        where vsv.sys_status = 'A' and vsvr.code_system = csv.code_system and vsvr.code_system_version_id = csv.id and vsvr.concepts is null and vsvr.filters is null limit 1) as value_set ";
 
+  /**
+   * {@code nested} / {@code flat}; anything else — the editor's "server default" included — is no
+   * setting at all, stored as {@code null}. Normalising here rather than trusting the caller keeps
+   * the column's check constraint from being the first thing that notices a bad value, which would
+   * surface as a save failure instead of a validation one.
+   */
+  public static String hierarchyShape(String shape) {
+    return "nested".equals(shape) || "flat".equals(shape) ? shape : null;
+  }
+
   public void save(CodeSystemVersion version) {
     SaveSqlBuilder ssb = new SaveSqlBuilder();
     ssb.property("id", version.getId());
@@ -48,6 +58,7 @@ public class CodeSystemVersionRepository extends BaseRepository {
     ssb.property("uri", version.getUri());
     ssb.property("preferred_language", version.getPreferredLanguage());
     ssb.property("algorithm", version.getAlgorithm());
+    ssb.property("hierarchy_shape", hierarchyShape(version.getHierarchyShape()));
     ssb.property("supported_languages", "?::text[]", PgUtil.array(version.getSupportedLanguages()));
     ssb.jsonProperty("description", version.getDescription());
     ssb.property("release_date", version.getReleaseDate());
