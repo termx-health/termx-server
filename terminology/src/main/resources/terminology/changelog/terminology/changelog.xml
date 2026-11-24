@@ -20,6 +20,7 @@
     <include file="13-update_queue_allowed_statuses.sql" relativeToChangelogFile="true"/>
     <include file="14-entity_version_effective_time.sql" relativeToChangelogFile="true"/>
     <include file="15-entity_property_value_extensions.sql" relativeToChangelogFile="true"/>
+    <include file="16-code_system_version_hierarchy_shape.sql" relativeToChangelogFile="true"/>
 
     <include file="views/concept_name.sql" relativeToChangelogFile="true"/>
     <include file="views/concept_order.sql" relativeToChangelogFile="true"/>

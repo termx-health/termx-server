@@ -20,6 +20,14 @@ public class CodeSystemVersion extends CodeSystemVersionReference {
   private List<String> supportedLanguages;
   private LocalizedName description;
   private String algorithm;
+  /**
+   * How this version's concept hierarchy is written in its FHIR resource: {@code nested} — the
+   * export termx had before the concept list was flattened, restored unchanged — or {@code flat}.
+   * {@code null} leaves it to the server, which derives one that is both lossless and valid for the
+   * data at hand (see {@code CodeSystemFhirMapper}). Published as the
+   * {@code codesystem-hierarchy-shape} extension; the stored hierarchy itself does not change.
+   */
+  private String hierarchyShape;
   private LocalDate releaseDate;
   private LocalDate expirationDate;
   private OffsetDateTime created;
