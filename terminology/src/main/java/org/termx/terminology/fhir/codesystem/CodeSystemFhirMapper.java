@@ -27,6 +27,7 @@ import org.termx.terminology.ApiError;
 import org.termx.terminology.Privilege;
 import org.termx.terminology.terminology.codesystem.CodeSystemService;
 import org.termx.terminology.terminology.codesystem.concept.ConceptService;
+import org.termx.terminology.terminology.codesystem.version.CodeSystemVersionRepository;
 import org.termx.terminology.terminology.mapset.MapSetService;
 import org.termx.terminology.terminology.relatedartifacts.CodeSystemRelatedArtifactService;
 import org.termx.terminology.terminology.valueset.ValueSetService;
@@ -102,6 +103,12 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
       "classified-with", "classifiedWith",
       "classifiedWith", "classifiedWith");
   private static final String PARENT_PROPERTY_URI = "http://hl7.org/fhir/concept-properties#parent";
+  // The two shapes a version's hierarchy can be written in; see resolveHierarchyShape.
+  private static final String SHAPE_NESTED = "nested";
+  private static final String SHAPE_FLAT = "flat";
+  // Stated on the resource so a consumer — the importer below included — knows which shape it got
+  // rather than having to guess from whether it happens to see nesting or parent properties.
+  private static final String HIERARCHY_SHAPE_EXTENSION_URL = "https://termx.org/fhir/StructureDefinition/codesystem-hierarchy-shape";
   // Parent codes plus `child` (the reverse edge) — the set recognised when reading a hierarchy back in.
   private static final Set<String> PARENT_OR_CHILD_PROPERTY_CODES =
       Stream.concat(PARENT_PROPERTY_CODES.stream(), Stream.of(CHILD_PROPERTY)).collect(Collectors.toUnmodifiableSet());
@@ -276,23 +283,84 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         codeSystemService.query(new CodeSystemQueryParams().setIds(String.join(",", propertySystems)).limit(propertySystems.size())).getData().stream()
             .collect(Collectors.toMap(CodeSystem::getId, CodeSystem::getUri));
 
-    // Concepts are emitted as a FLAT list, each code exactly once, with hierarchy carried by the
-    // parent concept-properties (partOf / is-a / ...) rather than by nesting.
+    // How the hierarchy is written in this resource, chosen per version (see resolveHierarchyShape):
     //
-    // FHIR's nested CodeSystem.concept[] can only express a TREE, but a termx hierarchy is a DAG: a
-    // concept may have several parents (a lab analyte belongs to many panels). Nesting it under every
-    // parent emitted the same code N times, breaking invariant CSD-1 ("all the codes SHALL be unique")
-    // — which current HAPI rejects — and contradicting `count`, which has always been the distinct
-    // total. The nesting was pure redundancy: each copy already carried the complete parent property
-    // list, so flattening is lossless. It also removes an unbounded recursion that a cyclic hierarchy
-    // would have blown the stack on.
+    //  - `nested`  children inside CodeSystem.concept.concept[]. This is the export termx had before
+    //              the CSD-1 fix below, restored unchanged — same roots, same recursion, same order —
+    //              so a consumer that was built against it gets byte-for-byte what it used to get.
+    //  - `flat`    every concept once at the top level, the hierarchy carried by parent properties.
+    //
+    // `flat` exists because FHIR's nested concept[] can only express a TREE, while a termx hierarchy
+    // is a DAG: a lab analyte belongs to many panels. Nesting it under every parent — which is what
+    // `nested` does, by design, because that is what it used to do — emits the same code once per
+    // parent, breaking CSD-1 ("all the codes SHALL be unique"), contradicting `count` (always the
+    // distinct total) and getting the resource rejected by current HAPI.
+    String hierarchyShape = resolveHierarchyShape(codeSystem, version, parentMap);
+    fhirCodeSystem.addExtension(new Extension(HIERARCHY_SHAPE_EXTENSION_URL).setValueCode(hierarchyShape));
+    boolean nested = SHAPE_NESTED.equals(hierarchyShape);
     fhirCodeSystem.setConcept(version.getEntities() == null ? null : version.getEntities().stream()
-        .map(e -> toFhir(e, codeSystem, version, childMap, parentMap, propertySystemUri))
+        .filter(e -> !nested || isRoot(e, codeSystem.getHierarchyMeaning()))
+        .map(e -> toFhir(e, codeSystem, version, childMap, parentMap, propertySystemUri, nested))
         .sorted(Comparator.comparing(CodeSystemConcept::getCode))
         .toList());
     declareAssociationProperties(fhirCodeSystem);
 
     return fhirCodeSystem;
+  }
+
+  /**
+   * The shape to write this version's hierarchy in: what the version asks for, or — with no setting
+   * — the shape that is both lossless and valid for the data at hand.
+   *
+   * <p>Derived: a hierarchy where every concept has at most ONE parent is a tree, and nesting a tree
+   * is exactly what {@code nested} did before the flattening change, so that case is restored to its
+   * old output automatically. Anything else is a DAG, where nesting repeats codes and breaks CSD-1 —
+   * the defect the flattening fixed — so it stays {@code flat}. No hierarchy at all is {@code flat}
+   * too: there is nothing to nest, and both shapes produce the same resource.
+   *
+   * <p>A version that genuinely wants the old DAG output, duplicate codes and all, asks for
+   * {@code nested} explicitly. The default never emits an invalid resource on its own.
+   */
+  private static String resolveHierarchyShape(CodeSystem codeSystem, CodeSystemVersion version, Map<Long, List<String>> parentMap) {
+    String declared = CodeSystemVersionRepository.hierarchyShape(version.getHierarchyShape());
+    if (declared != null) {
+      return declared;
+    }
+    if (codeSystem.getHierarchyMeaning() == null || parentMap.isEmpty()) {
+      return SHAPE_FLAT;
+    }
+    return parentMap.values().stream().allMatch(parents -> parents.size() <= 1) ? SHAPE_NESTED : SHAPE_FLAT;
+  }
+
+  private boolean isRoot(CodeSystemEntityVersion version, String hierarchyMeaning) {
+    if (hierarchyMeaning == null || version.getAssociations() == null) {
+      return true;
+    }
+    // If no association matches the hierarchy meaning, it's a root
+    return version.getAssociations().stream()
+        .noneMatch(a -> a.getAssociationType().equals(hierarchyMeaning));
+  }
+
+  /**
+   * The children of {@code targetId}, nested, as the pre-flattening export built them.
+   *
+   * <p>{@code visiting} is the only addition: it carries the codes on the current path so a cyclic
+   * hierarchy terminates instead of recursing until the stack goes. It cannot change the output for
+   * acyclic data, which is every hierarchy this is meant to serve.
+   */
+  private List<CodeSystemConcept> toFhirConcepts(Map<Long, List<CodeSystemEntityVersion>> childMap, Map<Long, List<String>> parentMap,
+                                                 Long targetId, CodeSystem codeSystem, CodeSystemVersion version,
+                                                 Map<String, String> propertySystemUri, Set<Long> visiting) {
+    List<CodeSystemConcept> result = childMap.getOrDefault(targetId, List.of()).stream()
+        .filter(e -> {
+          if (visiting.contains(e.getId())) {
+            log.warn("Concept '{}' closes a hierarchy cycle — not nested under itself.", e.getCode());
+            return false;
+          }
+          return true;
+        })
+        .map(e -> toFhirNested(e, codeSystem, version, childMap, parentMap, propertySystemUri, visiting)).toList();
+    return CollectionUtils.isEmpty(result) ? null : result.stream().sorted(Comparator.comparing(CodeSystemConcept::getCode)).toList();
   }
 
   private static String toFhirSupplement(CodeSystem codeSystem, CodeSystemVersion version) {
@@ -307,11 +375,40 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
 
   private CodeSystemConcept toFhir(CodeSystemEntityVersion e, CodeSystem codeSystem, CodeSystemVersion version,
                                    Map<Long, List<CodeSystemEntityVersion>> childMap, Map<Long, List<String>> parentMap,
-                                   Map<String, String> propertySystemUri) {
+                                   Map<String, String> propertySystemUri, boolean nested) {
+    return nested
+        ? toFhirNested(e, codeSystem, version, childMap, parentMap, propertySystemUri, Set.of())
+        : toFhirConcept(e, codeSystem, version, childMap, parentMap, propertySystemUri, true);
+  }
+
+  /** One concept with its children nested beneath it, as the pre-flattening export emitted them. */
+  private CodeSystemConcept toFhirNested(CodeSystemEntityVersion e, CodeSystem codeSystem, CodeSystemVersion version,
+                                         Map<Long, List<CodeSystemEntityVersion>> childMap, Map<Long, List<String>> parentMap,
+                                         Map<String, String> propertySystemUri, Set<Long> visiting) {
+    // The old export gated parent properties on the code system DECLARING a parent-ish property, and
+    // the nesting said the hierarchy on its own. Kept, so a nested resource is what it always was.
+    CodeSystemConcept concept =
+        toFhirConcept(e, codeSystem, version, childMap, parentMap, propertySystemUri, declaresParentProperty(codeSystem));
+    if (codeSystem.getHierarchyMeaning() != null) {
+      Set<Long> path = Stream.concat(visiting.stream(), Stream.of(e.getId())).collect(Collectors.toUnmodifiableSet());
+      concept.setConcept(toFhirConcepts(childMap, parentMap, e.getId(), codeSystem, version, propertySystemUri, path));
+    }
+    return concept;
+  }
+
+  private static boolean declaresParentProperty(CodeSystem codeSystem) {
+    List<EntityProperty> properties = codeSystem.getProperties() == null ? List.of() : codeSystem.getProperties();
+    return properties.stream().map(EntityProperty::getName).anyMatch(PARENT_PROPERTY_CODES::contains);
+  }
+
+  private CodeSystemConcept toFhirConcept(CodeSystemEntityVersion e, CodeSystem codeSystem, CodeSystemVersion version,
+                                          Map<Long, List<CodeSystemEntityVersion>> childMap, Map<Long, List<String>> parentMap,
+                                          Map<String, String> propertySystemUri, boolean parentsAsProperty) {
     CodeSystemConcept concept = new CodeSystemConcept();
     concept.setCode(e.getCode());
     setDesignations(concept, e.getDesignations(), version.getPreferredLanguage());
-    concept.setProperty(toFhirConceptProperties(e, codeSystem, childMap, parentMap, propertySystemUri, version.getPreferredLanguage()));
+    concept.setProperty(
+        toFhirConceptProperties(e, codeSystem, childMap, parentMap, propertySystemUri, version.getPreferredLanguage(), parentsAsProperty));
     return concept;
   }
 
@@ -452,7 +549,9 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     List<CodeSystemProperty> declared =
         fhirCodeSystem.getProperty() == null ? new ArrayList<>() : new ArrayList<>(fhirCodeSystem.getProperty());
     Set<String> declaredCodes = declared.stream().map(CodeSystemProperty::getCode).collect(Collectors.toCollection(HashSet::new));
-    fhirCodeSystem.getConcept().stream()
+    // Nested concepts too: in a nested shape the hierarchy property is carried by children, so
+    // scanning only the top level would leave the code that states the whole hierarchy undeclared.
+    allConcepts(fhirCodeSystem.getConcept())
         .filter(c -> c.getProperty() != null)
         .flatMap(c -> c.getProperty().stream())
         .map(CodeSystemConceptProperty::getCode)
@@ -468,22 +567,33 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     fhirCodeSystem.setProperty(declared);
   }
 
+  /** Every concept in a possibly-nested list, the nested children included. */
+  private static Stream<CodeSystemConcept> allConcepts(List<CodeSystemConcept> concepts) {
+    return CollectionUtils.isEmpty(concepts) ? Stream.empty()
+        : concepts.stream().flatMap(c -> Stream.concat(Stream.of(c), allConcepts(c.getConcept())));
+  }
+
   private List<CodeSystemConceptProperty> toFhirConceptProperties(CodeSystemEntityVersion entityVersion,
                                                                   CodeSystem codeSystem,
                                                                   Map<Long, List<CodeSystemEntityVersion>> childMap,
                                                                   Map<Long, List<String>> parentMap,
                                                                   Map<String, String> propertySystemUri,
-                                                                  String language) {
+                                                                  String language,
+                                                                  boolean parentsAsProperty) {
     List<EntityProperty> properties = codeSystem.getProperties() == null ? List.of() : codeSystem.getProperties();
 
     List<CodeSystemConceptProperty> conceptProperties = new ArrayList<>();
 
-    // Parent edges are ALWAYS emitted: with a flat concept list they are the only carrier of the
-    // hierarchy, so gating them on the code system happening to declare a parent property would
-    // silently drop it. declareAssociationProperties() then defines whatever code we used here.
+    // Under `flat` the parent edges are the ONLY carrier of the hierarchy, so they are never gated on
+    // the code system happening to DECLARE a parent property: that gate is what the pre-flattening
+    // export had, and it would silently drop the hierarchy of a code system whose parents lived in
+    // the nesting alone. declareAssociationProperties() then defines whatever code we used here.
+    // Under `nested` the caller passes the old gate back in, so that resource is unchanged.
     String hierarchyCode = hierarchyPropertyCode(codeSystem);
-    conceptProperties.addAll(parentMap.getOrDefault(entityVersion.getId(), List.of()).stream()
-        .map(c -> new CodeSystemConceptProperty().setCode(hierarchyCode).setValueCode(c)).toList());
+    if (parentsAsProperty) {
+      conceptProperties.addAll(parentMap.getOrDefault(entityVersion.getId(), List.of()).stream()
+          .map(c -> new CodeSystemConceptProperty().setCode(hierarchyCode).setValueCode(c)).toList());
+    }
     // Every other association keeps its OWN property code. These used to be relabelled with the
     // hierarchy code, so e.g. a classified-with edge was exported as partOf.
     conceptProperties.addAll(Optional.ofNullable(entityVersion.getAssociations()).orElse(List.of()).stream()
@@ -719,6 +829,35 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
     return flat;
   }
 
+  /**
+   * The shape an imported code system's hierarchy was written in, so it can be served back the same
+   * way. The extension says it outright; without one it is read off the resource itself — parent
+   * values with nesting is {@code nested}, parent values without is {@code flat}.
+   *
+   * <p>Nesting alone, or no hierarchy, returns null: the derived default already serves those
+   * unchanged, and recording a setting there would freeze a shape nobody chose. This matters because
+   * the import keeps the hierarchy ONCE, as associations — so without remembering the shape, a
+   * resource that arrived flat would go back out nested.
+   */
+  private static String fromFhirHierarchyShape(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
+    String declared = CodeSystemVersionRepository.hierarchyShape(
+        Optional.ofNullable(fhirCodeSystem.getExtension()).orElse(List.of()).stream()
+            .filter(e -> HIERARCHY_SHAPE_EXTENSION_URL.equals(e.getUrl()))
+            .map(Extension::getValueCode).filter(Objects::nonNull).findFirst().orElse(null));
+    if (declared != null) {
+      return declared;
+    }
+    List<CodeSystemConcept> all = flattenConcepts(Optional.ofNullable(fhirCodeSystem.getConcept()).orElse(List.of()));
+    boolean parentValues = all.stream().filter(c -> c.getProperty() != null).flatMap(c -> c.getProperty().stream())
+        .anyMatch(cp -> cp.getValueCode() != null && PARENT_PROPERTY_CODES.contains(cp.getCode()));
+    if (!parentValues) {
+      return null;
+    }
+    boolean nested = Optional.ofNullable(fhirCodeSystem.getConcept()).orElse(List.of()).stream()
+        .anyMatch(c -> CollectionUtils.isNotEmpty(c.getConcept()));
+    return nested ? SHAPE_NESTED : SHAPE_FLAT;
+  }
+
   private static List<CodeSystemVersion> fromFhirVersion(com.kodality.zmei.fhir.resource.terminology.CodeSystem fhirCodeSystem) {
     CodeSystemVersion version = new CodeSystemVersion();
     // Use the same id the code system resolves to (derived from the url's last segment when the resource
@@ -741,6 +880,7 @@ public class CodeSystemFhirMapper extends BaseFhirMapper {
         .distinct().toList());
     version.setStatus(PublicationStatus.draft);
     version.setAlgorithm(fhirCodeSystem.getVersionAlgorithmString());
+    version.setHierarchyShape(fromFhirHierarchyShape(fhirCodeSystem));
     version.setReleaseDate(fhirCodeSystem.getEffectivePeriod() == null || fhirCodeSystem.getEffectivePeriod().getStart() == null ? LocalDate.now() :
         LocalDate.from(fhirCodeSystem.getEffectivePeriod().getStart()));
     version.setExpirationDate(fhirCodeSystem.getEffectivePeriod() == null || fhirCodeSystem.getEffectivePeriod().getEnd() == null ? null :

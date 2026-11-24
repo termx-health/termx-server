@@ -308,7 +308,23 @@ class CodeSystemFhirMapperSpec extends Specification {
     designations.find { it.value == "A syn" }.use.code == "900000000000013009"
   }
 
-  // ---- flat concept export (CSD-1: "all the codes SHALL be unique") ----
+  // ---- hierarchy shapes (CSD-1: "all the codes SHALL be unique") ----
+
+  /** Every concept in the resource, nested children included — the shape-independent view. */
+  private static List allOf(List concepts) {
+    (concepts ?: []).collectMany { [it] + allOf(it.concept) }
+  }
+
+  private static conceptOf(resource, String code) {
+    allOf(resource.concept).find { it.code == code }
+  }
+
+  /** The shape the resource announces it was written in. */
+  private static String shapeOf(resource) {
+    resource.getExtension("https://termx.org/fhir/StructureDefinition/codesystem-hierarchy-shape")
+        .map { it.valueCode }.orElse(null)
+  }
+
 
   /** A concept with two parents — the shape that used to be emitted once per parent. */
   private static hierarchicalCodeSystem(String hierarchyMeaning, List<EntityProperty> properties) {
@@ -332,70 +348,139 @@ class CodeSystemFhirMapperSpec extends Specification {
     codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
     def (cs, version) = hierarchicalCodeSystem("part-of", [new EntityProperty().setName("partOf").setType(EntityPropertyType.code)])
 
-    when:
+    when: "no shape is set, so the server derives one"
     def exported = mapper.toFhir(cs, version, null)
 
-    then: "a flat list, no nesting, and count agrees with it"
+    then: "a DAG derives flat: nesting it is exactly what breaks CSD-1, so the default will not"
+    shapeOf(exported) == "flat"
+
+    and: "each code exactly once, and count agrees with it"
     exported.concept*.code == ["analyte", "panel-a", "panel-b"]
     exported.concept.every { it.concept == null }
     exported.count == exported.concept.size()
 
     and: "both parents survive as properties — flattening loses nothing"
-    def parents = exported.concept.find { it.code == "analyte" }.property.findAll { it.code == "partOf" }
-    parents*.valueCode.toSorted() == ["panel-a", "panel-b"]
+    conceptOf(exported, "analyte").property.findAll { it.code == "partOf" }*.valueCode.toSorted() == ["panel-a", "panel-b"]
   }
 
-  def "toFhir keeps the hierarchy when the code system declares no parent property"() {
-    given: "hierarchyMeaning set but no is-a/partOf property defined — the hierarchy used to live only in the nesting"
-    conceptService.load(_, _) >> Optional.empty()
-    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
-    def (cs, version) = hierarchicalCodeSystem("is-a", [])
-
-    when:
-    def exported = mapper.toFhir(cs, version, null)
-
-    then: "the parent edges are still emitted..."
-    exported.concept.find { it.code == "analyte" }.property.findAll { it.code == "is-a" }*.valueCode.toSorted() == ["panel-a", "panel-b"]
-
-    and: "...and the property they use is declared, so the resource stays self-describing"
-    exported.property.find { it.code == "is-a" }?.type == EntityPropertyType.code
-  }
-
-  def "toFhir labels each association with its own property code"() {
-    given: "a part-of hierarchy plus an unrelated classified-with association"
+  def "a tree derives nested, so an ordinary code system gets its hierarchy back untouched"() {
+    given: "the same code system with the second panel membership removed, making it a true tree"
     conceptService.load(_, _) >> Optional.empty()
     codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
     def (cs, version) = hierarchicalCodeSystem("part-of", [new EntityProperty().setName("partOf").setType(EntityPropertyType.code)])
-    version.entities.find { it.code == "analyte" }.associations
-        .add(new CodeSystemAssociation().setAssociationType("classified-with").setSourceId(3L).setTargetId(1L).setTargetCode("panel-a"))
+    version.entities.find { it.code == "analyte" }.associations.removeAll { it.targetCode == "panel-b" }
 
     when:
     def exported = mapper.toFhir(cs, version, null)
-    def properties = exported.concept.find { it.code == "analyte" }.property
 
-    then: "the classified-with edge is NOT relabelled partOf"
-    properties.findAll { it.code == "partOf" }*.valueCode.toSorted() == ["panel-a", "panel-b"]
-    properties.findAll { it.code == "classifiedWith" }*.valueCode == ["panel-a"]
+    then: "nesting a tree repeats no code, so the old output is also the valid one"
+    shapeOf(exported) == "nested"
+    exported.concept*.code == ["panel-a", "panel-b"]
+    conceptOf(exported, "panel-a").concept*.code == ["analyte"]
+    allOf(exported.concept)*.code.toSorted() == ["analyte", "panel-a", "panel-b"]
   }
 
-  def "fromFhir reads parent properties from nested concepts too"() {
-    given: "a legacy nested export whose nested child declares a second parent as a property"
-    def fhir = com.kodality.zmei.fhir.FhirMapper.fromJson('''
-      {"resourceType":"CodeSystem","url":"http://example.org/panels","status":"active","content":"complete","language":"en",
-       "hierarchyMeaning":"part-of","property":[{"code":"partOf","type":"code"}],
-       "concept":[{"code":"panel-a","concept":[{"code":"analyte","property":[
-         {"code":"partOf","valueCode":"panel-a"},{"code":"partOf","valueCode":"panel-b"}]}]},{"code":"panel-b"}]}''',
-        com.kodality.zmei.fhir.resource.terminology.CodeSystem)
+  def "a version that asks for #shape gets it, whatever the data looks like"() {
+    given:
     conceptService.load(_, _) >> Optional.empty()
     codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+    def (cs, version) = hierarchicalCodeSystem("part-of", [new EntityProperty().setName("partOf").setType(EntityPropertyType.code)])
+    version.setHierarchyShape(shape)
 
     when:
-    def imported = mapper.fromFhirCodeSystem(fhir)
-    def associations = imported.concepts.find { it.code == "analyte" }.versions.first().associations
+    def exported = mapper.toFhir(cs, version, null)
 
-    then: "both edges survive, not just the nesting parent"
-    associations*.targetCode.toSorted() == ["panel-a", "panel-b"]
-    associations.every { it.associationType == "part-of" }
+    then: "the chosen shape is honoured and announced"
+    shapeOf(exported) == shape
+    exported.concept*.code == roots
+    allOf(exported.concept)*.code.toSorted() == nodes
+
+    where: "`nested` on a DAG repeats the analyte under both panels — that IS the old output"
+    shape    | roots                             | nodes
+    "flat"   | ["analyte", "panel-a", "panel-b"] | ["analyte", "panel-a", "panel-b"]
+    "nested" | ["panel-a", "panel-b"]            | ["analyte", "analyte", "panel-a", "panel-b"]
+  }
+
+  def "an unknown shape is no setting at all, not an export failure"() {
+    given:
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+    def (cs, version) = hierarchicalCodeSystem("part-of", [new EntityProperty().setName("partOf").setType(EntityPropertyType.code)])
+    version.setHierarchyShape("sideways")
+
+    when:
+    def exported = mapper.toFhir(cs, version, null)
+
+    then: "it falls back to the derived shape rather than being treated as one of the two"
+    shapeOf(exported) == "flat"
+  }
+
+  def "a code system with no hierarchy exports flat, since there is nothing to nest"() {
+    given:
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+    def cs = new CodeSystem().setId("plain").setUri("http://example.org/plain").setName("plain")
+        .setTitle(new LocalizedName([en: "plain"])).setContent("complete")
+    def version = new CodeSystemVersion().setVersion("1.0.0").setPreferredLanguage("en")
+        .setReleaseDate(LocalDate.parse("2026-03-18")).setStatus(PublicationStatus.draft).setConceptsTotal(2)
+        .setEntities([new CodeSystemEntityVersion().setId(1L).setCode("a"), new CodeSystemEntityVersion().setId(2L).setCode("b")])
+
+    when:
+    def exported = mapper.toFhir(cs, version, null)
+
+    then:
+    shapeOf(exported) == "flat"
+    exported.concept*.code == ["a", "b"]
+  }
+
+  def "a cycle below a root terminates instead of recursing until the stack goes"() {
+    given: "root > a > b, and b is also a parent of a — the loop the old recursion fell into"
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+    def cs = new CodeSystem().setId("loop").setUri("http://example.org/loop").setName("loop")
+        .setTitle(new LocalizedName([en: "loop"])).setContent("complete").setHierarchyMeaning("is-a")
+    def isa = { Long from, Long to, String toCode ->
+      new CodeSystemAssociation().setAssociationType("is-a").setSourceId(from).setTargetId(to).setTargetCode(toCode)
+    }
+    def root = new CodeSystemEntityVersion().setId(1L).setCode("root")
+    def a = new CodeSystemEntityVersion().setId(2L).setCode("a").setAssociations([isa(2L, 1L, "root"), isa(2L, 3L, "b")])
+    def b = new CodeSystemEntityVersion().setId(3L).setCode("b").setAssociations([isa(3L, 2L, "a")])
+    def version = new CodeSystemVersion().setVersion("1.0.0").setPreferredLanguage("en")
+        .setReleaseDate(LocalDate.parse("2026-03-18")).setStatus(PublicationStatus.draft).setConceptsTotal(3)
+        .setEntities([root, a, b]).setHierarchyShape("nested")
+
+    when:
+    def exported = mapper.toFhir(cs, version, null)
+
+    then: "the walk stops when it would revisit a concept already on the path"
+    noExceptionThrown()
+    exported.concept*.code == ["root"]
+    conceptOf(exported, "a").concept*.code == ["b"]
+    conceptOf(exported, "b").concept == null
+  }
+
+  def "a code system that is nothing but a cycle has no roots, exactly as before"() {
+    given: "a and b are each other's only parent, so neither is a root"
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+    def cs = new CodeSystem().setId("loop2").setUri("http://example.org/loop2").setName("loop2")
+        .setTitle(new LocalizedName([en: "loop2"])).setContent("complete").setHierarchyMeaning("is-a")
+    def a = new CodeSystemEntityVersion().setId(1L).setCode("a").setAssociations(
+        [new CodeSystemAssociation().setAssociationType("is-a").setSourceId(1L).setTargetId(2L).setTargetCode("b")])
+    def b = new CodeSystemEntityVersion().setId(2L).setCode("b").setAssociations(
+        [new CodeSystemAssociation().setAssociationType("is-a").setSourceId(2L).setTargetId(1L).setTargetCode("a")])
+    def version = new CodeSystemVersion().setVersion("1.0.0").setPreferredLanguage("en")
+        .setReleaseDate(LocalDate.parse("2026-03-18")).setStatus(PublicationStatus.draft).setConceptsTotal(2)
+        .setEntities([a, b]).setHierarchyShape("nested")
+
+    when:
+    def exported = mapper.toFhir(cs, version, null)
+
+    then: "the nested shape is root-down, so it emits nothing — this is the restored behaviour, not new"
+    exported.concept == []
+
+    and: "`flat` is the shape that can carry data like this, and it does"
+    mapper.toFhir(cs, version.setHierarchyShape("flat"), null).concept*.code == ["a", "b"]
   }
 
   // ---- fixture pair: the same polyhierarchy, serialised wrongly and rightly ----
@@ -444,22 +529,48 @@ class CodeSystemFhirMapperSpec extends Specification {
     codes.count { it == "2345-7" } == 2
   }
 
-  def "re-exporting the nested fixture yields a CSD-1 valid flat list"() {
+  def "the nested shape reproduces the pre-flattening export, duplicate codes and all"() {
+    given: "the fixture IS what termx used to emit, so re-exporting it is the comparison"
+    conceptService.load(_, _) >> Optional.empty()
+    codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
+    def original = loadFixture("polyhierarchy-INVALID-nested.json")
+    def cs = mapper.fromFhirCodeSystem(original)
+
+    when: "the version asks for the old shape explicitly"
+    def exported = mapper.toFhir(cs, versionOf(cs).setHierarchyShape("nested"), null)
+
+    then: "same roots, same children under each, same order — Glucose under both panels again"
+    exported.concept*.code == original.concept*.code
+    exported.concept.collect { it.concept*.code } == original.concept.collect { it.concept*.code }
+
+    and: "which means the same 6 nodes for 5 codes, exactly as before"
+    countNodes(exported.concept) == countNodes(original.concept)
+    countNodes(exported.concept) == 6
+  }
+
+  def "re-exporting the nested fixture with no setting repairs the duplication"() {
     given:
     conceptService.load(_, _) >> Optional.empty()
     codeSystemService.query(_) >> new QueryResult<CodeSystem>([])
     def cs = mapper.fromFhirCodeSystem(loadFixture("polyhierarchy-INVALID-nested.json"))
+    def version = versionOf(cs)
+
+    expect: "nesting ALONE records no setting: the shape nobody chose must not be frozen in"
+    version.hierarchyShape == null
 
     when:
-    def exported = mapper.toFhir(cs, versionOf(cs), null)
+    def exported = mapper.toFhir(cs, version, null)
 
-    then: "every code exactly once, no nesting, count in agreement"
-    exported.concept*.code.sort() == ["2093-3", "2160-0", "2345-7", "PANEL-LIPID", "PANEL-METAB"]
-    exported.concept.every { it.concept == null }
-    exported.count == exported.concept.size()
+    then: "so the derived shape applies, and this is a DAG, so it is flat"
+    shapeOf(exported) == "flat"
+
+    and: "5 codes, 5 nodes, count in agreement"
+    def all = allOf(exported.concept)
+    all*.code.sort() == ["2093-3", "2160-0", "2345-7", "PANEL-LIPID", "PANEL-METAB"]
+    exported.count == all.size()
 
     and: "both panel memberships survive — what the nesting could only say by repeating itself"
-    exported.concept.find { it.code == "2345-7" }.property.findAll { it.code == "partOf" }*.valueCode.sort() ==
+    conceptOf(exported, "2345-7").property.findAll { it.code == "partOf" }*.valueCode.sort() ==
         ["PANEL-LIPID", "PANEL-METAB"]
 
     and: "the property carrying them is declared, so the resource stays self-describing"
@@ -476,7 +587,8 @@ class CodeSystemFhirMapperSpec extends Specification {
     when:
     def exported = mapper.toFhir(cs, versionOf(cs), null)
 
-    then: "already valid going in, still valid coming out"
+    then: "a flat resource is served back flat — this is what recording the shape buys"
+    cs.versions.first().hierarchyShape == "flat"
     original.concept*.code.sort() == exported.concept*.code.sort()
     exported.concept.every { it.concept == null }
     exported.count == exported.concept.size()
